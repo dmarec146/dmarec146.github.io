@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Fiche 21 — Généralités sur les vecteurs (Première) — interactif</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
+<script src="https://unpkg.com/mathlive"></script>
+<style>
+  :root {
+    --bleu: #4B46C7;
+    --bleu-clair: #D9D9FF;
+    --vert: #1D9E75;
+    --vert-clair: #E1F5EE;
+    --rouge: #E24B4A;
+    --rouge-clair: #FCEBEB;
+    --gris: #5F5E5A;
+    --gris-clair: #F1EFE8;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px 12px 60px;
+    color: #1a1a1a;
+    background: #fff;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Navigation ---------- */
+  .barre-navigation {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .nav-btn {
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 12.5px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--bleu-clair);
+    background: white;
+    color: var(--bleu);
+    text-decoration: none;
+    font-family: Georgia, serif;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-btn:hover { background: var(--bleu-clair); }
+  .nav-btn-sommaire {
+    background: var(--bleu);
+    color: white;
+    border-color: var(--bleu);
+    flex: 0 0 auto;
+    padding: 9px 16px;
+  }
+  .nav-btn-sommaire:hover { background: #3a36a0; }
+  .nav-btn-disabled {
+    color: #ccc;
+    border-color: #eee;
+    cursor: default;
+  }
+
+  /* ---------- En-tête ---------- */
+  .entete {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .badge {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 50%;
+    background: var(--bleu);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: Georgia, serif;
+  }
+  h1 {
+    font-size: 19px;
+    margin: 0;
+    line-height: 1.25;
+  }
+  .filet {
+    height: 3px;
+    background: var(--bleu);
+    width: 60%;
+    max-width: 220px;
+    margin: 6px 0 18px 54px;
+  }
+  .bandeau-calculatrice {
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--rouge);
+    background: var(--rouge-clair);
+    border-radius: 8px;
+    padding: 9px 14px;
+    margin: 0 0 14px;
+  }
+
+  /* ---------- Panneau de mode ---------- */
+  .mode-panneau {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: white;
+    border: 1.5px solid var(--bleu-clair);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .mode-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--gris);
+    width: 100%;
+  }
+  .mode-btn {
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 20px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-family: Georgia, serif;
+    cursor: pointer;
+    color: var(--gris);
+    min-height: 40px;
+    flex: 1 1 auto;
+  }
+  .mode-btn:hover { border-color: var(--bleu); }
+  .mode-btn.mode-actif {
+    background: var(--bleu);
+    border-color: var(--bleu);
+    color: white;
+    font-weight: bold;
+  }
+  .mode-explication {
+    font-size: 12px;
+    color: var(--gris);
+    font-style: italic;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .aide {
+    font-size: 12.5px;
+    color: var(--gris);
+    background: var(--gris-clair);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .aide code {
+    background: white;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .rappel-formule {
+    font-size: 13px;
+    background: #fff8e6;
+    border: 1px solid #f0dca0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 10px 0 14px;
+    line-height: 1.5;
+  }
+  .rappel-formule em { font-style: italic; }
+  .remarque-generale {
+    background: #e4e4e4;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .remarque-generale strong { display: block; margin-bottom: 4px; }
+
+  /* ---------- Sections ---------- */
+  .bloc-general {
+    background: var(--bleu-clair);
+    border-radius: 8px;
+    padding: 14px 12px;
+    margin-bottom: 22px;
+  }
+  .bloc-avance {
+    background: #e4e4e4;
+    border-radius: 10px;
+    padding: 16px 14px;
+    margin-top: 30px;
+  }
+  .bloc-avance .section-titre { margin-top: 0; }
+  .section-titre {
+    font-size: 17px;
+    font-weight: bold;
+    margin: 34px 0 6px;
+    line-height: 1.3;
+  }
+  .bloc-general .section-titre { margin-top: 0; }
+  .section-barre {
+    height: 2.5px;
+    background: var(--bleu);
+    margin-bottom: 14px;
+  }
+  .bloc-general .section-barre { background: var(--bleu); }
+  .bloc-avance .section-barre { background: #1a1a1a; height: 4px; }
+  .calcul-titre {
+    color: #990000;
+    font-weight: bold;
+    text-decoration: underline;
+    margin: 28px 0 10px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+  .calcul-titre:first-child { margin-top: 0; }
+  .picto-niveau {
+    display: inline-flex;
+    gap: 2px;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+
+  /* ---------- Questions : une seule colonne empilée par défaut (mobile-first) ---------- */
+  .question-grille {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .question {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1.5px solid #e2e2e2;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .question.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
+  .q-enonce { font-size: 15px; flex: 1 1 auto; min-width: 140px; }
+  .q-qcm-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px 22px;
+    width: 100%;
+    flex-basis: 100%;
+    margin: 6px 0 2px 0;
+    padding: 8px 6px;
+  }
+  .q-qcm-options-wrapper {
+    position: relative;
+    width: 100%;
+    flex-basis: 100%;
+    padding-right: 0;
+  }
+  .q-qcm-options-wrapper--scroll {
+    padding-right: 32px;
+  }
+  .q-qcm-options-wrapper--scroll::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, transparent, #fff 55%);
+    pointer-events: none;
+  }
+  .q-qcm-options-wrapper--scroll::after {
+    content: "→";
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: #7b6fd4;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .q-qcm-options--scroll {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .q-qcm-options--scroll::-webkit-scrollbar {
+    height: 5px;
+  }
+  .q-qcm-options--scroll::-webkit-scrollbar-thumb {
+    background: #b3aef0;
+    border-radius: 3px;
+  }
+  .q-qcm-options--scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .q-qcm-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14.5px;
+    white-space: nowrap;
+  }
+  .q-qcm-lettre {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    border: 1.3px solid #555;
+    border-radius: 50%;
+    font-size: 12.5px;
+    font-style: italic;
+    font-family: Georgia, serif;
+    flex-shrink: 0;
+  }
+  .q-input {
+    font-family: 'Courier New', monospace;
+    font-size: 16px; /* >=16px : évite le zoom auto iOS au focus */
+    padding: 9px 8px;
+    border: 1.5px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 120px;
+    min-width: 0;
+    background: white;
+    min-height: 40px;
+  }
+  .q-mathfield {
+    font-size: 17px;
+    padding: 6px 8px;
+    border: 1.5px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 140px;
+    min-width: 0;
+    background: white;
+    min-height: 40px;
+  }
+  .q-mathfield::part(menu-toggle) { display: none; }
+  .q-mathfield::part(virtual-keyboard-toggle) { display: none; }
+  .q-mathfield:focus-within { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .q-input:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .q-apercu-latex {
+    display: none;
+    width: 100%;
+    flex-basis: 100%;
+    font-size: 15px;
+    color: #555;
+    padding: 4px 8px;
+    min-height: 0;
+  }
+  .q-apercu-latex.visible { display: block; }
+  .q-clavier-btn {
+    background: none;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    cursor: pointer;
+    font-size: 17px;
+    color: var(--gris);
+    flex: 0 0 auto;
+  }
+  .q-clavier-btn:hover { background: var(--gris-clair); }
+  .q-aide-btn {
+    background: var(--bleu-clair);
+    border: 1.5px solid var(--bleu);
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--bleu);
+    flex: 0 0 auto;
+    line-height: 1;
+    padding: 0;
+  }
+  .q-aide-btn:hover { background: var(--bleu); color: white; }
+  .q-aide-bulle {
+    display: none;
+    width: 100%;
+    background: var(--bleu-clair);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: #1a1a1a;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+  .q-aide-bulle.ouverte { display: block; }
+  .q-aide-bulle code {
+    background: white;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .q-statut {
+    font-size: 12.5px;
+    font-weight: bold;
+    min-width: 68px;
+    text-align: center;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: Georgia, serif;
+    flex: 0 0 auto;
+  }
+  .q-statut.ok { color: var(--vert); background: var(--vert-clair); }
+  .q-statut.ko { color: var(--rouge); background: var(--rouge-clair); }
+
+  /* ---------- Clavier virtuel ---------- */
+  .clavier-visuel {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--gris-clair);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 4px;
+    width: 100%;
+  }
+  .clavier-visuel.ouvert { display: flex; }
+  .clavier-groupe {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .clavier-groupe .clavier-label {
+    font-size: 10.5px;
+    color: var(--gris);
+    width: 100%;
+    font-family: Georgia, serif;
+    margin-bottom: 2px;
+  }
+  .clavier-visuel button {
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+    line-height: 1;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 8px 10px;
+    flex: 0 0 auto;
+  }
+  .clavier-visuel button:hover { background: #eee; border-color: var(--bleu); }
+  .clavier-visuel button.touche-large { min-width: 60px; font-size: 12.5px; font-family: Georgia, serif; padding: 8px 12px; }
+  .clavier-visuel button.touche-effacer { color: var(--rouge); border-color: var(--rouge-clair); }
+  .clavier-visuel .clavier-apercu {
+    font-size: 12px;
+    color: var(--gris);
+    font-family: Georgia, serif;
+    padding-top: 4px;
+    border-top: 1px solid #ddd;
+  }
+
+  /* ---------- Barre de contrôle et boutons ---------- */
+  .barre-controle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 26px 0 10px;
+  }
+  .btn-principal, .btn-secondaire {
+    font-size: 15px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    border-radius: 8px;
+    padding: 12px 18px;
+    min-height: 46px;
+    width: 100%;
+  }
+  .btn-principal {
+    background: var(--bleu);
+    color: white;
+    border: none;
+  }
+  .btn-principal:hover { background: #3a36a0; }
+  .btn-secondaire {
+    background: white;
+    color: var(--bleu);
+    border: 1.5px solid var(--bleu);
+  }
+  .btn-secondaire:hover { background: var(--bleu-clair); }
+
+  .score-panneau {
+    display: none;
+    background: var(--gris-clair);
+    border-radius: 8px;
+    padding: 16px 14px;
+    margin: 20px 0;
+    font-size: 16px;
+  }
+  .score-panneau.visible { display: block; }
+  .score-chiffre { font-size: 24px; font-weight: bold; color: var(--bleu); }
+  .score-panneau .btn-secondaire { width: auto; margin-top: 4px; }
+
+  .correction-panneau {
+    display: none;
+    margin-top: 14px;
+    border-top: 1px solid #ddd;
+    padding-top: 12px;
+  }
+  .correction-panneau.visible { display: block; }
+  .correction-ligne {
+    padding: 7px 0;
+    font-size: 13.5px;
+    border-bottom: 1px solid #eee;
+  }
+  .correction-ligne .id { font-weight: bold; color: var(--gris); }
+
+  /* ---------- À partir des tablettes (>=600px) ---------- */
+  @media (min-width: 600px) {
+    body { padding: 24px 24px 60px; }
+    h1 { font-size: 24px; }
+    .badge { width: 52px; height: 52px; min-width: 52px; font-size: 22px; }
+    .filet { margin-left: 68px; }
+    .section-titre { font-size: 20px; }
+    .calcul-titre { font-size: 16px; }
+    .question-grille {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 20px;
+    }
+    .q-input { width: 130px; flex: 0 0 130px; }
+    .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .btn-principal, .btn-secondaire { width: auto; }
+    .mode-label { width: auto; margin-right: 4px; }
+    .mode-btn { flex: 0 0 auto; }
+  }
+
+  /* ---------- Grand écran (>=900px) : un peu plus d'air ---------- */
+  @media (min-width: 900px) {
+    .q-enonce { min-width: 90px; }
+  }
+
+  .qcm-bloc {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1.5px solid #e2e2e2;
+    margin-bottom: 10px;
+  }
+  .qcm-svg {
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    display: block;
+    margin: 0 auto 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+  .figure-centree {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  .figure-centree svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .figure-centree svg.qcm-svg {
+    max-width: 220px;
+  }
+  .qcm-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .qcm-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .qcm-lettre {
+    font-weight: bold;
+    min-width: 18px;
+  }
+  .qcm-grille-figures {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .qcm-grille-figures > div {
+    flex: 0 1 160px;
+  }
+  .qcm-figure-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--gris);
+    margin-top: 2px;
+  }
+  .tv-bloc {
+    background: var(--gris-clair);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .tv-table {
+    border-collapse: collapse;
+    font-family: Georgia, serif;
+    font-size: 13px;
+    margin: 10px auto;
+  }
+  .tv-x-cell {
+    border: 1px solid #333;
+    padding: 4px 10px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    font-style: italic;
+    background: #fafafa;
+  }
+  .tv-body-cell {
+    border: 1px solid #333;
+    padding: 0;
+    vertical-align: middle;
+  }
+</style>
+
+<body>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <a class="nav-btn" href="fiche-20.html">&larr; Fiche précédente</a>
+  <a class="nav-btn" href="fiche-22.html">Fiche suivante &rarr;</a>
+</div>
+
+<div class="entete">
+  <div class="badge">21</div>
+  <h1>Généralités sur les vecteurs — version interactive</h1>
+</div>
+<div class="filet"></div>
+
+<div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
+
+<div class="mode-panneau">
+  <span class="mode-label">Vérifier chaque réponse</span>
+  <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
+  <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
+  <span class="mode-explication" id="mode-explication"></span>
+</div>
+
+<div class="aide">
+  Pour les expressions mathématiques (dérivées, calculs...), un vrai éditeur de formule s'affiche : taper directement, utiliser <code>/</code> pour une fraction ou <code>&#9000;</code> pour son clavier symbolique.
+  Pour un cercle, saisir « centre_x;centre_y;rayon » (ex. <code>1;-2;2</code>). Pour vrai/faux, saisir « vrai » ou « faux ». Pour un QCM, saisir la lettre (a, b, c ou d).
+  Toute écriture mathématiquement équivalente à la réponse attendue est acceptée.
+</div>
+
+<div class="bloc-general">
+  <p class="section-titre">Quelques automatismes</p>
+  <div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 21.1 — Quelques développements. Développer et réduire les expressions suivantes, en utilisant une identité remarquable.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<div class="question-grille" id="grille-21-1"></div>
+
+<p class="calcul-titre"><span>Calcul 21.2 — Quelques fractions. Mettre les expressions suivantes au même dénominateur, puis simplifier au maximum.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<div class="question-grille" id="grille-21-2"></div>
+</div>
+
+<p class="section-titre">Échauffements</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 21.3 — Règle du parallélogramme.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-3"></div>
+
+<p class="calcul-titre"><span>Calcul 21.4 — Exprimer chacun des vecteurs suivants en fonction des vecteurs \(\overrightarrow{AB}\) et \(\overrightarrow{CD}\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="graphique-21-4"></div>
+<div id="graphique-21-4"></div>
+<div class="question-grille" id="grille-21-4"></div>
+
+<p class="calcul-titre"><span>Calcul 21.5 — Trouver les bons points.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>En utilisant les points placés dans le quadrillage ci-dessous, calculer les coordonnées d'un vecteur égal à chacune des sommes suivantes.</p>
+<div id="graphique-21-5"></div>
+<div id="graphique-21-5"></div>
+<div class="question-grille" id="grille-21-5"></div>
+
+<p class="calcul-titre"><span>Calcul 21.6 — Équations vectorielles (I).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Soit \(\vec{v}\) un vecteur non nul.</p>
+<div class="question-grille" id="grille-21-6"></div>
+
+<p class="calcul-titre"><span>Calcul 21.7 — Équations vectorielles (II).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Soit \(\vec{v}\) un vecteur non nul.</p>
+<div class="question-grille" id="grille-21-7"></div>
+
+<p class="section-titre">Autour de la relation de Chasles</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 21.8 — Des simplifications vectorielles.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Simplifier les expressions suivantes.</p>
+<div class="question-grille" id="grille-21-8"></div>
+
+<p class="calcul-titre"><span>Calcul 21.9 — Une lettre inconnue.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-9"></div>
+
+<p class="calcul-titre"><span>Calcul 21.10 — Simplifier l'expression.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-10"></div>
+
+<p class="calcul-titre"><span>Calcul 21.11 — Exprimer u en fonction de AB et AC.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-11"></div>
+
+<p class="calcul-titre"><span>Calcul 21.12 — Simplifier les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-12"></div>
+
+<p class="calcul-titre"><span>Calcul 21.13</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Déterminer le réel \(\alpha\) tel que \(\vec{u}\) soit le vecteur nul :</p>
+<div class="question-grille" id="grille-21-13"></div>
+
+<p class="calcul-titre"><span>Calcul 21.14 — Exprimer un vecteur en fonction d'un autre (I).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-14"></div>
+
+<p class="section-titre">Colinéarité</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 21.15 — Une question de colinéarité.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>On considère les points et les vecteurs suivants.</p>
+<div id="graphique-21-15"></div>
+<p>Déterminer à quel vecteur, parmi \(\overrightarrow{AB}\), \(\overrightarrow{CD}\) et \(\overrightarrow{EF}\), chacune des sommes suivantes est colinéaire.</p>
+<div id="graphique-21-15"></div>
+<div class="question-grille" id="grille-21-15"></div>
+
+<p class="calcul-titre"><span>Calcul 21.16 — Exprimer un vecteur en fonction d'un autre (II).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Exprimer le vecteur \(\vec{u}\) en fonction de \(\vec{v}\) dans chacun des cas suivants.</p>
+<div class="question-grille" id="grille-21-16"></div>
+
+<p class="calcul-titre"><span>Calcul 21.17 — Exprimer un vecteur en fonction d'un autre (II).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Soient A, B et C trois points non alignés.</p>
+<p>Exprimer le vecteur \(\vec{u}\) en fonction de \(\vec{v}\) dans chacun des cas suivants.</p>
+<div class="question-grille" id="grille-21-17"></div>
+
+<p class="calcul-titre"><span>Calcul 21.18 — Exprimer un vecteur en fonction d'un autre (III).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-21-18"></div>
+
+<p class="calcul-titre"><span>Calcul 21.19 — Point particulier d'un triangle.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Soit ABC un triangle. On considère le point G tel que \(\overrightarrow{GA}-2\overrightarrow{BG}+3\overrightarrow{GC}+2\overrightarrow{BC}=\vec{0}\).</p>
+<div class="question-grille" id="grille-21-19"></div>
+
+<p class="calcul-titre"><span>Calcul 21.20</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Soient ABC un triangle et les points M, N et P tels que \(\overrightarrow{AP}=\overrightarrow{BA}\), \(\overrightarrow{NC}=\dfrac{1}{3}\overrightarrow{BC}\) et \(\overrightarrow{AM}=\dfrac{1}{2}\overrightarrow{AC}\). Exprimer le vecteur \(\overrightarrow{PN}\) en fonction du vecteur \(\overrightarrow{PM}\).</p>
+<div class="question-grille" id="grille-21-20"></div>
+
+<div class="bloc-avance">
+<p class="section-titre">Calculs plus avancés</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 21.21</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>Soient A, B et C trois points non alignés.</p>
+<div class="question-grille" id="grille-21-21"></div>
+
+<div class="rappel-formule">On rappelle la propriété du milieu : le point I est le milieu de [AB] si et seulement si \(\overrightarrow{IA}+\overrightarrow{IB}=\vec{0}\).</div>
+
+<p class="calcul-titre"><span>Calcul 21.22 — Propriété du milieu.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>Soit ABC un triangle. On note I et J les milieux respectifs de [AB] et [AC].</p>
+<div class="question-grille" id="grille-21-22"></div>
+
+<p class="calcul-titre"><span>Calcul 21.23 — Point particulier d'un triangle (suite).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>On considère un triangle ABC, et on note G le point du plan qui vérifie \(\overrightarrow{GA}+\overrightarrow{GB}+\overrightarrow{GC}=\vec{0}\).</p>
+<div class="question-grille" id="grille-21-23"></div>
+</div>
+
+<div class="barre-controle">
+  <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
+  <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+</div>
+
+<div class="score-panneau" id="score-panneau">
+  <span class="score-chiffre" id="score-chiffre">0 / N</span> bonnes réponses
+  <div style="margin-top:10px;">
+    <button class="btn-secondaire" id="btn-correction" onclick="toggleCorrection()">Voir la correction des erreurs</button>
+  </div>
+  <div class="correction-panneau" id="correction-panneau"></div>
+</div>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <a class="nav-btn" href="fiche-20.html">&larr; Fiche précédente</a>
+  <a class="nav-btn" href="fiche-22.html">Fiche suivante &rarr;</a>
+</div>
+
+<script>
+function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+const exercices = [
+  // Calcul 21.1 - developpements (6 items)
+  {id:"21.1 a)", type:"alg", texteLibre:true, enonce:"\\((x+6)^2\\)", reponse:"x^2+12*x+36"},
+  {id:"21.1 b)", type:"alg", texteLibre:true, enonce:"\\((1-2x)^2\\)", reponse:"4*x^2-4*x+1"},
+  {id:"21.1 c)", type:"alg", texteLibre:true, enonce:"\\((1+3x)(1-3x)\\)", reponse:"1-9*x^2"},
+  {id:"21.1 d)", type:"alg", texteLibre:true, enonce:"\\(-2(3+5x)^2-10\\)", reponse:"-50*x^2-60*x-28"},
+  {id:"21.1 e)", type:"alg", texteLibre:true, enonce:"\\((2x-1)^2-x^2\\)", reponse:"3*x^2-4*x+1"},
+  {id:"21.1 f)", type:"alg", texteLibre:true, enonce:"\\(-(x-2)(x+2)-4\\)", reponse:"-x^2"},
+  // Calcul 21.2 - fractions (6 items)
+  {id:"21.2 a)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{1}{q}-\\dfrac{1}{q-1}\\)", reponse:"-1/(q*(q-1))"},
+  {id:"21.2 b)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{q}{1-q}-\\dfrac{q}{1+q}\\)", reponse:"-2*q^2/(q^2-1)"},
+  {id:"21.2 c)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{2}{1-q^2}+\\dfrac{-1}{1+q}\\)", reponse:"-1/(q-1)"},
+  {id:"21.2 d)", type:"alg", texteLibre:true, enonce:"\\(2q+\\dfrac{1}{2q-1}\\)", reponse:"(4*q^2-2*q+1)/(2*q-1)"},
+  {id:"21.2 e)", type:"alg", texteLibre:true, enonce:"\\(1-\\dfrac{2}{q+1}+\\dfrac{1}{(q+1)^2}\\)", reponse:"q^2/(q+1)^2"},
+  {id:"21.2 f)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{1}{q+1}-\\dfrac{q}{q^2-1}\\)", reponse:"-1/(q^2-1)"},
+  // Calcul 21.3 - regle du parallelogramme (1 item, QCM)
+  {id:"21.3", type:"qcm", texteLibre:true, enonce:"Si ABCD est un parallélogramme, alors :", bonneReponse:"c", options:[{lettre:"a",texte:"\\overrightarrow{AB}=\\overrightarrow{CD}"},{lettre:"b",texte:"\\overrightarrow{AC}=\\overrightarrow{BD}"},{lettre:"c",texte:"\\overrightarrow{BA}=\\overrightarrow{CD}"}]},
+  // Calcul 21.4 - vecteurs sur quadrillage (4 items)
+  {id:"21.4 a)", type:"paire", texteLibre:true, enonce:"\\(\\vec{u}\\)", pa:"-1/2", pb:"-5/4"},
+  {id:"21.4 b)", type:"paire", texteLibre:true, enonce:"\\(\\vec{v}\\)", pa:"-1/2", pb:"1/2"},
+  {id:"21.4 c)", type:"paire", texteLibre:true, enonce:"\\(\\vec{w}\\)", pa:"-1", pb:"-1/4"},
+  {id:"21.4 d)", type:"paire", texteLibre:true, enonce:"\\(\\vec{p}\\)", pa:"0", pb:"-3/4"},
+  {id:"21.4 e)", type:"paire", texteLibre:true, enonce:"\\(-2\\vec{u}+3\\vec{p}\\)", pa:"1", pb:"1/4"},
+  {id:"21.4 f)", type:"paire", texteLibre:true, enonce:"\\(4\\vec{v}+\\vec{u}-5\\vec{w}\\)", pa:"5/2", pb:"2"},
+  // Calcul 21.5 - points sur quadrillage (4 items)
+  {id:"21.5 a)", type:"paire", texteLibre:true, enonce:"\\(\\overrightarrow{AC}+\\overrightarrow{DG}\\)", pa:"0", pb:"-4"},
+  {id:"21.5 b)", type:"paire", texteLibre:true, enonce:"\\(\\overrightarrow{HG}-\\overrightarrow{AD}+\\dfrac{1}{2}\\overrightarrow{CD}+\\dfrac{2}{3}\\overrightarrow{DH}\\)", pa:"1", pb:"1"},
+  {id:"21.5 c)", type:"paire", texteLibre:true, enonce:"\\(\\overrightarrow{BA}-\\overrightarrow{GB}+\\overrightarrow{DB}+\\dfrac{1}{2}\\overrightarrow{AG}\\)", pa:"-1", pb:"-4"},
+  {id:"21.5 d)", type:"paire", texteLibre:true, enonce:"\\(\\dfrac{1}{2}(\\overrightarrow{AC}+\\overrightarrow{DF})-\\dfrac{1}{2}\\overrightarrow{ED}+\\dfrac{2}{3}\\overrightarrow{DH}\\)", pa:"1/2", pb:"-4"},
+  // Calcul 21.6 - equations vectorielles I (4 items)
+  {id:"21.6 a)", type:"num", texteLibre:true, enonce:"Déterminer le réel α tel que \\(\\vec{u}=\\alpha\\vec{v}+(1-\\alpha)\\vec{v}+2(1+\\alpha)\\vec{v}=\\vec{0}\\)", reponse:"-3/2"},
+  {id:"21.6 b)", type:"num", texteLibre:true, enonce:"Déterminer α tel que \\(\\vec{u}=(2\\alpha+1)\\vec{v}+(\\alpha+1)(\\alpha-1)\\vec{v}-\\alpha^2\\vec{v}=\\vec{0}\\)", reponse:"0"},
+  {id:"21.6 c)", type:"num", texteLibre:true, enonce:"Déterminer α tel que \\(\\vec{u}=-(\\alpha^2+1)\\vec{v}+(\\alpha-2)\\vec{v}+\\alpha(\\alpha+3)\\vec{v}=\\vec{0}\\)", reponse:"3/4"},
+  {id:"21.6 d)", type:"num", texteLibre:true, enonce:"Déterminer α tel que \\(\\vec{u}=2\\alpha^2\\vec{v}-(\\alpha+1)^2\\vec{v}+(2\\alpha+1)\\vec{v}=\\vec{0}\\)", reponse:"0"},
+  // Calcul 21.7 - equations vectorielles II (2 items)
+  {id:"21.7 a)", type:"num", texteLibre:true, enonce:"Déterminer pour quelles valeurs de α on a \\(\\vec{u}=\\dfrac{\\alpha}{\\alpha+1}\\vec{v}+(\\alpha+1)\\vec{v}-\\vec{v}=\\vec{0}\\)", reponse:"{-2;0}"},
+  {id:"21.7 b)", type:"num", texteLibre:true, enonce:"Déterminer pour quelles valeurs de α on a \\(\\vec{u}=(1+\\alpha)\\vec{v}+\\dfrac{1-\\alpha}{1+\\alpha}\\vec{v}-2\\vec{v}=\\vec{0}\\)", reponse:"{0;1}"},
+  // Calcul 21.8 - simplifications vectorielles (6 items)
+  {id:"21.8 a)", type:"texte", texteLibre:true, enonce:"\\(\\overrightarrow{AF}+\\overrightarrow{FH}-\\overrightarrow{AB}\\)", reponse:"BH"},
+  {id:"21.8 b)", type:"num", texteLibre:true, enonce:"\\(\\overrightarrow{IJ}+\\overrightarrow{KI}+\\overrightarrow{JK}\\) (le résultat est le vecteur nul : répondre 0)", reponse:"0"},
+  {id:"21.8 c)", type:"texte", texteLibre:true, enonce:"\\(\\overrightarrow{DE}+\\overrightarrow{EG}-\\overrightarrow{DA}-\\overrightarrow{OG}\\)", reponse:"AO"},
+  {id:"21.8 d)", type:"texte", texteLibre:true, enonce:"\\(-(\\overrightarrow{AE}-\\overrightarrow{BI})+\\overrightarrow{BE}+\\overrightarrow{IB}\\)", reponse:"-AB"},
+  {id:"21.8 e)", type:"texte", texteLibre:true, enonce:"\\(\\overrightarrow{EM}-(\\overrightarrow{EB}-\\overrightarrow{NM})+\\overrightarrow{MB}\\)", reponse:"NM"},
+  {id:"21.8 f)", type:"texte", texteLibre:true, enonce:"\\((\\overrightarrow{AB}-\\overrightarrow{EH})-(\\overrightarrow{BE}-\\overrightarrow{AH})\\)", reponse:"2AB"},
+  // Calcul 21.9 - remplacer X (1 item, QCM)
+  {id:"21.9", type:"qcm", texteLibre:true, enonce:"Par quelle lettre faut-il remplacer X pour que \\(\\overrightarrow{AF}+\\overrightarrow{EX}+\\overrightarrow{FE}+\\overrightarrow{CA}=\\vec{0}\\) ?", bonneReponse:"e", options:[{lettre:"a",texte:"A",texteLibreOption:true},{lettre:"b",texte:"E",texteLibreOption:true},{lettre:"c",texte:"B",texteLibreOption:true},{lettre:"d",texte:"F",texteLibreOption:true},{lettre:"e",texte:"C",texteLibreOption:true}]},
+  // Calcul 21.10 - simplifier (1 item)
+  {id:"21.10", type:"texte", texteLibre:true, enonce:"\\(\\overrightarrow{AF}-\\overrightarrow{EB}-\\overrightarrow{OF}+\\overrightarrow{EA}-\\overrightarrow{BO}\\) (le résultat est le vecteur nul : répondre 0)", reponse:"0"},
+  // Calcul 21.11 - exprimer u en fonction de AB, AC (4 items)
+  {id:"21.11 a)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=\\overrightarrow{CB}\\)", reponse:"AB-AC"},
+  {id:"21.11 b)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=-\\overrightarrow{CA}+2\\overrightarrow{BC}\\)", reponse:"-2AB+3AC"},
+  {id:"21.11 c)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=2\\overrightarrow{BC}-3\\overrightarrow{BA}+\\overrightarrow{CA}\\)", reponse:"AB+AC"},
+  {id:"21.11 d)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=2(\\overrightarrow{AC}-\\overrightarrow{CB})+3\\overrightarrow{AB}\\)", reponse:"AB+4AC"},
+  // Calcul 21.12 - simplifier (4 items)
+  {id:"21.12 a)", type:"texte", texteLibre:true, enonce:"\\(2\\overrightarrow{BE}-\\overrightarrow{BA}+\\overrightarrow{EA}\\)", reponse:"BE"},
+  {id:"21.12 b)", type:"texte", texteLibre:true, enonce:"\\(\\dfrac{1}{2}\\overrightarrow{AM}+\\dfrac{1}{2}\\overrightarrow{ME}+\\dfrac{3}{2}\\overrightarrow{AE}\\)", reponse:"2AE"},
+  {id:"21.12 c)", type:"texte", texteLibre:true, enonce:"\\(-\\dfrac{1}{4}\\overrightarrow{VS}+\\dfrac{1}{4}\\overrightarrow{VA}-\\overrightarrow{AS}\\)", reponse:"5/4SA"},
+  {id:"21.12 d)", type:"texte", texteLibre:true, enonce:"\\(\\dfrac{1}{2}(\\overrightarrow{AB}-2(\\overrightarrow{AB}-\\overrightarrow{CB}))-\\dfrac{1}{2}\\overrightarrow{AB}\\)", reponse:"CA"},
+  // Calcul 21.13 - determiner alpha (3 items)
+  {id:"21.13 a)", type:"num", texteLibre:true, enonce:"\\(\\vec{u}=3\\overrightarrow{AB}+\\overrightarrow{BC}+\\alpha\\overrightarrow{BA}+\\overrightarrow{CA}\\)", reponse:"2"},
+  {id:"21.13 b)", type:"num", texteLibre:true, enonce:"Déterminer α tel que \\(\\vec{u}=-3\\overrightarrow{BP}+\\alpha(\\overrightarrow{AB}-\\overrightarrow{PB})+3\\overrightarrow{BA}=\\vec{0}\\)", reponse:"3"},
+  {id:"21.13 c)", type:"num", texteLibre:true, enonce:"Déterminer α tel que \\(\\vec{u}=\\dfrac{2}{3}\\overrightarrow{EF}-\\dfrac{2}{3}\\overrightarrow{AF}+\\dfrac{\\alpha}{6}\\overrightarrow{AE}=\\vec{0}\\)", reponse:"4"},
+  // Calcul 21.14 - exprimer u en fonction de AB et alpha (4 items)
+  {id:"21.14 a)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=(1+\\alpha)\\overrightarrow{AB}-\\alpha\\overrightarrow{CA}+\\alpha\\overrightarrow{CB}\\)", reponse:"(1+2*a)AB"},
+  {id:"21.14 b)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=(1-\\alpha)(\\overrightarrow{AB}-\\overrightarrow{BC})-(\\alpha-1)\\overrightarrow{AC}\\)", reponse:"2*(1-a)AB"},
+  {id:"21.14 c)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=\\left(1-\\dfrac{1}{1-\\alpha}\\right)\\overrightarrow{AC}+\\alpha\\left(\\overrightarrow{BA}+\\dfrac{1}{1-\\alpha}\\overrightarrow{AC}\\right)\\)", reponse:"-a*AB"},
+  {id:"21.14 d)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=(1-\\alpha)^2\\overrightarrow{AB}+(1-\\alpha)(1+\\alpha)\\overrightarrow{AC}+\\alpha^2\\overrightarrow{BC}+\\overrightarrow{CB}\\)", reponse:"2*(1-a)AB"},
+  // Calcul 21.15 - colinearite (4 items)
+  {id:"21.15 a)", type:"qcm", texteLibre:true, enonce:"\\(\\vec{u}+\\dfrac{1}{2}\\vec{v}\\)", bonneReponse:"a", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]},
+  {id:"21.15 b)", type:"qcm", texteLibre:true, enonce:"\\(-\\left(\\dfrac{1}{4}\\vec{w}+\\vec{p}\\right)\\)", bonneReponse:"b", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]},
+  {id:"21.15 c)", type:"qcm", texteLibre:true, enonce:"\\(-\\dfrac{1}{2}(\\vec{p}-\\vec{v})\\)", bonneReponse:"b", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]},
+  {id:"21.15 d)", type:"qcm", texteLibre:true, enonce:"\\(\\vec{v}+\\vec{u}+\\dfrac{1}{2}\\vec{w}\\)", bonneReponse:"c", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]},
+  // Calcul 21.16 - exprimer u en fonction de v (4 items)
+  {id:"21.16 a)", type:"texte", texteLibre:true, enonce:"Si \\(3\\vec{u}=6\\vec{v}\\) alors on a \\(\\vec{u}=\\)", reponse:"2v"},
+  {id:"21.16 b)", type:"texte", texteLibre:true, enonce:"Si \\(\\dfrac{1}{2}\\vec{u}=-\\dfrac{3}{5}\\vec{v}\\) alors on a \\(\\vec{u}=\\)", reponse:"-6/5v"},
+  {id:"21.16 c)", type:"texte", texteLibre:true, enonce:"Si \\(\\dfrac{1}{2}(\\vec{u}-\\vec{v})=\\vec{0}\\) alors on a \\(\\vec{u}=\\)", reponse:"v"},
+  {id:"21.16 d)", type:"texte", texteLibre:true, enonce:"Si \\(\\dfrac{1}{3}\\vec{u}+\\dfrac{3}{4}\\vec{v}=-2(\\vec{u}+\\vec{v})\\) alors on a \\(\\vec{u}=\\)", reponse:"-33/28v"},
+  // Calcul 21.17 - exprimer u en fonction de v, points ABC (4 items)
+  {id:"21.17 a)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=-2\\overrightarrow{AB}\\) et \\(\\vec{v}=4\\overrightarrow{AB}\\)", reponse:"-1/2v"},
+  {id:"21.17 b)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=\\dfrac{1}{2}\\overrightarrow{CA}+\\dfrac{3}{4}\\overrightarrow{AB}\\) et \\(\\vec{v}=2\\overrightarrow{AC}-3\\overrightarrow{AB}\\)", reponse:"-1/4v"},
+  {id:"21.17 c)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=-\\dfrac{1}{4}\\overrightarrow{AC}\\) et \\(\\vec{v}=2\\overrightarrow{AB}-2\\overrightarrow{CB}\\)", reponse:"-1/8v"},
+  {id:"21.17 d)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=2(\\overrightarrow{AB}+\\overrightarrow{AC})\\) et \\(\\vec{v}=\\overrightarrow{CA}-\\dfrac{1}{2}\\overrightarrow{CB}\\)", reponse:"-4v"},
+  // Calcul 21.18 - exprimer AB (4 items)
+  {id:"21.18 a)", type:"texte", texteLibre:true, enonce:"Si \\(-4\\overrightarrow{AD}+4\\overrightarrow{BD}-\\overrightarrow{DC}=\\vec{0}\\) alors on a \\(\\overrightarrow{AB}=\\)...", reponse:"1/4CD"},
+  {id:"21.18 b)", type:"texte", texteLibre:true, enonce:"Si \\(3(\\overrightarrow{AD}-\\overrightarrow{BA})-3\\overrightarrow{BC}+\\overrightarrow{CD}=\\vec{0}\\) alors on a \\(\\overrightarrow{AB}=\\)...", reponse:"-2/3CD"},
+  {id:"21.18 c)", type:"texte", texteLibre:true, enonce:"Si \\(\\overrightarrow{CB}-3\\overrightarrow{AB}=-2\\overrightarrow{AD}+\\overrightarrow{AC}\\) alors on a \\(\\overrightarrow{AB}=\\)...", reponse:"CD"},
+  {id:"21.18 d)", type:"texte", texteLibre:true, enonce:"Si \\(-\\dfrac{1}{3}(\\overrightarrow{BD}-\\overrightarrow{BA})=\\dfrac{2}{3}\\overrightarrow{AD}+\\overrightarrow{CB}\\) alors on a \\(\\overrightarrow{AB}=\\)...", reponse:"DC"},
+  // Calcul 21.19 - point G (1 item)
+  {id:"21.19", type:"texte", texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{GA}\\) en fonction du vecteur \\(\\overrightarrow{GC}\\)", reponse:"-5GC"},
+  // Calcul 21.20 - exprimer PN en fonction de PM (1 item)
+  {id:"21.20", type:"texte", texteLibre:true, enonce:"", reponse:"4/3PM"},
+  // Calcul 21.21 - avance, u en fonction de v et alpha (4 items)
+  {id:"21.21 a)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=\\overrightarrow{AB}+(\\alpha^2-1)\\overrightarrow{AC}\\) et \\(\\vec{v}=\\dfrac{1}{\\alpha-1}\\overrightarrow{AB}+(\\alpha+1)\\overrightarrow{AC}\\)", reponse:"(a-1)v"},
+  {id:"21.21 b)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=\\alpha\\overrightarrow{AB}-\\left(1-\\dfrac{1}{\\alpha+1}\\right)\\overrightarrow{AC}\\) et \\(\\vec{v}=\\overrightarrow{BA}+\\dfrac{1}{\\alpha+1}\\overrightarrow{AC}\\)", reponse:"-a*v"},
+  {id:"21.21 c)", type:"texte", texteLibre:true, enonce:"\\(\\vec{u}=2\\alpha\\overrightarrow{AB}+(\\alpha^2+1)\\overrightarrow{BA}+\\overrightarrow{CA}\\) et \\(\\vec{v}=(\\alpha-1)\\overrightarrow{BA}+\\dfrac{1}{\\alpha-1}\\overrightarrow{CA}\\)", reponse:"(a-1)v"},
+  {id:"21.21 d)", type:"texte", texteLibre:true, enonce:"Si \\(\\vec{u}=(1+2\\alpha)^2\\overrightarrow{AB}-(1-2\\alpha)^2\\overrightarrow{AC}+(4\\alpha^2+1)\\overrightarrow{BC}\\) et \\(\\vec{v}=2\\overrightarrow{AB}+\\overrightarrow{BC}\\)", reponse:"4*a*v"},
+  // Calcul 21.22 - propriete du milieu (4 items, avance)
+  {id:"21.22 a)", type:"texte", texteLibre:true, enonce:"Soit ABC un triangle. On note I et J les milieux respectifs de [AB] et [AC]. Exprimer \\(\\overrightarrow{MA}+\\overrightarrow{MB}\\) en fonction de \\(\\overrightarrow{MI}\\)", reponse:"2MI"},
+  {id:"21.22 b)", type:"texte", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{BC}\\) en fonction de \\(\\overrightarrow{IJ}\\)", reponse:"2IJ"},
+  {id:"21.22 c)", type:"texte", texteLibre:true, enonce:"\\(-3\\overrightarrow{AB}-\\overrightarrow{IA}+\\overrightarrow{BI}\\)", reponse:"-3AB"},
+  {id:"21.22 d)", type:"texte", texteLibre:true, enonce:"\\(\\overrightarrow{MI}-\\overrightarrow{NA}-\\overrightarrow{BI}+2\\overrightarrow{IA}\\)", reponse:"MN"},
+  // Calcul 21.23 - centre de gravite (4 items, avance)
+  {id:"21.23 a)", type:"texte", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\))", reponse:"1/3(AB+AC)"},
+  {id:"21.23 b)", type:"texte", texteLibre:true, enonce:"Soient A', B' et C' respectivement milieux des segments [BC], [CA] et [AB]. Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AA'}\\)", reponse:"2/3AA'"},
+  {id:"21.23 c)", type:"num", texteLibre:true, enonce:"Simplifier la somme \\(\\overrightarrow{AA'}+\\overrightarrow{BB'}+\\overrightarrow{CC'}\\) (le résultat est le vecteur nul : répondre 0)", reponse:"0"},
+  {id:"21.23 d)", type:"num", texteLibre:true, enonce:"Simplifier la somme \\(\\overrightarrow{GA'}+\\overrightarrow{GB'}+\\overrightarrow{GC'}\\) (le résultat est le vecteur nul : répondre 0)", reponse:"0"}
+];
+
+const groupes = {
+  "grille-21-1": [0, 1, 2, 3, 4, 5],
+  "grille-21-2": [6, 7, 8, 9, 10, 11],
+  "grille-21-3": [12],
+  "grille-21-4": [13, 14, 15, 16, 17, 18],
+  "grille-21-5": [19, 20, 21, 22],
+  "grille-21-6": [23, 24, 25, 26],
+  "grille-21-7": [27, 28],
+  "grille-21-8": [29, 30, 31, 32, 33, 34],
+  "grille-21-9": [35],
+  "grille-21-10": [36],
+  "grille-21-11": [37, 38, 39, 40],
+  "grille-21-12": [41, 42, 43, 44],
+  "grille-21-13": [45, 46, 47],
+  "grille-21-14": [48, 49, 50, 51],
+  "grille-21-15": [52, 53, 54, 55],
+  "grille-21-16": [56, 57, 58, 59],
+  "grille-21-17": [60, 61, 62, 63],
+  "grille-21-18": [64, 65, 66, 67],
+  "grille-21-19": [68],
+  "grille-21-20": [69],
+  "grille-21-21": [70, 71, 72, 73],
+  "grille-21-22": [74, 75, 76, 77],
+  "grille-21-23": [78, 79, 80, 81]
+};
+const lettresEtendues = ["a","b","c","d","e","f"];
+
+function construireGrilles() {
+  for (const [gridId, indices] of Object.entries(groupes)) {
+    const grille = document.getElementById(gridId);
+    grille.innerHTML = '';
+    indices.forEach((idx, pos) => {
+      const ex = exercices[idx];
+      const div = document.createElement('div');
+      div.className = 'question';
+      div.id = 'q-' + idx;
+      div.innerHTML = `
+        <span class="q-lettre">${lettres[pos]})</span>
+        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
+        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
+        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
+        <span class="q-statut" id="statut-${idx}"></span>
+        <div class="clavier-visuel" id="clavier-${idx}">
+          <div class="clavier-groupe">
+            <span class="clavier-label">Chiffres</span>
+            <button onclick="inserer(${idx},'7')">7</button>
+            <button onclick="inserer(${idx},'8')">8</button>
+            <button onclick="inserer(${idx},'9')">9</button>
+            <button onclick="inserer(${idx},'4')">4</button>
+            <button onclick="inserer(${idx},'5')">5</button>
+            <button onclick="inserer(${idx},'6')">6</button>
+            <button onclick="inserer(${idx},'1')">1</button>
+            <button onclick="inserer(${idx},'2')">2</button>
+            <button onclick="inserer(${idx},'3')">3</button>
+            <button onclick="inserer(${idx},'0')">0</button>
+            <button onclick="inserer(${idx},',')">,</button>
+          </div>
+          <div class="clavier-groupe">
+            <span class="clavier-label">Opérations</span>
+            <button onclick="inserer(${idx},'+')">+</button>
+            <button onclick="inserer(${idx},'-')">−</button>
+            <button onclick="insererFonction(${idx},'*')">×</button>
+            <button onclick="insererFonction(${idx},'/')">÷</button>
+            <button onclick="inserer(${idx},'(')">(</button>
+            <button onclick="inserer(${idx},')')">)</button>
+          </div>
+          <div class="clavier-groupe">
+            <span class="clavier-label">Puissances</span>
+            <button onclick="insererPuissance(${idx},'2')">x²</button>
+            <button onclick="insererPuissance(${idx},'3')">x³</button>
+            <button onclick="insererExposant(${idx})">xⁿ</button>
+            <button onclick="insererRacine(${idx})">√</button>
+          </div>
+          <div class="clavier-groupe">
+            <span class="clavier-label">Fraction</span>
+            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
+            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
+          </div>
+          <div class="clavier-groupe">
+            <span class="clavier-label">Comparaison</span>
+            <button onclick="inserer(${idx},'>')">&gt;</button>
+            <button onclick="inserer(${idx},'<')">&lt;</button>
+            <button onclick="inserer(${idx},'>=')">&geq;</button>
+            <button onclick="inserer(${idx},'<=')">&leq;</button>
+          </div>
+          <div class="clavier-groupe">
+            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+          </div>
+          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
+        </div>
+      `;
+      grille.appendChild(div);
+    });
+  }
+}
+
+function toggleClavier(idx) {
+  const clavier = document.getElementById('clavier-' + idx);
+  const etaitOuvert = clavier.classList.contains('ouvert');
+  fermerAutresClaviers(idx);
+  fermerAutresAides(idx);
+  clavier.classList.toggle('ouvert', !etaitOuvert);
+}
+
+function toggleAide(idx) {
+  const aide = document.getElementById('aide-' + idx);
+  const etaitOuverte = aide.classList.contains('ouverte');
+  fermerAutresAides(idx);
+  fermerAutresClaviers(idx);
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
+
+function fermerAutresAides(idxActuel) {
+  exercices.forEach((ex, idx) => {
+    if (idx !== idxActuel) {
+      const aide = document.getElementById('aide-' + idx);
+      if (aide) aide.classList.remove('ouverte');
+    }
+  });
+}
+
+function placerCurseur(input, pos, fin) {
+  input.focus();
+  input.setSelectionRange(pos, fin ?? pos);
+}
+
+function reinitialiserStatut(idx) {
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  div.classList.remove('correct','incorrect');
+  statut.textContent = '';
+  statut.className = 'q-statut';
+  majApercuLatex(idx);
+}
+
+function inserer(idx, symbole) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
+  placerCurseur(input, start + symbole.length);
+  reinitialiserStatut(idx);
+}
+
+function insererFonction(idx, symbole) {
+  inserer(idx, symbole);
+}
+
+function insererPuissance(idx, n) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const symbole = '^' + n;
+  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
+  placerCurseur(input, start + symbole.length);
+  reinitialiserStatut(idx);
+}
+
+function insererExposant(idx) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = input.value.slice(0, start) + '^' + input.value.slice(end);
+  placerCurseur(input, start + 1);
+  reinitialiserStatut(idx);
+}
+
+function insererRacine(idx) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const selection = input.value.slice(start, end);
+  const symbole = '√(' + selection + ')';
+  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
+  const curseur = selection ? start + symbole.length : start + 2;
+  placerCurseur(input, curseur);
+  reinitialiserStatut(idx);
+}
+
+function majApercuLatex(idx) {
+  const input = document.getElementById('input-' + idx);
+  const apercuDiv = document.getElementById('apercu-' + idx);
+  if (!input || !apercuDiv) return;
+  const val = input.value.trim();
+  if (!val) { apercuDiv.textContent = ''; apercuDiv.classList.remove('visible'); return; }
+  const contientCases = val.includes('\u25A2');
+  const placeholder = 'CASETEMP';
+  const valPourParse = contientCases ? val.split('\u25A2').join(placeholder) : val;
+  let tex;
+  try {
+    const node = math.parse(normaliserSaisie(valPourParse));
+    tex = node.toTex({parenthesis: 'auto', implicit: 'hide'}).replace(/\\cdot/g, '');
+    if (contientCases) tex = tex.split(placeholder).join('\\square');
+  } catch(e) {
+    apercuDiv.textContent = '';
+    apercuDiv.classList.remove('visible');
+    return;
+  }
+  apercuDiv.textContent = '\\(' + tex + '\\)';
+  apercuDiv.classList.add('visible');
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    MathJax.typesetPromise([apercuDiv]).catch(()=>{});
+  }
+}
+
+function insererFraction(idx) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const selection = input.value.slice(start, end);
+  const num = selection || '\u25A2';
+  const symbole = '(' + num + ')/(\u25A2)';
+  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
+  placerCurseur(input, start + 1, start + 1 + num.length);
+  reinitialiserStatut(idx);
+}
+
+function insererSomme(idx) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const symbole = 'sum(k,1,n,)';
+  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
+  placerCurseur(input, start + symbole.length - 1);
+  reinitialiserStatut(idx);
+}
+
+function effacer(idx) {
+  const input = document.getElementById('input-' + idx);
+  input.value = '';
+  placerCurseur(input, 0);
+  reinitialiserStatut(idx);
+}
+
+function reculer(idx) {
+  const input = document.getElementById('input-' + idx);
+  const start = input.selectionStart ?? input.value.length;
+  if (start > 0) {
+    input.value = input.value.slice(0, start - 1) + input.value.slice(start);
+    placerCurseur(input, start - 1);
+  }
+  reinitialiserStatut(idx);
+}
+
+function normaliserSaisie(str) {
+  return String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+}
+
+function checkEqualNumeric(userInput, correctExpr) {
+  userInput = normaliserSaisie(userInput);
+  const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','lam','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','a1','a2','a3','a4','an','bet'];
+  try {
+    const userNode = math.parse(userInput);
+    const correctNode = math.parse(correctExpr);
+    const usedVars = new Set();
+    [userNode, correctNode].forEach(node => {
+      node.traverse(n => { if (n.isSymbolNode && vars.includes(n.name)) usedVars.add(n.name); });
+    });
+    if (usedVars.size === 0) {
+      const uVal = userNode.evaluate();
+      const cVal = correctNode.evaluate();
+      if (typeof uVal !== 'number' || typeof cVal !== 'number') return false;
+      return Math.abs(uVal - cVal) < 1e-9 * (1 + Math.abs(cVal));
+    }
+    let essaisValides = 0;
+    let tentatives = 0;
+    while (essaisValides < 6 && tentatives < 40) {
+      tentatives++;
+      const scope = {};
+      usedVars.forEach(v => { scope[v] = v === 'n' ? alea(1,6) : (v === 't' ? Math.random()*1.6 - 0.8 : (v === 'yt' ? Math.random()*0.8+0.1 : Math.random()*8 - 1)); });
+      let cVal;
+      try { cVal = correctNode.evaluate(scope); } catch(e) { continue; }
+      if (typeof cVal !== 'number' || !isFinite(cVal)) continue; // hors domaine pour la reponse correcte : retenter avec un autre x
+      let uVal;
+      try { uVal = userNode.evaluate(scope); } catch(e) { return false; }
+      if (typeof uVal !== 'number' || !isFinite(uVal)) return false;
+      if (Math.abs(uVal - cVal) > 1e-6 * (1 + Math.abs(cVal))) return false;
+      essaisValides++;
+    }
+    if (essaisValides < 6) return false; // domaine trop restreint pour valider avec confiance
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function checkCercle(userInput, cx, cy, r) {
+  // format attendu : "cx;cy;r" ou "(cx,cy);r" ou variantes avec espaces
+  userInput = normaliserSaisie(userInput);
+  const nettoye = userInput.trim().replace(/[()]/g, '').replace(/\s/g, '');
+  const parties = nettoye.split(/[;,]/).map(s => s.trim()).filter(s => s !== '');
+  if (parties.length !== 3) return false;
+  try {
+    const vals = parties.map(s => math.evaluate(s));
+    return Math.abs(vals[0] - cx) < 1e-6 && Math.abs(vals[1] - cy) < 1e-6 && Math.abs(vals[2] - r) < 1e-6;
+  } catch(e) {
+    return false;
+  }
+}
+
+function checkVraiFaux(userInput, correctBool) {
+  const v = userInput.trim().toLowerCase();
+  const estVrai = ['vrai', 'v', 'true', '1'].includes(v);
+  const estFaux = ['faux', 'f', 'false', '0'].includes(v);
+  if (!estVrai && !estFaux) return false;
+  return estVrai === correctBool;
+}
+
+function parseInequationSaisie(str) {
+  str = str.trim().toLowerCase().replace(/\s/g, '').replace(/,/g, '.');
+  let m = str.match(/^x(>=|<=|>|<)(-?[\d./]+)$/);
+  if (m) {
+    try { return { sens: m[1], seuil: math.evaluate(m[2]) }; } catch(e) { return null; }
+  }
+  m = str.match(/^([\]\[])(-?inf(?:ini)?|-?[\d./]+);(\+?inf(?:ini)?|-?[\d./]+)([\]\[])$/);
+  if (m) {
+    const [_, crochetG, gauche, droite, crochetD] = m;
+    try {
+      if (gauche.includes('inf')) {
+        const seuil = math.evaluate(droite);
+        return { sens: crochetD === ']' ? '<=' : '<', seuil };
+      } else {
+        const seuil = math.evaluate(gauche);
+        return { sens: crochetG === '[' ? '>=' : '>', seuil };
+      }
+    } catch(e) { return null; }
+  }
+  return null;
+}
+
+function checkInequation(userInput, correctSens, correctSeuil) {
+  const parsed = parseInequationSaisie(userInput);
+  if (!parsed) return false;
+  const sensEquivalent = parsed.sens === correctSens;
+  return Math.abs(parsed.seuil - correctSeuil) < 1e-6 && sensEquivalent;
+}
+
+function checkEncadrement(userInput, bas, haut) {
+  const nums = userInput.split(/[;,\s]+et\s+|[;,]+/).map(s => s.trim()).filter(s => s !== '');
+  if (nums.length !== 2) return false;
+  try {
+    const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
+    return Math.abs(vals[0] - bas) < 1e-9 && Math.abs(vals[1] - haut) < 1e-9;
+  } catch(e) {
+    return false;
+  }
+}
+
+function checkEnsemble(userInput, correctSet) {
+  userInput = normaliserSaisie(userInput);
+  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/[;,]/).map(x=>x.trim()).filter(x=>x!=='');
+  const userVals = nettoyerEtSplit(userInput);
+  const correctVals = nettoyerEtSplit(correctSet);
+  if (userVals.length !== correctVals.length) return false;
+  try {
+    const uNums = userVals.map(s => math.evaluate(s)).sort((a,b)=>a-b);
+    const cNums = correctVals.map(s => math.evaluate(s)).sort((a,b)=>a-b);
+    return uNums.every((v,i) => Math.abs(v-cNums[i]) < 1e-9);
+  } catch(e) { return false; }
+}
+
+function parseUnIntervalle(str) {
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^,;]+)[,;]([^,;\]\[]+)([\]\[])$/);
+  if (!m) return null;
+  const [_, cg, a, b, cd] = m;
+  try {
+    const va = (a.includes('inf')||a.includes('∞')) ? -Infinity : math.evaluate(a);
+    const vb = (b.includes('inf')||b.includes('∞')) ? Infinity : math.evaluate(b);
+    return {bas:va, haut:vb, inclusBas: cg==='[', inclusHaut: cd===']'};
+  } catch(e) { return null; }
+}
+
+function parseReponseIntervalle(str) {
+  str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g,'');
+  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels') return {type:'tout'};
+  if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return {type:'vide'};
+  const parties = str.split(/ou|∪|u(?![a-z])/);
+  const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
+  if (intervalles.length === 0) return null;
+  return {type:'intervalles', liste: intervalles};
+}
+
+function egaliteBorneIntervalle(a, b) {
+  if (a === b) return true;
+  if (!isFinite(a) || !isFinite(b)) return false;
+  return Math.abs(a - b) < 1e-9;
+}
+
+function checkIntervalle(userInput, correctSpec) {
+  const userParsed = parseReponseIntervalle(userInput);
+  if (!userParsed) return false;
+  if (userParsed.type !== correctSpec.type) return false;
+  if (correctSpec.type === 'tout' || correctSpec.type === 'vide') return true;
+  if (userParsed.liste.length !== correctSpec.liste.length) return false;
+  for (const iv of correctSpec.liste) {
+    const matchBorne = userParsed.liste.some(uiv =>
+      egaliteBorneIntervalle(uiv.bas, iv.bas) && egaliteBorneIntervalle(uiv.haut, iv.haut) &&
+      uiv.inclusBas === iv.inclusBas && uiv.inclusHaut === iv.inclusHaut
+    );
+    if (!matchBorne) return false;
+  }
+  return true;
+}
+
+function checkTexte(userInput, correctText) {
+  return userInput.trim().toLowerCase() === correctText.trim().toLowerCase();
+}
+
+function checkVecteur(userInput, correctX, correctY, vars) {
+  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
+  const parties = nettoye.split(/[;,]/);
+  if (parties.length !== 2) return false;
+  try {
+    for (let i=0;i<8;i++) {
+      const scope={}; (vars||['t']).forEach(v=>{ scope[v]=Math.random()*0.8-0.4; });
+      const ux = math.evaluate(parties[0], scope);
+      const uy = math.evaluate(parties[1], scope);
+      const cx = math.evaluate(correctX, scope);
+      const cy = math.evaluate(correctY, scope);
+      if (typeof ux!=='number'||typeof uy!=='number') return false;
+      const cross = ux*cy - uy*cx;
+      if (Math.abs(cross) > 1e-6*(1+Math.abs(cx*cy))) return false;
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+function checkPaire(userInput, correctA, correctB, vars) {
+  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  const parties = nettoye.split(';');
+  if (parties.length !== 2) return false;
+  try {
+    let essaisValides = 0, tentatives = 0;
+    while (essaisValides < 6 && tentatives < 40) {
+      tentatives++;
+      const scope={}; (vars||[]).forEach(v=>{ scope[v]=Math.random()*8-1; });
+      let ca, cb;
+      try { ca = math.evaluate(correctA, scope); cb = math.evaluate(correctB, scope); } catch(e) { continue; }
+      if (typeof ca!=='number'||typeof cb!=='number'||!isFinite(ca)||!isFinite(cb)) continue;
+      let ua, ub;
+      try { ua = math.evaluate(parties[0], scope); ub = math.evaluate(parties[1], scope); } catch(e) { return false; }
+      if (typeof ua!=='number'||typeof ub!=='number'||!isFinite(ua)||!isFinite(ub)) return false;
+      if (Math.abs(ua-ca) > 1e-6*(1+Math.abs(ca))) return false;
+      if (Math.abs(ub-cb) > 1e-6*(1+Math.abs(cb))) return false;
+      essaisValides++;
+    }
+    return essaisValides >= 6;
+  } catch(e) { return false; }
+}
+
+function checkTriplet(userInput, correctA, correctB, correctC, vars) {
+  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  const parties = nettoye.split(';');
+  if (parties.length !== 3) return false;
+  try {
+    let essaisValides = 0, tentatives = 0;
+    while (essaisValides < 6 && tentatives < 40) {
+      tentatives++;
+      const scope={}; (vars||[]).forEach(v=>{ scope[v]=Math.random()*8-1; });
+      let ca, cb, cc;
+      try { ca = math.evaluate(correctA, scope); cb = math.evaluate(correctB, scope); cc = math.evaluate(correctC, scope); } catch(e) { continue; }
+      if (typeof ca!=='number'||typeof cb!=='number'||typeof cc!=='number'||!isFinite(ca)||!isFinite(cb)||!isFinite(cc)) continue;
+      let a, b, c;
+      try { a = math.evaluate(parties[0], scope); b = math.evaluate(parties[1], scope); c = math.evaluate(parties[2], scope); } catch(e) { return false; }
+      if (typeof a!=='number'||typeof b!=='number'||typeof c!=='number'||!isFinite(a)||!isFinite(b)||!isFinite(c)) return false;
+      if (Math.abs(a-ca) > 1e-6*(1+Math.abs(ca))) return false;
+      if (Math.abs(b-cb) > 1e-6*(1+Math.abs(cb))) return false;
+      if (Math.abs(c-cc) > 1e-6*(1+Math.abs(cc))) return false;
+      essaisValides++;
+    }
+    return essaisValides >= 6;
+  } catch(e) { return false; }
+}
+
+function checkEquationCartesienne(userInput, correctA, correctB, correctC, vars) {
+  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  const parties = nettoye.split(';');
+  if (parties.length !== 3) return false;
+  try {
+    let essaisValides = 0, tentatives = 0;
+    while (essaisValides < 6 && tentatives < 40) {
+      tentatives++;
+      const scope={}; (vars||[]).forEach(v=>{ scope[v]=Math.random()*8-1; });
+      let a0, b0, c0;
+      try { a0 = math.evaluate(correctA, scope); b0 = math.evaluate(correctB, scope); c0 = math.evaluate(correctC, scope); } catch(e) { continue; }
+      if (typeof a0!=='number'||typeof b0!=='number'||typeof c0!=='number'||!isFinite(a0)||!isFinite(b0)||!isFinite(c0)) continue;
+      let a, b, c;
+      try { a = math.evaluate(parties[0], scope); b = math.evaluate(parties[1], scope); c = math.evaluate(parties[2], scope); } catch(e) { return false; }
+      if (typeof a!=='number'||typeof b!=='number'||typeof c!=='number'||!isFinite(a)||!isFinite(b)||!isFinite(c)) return false;
+      const cross1 = a*b0-b*a0, cross2 = a*c0-c*a0, cross3 = b*c0-c*b0;
+      const tol = 1e-6*(1+Math.abs(a0)+Math.abs(b0)+Math.abs(c0));
+      if (Math.abs(cross1)>tol || Math.abs(cross2)>tol || Math.abs(cross3)>tol) return false;
+      essaisValides++;
+    }
+    return essaisValides >= 6;
+  } catch(e) { return false; }
+}
+
+function evaluerExpressionSomme(str, scope) {
+  const nettoye = normaliserSaisie(str).trim().replace(/\s/g,'');
+  const m = nettoye.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+  if (!m) return null;
+  const [_, idxVar, borneInf, borneSup, expr] = m;
+  let bInf, bSup;
+  try {
+    bInf = Math.round(math.evaluate(borneInf, scope));
+    bSup = Math.round(math.evaluate(borneSup, scope));
+  } catch(e) { return null; }
+  if (!isFinite(bInf) || !isFinite(bSup) || bSup - bInf > 300 || bSup - bInf < 0) return null;
+  let total = 0;
+  for (let k = bInf; k <= bSup; k++) {
+    const scopeLocal = Object.assign({}, scope, {[idxVar]: k});
+    try {
+      const v = math.evaluate(expr, scopeLocal);
+      if (typeof v !== 'number' || !isFinite(v)) return null;
+      total += v;
+    } catch(e) { return null; }
+  }
+  return total;
+}
+
+function checkSomme(userInput, correctExpr) {
+  let essaisValides = 0, tentatives = 0;
+  while (essaisValides < 6 && tentatives < 40) {
+    tentatives++;
+    const scope = { x: Math.random()*2 - 0.6, n: alea(3,7) };
+    let cVal = evaluerExpressionSomme(correctExpr, scope);
+    if (cVal === null) {
+      try { cVal = math.evaluate(correctExpr, scope); } catch(e) { continue; }
+    }
+    if (typeof cVal !== 'number' || !isFinite(cVal)) continue;
+    let uVal = evaluerExpressionSomme(userInput, scope);
+    if (uVal === null) {
+      try { uVal = math.evaluate(normaliserSaisie(userInput), scope); } catch(e) { return false; }
+    }
+    if (typeof uVal !== 'number' || !isFinite(uVal)) return false;
+    if (Math.abs(uVal - cVal) > 1e-6 * (1 + Math.abs(cVal))) return false;
+    essaisValides++;
+  }
+  return essaisValides >= 6;
+}
+
+function corrigerParenthesesExcedentaires(v) {
+  let ouvrantes = 0, fermantes = 0;
+  for (const c of v) {
+    if (c === '(') ouvrantes++;
+    if (c === ')') fermantes++;
+  }
+  let exces = fermantes - ouvrantes;
+  while (exces > 0 && v.endsWith(')')) {
+    v = v.slice(0, -1);
+    exces--;
+  }
+  return v;
+}
+
+function valeurDuChamp(el) {
+  if (!el) return '';
+  if (el.tagName === 'MATH-FIELD') {
+    let v = el.getValue('ascii-math').trim();
+    // normaliser les lettres grecques residuelles vers la convention interne (alpha/lambda -> lam, beta -> bet)
+    v = v.replace(/\balpha\b/g, 'lam').replace(/\blambda\b/g, 'lam').replace(/\bbeta\b/g, 'bet');
+    // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
+    v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
+    // normaliser f'/g'/h' (frappe naturelle du prime, converti par MathLive en f^′) vers la convention interne fp/gp/hp
+    v = v.replace(/f\^′/g, 'fp ').replace(/g\^′/g, 'gp ').replace(/h\^′/g, 'hp ');
+    // normaliser aussi fp/gp/hp si jamais MathLive les a decomposes en deux lettres separees (ex: "f p" -> "fp")
+    v = v.replace(/\bf p\b/g, 'fp').replace(/\bg p\b/g, 'gp').replace(/\bh p\b/g, 'hp');
+    // normaliser sum si decompose en lettres separees par MathLive (ex: "s u m(" -> "sum(")
+    v = v.replace(/\bs u m\(/g, 'sum(');
+    // corriger un eventuel desequilibre de parentheses (MathLive insere parfois une fermante surnumeraire apres "sum(")
+    v = corrigerParenthesesExcedentaires(v);
+    return v;
+  }
+  return el.value.trim();
+}
+
+function verifierUne(idx) {
+  const ex = exercices[idx];
+  const input = document.getElementById('input-' + idx);
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  const val = valeurDuChamp(input);
+  div.classList.remove('correct','incorrect');
+  if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
+  let ok;
+  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
+  else if (ex.type === 'cercle') ok = checkCercle(val, ex.cx, ex.cy, ex.r);
+  else if (ex.type === 'vraifaux') ok = checkVraiFaux(val, ex.estVrai);
+  else if (ex.type === 'qcm') ok = val.trim().toLowerCase() === ex.bonneReponse.toLowerCase();
+  else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
+  else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
+  else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
+  else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
+  else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
+  else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
+  else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
+  else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else ok = checkEqualNumeric(val, ex.reponse);
+  div.classList.add(ok ? 'correct' : 'incorrect');
+  statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+  statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  return ok;
+}
+
+let modeImmediat = true;
+
+function toutesLesReponsesSontSaisies() {
+  return exercices.every((ex, idx) => valeurDuChamp(document.getElementById('input-' + idx)) !== '');
+}
+
+function attacherEcouteurs() {
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input.tagName === 'MATH-FIELD') {
+      const raccourcis = Object.assign({}, input.inlineShortcuts);
+      delete raccourcis['sum'];
+      input.inlineShortcuts = raccourcis;
+    }
+    let ignorerProchainInput = false;
+    input.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Enter') {
+        evenement.preventDefault();
+        ignorerProchainInput = true;
+        if (modeImmediat) {
+          verifierUne(idx);
+          if (toutesLesReponsesSontSaisies()) verifierTout();
+        }
+        allerChampSuivant(idx);
+      }
+    });
+    input.addEventListener('input', () => {
+      if (ignorerProchainInput) { ignorerProchainInput = false; return; }
+      reinitialiserStatut(idx);
+    });
+    input.addEventListener('focus', () => fermerAutresClaviers(idx));
+  });
+}
+
+function allerChampSuivant(idxActuel) {
+  const idxSuivant = idxActuel + 1;
+  if (idxSuivant < exercices.length) {
+    const champSuivant = document.getElementById('input-' + idxSuivant);
+    champSuivant.focus();
+    if (champSuivant.tagName !== 'MATH-FIELD' && champSuivant.setSelectionRange) {
+      champSuivant.setSelectionRange(champSuivant.value.length, champSuivant.value.length);
+    }
+  }
+}
+
+function fermerAutresClaviers(idxActuel) {
+  exercices.forEach((ex, idx) => {
+    if (idx !== idxActuel) {
+      const clavier = document.getElementById('clavier-' + idx);
+      if (clavier) clavier.classList.remove('ouvert');
+      const aide = document.getElementById('aide-' + idx);
+      if (aide) aide.classList.remove('ouverte');
+    }
+  });
+}
+
+function definirMode(immediat) {
+  modeImmediat = immediat;
+  document.getElementById('mode-immediat-btn').classList.toggle('mode-actif', immediat);
+  document.getElementById('mode-fin-btn').classList.toggle('mode-actif', !immediat);
+  document.getElementById('mode-explication').textContent = immediat
+    ? 'Appuyer sur Entrée après chaque réponse pour la faire vérifier et passer à la suivante.'
+    : 'Entrée passe à la question suivante sans corriger. Cliquer sur « Vérifier mes réponses », en bas de la fiche, pour tout corriger d\'un coup.';
+  if (!immediat) {
+    exercices.forEach((ex, idx) => reinitialiserStatut(idx));
+  }
+}
+
+function jsVersLatex(expr) {
+  let s = String(expr);
+  s = s.replace(/\blam\b/g, 'lambda');
+  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+  s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
+  s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
+  s = s.replace(/\*/g, '\\times ');
+  s = s.replace(/lambda/g, '\\lambda ');
+  return s;
+}
+
+function formaterUneBorne(v) {
+  if (v === Infinity) return '+\\infty';
+  if (v === -Infinity) return '-\\infty';
+  if (Number.isInteger(v)) return String(v);
+  try {
+    const frac = math.fraction(v);
+    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+  } catch(e) {}
+  return v.toFixed(3);
+}
+
+function formaterIntervalleSpec(spec) {
+  if (!spec) return '';
+  if (spec.type === 'tout') return '\\mathbb{R}';
+  if (spec.type === 'vide') return '\\emptyset';
+  if (spec.type === 'intervalles') {
+    return spec.liste.map(iv => {
+      const cg = iv.inclusBas ? '[' : ']';
+      const cd = iv.inclusHaut ? ']' : '[';
+      return `${cg}${formaterUneBorne(iv.bas)}\\,;\\,${formaterUneBorne(iv.haut)}${cd}`;
+    }).join('\\ \\cup\\ ');
+  }
+  return '';
+}
+
+function formaterReponse(ex) {
+  try {
+    if (ex.type === 'ineq') {
+      const symb = {'>':'>', '<':'<', '>=':'\\geqslant', '<=':'\\leqslant'}[ex.sens];
+      return `x ${symb} ${ex.seuil}`;
+    }
+    if (ex.type === 'encadrement') {
+      return `${ex.bas} < \\ldots < ${ex.haut}`;
+    }
+    if (ex.type === 'cercle') {
+      const fmt = (v) => {
+        if (Number.isInteger(v)) return String(v);
+        const frac = math.fraction(v);
+        return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+      };
+      return `\\Omega(${fmt(ex.cx)}\\,;\\,${fmt(ex.cy)}) \\text{ et } r=${fmt(ex.r)}`;
+    }
+    if (ex.type === 'vraifaux') {
+      return ex.estVrai ? '\\text{Vrai}' : '\\text{Faux}';
+    }
+    if (ex.type === 'qcm') {
+      return `\\text{Réponse } ${ex.bonneReponse}`;
+    }
+    if (ex.type === 'intervalle') {
+      return formaterIntervalleSpec(ex.intervalleSpec);
+    }
+    if (ex.type === 'texte') {
+      return `\\text{${ex.reponse}}`;
+    }
+    if (ex.type === 'alg') {
+      return jsVersLatex(ex.reponse);
+    }
+    if (ex.type === 'num') {
+      if (ex.reponse && ex.reponse.trim().startsWith('{')) {
+        return '\\{' + jsVersLatex(ex.reponse.replace(/[{}]/g,'')) + '\\}';
+      }
+      // si l'expression contient une racine ou une lettre, ce n'est pas un rationnel pur : afficher tel quel
+      if (/sqrt|[a-zA-Z]/.test(ex.reponse)) {
+        return jsVersLatex(ex.reponse);
+      }
+      const val = math.evaluate(ex.reponse);
+      if (Number.isInteger(val)) return String(val);
+      const frac = math.fraction(val);
+      return `${frac.s < 0 ? '-' : ''}${frac.n}/${frac.d}`;
+    }
+    return jsVersLatex(ex.reponse);
+  } catch(e) {
+    return ex.reponse || '';
+  }
+}
+
+function verifierTout() {
+  let score = 0;
+  let repondues = 0;
+  const erreurs = [];
+  exercices.forEach((ex, idx) => {
+    const ok = verifierUne(idx);
+    if (ok !== null) repondues++;
+    if (ok) score++;
+    else if (ok === false) erreurs.push(idx);
+  });
+  document.getElementById('score-panneau').classList.add('visible');
+  document.getElementById('score-chiffre').textContent = score + ' / ' + exercices.length;
+  const correctionDiv = document.getElementById('correction-panneau');
+  if (erreurs.length === 0) {
+    correctionDiv.innerHTML = '<p style="color:var(--vert);font-weight:bold;">Toutes les réponses saisies sont correctes.</p>';
+  } else {
+    correctionDiv.innerHTML = erreurs.map(idx => {
+      const ex = exercices[idx];
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+  }
+  if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
+  correctionDiv.classList.remove('visible');
+  document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+}
+
+function toggleCorrection() {
+  const panel = document.getElementById('correction-panneau');
+  panel.classList.toggle('visible');
+  document.getElementById('btn-correction').textContent =
+    panel.classList.contains('visible') ? 'Masquer la correction' : 'Voir la correction des erreurs';
+}
+
+function reinitialiser() {
+  exercices.forEach((ex, idx) => {
+    document.getElementById('input-' + idx).value = '';
+    document.getElementById('q-' + idx).classList.remove('correct','incorrect');
+    document.getElementById('statut-' + idx).textContent = '';
+    const clavier = document.getElementById('clavier-' + idx);
+    if (clavier) clavier.classList.remove('ouvert');
+  });
+  document.getElementById('score-panneau').classList.remove('visible');
+}
+
+function genererNouvelleFiche() {
+  exercices = genererExercices();
+  construireGrilles();
+  attacherEcouteurs();
+  document.getElementById('score-panneau').classList.remove('visible');
+  document.getElementById('correction-panneau').classList.remove('visible');
+  document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+
+function placeholderPour(ex) {
+  if (ex.type === 'cercle') return 'cx;cy;r';
+  if (ex.type === 'vraifaux') return 'vrai / faux';
+  if (ex.type === 'ineq') return 'x>4';
+  if (ex.type === 'intervalle') return ']a;b[';
+  if (ex.type === 'texte') return 'réponse';
+  return 'réponse';
+}
+
+function aideContextuellePour(ex) {
+  if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) {
+    return "Écrire la réponse sous forme d'un vecteur exprimé avec les points de l'énoncé, par exemple <code>2AB</code>, <code>-AB+3AC</code> ou <code>1/2AB</code> (utiliser <code>*</code> pour une multiplication explicite si besoin).";
+  }
+  if (ex.type === 'ineq') {
+    return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
+  }
+  if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) {
+    return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
+  }
+  if (ex.type === 'cercle') {
+    return "Donner les coordonnées du centre puis le rayon, séparés par des points-virgules : <code>cx;cy;r</code>. Exemple pour un centre (1;-2) et un rayon 3 : <code>1;-2;3</code>.";
+  }
+  if (ex.type === 'vraifaux') {
+    return "Écrire simplement <code>vrai</code> ou <code>faux</code>.";
+  }
+  if (ex.type === 'qcm') {
+    return "Écrire la lettre de la bonne réponse : <code>a</code>, <code>b</code>, <code>c</code> ou <code>d</code>.";
+  }
+  if (ex.type === 'intervalle') {
+    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ou » : <code>]-inf;1[ ou ]3;+inf[</code>. Écrire <code>R</code> si la réponse est l'ensemble des réels, ou <code>vide</code> s'il n'y a aucune solution.";
+  }
+  if (ex.type === 'vecteur') {
+    return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
+  }
+  if (ex.type === 'somme') {
+    return "Écrire directement <code>sum(k,1,n,expr)</code> au clavier pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le symbole &Sigma; du clavier virtuel (Maj + touche <code>+</code>) fonctionne aussi si besoin.";
+  }
+  if (ex.type === 'paire') {
+    return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
+  }
+  if (ex.type === 'eqcart') {
+    return "Donner une équation cartésienne sous la forme <code>a;b;c</code> (les coefficients de <code>ax+by+c=0</code>, séparés par des points-virgules). Toute équation proportionnelle à la réponse attendue est acceptée.";
+  }
+  if (ex.type === 'triplet') {
+    return "Donner les trois coefficients demandés, séparés par des points-virgules (ex : <code>a;b;c</code>).";
+  }
+  return "Utiliser <code>^</code> pour une puissance (x^2), le bouton √ pour une racine carrée, <code>/</code> pour une fraction. Toute écriture équivalente est acceptée.";
+}
+
+function necessiteAide(ex) {
+  if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
+  if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) return true;
+  if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
+  return false;
+}
+
+function construireGrilles() {
+  for (const [gridId, indices] of Object.entries(groupes)) {
+    const grille = document.getElementById(gridId);
+    grille.innerHTML = '';
+    indices.forEach((idx, pos) => {
+      const ex = exercices[idx];
+      const div = document.createElement('div');
+      div.className = 'question';
+      div.id = 'q-' + idx;
+      const lettre = lettresEtendues[pos] || '';
+      const suffixe = ex.avecEgal ? ' =' : '';
+      const boutonAide = necessiteAide(ex)
+        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
+        : '';
+      const bulleAide = necessiteAide(ex)
+        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
+        : '';
+      const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
+        ? `<div class="q-qcm-options-wrapper${ex.optionsSurUneLigne ? ' q-qcm-options-wrapper--scroll' : ''}"><div class="q-qcm-options${ex.optionsSurUneLigne ? ' q-qcm-options--scroll' : ''}">${ex.options.map(o =>
+            `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
+          ).join('')}</div></div>`
+        : '';
+      div.innerHTML = `
+        <span class="q-lettre">${lettre})</span>
+        <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
+        ${blocOptionsQCM}
+        ${champReponsePour(idx, ex)}
+        ${boutonAide}
+        <span class="q-statut" id="statut-${idx}"></span>
+        ${bulleAide}
+      `;
+      grille.appendChild(div);
+    });
+  }
+}
+
+const TYPES_MATHFIELD = ['num', 'alg', 'somme'];
+
+function utiliseMathfield(ex) {
+  if (!TYPES_MATHFIELD.includes(ex.type)) return false;
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) return false; // ensemble de valeurs : format {a;b}, pas une expression continue
+  return true;
+}
+
+function champReponsePour(idx, ex) {
+  if (utiliseMathfield(ex)) {
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
+              smart-fence="off" smart-superscript="on"
+              virtual-keyboard-mode="manual"></math-field>
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+  }
+  return `
+    <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierPour(idx, ex)}</div>`;
+}
+
+function genererClavierPour(idx, ex) {
+  if (ex.type === 'vraifaux') {
+    return `
+      <div class="clavier-groupe">
+        <button class="touche-large" onclick="inserer(${idx},'vrai')">vrai</button>
+        <button class="touche-large" onclick="inserer(${idx},'faux')">faux</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+      </div>`;
+  }
+  if (ex.type === 'qcm') {
+    return `
+      <div class="clavier-groupe">
+        <button onclick="inserer(${idx},'a')">a</button>
+        <button onclick="inserer(${idx},'b')">b</button>
+        <button onclick="inserer(${idx},'c')">c</button>
+        <button onclick="inserer(${idx},'d')">d</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+      </div>`;
+  }
+  const groupeChiffres = `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Chiffres</span>
+        <button onclick="inserer(${idx},'7')">7</button>
+        <button onclick="inserer(${idx},'8')">8</button>
+        <button onclick="inserer(${idx},'9')">9</button>
+        <button onclick="inserer(${idx},'4')">4</button>
+        <button onclick="inserer(${idx},'5')">5</button>
+        <button onclick="inserer(${idx},'6')">6</button>
+        <button onclick="inserer(${idx},'1')">1</button>
+        <button onclick="inserer(${idx},'2')">2</button>
+        <button onclick="inserer(${idx},'3')">3</button>
+        <button onclick="inserer(${idx},'0')">0</button>
+        <button onclick="inserer(${idx},',')">,</button>
+      </div>`;
+  if (ex.type === 'ineq') {
+    return groupeChiffres + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Comparaison</span>
+        <button class="touche-large" onclick="inserer(${idx},'x>')">x&gt;</button>
+        <button class="touche-large" onclick="inserer(${idx},'x<')">x&lt;</button>
+        <button class="touche-large" onclick="inserer(${idx},'x>=')">x&ge;</button>
+        <button class="touche-large" onclick="inserer(${idx},'x<=')">x&le;</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Opérations</span>
+        <button onclick="inserer(${idx},'+')">+</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="insererFraction(${idx})">a/b</button>
+        <button onclick="insererRacine(${idx})">√</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : la réponse commence toujours par « x », suivi du symbole puis du nombre. Exemple : « x&gt;4 ».</div>`;
+  }
+  if (ex.type === 'intervalle') {
+    return groupeChiffres + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Intervalle</span>
+        <button onclick="inserer(${idx},']')">]</button>
+        <button onclick="inserer(${idx},'[')">[</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button class="touche-large" onclick="inserer(${idx},'+∞')">+∞</button>
+        <button class="touche-large" onclick="inserer(${idx},'-∞')">−∞</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Autre</span>
+        <button onclick="insererFraction(${idx})">a/b</button>
+        <button onclick="insererRacine(${idx})">√</button>
+        <button class="touche-large" onclick="inserer(${idx},' ou ')">ou</button>
+        <button class="touche-large" onclick="inserer(${idx},'R')">R</button>
+        <button class="touche-large" onclick="inserer(${idx},'vide')">vide</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « ]-inf;1[ ou ]3/2;+inf[ » pour une réunion de deux intervalles.</div>`;
+  }
+  if (ex.type === 'cercle') {
+    return groupeChiffres + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Cercle</span>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="insererFraction(${idx})">a/b</button>
+        <button onclick="insererRacine(${idx})">√</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « cx;cy;r », par exemple « 1;-2;3 » pour un centre (1;−2) et un rayon 3.</div>`;
+  }
+  return groupeChiffres + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Opérations</span>
+        <button onclick="inserer(${idx},'+')">+</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="insererFonction(${idx},'*')">×</button>
+        <button onclick="insererFonction(${idx},'/')">÷</button>
+        <button onclick="inserer(${idx},'(')">(</button>
+        <button onclick="inserer(${idx},')')">)</button>
+        <button onclick="inserer(${idx},';')">;</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Puissances</span>
+        <button onclick="insererPuissance(${idx},'2')">x²</button>
+        <button onclick="insererPuissance(${idx},'3')">x³</button>
+        <button onclick="insererExposant(${idx})">xⁿ</button>
+        <button onclick="insererRacine(${idx})">√</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Fraction / lettres</span>
+        <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
+        <button class="touche-large" onclick="inserer(${idx},'x')">x</button>
+        <button class="touche-large" onclick="inserer(${idx},'lam')">λ</button>
+        ${ex.avecSomme ? `<button class="touche-large" onclick="insererSomme(${idx})">&Sigma;</button>` : ''}
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">${ex.avecSomme ? 'Astuce : le bouton &Sigma; insère &laquo; sum(k,1,n,...) &raquo; — compléter avec le terme général en fonction de k et x.' : 'Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ'}</div>`;
+}
+
+function genererSVGParabole(a, alpha, beta, largeur, hauteur) {
+  largeur = largeur || 170; hauteur = hauteur || 130;
+  const xmin=-6, xmax=6, ymin=-6, ymax=6;
+  const toSvgX = x => (x - xmin) / (xmax - xmin) * largeur;
+  const toSvgY = y => hauteur - (y - ymin) / (ymax - ymin) * hauteur;
+  let points = [];
+  for (let i = 0; i <= 80; i++) {
+    const x = xmin + (xmax-xmin)*i/80;
+    const y = a * (x - alpha) * (x - alpha) + beta;
+    if (y >= ymin - 3 && y <= ymax + 3) {
+      points.push(toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1));
+    }
+  }
+  const path = 'M ' + points.join(' L ');
+  const ox = toSvgX(0).toFixed(1), oy = toSvgY(0).toFixed(1);
+
+  // graduations tous les 2 unités sur x et y (sauf 0)
+  let graduations = '';
+  for (let gx = xmin; gx <= xmax; gx += 2) {
+    if (gx === 0) continue;
+    const sx = toSvgX(gx).toFixed(1);
+    graduations += `<line x1="${sx}" y1="${(parseFloat(oy)-2.5).toFixed(1)}" x2="${sx}" y2="${(parseFloat(oy)+2.5).toFixed(1)}" stroke="#999" stroke-width="1"/>`;
+    graduations += `<text x="${sx}" y="${(parseFloat(oy)+11).toFixed(1)}" font-size="7" text-anchor="middle" fill="#666">${gx}</text>`;
+  }
+  for (let gy = ymin; gy <= ymax; gy += 2) {
+    if (gy === 0) continue;
+    const sy = toSvgY(gy).toFixed(1);
+    graduations += `<line x1="${(parseFloat(ox)-2.5).toFixed(1)}" y1="${sy}" x2="${(parseFloat(ox)+2.5).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="1"/>`;
+    graduations += `<text x="${(parseFloat(ox)-6).toFixed(1)}" y="${(parseFloat(sy)+2.5).toFixed(1)}" font-size="7" text-anchor="middle" fill="#666">${gy}</text>`;
+  }
+
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg">
+    <line x1="0" y1="${oy}" x2="${largeur}" y2="${oy}" stroke="#ccc" stroke-width="1"/>
+    <line x1="${ox}" y1="0" x2="${ox}" y2="${hauteur}" stroke="#ccc" stroke-width="1"/>
+    ${graduations}
+    <path d="${path}" fill="none" stroke="#4B46C7" stroke-width="2.2"/>
+    <circle cx="${ox}" cy="${oy}" r="2" fill="#333"/>
+  </svg>`;
+}
+
+function labelFormeCanonique(a, alpha, beta) {
+  const decalage = -alpha;
+  const signeDecalage = decalage >= 0 ? '+' : '-';
+  const absDecalage = Math.abs(decalage);
+  const signeBeta = beta >= 0 ? '+' : '-';
+  const absBeta = Math.abs(beta);
+  const coeffStr = (a === 1) ? '' : (a === -1 ? '-' : a + '');
+  return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
+}
+
+
+function construireGraphique21_4() {
+  const largeur = 280, hauteur = 280;
+  const xmin=-1, xmax=7, ymin=-1, ymax=7;
+  const toSvgX = x => (x-xmin)/(xmax-xmin)*largeur;
+  const toSvgY = y => hauteur-(y-ymin)/(ymax-ymin)*hauteur;
+  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}">
+    <defs>
+      <marker id="fleche-bleue-21-4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2952a3"/></marker>
+      <marker id="fleche-orange-21-4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e8820c"/></marker>
+    </defs>`;
+  for (let i=xmin;i<=xmax;i++) svg += `<line x1="${toSvgX(i)}" y1="0" x2="${toSvgX(i)}" y2="${hauteur}" stroke="#ddd" stroke-width="1"/>`;
+  for (let j=ymin;j<=ymax;j++) svg += `<line x1="0" y1="${toSvgY(j)}" x2="${largeur}" y2="${toSvgY(j)}" stroke="#ddd" stroke-width="1"/>`;
+  const A=[6,2], B=[4,0], C=[2,2], D=[2,6];
+  svg += `<line x1="${toSvgX(A[0])}" y1="${toSvgY(A[1])}" x2="${toSvgX(B[0])}" y2="${toSvgY(B[1])}" stroke="#2952a3" stroke-width="2.3" marker-end="url(#fleche-bleue-21-4)"/>`;
+  svg += `<line x1="${toSvgX(C[0])}" y1="${toSvgY(C[1])}" x2="${toSvgX(D[0])}" y2="${toSvgY(D[1])}" stroke="#2952a3" stroke-width="2.3" marker-end="url(#fleche-bleue-21-4)"/>`;
+  svg += `<text x="${toSvgX(A[0])+4}" y="${toSvgY(A[1])-4}" font-size="12" font-style="italic">A</text>`;
+  svg += `<text x="${toSvgX(B[0])-14}" y="${toSvgY(B[1])+14}" font-size="12" font-style="italic">B</text>`;
+  svg += `<text x="${toSvgX(C[0])-14}" y="${toSvgY(C[1])+4}" font-size="12" font-style="italic">C</text>`;
+  svg += `<text x="${toSvgX(D[0])-14}" y="${toSvgY(D[1])+4}" font-size="12" font-style="italic">D</text>`;
+  const vecteurs = [
+    {origine:[0,0], vec:[1,3], label:'v', dx:-14, dy:0},
+    {origine:[1,4], vec:[2,1], label:'w', dx:4, dy:-4},
+    {origine:[5,6], vec:[1,-4], label:'u', dx:6, dy:0},
+    {origine:[6.5,6], vec:[0,-3], label:'p', dx:6, dy:0},
+  ];
+  vecteurs.forEach(v => {
+    const fin = [v.origine[0]+v.vec[0], v.origine[1]+v.vec[1]];
+    svg += `<line x1="${toSvgX(v.origine[0])}" y1="${toSvgY(v.origine[1])}" x2="${toSvgX(fin[0])}" y2="${toSvgY(fin[1])}" stroke="#e8820c" stroke-width="2.3" marker-end="url(#fleche-orange-21-4)"/>`;
+    const mx = (v.origine[0]+fin[0])/2, my = (v.origine[1]+fin[1])/2;
+    svg += `<text x="${toSvgX(mx)+v.dx}" y="${toSvgY(my)+v.dy}" font-size="12" fill="#e8820c" font-style="italic">${v.label}</text>`;
+  });
+  svg += '</svg>';
+  document.getElementById('graphique-21-4').innerHTML = `<div class="figure-centree">${svg}</div>`;
+}
+
+function construireGraphique21_5() {
+  const largeur = 260, hauteur = 260;
+  const xmin=-1, xmax=7, ymin=-1, ymax=7;
+  const toSvgX = x => (x-xmin)/(xmax-xmin)*largeur;
+  const toSvgY = y => hauteur-(y-ymin)/(ymax-ymin)*hauteur;
+  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}">`;
+  for (let i=xmin;i<=xmax;i++) svg += `<line x1="${toSvgX(i)}" y1="0" x2="${toSvgX(i)}" y2="${hauteur}" stroke="#ddd" stroke-width="1"/>`;
+  for (let j=ymin;j<=ymax;j++) svg += `<line x1="0" y1="${toSvgY(j)}" x2="${largeur}" y2="${toSvgY(j)}" stroke="#ddd" stroke-width="1"/>`;
+  const points = {A:[2,6], B:[5,6], C:[1,4], D:[3,4], E:[6,4], F:[2,2], G:[4,2], H:[3,1]};
+  for (const [nom, p] of Object.entries(points)) {
+    svg += `<circle cx="${toSvgX(p[0])}" cy="${toSvgY(p[1])}" r="2.5" fill="#333"/>`;
+    svg += `<text x="${toSvgX(p[0])-4}" y="${toSvgY(p[1])-8}" font-size="12" font-style="italic">${nom}</text>`;
+  }
+  svg += '</svg>';
+  document.getElementById('graphique-21-5').innerHTML = `<div class="figure-centree">${svg}</div>`;
+}
+
+
+function construireGraphique21_15() {
+  const largeur = 280, hauteur = 280;
+  const xmin=-1, xmax=8, ymin=0, ymax=9;
+  const toSvgX = x => (x-xmin)/(xmax-xmin)*largeur;
+  const toSvgY = y => hauteur-(y-ymin)/(ymax-ymin)*hauteur;
+  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}">
+    <defs>
+      <marker id="fleche-bleue-21-15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2952a3"/></marker>
+      <marker id="fleche-orange-21-15" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e8820c"/></marker>
+    </defs>`;
+  for (let i=Math.ceil(xmin);i<=xmax;i++) svg += `<line x1="${toSvgX(i)}" y1="0" x2="${toSvgX(i)}" y2="${hauteur}" stroke="#ddd" stroke-width="1"/>`;
+  for (let j=ymin;j<=ymax;j++) svg += `<line x1="0" y1="${toSvgY(j)}" x2="${largeur}" y2="${toSvgY(j)}" stroke="#ddd" stroke-width="1"/>`;
+  const A=[0,8], B=[3,6], C=[6,3], D=[7,5], E=[0,2], F=[2,1];
+  const segments = [[A,B,'A','B'],[C,D,'C','D'],[E,F,'E','F']];
+  segments.forEach(([p1,p2,n1,n2]) => {
+    svg += `<line x1="${toSvgX(p1[0])}" y1="${toSvgY(p1[1])}" x2="${toSvgX(p2[0])}" y2="${toSvgY(p2[1])}" stroke="#2952a3" stroke-width="2.3" marker-end="url(#fleche-bleue-21-15)"/>`;
+    svg += `<text x="${toSvgX(p1[0])-12}" y="${toSvgY(p1[1])-6}" font-size="12" font-style="italic">${n1}</text>`;
+    svg += `<text x="${toSvgX(p2[0])+4}" y="${toSvgY(p2[1])+12}" font-size="12" font-style="italic">${n2}</text>`;
+  });
+  const origine = [4,4];
+  const vecteurs = [
+    {vec:[-4,0], label:'w', dx:-14, dy:0},
+    {vec:[2,2], label:'v', dx:6, dy:-4},
+    {vec:[0,-2], label:'p', dx:-14, dy:0},
+    {vec:[2,-3], label:'u', dx:6, dy:0},
+  ];
+  vecteurs.forEach(v => {
+    const fin = [origine[0]+v.vec[0], origine[1]+v.vec[1]];
+    svg += `<line x1="${toSvgX(origine[0])}" y1="${toSvgY(origine[1])}" x2="${toSvgX(fin[0])}" y2="${toSvgY(fin[1])}" stroke="#e8820c" stroke-width="2.3" marker-end="url(#fleche-orange-21-15)"/>`;
+    const mx = (origine[0]+fin[0])/2, my = (origine[1]+fin[1])/2;
+    svg += `<text x="${toSvgX(mx)+v.dx}" y="${toSvgY(my)+v.dy}" font-size="12" fill="#e8820c" font-style="italic">${v.label}</text>`;
+  });
+  svg += '</svg>';
+  document.getElementById('graphique-21-15').innerHTML = `<div class="figure-centree">${svg}</div>`;
+}
+
+construireGrilles();
+construireGraphique21_4();
+construireGraphique21_5();
+construireGraphique21_15();
+attacherEcouteurs();
+definirMode(true);
+if (window.MathJax) MathJax.typesetPromise();
+</script>
+
+</body>
+</html>
