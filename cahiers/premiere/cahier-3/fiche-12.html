@@ -8,7 +8,8 @@
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
-  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
@@ -643,12 +644,6 @@ window.MathJax = {
   <span class="mode-explication" id="mode-explication"></span>
 </div>
 
-<div class="aide">
-  Pour les expressions mathématiques (dérivées, calculs...), un vrai éditeur de formule s'affiche : taper directement, utiliser <code>/</code> pour une fraction ou <code>&#9000;</code> pour son clavier symbolique.
-  Pour un cercle, saisir « centre_x;centre_y;rayon » (ex. <code>1;-2;2</code>). Pour vrai/faux, saisir « vrai » ou « faux ». Pour un QCM, saisir la lettre (a, b, c ou d).
-  Toute écriture mathématiquement équivalente à la réponse attendue est acceptée.
-</div>
-
 <div class="bloc-general">
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
@@ -811,9 +806,9 @@ const exercices = [
   {id:"12.16 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^{x^5}-2x^3e^{5x}\\)", reponse:"x^2*(5*x^2*exp(x^5)-10*x*exp(5*x)-6*exp(5*x))"},
   {id:"12.16 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^{x^3+2x}e^{e^x}\\)", reponse:"(3*x^2+2)*exp(x^3+2*x)*exp(exp(x))+exp(x)*exp(x^3+2*x)*exp(exp(x))"},
   // Calcul 12.17 - somme, Sigma (3 items, avance)
-  {id:"12.17 a)", type:"somme", avecSomme:true, texteLibre:true, enonce:"Soit \\(x\\) un réel strictement positif et \\(n\\) un entier naturel non nul. Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\exp(kx)\\)", reponse:"sum(k,1,n,exp(k*x))"},
-  {id:"12.17 b)", type:"somme", avecSomme:true, texteLibre:true, enonce:"Donner l'expression de la dérivée de \\(x\\mapsto \\exp(x)+\\exp(2x)+\\exp(3x)+\\cdots +\\exp(nx)\\)", reponse:"sum(k,1,n,k*exp(k*x))"},
-  {id:"12.17 c)", type:"somme", avecSomme:true, texteLibre:true, enonce:"En déduire une expression simple de \\(\\displaystyle\\sum_{k=1}^{n}k\\exp(kx)\\)", reponse:"sum(k,1,n,k*exp(k*x))"}
+  {id:"12.17 a)", type:"somme", texteLibre:true, enonce:"Soit \\(x\\) un réel strictement positif et \\(n\\) un entier naturel non nul. Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\exp(kx)\\)", reponse:"sum(k,1,n,exp(k*x))"},
+  {id:"12.17 b)", type:"somme", texteLibre:true, enonce:"Donner l'expression de la dérivée de \\(x\\mapsto \\exp(x)+\\exp(2x)+\\exp(3x)+\\cdots +\\exp(nx)\\)", reponse:"sum(k,1,n,k*exp(k*x))"},
+  {id:"12.17 c)", type:"somme", texteLibre:true, enonce:"En déduire une expression simple de \\(\\displaystyle\\sum_{k=1}^{n}k\\exp(kx)\\)", reponse:"sum(k,1,n,k*exp(k*x))"}
 ];
 
 const groupes = {
@@ -1028,16 +1023,6 @@ function insererFraction(idx) {
   reinitialiserStatut(idx);
 }
 
-function insererSomme(idx) {
-  const input = document.getElementById('input-' + idx);
-  const start = input.selectionStart ?? input.value.length;
-  const end = input.selectionEnd ?? input.value.length;
-  const symbole = 'sum(k,1,n,)';
-  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
-  placerCurseur(input, start + symbole.length - 1);
-  reinitialiserStatut(idx);
-}
-
 function effacer(idx) {
   const input = document.getElementById('input-' + idx);
   input.value = '';
@@ -1185,7 +1170,7 @@ function parseUnIntervalle(str) {
 
 function parseReponseIntervalle(str) {
   str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g,'');
-  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels') return {type:'tout'};
+  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels' || str === 'ℝ') return {type:'tout'};
   if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return {type:'vide'};
   const parties = str.split(/ou|∪|u(?![a-z])/);
   const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
@@ -1313,10 +1298,20 @@ function checkEquationCartesienne(userInput, correctA, correctB, correctC, vars)
 }
 
 function evaluerExpressionSomme(str, scope) {
-  const nettoye = normaliserSaisie(str).trim().replace(/\s/g,'');
-  const m = nettoye.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
-  if (!m) return null;
-  const [_, idxVar, borneInf, borneSup, expr] = m;
+  const avecEspaces = normaliserSaisie(str).trim();
+  let idxVar, borneInf, borneSup, expr;
+  const mNouveau = avecEspaces.match(/^sum\s*_\(([a-zA-Z]+)=([^)]+)\)\^(?:\(([^)]+)\)|(\S+?))\s*(.+)$/);
+  if (mNouveau) {
+    idxVar = mNouveau[1];
+    borneInf = mNouveau[2];
+    borneSup = mNouveau[3] !== undefined ? mNouveau[3] : mNouveau[4];
+    expr = mNouveau[5];
+  } else {
+    const nettoye = avecEspaces.replace(/\s/g,'');
+    const m = nettoye.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+    if (!m) return null;
+    idxVar = m[1]; borneInf = m[2]; borneSup = m[3]; expr = m[4];
+  }
   let bInf, bSup;
   try {
     bInf = Math.round(math.evaluate(borneInf, scope));
@@ -1425,6 +1420,12 @@ function attacherEcouteurs() {
     });
     input.addEventListener('input', () => {
       if (ignorerProchainInput) { ignorerProchainInput = false; return; }
+      if (ex.type === 'somme' && input.getValue('latex').trim() === '\\Sigma') {
+        ignorerProchainInput = true;
+        input.setValue('');
+        input.insert('\\sum_{k=#0}^{#0}#0', {focus: true});
+        return;
+      }
       reinitialiserStatut(idx);
     });
     input.addEventListener('focus', () => fermerAutresClaviers(idx));
@@ -1465,11 +1466,31 @@ function definirMode(immediat) {
   }
 }
 
+function convertirSqrt(s) {
+  let idx;
+  while ((idx = s.indexOf('sqrt(')) !== -1) {
+    let depth = 1;
+    let i = idx + 5;
+    while (i < s.length && depth > 0) {
+      if (s[i] === '(') depth++;
+      else if (s[i] === ')') depth--;
+      i++;
+    }
+    const inner = s.slice(idx+5, i-1);
+    s = s.slice(0, idx) + '\\sqrt{' + inner + '}' + s.slice(i);
+  }
+  return s;
+}
+function sommeVersLatex(reponse) {
+  const m = String(reponse).match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+  if (!m) return jsVersLatex(reponse);
+  const [_, idxVar, inf, sup, expr] = m;
+  return `\\displaystyle\\sum_{${idxVar}=${jsVersLatex(inf)}}^{${jsVersLatex(sup)}} ${jsVersLatex(expr)}`;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+  s = convertirSqrt(s);
   s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/\*/g, '\\times ');
@@ -1530,6 +1551,9 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
+    }
+    if (ex.type === 'somme') {
+      return sommeVersLatex(ex.reponse);
     }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
@@ -1641,7 +1665,7 @@ function aideContextuellePour(ex) {
     return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
   }
   if (ex.type === 'somme') {
-    return "Utiliser la notation <code>sum(k,1,n,expr)</code> pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le bouton &Sigma; du clavier insère ce squelette.";
+    return "Cliquer sur le bouton &Sigma; pour insérer le symbole de somme, puis compléter les trois cases : la valeur initiale de <code>k</code>, la valeur finale, et le terme général en fonction de <code>k</code> (et <code>x</code> si besoin).";
   }
   if (ex.type === 'paire') {
     return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
@@ -1707,7 +1731,21 @@ function utiliseMathfield(ex) {
   return true;
 }
 
+function insererMath(idx, texte) {
+  const mf = document.getElementById('input-' + idx);
+  mf.focus();
+  mf.executeCommand('moveToMathfieldEnd');
+  mf.insert(texte, {focus: true});
+}
+
 function champReponsePour(idx, ex) {
+  if (ex.type === 'somme') {
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
+              smart-fence="off" smart-superscript="on"
+              virtual-keyboard-mode="manual"></math-field>
+    <button class="q-clavier-btn" onclick="insererMath(${idx},'\\\\sum_{k=#0}^{#0}#0')" title="Insérer une somme">&Sigma;</button>
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+  }
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
               smart-fence="off" smart-superscript="on"
@@ -1832,13 +1870,12 @@ function genererClavierPour(idx, ex) {
         <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
         <button class="touche-large" onclick="inserer(${idx},'x')">x</button>
         <button class="touche-large" onclick="inserer(${idx},'lam')">λ</button>
-        ${ex.avecSomme ? `<button class="touche-large" onclick="insererSomme(${idx})">&Sigma;</button>` : ''}
       </div>
       <div class="clavier-groupe">
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">${ex.avecSomme ? 'Astuce : le bouton &Sigma; insère &laquo; sum(k,1,n,...) &raquo; — compléter avec le terme général en fonction de k et x.' : 'Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ'}</div>`;
+      <div class="clavier-apercu">Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ</div>`;
 }
 
 function genererSVGParabole(a, alpha, beta, largeur, hauteur) {

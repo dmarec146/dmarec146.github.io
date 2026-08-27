@@ -8,7 +8,8 @@
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
-  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
@@ -698,12 +699,6 @@ window.MathJax = {
   <span class="mode-explication" id="mode-explication"></span>
 </div>
 
-<div class="aide">
-  Pour les expressions mathématiques (dérivées, calculs...), un vrai éditeur de formule s'affiche : taper directement, utiliser <code>/</code> pour une fraction ou <code>&#9000;</code> pour son clavier symbolique.
-  Pour un cercle, saisir « centre_x;centre_y;rayon » (ex. <code>1;-2;2</code>). Pour vrai/faux, saisir « vrai » ou « faux ». Pour un QCM, saisir la lettre (a, b, c ou d).
-  Toute écriture mathématiquement équivalente à la réponse attendue est acceptée.
-</div>
-
 <div class="remarque-generale"><strong>Remarque</strong>
 Toutes les coordonnées sont exprimées dans un repère orthonormé du plan.</div>
 
@@ -1291,7 +1286,7 @@ function parseUnIntervalle(str) {
 
 function parseReponseIntervalle(str) {
   str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g,'');
-  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels') return {type:'tout'};
+  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels' || str === 'ℝ') return {type:'tout'};
   if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return {type:'vide'};
   const parties = str.split(/ou|∪|u(?![a-z])/);
   const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
@@ -1594,11 +1589,25 @@ function definirMode(immediat) {
   }
 }
 
+function convertirSqrt(s) {
+  let idx;
+  while ((idx = s.indexOf('sqrt(')) !== -1) {
+    let depth = 1;
+    let i = idx + 5;
+    while (i < s.length && depth > 0) {
+      if (s[i] === '(') depth++;
+      else if (s[i] === ')') depth--;
+      i++;
+    }
+    const inner = s.slice(idx+5, i-1);
+    s = s.slice(0, idx) + '\\sqrt{' + inner + '}' + s.slice(i);
+  }
+  return s;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+  s = convertirSqrt(s);
   s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/\*/g, '\\times ');

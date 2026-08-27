@@ -8,7 +8,8 @@
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
-  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
@@ -245,6 +246,8 @@ window.MathJax = {
     gap: 2px;
     flex-shrink: 0;
     text-decoration: none;
+    align-items: center;
+    margin-left: auto;
   }
 
   /* ---------- Questions : une seule colonne empilée par défaut (mobile-first) ---------- */
@@ -324,6 +327,7 @@ window.MathJax = {
     min-width: 0;
     background: white;
     min-height: 40px;
+    --contains-highlight-background-color: transparent;
   }
   .q-mathfield::part(menu-toggle) { display: none; }
   .q-mathfield::part(virtual-keyboard-toggle) { display: none; }
@@ -356,16 +360,18 @@ window.MathJax = {
     background: var(--bleu-clair);
     border: 1.5px solid var(--bleu);
     border-radius: 50%;
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: bold;
     color: var(--bleu);
     flex: 0 0 auto;
     line-height: 1;
     padding: 0;
+    vertical-align: middle;
+    margin-left: 6px;
   }
   .q-aide-btn:hover { background: var(--bleu); color: white; }
   .q-aide-bulle {
@@ -643,12 +649,6 @@ window.MathJax = {
   <span class="mode-explication" id="mode-explication"></span>
 </div>
 
-<div class="aide">
-  Pour les expressions mathématiques (dérivées, calculs...), un vrai éditeur de formule s'affiche : taper directement, utiliser <code>/</code> pour une fraction ou <code>&#9000;</code> pour son clavier symbolique.
-  Pour un cercle, saisir « centre_x;centre_y;rayon » (ex. <code>1;-2;2</code>). Pour vrai/faux, saisir « vrai » ou « faux ». Pour un QCM, saisir la lettre (a, b, c ou d).
-  Toute écriture mathématiquement équivalente à la réponse attendue est acceptée.
-</div>
-
 <div class="remarque-generale"><strong>Remarque</strong>
 Dans cette fiche, on ne se préoccupera pas (sauf mention du contraire) des ensembles de définition des fonctions considérées.</div>
 
@@ -728,6 +728,7 @@ Dans cette fiche, on ne se préoccupera pas (sauf mention du contraire) des ense
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -737,6 +738,8 @@ Dans cette fiche, on ne se préoccupera pas (sauf mention du contraire) des ense
   </div>
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
+
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
@@ -1407,99 +1410,12 @@ const groupes = {
 };
 const lettresEtendues = ["a","b","c","d","e","f","g","h"];
 
-function construireGrilles() {
-  for (const [gridId, indices] of Object.entries(groupes)) {
-    const grille = document.getElementById(gridId);
-    grille.innerHTML = '';
-    indices.forEach((idx, pos) => {
-      const ex = exercices[idx];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.id = 'q-' + idx;
-      div.innerHTML = `
-        <span class="q-lettre">${lettres[pos]})</span>
-        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
-        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-        <span class="q-statut" id="statut-${idx}"></span>
-        <div class="clavier-visuel" id="clavier-${idx}">
-          <div class="clavier-groupe">
-            <span class="clavier-label">Chiffres</span>
-            <button onclick="inserer(${idx},'7')">7</button>
-            <button onclick="inserer(${idx},'8')">8</button>
-            <button onclick="inserer(${idx},'9')">9</button>
-            <button onclick="inserer(${idx},'4')">4</button>
-            <button onclick="inserer(${idx},'5')">5</button>
-            <button onclick="inserer(${idx},'6')">6</button>
-            <button onclick="inserer(${idx},'1')">1</button>
-            <button onclick="inserer(${idx},'2')">2</button>
-            <button onclick="inserer(${idx},'3')">3</button>
-            <button onclick="inserer(${idx},'0')">0</button>
-            <button onclick="inserer(${idx},',')">,</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Opérations</span>
-            <button onclick="inserer(${idx},'+')">+</button>
-            <button onclick="inserer(${idx},'-')">−</button>
-            <button onclick="insererFonction(${idx},'*')">×</button>
-            <button onclick="insererFonction(${idx},'/')">÷</button>
-            <button onclick="inserer(${idx},'(')">(</button>
-            <button onclick="inserer(${idx},')')">)</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Puissances</span>
-            <button onclick="insererPuissance(${idx},'2')">x²</button>
-            <button onclick="insererPuissance(${idx},'3')">x³</button>
-            <button onclick="insererExposant(${idx})">xⁿ</button>
-            <button onclick="insererRacine(${idx})">√</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Fraction</span>
-            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Comparaison</span>
-            <button onclick="inserer(${idx},'>')">&gt;</button>
-            <button onclick="inserer(${idx},'<')">&lt;</button>
-            <button onclick="inserer(${idx},'>=')">&geq;</button>
-            <button onclick="inserer(${idx},'<=')">&leq;</button>
-          </div>
-          <div class="clavier-groupe">
-            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-          </div>
-          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
-        </div>
-      `;
-      grille.appendChild(div);
-    });
-  }
-}
-
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  fermerAutresAides(idx);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
   clavier.classList.toggle('ouvert', !etaitOuvert);
-}
-
-function toggleAide(idx) {
-  const aide = document.getElementById('aide-' + idx);
-  const etaitOuverte = aide.classList.contains('ouverte');
-  fermerAutresAides(idx);
-  fermerAutresClaviers(idx);
-  aide.classList.toggle('ouverte', !etaitOuverte);
-}
-
-function fermerAutresAides(idxActuel) {
-  exercices.forEach((ex, idx) => {
-    if (idx !== idxActuel) {
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
-    }
-  });
 }
 
 function placerCurseur(input, pos, fin) {
@@ -1755,7 +1671,7 @@ function parseUnIntervalle(str) {
 
 function parseReponseIntervalle(str) {
   str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g,'');
-  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels') return {type:'tout'};
+  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels' || str === 'ℝ') return {type:'tout'};
   if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return {type:'vide'};
   const parties = str.split(/ou|∪|u(?![a-z])/);
   const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
@@ -2017,8 +1933,6 @@ function fermerAutresClaviers(idxActuel) {
     if (idx !== idxActuel) {
       const clavier = document.getElementById('clavier-' + idx);
       if (clavier) clavier.classList.remove('ouvert');
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
     }
   });
 }
@@ -2035,11 +1949,25 @@ function definirMode(immediat) {
   }
 }
 
+function convertirSqrt(s) {
+  let idx;
+  while ((idx = s.indexOf('sqrt(')) !== -1) {
+    let depth = 1;
+    let i = idx + 5;
+    while (i < s.length && depth > 0) {
+      if (s[i] === '(') depth++;
+      else if (s[i] === ')') depth--;
+      i++;
+    }
+    const inner = s.slice(idx+5, i-1);
+    s = s.slice(0, idx) + '\\sqrt{' + inner + '}' + s.slice(i);
+  }
+  return s;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+  s = convertirSqrt(s);
   s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/\*/g, '\\times ');
@@ -2179,7 +2107,22 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  document.getElementById('toutes-reponses-panneau').classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+function toggleToutesReponses() {
+  const panel = document.getElementById('toutes-reponses-panneau');
+  const estOuvert = panel.classList.contains('visible');
+  if (!estOuvert) {
+    panel.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panel]);
+  }
+  panel.classList.toggle('visible', !estOuvert);
+  document.getElementById('btn-toutes-reponses').textContent = !estOuvert ? 'Masquer toutes les réponses' : 'Voir toutes les réponses';
 }
 
 
@@ -2209,7 +2152,7 @@ function aideContextuellePour(ex) {
     return "Écrire la lettre de la bonne réponse : <code>a</code>, <code>b</code>, <code>c</code> ou <code>d</code>.";
   }
   if (ex.type === 'intervalle') {
-    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ou » : <code>]-inf;1[ ou ]3;+inf[</code>. Écrire <code>R</code> si la réponse est l'ensemble des réels, ou <code>vide</code> s'il n'y a aucune solution.";
+    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.type === 'vecteur') {
     return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
@@ -2234,11 +2177,49 @@ function necessiteAide(ex) {
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
+function texteAideGroupe(indices) {
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (necessiteAide(ex)) return aideContextuellePour(ex);
+  }
+  return null;
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const conteneur = titre.querySelector('span:not(.picto-niveau)') || titre;
+  const btn = document.createElement('button');
+  btn.className = 'q-aide-btn';
+  btn.title = 'Comment répondre ?';
+  btn.textContent = '?';
+  btn.onclick = () => toggleAideGroupe(gridId);
+  conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.insertAdjacentElement('afterend', bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  const etaitOuverte = aide.classList.contains('ouverte');
+  fermerAutresClaviers(-1);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
 
 function construireGrilles() {
   for (const [gridId, indices] of Object.entries(groupes)) {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
+    injecterAideGroupe(gridId, indices);
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
@@ -2248,12 +2229,6 @@ function construireGrilles() {
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
-      const boutonAide = necessiteAide(ex)
-        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
-        : '';
-      const bulleAide = necessiteAide(ex)
-        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
-        : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
@@ -2264,9 +2239,7 @@ function construireGrilles() {
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
-        ${boutonAide}
         <span class="q-statut" id="statut-${idx}"></span>
-        ${bulleAide}
       `;
       grille.appendChild(div);
     });

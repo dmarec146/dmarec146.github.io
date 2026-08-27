@@ -8,7 +8,8 @@
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
-  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
@@ -645,12 +646,6 @@ window.MathJax = {
   <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
   <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
   <span class="mode-explication" id="mode-explication"></span>
-</div>
-
-<div class="aide">
-  Un vrai éditeur de formule s'affiche pour chaque réponse : taper directement, utiliser <code>/</code> pour une fraction ou <code>&#9000;</code> pour le clavier symbolique.
-  Pour un ensemble de solutions, écrire entre accolades, séparées par un point-virgule (ex. <code>{-2;3}</code>).
-  Toute écriture mathématiquement équivalente à la réponse attendue est acceptée.
 </div>
 
 <div class="bloc-general">
@@ -1785,10 +1780,24 @@ function definirMode(immediat) {
     exercices.forEach((ex, idx) => reinitialiserStatut(idx));
   }
 }
+function convertirSqrt(s) {
+  let idx;
+  while ((idx = s.indexOf('sqrt(')) !== -1) {
+    let depth = 1;
+    let i = idx + 5;
+    while (i < s.length && depth > 0) {
+      if (s[i] === '(') depth++;
+      else if (s[i] === ')') depth--;
+      i++;
+    }
+    const inner = s.slice(idx+5, i-1);
+    s = s.slice(0, idx) + '\\sqrt{' + inner + '}' + s.slice(i);
+  }
+  return s;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
-  s = s.replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+  s = convertirSqrt(s);
   s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/\*/g, '\\times ');
