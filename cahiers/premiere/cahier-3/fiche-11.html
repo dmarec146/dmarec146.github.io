@@ -246,6 +246,8 @@ window.MathJax = {
     gap: 2px;
     flex-shrink: 0;
     text-decoration: none;
+    align-items: center;
+    margin-left: auto;
   }
 
   /* ---------- Questions : une seule colonne empilée par défaut (mobile-first) ---------- */
@@ -325,6 +327,7 @@ window.MathJax = {
     min-width: 0;
     background: white;
     min-height: 40px;
+    --contains-highlight-background-color: transparent;
   }
   .q-mathfield::part(menu-toggle) { display: none; }
   .q-mathfield::part(virtual-keyboard-toggle) { display: none; }
@@ -357,16 +360,18 @@ window.MathJax = {
     background: var(--bleu-clair);
     border: 1.5px solid var(--bleu);
     border-radius: 50%;
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: bold;
     color: var(--bleu);
     flex: 0 0 auto;
     line-height: 1;
     padding: 0;
+    vertical-align: middle;
+    margin-left: 6px;
   }
   .q-aide-btn:hover { background: var(--bleu); color: white; }
   .q-aide-bulle {
@@ -661,6 +666,8 @@ window.MathJax = {
 <p class="section-titre">Calculs de dérivées</p>
 <div class="section-barre"></div>
 
+<div class="rappel-formule"><strong>Formule admise.</strong> Pour tous réels \(a\) et \(b\), la fonction \(x\mapsto \exp(ax+b)\) est dérivable sur \(\mathbb{R}\) et, pour tout réel \(x\), on a \[\left(\exp(ax+b)\right)'=a\times \exp(ax+b).\]</div>
+
 <p class="calcul-titre"><span>Calcul 11.4 — Exponentielles seules. Soit α∈ℝ. Donner une expression de la dérivée des fonctions définies par les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-11-4"></div>
 
@@ -710,6 +717,8 @@ window.MathJax = {
 <div class="barre-controle">
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -720,6 +729,8 @@ window.MathJax = {
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
 
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-10.html">&larr; Fiche précédente</a>
@@ -729,81 +740,481 @@ window.MathJax = {
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-const exercices = [
-  // Calcul 11.1 - fractions avec n (4 items)
-  {id:"11.1 a)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{1}{n-1}+\\dfrac{1}{n}+\\dfrac{1}{n+1}\\)", reponse:"(3*n^2-1)/(n^3-n)"},
-  {id:"11.1 b)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{n-2}{n^2}+\\dfrac{-n+1}{n^3}\\)", reponse:"(n^2-3*n+1)/n^3"},
-  {id:"11.1 c)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{2n-1}{2n+1}-\\dfrac{2n+1}{2n-1}\\)", reponse:"-8*n/(4*n^2-1)"},
-  {id:"11.1 d)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{n+2}{n^2-1}+\\dfrac{-n+3}{(n-2)(n+1)}\\)", reponse:"(4*n-7)/((n-2)*(n-1)*(n+1))"},
-  // Calcul 11.2 - puissances 2^a 3^b (4 items)
-  {id:"11.2 a)", type:"paire", texteLibre:true, enonce:"\\(8^n9^{-2n+1}\\)", pa:"3*n", pb:"-4*n+2", vars:["n"]},
-  {id:"11.2 b)", type:"paire", texteLibre:true, enonce:"\\(3^{n+1}-3^n\\)", pa:"1", pb:"n", vars:["n"]},
-  {id:"11.2 c)", type:"paire", texteLibre:true, enonce:"\\(4^{n+1}3^{5n}-4^n3^{5n+1}\\)", pa:"2*n", pb:"5*n", vars:["n"]},
-  {id:"11.2 d)", type:"paire", texteLibre:true, enonce:"\\(\\dfrac{(2^{n-2})^3(9^{-n+1})^2}{27(\\sqrt{2})^{4n-2}}\\)", pa:"n-5", pb:"-4*n+1", vars:["n"]},
-  // Calcul 11.3 - radicaux (4 items)
-  {id:"11.3 a)", type:"alg", texteLibre:true, enonce:"\\(\\sqrt{2^{4n}3^{2n+4}}\\)", reponse:"2^(2*n)*3^(n+2)"},
-  {id:"11.3 b)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{2}{\\sqrt{n^3}}\\)", reponse:"2*sqrt(n)/n^2"},
-  {id:"11.3 c)", type:"alg", texteLibre:true, enonce:"\\(\\dfrac{\\sqrt{n^2+4n+4}}{\\sqrt{n^2+2n}}\\)", reponse:"sqrt(n^2+2*n)/n"},
-  {id:"11.3 d)", type:"alg", texteLibre:true, enonce:"\\(\\left(\\dfrac{3n-\\sqrt{2n^2+1}}{\\sqrt{n+3}}\\right)^2\\)", reponse:"(3*n-sqrt(2*n^2+1))^2/(n+3)"},
-  // Calcul 11.4 - exponentielles seules (6 items)
-  {id:"11.4 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp(x)\\)", reponse:"exp(x)"},
-  {id:"11.4 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp(-x)\\)", reponse:"-exp(-x)"},
-  {id:"11.4 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp(\\alpha x+1)\\)", reponse:"lam*exp(lam*x+1)"},
-  {id:"11.4 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=3\\exp(x+1)-7\\)", reponse:"3*exp(x+1)"},
-  {id:"11.4 e)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{\\exp(x)+\\exp(-x)}{2}\\)", reponse:"exp(x)/2-exp(-x)/2"},
-  {id:"11.4 f)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{1}{8}\\exp(2x)-48\\exp\\left(\\dfrac{x}{6}\\right)\\)", reponse:"exp(2*x)/4-8*exp(x/6)"},
-  // Calcul 11.5 - exponentielles et autres fonctions (3 items)
-  {id:"11.5 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=3x-x^2-\\exp(x)\\)", reponse:"3-2*x-exp(x)"},
-  {id:"11.5 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\sqrt{2}\\exp(\\sqrt{2}x-1)+2\\sqrt{x}\\)", reponse:"2*exp(sqrt(2)*x-1)+1/sqrt(x)"},
-  {id:"11.5 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=-\\exp(-x)+\\dfrac{4}{x}\\)", reponse:"exp(-x)-4/x^2"},
-  // Calcul 11.6 - exponentielles avec n (3 items)
-  {id:"11.6 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{1}{6}x^3-\\dfrac{\\sqrt{3}}{4}\\exp\\left(\\sqrt{\\dfrac{2}{3}}x\\right)\\)", reponse:"x^2/2-sqrt(2)*exp(sqrt(6)*x/3)/4"},
-  {id:"11.6 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=x^n+\\dfrac{1}{n}\\exp((n-1)x)\\)", reponse:"n*x^(n-1)+exp((n-1)*x)"},
-  {id:"11.6 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=nx^{n+1}+(n+1)\\exp(-nx-x)\\)", reponse:"n*(n+1)*x^n-(n+1)^2*exp(-(n+1)*x)"},
-  // Calcul 11.7 - exponentielles et produits I (2 items)
-  {id:"11.7 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(\\exp(x)+2)(3-\\exp(x))\\)", reponse:"exp(x)-2*exp(2*x)"},
-  {id:"11.7 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(2\\exp(-x)-1)(\\exp(x)-\\exp(-x))\\)", reponse:"-exp(x)-exp(-x)+4*exp(-2*x)"},
-  // Calcul 11.8 - exponentielles et produits II (4 items)
-  {id:"11.8 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=x\\exp(2x)\\)", reponse:"(2*x+1)*exp(2*x)"},
-  {id:"11.8 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(x+2)\\exp(\\alpha x)\\)", reponse:"(lam*x+2*lam+1)*exp(lam*x)"},
-  {id:"11.8 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=x^3\\exp(x-2)\\)", reponse:"(x^3+3*x^2)*exp(x-2)"},
-  {id:"11.8 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\sqrt{3x}\\exp(\\sqrt{3}x)\\)", reponse:"3*sqrt(x)*exp(sqrt(3)*x)+sqrt(3)*exp(sqrt(3)*x)/(2*sqrt(x))"},
-  // Calcul 11.9 - exponentielles et produits III (4 items)
-  {id:"11.9 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(x^2-x+1)\\exp(-x)\\)", reponse:"(-x^2+3*x-2)*exp(-x)"},
-  {id:"11.9 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(x^3+2x+5)\\exp(2x)\\)", reponse:"(2*x^3+3*x^2+4*x+12)*exp(2*x)"},
-  {id:"11.9 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(x^{n+1}-nx^n-x)\\exp(-nx)\\)", reponse:"-(-n^2*x*x^n+n^2*x^n+n*x^2*x^n-n*x^2-n*x*x^n-x*x^n+x)*exp(-n*x)/x"},
-  {id:"11.9 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(x^2-\\exp(x))\\left(\\dfrac{1}{x}+\\exp(-2x)\\right)\\)", reponse:"1+exp(-x)+(2*x-2*x^2)*exp(-2*x)+(1-x)/x^2*exp(x)"},
-  // Calcul 11.10 - exponentielles et quotients (4 items)
-  {id:"11.10 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{1}{1+\\exp(x)}\\)", reponse:"-exp(x)/(1+exp(x))^2"},
-  {id:"11.10 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{3}{5\\exp(2x)+2\\exp(-x)}\\)", reponse:"(6-30*exp(3*x))*exp(x)/(5*exp(3*x)+2)^2"},
-  {id:"11.10 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{2\\exp(x)-1}{1+\\exp(-3x)}\\)", reponse:"(2*(exp(3*x)+1)*exp(x)+6*exp(x)-3)*exp(3*x)/(exp(3*x)+1)^2"},
-  {id:"11.10 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{x^2-\\exp(2x)}{\\exp(-x)-x}\\)", reponse:"(2*(-x+exp(2*x))*(x*exp(x)-1)+(x^2-exp(2*x))*(exp(x)+1))*exp(x)/(x*exp(x)-1)^2"},
-  // Calcul 11.11 - equation de tangente I (4 items, QCM)
-  {id:"11.11 a)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=\\exp(x)\\) et \\(a=0\\)", bonneReponse:"c", options:[{lettre:"a",texte:"y=1"},{lettre:"b",texte:"y=x"},{lettre:"c",texte:"y=x+1"},{lettre:"d",texte:"y=x-1"}]},
-  {id:"11.11 b)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=\\exp(2x)\\) et \\(a=0\\)", bonneReponse:"d", options:[{lettre:"a",texte:"y=2"},{lettre:"b",texte:"y=x"},{lettre:"c",texte:"y=x+2"},{lettre:"d",texte:"y=2x+1"}]},
-  {id:"11.11 c)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=3\\exp(-x)-1\\) et \\(a=0\\)", bonneReponse:"d", options:[{lettre:"a",texte:"y=x+3"},{lettre:"b",texte:"y=3x+2"},{lettre:"c",texte:"y=3x-1"},{lettre:"d",texte:"y=-3x+2"}]},
-  {id:"11.11 d)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=\\exp(x-1)\\) et \\(a=1\\)", bonneReponse:"b", options:[{lettre:"a",texte:"y=1"},{lettre:"b",texte:"y=x"},{lettre:"c",texte:"y=x+1"},{lettre:"d",texte:"y=x-1"}]},
-  // Calcul 11.12 - equation de tangente II (4 items)
-  {id:"11.12 a)", type:"paire", texteLibre:true, enonce:"\\(f(x)=2\\exp(4x)-1\\) et \\(a=0\\)", pa:"8", pb:"1"},
-  {id:"11.12 b)", type:"paire", texteLibre:true, enonce:"\\(f(x)=(1-\\alpha)\\exp(\\alpha x)+\\alpha^2x\\) et \\(a=0\\)", pa:"lam", pb:"1-lam", vars:["lam"]},
-  {id:"11.12 c)", type:"paire", texteLibre:true, enonce:"\\(f(x)=(x^2+x-3)\\exp(x)\\) et \\(a=0\\)", pa:"-2", pb:"-3"},
-  {id:"11.12 d)", type:"paire", texteLibre:true, enonce:"\\(f(x)=(x^2-x+4)\\exp(-2x)\\) et \\(a=1\\)", pa:"-7/exp(2)", pb:"11/exp(2)"},
-  // Calcul 11.13 - variations (4 items, QCM)
-  {id:"11.13 a)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=\\dfrac{\\exp(x)-\\exp(-x)}{2}\\) et \\(I=\\mathbb{R}\\)", bonneReponse:"a", options:[{lettre:"a",texte:"f est croissante sur I",texteLibreOption:true},{lettre:"b",texte:"f est décroissante sur I",texteLibreOption:true},{lettre:"c",texte:"f n'est pas monotone sur I",texteLibreOption:true}]},
-  {id:"11.13 b)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=x\\exp(-x)\\) et \\(I=[0,+\\infty[\\)", bonneReponse:"c", options:[{lettre:"a",texte:"f est croissante sur I",texteLibreOption:true},{lettre:"b",texte:"f est décroissante sur I",texteLibreOption:true},{lettre:"c",texte:"f n'est pas monotone sur I",texteLibreOption:true}]},
-  {id:"11.13 c)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=(x^2-2x+2)\\exp(x)\\) et \\(I=\\mathbb{R}\\)", bonneReponse:"a", options:[{lettre:"a",texte:"f est croissante sur I",texteLibreOption:true},{lettre:"b",texte:"f est décroissante sur I",texteLibreOption:true},{lettre:"c",texte:"f n'est pas monotone sur I",texteLibreOption:true}]},
-  {id:"11.13 d)", type:"qcm", texteLibre:true, enonce:"\\(f(x)=\\dfrac{1}{\\exp(x)+\\exp(-x)}\\) et \\(I=[0,+\\infty[\\)", bonneReponse:"b", options:[{lettre:"a",texte:"f est croissante sur I",texteLibreOption:true},{lettre:"b",texte:"f est décroissante sur I",texteLibreOption:true},{lettre:"c",texte:"f n'est pas monotone sur I",texteLibreOption:true}]},
-  // Calcul 11.14 - composee avec exponentielle I (4 items, avance)
-  {id:"11.14 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp(-x^2)\\)", reponse:"-2*x*exp(-x^2)"},
-  {id:"11.14 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp(x^3-x)\\)", reponse:"(3*x^2-1)*exp(x^3-x)"},
-  {id:"11.14 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp\\left(-\\dfrac{1}{x}\\right)\\)", reponse:"exp(-1/x)/x^2"},
-  {id:"11.14 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp\\left(x^2-\\dfrac{1}{2}\\sqrt{x}\\right)\\)", reponse:"(2*x-1/(4*sqrt(x)))*exp(x^2-sqrt(x)/2)"},
-  // Calcul 11.15 - composee avec exponentielle II (4 items, avance)
-  {id:"11.15 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\sqrt{x}\\exp(x^3+1)\\)", reponse:"3*x^(5/2)*exp(x^3+1)+exp(x^3+1)/(2*sqrt(x))"},
-  {id:"11.15 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp(x\\exp(x))\\)", reponse:"(x+1)*exp(x)*exp(x*exp(x))"},
-  {id:"11.15 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\exp\\left(\\dfrac{x-2}{x^2+1}\\right)\\)", reponse:"(-2*x*(x-2)/(x^2+1)^2+1/(x^2+1))*exp((x-2)/(x^2+1))"},
-  {id:"11.15 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{x\\exp(x^2)}{x^2+\\exp(-2x^3)}\\)", reponse:"2*x^2*exp(x^2)/(x^2+exp(-2*x^3))+x*(6*x^2*exp(-2*x^3)-2*x)*exp(x^2)/(x^2+exp(-2*x^3))^2+exp(x^2)/(x^2+exp(-2*x^3))"}
-];
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function fracStr(n, d) {
+  if (d < 0) { n = -n; d = -d; }
+  const g = pgcd(n, d);
+  n /= g; d /= g;
+  return d === 1 ? String(n) : `${n}/${d}`;
+}
+function fracLatex(n, d) {
+  if (d < 0) { n = -n; d = -d; }
+  const g = pgcd(n, d);
+  n /= g; d /= g;
+  if (d === 1) return String(n);
+  return n < 0 ? `-\\dfrac{${-n}}{${d}}` : `\\dfrac{${n}}{${d}}`;
+}
+function coefFracLatex(n, d) {
+  // comme fracLatex, mais omet le "1"/"-1" quand la fraction se reduit a un coefficient unitaire
+  if (d < 0) { n = -n; d = -d; }
+  const g = pgcd(n, d);
+  n /= g; d /= g;
+  if (d === 1) return n === 1 ? '' : n === -1 ? '-' : String(n);
+  return n < 0 ? `-\\dfrac{${-n}}{${d}}` : `\\dfrac{${n}}{${d}}`;
+}
+function coefPrefixe(n) {
+  return n === 1 ? '' : n === -1 ? '-' : `${n}*`;
+}
+function fmtLin(a, b, ascii, vr) {
+  vr = vr || 'x';
+  const mult = ascii ? '*' : '';
+  let s = a === 1 ? vr : a === -1 ? '-'+vr : (a === 0 ? '' : `${a}${mult}${vr}`);
+  if (b > 0) s += (s ? '+' : '') + b;
+  else if (b < 0) s += b;
+  else if (!s) s = '0';
+  return s;
+}
+function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
+function suite(a, b, ascii) {
+  // comme fmtLin, mais toujours prefixe par + ou - : pour concatener directement apres un terme existant (ex: "x^2" + suite(...))
+  const mult = ascii ? '*' : '';
+  let s = '';
+  if (a !== 0) {
+    s += (a > 0 ? '+' : '-');
+    const absA = Math.abs(a);
+    s += absA === 1 ? 'x' : `${absA}${mult}x`;
+  }
+  if (b > 0) s += '+' + b;
+  else if (b < 0) s += b;
+  return s;
+}
+function melanger(tableau) {
+  for (let i = tableau.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tableau[i], tableau[j]] = [tableau[j], tableau[i]];
+  }
+  return tableau;
+}
+function fmtDroite(pente, ordonnee) {
+  let s = 'y=';
+  if (pente === 0) { return s + String(ordonnee); }
+  s += (pente === 1 ? 'x' : pente === -1 ? '-x' : `${pente}x`);
+  if (ordonnee > 0) s += '+' + ordonnee;
+  else if (ordonnee < 0) s += ordonnee;
+  return s;
+}
+function optionsQCMTangente(pente, ordonnee) {
+  const vraie = fmtDroite(pente, ordonnee);
+  const decoysBrut = [
+    fmtDroite(0, ordonnee),
+    fmtDroite(pente, 0),
+    fmtDroite(pente, -ordonnee),
+    fmtDroite(-pente, ordonnee),
+    fmtDroite(pente + 1, ordonnee),
+    fmtDroite(pente, ordonnee + 1)
+  ];
+  const decoys = [];
+  for (const d of decoysBrut) {
+    if (d !== vraie && !decoys.includes(d)) decoys.push(d);
+    if (decoys.length === 3) break;
+  }
+  const lettres4 = ['a', 'b', 'c', 'd'];
+  const options = melanger([{ texte: vraie, estVrai: true }, ...decoys.map(t => ({ texte: t, estVrai: false }))]);
+  options.forEach((o, i) => o.lettre = lettres4[i]);
+  const bonneReponse = options.find(o => o.estVrai).lettre;
+  return { options: options.map(o => ({ lettre: o.lettre, texte: o.texte, texteLibreOption: true })), bonneReponse };
+}
+
+function genererExercices() {
+  const ex = [];
+
+  // ---------- 11.1 : fractions en n ----------
+  {
+    const p = alea(1,4);
+    ex.push({id:"11.1 a)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{1}{n-${p}}+\\dfrac{1}{n}+\\dfrac{1}{n+${p}}\\)`, reponse:`(3*n^2-${p*p})/(n^3-${coefPrefixe(p*p)}n)`});
+  }
+  {
+    const A = alea(1,4), B = alea(1,5);
+    ex.push({id:"11.1 b)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{n-${A}}{n^2}+\\dfrac{-n+${B}}{n^3}\\)`, reponse:`(n^2${-(A+1)}*n+${B})/n^3`});
+  }
+  {
+    const A = alea(1,5);
+    ex.push({id:"11.1 c)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{2n-${A}}{2n+${A}}-\\dfrac{2n+${A}}{2n-${A}}\\)`, reponse:`-${8*A}*n/(4*n^2-${A*A})`});
+  }
+  {
+    const P = alea(1,5), Q = alea(1,5);
+    const coefN = P+Q-1, cst = -(2*P+Q);
+    ex.push({id:"11.1 d)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{n+${P}}{n^2-1}+\\dfrac{-n+${Q}}{(n-2)(n+1)}\\)`, reponse:`(${fmtLin(coefN,cst,true,'n')})/((n-2)*(n-1)*(n+1))`});
+  }
+
+  // ---------- 11.2 : puissances 2^a 3^b ----------
+  {
+    const k = alea(1,4), m = alea(1,3), p = aleaNonNul(-3,3), q = alea(-3,3);
+    const paExpr = `${coefPrefixe(k)}n`, pbExpr = fmtLin(m*p,m*q,true,'n');
+    ex.push({id:"11.2 a)", type:"alg", texteLibre:true,
+      enonce:`\\(${Math.pow(2,k)}^n${Math.pow(3,m)}^{${fmtLin(p,q,false,'n')}}\\)`,
+      reponse:`2^(${paExpr})*3^(${pbExpr})`});
+  }
+  {
+    const j = alea(0,3), e = alea(-2,2);
+    const k = Math.pow(2,j);
+    const paExpr = `${j+1}`, pbExpr = fmtLin(1,e-1,true,'n');
+    ex.push({id:"11.2 b)", type:"alg", texteLibre:true,
+      enonce:`\\(${k===1?'':k+'\\times '}3^{${fmtLin(1,e,false,'n')}}-${k===1?'':k+'\\times '}3^{${fmtLin(1,e-1,false,'n')}}\\)`,
+      reponse:`2^(${paExpr})*3^(${pbExpr})`});
+  }
+  {
+    const m = alea(1,6);
+    const paExpr = `2*n`, pbExpr = `${coefPrefixe(m)}n`;
+    ex.push({id:"11.2 c)", type:"alg", texteLibre:true,
+      enonce:`\\(4^{n+1}3^{${m===1?'':m}n}-4^n3^{${m===1?'':m}n+1}\\)`,
+      reponse:`2^(${paExpr})*3^(${pbExpr})`});
+  }
+  {
+    ex.push({id:"11.2 d)", type:"alg", texteLibre:true,
+      enonce:`\\(\\dfrac{(2^{n-2})^3(9^{-n+1})^2}{27(\\sqrt{2})^{4n-2}}\\)`,
+      reponse:`2^(n-5)*3^(-4*n+1)`});
+  }
+
+  // ---------- 11.3 : radicaux ----------
+  {
+    const p = alea(1,4), q = alea(1,3);
+    ex.push({id:"11.3 a)", type:"alg", texteLibre:true, enonce:`\\(\\sqrt{2^{${4*p}n}3^{${2*q}n+4}}\\)`, reponse:`2^(${2*p}*n)*3^(${coefPrefixe(q)}n+2)`});
+  }
+  {
+    const A = alea(2,5);
+    ex.push({id:"11.3 b)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{${A}}{\\sqrt{n^3}}\\)`, reponse:`${A}*sqrt(n)/n^2`});
+  }
+  {
+    const p = alea(1,4);
+    ex.push({id:"11.3 c)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{\\sqrt{n^2+${2*p}n+${p*p}}}{\\sqrt{n^2+${p===1?'':p}n}}\\)`, reponse:`sqrt(n^2+${coefPrefixe(p)}n)/n`});
+  }
+  {
+    const A = alea(2,4), B = alea(1,4);
+    ex.push({id:"11.3 d)", type:"alg", texteLibre:true, enonce:`\\(\\left(\\dfrac{${A}n-\\sqrt{2n^2+1}}{\\sqrt{n+${B}}}\\right)^2\\)`, reponse:`(${A}*n-sqrt(2*n^2+1))^2/(n+${B})`});
+  }
+
+  // ---------- 11.4 : exponentielles seules ----------
+  {
+    const p = aleaNonNul(-4,4);
+    const prefP = p===1?'':p===-1?'-':`${p}*`;
+    ex.push({id:"11.4 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp(${fmtLin(p,0,false)})\\)`, reponse:`${prefP}exp(${fmtLin(p,0,true)})`, _fAscii:`exp(${fmtLin(p,0,true)})`});
+  }
+  {
+    const p = aleaNonNul(-4,4);
+    const prefP = p===1?'':p===-1?'-':`${p}*`;
+    ex.push({id:"11.4 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp(${fmtLin(p,0,false)})\\)`, reponse:`${prefP}exp(${fmtLin(p,0,true)})`, _fAscii:`exp(${fmtLin(p,0,true)})`});
+  }
+  {
+    const c = alea(-4,4);
+    ex.push({id:"11.4 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp(\\alpha x${c>0?'+':''}${c===0?'':c})\\)`, reponse:`lam*exp(lam*x${c>0?'+':''}${c===0?'':c})`, _fAscii:`exp(lam*x${c>0?'+':''}${c===0?'':c})`});
+  }
+  {
+    const C = aleaNonNul(-6,6), b = alea(-4,4), D = alea(1,20);
+    ex.push({id:"11.4 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${C===1?'':C===-1?'-':C}\\exp(${fmtLin(1,b,false)})-${D}\\)`, reponse:`${coefPrefixe(C)}exp(${fmtLin(1,b,true)})`, _fAscii:`${C}*exp(${fmtLin(1,b,true)})-${D}`});
+  }
+  {
+    const p = aleaNonNul(1,4);
+    ex.push({id:"11.4 e)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{\\exp(${fmtLin(p,0,false)})+\\exp(${fmtLin(-p,0,false)})}{2}\\)`,
+      reponse:`(${coefPrefixe(p)}exp(${fmtLin(p,0,true)})-${coefPrefixe(p)}exp(${fmtLin(-p,0,true)}))/2`, _fAscii:`(exp(${fmtLin(p,0,true)})+exp(${fmtLin(-p,0,true)}))/2`});
+  }
+  {
+    let p, q; do { p = aleaNonNul(-4,4); q = aleaNonNul(-4,4); } while (p===q);
+    const D1 = aleaNonNul(-6,6), D2 = aleaNonNul(-8,8);
+    const A = fracStr(D1,p), B = fracStr(D2,q);
+    ex.push({id:"11.4 f)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=${coefFracLatex(D1,p)}\\exp(${fmtLin(p,0,false)})${D2/q>=0?'+':''}${coefFracLatex(D2,q)}\\exp(${fmtLin(q,0,false)})\\)`,
+      reponse:`${coefPrefixe(D1)}exp(${fmtLin(p,0,true)})${D2>=0?'+':'-'}${Math.abs(D2)===1?'':Math.abs(D2)+'*'}exp(${fmtLin(q,0,true)})`,
+      _fAscii:`${fracStr(D1,p)}*exp(${fmtLin(p,0,true)})${D2/q>=0?'+':''}${fracStr(D2,q)}*exp(${fmtLin(q,0,true)})`});
+  }
+
+  // ---------- 11.5 : exponentielles et autres fonctions ----------
+  {
+    const A = aleaNonNul(-5,5), B = aleaNonNul(1,4), p = aleaNonNul(-3,3);
+    const termeP5a = p>=0 ? `-${p===1?'':p+'*'}exp(${fmtLin(p,0,true)})` : `+${-p===1?'':(-p)+'*'}exp(${fmtLin(p,0,true)})`;
+    ex.push({id:"11.5 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${fmtLin(A,0,false)}-${B===1?'':B}x^2-\\exp(${fmtLin(p,0,false)})\\)`,
+      reponse:`${A}-${2*B}*x${termeP5a}`, _fAscii:`${A}*x-${B}*x^2-exp(${fmtLin(p,0,true)})`});
+  }
+  {
+    const D2 = [2,3,5,6,7][alea(0,4)], c = alea(-3,3), D = aleaNonNul(1,5);
+    ex.push({id:"11.5 b)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=\\sqrt{${D2}}\\exp(\\sqrt{${D2}}x${c>0?'+':''}${c===0?'':c})+${D===1?'':D}\\sqrt{x}\\)`,
+      reponse:`${D2}*exp(sqrt(${D2})*x${c>0?'+':''}${c===0?'':c})+${D}/(2*sqrt(x))`,
+      _fAscii:`sqrt(${D2})*exp(sqrt(${D2})*x${c>0?'+':''}${c===0?'':c})+${D}*sqrt(x)`});
+  }
+  {
+    const p = aleaNonNul(1,4), D = aleaNonNul(1,8);
+    ex.push({id:"11.5 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=-\\exp(${fmtLin(-p,0,false)})+\\dfrac{${D}}{x}\\)`,
+      reponse:`${coefPrefixe(p)}exp(${fmtLin(-p,0,true)})-${D}/x^2`, _fAscii:`-exp(${fmtLin(-p,0,true)})+${D}/x`});
+  }
+
+  // ---------- 11.6 : exponentielles avec n ----------
+  {
+    const C = aleaNonNul(1,5), D = aleaNonNul(1,4), q = aleaNonNul(-4,4);
+    ex.push({id:"11.6 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${C}}{3}x^3-\\dfrac{${D}}{${q}}\\exp(${fmtLin(q,0,false)})\\)`,
+      reponse:`${coefPrefixe(C)}x^2-${coefPrefixe(D)}exp(${fmtLin(q,0,true)})`, _fAscii:`${C}/3*x^3-${D}/${q}*exp(${fmtLin(q,0,true)})`});
+  }
+  {
+    const k = alea(1,5);
+    ex.push({id:"11.6 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=x^n+\\dfrac{${k}}{n}\\exp((n-1)x)\\)`,
+      reponse:`n*x^(n-1)+${coefPrefixe(k)}(n-1)/n*exp((n-1)*x)`, _fAscii:`x^n+${k}/n*exp((n-1)*x)`});
+  }
+  {
+    const k = alea(1,4);
+    ex.push({id:"11.6 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${k===1?'':k}nx^{n+1}+(n+1)\\exp(-nx-x)\\)`,
+      reponse:`${coefPrefixe(k)}n*(n+1)*x^n-(n+1)^2*exp(-(n+1)*x)`, _fAscii:`${k}*n*x^(n+1)+(n+1)*exp(-n*x-x)`});
+  }
+
+  // ---------- 11.7 : exponentielles et produits I ----------
+  {
+    const A = aleaNonNul(-5,5), B = aleaNonNul(-5,5);
+    ex.push({id:"11.7 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(\\exp(x)${A>=0?'+':''}${A})(${B}-\\exp(x))\\)`,
+      reponse:`${coefPrefixe(B-A)}exp(x)-2*exp(2*x)`, _fAscii:`(exp(x)+${A})*(${B}-exp(x))`});
+  }
+  {
+    const C = aleaNonNul(-4,4), D = aleaNonNul(-4,4);
+    ex.push({id:"11.7 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(${C===1?'':C===-1?'-':C}\\exp(-x)${D>=0?'+':''}${D})(\\exp(x)-\\exp(-x))\\)`,
+      reponse:`${coefPrefixe(D)}exp(x)${D>=0?'+':'-'}${Math.abs(D)===1?'':Math.abs(D)+'*'}exp(-x)${(2*C)>=0?'+':''}${2*C}*exp(-2*x)`,
+      _fAscii:`(${C}*exp(-x)${D>=0?'+':''}${D})*(exp(x)-exp(-x))`});
+  }
+
+  // ---------- 11.8 : exponentielles et produits II ----------
+  {
+    const p = aleaNonNul(-3,3);
+    ex.push({id:"11.8 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=x\\exp(${fmtLin(p,0,false)})\\)`,
+      reponse:`(${fmtLin(p,1,true)})*exp(${fmtLin(p,0,true)})`, _fAscii:`x*exp(${fmtLin(p,0,true)})`});
+  }
+  {
+    const C = aleaNonNul(-5,5);
+    ex.push({id:"11.8 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(x${C>=0?'+':''}${C})\\exp(\\alpha x)\\)`,
+      reponse:`(lam*x+lam*${C}+1)*exp(lam*x)`, _fAscii:`(x${C>=0?'+':''}${C})*exp(lam*x)`});
+  }
+  {
+    const p = aleaNonNul(-3,3), C = alea(-4,4);
+    ex.push({id:"11.8 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=x^3\\exp(${fmtLin(p,-C,false)})\\)`,
+      reponse:`(${coefPrefixe(p)}x^3+3*x^2)*exp(${fmtLin(p,-C,true)})`, _fAscii:`x^3*exp(${fmtLin(p,-C,true)})`});
+  }
+  {
+    const D = [2,3,5,6,7][alea(0,4)];
+    ex.push({id:"11.8 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\sqrt{${D}x}\\exp(\\sqrt{${D}}x)\\)`,
+      reponse:`${D}*sqrt(x)*exp(sqrt(${D})*x)+sqrt(${D})*exp(sqrt(${D})*x)/(2*sqrt(x))`,
+      _fAscii:`sqrt(${D}*x)*exp(sqrt(${D})*x)`});
+  }
+
+  // ---------- 11.9 : exponentielles et produits III ----------
+  {
+    const A = alea(-4,4), B = alea(-5,5), p = aleaNonNul(-3,3);
+    ex.push({id:"11.9 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(x^2${suite(A,B,false)})\\exp(${fmtLin(p,0,false)})\\)`,
+      reponse:`(${coefPrefixe(p)}x^2${suite(2+p*A,A+p*B,true)})*exp(${fmtLin(p,0,true)})`,
+      _fAscii:`(x^2${suite(A,B,true)})*exp(${fmtLin(p,0,true)})`});
+  }
+  {
+    const C = alea(-4,4), D = alea(-6,6), q = aleaNonNul(-3,3);
+    ex.push({id:"11.9 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(x^3${suite(C,D,false)})\\exp(${fmtLin(q,0,false)})\\)`,
+      reponse:`(${coefPrefixe(q)}x^3+3*x^2${suite(q*C,C+q*D,true)})*exp(${fmtLin(q,0,true)})`,
+      _fAscii:`(x^3${suite(C,D,true)})*exp(${fmtLin(q,0,true)})`});
+  }
+  {
+    const k = alea(1,4);
+    ex.push({id:"11.9 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${k===1?'':k}(x^{n+1}-nx^n-x)\\exp(-nx)\\)`,
+      reponse:`${coefPrefixe(k)}(-n*x^(n+1)+(n^2+n+1)*x^n-n^2*x^(n-1)+n*x-1)*exp(-n*x)`,
+      _fAscii:`${k}*(x^(n+1)-n*x^n-x)*exp(-n*x)`});
+  }
+  {
+    let p, q; do { p = aleaNonNul(-3,3); q = aleaNonNul(-3,3); } while (p+q===0);
+    const termeQ = `2*x${q>=0?'+':'-'}${Math.abs(q)===1?'':Math.abs(q)+'*'}x^2`;
+    const termeP = `1/x^2${(-p)>=0?'+':''}${-p}/x`;
+    const dernierSigne = (p+q)>=0 ? '-' : '+';
+    const dernierAbs = Math.abs(p+q);
+    ex.push({id:"11.9 d)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=(x^2-\\exp(${fmtLin(p,0,false)}))\\left(\\dfrac{1}{x}+\\exp(${fmtLin(q,0,false)})\\right)\\)`,
+      reponse:`1+(${termeQ})*exp(${fmtLin(q,0,true)})+(${termeP})*exp(${fmtLin(p,0,true)})${dernierSigne}${dernierAbs===1?'':dernierAbs+'*'}exp(${fmtLin(p+q,0,true)})`,
+      _fAscii:`(x^2-exp(${fmtLin(p,0,true)}))*(1/x+exp(${fmtLin(q,0,true)}))`});
+  }
+
+  // ---------- 11.10 : exponentielles et quotients ----------
+  {
+    const p = aleaNonNul(-3,3);
+    ex.push({id:"11.10 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{1}{1+\\exp(${fmtLin(p,0,false)})}\\)`,
+      reponse:`${coefPrefixe(-p)}exp(${fmtLin(p,0,true)})/(1+exp(${fmtLin(p,0,true)}))^2`,
+      _fAscii:`1/(1+exp(${fmtLin(p,0,true)}))`});
+  }
+  {
+    const C = aleaNonNul(1,6), D = aleaNonNul(-5,5), E = aleaNonNul(-5,5);
+    let p, q; do { p = aleaNonNul(-3,3); q = aleaNonNul(-3,3); } while (p===q);
+    const DtermL = D===1?'':D===-1?'-':`${D}`;
+    const EtermL = E===1?'':E===-1?'-':`${E}`;
+    const DtermA = D===1?'':D===-1?'-':`${D}*`;
+    const EtermA = E===1?'':E===-1?'-':`${E}*`;
+    const signE = E>=0?'+':'';
+    ex.push({id:"11.10 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${C}}{${DtermL}\\exp(${fmtLin(p,0,false)})${signE}${EtermL}\\exp(${fmtLin(q,0,false)})}\\)`,
+      reponse:`-${C===1?'':C+'*'}(${coefPrefixe(D*p)}exp(${fmtLin(p,0,true)})${(E*q)>=0?'+':'-'}${Math.abs(E*q)===1?'':Math.abs(E*q)+'*'}exp(${fmtLin(q,0,true)}))/(${DtermA}exp(${fmtLin(p,0,true)})${signE}${EtermA}exp(${fmtLin(q,0,true)}))^2`,
+      _fAscii:`${C}/(${DtermA}exp(${fmtLin(p,0,true)})${signE}${EtermA}exp(${fmtLin(q,0,true)}))`});
+  }
+  {
+    const A = aleaNonNul(-4,4), B = aleaNonNul(-4,4), p = aleaNonNul(-3,3);
+    ex.push({id:"11.10 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${A===1?'':A===-1?'-':A}\\exp(x)${B>=0?'+':''}${B}}{1+\\exp(${fmtLin(p,0,false)})}\\)`,
+      reponse:`(${coefPrefixe(A)}exp(x)*(1+exp(${fmtLin(p,0,true)}))-(${coefPrefixe(A)}exp(x)${B>=0?'+':''}${B})${p===1?'*':p===-1?'*-':'*'+p+'*'}exp(${fmtLin(p,0,true)}))/(1+exp(${fmtLin(p,0,true)}))^2`,
+      _fAscii:`(${A}*exp(x)${B>=0?'+':''}${B})/(1+exp(${fmtLin(p,0,true)}))`});
+  }
+  {
+    let p, q; do { p = aleaNonNul(-3,3); q = aleaNonNul(-3,3); } while (p===q);
+    const termeQ10d = q>=0 ? `2*x-${coefPrefixe(q)}exp(${fmtLin(q,0,true)})` : `2*x+${coefPrefixe(-q)}exp(${fmtLin(q,0,true)})`;
+    ex.push({id:"11.10 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{x^2-\\exp(${fmtLin(q,0,false)})}{\\exp(${fmtLin(p,0,false)})-x}\\)`,
+      reponse:`((${termeQ10d})*(exp(${fmtLin(p,0,true)})-x)-(x^2-exp(${fmtLin(q,0,true)}))*(${coefPrefixe(p)}exp(${fmtLin(p,0,true)})-1))/(exp(${fmtLin(p,0,true)})-x)^2`,
+      _fAscii:`(x^2-exp(${fmtLin(q,0,true)}))/(exp(${fmtLin(p,0,true)})-x)`});
+  }
+
+  // ---------- 11.11 : equation de tangente I (QCM) ----------
+  {
+    const p = aleaNonNul(-3,3);
+    const { options, bonneReponse } = optionsQCMTangente(p, 1);
+    ex.push({id:"11.11 a)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=\\exp(${fmtLin(p,0,false)})\\) et \\(a=0\\)`, bonneReponse, options});
+  }
+  {
+    const q = aleaNonNul(-3,3);
+    const { options, bonneReponse } = optionsQCMTangente(q, 1);
+    ex.push({id:"11.11 b)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=\\exp(${fmtLin(q,0,false)})\\) et \\(a=0\\)`, bonneReponse, options});
+  }
+  {
+    const C = aleaNonNul(-4,4), p = aleaNonNul(-3,3), D = alea(-4,4);
+    const pente = -C*p, ordonnee = C+D;
+    const { options, bonneReponse } = optionsQCMTangente(pente, ordonnee);
+    ex.push({id:"11.11 c)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=${C===1?'':C===-1?'-':C}\\exp(${fmtLin(-p,0,false)})${D>=0?'+':''}${D}\\) et \\(a=0\\)`, bonneReponse, options});
+  }
+  {
+    const b = aleaNonNul(-4,4);
+    const { options, bonneReponse } = optionsQCMTangente(1, 1-b);
+    ex.push({id:"11.11 d)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=\\exp(${fmtLin(1,-b,false)})\\) et \\(a=${b}\\)`, bonneReponse, options});
+  }
+
+  // ---------- 11.12 : equation de tangente II (paire) ----------
+  {
+    const C = aleaNonNul(1,5), p = aleaNonNul(-4,4), D = alea(-6,6);
+    ex.push({id:"11.12 a)", type:"paire", texteLibre:true, enonce:`\\(f(x)=${C===1?'':C}\\exp(${fmtLin(p,0,false)})${D>=0?'+':''}${D}\\) et \\(a=0\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`${C*p}`, pb:`${C+D}`});
+  }
+  ex.push({id:"11.12 b)", type:"paire", texteLibre:true, enonce:`\\(f(x)=(1-\\alpha)\\exp(\\alpha x)+\\alpha^2x\\) et \\(a=0\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`, pa:"lam", pb:"1-lam", vars:["lam"]});
+  {
+    const A = alea(-4,4), B = alea(-5,5);
+    ex.push({id:"11.12 c)", type:"paire", texteLibre:true, enonce:`\\(f(x)=(x^2${suite(A,B,false)})\\exp(x)\\) et \\(a=0\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`${A+B}`, pb:`${B}`});
+  }
+  {
+    const A = alea(-4,4), B = alea(-6,6), p = aleaNonNul(-3,3);
+    const fAt1 = 1+A+B, bracketAt1 = p + (2+p*A) + (A+p*B);
+    ex.push({id:"11.12 d)", type:"paire", texteLibre:true, enonce:`\\(f(x)=(x^2${suite(A,B,false)})\\exp(${fmtLin(p,0,false)})\\) et \\(a=1\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`${coefPrefixe(bracketAt1)}exp(${p})`, pb:`${coefPrefixe(fAt1-bracketAt1)}exp(${p})`});
+  }
+
+  // ---------- 11.13 : variations (QCM) ----------
+  {
+    const p = aleaNonNul(1,4);
+    const opts = melanger([
+      {lettre:'a', texte:'f est croissante sur I', v:true},
+      {lettre:'b', texte:'f est décroissante sur I', v:false},
+      {lettre:'c', texte:"f n'est pas monotone sur I", v:false}
+    ]);
+    ['a','b','c'].forEach((l,i)=>opts[i].lettre=l);
+    ex.push({id:"11.13 a)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=\\dfrac{\\exp(${fmtLin(p,0,false)})-\\exp(${fmtLin(-p,0,false)})}{2}\\) et \\(I=\\mathbb{R}\\)`,
+      bonneReponse: opts.find(o=>o.v).lettre, options: opts.map(o=>({lettre:o.lettre,texte:o.texte,texteLibreOption:true}))});
+  }
+  {
+    const p = aleaNonNul(1,4);
+    const opts = melanger([
+      {lettre:'a', texte:'f est croissante sur I', v:false},
+      {lettre:'b', texte:'f est décroissante sur I', v:false},
+      {lettre:'c', texte:"f n'est pas monotone sur I", v:true}
+    ]);
+    ['a','b','c'].forEach((l,i)=>opts[i].lettre=l);
+    ex.push({id:"11.13 b)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=x\\exp(${fmtLin(-p,0,false)})\\) et \\(I=[0,+\\infty[\\)`,
+      bonneReponse: opts.find(o=>o.v).lettre, options: opts.map(o=>({lettre:o.lettre,texte:o.texte,texteLibreOption:true}))});
+  }
+  {
+    const k = alea(-3,3);
+    const A = 2*k-2, B = k*k-A;
+    const opts = melanger([
+      {lettre:'a', texte:'f est croissante sur I', v:true},
+      {lettre:'b', texte:'f est décroissante sur I', v:false},
+      {lettre:'c', texte:"f n'est pas monotone sur I", v:false}
+    ]);
+    ['a','b','c'].forEach((l,i)=>opts[i].lettre=l);
+    ex.push({id:"11.13 c)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=(x^2${suite(A,B,false)})\\exp(x)\\) et \\(I=\\mathbb{R}\\)`,
+      bonneReponse: opts.find(o=>o.v).lettre, options: opts.map(o=>({lettre:o.lettre,texte:o.texte,texteLibreOption:true}))});
+  }
+  {
+    const p = aleaNonNul(1,4);
+    const opts = melanger([
+      {lettre:'a', texte:'f est croissante sur I', v:false},
+      {lettre:'b', texte:'f est décroissante sur I', v:true},
+      {lettre:'c', texte:"f n'est pas monotone sur I", v:false}
+    ]);
+    ['a','b','c'].forEach((l,i)=>opts[i].lettre=l);
+    ex.push({id:"11.13 d)", type:"qcm", texteLibre:true, enonce:`\\(f(x)=\\dfrac{1}{\\exp(${fmtLin(p,0,false)})+\\exp(${fmtLin(-p,0,false)})}\\) et \\(I=[0,+\\infty[\\)`,
+      bonneReponse: opts.find(o=>o.v).lettre, options: opts.map(o=>({lettre:o.lettre,texte:o.texte,texteLibreOption:true}))});
+  }
+
+  // ---------- 11.14 : composee avec exponentielle I ----------
+  {
+    const p = aleaNonNul(1,3);
+    const pT14a = p===1?'':p, pT14aA = p===1?'':`${p}*`;
+    ex.push({id:"11.14 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp(-${pT14a}x^2)\\)`,
+      reponse:`-${2*p}*x*exp(-${pT14aA}x^2)`, _fAscii:`exp(-${pT14aA}x^2)`});
+  }
+  {
+    const p = aleaNonNul(1,4);
+    ex.push({id:"11.14 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp(x^3${suite(-p,0,false)})\\)`,
+      reponse:`(3*x^2-${p})*exp(x^3${suite(-p,0,true)})`, _fAscii:`exp(x^3${suite(-p,0,true)})`});
+  }
+  {
+    const k = aleaNonNul(1,5);
+    ex.push({id:"11.14 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp\\left(-\\dfrac{${k}}{x}\\right)\\)`,
+      reponse:`${coefPrefixe(k)}exp(-${k}/x)/x^2`, _fAscii:`exp(-${k}/x)`});
+  }
+  {
+    const A = aleaNonNul(1,3), B = aleaNonNul(1,4);
+    ex.push({id:"11.14 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp\\left(${A===1?'':A}x^2-${B===1?'':B}\\sqrt{x}\\right)\\)`,
+      reponse:`(${2*A}*x-${B}/(2*sqrt(x)))*exp(${A===1?'':A+'*'}x^2-${B===1?'':B+'*'}sqrt(x))`,
+      _fAscii:`exp(${A}*x^2-${B}*sqrt(x))`});
+  }
+
+  // ---------- 11.15 : composee avec exponentielle II ----------
+  {
+    const p = aleaNonNul(-2,2), c = alea(-3,3);
+    const pLatex = p===1?'':p===-1?'-':`${p}`;
+    const pAscii = p===1?'':p===-1?'-':`${p}*`;
+    const signe3p = (3*p)>=0 ? '+' : '';
+    ex.push({id:"11.15 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\sqrt{x}\\exp(${pLatex}x^3${c>0?'+':''}${c===0?'':c})\\)`,
+      reponse:`(1/(2*sqrt(x))${signe3p}${3*p}*x^(5/2))*exp(${pAscii}x^3${c>0?'+':''}${c===0?'':c})`,
+      _fAscii:`sqrt(x)*exp(${p}*x^3${c>0?'+':''}${c===0?'':c})`});
+  }
+  {
+    const p = aleaNonNul(-2,2);
+    const pLatex = p===1?'':p===-1?'-':`${p}`;
+    const pAscii = p===1?'':p===-1?'-':`${p}*`;
+    ex.push({id:"11.15 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp(${pLatex}x\\exp(x))\\)`,
+      reponse:`${coefPrefixe(p)}(x+1)*exp(x)*exp(${pAscii}x*exp(x))`, _fAscii:`exp(${p}*x*exp(x))`});
+  }
+  {
+    const A = alea(-3,3), B = aleaNonNul(1,4);
+    ex.push({id:"11.15 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\exp\\left(\\dfrac{x${A>=0?'-':'+'}${Math.abs(A)}}{x^2+${B}}\\right)\\)`,
+      reponse:`(-x^2${suite(2*A,B,true)})/(x^2+${B})^2*exp((x${A>=0?'-':'+'}${Math.abs(A)})/(x^2+${B}))`,
+      _fAscii:`exp((x${A>=0?'-':'+'}${Math.abs(A)})/(x^2+${B}))`});
+  }
+  {
+    const q = aleaNonNul(-2,2);
+    const qLatex = q===1?'':q===-1?'-':`${q}`;
+    const qAscii = q===1?'':q===-1?'-':`${q}*`;
+    const signe3q = (3*q)>=0 ? '+' : '';
+    ex.push({id:"11.15 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{x\\exp(x^2)}{x^2+\\exp(${qLatex}x^3)}\\)`,
+      reponse:`((1+2*x^2)*exp(x^2)*(x^2+exp(${qAscii}x^3))-x*exp(x^2)*(2*x${signe3q}${3*q}*x^2*exp(${qAscii}x^3)))/(x^2+exp(${qAscii}x^3))^2`,
+      _fAscii:`x*exp(x^2)/(x^2+exp(${qAscii}x^3))`});
+  }
+
+  return ex;
+}
+
+let exercices = genererExercices();
 
 const groupes = {
   "grille-11-1": [0,1,2,3],
@@ -824,99 +1235,12 @@ const groupes = {
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
-function construireGrilles() {
-  for (const [gridId, indices] of Object.entries(groupes)) {
-    const grille = document.getElementById(gridId);
-    grille.innerHTML = '';
-    indices.forEach((idx, pos) => {
-      const ex = exercices[idx];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.id = 'q-' + idx;
-      div.innerHTML = `
-        <span class="q-lettre">${lettres[pos]})</span>
-        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
-        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-        <span class="q-statut" id="statut-${idx}"></span>
-        <div class="clavier-visuel" id="clavier-${idx}">
-          <div class="clavier-groupe">
-            <span class="clavier-label">Chiffres</span>
-            <button onclick="inserer(${idx},'7')">7</button>
-            <button onclick="inserer(${idx},'8')">8</button>
-            <button onclick="inserer(${idx},'9')">9</button>
-            <button onclick="inserer(${idx},'4')">4</button>
-            <button onclick="inserer(${idx},'5')">5</button>
-            <button onclick="inserer(${idx},'6')">6</button>
-            <button onclick="inserer(${idx},'1')">1</button>
-            <button onclick="inserer(${idx},'2')">2</button>
-            <button onclick="inserer(${idx},'3')">3</button>
-            <button onclick="inserer(${idx},'0')">0</button>
-            <button onclick="inserer(${idx},',')">,</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Opérations</span>
-            <button onclick="inserer(${idx},'+')">+</button>
-            <button onclick="inserer(${idx},'-')">−</button>
-            <button onclick="insererFonction(${idx},'*')">×</button>
-            <button onclick="insererFonction(${idx},'/')">÷</button>
-            <button onclick="inserer(${idx},'(')">(</button>
-            <button onclick="inserer(${idx},')')">)</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Puissances</span>
-            <button onclick="insererPuissance(${idx},'2')">x²</button>
-            <button onclick="insererPuissance(${idx},'3')">x³</button>
-            <button onclick="insererExposant(${idx})">xⁿ</button>
-            <button onclick="insererRacine(${idx})">√</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Fraction</span>
-            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Comparaison</span>
-            <button onclick="inserer(${idx},'>')">&gt;</button>
-            <button onclick="inserer(${idx},'<')">&lt;</button>
-            <button onclick="inserer(${idx},'>=')">&geq;</button>
-            <button onclick="inserer(${idx},'<=')">&leq;</button>
-          </div>
-          <div class="clavier-groupe">
-            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-          </div>
-          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
-        </div>
-      `;
-      grille.appendChild(div);
-    });
-  }
-}
-
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  fermerAutresAides(idx);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
   clavier.classList.toggle('ouvert', !etaitOuvert);
-}
-
-function toggleAide(idx) {
-  const aide = document.getElementById('aide-' + idx);
-  const etaitOuverte = aide.classList.contains('ouverte');
-  fermerAutresAides(idx);
-  fermerAutresClaviers(idx);
-  aide.classList.toggle('ouverte', !etaitOuverte);
-}
-
-function fermerAutresAides(idxActuel) {
-  exercices.forEach((ex, idx) => {
-    if (idx !== idxActuel) {
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
-    }
-  });
 }
 
 function placerCurseur(input, pos, fin) {
@@ -1042,8 +1366,13 @@ function reculer(idx) {
   reinitialiserStatut(idx);
 }
 
+const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum']);
 function normaliserSaisie(str) {
-  return String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
+  // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
+  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  return s;
 }
 
 function checkEqualNumeric(userInput, correctExpr) {
@@ -1434,8 +1763,6 @@ function fermerAutresClaviers(idxActuel) {
     if (idx !== idxActuel) {
       const clavier = document.getElementById('clavier-' + idx);
       if (clavier) clavier.classList.remove('ouvert');
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
     }
   });
 }
@@ -1467,10 +1794,29 @@ function convertirSqrt(s) {
   }
   return s;
 }
+function convertirExposant(s) {
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '^' && s[i+1] === '(') {
+      let depth = 1, j = i + 2;
+      while (j < s.length && depth > 0) {
+        if (s[j] === '(') depth++;
+        else if (s[j] === ')') depth--;
+        j++;
+      }
+      result += '^{' + s.slice(i+2, j-1) + '}';
+      i = j - 1;
+    } else {
+      result += s[i];
+    }
+  }
+  return result;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
   s = convertirSqrt(s);
+  s = convertirExposant(s);
   s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/\*/g, '\\times ');
@@ -1531,6 +1877,9 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
+    }
+    if (ex.type === 'paire') {
+      return `${jsVersLatex(ex.pa)} \\; ; \\; ${jsVersLatex(ex.pb)}`;
     }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
@@ -1606,7 +1955,22 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  document.getElementById('toutes-reponses-panneau').classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+function toggleToutesReponses() {
+  const panel = document.getElementById('toutes-reponses-panneau');
+  const estOuvert = panel.classList.contains('visible');
+  if (!estOuvert) {
+    panel.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panel]);
+  }
+  panel.classList.toggle('visible', !estOuvert);
+  document.getElementById('btn-toutes-reponses').textContent = !estOuvert ? 'Masquer toutes les réponses' : 'Voir toutes les réponses';
 }
 
 
@@ -1661,11 +2025,49 @@ function necessiteAide(ex) {
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
+function texteAideGroupe(indices) {
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (necessiteAide(ex)) return aideContextuellePour(ex);
+  }
+  return null;
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const conteneur = titre.querySelector('span:not(.picto-niveau)') || titre;
+  const btn = document.createElement('button');
+  btn.className = 'q-aide-btn';
+  btn.title = 'Comment répondre ?';
+  btn.textContent = '?';
+  btn.onclick = () => toggleAideGroupe(gridId);
+  conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.after(bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  const etaitOuverte = aide.classList.contains('ouverte');
+  fermerAutresClaviers(-1);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
 
 function construireGrilles() {
   for (const [gridId, indices] of Object.entries(groupes)) {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
+    injecterAideGroupe(gridId, indices);
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
@@ -1675,12 +2077,6 @@ function construireGrilles() {
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
-      const boutonAide = necessiteAide(ex)
-        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
-        : '';
-      const bulleAide = necessiteAide(ex)
-        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
-        : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
@@ -1691,9 +2087,7 @@ function construireGrilles() {
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
-        ${boutonAide}
         <span class="q-statut" id="statut-${idx}"></span>
-        ${bulleAide}
       `;
       grille.appendChild(div);
     });

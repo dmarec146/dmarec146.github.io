@@ -243,8 +243,10 @@ window.MathJax = {
   .calcul-titre:first-child { margin-top: 0; }
   .picto-niveau {
     display: inline-flex;
+    align-items: center;
     gap: 2px;
     flex-shrink: 0;
+    margin-left: auto;
     text-decoration: none;
   }
 
@@ -325,6 +327,7 @@ window.MathJax = {
     min-width: 0;
     background: white;
     min-height: 40px;
+    --contains-highlight-background-color: transparent;
   }
   .q-mathfield::part(menu-toggle) { display: none; }
   .q-mathfield::part(virtual-keyboard-toggle) { display: none; }
@@ -357,11 +360,13 @@ window.MathJax = {
     background: var(--bleu-clair);
     border: 1.5px solid var(--bleu);
     border-radius: 50%;
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
+    vertical-align: middle;
+    margin-left: 6px;
     font-weight: bold;
     color: var(--bleu);
     flex: 0 0 auto;
@@ -716,6 +721,8 @@ window.MathJax = {
 <div class="barre-controle">
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -726,6 +733,8 @@ window.MathJax = {
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
 
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-11.html">&larr; Fiche précédente</a>
@@ -734,82 +743,469 @@ window.MathJax = {
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function fracStr(n, d) {
+  if (d < 0) { n = -n; d = -d; }
+  const g = pgcd(n, d);
+  n /= g; d /= g;
+  return d === 1 ? String(n) : `${n}/${d}`;
+}
+function fracLatex(n, d) {
+  if (d < 0) { n = -n; d = -d; }
+  const g = pgcd(n, d);
+  n /= g; d /= g;
+  if (d === 1) return String(n);
+  return n < 0 ? `-\\dfrac{${-n}}{${d}}` : `\\dfrac{${n}}{${d}}`;
+}
+function coefPrefixe(n) {
+  return n === 1 ? '' : n === -1 ? '-' : `${n}*`;
+}
+function coefPrefixeL(n) {
+  return n === 1 ? '' : n === -1 ? '-' : `${n}`;
+}
+function fmtLin(a, b, ascii, vr) {
+  vr = vr || 'x';
+  const mult = ascii ? '*' : '';
+  let s = a === 1 ? vr : a === -1 ? '-'+vr : (a === 0 ? '' : `${a}${mult}${vr}`);
+  if (b > 0) s += (s ? '+' : '') + b;
+  else if (b < 0) s += b;
+  else if (!s) s = '0';
+  return s;
+}
+function suite(a, b, ascii) {
+  const mult = ascii ? '*' : '';
+  let s = '';
+  if (a !== 0) {
+    s += (a > 0 ? '+' : '-');
+    const absA = Math.abs(a);
+    s += absA === 1 ? 'x' : `${absA}${mult}x`;
+  }
+  if (b > 0) s += '+' + b;
+  else if (b < 0) s += b;
+  return s;
+}
+function melanger(tableau) {
+  for (let i = tableau.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tableau[i], tableau[j]] = [tableau[j], tableau[i]];
+  }
+  return tableau;
+}
 
-const exercices = [
-  // Calcul 12.1 - factorisation I (4 items)
-  {id:"12.1 a)", type:"alg", texteLibre:true, enonce:"\\(5x(3x+1)-3(6x+2)\\)", reponse:"(3*x+1)*(5*x-6)"},
-  {id:"12.1 b)", type:"alg", texteLibre:true, enonce:"\\((2x-1)(7x+2)-3x(2x-1)\\)", reponse:"2*(2*x-1)*(2*x+1)"},
-  {id:"12.1 c)", type:"alg", texteLibre:true, enonce:"\\(36-(7x+4)^2\\)", reponse:"(2-7*x)*(7*x+10)"},
-  {id:"12.1 d)", type:"alg", texteLibre:true, enonce:"\\(7x+2-(4-49x^2)\\)", reponse:"(7*x-1)*(7*x+2)"},
-  // Calcul 12.2 - factorisation II (4 items)
-  {id:"12.2 a)", type:"alg", texteLibre:true, enonce:"\\((3x-5)(5x+1)+9x^2-25\\)", reponse:"2*(3*x-5)*(4*x+3)"},
-  {id:"12.2 b)", type:"alg", texteLibre:true, enonce:"\\((x-7)(2x+3)-4x^2+9\\)", reponse:"-(x+4)*(2*x+3)"},
-  {id:"12.2 c)", type:"alg", texteLibre:true, enonce:"\\(x^4-1\\)", reponse:"(x-1)*(x+1)*(x^2+1)"},
-  {id:"12.2 d)", type:"alg", texteLibre:true, enonce:"\\((x+y)^2-(x-y)^2\\)", reponse:"4*x*y"},
-  // Calcul 12.3 - dérivées de sommes (2 items)
-  {id:"12.3 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^x+4x\\)", reponse:"exp(x)+4"},
-  {id:"12.3 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=5e^x-7x+3\\)", reponse:"5*exp(x)-7"},
-  // Calcul 12.4 - dérivées de produits (4 items)
-  {id:"12.4 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=7xe^x\\)", reponse:"7*(x+1)*exp(x)"},
-  {id:"12.4 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=x^2e^x\\)", reponse:"x*(x+2)*exp(x)"},
-  {id:"12.4 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(3x-1)e^x\\)", reponse:"(3*x+2)*exp(x)"},
-  {id:"12.4 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(2-xe^x)^2\\)", reponse:"2*(x+1)*(x*exp(x)-2)*exp(x)"},
-  // Calcul 12.5 - dérivées de quotients (4 items)
-  {id:"12.5 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{e^x}{x^2+1}\\)", reponse:"(x-1)^2*exp(x)/(x^2+1)^2"},
-  {id:"12.5 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{2}{4x^2e^x+7}\\)", reponse:"-8*x*(x+2)*exp(x)/(4*x^2*exp(x)+7)^2"},
-  {id:"12.5 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{e^x-2}{e^x+1}\\)", reponse:"3*exp(x)/(exp(x)+1)^2"},
-  {id:"12.5 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{xe^x}{3xe^x+1}\\)", reponse:"(x+1)*exp(x)/(3*x*exp(x)+1)^2"},
-  // Calcul 12.6 - sommes du type exp(ax+b) (2 items)
-  {id:"12.6 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=3e^{5x}+6e^{2x}\\)", reponse:"15*exp(5*x)+12*exp(2*x)"},
-  {id:"12.6 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=3e^{-x}+e^{2x+1}\\)", reponse:"2*exp(2*x+1)-3*exp(-x)"},
-  // Calcul 12.7 - produits du type exp(ax+b) (4 items)
-  {id:"12.7 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(3x^2-1)e^{-x+1}\\)", reponse:"(-3*x^2+6*x+1)*exp(1-x)"},
-  {id:"12.7 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(3e^{x-1}-5)e^{2-3x}\\)", reponse:"(15-6*exp(x-1))*exp(2-3*x)"},
-  {id:"12.7 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(e^{2x}-5)(e^{-x}+e^{x})\\)", reponse:"3*exp(3*x)-4*exp(x)+5*exp(-x)"},
-  {id:"12.7 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=(e^x-e^{-x})^2\\)", reponse:"2*(exp(x)-1)*(exp(x)+1)*(exp(2*x)+1)*exp(-2*x)"},
-  // Calcul 12.8 - quotients du type exp(ax+b) (6 items)
-  {id:"12.8 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{1}{e^{7x-4}}\\)", reponse:"-7*exp(4-7*x)"},
-  {id:"12.8 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{3}{4e^{-x}+3}\\)", reponse:"12*exp(x)/(3*exp(x)+4)^2"},
-  {id:"12.8 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{2x}{e^{3x-2}+7}\\)", reponse:"-2*(3*x*exp(-2)*exp(3*x)-exp(-2)*exp(3*x)-7)/(exp(-2)*exp(3*x)+7)^2"},
-  {id:"12.8 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{7xe^{-x}}{e^{2x-1}}\\)", reponse:"7*(1-3*x)*exp(1-3*x)"},
-  {id:"12.8 e)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{e^x-e^{-x}}{e^x+e^{-x}}\\)", reponse:"4/(exp(x)+exp(-x))^2"},
-  {id:"12.8 f)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{(1-5x^2)e^{-3x}}{3e^{-x+1}}\\)", reponse:"(1/3)*exp(1)*(10*x*exp(-2*x)+3*(5*x^2-1)*exp(-2*x))"},
-  // Calcul 12.9 - derivee d'un quotient (1 item)
-  {id:"12.9", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{3xe^{-x}-2}{x^2e^x+1}\\)", reponse:"(-x*(x+2)*(3*x-2*exp(x))*exp(x)+3*(1-x)*(x^2*exp(x)+1))*exp(-x)/(x^2*exp(x)+1)^2"},
-  // Calcul 12.10 - exponentielle et racine carree (4 items)
-  {id:"12.10 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^{2-3x}\\sqrt{x}\\)", reponse:"(1-6*x)*exp(2-3*x)/(2*sqrt(x))"},
-  {id:"12.10 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{\\sqrt{x}}{e^x+1}\\)", reponse:"-(2*x*exp(x)-exp(x)-1)/(2*sqrt(x)*(exp(x)+1)^2)"},
-  {id:"12.10 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=\\dfrac{e^x\\sqrt{x}}{x^2+1}\\)", reponse:"(2*x^3-3*x^2+2*x+1)*exp(x)/(2*sqrt(x)*(x^2+1)^2)"},
-  {id:"12.10 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=x^2e^{2x}\\sqrt{x}\\)", reponse:"x^(3/2)*(4*x+5)*exp(2*x)/2"},
-  // Calcul 12.11 - calculs de nombres derives (2 items)
-  {id:"12.11 a)", type:"num", texteLibre:true, enonce:"Avec \\(f(x)=(2-x^3)e^{3-2x}\\), calculer \\(f'(2)\\)", reponse:"0"},
-  {id:"12.11 b)", type:"num", texteLibre:true, enonce:"Avec \\(f(x)=\\dfrac{e^{-x}-8}{2e^{3x}+5}\\), calculer \\(f'(-1)\\)", reponse:"(48-8*exp(1)-5*exp(4))*exp(3)/(4+20*exp(3)+25*exp(6))"},
-  // Calcul 12.12 - equations de tangentes (4 items)
-  {id:"12.12 a)", type:"paire", texteLibre:true, enonce:"Avec \\(f(x)=e^x\\) et \\(a=0\\)", pa:"1", pb:"1"},
-  {id:"12.12 b)", type:"paire", texteLibre:true, enonce:"Avec \\(f(x)=x^2e^{1-x}\\) et \\(a=3\\)", pa:"-3/exp(2)", pb:"18/exp(2)"},
-  {id:"12.12 c)", type:"paire", texteLibre:true, enonce:"Avec \\(f(x)=\\dfrac{2}{4+3e^{-x}}\\) et \\(a=1\\)", pa:"6*exp(1)/(9+24*exp(1)+16*exp(2))", pb:"8*exp(2)/(9+24*exp(1)+16*exp(2))"},
-  {id:"12.12 d)", type:"paire", texteLibre:true, enonce:"Avec \\(f(x)=\\dfrac{e^{2x}-2}{e^{3x}+3}\\) et \\(a=0\\)", pa:"11/16", pb:"-1/4"},
-  // Calcul 12.13 - variations, QCM (1 item)
-  {id:"12.13", type:"qcm", texteLibre:true, enonce:"Après avoir calculé et factorisé la dérivée de \\(x\\mapsto (5-x)e^{2-x}\\), déterminer si cette dernière est :", bonneReponse:"c", options:[{lettre:"a",texte:"décroissante sur \\(]-\\infty,7]\\)",texteLibreOption:true},{lettre:"b",texte:"croissante sur \\(]-\\infty,5]\\)",texteLibreOption:true},{lettre:"c",texte:"croissante sur \\([6,+\\infty[\\)",texteLibreOption:true}]},
-  // Calcul 12.14 - composees I (4 items, avance)
-  {id:"12.14 a)", type:"alg", texteLibre:true, enonce:"Sur ℝ, \\(f(x)=e^{x^3}\\)", reponse:"3*x^2*exp(x^3)"},
-  {id:"12.14 b)", type:"alg", texteLibre:true, enonce:"Sur \\(]0,+\\infty[\\), \\(f(x)=e^{\\sqrt{x}}\\)", reponse:"exp(sqrt(x))/(2*sqrt(x))"},
-  {id:"12.14 c)", type:"alg", texteLibre:true, enonce:"Sur ℝ, \\(f(x)=e^{x^2-2x}\\)", reponse:"2*(x-1)*exp(x^2-2*x)"},
-  {id:"12.14 d)", type:"alg", texteLibre:true, enonce:"Sur ℝ, \\(f(x)=e^{e^x}\\)", reponse:"exp(x+exp(x))"},
-  // Calcul 12.15 - composees II (3 items, avance)
-  {id:"12.15 a)", type:"alg", texteLibre:true, enonce:"Sur ℝ, \\(f(x)=e^{3x^2-2x+7}\\)", reponse:"(6*x-2)*exp(3*x^2-2*x+7)"},
-  {id:"12.15 b)", type:"alg", texteLibre:true, enonce:"Sur \\(]0,+\\infty[\\), \\(f(x)=e^{x\\sqrt{x}}\\)", reponse:"3*sqrt(x)*exp(x^(3/2))/2"},
-  {id:"12.15 c)", type:"alg", texteLibre:true, enonce:"Sur ℝ, \\(f(x)=e^{e^{x^2}}\\)", reponse:"2*x*exp(x^2)*exp(exp(x^2))"},
-  // Calcul 12.16 - composees III (4 items, avance)
-  {id:"12.16 a)", type:"alg", texteLibre:true, enonce:"\\(f(x)=4xe^{2x-x^3}\\)", reponse:"4*(1+2*x-3*x^3)*exp(2*x-x^3)"},
-  {id:"12.16 b)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^{x^2}e^{2x-1}\\)", reponse:"2*(x+1)*exp(-1)*exp(2*x)*exp(x^2)"},
-  {id:"12.16 c)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^{x^5}-2x^3e^{5x}\\)", reponse:"x^2*(5*x^2*exp(x^5)-10*x*exp(5*x)-6*exp(5*x))"},
-  {id:"12.16 d)", type:"alg", texteLibre:true, enonce:"\\(f(x)=e^{x^3+2x}e^{e^x}\\)", reponse:"(3*x^2+2)*exp(x^3+2*x)*exp(exp(x))+exp(x)*exp(x^3+2*x)*exp(exp(x))"},
-  // Calcul 12.17 - somme, Sigma (3 items, avance)
-  {id:"12.17 a)", type:"somme", texteLibre:true, enonce:"Soit \\(x\\) un réel strictement positif et \\(n\\) un entier naturel non nul. Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\exp(kx)\\)", reponse:"sum(k,1,n,exp(k*x))"},
-  {id:"12.17 b)", type:"somme", texteLibre:true, enonce:"Donner l'expression de la dérivée de \\(x\\mapsto \\exp(x)+\\exp(2x)+\\exp(3x)+\\cdots +\\exp(nx)\\)", reponse:"sum(k,1,n,k*exp(k*x))"},
-  {id:"12.17 c)", type:"somme", texteLibre:true, enonce:"En déduire une expression simple de \\(\\displaystyle\\sum_{k=1}^{n}k\\exp(kx)\\)", reponse:"sum(k,1,n,k*exp(k*x))"}
-];
+function genererExercices() {
+  const ex = [];
+
+  // ---------- 12.1 : factorisation I ----------
+  {
+    let p, q; do { p = aleaNonNul(-6,6); q = aleaNonNul(-6,6); } while (pgcd(p,q) !== 1);
+    const A = aleaNonNul(-6,6), B = aleaNonNul(-6,6), k = aleaNonNul(-3,3);
+    ex.push({id:"12.1 a)", type:"alg", texteLibre:true,
+      enonce:`\\(${A===1?'':A===-1?'-':A}x(${fmtLin(p,q,false)})${B>=0?'-':'+'}${Math.abs(B)===1?'':Math.abs(B)}(${fmtLin(k*p,k*q,false)})\\)`,
+      reponse:`(${fmtLin(p,q,true)})*(${fmtLin(A,-B*k,true)})`});
+  }
+  {
+    const p = aleaNonNul(-4,4), q = aleaNonNul(-4,4);
+    let r, s, B, rr;
+    do { r = aleaNonNul(-6,6); s = aleaNonNul(-6,6); B = aleaNonNul(-4,4); rr = r - B; } while (rr === 0);
+    const ss = s;
+    const g = pgcd(rr, ss);
+    ex.push({id:"12.1 b)", type:"alg", texteLibre:true,
+      enonce:`\\((${fmtLin(p,q,false)})(${fmtLin(r,s,false)})${B>=0?'-':'+'}${Math.abs(B)===1?'':Math.abs(B)}x(${fmtLin(p,q,false)})\\)`,
+      reponse:`${coefPrefixe(g)}(${fmtLin(p,q,true)})*(${fmtLin(rr/g,ss/g,true)})`});
+  }
+  {
+    let E, F, H; do { E = aleaNonNul(-6,6); F = aleaNonNul(-6,6); H = aleaNonNul(-6,6); } while (F === H || F+H === 0);
+    const N = aleaNonNul(1,6);
+    ex.push({id:"12.1 c)", type:"alg", texteLibre:true,
+      enonce:`\\(${fmtLin(E*(F+H), F*H+N*N, false)}-(${N*N}-${E*E===1?'':E*E}x^2)\\)`,
+      reponse:`(${fmtLin(E,F,true)})*(${fmtLin(E,H,true)})`});
+  }
+  {
+    const N = aleaNonNul(1,8), p = aleaNonNul(-6,6), q = aleaNonNul(-6,6);
+    ex.push({id:"12.1 d)", type:"alg", texteLibre:true,
+      enonce:`\\(${fmtLin(p,q,false)}-(${N*N}-${p*p===1?'':p*p}x^2)\\)`,
+      reponse:`(${fmtLin(-p,N-q,true)})*(${fmtLin(p,N+q,true)})`});
+  }
+
+  // ---------- 12.2 : factorisation II ----------
+  {
+    const p = aleaNonNul(1,6), q = aleaNonNul(1,6);
+    let r, s, rr;
+    do { r = aleaNonNul(-6,6); s = aleaNonNul(-6,6); rr = r+p; } while (rr === 0);
+    const ss = s+q;
+    const g = pgcd(rr,ss);
+    ex.push({id:"12.2 a)", type:"alg", texteLibre:true,
+      enonce:`\\((${fmtLin(r,s,false)})(${fmtLin(p,-q,false)})+${p*p===1?'':p*p}x^2-${q*q}\\)`,
+      reponse:`${coefPrefixe(g)}(${fmtLin(p,-q,true)})*(${fmtLin(rr/g,ss/g,true)})`});
+  }
+  {
+    const C = aleaNonNul(1,6), D = aleaNonNul(1,6);
+    let r, s, rr;
+    do { r = aleaNonNul(-6,6); s = aleaNonNul(-6,6); rr = r - C; } while (rr === 0);
+    const ss = s + D;
+    const g = pgcd(rr,ss);
+    ex.push({id:"12.2 b)", type:"alg", texteLibre:true,
+      enonce:`\\((${fmtLin(r,s,false)})(${fmtLin(C,D,false)})-${C*C===1?'':C*C}x^2+${D*D}\\)`,
+      reponse:`${coefPrefixe(g)}(${fmtLin(C,D,true)})*(${fmtLin(rr/g,ss/g,true)})`});
+  }
+  {
+    const k = aleaNonNul(1,4);
+    ex.push({id:"12.2 c)", type:"alg", texteLibre:true,
+      enonce:`\\(x^4-${k**4}\\)`,
+      reponse:`(x-${k})*(x+${k})*(x^2+${k*k})`});
+  }
+  {
+    const a = aleaNonNul(1,5), b = aleaNonNul(1,5);
+    ex.push({id:"12.2 d)", type:"alg", texteLibre:true,
+      enonce:`\\((${a===1?'':a}x+${b===1?'':b}y)^2-(${a===1?'':a}x-${b===1?'':b}y)^2\\)`,
+      reponse:`${coefPrefixe(4*a*b)}x*y`});
+  }
+
+  // ---------- 12.3 : dérivées de sommes ----------
+  {
+    const A = aleaNonNul(-8,8);
+    ex.push({id:"12.3 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=e^x${suite(A,0,false)}\\)`,
+      reponse:`exp(x)${A>=0?'+':''}${A}`, _fAscii:`exp(x)+${A}*x`});
+  }
+  {
+    const C = aleaNonNul(-6,6), D = aleaNonNul(-8,8), E = alea(-6,6);
+    ex.push({id:"12.3 b)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=${coefPrefixeL(C)}e^x${suite(D,E,false)}\\)`,
+      reponse:`${coefPrefixe(C)}exp(x)${D>=0?'+':''}${D}`, _fAscii:`${coefPrefixe(C)}exp(x)+${D}*x+${E}`});
+  }
+
+  // ---------- 12.4 : dérivées de produits ----------
+  {
+    const A = aleaNonNul(-6,6);
+    ex.push({id:"12.4 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${coefPrefixeL(A)}xe^x\\)`,
+      reponse:`${coefPrefixe(A)}(x+1)*exp(x)`, _fAscii:`${coefPrefixe(A)}x*exp(x)`});
+  }
+  {
+    const A = aleaNonNul(-5,5);
+    ex.push({id:"12.4 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${coefPrefixeL(A)}x^2e^x\\)`,
+      reponse:`${coefPrefixe(A)}x*(x+2)*exp(x)`, _fAscii:`${coefPrefixe(A)}x^2*exp(x)`});
+  }
+  {
+    const A = aleaNonNul(-6,6), B = alea(-6,6);
+    ex.push({id:"12.4 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(${fmtLin(A,B,false)})e^x\\)`,
+      reponse:`(${fmtLin(A,A+B,true)})*exp(x)`, _fAscii:`(${fmtLin(A,B,true)})*exp(x)`});
+  }
+  {
+    const M = aleaNonNul(-3,3), N = aleaNonNul(-6,6);
+    ex.push({id:"12.4 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(${N}${M>=0?'-':'+'}${Math.abs(M)===1?'':Math.abs(M)}xe^x)^2\\)`,
+      reponse:`${2*M}*(x+1)*(${coefPrefixe(M)}x*exp(x)${N>=0?'-':'+'}${Math.abs(N)})*exp(x)`,
+      _fAscii:`(${N}${M>=0?'-':'+'}${Math.abs(M)===1?'':Math.abs(M)+'*'}x*exp(x))^2`});
+  }
+
+  // ---------- 12.5 : dérivées de quotients ----------
+  {
+    const C = aleaNonNul(-6,6);
+    ex.push({id:"12.5 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${coefPrefixeL(C)}e^x}{x^2+1}\\)`,
+      reponse:`${coefPrefixe(C)}(x-1)^2*exp(x)/(x^2+1)^2`, _fAscii:`${coefPrefixe(C)}exp(x)/(x^2+1)`});
+  }
+  {
+    const C = aleaNonNul(1,6), A = aleaNonNul(-5,5), B = aleaNonNul(1,8);
+    ex.push({id:"12.5 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${C}}{${coefPrefixeL(A)}x^2e^x+${B}}\\)`,
+      reponse:`${coefPrefixe(-C*A)}x*(x+2)*exp(x)/(${coefPrefixe(A)}x^2*exp(x)+${B})^2`,
+      _fAscii:`${C}/(${coefPrefixe(A)}x^2*exp(x)+${B})`});
+  }
+  {
+    let A, B; do { A = aleaNonNul(-6,6); B = aleaNonNul(-6,6); } while (A === B);
+    ex.push({id:"12.5 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{e^x${A>=0?'+':''}${A}}{e^x${B>=0?'+':''}${B}}\\)`,
+      reponse:`${coefPrefixe(B-A)}exp(x)/(exp(x)${B>=0?'+':''}${B})^2`,
+      _fAscii:`(exp(x)${A>=0?'+':''}${A})/(exp(x)${B>=0?'+':''}${B})`});
+  }
+  {
+    const C = aleaNonNul(-6,6), D = aleaNonNul(-8,8);
+    ex.push({id:"12.5 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{xe^x}{${coefPrefixeL(C)}xe^x${D>=0?'+':''}${D}}\\)`,
+      reponse:`${coefPrefixe(D)}(x+1)*exp(x)/(${coefPrefixe(C)}x*exp(x)${D>=0?'+':''}${D})^2`,
+      _fAscii:`x*exp(x)/(${coefPrefixe(C)}x*exp(x)${D>=0?'+':''}${D})`});
+  }
+
+  // ---------- 12.6 : sommes exp(ax+b) ----------
+  {
+    let p, q; do { p = aleaNonNul(-6,6); q = aleaNonNul(-6,6); } while (p === q);
+    const C1 = aleaNonNul(1,6), C2 = aleaNonNul(1,6);
+    ex.push({id:"12.6 a)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=${C1===1?'':C1}e^{${fmtLin(p,0,false)}}+${C2===1?'':C2}e^{${fmtLin(q,0,false)}}\\)`,
+      reponse:`${coefPrefixe(C1*p)}exp(${fmtLin(p,0,true)})${(C2*q)>=0?'+':'-'}${Math.abs(C2*q)===1?'':Math.abs(C2*q)+'*'}exp(${fmtLin(q,0,true)})`,
+      _fAscii:`${C1}*exp(${fmtLin(p,0,true)})+${C2}*exp(${fmtLin(q,0,true)})`});
+  }
+  {
+    let p, q; do { p = aleaNonNul(-6,6); q = aleaNonNul(-6,6); } while (p === q);
+    const C = aleaNonNul(-6,6), r1 = alea(-4,4), D = aleaNonNul(-6,6), r2 = alea(-4,4);
+    ex.push({id:"12.6 b)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=${coefPrefixeL(C)}e^{${fmtLin(p,r1,false)}}${D>=0?'+':''}${coefPrefixeL(D)}e^{${fmtLin(q,r2,false)}}\\)`,
+      reponse:`${coefPrefixe(C*p)}exp(${fmtLin(p,r1,true)})${(D*q)>=0?'+':'-'}${Math.abs(D*q)===1?'':Math.abs(D*q)+'*'}exp(${fmtLin(q,r2,true)})`,
+      _fAscii:`${coefPrefixe(C)}exp(${fmtLin(p,r1,true)})+${coefPrefixe(D)}exp(${fmtLin(q,r2,true)})`});
+  }
+
+  // ---------- 12.7 : produits exp(ax+b) ----------
+  {
+    const A = aleaNonNul(-4,4), B = aleaNonNul(-6,6);
+    let p, q; do { p = aleaNonNul(-3,3); q = alea(-4,4); } while (p === 0);
+    const t1 = p*A, t2 = 2*A, t3 = p*B;
+    ex.push({id:"12.7 a)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=(${A===1?'':A===-1?'-':A}x^2${B>=0?'+':''}${B})e^{${fmtLin(p,q,false)}}\\)`,
+      reponse:`(${coefPrefixe(t1)}x^2${t2>=0?'+':''}${t2}*x${t3>=0?'+':''}${t3})*exp(${fmtLin(p,q,true)})`,
+      _fAscii:`(${A}*x^2${B>=0?'+':''}${B})*exp(${fmtLin(p,q,true)})`});
+  }
+  {
+    const C = aleaNonNul(-4,4), D = aleaNonNul(-6,6);
+    const m = aleaNonNul(-3,3), r1 = alea(-3,3);
+    let p, q; do { p = aleaNonNul(-3,3); q = alea(-3,3); } while (p === -m);
+    const coefExp = C*(m+p), constTerm = -p*D;
+    ex.push({id:"12.7 b)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=(${coefPrefixeL(C)}e^{${fmtLin(m,r1,false)}}${(-D)>=0?'+':''}${-D})e^{${fmtLin(p,q,false)}}\\)`,
+      reponse:`(${constTerm}${coefExp>=0?'+':''}${coefPrefixe(coefExp)}exp(${fmtLin(m,r1,true)}))*exp(${fmtLin(p,q,true)})`,
+      _fAscii:`(${coefPrefixe(C)}exp(${fmtLin(m,r1,true)})${(-D)>=0?'+':''}${-D})*exp(${fmtLin(p,q,true)})`});
+  }
+  {
+    const A = aleaNonNul(-6,6);
+    ex.push({id:"12.7 c)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=(e^{2x}${A>=0?'+':''}${A})(e^{-x}+e^{x})\\)`,
+      reponse:`3*exp(3*x)${(1+A)>=0?'+':''}${coefPrefixe(1+A)}exp(x)${(-A)>=0?'+':''}${coefPrefixe(-A)}exp(-x)`,
+      _fAscii:`(exp(2*x)${A>=0?'+':''}${A})*(exp(-x)+exp(x))`});
+  }
+  {
+    const C = aleaNonNul(-4,4);
+    ex.push({id:"12.7 d)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=(e^x${(-C)>=0?'+':''}${coefPrefixeL(-C)}e^{-x})^2\\)`,
+      reponse:`2*(exp(4*x)-${C*C})*exp(-2*x)`,
+      _fAscii:`(exp(x)${(-C)>=0?'+':''}${coefPrefixe(-C)}exp(-x))^2`});
+  }
+
+  // ---------- 12.8 : quotients exp(ax+b) ----------
+  {
+    const p = aleaNonNul(-6,6), q = alea(-6,6);
+    ex.push({id:"12.8 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{1}{e^{${fmtLin(p,q,false)}}}\\)`,
+      reponse:`${coefPrefixe(-p)}exp(${fmtLin(-p,-q,true)})`,
+      _fAscii:`1/exp(${fmtLin(p,q,true)})`});
+  }
+  {
+    const C = aleaNonNul(-6,6), A = aleaNonNul(1,6), B = aleaNonNul(1,6);
+    ex.push({id:"12.8 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${C}}{${A===1?'':A}e^{-x}+${B}}\\)`,
+      reponse:`${coefPrefixe(C*A)}exp(x)/(${coefPrefixe(B)}exp(x)+${A})^2`,
+      _fAscii:`${C}/(${A===1?'':A+'*'}exp(-x)+${B})`});
+  }
+  {
+    const p = aleaNonNul(-4,4), q = alea(-4,4), B = aleaNonNul(1,8);
+    ex.push({id:"12.8 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{2x}{e^{${fmtLin(p,q,false)}}+${B}}\\)`,
+      reponse:`(2*(${fmtLin(-p,1,true)})*exp(${fmtLin(p,q,true)})+${2*B})/(exp(${fmtLin(p,q,true)})+${B})^2`,
+      _fAscii:`2*x/(exp(${fmtLin(p,q,true)})+${B})`});
+  }
+  {
+    let a, b, c, d; do { a = aleaNonNul(-3,3); b = alea(-3,3); c = aleaNonNul(-3,3); d = alea(-3,3); } while (a === c);
+    const C = aleaNonNul(-6,6), k = a-c, r = b-d;
+    ex.push({id:"12.8 d)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=\\dfrac{${coefPrefixeL(C)}xe^{${fmtLin(a,b,false)}}}{e^{${fmtLin(c,d,false)}}}\\)`,
+      reponse:`${coefPrefixe(C)}(${fmtLin(k,1,true)})*exp(${fmtLin(k,r,true)})`,
+      _fAscii:`${coefPrefixe(C)}x*exp(${fmtLin(a,b,true)})/exp(${fmtLin(c,d,true)})`});
+  }
+  {
+    const p = aleaNonNul(-4,4);
+    ex.push({id:"12.8 e)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=\\dfrac{e^{${fmtLin(p,0,false)}}-e^{${fmtLin(-p,0,false)}}}{e^{${fmtLin(p,0,false)}}+e^{${fmtLin(-p,0,false)}}}\\)`,
+      reponse:`${4*p}/(exp(${fmtLin(p,0,true)})+exp(${fmtLin(-p,0,true)}))^2`,
+      _fAscii:`(exp(${fmtLin(p,0,true)})-exp(${fmtLin(-p,0,true)}))/(exp(${fmtLin(p,0,true)})+exp(${fmtLin(-p,0,true)}))`});
+  }
+  {
+    const A = aleaNonNul(1,6), B = aleaNonNul(1,6), m = aleaNonNul(-3,3), n = aleaNonNul(-3,3), c = alea(-4,4);
+    const k = m-n, r = -c;
+    ex.push({id:"12.8 f)", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=\\dfrac{(1-${A===1?'':A}x^2)e^{${fmtLin(m,0,false)}}}{${B===1?'':B}e^{${fmtLin(n,c,false)}}}\\)`,
+      reponse:`(${coefPrefixe(-A*k)}x^2${(-2*A)>=0?'+':''}${(-2*A)===1?'':(-2*A)===-1?'-':(-2*A)}*x${k>=0?'+':''}${k})${B===1?'':'/'+B}*exp(${fmtLin(k,r,true)})`,
+      _fAscii:`(1-${A===1?'':A+'*'}x^2)*exp(${fmtLin(m,0,true)})/(${B}*exp(${fmtLin(n,c,true)}))`});
+  }
+
+  // ---------- 12.9 : dérivée d'un quotient ----------
+  {
+    const A = aleaNonNul(1,5), B = aleaNonNul(1,6), C = aleaNonNul(1,4);
+    ex.push({id:"12.9", type:"alg", texteLibre:true,
+      enonce:`\\(f(x)=\\dfrac{${A===1?'':A}xe^{-x}-${B}}{x^2e^x+${C}}\\)`,
+      reponse:`(${-2*A}*x^3${coefPrefixe(-A)}x^2+${coefPrefixe(A*C)}(1-x)*exp(-x)+${coefPrefixe(B)}x*(x+2)*exp(x))/(x^2*exp(x)+${C})^2`,
+      _fAscii:`(${A===1?'':A+'*'}x*exp(-x)-${B})/(x^2*exp(x)+${C})`});
+  }
+
+  // ---------- 12.10 : exponentielle et racine carree ----------
+  {
+    const p = aleaNonNul(-4,4), q = alea(-4,4);
+    ex.push({id:"12.10 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=e^{${fmtLin(p,q,false)}}\\sqrt{x}\\)`,
+      reponse:`(${fmtLin(2*p,1,true)})*exp(${fmtLin(p,q,true)})/(2*sqrt(x))`,
+      _fAscii:`exp(${fmtLin(p,q,true)})*sqrt(x)`});
+  }
+  {
+    const p = aleaNonNul(-3,3), B = aleaNonNul(1,6);
+    ex.push({id:"12.10 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{\\sqrt{x}}{e^{${fmtLin(p,0,false)}}+${B}}\\)`,
+      reponse:`((${fmtLin(-2*p,1,true)})*exp(${fmtLin(p,0,true)})+${B})/(2*sqrt(x)*(exp(${fmtLin(p,0,true)})+${B})^2)`,
+      _fAscii:`sqrt(x)/(exp(${fmtLin(p,0,true)})+${B})`});
+  }
+  {
+    const p = aleaNonNul(-3,3), B = aleaNonNul(1,6);
+    ex.push({id:"12.10 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{e^{${fmtLin(p,0,false)}}\\sqrt{x}}{x^2+${B}}\\)`,
+      reponse:`(${2*p}*x^3-3*x^2${(2*p*B)>=0?'+':''}${2*p*B}*x+${B})*exp(${fmtLin(p,0,true)})/(2*sqrt(x)*(x^2+${B})^2)`,
+      _fAscii:`exp(${fmtLin(p,0,true)})*sqrt(x)/(x^2+${B})`});
+  }
+  {
+    const p = aleaNonNul(-3,3);
+    ex.push({id:"12.10 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=x^2e^{${fmtLin(p,0,false)}}\\sqrt{x}\\)`,
+      reponse:`x^(3/2)*(${fmtLin(2*p,5,true)})*exp(${fmtLin(p,0,true)})/2`,
+      _fAscii:`x^2*exp(${fmtLin(p,0,true)})*sqrt(x)`});
+  }
+
+  // ---------- 12.11 : calculs de nombres derives ----------
+  {
+    const p = aleaNonNul(-3,3), a = aleaNonNul(-3,3), A = alea(-6,6);
+    ex.push({id:"12.11 a)", type:"num", texteLibre:true,
+      enonce:`Avec \\(f(x)=(${A}-x^3)e^{${fmtLin(p,-p*a,false)}}\\), calculer \\(f'(${a})\\)`,
+      reponse:`${p*(A-a**3)-3*a*a}`});
+  }
+  {
+    const A = alea(-6,6), B = aleaNonNul(1,4), C = aleaNonNul(-4,4), D = aleaNonNul(1,6);
+    let a; do { a = aleaNonNul(-2,2); } while (false);
+    const EXP1 = (C-1)*a, EXP2 = C*a, EXP3 = -a;
+    const coef1 = -B*(1+C), coef3 = -D, coef2 = -A*B*C;
+    let terme = `${coefPrefixe(coef1)}exp(${EXP1})`;
+    terme += `${coef3>=0?'+':''}${coefPrefixe(coef3)}exp(${EXP3})`;
+    terme += `${coef2>=0?'+':''}${coefPrefixe(coef2)}exp(${EXP2})`;
+    ex.push({id:"12.11 b)", type:"num", texteLibre:true,
+      enonce:`Avec \\(f(x)=\\dfrac{e^{-x}${A>=0?'+':''}${A}}{${B===1?'':B}e^{${fmtLin(C,0,false)}}${D>=0?'+':''}${D}}\\), calculer \\(f'(${a})\\)`,
+      reponse:`(${terme})/(${coefPrefixe(B)}exp(${EXP2})+${D})^2`});
+  }
+
+  // ---------- 12.12 : equations de tangentes ----------
+  {
+    const p = aleaNonNul(-4,4), q = alea(-3,3);
+    ex.push({id:"12.12 a)", type:"paire", texteLibre:true,
+      enonce:`Avec \\(f(x)=e^{${fmtLin(p,q,false)}}\\) et \\(a=0\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`${coefPrefixe(p)}exp(${q})`, pb:`exp(${q})`});
+  }
+  {
+    const q = alea(-3,3), a = aleaNonNul(-3,3);
+    const paVal = a*(2-a), pbVal = a*a*(a-1);
+    ex.push({id:"12.12 b)", type:"paire", texteLibre:true,
+      enonce:`Avec \\(f(x)=x^2e^{${fmtLin(-1,q,false)}}\\) et \\(a=${a}\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`${coefPrefixe(paVal)}exp(${q-a})`, pb:`${coefPrefixe(pbVal)}exp(${q-a})`});
+  }
+  {
+    const C = aleaNonNul(1,4), A = aleaNonNul(1,6), B = aleaNonNul(1,6), a = aleaNonNul(-2,2);
+    const denomStr = `(${A}+${coefPrefixe(B)}exp(${-a}))`;
+    const aCB = Math.abs(a)*C*B;
+    ex.push({id:"12.12 c)", type:"paire", texteLibre:true,
+      enonce:`Avec \\(f(x)=\\dfrac{${C}}{${A}+${B===1?'':B}e^{${fmtLin(-1,0,false)}}}\\) et \\(a=${a}\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`${coefPrefixe(C*B)}exp(${-a})/${denomStr}^2`,
+      pb:`${C}/${denomStr}${a>=0?'-':'+'}${coefPrefixe(aCB)}exp(${-a})/${denomStr}^2`});
+  }
+  {
+    const p = aleaNonNul(-3,3), B = aleaNonNul(1,6), q = aleaNonNul(-3,3), D = aleaNonNul(1,6);
+    ex.push({id:"12.12 d)", type:"paire", texteLibre:true,
+      enonce:`Avec \\(f(x)=\\dfrac{e^{${fmtLin(p,0,false)}}-${B}}{e^{${fmtLin(q,0,false)}}+${D}}\\) et \\(a=0\\) (donner le coefficient directeur puis l'ordonnée à l'origine, séparés par un point-virgule)`,
+      pa:`(${coefPrefixe(p)}(1+${D})${q>=0?'-':'+'}${coefPrefixe(Math.abs(q))}(1-${B}))/(1+${D})^2`,
+      pb:`(1-${B})/(1+${D})`});
+  }
+
+  // ---------- 12.13 : variations (QCM) ----------
+  {
+    const A = aleaNonNul(-4,4), q = alea(-3,3);
+    const seuil = A+1;
+    const opts = melanger([
+      {lettre:'',texte:`décroissante sur \\(]-\\infty,${seuil+1}]\\)`,estBonne:false},
+      {lettre:'',texte:`croissante sur \\(]-\\infty,${A}]\\)`,estBonne:false},
+      {lettre:'',texte:`croissante sur \\([${seuil},+\\infty[\\)`,estBonne:true}
+    ]);
+    let bonneReponse = '';
+    const options = opts.map((o,i) => {
+      const lettre = lettresEtendues[i];
+      if (o.estBonne) bonneReponse = lettre;
+      return {lettre, texte:o.texte, texteLibreOption:true};
+    });
+    ex.push({id:"12.13", type:"qcm", texteLibre:true,
+      enonce:`Après avoir calculé et factorisé la dérivée de \\(x\\mapsto (${A}-x)e^{${fmtLin(-1,q,false)}}\\), déterminer si cette dernière est :`,
+      bonneReponse, options});
+  }
+
+  // ---------- 12.14 : composees I ----------
+  {
+    const k = aleaNonNul(-3,3);
+    ex.push({id:"12.14 a)", type:"alg", texteLibre:true, enonce:`Sur ℝ, \\(f(x)=e^{${coefPrefixeL(k)}x^3}\\)`,
+      reponse:`${3*k}*x^2*exp(${coefPrefixe(k)}x^3)`, _fAscii:`exp(${coefPrefixe(k)}x^3)`});
+  }
+  {
+    const k = aleaNonNul(-4,4);
+    ex.push({id:"12.14 b)", type:"alg", texteLibre:true, enonce:`Sur \\(]0,+\\infty[\\), \\(f(x)=e^{${coefPrefixeL(k)}\\sqrt{x}}\\)`,
+      reponse:`${coefPrefixe(k)}exp(${coefPrefixe(k)}sqrt(x))/(2*sqrt(x))`, _fAscii:`exp(${coefPrefixe(k)}sqrt(x))`});
+  }
+  {
+    const b = aleaNonNul(-6,6);
+    ex.push({id:"12.14 c)", type:"alg", texteLibre:true, enonce:`Sur ℝ, \\(f(x)=e^{x^2${suite(b,0,false)}}\\)`,
+      reponse:`(${fmtLin(2,b,true)})*exp(x^2${suite(b,0,true)})`, _fAscii:`exp(x^2${suite(b,0,true)})`});
+  }
+  {
+    const k = aleaNonNul(-3,3);
+    ex.push({id:"12.14 d)", type:"alg", texteLibre:true, enonce:`Sur ℝ, \\(f(x)=e^{${coefPrefixeL(k)}e^x}\\)`,
+      reponse:`${coefPrefixe(k)}exp(x)*exp(${coefPrefixe(k)}exp(x))`, _fAscii:`exp(${coefPrefixe(k)}exp(x))`});
+  }
+
+  // ---------- 12.15 : composees II ----------
+  {
+    const A = aleaNonNul(-4,4), B = alea(-6,6), C = alea(-8,8);
+    ex.push({id:"12.15 a)", type:"alg", texteLibre:true, enonce:`Sur ℝ, \\(f(x)=e^{${A===1?'':A===-1?'-':A}x^2${suite(B,C,false)}}\\)`,
+      reponse:`(${fmtLin(2*A,B,true)})*exp(${coefPrefixe(A)}x^2${suite(B,C,true)})`, _fAscii:`exp(${coefPrefixe(A)}x^2${suite(B,C,true)})`});
+  }
+  {
+    const k = aleaNonNul(-3,3);
+    ex.push({id:"12.15 b)", type:"alg", texteLibre:true, enonce:`Sur \\(]0,+\\infty[\\), \\(f(x)=e^{${coefPrefixeL(k)}x\\sqrt{x}}\\)`,
+      reponse:`${fracStr(3*k,2)}*sqrt(x)*exp(${coefPrefixe(k)}x^(3/2))`, _fAscii:`exp(${coefPrefixe(k)}x^(3/2))`});
+  }
+  {
+    const k = aleaNonNul(-3,3);
+    ex.push({id:"12.15 c)", type:"alg", texteLibre:true, enonce:`Sur ℝ, \\(f(x)=e^{e^{${coefPrefixeL(k)}x^2}}\\)`,
+      reponse:`${2*k}*x*exp(${coefPrefixe(k)}x^2)*exp(exp(${coefPrefixe(k)}x^2))`, _fAscii:`exp(exp(${coefPrefixe(k)}x^2))`});
+  }
+
+  // ---------- 12.16 : composees III ----------
+  {
+    const C = aleaNonNul(-4,4), p = aleaNonNul(-3,3), q = aleaNonNul(-2,2);
+    const qL = q===1?'':q===-1?'-':`${q}`, qA = q===1?'':q===-1?'-':`${q}*`;
+    const pL = p===1?'':p===-1?'-':`${p}`, pA = p===1?'':p===-1?'-':`${p}*`;
+    const t3q = 3*q, t3qA = t3q===1?'':t3q===-1?'-':`${t3q}*`;
+    ex.push({id:"12.16 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=${coefPrefixeL(C)}xe^{${fmtLin(p,0,false)}${q>=0?'+':''}${qL}x^3}\\)`,
+      reponse:`${coefPrefixe(C)}(1${p>=0?'+':''}${pA}x${t3q>=0?'+':''}${t3qA}x^3)*exp(${pA}x${q>=0?'+':''}${qA}x^3)`,
+      _fAscii:`${coefPrefixe(C)}x*exp(${pA}x${q>=0?'+':''}${qA}x^3)`});
+  }
+  {
+    const p = aleaNonNul(-4,4), q = alea(-6,6);
+    ex.push({id:"12.16 b)", type:"alg", texteLibre:true, enonce:`\\(f(x)=e^{x^2}e^{${fmtLin(p,q,false)}}\\)`,
+      reponse:`(${fmtLin(2,p,true)})*exp(x^2${suite(p,q,true)})`, _fAscii:`exp(x^2)*exp(${fmtLin(p,q,true)})`});
+  }
+  {
+    const C = aleaNonNul(1,4), k = aleaNonNul(-4,4);
+    ex.push({id:"12.16 c)", type:"alg", texteLibre:true, enonce:`\\(f(x)=e^{x^5}-${C===1?'':C}x^3e^{${fmtLin(k,0,false)}}\\)`,
+      reponse:`x^2*(5*x^2*exp(x^5)-${coefPrefixe(C)}(${fmtLin(k,3,true)})*exp(${fmtLin(k,0,true)}))`,
+      _fAscii:`exp(x^5)-${coefPrefixe(C)}x^3*exp(${fmtLin(k,0,true)})`});
+  }
+  {
+    const A = aleaNonNul(-3,3), B = aleaNonNul(-4,4);
+    const t3A = 3*A;
+    ex.push({id:"12.16 d)", type:"alg", texteLibre:true, enonce:`\\(f(x)=e^{${coefPrefixeL(A)}x^3${suite(B,0,false)}}e^{e^x}\\)`,
+      reponse:`(${t3A}*x^2${B>=0?'+':''}${B}+exp(x))*exp(${coefPrefixe(A)}x^3${suite(B,0,true)})*exp(exp(x))`,
+      _fAscii:`exp(${coefPrefixe(A)}x^3${suite(B,0,true)})*exp(exp(x))`});
+  }
+
+  // ---------- 12.17 : somme, Sigma ----------
+  ex.push({id:"12.17 a)", type:"somme", texteLibre:true,
+    enonce:"Soit \\(x\\) un réel strictement positif et \\(n\\) un entier naturel non nul. Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\exp(kx)\\)",
+    reponse:"(exp((n+1)*x)-exp(x))/(exp(x)-1)"});
+  ex.push({id:"12.17 b)", type:"somme", texteLibre:true,
+    enonce:"Donner l'expression de la dérivée de \\(x\\mapsto \\exp(x)+\\exp(2x)+\\exp(3x)+\\cdots +\\exp(nx)\\)",
+    reponse:"sum(k,1,n,k*exp(k*x))"});
+  ex.push({id:"12.17 c)", type:"somme", texteLibre:true,
+    enonce:"En déduire une expression simple de \\(\\displaystyle\\sum_{k=1}^{n}k\\exp(kx)\\)",
+    reponse:"(n*exp((n+2)*x)-(n+1)*exp((n+1)*x)+exp(x))/(exp(x)-1)^2"});
+
+  return ex;
+}
 
 const groupes = {
   "grille-12-1": [0,1,2,3],
@@ -831,100 +1227,13 @@ const groupes = {
   "grille-12-17": [53,54,55]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
-
-function construireGrilles() {
-  for (const [gridId, indices] of Object.entries(groupes)) {
-    const grille = document.getElementById(gridId);
-    grille.innerHTML = '';
-    indices.forEach((idx, pos) => {
-      const ex = exercices[idx];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.id = 'q-' + idx;
-      div.innerHTML = `
-        <span class="q-lettre">${lettres[pos]})</span>
-        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
-        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-        <span class="q-statut" id="statut-${idx}"></span>
-        <div class="clavier-visuel" id="clavier-${idx}">
-          <div class="clavier-groupe">
-            <span class="clavier-label">Chiffres</span>
-            <button onclick="inserer(${idx},'7')">7</button>
-            <button onclick="inserer(${idx},'8')">8</button>
-            <button onclick="inserer(${idx},'9')">9</button>
-            <button onclick="inserer(${idx},'4')">4</button>
-            <button onclick="inserer(${idx},'5')">5</button>
-            <button onclick="inserer(${idx},'6')">6</button>
-            <button onclick="inserer(${idx},'1')">1</button>
-            <button onclick="inserer(${idx},'2')">2</button>
-            <button onclick="inserer(${idx},'3')">3</button>
-            <button onclick="inserer(${idx},'0')">0</button>
-            <button onclick="inserer(${idx},',')">,</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Opérations</span>
-            <button onclick="inserer(${idx},'+')">+</button>
-            <button onclick="inserer(${idx},'-')">−</button>
-            <button onclick="insererFonction(${idx},'*')">×</button>
-            <button onclick="insererFonction(${idx},'/')">÷</button>
-            <button onclick="inserer(${idx},'(')">(</button>
-            <button onclick="inserer(${idx},')')">)</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Puissances</span>
-            <button onclick="insererPuissance(${idx},'2')">x²</button>
-            <button onclick="insererPuissance(${idx},'3')">x³</button>
-            <button onclick="insererExposant(${idx})">xⁿ</button>
-            <button onclick="insererRacine(${idx})">√</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Fraction</span>
-            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Comparaison</span>
-            <button onclick="inserer(${idx},'>')">&gt;</button>
-            <button onclick="inserer(${idx},'<')">&lt;</button>
-            <button onclick="inserer(${idx},'>=')">&geq;</button>
-            <button onclick="inserer(${idx},'<=')">&leq;</button>
-          </div>
-          <div class="clavier-groupe">
-            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-          </div>
-          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
-        </div>
-      `;
-      grille.appendChild(div);
-    });
-  }
-}
+let exercices = genererExercices();
 
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  fermerAutresAides(idx);
   clavier.classList.toggle('ouvert', !etaitOuvert);
-}
-
-function toggleAide(idx) {
-  const aide = document.getElementById('aide-' + idx);
-  const etaitOuverte = aide.classList.contains('ouverte');
-  fermerAutresAides(idx);
-  fermerAutresClaviers(idx);
-  aide.classList.toggle('ouverte', !etaitOuverte);
-}
-
-function fermerAutresAides(idxActuel) {
-  exercices.forEach((ex, idx) => {
-    if (idx !== idxActuel) {
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
-    }
-  });
 }
 
 function placerCurseur(input, pos, fin) {
@@ -1040,8 +1349,13 @@ function reculer(idx) {
   reinitialiserStatut(idx);
 }
 
+const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum']);
 function normaliserSaisie(str) {
-  return String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
+  // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
+  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  return s;
 }
 
 function checkEqualNumeric(userInput, correctExpr) {
@@ -1448,8 +1762,6 @@ function fermerAutresClaviers(idxActuel) {
     if (idx !== idxActuel) {
       const clavier = document.getElementById('clavier-' + idx);
       if (clavier) clavier.classList.remove('ouvert');
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
     }
   });
 }
@@ -1487,10 +1799,29 @@ function sommeVersLatex(reponse) {
   const [_, idxVar, inf, sup, expr] = m;
   return `\\displaystyle\\sum_{${idxVar}=${jsVersLatex(inf)}}^{${jsVersLatex(sup)}} ${jsVersLatex(expr)}`;
 }
+function convertirExposant(s) {
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '^' && s[i+1] === '(') {
+      let depth = 1, j = i + 2;
+      while (j < s.length && depth > 0) {
+        if (s[j] === '(') depth++;
+        else if (s[j] === ')') depth--;
+        j++;
+      }
+      result += '^{' + s.slice(i+2, j-1) + '}';
+      i = j - 1;
+    } else {
+      result += s[i];
+    }
+  }
+  return result;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
   s = convertirSqrt(s);
+  s = convertirExposant(s);
   s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
   s = s.replace(/\*/g, '\\times ');
@@ -1554,6 +1885,9 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'somme') {
       return sommeVersLatex(ex.reponse);
+    }
+    if (ex.type === 'paire') {
+      return `${jsVersLatex(ex.pa)} \\; ; \\; ${jsVersLatex(ex.pb)}`;
     }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
@@ -1629,7 +1963,25 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panelToutes = document.getElementById('toutes-reponses-panneau');
+  panelToutes.classList.remove('visible');
+  panelToutes.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+
+function toggleToutesReponses() {
+  const panel = document.getElementById('toutes-reponses-panneau');
+  const estOuvert = panel.classList.contains('visible');
+  if (!estOuvert) {
+    panel.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panel]);
+  }
+  panel.classList.toggle('visible', !estOuvert);
+  document.getElementById('btn-toutes-reponses').textContent = !estOuvert ? 'Masquer toutes les réponses' : 'Voir toutes les réponses';
 }
 
 
@@ -1685,10 +2037,49 @@ function necessiteAide(ex) {
   return false;
 }
 
+function texteAideGroupe(indices) {
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (necessiteAide(ex)) return aideContextuellePour(ex);
+  }
+  return null;
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const conteneur = titre.querySelector('span:not(.picto-niveau)') || titre;
+  const btn = document.createElement('button');
+  btn.className = 'q-aide-btn';
+  btn.title = 'Comment répondre ?';
+  btn.textContent = '?';
+  btn.onclick = () => toggleAideGroupe(gridId);
+  conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.after(bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  const etaitOuverte = aide.classList.contains('ouverte');
+  fermerAutresClaviers(-1);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
+
 function construireGrilles() {
   for (const [gridId, indices] of Object.entries(groupes)) {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
+    injecterAideGroupe(gridId, indices);
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
@@ -1698,12 +2089,6 @@ function construireGrilles() {
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
-      const boutonAide = necessiteAide(ex)
-        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
-        : '';
-      const bulleAide = necessiteAide(ex)
-        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
-        : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
@@ -1714,9 +2099,7 @@ function construireGrilles() {
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
-        ${boutonAide}
         <span class="q-statut" id="statut-${idx}"></span>
-        ${bulleAide}
       `;
       grille.appendChild(div);
     });
