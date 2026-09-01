@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1341,6 +1341,9 @@ function reculer(idx) {
 const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum']);
 function normaliserSaisie(str) {
   let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
+  // pour ne pas toucher a un eventuel separateur (le point-virgule reste le seul separateur d'ensemble/intervalle)
+  s = s.replace(/(\d),(\d)/g, '$1.$2');
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
@@ -1389,7 +1392,7 @@ function checkCercle(userInput, cx, cy, r) {
   // format attendu : "cx;cy;r" ou "(cx,cy);r" ou variantes avec espaces
   userInput = normaliserSaisie(userInput);
   const nettoye = userInput.trim().replace(/[()]/g, '').replace(/\s/g, '');
-  const parties = nettoye.split(/[;,]/).map(s => s.trim()).filter(s => s !== '');
+  const parties = nettoye.split(/;/).map(s => s.trim()).filter(s => s !== '');
   if (parties.length !== 3) return false;
   try {
     const vals = parties.map(s => math.evaluate(s));
@@ -1437,7 +1440,8 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  const nums = userInput.split(/[;,\s]+et\s+|[;,]+/).map(s => s.trim()).filter(s => s !== '');
+  userInput = normaliserSaisie(userInput);
+  const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
   if (nums.length !== 2) return false;
   try {
     const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
@@ -1449,7 +1453,7 @@ function checkEncadrement(userInput, bas, haut) {
 
 function checkEnsemble(userInput, correctSet) {
   userInput = normaliserSaisie(userInput);
-  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/[;,]/).map(x=>x.trim()).filter(x=>x!=='');
+  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
   const userVals = nettoyerEtSplit(userInput);
   const correctVals = nettoyerEtSplit(correctSet);
   if (userVals.length !== correctVals.length) return false;
@@ -1461,7 +1465,7 @@ function checkEnsemble(userInput, correctSet) {
 }
 
 function parseUnIntervalle(str) {
-  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^,;]+)[,;]([^,;\]\[]+)([\]\[])$/);
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^;]+);([^;\]\[]+)([\]\[])$/);
   if (!m) return null;
   const [_, cg, a, b, cd] = m;
   try {
@@ -1512,7 +1516,7 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
     nettoye = nettoye.slice(1,-1);
   }
-  const parties = nettoye.split(/[;,]/);
+  const parties = nettoye.split(/;/);
   if (parties.length !== 2) return false;
   try {
     for (let i=0;i<8;i++) {
@@ -1789,13 +1793,21 @@ function convertirExposant(s) {
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
-  s = convertirSqrt(s);
-  s = convertirExposant(s);
-  s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
-  s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
-  s = s.replace(/\*/g, '\\times ');
-  s = s.replace(/lambda/g, '\\lambda ');
-  return s;
+  try {
+    const node = math.parse(normaliserSaisie(s));
+    let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = tex.replace(/\\cdot/g, '\\times ');
+    tex = tex.replace(/\\frac\{/g, '\\dfrac{');
+    tex = tex.replace(/lambda/g, '\\lambda ');
+    return tex;
+  } catch(e) {
+    s = convertirSqrt(s);
+    s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/\*/g, '\\times ');
+    s = s.replace(/lambda/g, '\\lambda ');
+    return s;
+  }
 }
 
 function formaterUneBorne(v) {
@@ -1804,7 +1816,7 @@ function formaterUneBorne(v) {
   if (Number.isInteger(v)) return String(v);
   try {
     const frac = math.fraction(v);
-    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
   } catch(e) {}
   return v.toFixed(3);
 }
@@ -1836,7 +1848,7 @@ function formaterReponse(ex) {
       const fmt = (v) => {
         if (Number.isInteger(v)) return String(v);
         const frac = math.fraction(v);
-        return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+        return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
       };
       return `\\Omega(${fmt(ex.cx)}\\,;\\,${fmt(ex.cy)}) \\text{ et } r=${fmt(ex.r)}`;
     }
@@ -1857,7 +1869,8 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'num') {
       if (ex.reponse && ex.reponse.trim().startsWith('{')) {
-        return '\\{' + jsVersLatex(ex.reponse.replace(/[{}]/g,'')) + '\\}';
+        const elements = ex.reponse.replace(/[{}]/g,'').split(';').map(el => jsVersLatex(el.trim()));
+        return '\\left\\{' + elements.join('\\,;\\,') + '\\right\\}';
       }
       // si l'expression contient une racine ou une lettre, ce n'est pas un rationnel pur : afficher tel quel
       if (/sqrt|[a-zA-Z]/.test(ex.reponse)) {
@@ -1866,7 +1879,7 @@ function formaterReponse(ex) {
       const val = math.evaluate(ex.reponse);
       if (Number.isInteger(val)) return String(val);
       const frac = math.fraction(val);
-      return `${frac.s < 0 ? '-' : ''}${frac.n}/${frac.d}`;
+      return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
     }
     return jsVersLatex(ex.reponse);
   } catch(e) {

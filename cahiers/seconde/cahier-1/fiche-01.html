@@ -835,6 +835,8 @@ function reculer(idx) {
 }
 
 function checkEqualNumeric(userInput, correctExpr) {
+  // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
+  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
   const vars = ['x','t','u','v','a','b','c','m','k','y','z'];
   try {
     const userNode = math.parse(userInput);
@@ -864,7 +866,8 @@ function checkEqualNumeric(userInput, correctExpr) {
 }
 
 function checkEnsemble(userInput, correctSet) {
-  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/[;,]/).map(x=>x.trim()).filter(x=>x!=='');
+  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
+  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
   const userVals = nettoyerEtSplit(userInput);
   const correctVals = nettoyerEtSplit(correctSet);
   if (userVals.length !== correctVals.length) return false;
@@ -905,7 +908,8 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  const nums = userInput.split(/[;,\s]+et\s+|[;,]+/).map(s => s.trim()).filter(s => s !== '');
+  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
+  const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
   if (nums.length !== 2) return false;
   try {
     const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
@@ -920,6 +924,15 @@ function valeurDuChamp(el) {
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
     v = v.replace(/\balpha\b/g, 'lam').replace(/\blambda\b/g, 'lam').replace(/\bbeta\b/g, 'bet');
+    // normaliser le symbole de multiplication (MathLive exporte un "*" tape au clavier sous la forme du
+    // caractere unicode "∗", que math.js ne reconnait pas) vers l'asterisque ascii standard
+    v = v.replace(/[∗×·]/g, '*');
+    // normaliser les noms de fonctions eventuellement decomposes lettre par lettre par MathLive (frappe naturelle,
+    // ex: "s q r t(" -> "sqrt(") - sinon la reconnaissance de la fonction echoue silencieusement
+    ['sqrt','exp','sin','cos','tan','log','ln','abs'].forEach(fn => {
+      const motif = fn.split('').join('\\s+');
+      v = v.replace(new RegExp('(?<![a-zA-Z])' + motif + '\\s*\\(', 'g'), fn + '(');
+    });
     return v;
   }
   return el.value.trim();
@@ -1023,7 +1036,7 @@ function formaterReponse(ex) {
       const val = math.evaluate(ex.reponse);
       if (Number.isInteger(val)) return String(val);
       const frac = math.fraction(val);
-      return `${frac.s < 0 ? '-' : ''}${frac.n}/${frac.d}`;
+      return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
     }
     return ex.reponse;
   } catch(e) {

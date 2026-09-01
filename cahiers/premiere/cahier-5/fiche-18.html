@@ -412,16 +412,18 @@ window.MathJax = {
     background: var(--bleu-clair);
     border: 1.5px solid var(--bleu);
     border-radius: 50%;
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: bold;
     color: var(--bleu);
     flex: 0 0 auto;
     line-height: 1;
     padding: 0;
+    margin-left: 6px;
+    vertical-align: middle;
   }
   .q-aide-btn:hover { background: var(--bleu); color: white; }
   .q-aide-bulle {
@@ -761,6 +763,7 @@ window.MathJax = {
 <div class="barre-controle">
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -771,6 +774,11 @@ window.MathJax = {
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
 
+<div class="barre-controle">
+  <button class="btn-secondaire" onclick="toggleToutesReponses()" id="btn-toutes-reponses">Voir toutes les réponses</button>
+</div>
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-17.html">&larr; Fiche précédente</a>
@@ -779,60 +787,175 @@ window.MathJax = {
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function fracStr(n, d) { if (d < 0) { n = -n; d = -d; } const g = pgcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; }
+function melanger(tableau) { for (let i = tableau.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [tableau[i], tableau[j]] = [tableau[j], tableau[i]]; } return tableau; }
+function coefPrefixe(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}*`; }
+function coefPrefixeL(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}`; }
 
-const exercices = [
-  // Calcul 18.1 - trois calculs (3 items)
-  {id:"18.1 a)", type:"num", enonce:"(-2)^5-1", reponse:"-33"},
-  {id:"18.1 b)", type:"num", enonce:"\\dfrac{1}{5}-1", reponse:"-4/5"},
-  {id:"18.1 c)", type:"num", enonce:"\\sqrt{(-3)^4\\times 4^{-3}}", reponse:"9/8"},
-  // Calcul 18.2 - des carres (3 items)
-  {id:"18.2 a)", type:"alg", texteLibre:true, enonce:"\\((a+b)^2\\)", reponse:"a^2+2*a*b+b^2"},
-  {id:"18.2 b)", type:"alg", texteLibre:true, enonce:"\\((a-b)^3\\)", reponse:"a^3-3*a^2*b+3*a*b^2-b^3"},
-  {id:"18.2 c)", type:"alg", texteLibre:true, enonce:"\\((a+b-c)^2\\)", reponse:"a^2+b^2+c^2+2*a*b-2*a*c-2*b*c"},
-  // Calcul 18.3 - ecritures I (4 items)
-  {id:"18.3 a)", type:"texte", texteLibre:true, enonce:"\\(1\\times 2\\times 3\\times \\cdots \\times 99\\) (répondre sous la forme : prod k=1 a 99 de k)", reponse:"prod k=1 a 99 de k"},
-  {id:"18.3 b)", type:"texte", texteLibre:true, enonce:"\\(3^3\\times 4^4\\times 5^5\\times \\cdots \\times 50^{50}\\) (répondre sous la forme : prod k=3 a 50 de k^k)", reponse:"prod k=3 a 50 de k^k"},
-  {id:"18.3 c)", type:"texte", texteLibre:true, enonce:"\\(3^5\\times 4^6\\times 5^7\\times \\cdots \\times 15^{17}\\) (répondre sous la forme : prod k=3 a 15 de k^(k+2))", reponse:"prod k=3 a 15 de k^(k+2)"},
-  {id:"18.3 d)", type:"texte", texteLibre:true, enonce:"\\(2\\times 2\\times 2\\times 2\\times 2\\times 2\\times 2\\times 2\\times 2\\) (répondre sous la forme : prod k=1 a 9 de 2)", reponse:"prod k=1 a 9 de 2"},
-  // Calcul 18.4 - ecritures II (4 items)
-  {id:"18.4 a)", type:"texte", texteLibre:true, enonce:"\\(2x_1\\times 5x_2\\times 10x_3\\times \\cdots \\times (9n^2+1)x_{3n}\\) (répondre sous la forme : prod k=1 a 3n de (k^2+1)x_k)", reponse:"prod k=1 a 3n de (k^2+1)x_k"},
-  {id:"18.4 b)", type:"texte", texteLibre:true, enonce:"\\((x_1+x_2)(x_2+x_3)(x_3+x_4)\\times \\cdots \\times (x_{n-1}+x_n)\\) (répondre sous la forme : prod k=1 a n-1 de (x_k+x_(k+1)))", reponse:"prod k=1 a n-1 de (x_k+x_(k+1))"},
-  {id:"18.4 c)", type:"texte", texteLibre:true, enonce:"\\((x_1+y_1)(x_2+y_2)(x_3+y_3)\\times \\cdots \\times (x_n+y_n)\\) (répondre sous la forme : prod k=1 a n de (x_k+y_k))", reponse:"prod k=1 a n de (x_k+y_k)"},
-  {id:"18.4 d)", type:"texte", texteLibre:true, enonce:"\\((x_0+y_n)(x_1+y_{n-1})(x_2+y_{n-2})\\times \\cdots \\times (x_{n-1}+y_1)(x_n+y_0)\\) (répondre sous la forme : prod k=0 a n de (x_k+y_(n-k)))", reponse:"prod k=0 a n de (x_k+y_(n-k))"},
-  // Calcul 18.5 - melange produits et sommes (2 items)
-  {id:"18.5 a)", type:"texte", texteLibre:true, enonce:"\\(x_1+x_1x_2+x_1x_2x_3+\\cdots +(x_1x_2x_3\\cdots x_n)\\) (répondre sous la forme : sum k=1 a n de prod i=1 a k de x_i)", reponse:"sum k=1 a n de prod i=1 a k de x_i"},
-  {id:"18.5 b)", type:"texte", texteLibre:true, enonce:"\\(x_1\\times (x_1+x_2)\\times (x_1+x_2+x_3)\\times \\cdots \\times (x_1+x_2+x_3+\\cdots +x_n)\\) (répondre sous la forme : prod k=1 a n de sum i=1 a k de x_i)", reponse:"prod k=1 a n de sum i=1 a k de x_i"},
-  // Calcul 18.6 - valeurs de produits (4 items)
-  {id:"18.6 a)", type:"num", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{5}k\\)", reponse:"120"},
-  {id:"18.6 b)", type:"num", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=0}^{3}(2k+1)\\)", reponse:"105"},
-  {id:"18.6 c)", type:"num", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{8}(k-3)^2\\)", reponse:"0"},
-  {id:"18.6 d)", type:"num", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{10}\\dfrac{k}{k+1}\\)", reponse:"1/11"},
-  // Calcul 18.7 - produit constant (1 item, QCM)
-  {id:"18.7", type:"qcm", texteLibre:true, enonce:"Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{n}2\\) ?", bonneReponse:"e", options:[{lettre:"a",texte:"2n"},{lettre:"b",texte:"2(n+1)"},{lettre:"c",texte:"2(n-1)"},{lettre:"d",texte:"2^n"},{lettre:"e",texte:"2^{n+1}"},{lettre:"f",texte:"2^{n-1}"}], optionsSurUneLigne:true},
-  // Calcul 18.8 - produit constant, bis (1 item, QCM, deux bonnes reponses)
-  {id:"18.8", type:"qcm", texteLibre:true, enonce:"Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{4n}2\\) ? Il y a deux réponses possibles (donner l'une des deux).", bonneReponse:"d|f", options:[{lettre:"a",texte:"8n"},{lettre:"b",texte:"2^4\\times 2^n"},{lettre:"c",texte:"2^{4(n+1)}"},{lettre:"d",texte:"2\\times 2^{4n}"},{lettre:"e",texte:"4^{2(n+1)}"},{lettre:"f",texte:"2^{4n+1}"}], optionsSurUneLigne:true},
-  // Calcul 18.9 - telescopage I (4 items)
-  {id:"18.9 a)", type:"alg", texteLibre:true, enonce:"Que vaut \\(b_1\\) ?", reponse:"a2/a1"},
-  {id:"18.9 b)", type:"alg", texteLibre:true, enonce:"Que vaut \\(b_2\\) ?", reponse:"a3/a1"},
-  {id:"18.9 c)", type:"alg", texteLibre:true, enonce:"Que vaut \\(b_3\\) ?", reponse:"a4/a1"},
-  {id:"18.9 d)", type:"alg", texteLibre:true, enonce:"Que vaut \\(b_{n-1}\\) ?", reponse:"an/a1"},
-  // Calcul 18.10 - telescopage II (1 item, QCM)
-  {id:"18.10", type:"qcm", texteLibre:true, enonce:"On considère deux entiers naturels n et p tels que \\(2\\leqslant p\\leqslant n\\), et des réels non nuls \\(a_1,\\ldots,a_n\\). À laquelle des expressions suivantes est égal \\(\\displaystyle\\prod_{k=p}^{n}\\dfrac{a_{k-1}}{a_k}\\) ?", bonneReponse:"e", options:[{lettre:"a",texte:"\\dfrac{a_1}{a_n}"},{lettre:"b",texte:"\\dfrac{a_n}{a_1}"},{lettre:"c",texte:"\\dfrac{a_2}{a_n}"},{lettre:"d",texte:"\\dfrac{a_n}{a_2}"},{lettre:"e",texte:"\\dfrac{a_{p-1}}{a_n}"},{lettre:"f",texte:"\\dfrac{a_n}{a_{p-1}}"},{lettre:"g",texte:"\\dfrac{a_p}{a_n}"},{lettre:"h",texte:"\\dfrac{a_n}{a_p}"}], optionsSurUneLigne:true},
-  // Calcul 18.11 - telescopages en situation (4 items)
-  {id:"18.11 a)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{k}{k+1}\\)", reponse:"1/(n+1)"},
-  {id:"18.11 b)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{2k+1}{2k-1}\\)", reponse:"2*n+1"},
-  {id:"18.11 c)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=2}^{n}\\dfrac{k^2-1}{k^2}\\)", reponse:"(n+1)/(2*n)"},
-  {id:"18.11 d)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{k^2+k-1}{k^2+3k+1}\\)", reponse:"1/(n^2+3*n+1)"},
-  // Calcul 18.12 - produits avances (2 items, avance)
-  {id:"18.12 a)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=2}^{n}\\dfrac{k+1}{k-1}\\)", reponse:"n*(n+1)/2"},
-  {id:"18.12 b)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=3}^{n}\\dfrac{k-2}{k+2}\\)", reponse:"24/((n-1)*n*(n+1)*(n+2))"},
-  // Calcul 18.13 - valeurs de produits avances (2 items, avance)
-  {id:"18.13 a)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\prod_{k=1}^{n}3^k\\)", reponse:"3^(n*(n+1)/2)"},
-  {id:"18.13 b)", type:"alg", texteLibre:true, enonce:"Soit \\(a\\ne 1\\). Déterminer la valeur de \\(\\displaystyle\\prod_{k=0}^{n-1}3^{a^k}\\)", reponse:"3^((a^n-1)/(a-1))"},
-  // Calcul 18.14 - factorielle (2 items, avance)
-  {id:"18.14 a)", type:"alg", texteLibre:true, enonce:"Pour \\(n\\in\\mathbb{N}^*\\), on appelle factorielle de n l'entier noté \\(n!\\) et défini par \\(n!=\\displaystyle\\prod_{k=1}^{n}k\\). Donner une relation simple entre \\((n+1)!\\) et \\(n!\\)", reponse:"(n+1)*n!"},
-  {id:"18.14 b)", type:"alg", texteLibre:true, enonce:"Donner une expression simple du produit \\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{2k-1}{2k}\\) ne faisant intervenir que des puissances de 2 et des factorielles", reponse:"(2*n)!/(2^(2*n)*(n!)^2)"}
-];
+function genererExercices() {
+  const ex = [];
+
+  // ---------- 18.1 : trois calculs ----------
+  {
+    const B1 = alea(2, 3), E1 = [3, 5][alea(0, 1)], C1 = alea(1, 3);
+    ex.push({id: "18.1 a)", type: "num", enonce: `(-${B1})^${E1}-${C1}`, reponse: String(Math.pow(-B1, E1) - C1)});
+
+    const D2 = alea(2, 6), E2 = alea(1, 3);
+    ex.push({id: "18.1 b)", type: "num", enonce: `\\dfrac{1}{${D2}}-${E2}`, reponse: fracStr(1 - E2 * D2, D2)});
+
+    const B3 = [2, 3, 5][alea(0, 2)], R3 = [2, 3][alea(0, 1)], C3 = R3 * R3;
+    ex.push({id: "18.1 c)", type: "num", enonce: `\\sqrt{(-${B3})^4\\times ${C3}^{-3}}`, reponse: fracStr(B3 * B3, R3 * R3 * R3)});
+  }
+
+  // ---------- 18.2 : des carres ----------
+  {
+    const A = alea(1, 3), B = alea(1, 3);
+    ex.push({id: "18.2 a)", type: "alg", texteLibre: true, enonce: `\\((${coefPrefixeL(A)}a+${coefPrefixeL(B)}b)^2\\)`,
+      reponse: `${coefPrefixe(A * A)}a^2+${coefPrefixe(2 * A * B)}a*b+${coefPrefixe(B * B)}b^2`});
+
+    const A2 = alea(1, 3), B2 = alea(1, 3);
+    ex.push({id: "18.2 b)", type: "alg", texteLibre: true, enonce: `\\((${coefPrefixeL(A2)}a-${coefPrefixeL(B2)}b)^3\\)`,
+      reponse: `${coefPrefixe(A2 ** 3)}a^3-${3 * A2 * A2 * B2}*a^2*b+${3 * A2 * B2 * B2}*a*b^2-${coefPrefixe(B2 ** 3)}b^3`});
+
+    const A3 = alea(1, 3), B3 = alea(1, 3), C3 = alea(1, 3);
+    ex.push({id: "18.2 c)", type: "alg", texteLibre: true, enonce: `\\((${coefPrefixeL(A3)}a+${coefPrefixeL(B3)}b-${coefPrefixeL(C3)}c)^2\\)`,
+      reponse: `${coefPrefixe(A3 * A3)}a^2+${coefPrefixe(B3 * B3)}b^2+${coefPrefixe(C3 * C3)}c^2+${2 * A3 * B3}*a*b-${2 * A3 * C3}*a*c-${2 * B3 * C3}*b*c`});
+  }
+
+  // ---------- 18.3 : ecritures I ----------
+  {
+    const N = alea(30, 150);
+    ex.push({id: "18.3 a)", type: "produit", texteLibre: true, enonce: `\\(1\\times 2\\times 3\\times \\cdots \\times ${N}\\)`, reponse: `prod(k,1,${N},k)`});
+
+    const S = alea(2, 4), E = S + alea(4, 7);
+    ex.push({id: "18.3 b)", type: "produit", texteLibre: true, enonce: `\\(${S}^{${S}}\\times ${S+1}^{${S+1}}\\times ${S+2}^{${S+2}}\\times \\cdots \\times ${E}^{${E}}\\)`, reponse: `prod(k,${S},${E},k^k)`});
+
+    const Sc = alea(3, 5), Ec = Sc + alea(8, 12), D = alea(1, 3);
+    ex.push({id: "18.3 c)", type: "produit", texteLibre: true, enonce: `\\(${Sc}^{${Sc+D}}\\times ${Sc+1}^{${Sc+1+D}}\\times ${Sc+2}^{${Sc+2+D}}\\times \\cdots \\times ${Ec}^{${Ec+D}}\\)`, reponse: `prod(k,${Sc},${Ec},k^(k+${D}))`});
+
+    const C = alea(2, 9), M = alea(6, 10);
+    ex.push({id: "18.3 d)", type: "produit", texteLibre: true, enonce: `\\(${Array(M).fill(C).join('\\times ')}\\)`, reponse: `prod(k,1,${M},${C})`});
+  }
+
+  // ---------- 18.4 : ecritures II ----------
+  {
+    const C = alea(1, 3), M = alea(2, 4);
+    ex.push({id: "18.4 a)", type: "produit", texteLibre: true, enonce: `\\(${1+C}x_1\\times ${4+C}x_2\\times ${9+C}x_3\\times \\cdots \\times (${M*M}n^2+${C})x_{${M}n}\\)`, reponse: `prod(k,1,${M}n,(k^2+${C})*x_k)`});
+    ex.push({id: "18.4 b)", type: "produit", texteLibre: true, enonce: "\\((x_1+x_2)(x_2+x_3)(x_3+x_4)\\times \\cdots \\times (x_{n-1}+x_n)\\)", reponse: "prod(k,1,n-1,x_k+x_(k+1))"});
+    ex.push({id: "18.4 c)", type: "produit", texteLibre: true, enonce: "\\((x_1+y_1)(x_2+y_2)(x_3+y_3)\\times \\cdots \\times (x_n+y_n)\\)", reponse: "prod(k,1,n,x_k+y_k)"});
+    ex.push({id: "18.4 d)", type: "produit", texteLibre: true, enonce: "\\((x_0+y_n)(x_1+y_{n-1})(x_2+y_{n-2})\\times \\cdots \\times (x_{n-1}+y_1)(x_n+y_0)\\)", reponse: "prod(k,0,n,x_k+y_(n-k))"});
+  }
+
+  // ---------- 18.5 : melange produits et sommes (fixe) ----------
+  ex.push({id: "18.5 a)", type: "somme", texteLibre: true, enonce: "\\(x_1+x_1x_2+x_1x_2x_3+\\cdots +(x_1x_2x_3\\cdots x_n)\\)", reponse: "sum(k,1,n,prod(i,1,k,x_i))"});
+  ex.push({id: "18.5 b)", type: "produit", texteLibre: true, enonce: "\\(x_1\\times (x_1+x_2)\\times (x_1+x_2+x_3)\\times \\cdots \\times (x_1+x_2+x_3+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,1,k,x_i))"});
+
+  // ---------- 18.6 : valeurs de produits ----------
+  {
+    const N1 = alea(4, 7);
+    let f = 1; for (let i = 1; i <= N1; i++) f *= i;
+    ex.push({id: "18.6 a)", type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{${N1}}k\\)`, reponse: String(f)});
+
+    const N2 = alea(2, 4);
+    let p = 1; for (let k = 0; k <= N2; k++) p *= (2 * k + 1);
+    ex.push({id: "18.6 b)", type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=0}^{${N2}}(2k+1)\\)`, reponse: String(p)});
+
+    const N3 = alea(6, 10), Sh = alea(2, N3 - 1);
+    ex.push({id: "18.6 c)", type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{${N3}}(k-${Sh})^2\\)`, reponse: "0"});
+
+    const N4 = alea(6, 12);
+    ex.push({id: "18.6 d)", type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{${N4}}\\dfrac{k}{k+1}\\)`, reponse: fracStr(1, N4 + 1)});
+  }
+
+  // ---------- 18.7 : produit constant (QCM) ----------
+  {
+    const C = alea(2, 5);
+    const opts = [
+      {texte: `${C}n`, correct: false},
+      {texte: `${C}(n+1)`, correct: false},
+      {texte: `${C}(n-1)`, correct: false},
+      {texte: `${C}^n`, correct: false},
+      {texte: `${C}^{n+1}`, correct: true},
+      {texte: `${C}^{n-1}`, correct: false}
+    ];
+    melanger(opts);
+    const lettresQCM = ["a", "b", "c", "d", "e", "f"];
+    let bonne = "";
+    const options = opts.map((o, i) => { const L = lettresQCM[i]; if (o.correct) bonne = L; return {lettre: L, texte: o.texte}; });
+    ex.push({id: "18.7", type: "qcm", texteLibre: true, enonce: `Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{n}${C}\\) ?`, bonneReponse: bonne, options, optionsSurUneLigne: true});
+  }
+
+  // ---------- 18.8 : produit constant, bis (QCM, deux bonnes reponses) ----------
+  {
+    const C = alea(2, 5), M = alea(3, 5);
+    const opts = [
+      {texte: `${C * M}n`, correct: false},
+      {texte: `${C}^{${M}}\\times ${C}^n`, correct: false},
+      {texte: `${C}^{${M}(n+1)}`, correct: false},
+      {texte: `${C}\\times ${C}^{${M}n}`, correct: true},
+      {texte: `${C}^{${M}n+1}`, correct: true},
+      {texte: `${C}^{${M}n}`, correct: false}
+    ];
+    melanger(opts);
+    const lettresQCM = ["a", "b", "c", "d", "e", "f"];
+    let bonnes = [];
+    const options = opts.map((o, i) => { const L = lettresQCM[i]; if (o.correct) bonnes.push(L); return {lettre: L, texte: o.texte}; });
+    ex.push({id: "18.8", type: "qcm", texteLibre: true, enonce: `Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{${M}n}${C}\\) ? Il y a deux réponses possibles (donner l'une des deux).`, bonneReponse: bonnes.join('|'), options, optionsSurUneLigne: true});
+  }
+
+  // ---------- 18.9 : telescopage I (fixe) ----------
+  ex.push({id: "18.9 a)", type: "alg", texteLibre: true, enonce: "Que vaut \\(b_1\\) ?", reponse: "a2/a1"});
+  ex.push({id: "18.9 b)", type: "alg", texteLibre: true, enonce: "Que vaut \\(b_2\\) ?", reponse: "a3/a1"});
+  ex.push({id: "18.9 c)", type: "alg", texteLibre: true, enonce: "Que vaut \\(b_3\\) ?", reponse: "a4/a1"});
+  ex.push({id: "18.9 d)", type: "alg", texteLibre: true, enonce: "Que vaut \\(b_{n-1}\\) ?", reponse: "an/a1"});
+
+  // ---------- 18.10 : telescopage II (QCM, fixe) ----------
+  ex.push({id: "18.10", type: "qcm", texteLibre: true, enonce: "On considère deux entiers naturels n et p tels que \\(2\\leqslant p\\leqslant n\\), et des réels non nuls \\(a_1,\\ldots,a_n\\). À laquelle des expressions suivantes est égal \\(\\displaystyle\\prod_{k=p}^{n}\\dfrac{a_{k-1}}{a_k}\\) ?", bonneReponse: "e", options: [{lettre: "a", texte: "\\dfrac{a_1}{a_n}"}, {lettre: "b", texte: "\\dfrac{a_n}{a_1}"}, {lettre: "c", texte: "\\dfrac{a_2}{a_n}"}, {lettre: "d", texte: "\\dfrac{a_n}{a_2}"}, {lettre: "e", texte: "\\dfrac{a_{p-1}}{a_n}"}, {lettre: "f", texte: "\\dfrac{a_n}{a_{p-1}}"}, {lettre: "g", texte: "\\dfrac{a_p}{a_n}"}, {lettre: "h", texte: "\\dfrac{a_n}{a_p}"}], optionsSurUneLigne: true});
+
+  // ---------- 18.11 : telescopages en situation ----------
+  {
+    const A = alea(0, 4);
+    const numA = A === 0 ? 'k' : `k+${A}`;
+    ex.push({id: "18.11 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${numA}}{k+${A + 1}}\\)`, reponse: `${1 + A}/(n+${1 + A})`});
+
+    const Ab = alea(1, 3), Bb = alea(1, 4);
+    const Db = Bb - Ab;
+    const denomB = `${coefPrefixeL(Ab)}k${Db === 0 ? '' : (Db > 0 ? `+${Db}` : `${Db}`)}`;
+    ex.push({id: "18.11 b)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${coefPrefixeL(Ab)}k+${Bb}}{${denomB}}\\)`,
+      reponse: `${fracStr(Ab, Bb)}*n+1`});
+
+    ex.push({id: "18.11 c)", type: "alg", texteLibre: true, enonce: "\\(\\displaystyle\\prod_{k=2}^{n}\\dfrac{k^2-1}{k^2}\\)", reponse: "(n+1)/(2*n)"});
+    ex.push({id: "18.11 d)", type: "alg", texteLibre: true, enonce: "\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{k^2+k-1}{k^2+3k+1}\\)", reponse: "1/(n^2+3*n+1)"});
+  }
+
+  // ---------- 18.12 : produits avances ----------
+  {
+    const S = alea(2, 5);
+    ex.push({id: "18.12 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${S}}^{n}\\dfrac{k+1}{k-1}\\)`, reponse: `n*(n+1)/${S * (S - 1)}`});
+
+    const S2 = alea(3, 6);
+    const constNum = (S2 - 2) * (S2 - 1) * S2 * (S2 + 1);
+    ex.push({id: "18.12 b)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${S2}}^{n}\\dfrac{k-2}{k+2}\\)`, reponse: `${constNum}/((n-1)*n*(n+1)*(n+2))`});
+  }
+
+  // ---------- 18.13 : valeurs de produits avances ----------
+  {
+    const B1 = alea(2, 6);
+    ex.push({id: "18.13 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}${B1}^k\\)`, reponse: `${B1}^(n*(n+1)/2)`});
+
+    const B2 = alea(2, 6);
+    ex.push({id: "18.13 b)", type: "alg", texteLibre: true, enonce: `Soit \\(a\\ne 1\\). Déterminer la valeur de \\(\\displaystyle\\prod_{k=0}^{n-1}${B2}^{a^k}\\)`, reponse: `${B2}^((a^n-1)/(a-1))`});
+  }
+
+  // ---------- 18.14 : factorielle (fixe) ----------
+  ex.push({id: "18.14 a)", type: "alg", texteLibre: true, enonce: "Pour \\(n\\in\\mathbb{N}^*\\), on appelle factorielle de n l'entier noté \\(n!\\) et défini par \\(n!=\\displaystyle\\prod_{k=1}^{n}k\\). Donner une relation simple entre \\((n+1)!\\) et \\(n!\\)", reponse: "(n+1)*n!"});
+  ex.push({id: "18.14 b)", type: "alg", texteLibre: true, enonce: "Donner une expression simple du produit \\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{2k-1}{2k}\\) ne faisant intervenir que des puissances de 2 et des factorielles", reponse: "(2*n)!/(2^(2*n)*(n!)^2)"});
+
+  return ex;
+}
+
+let exercices = genererExercices();
 
 const groupes = {
   "grille-18-1": [0,1,2],
@@ -852,99 +975,11 @@ const groupes = {
 };
 const lettresEtendues = ["a","b","c","d","e","f","g","h"];
 
-function construireGrilles() {
-  for (const [gridId, indices] of Object.entries(groupes)) {
-    const grille = document.getElementById(gridId);
-    grille.innerHTML = '';
-    indices.forEach((idx, pos) => {
-      const ex = exercices[idx];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.id = 'q-' + idx;
-      div.innerHTML = `
-        <span class="q-lettre">${lettres[pos]})</span>
-        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
-        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-        <span class="q-statut" id="statut-${idx}"></span>
-        <div class="clavier-visuel" id="clavier-${idx}">
-          <div class="clavier-groupe">
-            <span class="clavier-label">Chiffres</span>
-            <button onclick="inserer(${idx},'7')">7</button>
-            <button onclick="inserer(${idx},'8')">8</button>
-            <button onclick="inserer(${idx},'9')">9</button>
-            <button onclick="inserer(${idx},'4')">4</button>
-            <button onclick="inserer(${idx},'5')">5</button>
-            <button onclick="inserer(${idx},'6')">6</button>
-            <button onclick="inserer(${idx},'1')">1</button>
-            <button onclick="inserer(${idx},'2')">2</button>
-            <button onclick="inserer(${idx},'3')">3</button>
-            <button onclick="inserer(${idx},'0')">0</button>
-            <button onclick="inserer(${idx},',')">,</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Opérations</span>
-            <button onclick="inserer(${idx},'+')">+</button>
-            <button onclick="inserer(${idx},'-')">−</button>
-            <button onclick="insererFonction(${idx},'*')">×</button>
-            <button onclick="insererFonction(${idx},'/')">÷</button>
-            <button onclick="inserer(${idx},'(')">(</button>
-            <button onclick="inserer(${idx},')')">)</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Puissances</span>
-            <button onclick="insererPuissance(${idx},'2')">x²</button>
-            <button onclick="insererPuissance(${idx},'3')">x³</button>
-            <button onclick="insererExposant(${idx})">xⁿ</button>
-            <button onclick="insererRacine(${idx})">√</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Fraction</span>
-            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Comparaison</span>
-            <button onclick="inserer(${idx},'>')">&gt;</button>
-            <button onclick="inserer(${idx},'<')">&lt;</button>
-            <button onclick="inserer(${idx},'>=')">&geq;</button>
-            <button onclick="inserer(${idx},'<=')">&leq;</button>
-          </div>
-          <div class="clavier-groupe">
-            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-          </div>
-          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
-        </div>
-      `;
-      grille.appendChild(div);
-    });
-  }
-}
-
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  fermerAutresAides(idx);
   clavier.classList.toggle('ouvert', !etaitOuvert);
-}
-
-function toggleAide(idx) {
-  const aide = document.getElementById('aide-' + idx);
-  const etaitOuverte = aide.classList.contains('ouverte');
-  fermerAutresAides(idx);
-  fermerAutresClaviers(idx);
-  aide.classList.toggle('ouverte', !etaitOuverte);
-}
-
-function fermerAutresAides(idxActuel) {
-  exercices.forEach((ex, idx) => {
-    if (idx !== idxActuel) {
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
-    }
-  });
 }
 
 function placerCurseur(input, pos, fin) {
@@ -1070,9 +1105,12 @@ function reculer(idx) {
   reinitialiserStatut(idx);
 }
 
-const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum']);
+const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum','prod','xsub','ysub']);
 function normaliserSaisie(str) {
   let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
+  // pour ne pas toucher a un eventuel separateur (le point-virgule reste le seul separateur d'ensemble/intervalle)
+  s = s.replace(/(\d),(\d)/g, '$1.$2');
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
@@ -1121,7 +1159,7 @@ function checkCercle(userInput, cx, cy, r) {
   // format attendu : "cx;cy;r" ou "(cx,cy);r" ou variantes avec espaces
   userInput = normaliserSaisie(userInput);
   const nettoye = userInput.trim().replace(/[()]/g, '').replace(/\s/g, '');
-  const parties = nettoye.split(/[;,]/).map(s => s.trim()).filter(s => s !== '');
+  const parties = nettoye.split(/;/).map(s => s.trim()).filter(s => s !== '');
   if (parties.length !== 3) return false;
   try {
     const vals = parties.map(s => math.evaluate(s));
@@ -1169,7 +1207,8 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  const nums = userInput.split(/[;,\s]+et\s+|[;,]+/).map(s => s.trim()).filter(s => s !== '');
+  userInput = normaliserSaisie(userInput);
+  const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
   if (nums.length !== 2) return false;
   try {
     const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
@@ -1181,7 +1220,7 @@ function checkEncadrement(userInput, bas, haut) {
 
 function checkEnsemble(userInput, correctSet) {
   userInput = normaliserSaisie(userInput);
-  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/[;,]/).map(x=>x.trim()).filter(x=>x!=='');
+  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
   const userVals = nettoyerEtSplit(userInput);
   const correctVals = nettoyerEtSplit(correctSet);
   if (userVals.length !== correctVals.length) return false;
@@ -1193,7 +1232,7 @@ function checkEnsemble(userInput, correctSet) {
 }
 
 function parseUnIntervalle(str) {
-  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^,;]+)[,;]([^,;\]\[]+)([\]\[])$/);
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^;]+);([^;\]\[]+)([\]\[])$/);
   if (!m) return null;
   const [_, cg, a, b, cd] = m;
   try {
@@ -1256,7 +1295,7 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
     nettoye = nettoye.slice(1,-1);
   }
-  const parties = nettoye.split(/[;,]/);
+  const parties = nettoye.split(/;/);
   if (parties.length !== 2) return false;
   try {
     for (let i=0;i<8;i++) {
@@ -1344,11 +1383,46 @@ function checkEquationCartesienne(userInput, correctA, correctB, correctC, vars)
   } catch(e) { return false; }
 }
 
+function genererScopeSommeProduit() {
+  const scope = { x: Math.random()*2 - 0.6, n: alea(3,7) };
+  for (let i = 0; i <= 40; i++) {
+    scope['x_' + i] = Math.random()*4 - 2;
+    scope['y_' + i] = Math.random()*4 - 2;
+  }
+  return scope;
+}
+
+// remplace x_EXPR / y_EXPR (EXPR = identifiant simple ou expression entre parentheses, ex: x_k, x_(k+1), y_(n-k))
+// par la valeur concrete x_N / y_N une fois l'indice evalue dans le scope courant (variables de boucle incluses)
+function substituerIndices(expr, scope) {
+  return expr.replace(/\b([xy])_(\(([^()]+)\)|[a-zA-Z0-9]+)/g, (m, lettre, groupeComplet, groupeParen) => {
+    const idxExpr = groupeParen !== undefined ? groupeParen : groupeComplet;
+    try {
+      const v = Math.round(math.evaluate(idxExpr, scope));
+      return `${lettre}_${v}`;
+    } catch(e) { return m; }
+  });
+}
+
 function evaluerExpressionSomme(str, scope) {
-  const nettoye = normaliserSaisie(str).trim().replace(/\s/g,'');
-  const m = nettoye.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
-  if (!m) return null;
-  const [_, idxVar, borneInf, borneSup, expr] = m;
+  // attention : la conversion virgule-decimale de normaliserSaisie ne doit PAS s'appliquer avant d'avoir
+  // isole les 4 arguments separes par des virgules de la forme sum(k,1,n,expr) - sinon "1,60" devient "1.60"
+  const brut = String(str).trim();
+  let idxVar, borneInf, borneSup, expr;
+  // attention : matcher la structure "_(...)^..." AVANT normaliserSaisie, qui inserterait sinon un '*' parasite
+  // entre "_" et "(" (l'identifiant "_" seul n'est jamais une fonction connue)
+  const mNouveau = brut.match(/^sum\s*_\(([a-zA-Z]+)=([^)]+)\)\^(?:\(([^)]+)\)|(\S+?))\s*(.+)$/);
+  if (mNouveau) {
+    idxVar = mNouveau[1];
+    borneInf = normaliserSaisie(mNouveau[2]);
+    borneSup = normaliserSaisie(mNouveau[3] !== undefined ? mNouveau[3] : mNouveau[4]);
+    expr = mNouveau[5];
+  } else {
+    const nettoye = brut.replace(/\s/g,'');
+    const m = nettoye.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+    if (!m) return null;
+    idxVar = m[1]; borneInf = normaliserSaisie(m[2]); borneSup = normaliserSaisie(m[3]); expr = m[4];
+  }
   let bInf, bSup;
   try {
     bInf = Math.round(math.evaluate(borneInf, scope));
@@ -1358,11 +1432,52 @@ function evaluerExpressionSomme(str, scope) {
   let total = 0;
   for (let k = bInf; k <= bSup; k++) {
     const scopeLocal = Object.assign({}, scope, {[idxVar]: k});
-    try {
-      const v = math.evaluate(expr, scopeLocal);
-      if (typeof v !== 'number' || !isFinite(v)) return null;
-      total += v;
-    } catch(e) { return null; }
+    let v = evaluerExpressionSomme(expr, scopeLocal);
+    if (v === null) v = evaluerExpressionProduit(expr, scopeLocal);
+    if (v === null) {
+      try { v = math.evaluate(normaliserSaisie(substituerIndices(expr, scopeLocal)), scopeLocal); } catch(e) { return null; }
+    }
+    if (typeof v !== 'number' || !isFinite(v)) return null;
+    total += v;
+  }
+  return total;
+}
+
+function evaluerExpressionProduit(str, scope) {
+  // attention : la conversion virgule-decimale de normaliserSaisie ne doit PAS s'appliquer avant d'avoir
+  // isole les 4 arguments separes par des virgules de la forme prod(k,1,n,expr) - sinon "1,60" devient "1.60"
+  const brut = String(str).trim();
+  let idxVar, borneInf, borneSup, expr;
+  // attention : matcher la structure "_(...)^..." AVANT normaliserSaisie, qui inserterait sinon un '*' parasite
+  // entre "_" et "(" (l'identifiant "_" seul n'est jamais une fonction connue)
+  const mNouveau = brut.match(/^prod\s*_\(([a-zA-Z]+)=([^)]+)\)\^(?:\(([^)]+)\)|(\S+?))\s*(.+)$/);
+  if (mNouveau) {
+    idxVar = mNouveau[1];
+    borneInf = normaliserSaisie(mNouveau[2]);
+    borneSup = normaliserSaisie(mNouveau[3] !== undefined ? mNouveau[3] : mNouveau[4]);
+    expr = mNouveau[5];
+  } else {
+    const nettoye = brut.replace(/\s/g,'');
+    const m = nettoye.match(/^prod\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+    if (!m) return null;
+    idxVar = m[1]; borneInf = normaliserSaisie(m[2]); borneSup = normaliserSaisie(m[3]); expr = m[4];
+  }
+  let bInf, bSup;
+  try {
+    bInf = Math.round(math.evaluate(borneInf, scope));
+    bSup = Math.round(math.evaluate(borneSup, scope));
+  } catch(e) { return null; }
+  if (!isFinite(bInf) || !isFinite(bSup) || bSup - bInf > 300 || bSup - bInf < 0) return null;
+  let total = 1;
+  for (let k = bInf; k <= bSup; k++) {
+    const scopeLocal = Object.assign({}, scope, {[idxVar]: k});
+    let v = evaluerExpressionSomme(expr, scopeLocal);
+    if (v === null) v = evaluerExpressionProduit(expr, scopeLocal);
+    if (v === null) {
+      try { v = math.evaluate(normaliserSaisie(substituerIndices(expr, scopeLocal)), scopeLocal); } catch(e) { return null; }
+    }
+    if (typeof v !== 'number' || !isFinite(v)) return null;
+    total *= v;
   }
   return total;
 }
@@ -1371,15 +1486,36 @@ function checkSomme(userInput, correctExpr) {
   let essaisValides = 0, tentatives = 0;
   while (essaisValides < 6 && tentatives < 40) {
     tentatives++;
-    const scope = { x: Math.random()*2 - 0.6, n: alea(3,7) };
+    const scope = genererScopeSommeProduit();
     let cVal = evaluerExpressionSomme(correctExpr, scope);
     if (cVal === null) {
-      try { cVal = math.evaluate(correctExpr, scope); } catch(e) { continue; }
+      try { cVal = math.evaluate(substituerIndices(correctExpr, scope), scope); } catch(e) { continue; }
     }
     if (typeof cVal !== 'number' || !isFinite(cVal)) continue;
     let uVal = evaluerExpressionSomme(userInput, scope);
     if (uVal === null) {
-      try { uVal = math.evaluate(normaliserSaisie(userInput), scope); } catch(e) { return false; }
+      try { uVal = math.evaluate(normaliserSaisie(substituerIndices(userInput, scope)), scope); } catch(e) { return false; }
+    }
+    if (typeof uVal !== 'number' || !isFinite(uVal)) return false;
+    if (Math.abs(uVal - cVal) > 1e-6 * (1 + Math.abs(cVal))) return false;
+    essaisValides++;
+  }
+  return essaisValides >= 6;
+}
+
+function checkProduit(userInput, correctExpr) {
+  let essaisValides = 0, tentatives = 0;
+  while (essaisValides < 6 && tentatives < 40) {
+    tentatives++;
+    const scope = genererScopeSommeProduit();
+    let cVal = evaluerExpressionProduit(correctExpr, scope);
+    if (cVal === null) {
+      try { cVal = math.evaluate(substituerIndices(correctExpr, scope), scope); } catch(e) { continue; }
+    }
+    if (typeof cVal !== 'number' || !isFinite(cVal)) continue;
+    let uVal = evaluerExpressionProduit(userInput, scope);
+    if (uVal === null) {
+      try { uVal = math.evaluate(normaliserSaisie(substituerIndices(userInput, scope)), scope); } catch(e) { return false; }
     }
     if (typeof uVal !== 'number' || !isFinite(uVal)) return false;
     if (Math.abs(uVal - cVal) > 1e-6 * (1 + Math.abs(cVal))) return false;
@@ -1420,8 +1556,12 @@ function valeurDuChamp(el) {
     v = v.replace(/f\^′/g, 'fp ').replace(/g\^′/g, 'gp ').replace(/h\^′/g, 'hp ');
     // normaliser aussi fp/gp/hp si jamais MathLive les a decomposes en deux lettres separees (ex: "f p" -> "fp")
     v = v.replace(/\bf p\b/g, 'fp').replace(/\bg p\b/g, 'gp').replace(/\bh p\b/g, 'hp');
-    // normaliser sum si decompose en lettres separees par MathLive (ex: "s u m(" -> "sum(")
-    v = v.replace(/\bs u m\(/g, 'sum(');
+    // normaliser les noms de fonctions eventuellement decomposes lettre par lettre par MathLive (frappe naturelle,
+    // ex: "s u m(" -> "sum(", "e x p(" -> "exp(") - sinon la reconnaissance de la fonction echoue silencieusement
+    ['sum','prod','exp','sqrt','sin','cos','tan','log','ln','abs'].forEach(fn => {
+      const motif = fn.split('').join('\\s+');
+      v = v.replace(new RegExp('(?<![a-zA-Z])' + motif + '\\s*\\(', 'g'), fn + '(');
+    });
     // normaliser les barres de valeur absolue |...| (saisies via MathLive) vers la convention mathjs abs(...)
     if (v.startsWith('|') && v.endsWith('|') && v.indexOf('|', 1) === v.length - 1) {
       v = 'abs(' + v.slice(1, -1) + ')';
@@ -1454,6 +1594,7 @@ function verifierUne(idx) {
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
+  else if (ex.type === 'produit') ok = checkProduit(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
@@ -1474,6 +1615,7 @@ function attacherEcouteurs() {
     if (input.tagName === 'MATH-FIELD') {
       const raccourcis = Object.assign({}, input.inlineShortcuts);
       delete raccourcis['sum'];
+      delete raccourcis['prod'];
       input.inlineShortcuts = raccourcis;
     }
     let ignorerProchainInput = false;
@@ -1490,6 +1632,18 @@ function attacherEcouteurs() {
     });
     input.addEventListener('input', () => {
       if (ignorerProchainInput) { ignorerProchainInput = false; return; }
+      if (ex.type === 'somme' && input.getValue('latex').trim() === '\\Sigma') {
+        ignorerProchainInput = true;
+        input.setValue('');
+        input.insert('\\sum_{k=#0}^{#0}#0', {focus: true});
+        return;
+      }
+      if (ex.type === 'produit' && input.getValue('latex').trim() === '\\Pi') {
+        ignorerProchainInput = true;
+        input.setValue('');
+        input.insert('\\prod_{k=#0}^{#0}#0', {focus: true});
+        return;
+      }
       reinitialiserStatut(idx);
     });
     input.addEventListener('focus', () => fermerAutresClaviers(idx));
@@ -1512,8 +1666,6 @@ function fermerAutresClaviers(idxActuel) {
     if (idx !== idxActuel) {
       const clavier = document.getElementById('clavier-' + idx);
       if (clavier) clavier.classList.remove('ouvert');
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
     }
   });
 }
@@ -1545,16 +1697,64 @@ function convertirSqrt(s) {
   }
   return s;
 }
+function convertirExposant(s) {
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '^' && s[i+1] === '(') {
+      let depth = 1, j = i + 2;
+      while (j < s.length && depth > 0) {
+        if (s[j] === '(') depth++;
+        else if (s[j] === ')') depth--;
+        j++;
+      }
+      const inner = s.slice(i+2, j-1);
+      result += '^{' + inner + '}';
+      i = j - 1;
+    } else {
+      result += s[i];
+    }
+  }
+  return result;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
-  s = convertirSqrt(s);
-  s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
-  s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
-  s = s.replace(/\*/g, '\\times ');
-  s = s.replace(/lambda/g, '\\lambda ');
-  return s;
+  // variables indicees x_k, x_(k+1), y_(n-k)... -> forme temporaire xsub(...)/ysub(...) analysable par math.js
+  s = s.replace(/\b([xy])_(\(([^()]+)\)|[a-zA-Z0-9]+)/g, (m, lettre, groupeComplet, groupeParen) => {
+    const idxExpr = groupeParen !== undefined ? groupeParen : groupeComplet;
+    return `${lettre}sub(${idxExpr})`;
+  });
+  try {
+    const node = math.parse(normaliserSaisie(s));
+    let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = tex.replace(/\\cdot/g, '\\times ');
+    tex = tex.replace(/\\frac\{/g, '\\dfrac{');
+    tex = tex.replace(/lambda/g, '\\lambda ');
+    tex = tex.replace(/\ban\b/g, 'a_n').replace(/\ba1\b/g, 'a_1').replace(/\ba2\b/g, 'a_2').replace(/\ba3\b/g, 'a_3').replace(/\ba4\b/g, 'a_4');
+    tex = tex.replace(/\\mathrm\{([xy])sub\}\\left\(\s*([^()]*?)\s*\\right\)/g, '$1_{$2}');
+    return tex;
+  } catch(e) {
+    s = s.replace(/\ban\b/g, 'a_n').replace(/\ba1\b/g, 'a_1').replace(/\ba2\b/g, 'a_2').replace(/\ba3\b/g, 'a_3').replace(/\ba4\b/g, 'a_4');
+    s = s.replace(/\b([xy])sub\(([^()]*)\)/g, '$1_{$2}');
+    s = convertirSqrt(s);
+    s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/\*/g, '\\times ');
+    s = s.replace(/lambda/g, '\\lambda ');
+    return s;
+  }
 }
+
+function sommeOuProduitVersLatex(str) {
+  const s = String(str);
+  const mSum = s.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+  if (mSum) return `\\displaystyle\\sum_{${mSum[1]}=${jsVersLatex(mSum[2])}}^{${jsVersLatex(mSum[3])}} ${sommeOuProduitVersLatex(mSum[4])}`;
+  const mProd = s.match(/^prod\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
+  if (mProd) return `\\displaystyle\\prod_{${mProd[1]}=${jsVersLatex(mProd[2])}}^{${jsVersLatex(mProd[3])}} ${sommeOuProduitVersLatex(mProd[4])}`;
+  return jsVersLatex(s);
+}
+function sommeVersLatex(reponse) { return sommeOuProduitVersLatex(reponse); }
+function produitVersLatex(reponse) { return sommeOuProduitVersLatex(reponse); }
 
 function formaterUneBorne(v) {
   if (v === Infinity) return '+\\infty';
@@ -1562,7 +1762,7 @@ function formaterUneBorne(v) {
   if (Number.isInteger(v)) return String(v);
   try {
     const frac = math.fraction(v);
-    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
   } catch(e) {}
   return v.toFixed(3);
 }
@@ -1594,7 +1794,7 @@ function formaterReponse(ex) {
       const fmt = (v) => {
         if (Number.isInteger(v)) return String(v);
         const frac = math.fraction(v);
-        return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+        return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
       };
       return `\\Omega(${fmt(ex.cx)}\\,;\\,${fmt(ex.cy)}) \\text{ et } r=${fmt(ex.r)}`;
     }
@@ -1610,12 +1810,19 @@ function formaterReponse(ex) {
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
     }
+    if (ex.type === 'somme') {
+      return sommeVersLatex(ex.reponse);
+    }
+    if (ex.type === 'produit') {
+      return produitVersLatex(ex.reponse);
+    }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
     }
     if (ex.type === 'num') {
       if (ex.reponse && ex.reponse.trim().startsWith('{')) {
-        return '\\{' + jsVersLatex(ex.reponse.replace(/[{}]/g,'')) + '\\}';
+        const elements = ex.reponse.replace(/[{}]/g,'').split(';').map(el => jsVersLatex(el.trim()));
+        return '\\left\\{' + elements.join('\\,;\\,') + '\\right\\}';
       }
       // si l'expression contient une racine ou une lettre, ce n'est pas un rationnel pur : afficher tel quel
       if (/sqrt|[a-zA-Z]/.test(ex.reponse)) {
@@ -1624,7 +1831,7 @@ function formaterReponse(ex) {
       const val = math.evaluate(ex.reponse);
       if (Number.isInteger(val)) return String(val);
       const frac = math.fraction(val);
-      return `${frac.s < 0 ? '-' : ''}${frac.n}/${frac.d}`;
+      return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
     }
     return jsVersLatex(ex.reponse);
   } catch(e) {
@@ -1675,6 +1882,9 @@ function reinitialiser() {
     if (clavier) clavier.classList.remove('ouvert');
   });
   document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
 }
 
 function genererNouvelleFiche() {
@@ -1684,7 +1894,28 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  panneauToutes.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+
+function toggleToutesReponses() {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
+  }
 }
 
 
@@ -1732,7 +1963,10 @@ function aideContextuellePour(ex) {
     return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
   }
   if (ex.type === 'somme') {
-    return "Écrire directement <code>sum(k,1,n,expr)</code> au clavier pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le symbole &Sigma; du clavier virtuel (Maj + touche <code>+</code>) fonctionne aussi si besoin.";
+    return "Cliquer sur le bouton &Sigma; pour insérer le symbole de somme, puis compléter les trois cases : la valeur initiale de <code>k</code>, la valeur finale, et le terme général en fonction de <code>k</code> (et <code>x</code> si besoin).";
+  }
+  if (ex.type === 'produit') {
+    return "Cliquer sur le bouton &Pi; pour insérer le symbole de produit, puis compléter les trois cases : la valeur initiale de <code>k</code>, la valeur finale, et le terme général en fonction de <code>k</code> (et <code>x</code> si besoin).";
   }
   if (ex.type === 'paire') {
     return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
@@ -1747,7 +1981,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
-  if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
+  if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'produit', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) return true;
   if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) return true;
   if (ex.type === 'texte' && ex.reponse && /^[a-z]\s*(>=|<=)\s*.+$/.test(ex.reponse.trim())) return true;
@@ -1755,10 +1989,49 @@ function necessiteAide(ex) {
   return false;
 }
 
+function texteAideGroupe(indices) {
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (necessiteAide(ex)) return aideContextuellePour(ex);
+  }
+  return null;
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const conteneur = titre.querySelector('span:not(.picto-niveau)') || titre;
+  const btn = document.createElement('button');
+  btn.className = 'q-aide-btn';
+  btn.title = 'Comment répondre ?';
+  btn.textContent = '?';
+  btn.onclick = () => toggleAideGroupe(gridId);
+  conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.after(bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  const etaitOuverte = aide.classList.contains('ouverte');
+  fermerAutresClaviers(-1);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
+
 function construireGrilles() {
   for (const [gridId, indices] of Object.entries(groupes)) {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
+    injecterAideGroupe(gridId, indices);
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
@@ -1766,12 +2039,6 @@ function construireGrilles() {
       div.id = 'q-' + idx;
       const lettre = lettresEtendues[pos] || '';
       const suffixe = ex.avecEgal ? ' =' : '';
-      const boutonAide = necessiteAide(ex)
-        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
-        : '';
-      const bulleAide = necessiteAide(ex)
-        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
-        : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options-wrapper${ex.optionsSurUneLigne ? ' q-qcm-options-wrapper--scroll' : ''}"><div class="q-qcm-options${ex.optionsSurUneLigne ? ' q-qcm-options--scroll' : ''}">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
@@ -1782,16 +2049,14 @@ function construireGrilles() {
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
-        ${boutonAide}
         <span class="q-statut" id="statut-${idx}"></span>
-        ${bulleAide}
       `;
       grille.appendChild(div);
     });
   }
 }
 
-const TYPES_MATHFIELD = ['num', 'alg', 'somme'];
+const TYPES_MATHFIELD = ['num', 'alg', 'somme', 'produit'];
 
 function utiliseMathfield(ex) {
   if (!TYPES_MATHFIELD.includes(ex.type)) return false;
@@ -1799,7 +2064,28 @@ function utiliseMathfield(ex) {
   return true;
 }
 
+function insererMath(idx, texte) {
+  const mf = document.getElementById('input-' + idx);
+  mf.focus();
+  mf.executeCommand('moveToMathfieldEnd');
+  mf.insert(texte, {focus: true});
+}
+
 function champReponsePour(idx, ex) {
+  if (ex.type === 'somme') {
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
+              smart-fence="off" smart-superscript="on"
+              virtual-keyboard-mode="manual"></math-field>
+    <button class="q-clavier-btn" onclick="insererMath(${idx},'\\\\sum_{k=#0}^{#0}#0')" title="Insérer une somme">&Sigma;</button>
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+  }
+  if (ex.type === 'produit') {
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
+              smart-fence="off" smart-superscript="on"
+              virtual-keyboard-mode="manual"></math-field>
+    <button class="q-clavier-btn" onclick="insererMath(${idx},'\\\\prod_{k=#0}^{#0}#0')" title="Insérer un produit">&Pi;</button>
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+  }
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
               smart-fence="off" smart-superscript="on"

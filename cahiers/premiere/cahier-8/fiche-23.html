@@ -412,16 +412,18 @@ window.MathJax = {
     background: var(--bleu-clair);
     border: 1.5px solid var(--bleu);
     border-radius: 50%;
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: bold;
     color: var(--bleu);
     flex: 0 0 auto;
     line-height: 1;
     padding: 0;
+    margin-left: 6px;
+    vertical-align: middle;
   }
   .q-aide-btn:hover { background: var(--bleu); color: white; }
   .q-aide-bulle {
@@ -768,6 +770,7 @@ window.MathJax = {
 <div class="barre-controle">
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -778,6 +781,11 @@ window.MathJax = {
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
 
+<div class="barre-controle">
+  <button class="btn-secondaire" onclick="toggleToutesReponses()" id="btn-toutes-reponses">Voir toutes les réponses</button>
+</div>
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
@@ -786,76 +794,283 @@ window.MathJax = {
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
 
-const exercices = [
+function fracToStr(f) { f = math.fraction(f); return f.d === 1 ? String((f.s < 0 ? -1 : 1) * f.n) : `${f.s < 0 ? '-' : ''}${f.n}/${f.d}`; }
+function coefPrefixeL(f) {
+  f = math.fraction(f);
+  if (f.n === 1 && f.d === 1) return f.s < 0 ? '-' : '';
+  if (f.d === 1) return (f.s < 0 ? '-' : '') + f.n;
+  return (f.s < 0 ? '-' : '') + `\\dfrac{${f.n}}{${f.d}}`;
+}
+function signedFracTerm(coefF, factorStr) {
+  coefF = math.fraction(coefF);
+  if (coefF.n === 0) return '';
+  const neg = coefF.s < 0;
+  const abs = math.abs(coefF);
+  const body = (abs.n === 1 && abs.d === 1) ? (factorStr || '1') : (fracToStr(abs) + (factorStr ? '*' + factorStr : ''));
+  return (neg ? '-' : '+') + body;
+}
+function joinSigned(parts) {
+  const s = parts.filter(p => p !== '').join('');
+  return s.startsWith('+') ? s.slice(1) : (s === '' ? '0' : s);
+}
+function simplifierRacine(n) {
+  let coef = 1, radicand = n;
+  for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--) {
+    if (radicand % (k*k) === 0) { coef *= k; radicand /= (k*k); break; }
+  }
+  return { coef, radicand };
+}
+function surdTerm(coefF, radicand) {
+  coefF = math.fraction(coefF);
+  if (radicand === 1) return fracToStr(coefF);
+  const neg = coefF.s < 0;
+  const abs = math.abs(coefF);
+  const absStr = (abs.n === 1 && abs.d === 1) ? '' : (fracToStr(abs).includes('/') ? `(${fracToStr(abs)})*` : fracToStr(abs) + '*');
+  return (neg ? '-' : '') + absStr + `sqrt(${radicand})`;
+}
+
+// ---------- toolkit trigonometrique : angles remarquables en douziemes de pi ----------
+// k = angle / (pi/12) ; valeurs "remarquables" = multiples de pi/6 ou de pi/4 (k multiple de 2 ou de 3)
+const NICE_K = [0,2,3,4,6,8,9,10,12,14,15,16,18,20,21,22];
+const NICE_K_TAN = NICE_K.filter(k => k !== 6 && k !== 18); // tangente non definie en pi/2, 3pi/2
+const COS_TABLE = {0:'1',2:'sqrt(3)/2',3:'sqrt(2)/2',4:'1/2',6:'0',8:'-1/2',9:'-sqrt(2)/2',10:'-sqrt(3)/2',12:'-1',14:'-sqrt(3)/2',15:'-sqrt(2)/2',16:'-1/2',18:'0',20:'1/2',21:'sqrt(2)/2',22:'sqrt(3)/2'};
+const SIN_TABLE = {0:'0',2:'1/2',3:'sqrt(2)/2',4:'sqrt(3)/2',6:'1',8:'sqrt(3)/2',9:'sqrt(2)/2',10:'1/2',12:'0',14:'-1/2',15:'-sqrt(2)/2',16:'-sqrt(3)/2',18:'-1',20:'-sqrt(3)/2',21:'-sqrt(2)/2',22:'-1/2'};
+const TAN_TABLE = {0:'0',2:'sqrt(3)/3',3:'1',4:'sqrt(3)',8:'-sqrt(3)',9:'-1',10:'-sqrt(3)/3',12:'0',14:'sqrt(3)/3',15:'1',16:'sqrt(3)',20:'-sqrt(3)',21:'-1',22:'-sqrt(3)/3'};
+function mod24(k) { return ((k % 24) + 24) % 24; }
+// k (douziemes de pi, non reduit) -> {p,q} tels que angle = p*pi/q (fraction reduite via pgcd(k,12))
+function angleFrac(k) {
+  if (k === 0) return { p: 0, q: 1 };
+  const g = pgcd(Math.abs(k), 12);
+  return { p: k / g, q: 12 / g };
+}
+function angleLatex(k) {
+  const { p, q } = angleFrac(k);
+  if (p === 0) return '0';
+  const sign = p < 0 ? '-' : '';
+  const ap = Math.abs(p);
+  const numPart = ap === 1 ? '\\pi' : `${ap}\\pi`;
+  if (q === 1) return `${sign}${numPart}`;
+  return `${sign}\\dfrac{${numPart}}{${q}}`;
+}
+function angleAscii(k) {
+  const { p, q } = angleFrac(k);
+  if (p === 0) return '0';
+  const sign = p < 0 ? '-' : '';
+  const ap = Math.abs(p);
+  const numPart = ap === 1 ? 'pi' : `${ap}*pi`;
+  if (q === 1) return `${sign}${numPart}`;
+  return `${sign}${numPart}/${q}`;
+}
+// pioche n valeurs distinctes dans un tableau
+function piocheDistinct(tableau, n) {
+  const copie = tableau.slice();
+  const res = [];
+  for (let i = 0; i < n; i++) {
+    const j = alea(0, copie.length - 1);
+    res.push(copie[j]);
+    copie.splice(j, 1);
+  }
+  return res;
+}
+function piFracAscii(f) {
+  f = math.fraction(f);
+  if (f.n === 0) return '0';
+  const sign = f.s < 0 ? '-' : '';
+  if (f.d === 1) return f.n === 1 ? `${sign}pi` : `${sign}${f.n}*pi`;
+  return f.n === 1 ? `${sign}pi/${f.d}` : `${sign}${f.n}*pi/${f.d}`;
+}
+
+function genererExercices() {
+  const ex = [];
   // Calcul 23.1 - radians vers degres (4 items)
-  {id:"23.1 a)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{\\pi}{3}\\)", reponse:"60"},
-  {id:"23.1 b)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{\\pi}{2}\\)", reponse:"90"},
-  {id:"23.1 c)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{3\\pi}{4}\\)", reponse:"135"},
-  {id:"23.1 d)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{7\\pi}{6}\\)", reponse:"210"},
-  // Calcul 23.2 - degres vers radians (4 items)
-  {id:"23.2 a)", type:"num", texteLibre:true, enonce:"\\(45\\)", reponse:"pi/4"},
-  {id:"23.2 b)", type:"num", texteLibre:true, enonce:"\\(270\\)", reponse:"3*pi/2"},
-  {id:"23.2 c)", type:"num", texteLibre:true, enonce:"\\(120\\)", reponse:"2*pi/3"},
-  {id:"23.2 d)", type:"num", texteLibre:true, enonce:"\\(112{,}5\\)", reponse:"5*pi/8"},
-  // Calcul 23.3 - fractions (9 items)
-  {id:"23.3 a)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{\\pi}{3}+\\dfrac{\\pi}{6}\\)", reponse:"pi/2"},
-  {id:"23.3 b)", type:"num", texteLibre:true, enonce:"\\(\\pi-\\dfrac{\\pi}{4}\\)", reponse:"3*pi/4"},
-  {id:"23.3 c)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{\\pi}{2}+\\dfrac{\\pi}{3}\\)", reponse:"5*pi/6"},
-  {id:"23.3 d)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{\\pi}{3}-\\dfrac{\\pi}{4}\\)", reponse:"pi/12"},
-  {id:"23.3 e)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{\\pi}{3}+2\\pi\\)", reponse:"7*pi/3"},
-  {id:"23.3 f)", type:"num", texteLibre:true, enonce:"\\(-\\dfrac{7\\pi}{6}+4\\pi\\)", reponse:"17*pi/6"},
-  {id:"23.3 g)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{11\\pi}{2}-5\\pi\\)", reponse:"pi/2"},
-  {id:"23.3 h)", type:"num", texteLibre:true, enonce:"\\(-\\dfrac{17\\pi}{4}+3\\pi\\)", reponse:"-5*pi/4"},
-  {id:"23.3 i)", type:"num", texteLibre:true, enonce:"\\(\\dfrac{45\\pi}{2}+11\\pi\\)", reponse:"67*pi/2"},
-  // Calcul 23.4 - premiers angles (6 items)
-  {id:"23.4 a)", type:"num", texteLibre:true, enonce:"\\(\\cos\\left(\\dfrac{\\pi}{3}\\right)\\)", reponse:"1/2"},
-  {id:"23.4 b)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(\\dfrac{\\pi}{4}\\right)\\)", reponse:"sqrt(2)/2"},
-  {id:"23.4 c)", type:"num", texteLibre:true, enonce:"\\(\\cos(0)\\)", reponse:"1"},
-  {id:"23.4 d)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(\\dfrac{\\pi}{2}\\right)\\)", reponse:"1"},
-  {id:"23.4 e)", type:"num", texteLibre:true, enonce:"\\(\\cos\\left(\\dfrac{\\pi}{6}\\right)\\)", reponse:"sqrt(3)/2"},
-  {id:"23.4 f)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(\\dfrac{\\pi}{3}\\right)\\)", reponse:"sqrt(3)/2"},
-  // Calcul 23.5 - autres angles (6 items)
-  {id:"23.5 a)", type:"num", texteLibre:true, enonce:"\\(\\cos\\left(\\dfrac{2\\pi}{3}\\right)\\)", reponse:"-1/2"},
-  {id:"23.5 b)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(-\\dfrac{\\pi}{4}\\right)\\)", reponse:"-sqrt(2)/2"},
-  {id:"23.5 c)", type:"num", texteLibre:true, enonce:"\\(\\cos(7\\pi)\\)", reponse:"-1"},
-  {id:"23.5 d)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(\\dfrac{11\\pi}{6}\\right)\\)", reponse:"-1/2"},
-  {id:"23.5 e)", type:"num", texteLibre:true, enonce:"\\(\\cos\\left(\\dfrac{15\\pi}{2}\\right)\\)", reponse:"0"},
-  {id:"23.5 f)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(-\\dfrac{7\\pi}{3}\\right)\\)", reponse:"-sqrt(3)/2"},
-  // Calcul 23.6 - derniers angles (3 items)
-  {id:"23.6 a)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(\\dfrac{14\\pi}{4}\\right)\\)", reponse:"-1"},
-  {id:"23.6 b)", type:"num", texteLibre:true, enonce:"\\(\\cos\\left(-\\dfrac{5\\pi}{6}\\right)\\)", reponse:"-sqrt(3)/2"},
-  {id:"23.6 c)", type:"num", texteLibre:true, enonce:"\\(\\sin\\left(-\\dfrac{7\\pi}{4}\\right)\\)", reponse:"sqrt(2)/2"},
-  // Calcul 23.7 - monotonie sur [0,pi/2] (2 items, QCM)
-  {id:"23.7 a)", type:"qcm", texteLibre:true, enonce:"Soient \\(t_1,t_2\\in\\mathbb{R}\\) tels que \\(0\\leqslant t_1\\lt t_2\\leqslant \\frac{\\pi}{2}\\). Quelle est l'affirmation juste ?", bonneReponse:"b", options:[{lettre:"a",texte:"\\cos(t_1)\\lt\\cos(t_2)"},{lettre:"b",texte:"\\cos(t_1)>\\cos(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]},
-  {id:"23.7 b)", type:"qcm", texteLibre:true, enonce:"Même question pour sin.", bonneReponse:"a", options:[{lettre:"a",texte:"\\sin(t_1)\\lt\\sin(t_2)"},{lettre:"b",texte:"\\sin(t_1)>\\sin(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]},
-  // Calcul 23.8 - monotonie sur un autre intervalle (2 items, QCM)
-  {id:"23.8 a)", type:"qcm", texteLibre:true, enonce:"Soient \\(t_1,t_2\\in\\mathbb{R}\\) avec \\(0\\leqslant t_1\\lt t_2\\leqslant \\pi\\). Quelle est l'affirmation juste pour cos ?", bonneReponse:"b", options:[{lettre:"a",texte:"\\cos(t_1)\\lt\\cos(t_2)"},{lettre:"b",texte:"\\cos(t_1)>\\cos(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]},
-  {id:"23.8 b)", type:"qcm", texteLibre:true, enonce:"Même question pour sin.", bonneReponse:"c", options:[{lettre:"a",texte:"\\sin(t_1)\\lt\\sin(t_2)"},{lettre:"b",texte:"\\sin(t_1)>\\sin(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]},
-  // Calcul 23.9 - comparaison sin/cos (1 item, plusieurs bonnes reponses)
-  {id:"23.9", type:"qcm", texteLibre:true, enonce:"Pour quelles valeurs du réel x a-t-on \\(\\sin(x)\\leqslant\\cos(x)\\) ? Plusieurs réponses sont possibles.", bonneReponse:"a,b,c,f", options:[{lettre:"a",texte:"x=0"},{lettre:"b",texte:"x=\\dfrac{\\pi}{4}"},{lettre:"c",texte:"x=\\dfrac{\\pi}{6}"},{lettre:"d",texte:"x=\\pi"},{lettre:"e",texte:"x=\\dfrac{7\\pi}{6}"},{lettre:"f",texte:"x=\\dfrac{7\\pi}{4}"}], optionsSurUneLigne:true},
-  // Calcul 23.10 - comparaison sin/cos sur intervalle (1 item, plusieurs bonnes reponses)
-  {id:"23.10", type:"qcm", texteLibre:true, enonce:"Sur quel(s) intervalle(s) \\(I\\) a-t-on \\(\\forall x\\in I,\\ \\sin(x)\\leqslant\\cos(x)\\) ? Plusieurs réponses sont possibles.", bonneReponse:"b,c,f", options:[{lettre:"a",texte:"I_1=\\left[0,\\dfrac{\\pi}{2}\\right]"},{lettre:"b",texte:"I_2=\\left[0,\\dfrac{\\pi}{4}\\right]"},{lettre:"c",texte:"I_3=\\left[-\\dfrac{2\\pi}{3},-\\dfrac{\\pi}{3}\\right]"},{lettre:"d",texte:"I_4=\\left[\\dfrac{\\pi}{2},\\pi\\right]"},{lettre:"e",texte:"I_5=\\left[\\dfrac{7\\pi}{6},\\dfrac{5\\pi}{4}\\right]"},{lettre:"f",texte:"I_6=\\left[\\dfrac{3\\pi}{2},\\dfrac{9\\pi}{4}\\right]"}], optionsSurUneLigne:true},
-  // Calcul 23.11 - valeurs particulieres tangente (6 items, avance)
-  {id:"23.11 a)", type:"num", texteLibre:true, enonce:"\\(\\tan\\left(\\dfrac{\\pi}{3}\\right)\\)", reponse:"sqrt(3)"},
-  {id:"23.11 b)", type:"num", texteLibre:true, enonce:"\\(\\tan\\left(\\dfrac{\\pi}{4}\\right)\\)", reponse:"1"},
-  {id:"23.11 c)", type:"num", texteLibre:true, enonce:"\\(\\tan(0)\\)", reponse:"0"},
-  {id:"23.11 d)", type:"num", texteLibre:true, enonce:"\\(\\tan\\left(\\dfrac{7\\pi}{4}\\right)\\)", reponse:"-1"},
-  {id:"23.11 e)", type:"num", texteLibre:true, enonce:"\\(\\tan\\left(\\dfrac{\\pi}{6}\\right)\\)", reponse:"sqrt(3)/3"},
-  {id:"23.11 f)", type:"num", texteLibre:true, enonce:"\\(\\tan\\left(-\\dfrac{13\\pi}{3}\\right)\\)", reponse:"-sqrt(3)"},
+  (function() {
+    const POOL_Q = [2,3,4,6,12];
+    for (const l of ['a)','b)','c)','d)']) {
+      let p, q;
+      do { q = POOL_Q[alea(0,POOL_Q.length-1)]; p = alea(1, 2*q); } while (pgcd(p,q) !== 1);
+      ex.push({id:`23.1 ${l}`, type:"num", texteLibre:true, enonce: p===1 ? `\\(\\dfrac{\\pi}{${q}}\\)` : `\\(\\dfrac{${p}\\pi}{${q}}\\)`, reponse: String(180*p/q)});
+    }
+  })();
+  // Calcul 23.2 - degres vers radians (4 items : 3 en douziemes, 1 en huitiemes)
+  (function() {
+    for (const l of ['a)','b)','c)']) {
+      const k = aleaNonNul(1,23);
+      const deg = 15*k;
+      const frac = math.fraction(k,12);
+      ex.push({id:`23.2 ${l}`, type:"num", texteLibre:true, enonce:`\\(${deg}\\)`, reponse: piFracAscii(frac)});
+    }
+    let m; do { m = alea(1,15); } while (m % 8 === 0);
+    const degM = m * 22.5;
+    const degDisp = Number.isInteger(degM) ? String(degM) : String(degM).replace('.', '{,}');
+    const fracM = math.fraction(m,8);
+    ex.push({id:"23.2 d)", type:"num", texteLibre:true, enonce:`\\(${degDisp}\\)`, reponse: piFracAscii(fracM)});
+  })();
+  // Calcul 23.3 - arithmetique de fractions de pi (9 items)
+  (function() {
+    const POOL_D = [2,3,4,6,8,12];
+    let A, B;
+    do { A = POOL_D[alea(0,POOL_D.length-1)]; B = POOL_D[alea(0,POOL_D.length-1)]; } while (A === B);
+    const sum1 = math.add(math.fraction(1,A), math.fraction(1,B));
+    ex.push({id:"23.3 a)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{\\pi}{${A}}+\\dfrac{\\pi}{${B}}\\)`, reponse: piFracAscii(sum1)});
+
+    const C = POOL_D[alea(0,POOL_D.length-1)];
+    const term2 = math.subtract(1, math.fraction(1,C));
+    ex.push({id:"23.3 b)", type:"num", texteLibre:true, enonce:`\\(\\pi-\\dfrac{\\pi}{${C}}\\)`, reponse: piFracAscii(term2)});
+
+    let D, E;
+    do { D = POOL_D[alea(0,POOL_D.length-1)]; E = POOL_D[alea(0,POOL_D.length-1)]; } while (D === E);
+    const sum3 = math.add(math.fraction(1,D), math.fraction(1,E));
+    ex.push({id:"23.3 c)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{\\pi}{${D}}+\\dfrac{\\pi}{${E}}\\)`, reponse: piFracAscii(sum3)});
+
+    let F, G;
+    do { F = POOL_D[alea(0,POOL_D.length-1)]; G = POOL_D[alea(0,POOL_D.length-1)]; } while (F === G);
+    const diff4 = math.subtract(math.fraction(1,F), math.fraction(1,G));
+    ex.push({id:"23.3 d)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{\\pi}{${F}}-\\dfrac{\\pi}{${G}}\\)`, reponse: piFracAscii(diff4)});
+
+    const H = POOL_D[alea(0,POOL_D.length-1)], N5 = alea(1,3);
+    const term5 = math.add(math.fraction(1,H), N5);
+    ex.push({id:"23.3 e)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{\\pi}{${H}}+${N5===1?'':N5}\\pi\\)`, reponse: piFracAscii(term5)});
+
+    const P6 = aleaNonNul(1,11), Q6 = POOL_D[alea(0,POOL_D.length-1)], N6 = alea(2,5);
+    const term6 = math.subtract(N6, math.fraction(P6,Q6));
+    ex.push({id:"23.3 f)", type:"num", texteLibre:true, enonce:`\\(-\\dfrac{${P6}\\pi}{${Q6}}+${N6}\\pi\\)`, reponse: piFracAscii(term6)});
+
+    const Q7 = POOL_D[alea(0,POOL_D.length-1)], N7 = alea(2,6), P7 = alea(2*Q7+1, 3*Q7);
+    const term7 = math.subtract(math.fraction(P7,Q7), N7);
+    ex.push({id:"23.3 g)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{${P7}\\pi}{${Q7}}-${N7}\\pi\\)`, reponse: piFracAscii(term7)});
+
+    const P8 = aleaNonNul(1,17), Q8 = POOL_D[alea(0,POOL_D.length-1)], N8 = alea(2,4);
+    const term8 = math.subtract(N8, math.fraction(P8,Q8));
+    ex.push({id:"23.3 h)", type:"num", texteLibre:true, enonce:`\\(-\\dfrac{${P8}\\pi}{${Q8}}+${N8}\\pi\\)`, reponse: piFracAscii(term8)});
+
+    const Q9 = POOL_D[alea(0,POOL_D.length-1)], N9 = alea(6,12), P9 = alea(2*Q9+1, 3*Q9);
+    const term9 = math.add(math.fraction(P9,Q9), N9);
+    ex.push({id:"23.3 i)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{${P9}\\pi}{${Q9}}+${N9}\\pi\\)`, reponse: piFracAscii(term9)});
+  })();
+  // Calcul 23.4 - premiers angles, directs, distincts (6 items)
+  (function() {
+    const ks = piocheDistinct(NICE_K, 6);
+    const lettres4 = ['a)','b)','c)','d)','e)','f)'];
+    lettres4.forEach((l,i) => {
+      const k = ks[i];
+      const fn = i % 2 === 0 ? 'cos' : 'sin';
+      const table = fn === 'cos' ? COS_TABLE : SIN_TABLE;
+      ex.push({id:`23.4 ${l}`, type:"num", texteLibre:true, enonce:`\\(${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[k]});
+    });
+  })();
+  // Calcul 23.5 - autres angles, parfois negatifs ou non reduits (6 items)
+  (function() {
+    const lettres5 = ['a)','b)','c)','d)','e)','f)'];
+    lettres5.forEach((l,i) => {
+      const k0 = NICE_K[alea(0,NICE_K.length-1)];
+      const signe = alea(0,1)===0 ? 1 : -1;
+      const decalage = 12*alea(-3,3);
+      const k = signe*k0 + decalage;
+      const fn = i % 2 === 0 ? 'cos' : 'sin';
+      const table = fn === 'cos' ? COS_TABLE : SIN_TABLE;
+      ex.push({id:`23.5 ${l}`, type:"num", texteLibre:true, enonce:`\\(${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[mod24(k)]});
+    });
+  })();
+  // Calcul 23.6 - derniers angles, non reduits (3 items)
+  (function() {
+    const lettres6 = ['a)','b)','c)'];
+    lettres6.forEach((l,i) => {
+      const k0 = NICE_K[alea(0,NICE_K.length-1)];
+      const signe = alea(0,1)===0 ? 1 : -1;
+      const decalage = 12*alea(-3,3);
+      const k = signe*k0 + decalage;
+      const fn = i % 2 === 0 ? 'sin' : 'cos';
+      const table = fn === 'cos' ? COS_TABLE : SIN_TABLE;
+      ex.push({id:`23.6 ${l}`, type:"num", texteLibre:true, enonce:`\\(${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[mod24(k)]});
+    });
+  })();
+  // Calcul 23.7 - monotonie sur [0,pi/2] (2 items, QCM, theoreme fixe)
+  ex.push({id:"23.7 a)", type:"qcm", texteLibre:true, enonce:"Soient \\(t_1,t_2\\in\\mathbb{R}\\) tels que \\(0\\leqslant t_1\\lt t_2\\leqslant \\frac{\\pi}{2}\\). Quelle est l'affirmation juste ?", bonneReponse:"b", options:[{lettre:"a",texte:"\\cos(t_1)\\lt\\cos(t_2)"},{lettre:"b",texte:"\\cos(t_1)>\\cos(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]});
+  ex.push({id:"23.7 b)", type:"qcm", texteLibre:true, enonce:"Même question pour sin.", bonneReponse:"a", options:[{lettre:"a",texte:"\\sin(t_1)\\lt\\sin(t_2)"},{lettre:"b",texte:"\\sin(t_1)>\\sin(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]});
+  // Calcul 23.8 - monotonie sur un autre intervalle (2 items, QCM, theoreme fixe)
+  ex.push({id:"23.8 a)", type:"qcm", texteLibre:true, enonce:"Soient \\(t_1,t_2\\in\\mathbb{R}\\) avec \\(0\\leqslant t_1\\lt t_2\\leqslant \\pi\\). Quelle est l'affirmation juste pour cos ?", bonneReponse:"b", options:[{lettre:"a",texte:"\\cos(t_1)\\lt\\cos(t_2)"},{lettre:"b",texte:"\\cos(t_1)>\\cos(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]});
+  ex.push({id:"23.8 b)", type:"qcm", texteLibre:true, enonce:"Même question pour sin.", bonneReponse:"c", options:[{lettre:"a",texte:"\\sin(t_1)\\lt\\sin(t_2)"},{lettre:"b",texte:"\\sin(t_1)>\\sin(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}]});
+  // Calcul 23.9 - comparaison sin/cos en des points (1 item, plusieurs bonnes reponses, randomise)
+  (function() {
+    let ks, reponses;
+    do {
+      ks = piocheDistinct(NICE_K, 6);
+      reponses = ks.map(k => math.evaluate(SIN_TABLE[k]) <= math.evaluate(COS_TABLE[k]) + 1e-12);
+    } while (reponses.every(r=>r) || reponses.every(r=>!r));
+    const lettresOpt = ['a','b','c','d','e','f'];
+    const options = ks.map((k,i) => ({lettre: lettresOpt[i], texte: `x=${angleLatex(k)}`}));
+    const bonne = lettresOpt.filter((l,i) => reponses[i]).join(',');
+    ex.push({id:"23.9", type:"qcm", texteLibre:true, enonce:"Pour quelles valeurs du réel x a-t-on \\(\\sin(x)\\leqslant\\cos(x)\\) ? Plusieurs réponses sont possibles.", bonneReponse: bonne, options, optionsSurUneLigne:true});
+  })();
+  // Calcul 23.10 - comparaison sin/cos sur intervalle (1 item, theoreme fixe : la region est fixe, les intervalles proposes sont fixes)
+  ex.push({id:"23.10", type:"qcm", texteLibre:true, enonce:"Sur quel(s) intervalle(s) \\(I\\) a-t-on \\(\\forall x\\in I,\\ \\sin(x)\\leqslant\\cos(x)\\) ? Plusieurs réponses sont possibles.", bonneReponse:"b,c,f", options:[{lettre:"a",texte:"I_1=\\left[0,\\dfrac{\\pi}{2}\\right]"},{lettre:"b",texte:"I_2=\\left[0,\\dfrac{\\pi}{4}\\right]"},{lettre:"c",texte:"I_3=\\left[-\\dfrac{2\\pi}{3},-\\dfrac{\\pi}{3}\\right]"},{lettre:"d",texte:"I_4=\\left[\\dfrac{\\pi}{2},\\pi\\right]"},{lettre:"e",texte:"I_5=\\left[\\dfrac{7\\pi}{6},\\dfrac{5\\pi}{4}\\right]"},{lettre:"f",texte:"I_6=\\left[\\dfrac{3\\pi}{2},\\dfrac{9\\pi}{4}\\right]"}], optionsSurUneLigne:true});
+  // Calcul 23.11 - valeurs particulieres tangente, directes et distinctes (6 items, avance)
+  (function() {
+    const ks = piocheDistinct(NICE_K_TAN, 6);
+    const lettres11 = ['a)','b)','c)','d)','e)','f)'];
+    lettres11.forEach((l,i) => {
+      const k = ks[i];
+      ex.push({id:`23.11 ${l}`, type:"num", texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: TAN_TABLE[k]});
+    });
+  })();
   // Calcul 23.12 - quelques formules (2 items, avance)
-  {id:"23.12 a)", type:"qcm", texteLibre:true, enonce:"La fonction \\(x\\mapsto\\tan(x)\\) est :", bonneReponse:"b", options:[{lettre:"a",texte:"paire",texteLibreOption:true},{lettre:"b",texte:"impaire",texteLibreOption:true},{lettre:"c",texte:"aucune des deux",texteLibreOption:true}]},
-  {id:"23.12 b)", type:"texte", texteLibre:true, enonce:"Pour \\(x\\in\\,]-\\frac{\\pi}{2},\\frac{\\pi}{2}[\\), simplifier tan(x+π)", reponse:"tan(x)"},
+  ex.push({id:"23.12 a)", type:"qcm", texteLibre:true, enonce:"La fonction \\(x\\mapsto\\tan(x)\\) est :", bonneReponse:"b", options:[{lettre:"a",texte:"paire",texteLibreOption:true},{lettre:"b",texte:"impaire",texteLibreOption:true},{lettre:"c",texte:"aucune des deux",texteLibreOption:true}]});
+  (function() {
+    const n = alea(1,4);
+    const signe = alea(0,1)===0 ? '+' : '-';
+    const nAffiche = n===1 ? '' : n;
+    ex.push({id:"23.12 b)", type:"texte", texteLibre:true, enonce:`Pour \\(x\\in\\,]-\\frac{\\pi}{2},\\frac{\\pi}{2}[\\), simplifier tan(x${signe}${nAffiche}π)`, reponse:"tan(x)"});
+  })();
   // Calcul 23.13 - connaissant l'un, deduire l'autre (3 items, avance)
-  {id:"23.13 a)", type:"num", texteLibre:true, enonce:"Sachant que \\(\\sin(x)=\\dfrac{1}{4}\\) et \\(x\\in\\left[0,\\dfrac{\\pi}{2}\\right]\\), que vaut cos(x) ?", reponse:"sqrt(15)/4"},
-  {id:"23.13 b)", type:"num", texteLibre:true, enonce:"Sachant que \\(\\cos(x)=\\dfrac{\\sqrt{6}}{3}\\) et \\(x\\in\\left[-\\dfrac{\\pi}{2},0\\right]\\), que vaut sin(x) ?", reponse:"-sqrt(3)/3"},
-  {id:"23.13 c)", type:"num", texteLibre:true, enonce:"Sachant que \\(\\cos\\left(\\dfrac{\\pi}{8}\\right)=\\dfrac{\\sqrt{2+\\sqrt{2}}}{2}\\), que vaut \\(\\sin\\left(\\dfrac{\\pi}{8}\\right)\\) ?", reponse:"sqrt(2-sqrt(2))/2"},
+  (function() {
+    let n1, d1; do { n1 = alea(1,6); d1 = alea(n1+1,9); } while (pgcd(n1,d1) !== 1);
+    const s1 = simplifierRacine(d1*d1-n1*n1);
+    ex.push({id:"23.13 a)", type:"num", texteLibre:true, enonce:`Sachant que \\(\\sin(x)=\\dfrac{${n1}}{${d1}}\\) et \\(x\\in\\left[0,\\dfrac{\\pi}{2}\\right]\\), que vaut cos(x) ?`, reponse: `${surdTerm(s1.coef, s1.radicand)}/${d1}`});
+
+    const d2 = alea(2,6);
+    let D2; do { D2 = alea(1,d2*d2-1); } while (Number.isInteger(Math.sqrt(D2)) || Number.isInteger(Math.sqrt(d2*d2-D2)));
+    const c2 = simplifierRacine(d2*d2 - D2);
+    ex.push({id:"23.13 b)", type:"num", texteLibre:true, enonce:`Sachant que \\(\\cos(x)=\\dfrac{\\sqrt{${D2}}}{${d2}}\\) et \\(x\\in\\left[-\\dfrac{\\pi}{2},0\\right]\\), que vaut sin(x) ?`, reponse: `-${surdTerm(c2.coef, c2.radicand)}/${d2}`});
+
+    ex.push({id:"23.13 c)", type:"num", texteLibre:true, enonce:"Sachant que \\(\\cos\\left(\\dfrac{\\pi}{8}\\right)=\\dfrac{\\sqrt{2+\\sqrt{2}}}{2}\\), que vaut \\(\\sin\\left(\\dfrac{\\pi}{8}\\right)\\) ?", reponse:"sqrt(2-sqrt(2))/2"});
+  })();
   // Calcul 23.14 - avec tangente I (2 items, avance)
-  {id:"23.14 a)", type:"num", texteLibre:true, enonce:"Sachant que \\(\\cos(x)=\\dfrac{3}{5}\\) et \\(x\\in\\left[-\\dfrac{\\pi}{2},0\\right]\\), que vaut tan(x) ?", reponse:"-4/3"},
-  {id:"23.14 b)", type:"num", texteLibre:true, enonce:"Sachant que \\(\\cos(x)=\\dfrac{1}{\\sqrt{3}}\\) et \\(x\\in[0,\\pi]\\), que vaut tan(x) ?", reponse:"sqrt(2)"},
+  (function() {
+    const TRIPLES = [[3,4,5],[5,12,13],[8,15,17],[7,24,25],[20,21,29]];
+    const [a1,b1,c1] = TRIPLES[alea(0,TRIPLES.length-1)];
+    // quadrants : [intervalle latex, signe cos, signe sin]
+    const QUADRANTS = [
+      ["\\left[0,\\dfrac{\\pi}{2}\\right]", 1, 1],
+      ["\\left[\\dfrac{\\pi}{2},\\pi\\right]", -1, 1],
+      ["\\left[-\\pi,-\\dfrac{\\pi}{2}\\right]", -1, -1],
+      ["\\left[-\\dfrac{\\pi}{2},0\\right]", 1, -1]
+    ];
+    const [intervalle14, signeCos, signeSin] = QUADRANTS[alea(0,3)];
+    const cosVal = signeCos * a1;
+    const tan14a = math.divide(math.fraction(signeSin*b1,c1), math.fraction(cosVal,c1));
+    ex.push({id:"23.14 a)", type:"num", texteLibre:true, enonce:`Sachant que \\(\\cos(x)=\\dfrac{${cosVal}}{${c1}}\\) et \\(x\\in${intervalle14}\\), que vaut tan(x) ?`, reponse: fracToStr(tan14a)});
+
+    let D14; do { D14 = alea(2,8); } while (Number.isInteger(Math.sqrt(D14)) || Number.isInteger(Math.sqrt(D14-1)));
+    const s14b = simplifierRacine(D14-1);
+    ex.push({id:"23.14 b)", type:"num", texteLibre:true, enonce:`Sachant que \\(\\cos(x)=\\dfrac{1}{\\sqrt{${D14}}}\\) et \\(x\\in[0,\\pi]\\), que vaut tan(x) ?`, reponse: `${s14b.coef===1?'':s14b.coef}sqrt(${s14b.radicand})`});
+  })();
   // Calcul 23.15 - avec tangente II (1 item, avance)
-  {id:"23.15", type:"num", texteLibre:true, enonce:"Sachant que tan(x)=2 et \\(x\\in\\left[0,\\dfrac{\\pi}{2}\\right]\\), que vaut sin(x) ?", reponse:"2*sqrt(5)/5"}
-];
+  (function() {
+    const T = alea(2,5);
+    const Tf = math.fraction(T);
+    const denom = 1 + T*T;
+    const s15 = simplifierRacine(denom);
+    // sin(x) = T*sqrt(1+T^2)/(1+T^2), avec x dans [0,pi/2] donc sin,cos,tan > 0
+    const sinNum = math.multiply(Tf, s15.coef);
+    const reponse15 = s15.radicand === 1 ? fracToStr(math.divide(sinNum, denom)) : `${fracToStr(sinNum)}*sqrt(${s15.radicand})/${denom}`;
+    ex.push({id:"23.15", type:"num", texteLibre:true, enonce:`Sachant que tan(x)=${T} et \\(x\\in\\left[0,\\dfrac{\\pi}{2}\\right]\\), que vaut sin(x) ?`, reponse: reponse15});
+  })();
+  return ex;
+}
+let exercices = genererExercices();
 
 const groupes = {
   "grille-23-1": [0,1,2,3],
@@ -876,99 +1091,11 @@ const groupes = {
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
-function construireGrilles() {
-  for (const [gridId, indices] of Object.entries(groupes)) {
-    const grille = document.getElementById(gridId);
-    grille.innerHTML = '';
-    indices.forEach((idx, pos) => {
-      const ex = exercices[idx];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.id = 'q-' + idx;
-      div.innerHTML = `
-        <span class="q-lettre">${lettres[pos]})</span>
-        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
-        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-        <span class="q-statut" id="statut-${idx}"></span>
-        <div class="clavier-visuel" id="clavier-${idx}">
-          <div class="clavier-groupe">
-            <span class="clavier-label">Chiffres</span>
-            <button onclick="inserer(${idx},'7')">7</button>
-            <button onclick="inserer(${idx},'8')">8</button>
-            <button onclick="inserer(${idx},'9')">9</button>
-            <button onclick="inserer(${idx},'4')">4</button>
-            <button onclick="inserer(${idx},'5')">5</button>
-            <button onclick="inserer(${idx},'6')">6</button>
-            <button onclick="inserer(${idx},'1')">1</button>
-            <button onclick="inserer(${idx},'2')">2</button>
-            <button onclick="inserer(${idx},'3')">3</button>
-            <button onclick="inserer(${idx},'0')">0</button>
-            <button onclick="inserer(${idx},',')">,</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Opérations</span>
-            <button onclick="inserer(${idx},'+')">+</button>
-            <button onclick="inserer(${idx},'-')">−</button>
-            <button onclick="insererFonction(${idx},'*')">×</button>
-            <button onclick="insererFonction(${idx},'/')">÷</button>
-            <button onclick="inserer(${idx},'(')">(</button>
-            <button onclick="inserer(${idx},')')">)</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Puissances</span>
-            <button onclick="insererPuissance(${idx},'2')">x²</button>
-            <button onclick="insererPuissance(${idx},'3')">x³</button>
-            <button onclick="insererExposant(${idx})">xⁿ</button>
-            <button onclick="insererRacine(${idx})">√</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Fraction</span>
-            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Comparaison</span>
-            <button onclick="inserer(${idx},'>')">&gt;</button>
-            <button onclick="inserer(${idx},'<')">&lt;</button>
-            <button onclick="inserer(${idx},'>=')">&geq;</button>
-            <button onclick="inserer(${idx},'<=')">&leq;</button>
-          </div>
-          <div class="clavier-groupe">
-            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-          </div>
-          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
-        </div>
-      `;
-      grille.appendChild(div);
-    });
-  }
-}
-
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  fermerAutresAides(idx);
   clavier.classList.toggle('ouvert', !etaitOuvert);
-}
-
-function toggleAide(idx) {
-  const aide = document.getElementById('aide-' + idx);
-  const etaitOuverte = aide.classList.contains('ouverte');
-  fermerAutresAides(idx);
-  fermerAutresClaviers(idx);
-  aide.classList.toggle('ouverte', !etaitOuverte);
-}
-
-function fermerAutresAides(idxActuel) {
-  exercices.forEach((ex, idx) => {
-    if (idx !== idxActuel) {
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
-    }
-  });
 }
 
 function placerCurseur(input, pos, fin) {
@@ -1097,6 +1224,9 @@ function reculer(idx) {
 const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum']);
 function normaliserSaisie(str) {
   let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
+  // pour ne pas toucher a un eventuel separateur (le point-virgule reste le seul separateur d'ensemble/intervalle)
+  s = s.replace(/(\d),(\d)/g, '$1.$2');
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
@@ -1145,7 +1275,7 @@ function checkCercle(userInput, cx, cy, r) {
   // format attendu : "cx;cy;r" ou "(cx,cy);r" ou variantes avec espaces
   userInput = normaliserSaisie(userInput);
   const nettoye = userInput.trim().replace(/[()]/g, '').replace(/\s/g, '');
-  const parties = nettoye.split(/[;,]/).map(s => s.trim()).filter(s => s !== '');
+  const parties = nettoye.split(/;/).map(s => s.trim()).filter(s => s !== '');
   if (parties.length !== 3) return false;
   try {
     const vals = parties.map(s => math.evaluate(s));
@@ -1193,7 +1323,8 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  const nums = userInput.split(/[;,\s]+et\s+|[;,]+/).map(s => s.trim()).filter(s => s !== '');
+  userInput = normaliserSaisie(userInput);
+  const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
   if (nums.length !== 2) return false;
   try {
     const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
@@ -1205,7 +1336,7 @@ function checkEncadrement(userInput, bas, haut) {
 
 function checkEnsemble(userInput, correctSet) {
   userInput = normaliserSaisie(userInput);
-  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/[;,]/).map(x=>x.trim()).filter(x=>x!=='');
+  const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
   const userVals = nettoyerEtSplit(userInput);
   const correctVals = nettoyerEtSplit(correctSet);
   if (userVals.length !== correctVals.length) return false;
@@ -1217,7 +1348,7 @@ function checkEnsemble(userInput, correctSet) {
 }
 
 function parseUnIntervalle(str) {
-  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^,;]+)[,;]([^,;\]\[]+)([\]\[])$/);
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^;]+);([^;\]\[]+)([\]\[])$/);
   if (!m) return null;
   const [_, cg, a, b, cd] = m;
   try {
@@ -1276,7 +1407,7 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
     nettoye = nettoye.slice(1,-1);
   }
-  const parties = nettoye.split(/[;,]/);
+  const parties = nettoye.split(/;/);
   if (parties.length !== 2) return false;
   try {
     for (let i=0;i<8;i++) {
@@ -1522,8 +1653,6 @@ function fermerAutresClaviers(idxActuel) {
     if (idx !== idxActuel) {
       const clavier = document.getElementById('clavier-' + idx);
       if (clavier) clavier.classList.remove('ouvert');
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
     }
   });
 }
@@ -1558,12 +1687,21 @@ function convertirSqrt(s) {
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
-  s = convertirSqrt(s);
-  s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
-  s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
-  s = s.replace(/\*/g, '\\times ');
-  s = s.replace(/lambda/g, '\\lambda ');
-  return s;
+  try {
+    const node = math.parse(normaliserSaisie(s));
+    let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = tex.replace(/\\cdot/g, '\\times ');
+    tex = tex.replace(/\\frac\{/g, '\\dfrac{');
+    tex = tex.replace(/lambda/g, '\\lambda ');
+    return tex;
+  } catch(e) {
+    s = convertirSqrt(s);
+    s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/\*/g, '\\times ');
+    s = s.replace(/lambda/g, '\\lambda ');
+    return s;
+  }
 }
 
 function formaterUneBorne(v) {
@@ -1572,7 +1710,7 @@ function formaterUneBorne(v) {
   if (Number.isInteger(v)) return String(v);
   try {
     const frac = math.fraction(v);
-    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
   } catch(e) {}
   return v.toFixed(3);
 }
@@ -1604,7 +1742,7 @@ function formaterReponse(ex) {
       const fmt = (v) => {
         if (Number.isInteger(v)) return String(v);
         const frac = math.fraction(v);
-        return `${frac.s < 0 ? '-' : ''}\\frac{${frac.n}}{${frac.d}}`;
+        return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
       };
       return `\\Omega(${fmt(ex.cx)}\\,;\\,${fmt(ex.cy)}) \\text{ et } r=${fmt(ex.r)}`;
     }
@@ -1625,7 +1763,8 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'num') {
       if (ex.reponse && ex.reponse.trim().startsWith('{')) {
-        return '\\{' + jsVersLatex(ex.reponse.replace(/[{}]/g,'')) + '\\}';
+        const elements = ex.reponse.replace(/[{}]/g,'').split(';').map(el => jsVersLatex(el.trim()));
+        return '\\left\\{' + elements.join('\\,;\\,') + '\\right\\}';
       }
       // si l'expression contient une racine ou une lettre, ce n'est pas un rationnel pur : afficher tel quel
       if (/sqrt|[a-zA-Z]/.test(ex.reponse)) {
@@ -1634,7 +1773,7 @@ function formaterReponse(ex) {
       const val = math.evaluate(ex.reponse);
       if (Number.isInteger(val)) return String(val);
       const frac = math.fraction(val);
-      return `${frac.s < 0 ? '-' : ''}${frac.n}/${frac.d}`;
+      return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
     }
     return jsVersLatex(ex.reponse);
   } catch(e) {
@@ -1685,6 +1824,9 @@ function reinitialiser() {
     if (clavier) clavier.classList.remove('ouvert');
   });
   document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
 }
 
 function genererNouvelleFiche() {
@@ -1694,7 +1836,28 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  panneauToutes.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+
+function toggleToutesReponses() {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
+  }
 }
 
 
@@ -1761,10 +1924,53 @@ function necessiteAide(ex) {
   return false;
 }
 
+function texteAideGroupe(indices) {
+  const textes = [];
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (necessiteAide(ex)) {
+      const t = aideContextuellePour(ex);
+      if (!textes.includes(t)) textes.push(t);
+    }
+  }
+  return textes.length ? textes.join('<br><br>') : null;
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const conteneur = titre.querySelector('span:not(.picto-niveau)') || titre;
+  const btn = document.createElement('button');
+  btn.className = 'q-aide-btn';
+  btn.title = 'Comment répondre ?';
+  btn.textContent = '?';
+  btn.onclick = () => toggleAideGroupe(gridId);
+  conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.after(bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  const etaitOuverte = aide.classList.contains('ouverte');
+  fermerAutresClaviers(-1);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
+
 function construireGrilles() {
   for (const [gridId, indices] of Object.entries(groupes)) {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
+    injecterAideGroupe(gridId, indices);
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
@@ -1772,12 +1978,6 @@ function construireGrilles() {
       div.id = 'q-' + idx;
       const lettre = lettresEtendues[pos] || '';
       const suffixe = ex.avecEgal ? ' =' : '';
-      const boutonAide = necessiteAide(ex)
-        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
-        : '';
-      const bulleAide = necessiteAide(ex)
-        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
-        : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options-wrapper${ex.optionsSurUneLigne ? ' q-qcm-options-wrapper--scroll' : ''}"><div class="q-qcm-options${ex.optionsSurUneLigne ? ' q-qcm-options--scroll' : ''}">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
@@ -1788,9 +1988,7 @@ function construireGrilles() {
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
-        ${boutonAide}
         <span class="q-statut" id="statut-${idx}"></span>
-        ${bulleAide}
       `;
       grille.appendChild(div);
     });
