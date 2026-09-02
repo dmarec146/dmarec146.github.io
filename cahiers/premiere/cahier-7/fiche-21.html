@@ -1451,6 +1451,11 @@ function normaliserSaisie(str) {
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  // une parenthese fermante directement suivie d'une lettre est une multiplication implicite pour l'utilisateur
+  // (ex: une fraction MathLive "(5)/(2)x" tapee via le clavier virtuel puis suivie de x sans operateur),
+  // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
+  // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
+  s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
 }
 
@@ -1897,18 +1902,63 @@ function convertirSqrt(s) {
   }
   return s;
 }
+// certaines variables du site (m, t, b, g, h, N, ...) coincident avec des unites physiques connues
+// de math.js (metre, tonne, bit, gramme, heure, newton...) : math.js les evalue/typeset alors comme
+// des unites (rendu droit "\mathrm{m}") plutot que comme de simples variables. On les protege avant
+// le parse par un identifiant inconnu de math.js, puis on restaure la lettre d'origine dans le tex.
+const VARS_A_PROTEGER = ['x','t','u','v','a','b','c','m','k','y','z','n','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','x_A','y_A'];
+function protegerVariables(s) {
+  const mapping = [];
+  let out = s;
+  VARS_A_PROTEGER.forEach((v, i) => {
+    const placeholder = `qvarplaceholder${String(i).padStart(2,'0')}`;
+    const re = new RegExp('\\b' + v + '\\b', 'g');
+    if (re.test(out)) { out = out.replace(re, placeholder); mapping.push([placeholder, v]); }
+  });
+  return { out, mapping };
+}
+function restaurerVariables(tex, mapping) {
+  let out = tex;
+  mapping.forEach(([placeholder, v]) => { out = out.split(placeholder).join(v); });
+  return out;
+}
+// supprime le "\cdot"/"\times" entre un coefficient numerique et une lettre isolee (ecriture
+// implicite usuelle : "8m", pas "8 fois m"), et n'ecrit jamais un coefficient de 1 ou -1
+function collerCoefficientLettre(tex) {
+  let out = tex;
+  // coefficient 1/-1 devant un facteur (lettre(s), ou commande backslash type \sqrt{...}) : ne jamais afficher le 1
+  out = out.replace(/(^|[^0-9])1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '$1$2');
+  out = out.replace(/-1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '-$1');
+  // un ENTIER (jamais une fraction : le lookbehind exclut un "}" - fin de denominateur - juste avant)
+  // directement suivi d'une SEULE lettre (nue ou base d'exposant) ou d'une commande backslash : coller.
+  // Retirer le x apres une fraction reintroduirait une vraie ambiguite de precedence au reimport MathLive
+  // (verifie empiriquement : math.js traite la multiplication implicite comme prioritaire sur la division,
+  // donc "(27)/(2)x^2" se reevalue en 27/(2x^2) et non (27/2)x^2 - la fraction doit garder son x).
+  out = out.replace(/(?<!\})(\d)\\cdot\s*(\\[a-zA-Z]+(?:\{[^{}]*\})*|\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, '$1$2');
+  // un ENTIER (jamais une fraction, meme garde) directement suivi d'une parenthese : coller
+  out = out.replace(/(?<!\})(\d)\\cdot\s*\\left\(/g, '$1\\left(');
+  // un groupe deja entre parentheses (\right)) est une barriere de precedence complete : jamais de x
+  // apres lui, quel que soit ce qui suit (lettre, racine, ou une autre parenthese) - aucune garde necessaire
+  out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
+  return out;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
   try {
-    const node = math.parse(normaliserSaisie(s));
+    const { out: sProtege, mapping } = protegerVariables(normaliserSaisie(s));
+    const node = math.parse(sProtege);
     let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = restaurerVariables(tex, mapping);
+    tex = collerCoefficientLettre(tex);
     tex = tex.replace(/\\cdot/g, '\\times ');
     tex = tex.replace(/\\frac\{/g, '\\dfrac{');
-    tex = tex.replace(/lambda/g, '\\lambda ');
+    tex = tex.replace(/(?<!\\)lambda/g, '\\lambda ');
     return tex;
   } catch(e) {
     s = convertirSqrt(s);
+    s = s.replace(/(^|[^0-9])1\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/-1\*([a-zA-Z\\])/g, '-$1');
     s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/\*/g, '\\times ');
@@ -2148,15 +2198,19 @@ function necessiteAide(ex) {
 }
 
 function texteAideGroupe(indices) {
-  const textes = [];
+  const groupes = [];
   for (const idx of indices) {
     const ex = exercices[idx];
-    if (necessiteAide(ex)) {
-      const t = aideContextuellePour(ex);
-      if (!textes.includes(t)) textes.push(t);
-    }
+    if (!necessiteAide(ex)) continue;
+    const texte = aideContextuellePour(ex);
+    const lettre = (ex.id.match(/([a-zA-Z])\)\s*$/) || [])[1];
+    let g = groupes.find(g => g.texte === texte);
+    if (!g) { g = { texte, lettres: [] }; groupes.push(g); }
+    if (lettre) g.lettres.push(lettre);
   }
-  return textes.length ? textes.join('<br><br>') : null;
+  if (groupes.length === 0) return null;
+  if (groupes.length === 1) return groupes[0].texte;
+  return groupes.map(g => (g.lettres.length ? `<strong>${g.lettres.join(', ')})</strong> ` : '') + g.texte).join('<br><br>');
 }
 function injecterAideGroupe(gridId, indices) {
   const grille = document.getElementById(gridId);

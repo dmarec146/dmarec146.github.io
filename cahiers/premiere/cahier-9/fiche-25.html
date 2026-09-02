@@ -817,6 +817,28 @@ function coefAscii(f) {
   const magStr = abs.d === 1 ? String(abs.n) : `(${abs.n}/${abs.d})`;
   return (neg ? '-' : '') + magStr + '*';
 }
+function equationReduiteAscii(pente, ordonnee) {
+  // pente et ordonnee peuvent etre une fraction/un nombre, ou deja une chaine ascii signee (ex: un terme en sqrt(...))
+  let penteTerm;
+  try {
+    const m = math.fraction(pente);
+    penteTerm = m.n === 0 ? '' : (coefAscii(m) + 'x');
+  } catch(e) {
+    const sp = String(pente).trim();
+    penteTerm = (sp === '0') ? '' : (sp + '*x');
+  }
+  let interceptTerm;
+  try {
+    const p = math.fraction(ordonnee);
+    const s = p.n === 0 ? '' : fracToStr(p);
+    interceptTerm = s === '' ? '' : (s.startsWith('-') ? s : '+' + s);
+  } catch(e) {
+    const s = String(ordonnee).trim();
+    interceptTerm = (s === '' || s === '0') ? '' : (s.startsWith('-') ? s : '+' + s);
+  }
+  const joined = penteTerm + interceptTerm;
+  return joined === '' ? '0' : (joined.startsWith('+') ? joined.slice(1) : joined);
+}
 function simplifierRacine(n) {
   let coef = 1, radicand = n;
   for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--) {
@@ -1005,7 +1027,7 @@ function genererExercices() {
     const m = math.fraction(-nx, ny);
     const p = math.fraction(nx*Ax + ny*Ay, ny);
     ctx.c6 = {Ax, Ay, nx, ny};
-    ex.push({id:"25.6", type:"paire", texteLibre:true, enonce:"(coefficient directeur puis ordonnée à l'origine)", pa: fracToStr(m), pb: fracToStr(p)});
+    ex.push({id:"25.6", type:"alg", texteLibre:true, formeYax:true, enonce:"(sous la forme y=ax+b)", reponse: equationReduiteAscii(m, p)});
   })();
   // Calcul 25.7 - equations reduites (3 items, self-contenus)
   (function() {
@@ -1014,7 +1036,7 @@ function genererExercices() {
     const nx = aleaNonNul(-6,6), ny = aleaNonNul(-6,6);
     const m = math.fraction(-nx, ny);
     const p = math.divide(math.add(math.multiply(nx,Bx), math.multiply(ny,By)), ny);
-    ex.push({id:"25.7 a)", type:"paire", texteLibre:true, enonce:`La droite (d2) passant par le point \\(B\\left(${coordLatex(Bx)};${coordLatex(By)}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, pa: fracToStr(m), pb: fracToStr(p)});
+    ex.push({id:"25.7 a)", type:"alg", texteLibre:true, formeYax:true, enonce:`La droite (d2) passant par le point \\(B\\left(${coordLatex(Bx)};${coordLatex(By)}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, p)});
   })();
   (function() {
     const D = SQFREE[alea(0,SQFREE.length-1)];
@@ -1025,7 +1047,7 @@ function genererExercices() {
     const p = math.fraction(V, ny);
     const kTerm = (k===1?'':(k===-1?'-':k)) + `\\sqrt{${D}}`;
     const kmTerm = (km===1?'':(km===-1?'-':km)) + `\\sqrt{${D}}`;
-    ex.push({id:"25.7 b)", type:"paire", texteLibre:true, enonce:`La droite (d3) passant par le point \\(C(${kTerm};${kmTerm})\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, pa: fracToStr(m), pb: surdTerm(p, D)});
+    ex.push({id:"25.7 b)", type:"alg", texteLibre:true, formeYax:true, enonce:`La droite (d3) passant par le point \\(C(${kTerm};${kmTerm})\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, surdTerm(p, D))});
   })();
   (function() {
     const D = SQFREE[alea(0,SQFREE.length-1)];
@@ -1035,7 +1057,7 @@ function genererExercices() {
     const m = math.fraction(-nx, ny);
     const pFrac = math.fraction(V, ny*D);
     const pTerm = pFrac.n===0 ? '0' : `${surdTerm(pFrac, D)}`;
-    ex.push({id:"25.7 c)", type:"paire", texteLibre:true, enonce:`La droite (d4) passant par le point \\(D\\left(\\frac{${p0}}{\\sqrt{${D}}};\\frac{${q0}}{\\sqrt{${D}}}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, pa: fracToStr(m), pb: pTerm});
+    ex.push({id:"25.7 c)", type:"alg", texteLibre:true, formeYax:true, enonce:`La droite (d4) passant par le point \\(D\\left(\\frac{${p0}}{\\sqrt{${D}}};\\frac{${q0}}{\\sqrt{${D}}}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, pTerm)});
   })();
   // Calcul 25.8 - equation reduite perpendiculaire (1 item, contexte partage : titre + enonce)
   (function() {
@@ -1046,7 +1068,7 @@ function genererExercices() {
     ctx.c8 = {D0, k, e, C0};
     const kTerm = (k===1?'':(k===-1?'-':k)) + `√${D0}`;
     const c0Term = C0>=0 ? `+${C0}` : `-${-C0}`;
-    ex.push({id:"25.8", type:"paire", texteLibre:true, enonce:`Déterminer l'équation réduite de la droite (d5) passant par le point E(${kTerm};${e}) et perpendiculaire à la droite (D) d'équation x−√${D0}y${c0Term}=0`, pa, pb});
+    ex.push({id:"25.8", type:"alg", texteLibre:true, formeYax:true, enonce:`Déterminer l'équation réduite de la droite (d5) passant par le point E(${kTerm};${e}) et perpendiculaire à la droite (D) d'équation x−√${D0}y${c0Term}=0`, reponse: equationReduiteAscii(pa, pb)});
   })();
   // Calcul 25.9 - equations reduites perpendiculaires (2 items, contexte partage : titre)
   (function() {
@@ -1058,11 +1080,11 @@ function genererExercices() {
     const dx = Bx-Ax, dy = By-Ay;
     const m1 = math.fraction(-dx, dy);
     const p1 = math.divide(math.add(math.multiply(dx,Ax), math.multiply(dy,Ay)), dy);
-    ex.push({id:"25.9 a)", type:"paire", texteLibre:true, enonce:"l'équation réduite de la droite (d6) passant par le point A et perpendiculaire à la droite (AB)", pa: fracToStr(m1), pb: fracToStr(p1)});
+    ex.push({id:"25.9 a)", type:"alg", texteLibre:true, formeYax:true, enonce:"l'équation réduite de la droite (d6) passant par le point A et perpendiculaire à la droite (AB)", reponse: equationReduiteAscii(m1, p1)});
     const ex2x = Cx-Bx, ex2y = Cy-By;
     const m2 = math.fraction(-ex2x, ex2y);
     const p2 = math.divide(math.add(math.multiply(ex2x,Cx), math.multiply(ex2y,Cy)), ex2y);
-    ex.push({id:"25.9 b)", type:"paire", texteLibre:true, enonce:"l'équation réduite de la droite (d7) passant par le point C et perpendiculaire à la droite (BC)", pa: fracToStr(m2), pb: fracToStr(p2)});
+    ex.push({id:"25.9 b)", type:"alg", texteLibre:true, formeYax:true, enonce:"l'équation réduite de la droite (d7) passant par le point C et perpendiculaire à la droite (BC)", reponse: equationReduiteAscii(m2, p2)});
   })();
   // Calcul 25.10 - rectangle (4 items, avance, contexte partage : paragraphe)
   (function() {
@@ -1081,7 +1103,7 @@ function genererExercices() {
     const reponseCascii = `${coefAscii(h)}y${constC.n===0?'':(constC.s<0?'+':'-')+fracToStr(math.abs(constC))}`;
     ex.push({id:"25.10 c)", type:"alg", texteLibre:true, enonce:"Exprimer en fonction de y le produit scalaire \\(\\overrightarrow{AB}\\cdot\\overrightarrow{BD}\\)", reponse: reponseCascii});
     const Dx = math.add(Ax, w), Dy = math.add(Ay, h);
-    ex.push({id:"25.10 d)", type:"paire", texteLibre:true, enonce:"Déterminer les réels x et y pour que le quadrilatère ABDC soit un rectangle", pa: fracToStr(Dx), pb: fracToStr(Dy)});
+    ex.push({id:"25.10 d)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les réels x et y pour que le quadrilatère ABDC soit un rectangle", pa: fracToStr(Dx), pb: fracToStr(Dy)});
   })();
   // Calcul 25.11 - tangentes perpendiculaires (1 item, avance, contexte partage : titre)
   (function() {
@@ -1154,15 +1176,19 @@ function toggleClavier(idx) {
 }
 
 function texteAideGroupe(indices) {
-  const textes = [];
+  const groupes = [];
   for (const idx of indices) {
     const ex = exercices[idx];
-    if (necessiteAide(ex)) {
-      const t = aideContextuellePour(ex);
-      if (!textes.includes(t)) textes.push(t);
-    }
+    if (!necessiteAide(ex)) continue;
+    const texte = aideContextuellePour(ex);
+    const lettre = (ex.id.match(/([a-zA-Z])\)\s*$/) || [])[1];
+    let g = groupes.find(g => g.texte === texte);
+    if (!g) { g = { texte, lettres: [] }; groupes.push(g); }
+    if (lettre) g.lettres.push(lettre);
   }
-  return textes.length ? textes.join('<br><br>') : null;
+  if (groupes.length === 0) return null;
+  if (groupes.length === 1) return groupes[0].texte;
+  return groupes.map(g => (g.lettres.length ? `<strong>${g.lettres.join(', ')})</strong> ` : '') + g.texte).join('<br><br>');
 }
 function injecterAideGroupe(gridId, indices) {
   const grille = document.getElementById(gridId);
@@ -1327,9 +1353,19 @@ function normaliserSaisie(str) {
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  // une parenthese fermante directement suivie d'une lettre est une multiplication implicite pour l'utilisateur
+  // (ex: une fraction MathLive "(5)/(2)x" tapee via le clavier virtuel puis suivie de x sans operateur),
+  // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
+  // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
+  s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
 }
 
+function checkEquationYax(userInput, correctExpr) {
+  const m = String(userInput).trim().match(/^y\s*=\s*(.+)$/i);
+  if (!m) return false;
+  return checkEqualNumeric(m[1], correctExpr);
+}
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','lam','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','a1','a2','a3','a4','an','bet'];
@@ -1521,6 +1557,12 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   } catch(e) { return false; }
 }
 
+function checkPointCoordonnees(userInput, correctA, correctB, vars) {
+  const nettoye = String(userInput).trim();
+  const m = nettoye.match(/^\((.*)\)$/);
+  if (!m) return false;
+  return checkPaire(m[1], correctA, correctB, vars);
+}
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
   const parties = nettoye.split(';');
@@ -1688,10 +1730,12 @@ function verifierUne(idx) {
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
+  else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
+  else if (ex.formeYax) ok = checkEquationYax(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
@@ -1781,19 +1825,64 @@ function convertirSqrt(s) {
   }
   return s;
 }
+// certaines variables du site (m, t, b, g, h, N, ...) coincident avec des unites physiques connues
+// de math.js (metre, tonne, bit, gramme, heure, newton...) : math.js les evalue/typeset alors comme
+// des unites (rendu droit "\mathrm{m}") plutot que comme de simples variables. On les protege avant
+// le parse par un identifiant inconnu de math.js, puis on restaure la lettre d'origine dans le tex.
+const VARS_A_PROTEGER = ['x','t','u','v','a','b','c','m','k','y','z','n','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','x_A','y_A'];
+function protegerVariables(s) {
+  const mapping = [];
+  let out = s;
+  VARS_A_PROTEGER.forEach((v, i) => {
+    const placeholder = `qvarplaceholder${String(i).padStart(2,'0')}`;
+    const re = new RegExp('\\b' + v + '\\b', 'g');
+    if (re.test(out)) { out = out.replace(re, placeholder); mapping.push([placeholder, v]); }
+  });
+  return { out, mapping };
+}
+function restaurerVariables(tex, mapping) {
+  let out = tex;
+  mapping.forEach(([placeholder, v]) => { out = out.split(placeholder).join(v); });
+  return out;
+}
+// supprime le "\cdot"/"\times" entre un coefficient numerique et une lettre isolee (ecriture
+// implicite usuelle : "8m", pas "8 fois m"), et n'ecrit jamais un coefficient de 1 ou -1
+function collerCoefficientLettre(tex) {
+  let out = tex;
+  // coefficient 1/-1 devant un facteur (lettre(s), ou commande backslash type \sqrt{...}) : ne jamais afficher le 1
+  out = out.replace(/(^|[^0-9])1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '$1$2');
+  out = out.replace(/-1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '-$1');
+  // un ENTIER (jamais une fraction : le lookbehind exclut un "}" - fin de denominateur - juste avant)
+  // directement suivi d'une SEULE lettre (nue ou base d'exposant) ou d'une commande backslash : coller.
+  // Retirer le x apres une fraction reintroduirait une vraie ambiguite de precedence au reimport MathLive
+  // (verifie empiriquement : math.js traite la multiplication implicite comme prioritaire sur la division,
+  // donc "(27)/(2)x^2" se reevalue en 27/(2x^2) et non (27/2)x^2 - la fraction doit garder son x).
+  out = out.replace(/(?<!\})(\d)\\cdot\s*(\\[a-zA-Z]+(?:\{[^{}]*\})*|\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, '$1$2');
+  // un ENTIER (jamais une fraction, meme garde) directement suivi d'une parenthese : coller
+  out = out.replace(/(?<!\})(\d)\\cdot\s*\\left\(/g, '$1\\left(');
+  // un groupe deja entre parentheses (\right)) est une barriere de precedence complete : jamais de x
+  // apres lui, quel que soit ce qui suit (lettre, racine, ou une autre parenthese) - aucune garde necessaire
+  out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
+  return out;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
   try {
-    const node = math.parse(normaliserSaisie(s));
+    const { out: sProtege, mapping } = protegerVariables(normaliserSaisie(s));
+    const node = math.parse(sProtege);
     let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = restaurerVariables(tex, mapping);
+    tex = collerCoefficientLettre(tex);
     tex = tex.replace(/\\cdot/g, '\\times ');
     tex = tex.replace(/\\frac\{/g, '\\dfrac{');
-    tex = tex.replace(/lambda/g, '\\lambda ');
+    tex = tex.replace(/(?<!\\)lambda/g, '\\lambda ');
     return tex;
   } catch(e) {
     // repli sur l'ancien rendu (texte non parseable par math.js, ex: contient deja du LaTeX)
     s = convertirSqrt(s);
+    s = s.replace(/(^|[^0-9])1\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/-1\*([a-zA-Z\\])/g, '-$1');
     s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/\*/g, '\\times ');
@@ -1829,6 +1918,9 @@ function formaterIntervalleSpec(spec) {
 
 function formaterReponse(ex) {
   try {
+    if (ex.formeYax) {
+      return `y=${jsVersLatex(ex.reponse)}`;
+    }
     if (ex.type === 'ineq') {
       const symb = {'>':'>', '<':'<', '>=':'\\geqslant', '<=':'\\leqslant'}[ex.sens];
       return `x ${symb} ${ex.seuil}`;
@@ -1964,6 +2056,8 @@ function toggleToutesReponses() {
 
 
 function placeholderPour(ex) {
+  if (ex.formeYax) return 'y=ax+b';
+  if (ex.formePoint) return '(x;y)';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -1973,6 +2067,12 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.formeYax) {
+    return "Écrire l'équation complète, y compris « y= » : par exemple <code>y=2x+3</code>.";
+  }
+  if (ex.formePoint) {
+    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code>.";
+  }
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) {
     return "Écrire les lettres des bonnes réponses séparées par des virgules, par exemple <code>a,c,d</code>.";
   }
@@ -2019,6 +2119,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.formeYax) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) return true;
   if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) return true;

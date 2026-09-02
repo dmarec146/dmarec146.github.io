@@ -836,6 +836,28 @@ function fracToStr(f) { f = math.fraction(f); const n = f.s * f.n, d = f.d; retu
 function coefPrefixe(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}*`; }
 function coefPrefixeL(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}`; }
 function joinSigned(parts) { const s = parts.filter(x=>x).join(''); return s.startsWith('+') ? s.slice(1) : (s === '' ? '0' : s); }
+function equationReduiteAscii(pente, ordonnee) { return joinSigned([signedFracTerm(pente,'x'), signedFracTerm(ordonnee)]); }
+function equationCartesienneAscii(eqa, eqb, eqc) {
+  const signeEtCorps = (coefRaw) => {
+    const c = String(coefRaw).trim();
+    const neg = c.startsWith('-');
+    return { neg, corps: neg ? c.slice(1) : c };
+  };
+  const terme = (coefRaw, vr) => {
+    const { neg, corps } = signeEtCorps(coefRaw);
+    if (corps === '0') return { sign: '', text: '' };
+    if (corps === '1') return { sign: neg ? '-' : '+', text: vr };
+    return { sign: neg ? '-' : '+', text: `(${corps})*${vr}` };
+  };
+  const ta = terme(eqa, 'x'), tb = terme(eqb, 'y');
+  const { neg: negC, corps: corpsC } = signeEtCorps(eqc);
+  const tc = corpsC === '0' ? { sign: '', text: '' } : { sign: negC ? '-' : '+', text: corpsC };
+  const tous = [ta, tb, tc].filter(t => t.text !== '');
+  if (tous.length === 0) return '0';
+  let out = (tous[0].sign === '-' ? '-' : '') + tous[0].text;
+  for (let i = 1; i < tous.length; i++) out += tous[i].sign + tous[i].text;
+  return out;
+}
 function signedFracTerm(coefF, factorStr) {
   coefF = math.fraction(coefF);
   if (coefF.n === 0) return '';
@@ -940,7 +962,7 @@ function genererExercices() {
     const x0=alea(-9,9), y0=alea(-9,9), ux=aleaNonNul(-9,9), uy=aleaNonNul(-9,9);
     const eqa=uy, eqb=-ux, eqc=-uy*x0+ux*y0;
     ex.push({id:"20.3 a)", type:"eqcart", texteLibre:true, enonce:"Déterminer une équation cartésienne de (d)", eqa:String(eqa), eqb:String(eqb), eqc:String(eqc)});
-    ex.push({id:"20.3 b)", type:"paire", texteLibre:true, enonce:"Déterminer l'équation réduite de (d) (donner le coefficient directeur puis l'ordonnée à l'origine)", pa:fracStr(eqa,-eqb), pb:fracStr(eqc,-eqb)});
+    ex.push({id:"20.3 b)", type:"alg", texteLibre:true, formeYax:true, enonce:"Déterminer l'équation réduite de (d), sous la forme y=ax+b", reponse: equationReduiteAscii(fracStr(eqa,-eqb), fracStr(eqc,-eqb))});
     paramsAvances.g3 = {x0,y0,ux,uy};
   }
 
@@ -951,7 +973,7 @@ function genererExercices() {
     const ux=xB-xA, uy=yB-yA;
     const eqa=uy, eqb=-ux, eqc=-uy*xA+ux*yA;
     ex.push({id:"20.4 a)", type:"eqcart", texteLibre:true, enonce:"Déterminer une équation cartésienne de (d)", eqa:String(eqa), eqb:String(eqb), eqc:String(eqc)});
-    ex.push({id:"20.4 b)", type:"paire", texteLibre:true, enonce:"Déterminer l'équation réduite de (d) (coefficient directeur puis ordonnée à l'origine)", pa:fracStr(eqa,-eqb), pb:fracStr(eqc,-eqb)});
+    ex.push({id:"20.4 b)", type:"alg", texteLibre:true, formeYax:true, enonce:"Déterminer l'équation réduite de (d), sous la forme y=ax+b", reponse: equationReduiteAscii(fracStr(eqa,-eqb), fracStr(eqc,-eqb))});
     paramsAvances.g4 = {xA,yA,xB,yB};
   }
 
@@ -965,7 +987,7 @@ function genererExercices() {
     } while (uxf.n === 0 || uyf.n === 0);
     const eqaf=uyf, eqbf=math.multiply(-1,uxf), eqcf=math.add(math.multiply(-1,math.multiply(uyf,xAf)), math.multiply(uxf,yAf));
     ex.push({id:"20.5 a)", type:"eqcart", texteLibre:true, enonce:"Déterminer une équation cartésienne de (d)", eqa:fracToStr(eqaf), eqb:fracToStr(eqbf), eqc:fracToStr(eqcf)});
-    ex.push({id:"20.5 b)", type:"paire", texteLibre:true, enonce:"Déterminer l'équation réduite de (d) (coefficient directeur puis ordonnée à l'origine)", pa:fracToStr(math.divide(eqaf,math.multiply(-1,eqbf))), pb:fracToStr(math.divide(eqcf,math.multiply(-1,eqbf)))});
+    ex.push({id:"20.5 b)", type:"alg", texteLibre:true, formeYax:true, enonce:"Déterminer l'équation réduite de (d), sous la forme y=ax+b", reponse: equationReduiteAscii(math.divide(eqaf,math.multiply(-1,eqbf)), math.divide(eqcf,math.multiply(-1,eqbf)))});
     paramsAvances.g5 = {xAf,yAf,xBf,yBf};
   }
 
@@ -996,7 +1018,7 @@ function genererExercices() {
     let K7; do { K7 = alea(-3,3); } while (K7 === B7);
     ex.push({id:"20.7 a)", type:"vecteur", texteLibre:true, enonce:"Les coordonnées d'un vecteur directeur de (d1)", vx:String(Q7), vy:String(P7), vars:[]});
     ex.push({id:"20.7 b)", type:"eqcart", texteLibre:true, enonce:"Une équation cartésienne de (d1)", eqa:String(-P7), eqb:String(Q7), eqc:String(-Q7*B7)});
-    ex.push({id:"20.7 c)", type:"paire", texteLibre:true, enonce:"L'équation réduite de (d1) (coefficient directeur puis ordonnée à l'origine)", pa:fracStr(P7,Q7), pb:String(B7)});
+    ex.push({id:"20.7 c)", type:"alg", texteLibre:true, formeYax:true, enonce:"L'équation réduite de (d1), sous la forme y=ax+b", reponse: equationReduiteAscii(fracStr(P7,Q7), B7)});
     ex.push({id:"20.7 d)", type:"num", texteLibre:true, enonce:"L'équation réduite de (d2), sous la forme y=k (donner juste k)", reponse:String(K7)});
     paramsAvances.g7 = {P7,Q7,B7,K7};
   }
@@ -1017,7 +1039,7 @@ function genererExercices() {
     ex.push({id:"20.8 a)", type:"num", texteLibre:true, enonce:`Calculer l'ordonnée du point de (d) d'abscisse ${X1}`, reponse: y1});
     ex.push({id:"20.8 b)", type:"num", texteLibre:true, enonce:`Calculer l'abscisse du point de (d) d'ordonnée \\(\\dfrac{${Y1n}}{${Y1d}}\\)`, reponse: x1});
     ex.push({id:"20.8 c)", type:"num", texteLibre:true, enonce:`Calculer l'ordonnée du point de (d) d'abscisse \\(${surdLatex(Cf,kD)}\\)`, reponse: y2});
-    ex.push({id:"20.8 d)", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du point de (d) dont l'abscisse et l'ordonnée sont égales", pa:xEqY, pb:xEqY});
+    ex.push({id:"20.8 d)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point de (d) dont l'abscisse et l'ordonnée sont égales", pa:xEqY, pb:xEqY});
     paramsAvances.g8 = {eqa,eqb,eqc};
   }
 
@@ -1065,7 +1087,7 @@ function genererExercices() {
     const eqa1=aleaNonNul(-6,6), eqb1=aleaNonNul(-6,6), eqc1=alea(-9,9);
     const K12=alea(-15,15);
     const xI=K12, yI=fracToStr(math.divide(math.multiply(-1,math.add(math.multiply(eqa1,K12),eqc1)),eqb1));
-    ex.push({id:"20.12", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d1) et (d2)", pa:String(xI), pb:yI});
+    ex.push({id:"20.12", type:"paire", formePoint:true, texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d1) et (d2)", pa:String(xI), pb:yI});
     paramsAvances.g12 = {eqa1,eqb1,eqc1,K12};
   }
 
@@ -1080,9 +1102,9 @@ function genererExercices() {
     const xAxis = fracToStr(math.divide(math.multiply(-1,eqcf),eqaf));
     const yAxis = fracToStr(math.divide(math.multiply(-1,eqcf),eqbf));
     const xEqY = fracToStr(math.divide(math.multiply(-1,eqcf), math.add(eqaf,eqbf)));
-    ex.push({id:"20.13 a)", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d) avec l'axe des abscisses", pa:xAxis, pb:"0"});
-    ex.push({id:"20.13 b)", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d) avec l'axe des ordonnées", pa:"0", pb:yAxis});
-    ex.push({id:"20.13 c)", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d) avec la droite d'équation y=x", pa:xEqY, pb:xEqY});
+    ex.push({id:"20.13 a)", type:"paire", formePoint:true, texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d) avec l'axe des abscisses", pa:xAxis, pb:"0"});
+    ex.push({id:"20.13 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d) avec l'axe des ordonnées", pa:"0", pb:yAxis});
+    ex.push({id:"20.13 c)", type:"paire", formePoint:true, texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d) avec la droite d'équation y=x", pa:xEqY, pb:xEqY});
     paramsAvances.g13 = {eqaf,eqbf,eqcf};
   }
 
@@ -1096,7 +1118,7 @@ function genererExercices() {
     const eqc1=alea(-9,9), eqc2=alea(-9,9);
     const xI14 = fracStr(eqb1*eqc2-eqb2*eqc1, D14);
     const yI14 = fracStr(eqc1*eqa2-eqc2*eqa1, D14);
-    ex.push({id:"20.14", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d1) et (d2)", pa:xI14, pb:yI14});
+    ex.push({id:"20.14", type:"paire", formePoint:true, texteLibre:true, enonce:"Calculer les coordonnées du point d'intersection de (d1) et (d2)", pa:xI14, pb:yI14});
     paramsAvances.g14 = {eqa1,eqb1,eqc1,eqa2,eqb2,eqc2};
   }
 
@@ -1112,7 +1134,7 @@ function genererExercices() {
     const K2 = math.fraction(C1*A2-C2*A1, det15);
     const xVal = surdTerm(math.divide(K1,3), 3);
     const yVal = surdTerm(math.divide(K2,2), 2);
-    ex.push({id:"20.15", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de (d1) et (d2)", pa: xVal, pb: yVal});
+    ex.push({id:"20.15", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de (d1) et (d2)", pa: xVal, pb: yVal});
     paramsAvances.g15 = {A1,B1,A2,B2,C1,C2};
   }
 
@@ -1149,8 +1171,8 @@ function genererExercices() {
     const yCoefSurd = math.multiply(mLine, halfSqrtCoef);
     const ySmall = joinSigned([signedFracTerm(yConst), signedSurdTerm(math.multiply(-1,yCoefSurd), radicand)]);
     const yBig = joinSigned([signedFracTerm(yConst), signedSurdTerm(yCoefSurd, radicand)]);
-    ex.push({id:"20.16 a)", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de P (celui d'abscisse la plus petite)", pa:xSmall, pb:ySmall});
-    ex.push({id:"20.16 b)", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig, pb:yBig});
+    ex.push({id:"20.16 a)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de P (celui d'abscisse la plus petite)", pa:xSmall, pb:ySmall});
+    ex.push({id:"20.16 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig, pb:yBig});
     paramsAvances.g16 = {eqa16,eqb16,eqc16,bP:bP2,cP:cP2};
   }
 
@@ -1166,8 +1188,8 @@ function genererExercices() {
     const xBig17 = joinSigned([signedFracTerm(h17), signedSurdTerm(offXcoef, rad17)]);
     const ySmall17 = joinSigned([signedFracTerm(k17), signedSurdTerm(math.multiply(-1,offYcoef), rad17)]);
     const yBig17 = joinSigned([signedFracTerm(k17), signedSurdTerm(offYcoef, rad17)]);
-    ex.push({id:"20.17 a)", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de C (celui d'abscisse la plus petite)", pa:xSmall17, pb:ySmall17});
-    ex.push({id:"20.17 b)", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig17, pb:yBig17});
+    ex.push({id:"20.17 a)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de C (celui d'abscisse la plus petite)", pa:xSmall17, pb:ySmall17});
+    ex.push({id:"20.17 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig17, pb:yBig17});
     paramsAvances.g17 = {h17,k17,m17,r17};
   }
 
@@ -1204,7 +1226,7 @@ function genererExercices() {
     const yNum = joinSigned([signedFracTerm(-T19,'m'), signedFracTerm(R19*S19)]);
     const Dstr = joinSigned(['m^2', signedFracTerm(-SP,'m'), signedFracTerm(-SQ)]);
     ex.push({id:"20.19 a)", type:"num", texteLibre:true, enonce:"Déterminer les deux valeurs de m à exclure pour que les droites (d1) et (d2) soient sécantes", reponse: reponse19a});
-    ex.push({id:"20.19 b)", type:"paire", texteLibre:true, enonce:"Dans les conditions précédentes, déterminer les coordonnées du point d'intersection de (d1) et (d2) en fonction de m", pa:`(${xNum})/(${Dstr})`, pb:`(${yNum})/(${Dstr})`, vars:["m"]});
+    ex.push({id:"20.19 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Dans les conditions précédentes, déterminer les coordonnées du point d'intersection de (d1) et (d2) en fonction de m", pa:`(${xNum})/(${Dstr})`, pb:`(${yNum})/(${Dstr})`, vars:["m"]});
     paramsAvances.g19 = {P19,Q19,R19,S19,T19};
   }
 
@@ -1217,11 +1239,11 @@ function genererExercices() {
     // intersection with eqa20*x+eqb20*y+eqc20=0 : x = (-eqb20*(C20-A20 m^2)-eqc20)/(eqa20+eqb20*(2A20 m+B20))
     const numX = joinSigned([signedFracTerm(eqb20*A20,'m^2'), signedFracTerm(-eqb20*C20-eqc20)]);
     const denX = joinSigned([signedFracTerm(2*eqb20*A20,'m'), signedFracTerm(eqa20+eqb20*B20)]);
-    ex.push({id:"20.20 a)", type:"alg", texteLibre:true, enonce:"On note \\(T_{f,m}\\) la tangente à la courbe de f au point d'abscisse m. Déterminer une équation de \\(T_{f,m}\\) (donner l'expression de y en fonction de x)", reponse: reponse20a});
+    ex.push({id:"20.20 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"On note \\(T_{f,m}\\) la tangente à la courbe de f au point d'abscisse m. Déterminer une équation de \\(T_{f,m}\\), sous la forme y=ax+b", reponse: reponse20a});
     const m1Str = joinSigned([signedFracTerm(2*A20,'m'), signedFracTerm(B20)]);
     const pbExpr = `(${m1Str})*((${numX})/(${denX}))${signedFracTerm(C20)}${signedFracTerm(-A20,'m^2')}`;
     const eqEnonce20 = joinSigned([signedFracTerm(eqa20,'x'), signedFracTerm(eqb20,'y'), signedFracTerm(eqc20)]);
-    ex.push({id:"20.20 b)", type:"paire", texteLibre:true, enonce:`Soit (d) la droite d'équation \\(${jsVersLatex(eqEnonce20)}=0\\). Déterminer les coordonnées de l'éventuel point d'intersection de \\(T_{f,m}\\) et (d), en fonction de m`, pa:`(${numX})/(${denX})`, pb:pbExpr, vars:["m"]});
+    ex.push({id:"20.20 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`Soit (d) la droite d'équation \\(${jsVersLatex(eqEnonce20)}=0\\). Déterminer les coordonnées de l'éventuel point d'intersection de \\(T_{f,m}\\) et (d), en fonction de m`, pa:`(${numX})/(${denX})`, pb:pbExpr, vars:["m"]});
     paramsAvances.g20 = {A20,B20,C20,eqa20,eqb20,eqc20};
   }
 
@@ -1239,11 +1261,11 @@ function genererExercices() {
     // m1-m2 = 2*(A1_21+A2_21)*a
     const xNum21 = joinSigned([signedFracTerm(A1_21-A2_21,'a^2'), signedFracTerm(C2_21-C1_21)]);
     const xDen21 = `${2*(A1_21+A2_21)}*a`;
-    ex.push({id:"20.21 a)", type:"alg", texteLibre:true, enonce:"Déterminer une équation de \\(T_{f,a}\\), la tangente à la courbe de f au point d'abscisse a (donner y en fonction de x)", reponse: reponse21a});
-    ex.push({id:"20.21 b)", type:"alg", texteLibre:true, enonce:"Déterminer une équation de \\(T_{g,-a}\\), la tangente à la courbe de g au point d'abscisse −a", reponse: reponse21b});
+    ex.push({id:"20.21 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{f,a}\\), la tangente à la courbe de f au point d'abscisse a, sous la forme y=ax+b", reponse: reponse21a});
+    ex.push({id:"20.21 b)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{g,-a}\\), la tangente à la courbe de g au point d'abscisse −a, sous la forme y=ax+b", reponse: reponse21b});
     const m1_21 = joinSigned([signedFracTerm(2*A1_21,'a')]);
     const pb21 = `(${m1_21})*((${xNum21})/(${xDen21}))${signedFracTerm(C1_21)}${signedFracTerm(-A1_21,'a^2')}`;
-    ex.push({id:"20.21 c)", type:"paire", texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,-a}\\), en fonction de a", pa:`(${xNum21})/(${xDen21})`, pb:pb21, vars:["a"]});
+    ex.push({id:"20.21 c)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,-a}\\), en fonction de a", pa:`(${xNum21})/(${xDen21})`, pb:pb21, vars:["a"]});
     paramsAvances.g21 = {A1_21,C1_21,A2_21,C2_21};
   }
 
@@ -1416,9 +1438,19 @@ function normaliserSaisie(str) {
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  // une parenthese fermante directement suivie d'une lettre est une multiplication implicite pour l'utilisateur
+  // (ex: une fraction MathLive "(5)/(2)x" tapee via le clavier virtuel puis suivie de x sans operateur),
+  // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
+  // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
+  s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
 }
 
+function checkEquationYax(userInput, correctExpr) {
+  const m = String(userInput).trim().match(/^y\s*=\s*(.+)$/i);
+  if (!m) return false;
+  return checkEqualNumeric(m[1], correctExpr);
+}
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','lam','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','a1','a2','a3','a4','an','bet'];
@@ -1602,6 +1634,12 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   } catch(e) { return false; }
 }
 
+function checkPointCoordonnees(userInput, correctA, correctB, vars) {
+  const nettoye = String(userInput).trim();
+  const m = nettoye.match(/^\((.*)\)$/);
+  if (!m) return false;
+  return checkPaire(m[1], correctA, correctB, vars);
+}
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
   const parties = nettoye.split(';');
@@ -1769,10 +1807,12 @@ function verifierUne(idx) {
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
+  else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
+  else if (ex.formeYax) ok = checkEquationYax(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
@@ -1881,18 +1921,63 @@ function convertirExposant(s) {
   }
   return result;
 }
+// certaines variables du site (m, t, b, g, h, N, ...) coincident avec des unites physiques connues
+// de math.js (metre, tonne, bit, gramme, heure, newton...) : math.js les evalue/typeset alors comme
+// des unites (rendu droit "\mathrm{m}") plutot que comme de simples variables. On les protege avant
+// le parse par un identifiant inconnu de math.js, puis on restaure la lettre d'origine dans le tex.
+const VARS_A_PROTEGER = ['x','t','u','v','a','b','c','m','k','y','z','n','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','x_A','y_A'];
+function protegerVariables(s) {
+  const mapping = [];
+  let out = s;
+  VARS_A_PROTEGER.forEach((v, i) => {
+    const placeholder = `qvarplaceholder${String(i).padStart(2,'0')}`;
+    const re = new RegExp('\\b' + v + '\\b', 'g');
+    if (re.test(out)) { out = out.replace(re, placeholder); mapping.push([placeholder, v]); }
+  });
+  return { out, mapping };
+}
+function restaurerVariables(tex, mapping) {
+  let out = tex;
+  mapping.forEach(([placeholder, v]) => { out = out.split(placeholder).join(v); });
+  return out;
+}
+// supprime le "\cdot"/"\times" entre un coefficient numerique et une lettre isolee (ecriture
+// implicite usuelle : "8m", pas "8 fois m"), et n'ecrit jamais un coefficient de 1 ou -1
+function collerCoefficientLettre(tex) {
+  let out = tex;
+  // coefficient 1/-1 devant un facteur (lettre(s), ou commande backslash type \sqrt{...}) : ne jamais afficher le 1
+  out = out.replace(/(^|[^0-9])1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '$1$2');
+  out = out.replace(/-1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '-$1');
+  // un ENTIER (jamais une fraction : le lookbehind exclut un "}" - fin de denominateur - juste avant)
+  // directement suivi d'une SEULE lettre (nue ou base d'exposant) ou d'une commande backslash : coller.
+  // Retirer le x apres une fraction reintroduirait une vraie ambiguite de precedence au reimport MathLive
+  // (verifie empiriquement : math.js traite la multiplication implicite comme prioritaire sur la division,
+  // donc "(27)/(2)x^2" se reevalue en 27/(2x^2) et non (27/2)x^2 - la fraction doit garder son x).
+  out = out.replace(/(?<!\})(\d)\\cdot\s*(\\[a-zA-Z]+(?:\{[^{}]*\})*|\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, '$1$2');
+  // un ENTIER (jamais une fraction, meme garde) directement suivi d'une parenthese : coller
+  out = out.replace(/(?<!\})(\d)\\cdot\s*\\left\(/g, '$1\\left(');
+  // un groupe deja entre parentheses (\right)) est une barriere de precedence complete : jamais de x
+  // apres lui, quel que soit ce qui suit (lettre, racine, ou une autre parenthese) - aucune garde necessaire
+  out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
+  return out;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
   try {
-    const node = math.parse(normaliserSaisie(s));
+    const { out: sProtege, mapping } = protegerVariables(normaliserSaisie(s));
+    const node = math.parse(sProtege);
     let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = restaurerVariables(tex, mapping);
+    tex = collerCoefficientLettre(tex);
     tex = tex.replace(/\\cdot/g, '\\times ');
     tex = tex.replace(/\\frac\{/g, '\\dfrac{');
-    tex = tex.replace(/lambda/g, '\\lambda ');
+    tex = tex.replace(/(?<!\\)lambda/g, '\\lambda ');
     return tex;
   } catch(e) {
     s = convertirSqrt(s);
+    s = s.replace(/(^|[^0-9])1\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/-1\*([a-zA-Z\\])/g, '-$1');
     s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/\*/g, '\\times ');
@@ -1928,6 +2013,9 @@ function formaterIntervalleSpec(spec) {
 
 function formaterReponse(ex) {
   try {
+    if (ex.formeYax) {
+      return `y=${jsVersLatex(ex.reponse)}`;
+    }
     if (ex.type === 'ineq') {
       const symb = {'>':'>', '<':'<', '>=':'\\geqslant', '<=':'\\leqslant'}[ex.sens];
       return `x ${symb} ${ex.seuil}`;
@@ -1959,7 +2047,7 @@ function formaterReponse(ex) {
       return jsVersLatex(ex.reponse);
     }
     if (ex.type === 'eqcart') {
-      return `(${jsVersLatex(ex.eqa)})x+(${jsVersLatex(ex.eqb)})y+(${jsVersLatex(ex.eqc)})=0`;
+      return `${jsVersLatex(equationCartesienneAscii(ex.eqa, ex.eqb, ex.eqc))}=0`;
     }
     if (ex.type === 'paire') {
       return `\\left(${jsVersLatex(ex.pa)}\\,;\\,${jsVersLatex(ex.pb)}\\right)`;
@@ -2073,16 +2161,21 @@ function toggleToutesReponses() {
 
 
 function placeholderPour(ex) {
+  if (ex.formeYax) return 'y=ax+b';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
   if (ex.type === 'intervalle') return ']a;b[';
   if (ex.type === 'texte') return 'réponse';
   if (ex.type === 'vecteur') return '(x;y)';
+  if (ex.formePoint) return '(x;y)';
   return 'réponse';
 }
 
 function aideContextuellePour(ex) {
+  if (ex.formeYax) {
+    return "Écrire l'équation complète, y compris « y= » : par exemple <code>y=2x+3</code>.";
+  }
   if (ex.type === 'ineq') {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
@@ -2107,6 +2200,9 @@ function aideContextuellePour(ex) {
   if (ex.type === 'somme') {
     return "Écrire directement <code>sum(k,1,n,expr)</code> au clavier pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le symbole &Sigma; du clavier virtuel (Maj + touche <code>+</code>) fonctionne aussi si besoin.";
   }
+  if (ex.formePoint) {
+    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code>.";
+  }
   if (ex.type === 'paire') {
     return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
   }
@@ -2120,21 +2216,26 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.formeYax) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
 
 function texteAideGroupe(indices) {
-  const textes = [];
+  const groupes = [];
   for (const idx of indices) {
     const ex = exercices[idx];
-    if (necessiteAide(ex)) {
-      const t = aideContextuellePour(ex);
-      if (!textes.includes(t)) textes.push(t);
-    }
+    if (!necessiteAide(ex)) continue;
+    const texte = aideContextuellePour(ex);
+    const lettre = (ex.id.match(/([a-zA-Z])\)\s*$/) || [])[1];
+    let g = groupes.find(g => g.texte === texte);
+    if (!g) { g = { texte, lettres: [] }; groupes.push(g); }
+    if (lettre) g.lettres.push(lettre);
   }
-  return textes.length ? textes.join('<br><br>') : null;
+  if (groupes.length === 0) return null;
+  if (groupes.length === 1) return groupes[0].texte;
+  return groupes.map(g => (g.lettres.length ? `<strong>${g.lettres.join(', ')})</strong> ` : '') + g.texte).join('<br><br>');
 }
 function injecterAideGroupe(gridId, indices) {
   const grille = document.getElementById(gridId);
@@ -2466,6 +2567,12 @@ function coefSqrtLatexTerm(n, radicalLatex) {
 function signedFracTermRawL(str, factor) {
   // str is an ascii number/expression (already known sign at front if negative); wrap safely
   const s = jsVersLatex(str);
+  // si str contient plusieurs termes (ex: "6m+3") et qu'on lui accole un facteur, une simple
+  // concatenation ("6m+3y") est ambigue/fausse : il faut parenthéser tout le groupe signé
+  const bodyApresSigneUnique = s.trim().replace(/^-/, '');
+  if (factor && /[+-]/.test(bodyApresSigneUnique)) {
+    return `+\\left(${s}\\right)${factor}`;
+  }
   const neg = s.trim().startsWith('-');
   const body = neg ? s.trim().slice(1) : s;
   const withFactor = factor ? `${body}${factor}` : body;

@@ -820,93 +820,454 @@ Dans toute cette fiche, on fixe une base orthonormée du plan. Les coordonnées 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-const exercices = [
+function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function melanger(tableau) {
+  const t = tableau.slice();
+  for (let i = t.length - 1; i > 0; i--) { const j = alea(0, i); [t[i], t[j]] = [t[j], t[i]]; }
+  return t;
+}
+function fracToStr(f) { f = math.fraction(f); return f.d === 1 ? String((f.s < 0 ? -1 : 1) * f.n) : `${f.s < 0 ? '-' : ''}${f.n}/${f.d}`; }
+function coordLatex(f) {
+  f = math.fraction(f);
+  if (f.d === 1) return String(f.s * f.n);
+  return `${f.s < 0 ? '-' : ''}\\frac{${f.n}}{${f.d}}`;
+}
+function simplifierRacine(n) {
+  let coef = 1, radicand = n;
+  for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--) {
+    if (radicand % (k*k) === 0) { coef *= k; radicand /= (k*k); break; }
+  }
+  return { coef, radicand };
+}
+function lcm(a,b) { return a*b/pgcd(a,b); }
+function vecteurEntierReduit(px, py) {
+  // px, py : nombres ou math.Fraction (vecteur direction) -> vecteur entier reduit de meme sens
+  const fx = math.fraction(px), fy = math.fraction(py);
+  const L = lcm(fx.d, fy.d);
+  const ix = fx.s*fx.n*(L/fx.d), iy = fy.s*fy.n*(L/fy.d);
+  const g = pgcd(ix, iy);
+  return { x: ix/g, y: iy/g };
+}
+function equationDroiteLatex(a, b, c) {
+  const termA = a === 1 ? 'x' : (a === -1 ? '-x' : `${a}x`);
+  const termB = b >= 0 ? `+${b === 1 ? '' : b}y` : `${b === -1 ? '-' : b}y`;
+  const termC = c === 0 ? '' : (c > 0 ? `+${c}` : `${c}`);
+  return termA + termB + termC;
+}
+function equationCercleDeveloppeeLatex(A, B, C) {
+  const termA = A === 0 ? '' : (A > 0 ? `+${A === 1 ? '' : A}x` : `${A === -1 ? '-' : A}x`);
+  const termB = B === 0 ? '' : (B > 0 ? `+${B === 1 ? '' : B}y` : `${B === -1 ? '-' : B}y`);
+  const termC = C === 0 ? '' : (C > 0 ? `+${C}` : `${C}`);
+  return `x^2+y^2${termA}${termB}${termC}`;
+}
+function termeSoustrait(v) { return v >= 0 ? `-${v}` : `+${-v}`; }
+function oddInt(maxAbs) { return (alea(0,1) ? 1 : -1) * (2*alea(0, Math.floor((maxAbs-1)/2)) + 1); }
+function polyDescendant(A, n) {
+  // (x-A)(polyDescendant(A,n)) = x^n - A^n
+  let terms = [];
+  for (let k=0;k<n;k++) {
+    const p = n-1-k;
+    const coefVal = Math.pow(A,k);
+    const coefStr = k===0 ? '' : String(coefVal);
+    const xStr = p===0 ? '' : (p===1 ? 'x' : `x^${p}`);
+    terms.push((coefStr && xStr) ? coefStr+xStr : (coefStr || xStr || '1'));
+  }
+  return terms.join('+');
+}
+function polyAlterneAscii(A, n) {
+  // (x+A)(polyAlterneAscii(A,n)) = x^n - (-A)^n
+  let out = '';
+  for (let k=0;k<n;k++) {
+    const p = n-1-k;
+    const signedCoef = Math.pow(-A,k);
+    const neg = signedCoef<0;
+    const mag = Math.abs(signedCoef);
+    const coefStr = mag===1 ? '' : String(mag);
+    const xStr = p===0 ? '' : (p===1 ? 'x' : `x^${p}`);
+    const body = (coefStr && xStr) ? coefStr+xStr : (coefStr || xStr || '1');
+    out += (k===0 ? (neg?'-':'') : (neg?'-':'+')) + body;
+  }
+  return out;
+}
+function projeteOrthogonal(Mx, My, a, b, c) {
+  const k = math.divide(math.add(math.add(math.multiply(a,Mx), math.multiply(b,My)), c), a*a+b*b);
+  const Hx = math.subtract(Mx, math.multiply(k,a));
+  const Hy = math.subtract(My, math.multiply(k,b));
+  return { Hx, Hy };
+}
+function qcmTrouverNormal(a, b) {
+  // (a,b) attendu avec a!=0, b!=0, |a|!=|b|
+  const correct = {x:a, y:b, ok:true};
+  const directeur = {x:-b, y:a, ok:false};
+  const swapped = {x:b, y:a, ok:false};
+  const signflip = {x:a, y:-b, ok:false};
+  const shuffled = melanger([correct, directeur, swapped, signflip]);
+  const lettresQ = ['a','b','c','d'];
+  const options = shuffled.map((v,i) => ({lettre:lettresQ[i], texte:`\\vec{n_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
+  const bonneReponse = lettresQ[shuffled.findIndex(v=>v.ok)];
+  return { options, bonneReponse };
+}
+const PYTHA = [[3,4,5],[6,8,10],[5,12,13],[8,15,17],[7,24,25],[9,12,15],[20,21,29]];
+
+function genererExercices() {
+  const ex = [];
   // Calcul 26.1 - puissances (2 items)
-  {id:"26.1 a)", type:"num", texteLibre:true, enonce:"Simplifier au maximum, sous forme de produit de puissances : \\(\\dfrac{3^{200}\\times 8^{10}}{(-9)^{99}\\times 2^{31}}\\)", reponse:"-3^2/2"},
-  {id:"26.1 b)", type:"num", texteLibre:true, enonce:"Simplifier \\(\\dfrac{(5^3\\times 2^{-3})^2/(2\\times 25)^3}{10^2\\times 5/28}\\)", reponse:"7/(5^3*2^9)"},
+  (function() {
+    const C = 2*alea(3,8)-1;
+    const p = alea(1,4);
+    const A = 2*C + p;
+    const B = alea(3,10);
+    const qAbs = alea(1,4);
+    const D = 3*B + qAbs;
+    ex.push({id:"26.1 a)", type:"num", texteLibre:true, enonce:`Simplifier au maximum, sous forme de produit de puissances : \\(\\dfrac{3^{${A}}\\times 8^{${B}}}{(-9)^{${C}}\\times 2^{${D}}}\\)`, reponse:`-3^${p}/2^${qAbs}`});
+  })();
+  (function() {
+    const a = alea(1,4), b = alea(1,5);
+    const P = [3,7,11,13][alea(0,3)];
+    const m = 9-2*a, n = 2*b+3;
+    ex.push({id:"26.1 b)", type:"num", texteLibre:true, enonce:`Simplifier \\(\\dfrac{(5^{${a}}\\times 2^{-${b}})^2/(2\\times 25)^3}{10^2\\times 5/${4*P}}\\)`, reponse:`${P}/(5^${m}*2^${n})`});
+  })();
   // Calcul 26.2 - developpements (3 items)
-  {id:"26.2 a)", type:"alg", texteLibre:true, enonce:"Soit x∈ℝ. Développer \\((x-2)(x^4+2x^3+4x^2+8x+16)\\)", reponse:"x^5-32"},
-  {id:"26.2 b)", type:"alg", texteLibre:true, enonce:"Développer \\((x+1)(x^7-x^6+x^5-x^4+x^3-x^2+x-1)\\)", reponse:"x^8-1"},
-  {id:"26.2 c)", type:"alg", texteLibre:true, enonce:"Développer \\((x+1)(x^6-x^5+x^4-x^3+x^2-x+1)\\)", reponse:"x^7+1"},
+  (function() {
+    const A = alea(2,4);
+    ex.push({id:"26.2 a)", type:"alg", texteLibre:true, enonce:`Soit x∈ℝ. Développer \\((x-${A})(${polyDescendant(A,5)})\\)`, reponse:`x^5-${A**5}`});
+  })();
+  (function() {
+    const n = 2*alea(3,5);
+    ex.push({id:"26.2 b)", type:"alg", texteLibre:true, enonce:`Développer \\((x+1)(${polyAlterneAscii(1,n)})\\)`, reponse:`x^${n}-1`});
+  })();
+  (function() {
+    const n = 2*alea(3,5)+1;
+    ex.push({id:"26.2 c)", type:"alg", texteLibre:true, enonce:`Développer \\((x+1)(${polyAlterneAscii(1,n)})\\)`, reponse:`x^${n}+1`});
+  })();
   // Calcul 26.3 - calcul fondamental (2 items)
-  {id:"26.3 a)", type:"texte", texteLibre:true, enonce:"Soient \\(\\vec{u}\\begin{pmatrix}x\\\\y\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}x'\\\\y'\\end{pmatrix}\\) deux vecteurs. Donner une expression de \\(\\vec{u}\\cdot\\vec{v}\\)", reponse:"x*x'+y*y'"},
-  {id:"26.3 b)", type:"qcm", texteLibre:true, enonce:"Soient a et b des réels. Parmi les vecteurs suivants, lequel est orthogonal à \\(\\vec{u}\\begin{pmatrix}a\\\\b\\end{pmatrix}\\) ?", bonneReponse:"c", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}-a\\\\b\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}b\\\\a\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}b\\\\-a\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}a\\\\b\\end{pmatrix}"}], optionsSurUneLigne:true},
+  ex.push({id:"26.3 a)", type:"texte", texteLibre:true, enonce:"Soient \\(\\vec{u}\\begin{pmatrix}x\\\\y\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}x'\\\\y'\\end{pmatrix}\\) deux vecteurs. Donner une expression de \\(\\vec{u}\\cdot\\vec{v}\\)", reponse:"x*x'+y*y'"});
+  (function() {
+    const raw = [
+      {texte:'\\vec{n_1}\\begin{pmatrix}-a\\\\b\\end{pmatrix}', ok:false},
+      {texte:'\\vec{n_2}\\begin{pmatrix}b\\\\a\\end{pmatrix}', ok:false},
+      {texte:'\\vec{n_3}\\begin{pmatrix}b\\\\-a\\end{pmatrix}', ok:true},
+      {texte:'\\vec{n_4}\\begin{pmatrix}a\\\\b\\end{pmatrix}', ok:false}
+    ];
+    const shuffled = melanger(raw);
+    const lettresQ = ['a','b','c','d'];
+    const options = shuffled.map((o,i) => ({lettre:lettresQ[i], texte:o.texte.replace(/n_\d/, `n_${i+1}`)}));
+    const bonne = lettresQ[shuffled.findIndex(o=>o.ok)];
+    ex.push({id:"26.3 b)", type:"qcm", texteLibre:true, enonce:"Soient a et b des réels. Parmi les vecteurs suivants, lequel est orthogonal à \\(\\vec{u}\\begin{pmatrix}a\\\\b\\end{pmatrix}\\) ?", bonneReponse:bonne, options, optionsSurUneLigne:true});
+  })();
   // Calcul 26.4 - droites et vecteurs (2 items)
-  {id:"26.4 a)", type:"qcm", texteLibre:true, enonce:"La droite (d1) a pour vecteur normal \\(\\vec{n}\\begin{pmatrix}-2\\\\-5\\end{pmatrix}\\). La droite (d2) est perpendiculaire à (d1). Parmi les vecteurs suivants, lequel est un vecteur directeur de (d2) ?", bonneReponse:"c", options:[{lettre:"a",texte:"\\vec{u_1}\\begin{pmatrix}5\\\\-2\\end{pmatrix}"},{lettre:"b",texte:"\\vec{u_2}\\begin{pmatrix}-5\\\\2\\end{pmatrix}"},{lettre:"c",texte:"\\vec{u_3}\\begin{pmatrix}2\\\\5\\end{pmatrix}"},{lettre:"d",texte:"\\vec{u_4}\\begin{pmatrix}2\\\\-5\\end{pmatrix}"}], optionsSurUneLigne:true},
-  {id:"26.4 b)", type:"qcm", texteLibre:true, enonce:"La droite (d) a pour vecteur directeur \\(\\vec{u}\\begin{pmatrix}2\\\\-1\\end{pmatrix}\\). Parmi les vecteurs suivants, lequel est normal à (d) ?", bonneReponse:"d", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}-1\\\\2\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}1\\\\-2\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}-3\\\\6\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}3\\\\6\\end{pmatrix}"}], optionsSurUneLigne:true},
+  (function() {
+    let nx,ny; do { nx=aleaNonNul(-6,6); ny=aleaNonNul(-6,6); } while (Math.abs(nx)===Math.abs(ny));
+    const correct={x:nx,y:ny,ok:true}, w1={x:-ny,y:nx,ok:false}, w2={x:ny,y:nx,ok:false}, w3={x:nx,y:-ny,ok:false};
+    const shuffled = melanger([correct,w1,w2,w3]);
+    const lettresQ=['a','b','c','d'];
+    const options = shuffled.map((v,i)=>({lettre:lettresQ[i], texte:`\\vec{u_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
+    const bonne = lettresQ[shuffled.findIndex(v=>v.ok)];
+    ex.push({id:"26.4 a)", type:"qcm", texteLibre:true, enonce:`La droite (d1) a pour vecteur normal \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\). La droite (d2) est perpendiculaire à (d1). Parmi les vecteurs suivants, lequel est un vecteur directeur de (d2) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+  })();
+  (function() {
+    let ux,uy; do { ux=aleaNonNul(-6,6); uy=aleaNonNul(-6,6); } while (Math.abs(ux)===Math.abs(uy));
+    const correct={x:-uy,y:ux,ok:true}, w1={x:ux,y:uy,ok:false}, w2={x:uy,y:ux,ok:false}, w3={x:ux,y:-uy,ok:false};
+    const shuffled = melanger([correct,w1,w2,w3]);
+    const lettresQ=['a','b','c','d'];
+    const options = shuffled.map((v,i)=>({lettre:lettresQ[i], texte:`\\vec{n_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
+    const bonne = lettresQ[shuffled.findIndex(v=>v.ok)];
+    ex.push({id:"26.4 b)", type:"qcm", texteLibre:true, enonce:`La droite (d) a pour vecteur directeur \\(\\vec{u}\\begin{pmatrix}${ux}\\\\${uy}\\end{pmatrix}\\). Parmi les vecteurs suivants, lequel est normal à (d) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+  })();
   // Calcul 26.5 - vecteurs normaux a AB (4 items)
-  {id:"26.5 a)", type:"vecteur", texteLibre:true, enonce:"Avec A(2;3) et B(4;1)", vx:"1", vy:"1", vars:[]},
-  {id:"26.5 b)", type:"vecteur", texteLibre:true, enonce:"Avec A(−2;3) et B(2;1)", vx:"1", vy:"2", vars:[]},
-  {id:"26.5 c)", type:"vecteur", texteLibre:true, enonce:"Avec A(−4;−5) et B(−2;−2)", vx:"-3", vy:"2", vars:[]},
-  {id:"26.5 d)", type:"vecteur", texteLibre:true, enonce:"Avec A(−1;1) et B(−2;−3/2)", vx:"5", vy:"-2", vars:[]},
+  (function() {
+    let Ax,Ay,Bx,By; do {Ax=alea(-5,5);Ay=alea(-5,5);Bx=alea(-5,5);By=alea(-5,5);} while(Ax===Bx&&Ay===By);
+    const v = vecteurEntierReduit(-(By-Ay), Bx-Ax);
+    ex.push({id:"26.5 a)", type:"vecteur", texteLibre:true, enonce:`Avec A(${Ax};${Ay}) et B(${Bx};${By})`, vx:String(v.x), vy:String(v.y), vars:[]});
+  })();
+  (function() {
+    let Ax,Ay,Bx,By; do {Ax=alea(-5,5);Ay=alea(-5,5);Bx=alea(-5,5);By=alea(-5,5);} while(Ax===Bx&&Ay===By);
+    const v = vecteurEntierReduit(-(By-Ay), Bx-Ax);
+    ex.push({id:"26.5 b)", type:"vecteur", texteLibre:true, enonce:`Avec A(${Ax};${Ay}) et B(${Bx};${By})`, vx:String(v.x), vy:String(v.y), vars:[]});
+  })();
+  (function() {
+    let Ax,Ay,Bx,By; do {Ax=alea(-5,5);Ay=alea(-5,5);Bx=alea(-5,5);By=alea(-5,5);} while(Ax===Bx&&Ay===By);
+    const v = vecteurEntierReduit(-(By-Ay), Bx-Ax);
+    ex.push({id:"26.5 c)", type:"vecteur", texteLibre:true, enonce:`Avec A(${Ax};${Ay}) et B(${Bx};${By})`, vx:String(v.x), vy:String(v.y), vars:[]});
+  })();
+  (function() {
+    const Ax=alea(-5,5), Ay=alea(-5,5);
+    let Bx,By2; do { Bx=alea(-5,5); By2=aleaNonNul(-9,9); } while (Bx===Ax && By2===2*Ay);
+    const By = math.fraction(By2,2);
+    const v = vecteurEntierReduit(math.multiply(-1, math.subtract(By,Ay)), Bx-Ax);
+    ex.push({id:"26.5 d)", type:"vecteur", texteLibre:true, enonce:`Avec A(${Ax};${Ay}) et \\(B\\left(${Bx};${coordLatex(By)}\\right)\\)`, vx:String(v.x), vy:String(v.y), vars:[]});
+  })();
   // Calcul 26.6 - deux equations (2 items)
-  {id:"26.6 a)", type:"num", texteLibre:true, enonce:"Trouver la valeur du réel m pour que \\(\\vec{u}\\begin{pmatrix}1+m\\\\m+5\\end{pmatrix}\\) et \\(\\vec{n}\\begin{pmatrix}2-m\\\\m-4\\end{pmatrix}\\) soient orthogonaux", reponse:"9"},
-  {id:"26.6 b)", type:"num", texteLibre:true, enonce:"On considère les points A(−1;2) et B(m;3). Trouver l'unique valeur de m pour que le vecteur \\(\\vec{n}\\begin{pmatrix}-2\\\\1\\end{pmatrix}\\) soit normal à (AB)", reponse:"-1/2"},
+  (function() {
+    let A,B,C,D,denom;
+    do { A=alea(-4,4); B=alea(-4,4); C=alea(-4,4); D=alea(-4,4); denom = C-A+B-D; } while (denom===0);
+    const m = math.fraction(B*D-A*C, denom);
+    ex.push({id:"26.6 a)", type:"num", texteLibre:true, enonce:`Trouver la valeur du réel m pour que \\(\\vec{u}\\begin{pmatrix}${A}+m\\\\m${B>=0?'+':''}${B}\\end{pmatrix}\\) et \\(\\vec{n}\\begin{pmatrix}${C}-m\\\\m${D>=0?'+':''}${D}\\end{pmatrix}\\) soient orthogonaux`, reponse:fracToStr(m)});
+  })();
+  (function() {
+    const Ax=alea(-6,6), Ay=alea(-6,6), By=alea(-6,6);
+    const nx=aleaNonNul(-5,5), ny=aleaNonNul(-5,5);
+    const m = math.subtract(Ax, math.divide(math.multiply(ny, By-Ay), nx));
+    ex.push({id:"26.6 b)", type:"num", texteLibre:true, enonce:`On considère les points A(${Ax};${Ay}) et B(m;${By}). Trouver l'unique valeur de m pour que le vecteur \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\) soit normal à (AB)`, reponse:fracToStr(m)});
+  })();
   // Calcul 26.7 - quatre calculs de vecteurs directeurs et normaux (8 items)
-  {id:"26.7 a)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_1): 2x+3y+1=0\\), donner \\(\\vec{n}\\)", vx:"2", vy:"3", vars:[]},
-  {id:"26.7 b)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_1)\\), donner \\(\\vec{u}\\)", vx:"-3", vy:"2", vars:[]},
-  {id:"26.7 c)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_2): -3x+5y+7=0\\), donner \\(\\vec{u}\\)", vx:"-5", vy:"-3", vars:[]},
-  {id:"26.7 d)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_2)\\), donner \\(\\vec{n}\\)", vx:"-3", vy:"5", vars:[]},
-  {id:"26.7 e)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_3): \\dfrac{x}{3}-6y+13=0\\), donner \\(\\vec{u}\\)", vx:"6", vy:"1/3", vars:[]},
-  {id:"26.7 f)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_3)\\), donner \\(\\vec{n}\\)", vx:"1/3", vy:"-6", vars:[]},
-  {id:"26.7 g)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_4): \\sqrt{2}x-\\pi y+4=0\\), donner \\(\\vec{u}\\)", vx:"pi", vy:"sqrt(2)", vars:[]},
-  {id:"26.7 h)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_4)\\), donner \\(\\vec{n}\\)", vx:"sqrt(2)", vy:"-pi", vars:[]},
+  (function() {
+    const a1=aleaNonNul(-6,6), b1=aleaNonNul(-6,6), c1=alea(-9,9);
+    ex.push({id:"26.7 a)", type:"vecteur", texteLibre:true, enonce:`Pour \\((D_1): ${equationDroiteLatex(a1,b1,c1)}=0\\), donner \\(\\vec{n}\\)`, vx:String(a1), vy:String(b1), vars:[]});
+    ex.push({id:"26.7 b)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_1)\\), donner \\(\\vec{u}\\)", vx:String(-b1), vy:String(a1), vars:[]});
+
+    const a2=aleaNonNul(-6,6), b2=aleaNonNul(-6,6), c2=alea(-9,9);
+    ex.push({id:"26.7 c)", type:"vecteur", texteLibre:true, enonce:`Pour \\((D_2): ${equationDroiteLatex(a2,b2,c2)}=0\\), donner \\(\\vec{u}\\)`, vx:String(-b2), vy:String(a2), vars:[]});
+    ex.push({id:"26.7 d)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_2)\\), donner \\(\\vec{n}\\)", vx:String(a2), vy:String(b2), vars:[]});
+
+    const K3=alea(2,5), b3=aleaNonNul(-8,8), c3=alea(-15,15);
+    const a3 = math.fraction(1,K3);
+    const termB3 = b3>=0 ? `+${b3===1?'':b3}y` : `${b3===-1?'-':b3}y`;
+    const termC3 = c3===0?'':(c3>0?`+${c3}`:`${c3}`);
+    ex.push({id:"26.7 e)", type:"vecteur", texteLibre:true, enonce:`Pour \\((D_3): \\dfrac{x}{${K3}}${termB3}${termC3}=0\\), donner \\(\\vec{u}\\)`, vx:String(-b3), vy:fracToStr(a3), vars:[]});
+    ex.push({id:"26.7 f)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_3)\\), donner \\(\\vec{n}\\)", vx:fracToStr(a3), vy:String(b3), vars:[]});
+
+    ex.push({id:"26.7 g)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_4): \\sqrt{2}x-\\pi y+4=0\\), donner \\(\\vec{u}\\)", vx:"pi", vy:"sqrt(2)", vars:[]});
+    ex.push({id:"26.7 h)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_4)\\), donner \\(\\vec{n}\\)", vx:"sqrt(2)", vy:"-pi", vars:[]});
+  })();
   // Calcul 26.8 - QCM vecteurs normaux (3 items)
-  {id:"26.8 a)", type:"qcm", texteLibre:true, enonce:"Soit (D) la droite d'équation \\(x-2y+3=0\\). Parmi les vecteurs suivants, lequel est un vecteur normal ?", bonneReponse:"a", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}1\\\\-2\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}2\\\\1\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}-2\\\\3\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}1\\\\3\\end{pmatrix}"}], optionsSurUneLigne:true},
-  {id:"26.8 b)", type:"qcm", texteLibre:true, enonce:"Soit (d) la droite d'équation cartésienne \\(x-3y-2=0\\). Parmi les vecteurs suivants, lequel n'est PAS un vecteur normal ?", bonneReponse:"d", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}1\\\\-3\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}-2\\\\6\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}\\frac{1}{3}\\\\-1\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}3\\\\1\\end{pmatrix}"}], optionsSurUneLigne:true},
-  {id:"26.8 c)", type:"qcm", texteLibre:true, enonce:"Un vecteur normal de la droite (d) d'équation \\(2x-5y-100=0\\) est :", bonneReponse:"a", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}2\\\\-5\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}2\\\\5\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}5\\\\2\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}-5\\\\2\\end{pmatrix}"}], optionsSurUneLigne:true},
+  (function() {
+    let a,b; do { a=aleaNonNul(-5,5); b=aleaNonNul(-5,5); } while (Math.abs(a)===Math.abs(b));
+    const c=alea(-9,9);
+    const {options,bonneReponse} = qcmTrouverNormal(a,b);
+    ex.push({id:"26.8 a)", type:"qcm", texteLibre:true, enonce:`Soit (D) la droite d'équation \\(${equationDroiteLatex(a,b,c)}=0\\). Parmi les vecteurs suivants, lequel est un vecteur normal ?`, bonneReponse, options, optionsSurUneLigne:true});
+  })();
+  (function() {
+    let a,b; do { a=aleaNonNul(-5,5); b=aleaNonNul(-5,5); } while (Math.abs(a)===Math.abs(b));
+    const c=alea(-9,9);
+    const K = alea(2,4);
+    const raw = [
+      {texte:`\\vec{n_1}\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}`, ok:true},
+      {texte:`\\vec{n_2}\\begin{pmatrix}${-2*a}\\\\${-2*b}\\end{pmatrix}`, ok:true},
+      {texte:`\\vec{n_3}\\begin{pmatrix}\\frac{${a}}{${K}}\\\\\\frac{${b}}{${K}}\\end{pmatrix}`, ok:true},
+      {texte:`\\vec{n_4}\\begin{pmatrix}${-b}\\\\${a}\\end{pmatrix}`, ok:false}
+    ];
+    const shuffled = melanger(raw);
+    const lettresQ=['a','b','c','d'];
+    const options = shuffled.map((o,i)=>({lettre:lettresQ[i], texte:o.texte.replace(/n_\d/, `n_${i+1}`)}));
+    const bonne = lettresQ[shuffled.findIndex(o=>!o.ok)];
+    ex.push({id:"26.8 b)", type:"qcm", texteLibre:true, enonce:`Soit (d) la droite d'équation cartésienne \\(${equationDroiteLatex(a,b,c)}=0\\). Parmi les vecteurs suivants, lequel n'est PAS un vecteur normal ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+  })();
+  (function() {
+    let a,b; do { a=aleaNonNul(-6,6); b=aleaNonNul(-6,6); } while (Math.abs(a)===Math.abs(b));
+    const c=alea(-99,99);
+    const {options,bonneReponse} = qcmTrouverNormal(a,b);
+    ex.push({id:"26.8 c)", type:"qcm", texteLibre:true, enonce:`Un vecteur normal de la droite (d) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\) est :`, bonneReponse, options, optionsSurUneLigne:true});
+  })();
   // Calcul 26.9 - QCM plusieurs bonnes reponses (3 items)
-  {id:"26.9 a)", type:"qcm", texteLibre:true, enonce:"Soit (D) la droite d'équation \\(y=x\\). Parmi les vecteurs suivants, lesquels sont normaux à (D) ?", bonneReponse:"a,b", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}1\\\\-1\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}-1\\\\1\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}1\\\\0\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}1\\\\1\\end{pmatrix}"}], optionsSurUneLigne:true},
-  {id:"26.9 b)", type:"qcm", texteLibre:true, enonce:"Soit (D) une droite parallèle à l'axe (Ox). Lesquels de ces vecteurs sont normaux à (D) ?", bonneReponse:"a", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}0\\\\1\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}1\\\\0\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}-1\\\\0\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}1\\\\1\\end{pmatrix}"}], optionsSurUneLigne:true},
-  {id:"26.9 c)", type:"qcm", texteLibre:true, enonce:"Soit (D) la droite d'équation \\(y=4x-2\\). Parmi les vecteurs suivants, lequel est normal à (D) ?", bonneReponse:"b", options:[{lettre:"a",texte:"\\vec{n_1}\\begin{pmatrix}1\\\\4\\end{pmatrix}"},{lettre:"b",texte:"\\vec{n_2}\\begin{pmatrix}4\\\\-1\\end{pmatrix}"},{lettre:"c",texte:"\\vec{n_3}\\begin{pmatrix}-4\\\\-2\\end{pmatrix}"},{lettre:"d",texte:"\\vec{n_4}\\begin{pmatrix}-1\\\\4\\end{pmatrix}"}], optionsSurUneLigne:true},
+  (function() {
+    let K; do { K=aleaNonNul(-4,4); } while (Math.abs(K)===1);
+    const correct1={x:K,y:-1,ok:true}, correct2={x:-K,y:1,ok:true}, wrong1={x:1,y:K,ok:false}, wrong2={x:-1,y:K,ok:false};
+    const shuffled = melanger([correct1,correct2,wrong1,wrong2]);
+    const lettresQ=['a','b','c','d'];
+    const options = shuffled.map((v,i)=>({lettre:lettresQ[i], texte:`\\vec{n_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
+    const bonne = lettresQ.filter((l,i)=>shuffled[i].ok).join(',');
+    ex.push({id:"26.9 a)", type:"qcm", texteLibre:true, enonce:`Soit (D) la droite d'équation \\(y=${K===1?'':(K===-1?'-':K)}x\\). Parmi les vecteurs suivants, lesquels sont normaux à (D) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+  })();
+  (function() {
+    const base = [{x:0,y:1,ok:true},{x:1,y:0,ok:false},{x:-1,y:0,ok:false},{x:1,y:1,ok:false}];
+    const shuffled = melanger(base);
+    const lettresQ=['a','b','c','d'];
+    const options = shuffled.map((v,i)=>({lettre:lettresQ[i], texte:`\\vec{n_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
+    const bonne = lettresQ[shuffled.findIndex(v=>v.ok)];
+    ex.push({id:"26.9 b)", type:"qcm", texteLibre:true, enonce:"Soit (D) une droite parallèle à l'axe (Ox). Lesquels de ces vecteurs sont normaux à (D) ?", bonneReponse:bonne, options, optionsSurUneLigne:true});
+  })();
+  (function() {
+    let K; do { K=aleaNonNul(-5,5); } while (Math.abs(K)===1);
+    const P = aleaNonNul(-6,6);
+    const {options,bonneReponse} = qcmTrouverNormal(K,-1);
+    ex.push({id:"26.9 c)", type:"qcm", texteLibre:true, enonce:`Soit (D) la droite d'équation \\(y=${K}x${P>=0?'+':''}${P}\\). Parmi les vecteurs suivants, lequel est normal à (D) ?`, bonneReponse, options, optionsSurUneLigne:true});
+  })();
   // Calcul 26.10 - droites perpendiculaires (4 items)
-  {id:"26.10 a)", type:"qcm", texteLibre:true, enonce:"\\((d_1): 3x-y+1=0\\) et \\((d_2): x+3y-2=0\\)", bonneReponse:"a", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]},
-  {id:"26.10 b)", type:"qcm", texteLibre:true, enonce:"\\((d_1): 2x-3y+1=0\\) et \\((d_2): 4x+3y-6=0\\)", bonneReponse:"b", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]},
-  {id:"26.10 c)", type:"qcm", texteLibre:true, enonce:"\\((d_1): 2x+y-3=0\\) et \\((d_2): y=\\dfrac{1}{2}x+5\\)", bonneReponse:"a", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]},
-  {id:"26.10 d)", type:"qcm", texteLibre:true, enonce:"\\((d_1): (1+\\sqrt{2})x-y+3=0\\) et \\((d_2): (1-\\sqrt{2})x+y=0\\)", bonneReponse:"b", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]},
+  function droitesPerp(veutPerp) {
+    const a1=aleaNonNul(-5,5), b1=aleaNonNul(-5,5), c1=alea(-9,9);
+    let a2,b2;
+    if (veutPerp) { const k=aleaNonNul(-3,3); a2=b1*k; b2=-a1*k; }
+    else { do { a2=aleaNonNul(-6,6); b2=aleaNonNul(-6,6); } while (a1*a2+b1*b2===0); }
+    const c2=alea(-9,9);
+    return {a1,b1,c1,a2,b2,c2};
+  }
+  ['a','b','c','d'].forEach(lettre => {
+    const veut = alea(0,1)===1;
+    const {a1,b1,c1,a2,b2,c2} = droitesPerp(veut);
+    ex.push({id:`26.10 ${lettre})`, type:"qcm", texteLibre:true, enonce:`\\((d_1): ${equationDroiteLatex(a1,b1,c1)}=0\\) et \\((d_2): ${equationDroiteLatex(a2,b2,c2)}=0\\)`, bonneReponse: veut?'a':'b', options:[{lettre:'a',texte:'oui',texteLibreOption:true},{lettre:'b',texte:'non',texteLibreOption:true}]});
+  });
   // Calcul 26.11 - equations cartesiennes (3 items)
-  {id:"26.11 a)", type:"eqcart", texteLibre:true, enonce:"la droite passant par A(2;−1) et de vecteur normal \\(\\vec{n}\\begin{pmatrix}2\\\\1\\end{pmatrix}\\)", eqa:"2", eqb:"1", eqc:"-3"},
-  {id:"26.11 b)", type:"eqcart", texteLibre:true, enonce:"la droite passant par A(1;−2) et de vecteur normal \\(\\vec{n}\\begin{pmatrix}-2\\\\4\\end{pmatrix}\\)", eqa:"-2", eqb:"4", eqc:"10"},
-  {id:"26.11 c)", type:"eqcart", texteLibre:true, enonce:"la droite passant par \\(A\\left(6;-\\frac{1}{2}\\right)\\) et de vecteur normal \\(\\vec{n}\\begin{pmatrix}5\\\\-7\\end{pmatrix}\\)", eqa:"5", eqb:"-7", eqc:"-67/2"},
+  (function() {
+    const Ax=alea(-6,6), Ay=alea(-6,6), nx=aleaNonNul(-6,6), ny=aleaNonNul(-6,6);
+    const c=-(nx*Ax+ny*Ay);
+    ex.push({id:"26.11 a)", type:"eqcart", texteLibre:true, enonce:`la droite passant par A(${Ax};${Ay}) et de vecteur normal \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, eqa:String(nx), eqb:String(ny), eqc:String(c)});
+  })();
+  (function() {
+    const Ax=alea(-6,6), Ay=alea(-6,6), nx=aleaNonNul(-6,6), ny=aleaNonNul(-6,6);
+    const c=-(nx*Ax+ny*Ay);
+    ex.push({id:"26.11 b)", type:"eqcart", texteLibre:true, enonce:`la droite passant par A(${Ax};${Ay}) et de vecteur normal \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, eqa:String(nx), eqb:String(ny), eqc:String(c)});
+  })();
+  (function() {
+    const Ax=alea(-6,6), Ay2=aleaNonNul(-9,9);
+    const nx=aleaNonNul(-7,7), ny=aleaNonNul(-7,7);
+    const Ay = math.fraction(Ay2,2);
+    const c = math.subtract(0, math.add(nx*Ax, math.multiply(ny, Ay)));
+    ex.push({id:"26.11 c)", type:"eqcart", texteLibre:true, enonce:`la droite passant par \\(A\\left(${Ax};${coordLatex(Ay)}\\right)\\) et de vecteur normal \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, eqa:String(nx), eqb:String(ny), eqc:fracToStr(c)});
+  })();
   // Calcul 26.12 - projection orthogonale I (2 items)
-  {id:"26.12 a)", type:"paire", texteLibre:true, enonce:"H, le projeté orthogonal de M(1;3) sur la droite (d) d'équation x−y=0", pa:"2", pb:"2"},
-  {id:"26.12 b)", type:"paire", texteLibre:true, enonce:"H, le projeté orthogonal de M(1;5) sur la droite (d) d'équation y=x+4", pa:"1", pb:"5"},
+  (function() {
+    const Mx=alea(-5,5), My=alea(-5,5);
+    const a=aleaNonNul(-4,4), b=aleaNonNul(-4,4), c=alea(-6,6);
+    const {Hx,Hy} = projeteOrthogonal(Mx,My,a,b,c);
+    ex.push({id:"26.12 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`H, le projeté orthogonal de M(${Mx};${My}) sur la droite (d) d'équation ${equationDroiteLatex(a,b,c)}=0`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
+  })();
+  (function() {
+    const Mx=alea(-5,5), My=alea(-5,5);
+    const a=aleaNonNul(-4,4), b=aleaNonNul(-4,4), c=alea(-6,6);
+    const {Hx,Hy} = projeteOrthogonal(Mx,My,a,b,c);
+    ex.push({id:"26.12 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`H, le projeté orthogonal de M(${Mx};${My}) sur la droite (d) d'équation ${equationDroiteLatex(a,b,c)}=0`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
+  })();
   // Calcul 26.13 - projection orthogonale II (2 items)
-  {id:"26.13 a)", type:"paire", texteLibre:true, enonce:"H, le projeté orthogonal de M(1;2) sur la droite (d): 3x−4y=0", pa:"8/5", pb:"6/5"},
-  {id:"26.13 b)", type:"paire", texteLibre:true, enonce:"H, le projeté orthogonal de \\(M\\left(\\frac{7}{2};0\\right)\\) sur la droite (d): 4x+3y−9=0", pa:"27/10", pb:"-3/5"},
+  (function() {
+    const Mx=alea(-5,5), My=alea(-5,5);
+    const a=aleaNonNul(-6,6), b=aleaNonNul(-6,6), c=alea(-9,9);
+    const {Hx,Hy} = projeteOrthogonal(Mx,My,a,b,c);
+    ex.push({id:"26.13 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`H, le projeté orthogonal de M(${Mx};${My}) sur la droite (d): ${equationDroiteLatex(a,b,c)}=0`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
+  })();
+  (function() {
+    const Mx2=aleaNonNul(-9,9), My=alea(-5,5);
+    const a=aleaNonNul(-6,6), b=aleaNonNul(-6,6), c=alea(-9,9);
+    const Mx = math.fraction(Mx2,2);
+    const {Hx,Hy} = projeteOrthogonal(Mx,My,a,b,c);
+    ex.push({id:"26.13 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`H, le projeté orthogonal de \\(M\\left(${coordLatex(Mx)};${My}\\right)\\) sur la droite (d): ${equationDroiteLatex(a,b,c)}=0`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
+  })();
   // Calcul 26.14 - une distance I (1 item)
-  {id:"26.14", type:"num", texteLibre:true, enonce:"Calculer la distance entre le point M(−1;1) et la droite (d) d'équation 3x−4y−3=0", reponse:"2"},
+  (function() {
+    const [pa0,pb0,R] = PYTHA[alea(0,PYTHA.length-1)];
+    const a = (alea(0,1)?1:-1)*pa0, b = (alea(0,1)?1:-1)*pb0;
+    const Mx=alea(-6,6), My=alea(-6,6);
+    const Dtarget = alea(1,6);
+    const sign = alea(0,1)?1:-1;
+    const c = sign*Dtarget*R - a*Mx - b*My;
+    ex.push({id:"26.14", type:"num", texteLibre:true, enonce:`Calculer la distance entre le point M(${Mx};${My}) et la droite (d) d'équation ${equationDroiteLatex(a,b,c)}=0`, reponse:String(Dtarget)});
+  })();
   // Calcul 26.15 - une distance II (1 item)
-  {id:"26.15", type:"num", texteLibre:true, enonce:"On considère les points A(−10;−1), B(−4;−5) et C(−2;−2). Déterminer la distance entre le point A et la droite (BC)", reponse:"2*sqrt(13)"},
+  (function() {
+    let Ax,Ay,Bx,By,Cx,Cy,a,b,c,Nraw,Dsq;
+    do {
+      Ax=alea(-8,8);Ay=alea(-8,8);Bx=alea(-8,8);By=alea(-8,8);Cx=alea(-8,8);Cy=alea(-8,8);
+      if (Bx===Cx && By===Cy) continue;
+      a = -(Cy-By); b = Cx-Bx; c = -(a*Bx+b*By);
+      Nraw = a*Ax+b*Ay+c; Dsq = a*a+b*b;
+    } while ((Bx===Cx && By===Cy) || Nraw===0);
+    const {coef, radicand} = simplifierRacine(Dsq);
+    let reponseStr;
+    if (radicand===1) {
+      reponseStr = fracToStr(math.fraction(Math.abs(Nraw), Dsq));
+    } else {
+      const coefFinal = math.fraction(Math.abs(Nraw), coef*radicand);
+      reponseStr = (coefFinal.n===1 && coefFinal.d===1) ? `sqrt(${radicand})` : `${fracToStr(coefFinal)}*sqrt(${radicand})`;
+    }
+    ex.push({id:"26.15", type:"num", texteLibre:true, enonce:`On considère les points A(${Ax};${Ay}), B(${Bx};${By}) et C(${Cx};${Cy}). Déterminer la distance entre le point A et la droite (BC)`, reponse:reponseStr});
+  })();
   // Calcul 26.16 - equations de cercles (3 items)
-  {id:"26.16 a)", type:"triplet", texteLibre:true, enonce:"Cercle C de centre Ω(−1;2) et de rayon r=2", ta:"2", tb:"-4", tc:"1"},
-  {id:"26.16 b)", type:"triplet", texteLibre:true, enonce:"Cercle C de centre \\(\\Omega\\left(-\\frac{1}{2};\\frac{7}{2}\\right)\\) et de rayon \\(r=\\frac{\\sqrt{122}}{2}\\)", ta:"1", tb:"-7", tc:"-18"},
-  {id:"26.16 c)", type:"triplet", texteLibre:true, enonce:"Cercle C de centre Ω(e;2) et de rayon \\(r=\\sqrt{5}\\)", ta:"-2*exp(1)", tb:"-4", tc:"exp(2)-1"},
+  (function() {
+    const h=alea(-5,5), k=alea(-5,5), r=alea(1,5);
+    const ta=-2*h, tb=-2*k, tc=h*h+k*k-r*r;
+    ex.push({id:"26.16 a)", type:"triplet", texteLibre:true, enonce:`Cercle C de centre \\(\\Omega(${h};${k})\\) et de rayon r=${r}`, ta:String(ta), tb:String(tb), tc:String(tc)});
+  })();
+  (function() {
+    let h2,k2,targetTc,rNum;
+    do { h2=aleaNonNul(-9,9); k2=aleaNonNul(-9,9); targetTc=aleaNonNul(-20,20); rNum = h2*h2+k2*k2-4*targetTc; } while (rNum<=0);
+    const {coef,radicand} = simplifierRacine(rNum);
+    const rLatex = radicand===1 ? fracToStr(math.fraction(coef,2)) : `\\dfrac{${coef>1?coef:''}\\sqrt{${radicand}}}{2}`;
+    const ta=-h2, tb=-k2, tc=targetTc;
+    ex.push({id:"26.16 b)", type:"triplet", texteLibre:true, enonce:`Cercle C de centre \\(\\Omega\\left(${coordLatex(math.fraction(h2,2))};${coordLatex(math.fraction(k2,2))}\\right)\\) et de rayon \\(r=${rLatex}\\)`, ta:String(ta), tb:String(tb), tc:String(tc)});
+  })();
+  (function() {
+    const k=alea(-5,5), D=[2,3,5,6,7,10,11,13][alea(0,7)];
+    const rest = k*k-D;
+    const tc = rest===0 ? 'exp(2)' : `exp(2)${rest>0?'+':''}${rest}`;
+    ex.push({id:"26.16 c)", type:"triplet", texteLibre:true, enonce:`Cercle C de centre \\(\\Omega(e;${k})\\) et de rayon \\(r=\\sqrt{${D}}\\)`, ta:"-2*exp(1)", tb:String(-2*k), tc});
+  })();
   // Calcul 26.17 - retrouver le centre et le rayon I (2 items)
-  {id:"26.17 a)", type:"paire", texteLibre:true, enonce:"On considère l'équation x²+y²−4x+6y−3=0 (celle d'un cercle). Déterminer le centre de ce cercle", pa:"2", pb:"-3"},
-  {id:"26.17 b)", type:"num", texteLibre:true, enonce:"Déterminer le rayon de ce cercle", reponse:"4"},
+  (function() {
+    const h=alea(-5,5), k=alea(-5,5), r=alea(2,6);
+    const A=-2*h, B=-2*k, C=h*h+k*k-r*r;
+    ex.push({id:"26.17 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`On considère l'équation \\(${equationCercleDeveloppeeLatex(A,B,C)}=0\\) (celle d'un cercle). Déterminer le centre de ce cercle`, pa:String(h), pb:String(k)});
+    ex.push({id:"26.17 b)", type:"num", texteLibre:true, enonce:"Déterminer le rayon de ce cercle", reponse:String(r)});
+  })();
   // Calcul 26.18 - retrouver le centre et le rayon II (6 items)
-  {id:"26.18 a)", type:"paire", texteLibre:true, enonce:"Pour x²+y²−2x+3y=0, déterminer le centre Ω", pa:"1", pb:"-3/2"},
-  {id:"26.18 b)", type:"num", texteLibre:true, enonce:"Déterminer le rayon r", reponse:"sqrt(13)/2"},
-  {id:"26.18 c)", type:"paire", texteLibre:true, enonce:"Pour x²+y²+x−2y=0, déterminer le centre Ω", pa:"-1/2", pb:"1"},
-  {id:"26.18 d)", type:"num", texteLibre:true, enonce:"Déterminer le rayon r", reponse:"sqrt(5)/2"},
-  {id:"26.18 e)", type:"paire", texteLibre:true, enonce:"Pour x²+y²−4x+2y−5=0, déterminer le centre Ω", pa:"2", pb:"-1"},
-  {id:"26.18 f)", type:"num", texteLibre:true, enonce:"Déterminer le rayon r", reponse:"sqrt(10)"},
+  (function() {
+    const A = oddInt(9), B = oddInt(9);
+    const h = math.fraction(-A,2), k = math.fraction(-B,2);
+    const {coef,radicand} = simplifierRacine(A*A+B*B);
+    const rAscii = radicand===1 ? fracToStr(math.fraction(coef,2)) : (coef>1?`${coef}*sqrt(${radicand})/2`:`sqrt(${radicand})/2`);
+    ex.push({id:"26.18 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`Pour \\(${equationCercleDeveloppeeLatex(A,B,0)}=0\\), déterminer le centre \\(\\Omega\\)`, pa:fracToStr(h), pb:fracToStr(k)});
+    ex.push({id:"26.18 b)", type:"num", texteLibre:true, enonce:"Déterminer le rayon r", reponse:rAscii});
+  })();
+  (function() {
+    const A = oddInt(9), B = oddInt(9);
+    const h = math.fraction(-A,2), k = math.fraction(-B,2);
+    const {coef,radicand} = simplifierRacine(A*A+B*B);
+    const rAscii = radicand===1 ? fracToStr(math.fraction(coef,2)) : (coef>1?`${coef}*sqrt(${radicand})/2`:`sqrt(${radicand})/2`);
+    ex.push({id:"26.18 c)", type:"paire", formePoint:true, texteLibre:true, enonce:`Pour \\(${equationCercleDeveloppeeLatex(A,B,0)}=0\\), déterminer le centre \\(\\Omega\\)`, pa:fracToStr(h), pb:fracToStr(k)});
+    ex.push({id:"26.18 d)", type:"num", texteLibre:true, enonce:"Déterminer le rayon r", reponse:rAscii});
+  })();
+  (function() {
+    let h,k,C,r2;
+    do { h=alea(-5,5); k=alea(-5,5); C=aleaNonNul(-9,9); r2=h*h+k*k-C; } while (r2<=0);
+    const A=-2*h, B=-2*k;
+    const {coef,radicand} = simplifierRacine(r2);
+    const rAscii = radicand===1 ? String(coef) : (coef>1?`${coef}*sqrt(${radicand})`:`sqrt(${radicand})`);
+    ex.push({id:"26.18 e)", type:"paire", formePoint:true, texteLibre:true, enonce:`Pour \\(${equationCercleDeveloppeeLatex(A,B,C)}=0\\), déterminer le centre \\(\\Omega\\)`, pa:String(h), pb:String(k)});
+    ex.push({id:"26.18 f)", type:"num", texteLibre:true, enonce:"Déterminer le rayon r", reponse:rAscii});
+  })();
   // Calcul 26.19 - des cercles inconnus (3 items)
-  {id:"26.19 a)", type:"triplet", texteLibre:true, enonce:"de diamètre [AB] avec A(−1;−1) et B(5;7)", ta:"-4", tb:"-6", tc:"-12"},
-  {id:"26.19 b)", type:"triplet", texteLibre:true, enonce:"de centre Ω(5;2) et passant par O", ta:"-10", tb:"-4", tc:"0"},
-  {id:"26.19 c)", type:"triplet", texteLibre:true, enonce:"de centre Ω(−4;3) et passant par B(−1;2)", ta:"8", tb:"-6", tc:"15"},
-  // Calcul 26.20 - distance d'un point a une droite, formule generale (5 items, avance)
-  {id:"26.20 a)", type:"vecteur", texteLibre:true, enonce:"Donner les coordonnées d'un vecteur normal \\(\\vec{n}\\) à la droite (D)", vx:"a", vy:"b", vars:["a","b"]},
-  {id:"26.20 b)", type:"alg", texteLibre:true, enonce:"Comme le point H est le projeté orthogonal de A sur (D), les vecteurs \\(\\overrightarrow{AH}\\) et \\(\\vec{n}\\) sont colinéaires. Il existe donc un réel k tel que \\(\\overrightarrow{AH}=k\\vec{n}\\), qu'on fixe. Déterminer les coordonnées \\(x_H\\) de H en fonction de \\(x_A\\), \\(y_A\\), de a, b et de k", reponse:"x_A+k*a"},
-  {id:"26.20 c)", type:"alg", texteLibre:true, enonce:"Déterminer \\(y_H\\) en fonction de \\(y_A\\), b et k", reponse:"y_A+k*b"},
-  {id:"26.20 d)", type:"alg", texteLibre:true, enonce:"Sachant que le point H appartient à la droite (D), déterminer la valeur de k", reponse:"-(a*x_A+b*y_A+c)/(a^2+b^2)"},
-  {id:"26.20 e)", type:"alg", texteLibre:true, enonce:"En déduire la valeur de la distance de A à (D), en fonction de \\(x_A\\), \\(y_A\\) et a, b, c", reponse:"abs(a*x_A+b*y_A+c)/sqrt(a^2+b^2)"},
+  (function() {
+    let Ax,Ay,Bx,By; do { Ax=alea(-6,6);Ay=alea(-6,6);Bx=alea(-6,6);By=alea(-6,6); } while(Ax===Bx&&Ay===By);
+    const ta=-(Ax+Bx), tb=-(Ay+By), tc=Ax*Bx+Ay*By;
+    ex.push({id:"26.19 a)", type:"triplet", texteLibre:true, enonce:`de diamètre [AB] avec A(${Ax};${Ay}) et B(${Bx};${By})`, ta:String(ta), tb:String(tb), tc:String(tc)});
+  })();
+  (function() {
+    let h,k; do { h=alea(-6,6); k=alea(-6,6); } while (h===0&&k===0);
+    ex.push({id:"26.19 b)", type:"triplet", texteLibre:true, enonce:`de centre \\(\\Omega(${h};${k})\\) et passant par O`, ta:String(-2*h), tb:String(-2*k), tc:"0"});
+  })();
+  (function() {
+    let h,k,Px,Py; do { h=alea(-6,6);k=alea(-6,6);Px=alea(-6,6);Py=alea(-6,6); } while(h===Px&&k===Py);
+    const ta=-2*h, tb=-2*k, tc=h*h+k*k-((h-Px)*(h-Px)+(k-Py)*(k-Py));
+    ex.push({id:"26.19 c)", type:"triplet", texteLibre:true, enonce:`de centre \\(\\Omega(${h};${k})\\) et passant par B(${Px};${Py})`, ta:String(ta), tb:String(tb), tc:String(tc)});
+  })();
+  // Calcul 26.20 - distance d'un point a une droite, formule generale (5 items, avance, purement symbolique)
+  ex.push({id:"26.20 a)", type:"vecteur", texteLibre:true, enonce:"Donner les coordonnées d'un vecteur normal \\(\\vec{n}\\) à la droite (D)", vx:"a", vy:"b", vars:["a","b"]});
+  ex.push({id:"26.20 b)", type:"alg", texteLibre:true, enonce:"Comme le point H est le projeté orthogonal de A sur (D), les vecteurs \\(\\overrightarrow{AH}\\) et \\(\\vec{n}\\) sont colinéaires. Il existe donc un réel k tel que \\(\\overrightarrow{AH}=k\\vec{n}\\), qu'on fixe. Déterminer les coordonnées \\(x_H\\) de H en fonction de \\(x_A\\), \\(y_A\\), de a, b et de k", reponse:"x_A+k*a"});
+  ex.push({id:"26.20 c)", type:"alg", texteLibre:true, enonce:"Déterminer \\(y_H\\) en fonction de \\(y_A\\), b et k", reponse:"y_A+k*b"});
+  ex.push({id:"26.20 d)", type:"alg", texteLibre:true, enonce:"Sachant que le point H appartient à la droite (D), déterminer la valeur de k", reponse:"-(a*x_A+b*y_A+c)/(a^2+b^2)"});
+  ex.push({id:"26.20 e)", type:"alg", texteLibre:true, enonce:"En déduire la valeur de la distance de A à (D), en fonction de \\(x_A\\), \\(y_A\\) et a, b, c", reponse:"abs(a*x_A+b*y_A+c)/sqrt(a^2+b^2)"});
   // Calcul 26.21 - tangente connaissant le cercle (1 item, avance)
-  {id:"26.21", type:"eqcart", texteLibre:true, enonce:"On considère le cercle C d'équation (x−1)²+(y−2)²=2. Déterminer une équation de la tangente au cercle C au point A(2;3)", eqa:"1", eqb:"1", eqc:"-5"},
+  (function() {
+    const h=alea(-5,5), k=alea(-5,5);
+    const p=aleaNonNul(-4,4), q=aleaNonNul(-4,4);
+    const Ax=h+p, Ay=k+q;
+    const D=p*p+q*q;
+    const eqc=-(p*Ax+q*Ay);
+    ex.push({id:"26.21", type:"eqcart", texteLibre:true, enonce:`On considère le cercle C d'équation \\((x${termeSoustrait(h)})^2+(y${termeSoustrait(k)})^2=${D}\\). Déterminer une équation de la tangente au cercle C au point A(${Ax};${Ay})`, eqa:String(p), eqb:String(q), eqc:String(eqc)});
+  })();
   // Calcul 26.22 - cercle connaissant la tangente (1 item, avance)
-  {id:"26.22", type:"triplet", texteLibre:true, enonce:"On considère la droite (D) d'équation x+2y−5=0 et le point \\(\\Omega\\left(-2;-\\frac{3}{2}\\right)\\). Déterminer une équation du cercle de centre Ω tangent à (D), sous la forme \\(x^2+y^2+ax+by+c=0\\)", ta:"4", tb:"3", tc:"-55/4"}
-];
+  (function() {
+    const a=aleaNonNul(-4,4), b=aleaNonNul(-4,4), c=alea(-9,9);
+    let h,k; do { h=alea(-5,5); k=alea(-5,5); } while (a*h+b*k+c===0);
+    const num = a*h+b*k+c;
+    const r2 = math.fraction(num*num, a*a+b*b);
+    const tc = math.subtract(h*h+k*k, r2);
+    ex.push({id:"26.22", type:"triplet", texteLibre:true, enonce:`On considère la droite (D) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\) et le point \\(\\Omega(${h};${k})\\). Déterminer une équation du cercle de centre Ω tangent à (D), sous la forme \\(x^2+y^2+ax+by+c=0\\)`, ta:String(-2*h), tb:String(-2*k), tc:fracToStr(tc)});
+  })();
+  return ex;
+}
+
+let exercices = genererExercices();
 
 const groupes = {
   "grille-26-1": [0,1],
@@ -942,15 +1303,19 @@ function toggleClavier(idx) {
 }
 
 function texteAideGroupe(indices) {
-  const textes = [];
+  const groupes = [];
   for (const idx of indices) {
     const ex = exercices[idx];
-    if (necessiteAide(ex)) {
-      const t = aideContextuellePour(ex);
-      if (!textes.includes(t)) textes.push(t);
-    }
+    if (!necessiteAide(ex)) continue;
+    const texte = aideContextuellePour(ex);
+    const lettre = (ex.id.match(/([a-zA-Z])\)\s*$/) || [])[1];
+    let g = groupes.find(g => g.texte === texte);
+    if (!g) { g = { texte, lettres: [] }; groupes.push(g); }
+    if (lettre) g.lettres.push(lettre);
   }
-  return textes.length ? textes.join('<br><br>') : null;
+  if (groupes.length === 0) return null;
+  if (groupes.length === 1) return groupes[0].texte;
+  return groupes.map(g => (g.lettres.length ? `<strong>${g.lettres.join(', ')})</strong> ` : '') + g.texte).join('<br><br>');
 }
 function injecterAideGroupe(gridId, indices) {
   const grille = document.getElementById(gridId);
@@ -1107,14 +1472,29 @@ function reculer(idx) {
 }
 
 const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs','sum']);
+function convertirPipesEnAbs(s) {
+  // MathLive exporte une valeur absolue saisie via le clavier (|x|) avec des barres verticales,
+  // que math.js ne comprend pas nativement : on les convertit par paires en abs(...)
+  const parties = s.split('|');
+  if (parties.length % 2 === 0) return s; // nombre impair de barres : forme mal formee, on laisse tel quel
+  let out = parties[0];
+  for (let i=1;i<parties.length;i+=2) out += 'abs(' + parties[i] + ')' + (parties[i+1] || '');
+  return out;
+}
 function normaliserSaisie(str) {
   let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  s = convertirPipesEnAbs(s);
   // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
   // pour ne pas toucher a un eventuel separateur (le point-virgule reste le seul separateur d'ensemble/intervalle)
   s = s.replace(/(\d),(\d)/g, '$1.$2');
   // une lettre (variable) directement suivie de '(' est une multiplication implicite pour l'utilisateur
   // (ex: "x(x+2)"), mais math.js l'interprete comme un appel de fonction "x(...)" sauf si on ajoute explicitement '*'
   s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  // une parenthese fermante directement suivie d'une lettre est une multiplication implicite pour l'utilisateur
+  // (ex: une fraction MathLive "(5)/(2)x" tapee via le clavier virtuel puis suivie de x sans operateur),
+  // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
+  // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
+  s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
 }
 
@@ -1309,6 +1689,12 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   } catch(e) { return false; }
 }
 
+function checkPointCoordonnees(userInput, correctA, correctB, vars) {
+  const nettoye = String(userInput).trim();
+  const m = nettoye.match(/^\((.*)\)$/);
+  if (!m) return false;
+  return checkPaire(m[1], correctA, correctB, vars);
+}
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
   const parties = nettoye.split(';');
@@ -1480,6 +1866,7 @@ function verifierUne(idx) {
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
+  else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
@@ -1575,18 +1962,63 @@ function convertirSqrt(s) {
   }
   return s;
 }
+// certaines variables du site (m, t, b, g, h, N, ...) coincident avec des unites physiques connues
+// de math.js (metre, tonne, bit, gramme, heure, newton...) : math.js les evalue/typeset alors comme
+// des unites (rendu droit "\mathrm{m}") plutot que comme de simples variables. On les protege avant
+// le parse par un identifiant inconnu de math.js, puis on restaure la lettre d'origine dans le tex.
+const VARS_A_PROTEGER = ['x','t','u','v','a','b','c','m','k','y','z','n','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','x_A','y_A'];
+function protegerVariables(s) {
+  const mapping = [];
+  let out = s;
+  VARS_A_PROTEGER.forEach((v, i) => {
+    const placeholder = `qvarplaceholder${String(i).padStart(2,'0')}`;
+    const re = new RegExp('\\b' + v + '\\b', 'g');
+    if (re.test(out)) { out = out.replace(re, placeholder); mapping.push([placeholder, v]); }
+  });
+  return { out, mapping };
+}
+function restaurerVariables(tex, mapping) {
+  let out = tex;
+  mapping.forEach(([placeholder, v]) => { out = out.split(placeholder).join(v); });
+  return out;
+}
+// supprime le "\cdot"/"\times" entre un coefficient numerique et une lettre isolee (ecriture
+// implicite usuelle : "8m", pas "8 fois m"), et n'ecrit jamais un coefficient de 1 ou -1
+function collerCoefficientLettre(tex) {
+  let out = tex;
+  // coefficient 1/-1 devant un facteur (lettre(s), ou commande backslash type \sqrt{...}) : ne jamais afficher le 1
+  out = out.replace(/(^|[^0-9])1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '$1$2');
+  out = out.replace(/-1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '-$1');
+  // un ENTIER (jamais une fraction : le lookbehind exclut un "}" - fin de denominateur - juste avant)
+  // directement suivi d'une SEULE lettre (nue ou base d'exposant) ou d'une commande backslash : coller.
+  // Retirer le x apres une fraction reintroduirait une vraie ambiguite de precedence au reimport MathLive
+  // (verifie empiriquement : math.js traite la multiplication implicite comme prioritaire sur la division,
+  // donc "(27)/(2)x^2" se reevalue en 27/(2x^2) et non (27/2)x^2 - la fraction doit garder son x).
+  out = out.replace(/(?<!\})(\d)\\cdot\s*(\\[a-zA-Z]+(?:\{[^{}]*\})*|\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, '$1$2');
+  // un ENTIER (jamais une fraction, meme garde) directement suivi d'une parenthese : coller
+  out = out.replace(/(?<!\})(\d)\\cdot\s*\\left\(/g, '$1\\left(');
+  // un groupe deja entre parentheses (\right)) est une barriere de precedence complete : jamais de x
+  // apres lui, quel que soit ce qui suit (lettre, racine, ou une autre parenthese) - aucune garde necessaire
+  out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
+  return out;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
   try {
-    const node = math.parse(normaliserSaisie(s));
+    const { out: sProtege, mapping } = protegerVariables(normaliserSaisie(s));
+    const node = math.parse(sProtege);
     let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = restaurerVariables(tex, mapping);
+    tex = collerCoefficientLettre(tex);
     tex = tex.replace(/\\cdot/g, '\\times ');
     tex = tex.replace(/\\frac\{/g, '\\dfrac{');
-    tex = tex.replace(/lambda/g, '\\lambda ');
+    tex = tex.replace(/(?<!\\)lambda/g, '\\lambda ');
     return tex;
   } catch(e) {
     s = convertirSqrt(s);
+    s = s.replace(/(^|[^0-9])1\*([a-zA-Z\\])/g, '$1$2');
+    s = s.replace(/-1\*([a-zA-Z\\])/g, '-$1');
     s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/\*/g, '\\times ');
@@ -1620,6 +2052,27 @@ function formaterIntervalleSpec(spec) {
   return '';
 }
 
+function equationCartesienneAscii(eqa, eqb, eqc) {
+  const signeEtCorps = (coefRaw) => {
+    const c = String(coefRaw).trim();
+    const neg = c.startsWith('-');
+    return { neg, corps: neg ? c.slice(1) : c };
+  };
+  const terme = (coefRaw, vr) => {
+    const { neg, corps } = signeEtCorps(coefRaw);
+    if (corps === '0') return { sign: '', text: '' };
+    if (corps === '1') return { sign: neg ? '-' : '+', text: vr };
+    return { sign: neg ? '-' : '+', text: `(${corps})*${vr}` };
+  };
+  const ta = terme(eqa, 'x'), tb = terme(eqb, 'y');
+  const { neg: negC, corps: corpsC } = signeEtCorps(eqc);
+  const tc = corpsC === '0' ? { sign: '', text: '' } : { sign: negC ? '-' : '+', text: corpsC };
+  const tous = [ta, tb, tc].filter(t => t.text !== '');
+  if (tous.length === 0) return '0';
+  let out = (tous[0].sign === '-' ? '-' : '') + tous[0].text;
+  for (let i = 1; i < tous.length; i++) out += tous[i].sign + tous[i].text;
+  return out;
+}
 function formaterReponse(ex) {
   try {
     if (ex.type === 'ineq') {
@@ -1648,6 +2101,18 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
+    }
+    if (ex.type === 'paire') {
+      return `\\left(${jsVersLatex(String(ex.pa))}\\,;\\,${jsVersLatex(String(ex.pb))}\\right)`;
+    }
+    if (ex.type === 'vecteur') {
+      return `\\begin{pmatrix}${jsVersLatex(String(ex.vx))}\\\\${jsVersLatex(String(ex.vy))}\\end{pmatrix}`;
+    }
+    if (ex.type === 'triplet') {
+      return `\\left(${jsVersLatex(String(ex.ta))}\\,;\\,${jsVersLatex(String(ex.tb))}\\,;\\,${jsVersLatex(String(ex.tc))}\\right)`;
+    }
+    if (ex.type === 'eqcart') {
+      return `${jsVersLatex(equationCartesienneAscii(ex.eqa, ex.eqb, ex.eqc))}=0`;
     }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
@@ -1753,6 +2218,7 @@ function toggleToutesReponses() {
 
 
 function placeholderPour(ex) {
+  if (ex.formePoint) return '(x;y)';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -1763,6 +2229,9 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.formePoint) {
+    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code>.";
+  }
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) {
     return "Écrire les lettres des bonnes réponses séparées par des virgules, par exemple <code>a,c,d</code>.";
   }

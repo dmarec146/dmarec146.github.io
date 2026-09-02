@@ -836,6 +836,11 @@ function reculer(idx) {
 function checkEqualNumeric(userInput, correctExpr) {
   // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
   userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
+  // une parenthese fermante directement suivie d'une lettre est une multiplication implicite pour l'utilisateur
+  // (ex: une fraction MathLive "(5)/(2)x" tapee via le clavier virtuel puis suivie de x sans operateur),
+  // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
+  // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
+  userInput = userInput.replace(/\)([a-zA-Z])/g, ')*$1');
   const vars = ['x','t','u','v','a','b','c','m','k','y','z'];
   try {
     const userNode = math.parse(userInput);
