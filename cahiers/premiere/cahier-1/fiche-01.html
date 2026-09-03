@@ -675,6 +675,28 @@ window.MathJax = {
     vertical-align: middle;
   }
   .svg-police-manuel { font-family: 'Cambria Math', Cambria, Georgia, serif; }
+
+  /* ---------- Impression / export PDF ---------- */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    .question, .qcm-bloc { break-inside: avoid; }
+    .calcul-titre, .section-titre { break-after: avoid; }
+    a[href]::after { content: ""; }
+  }
 </style>
 
 <body>
@@ -683,6 +705,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-02.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn" onclick="exporterPDF()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -782,10 +805,12 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-02.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn" onclick="exporterPDF()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 
 // ---------- Boîte à outils fractions exactes (numérateur/dénominateur entiers) ----------
 function pgcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=b;b=a%b;a=t;}return a||1;}
