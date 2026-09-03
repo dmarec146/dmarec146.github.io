@@ -14,6 +14,7 @@ window.MathJax = {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
 <script src="https://unpkg.com/mathlive"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js"></script>
 <style>
   :root {
     --bleu: #4B46C7;
@@ -676,7 +677,18 @@ window.MathJax = {
   }
   .svg-police-manuel { font-family: 'Cambria Math', Cambria, Georgia, serif; }
 
-  /* ---------- Impression / export PDF ---------- */
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF (masquage partagé impression + capture html2pdf) ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
   @media print {
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     @page { margin: 1.4cm; }
@@ -693,9 +705,23 @@ window.MathJax = {
       display: none !important;
     }
     .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
-    .question, .qcm-bloc { break-inside: avoid; }
-    .calcul-titre, .section-titre { break-after: avoid; }
     a[href]::after { content: ""; }
+  }
+  .mode-export-pdf .barre-navigation,
+  .mode-export-pdf .mode-panneau,
+  .mode-export-pdf .bandeau-calculatrice,
+  .mode-export-pdf .q-clavier-btn,
+  .mode-export-pdf .clavier-visuel,
+  .mode-export-pdf .q-aide-btn,
+  .mode-export-pdf .barre-controle,
+  .mode-export-pdf .modal-svg-overlay,
+  .mode-export-pdf #score-panneau .btn-secondaire {
+    display: none !important;
+  }
+  .mode-export-pdf .bloc-general,
+  .mode-export-pdf .bloc-avance {
+    background: none;
+    border: 1px solid #ccc;
   }
 </style>
 
@@ -705,7 +731,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-02.html">Fiche suivante &rarr;</a>
-  <button type="button" class="nav-btn" onclick="exporterPDF()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Exporter en PDF</button>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF(this)"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -805,12 +831,34 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-02.html">Fiche suivante &rarr;</a>
-  <button type="button" class="nav-btn" onclick="exporterPDF()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Exporter en PDF</button>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF(this)"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function exporterPDF() { window.print(); }
+function exporterPDF(btn) {
+  if (typeof html2pdf === 'undefined') { window.print(); return; }
+  const texteInitial = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = 'Génération du PDF…';
+  document.body.classList.add('mode-export-pdf');
+  const nomFichier = (document.title.split('—')[0].trim() || 'fiche').replace(/[^\w\-]+/g, '_') + '.pdf';
+  const options = {
+    margin: 10,
+    filename: nomFichier,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 1.5, useCORS: true, foreignObjectRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+  html2pdf().set(options).from(document.body).save()
+    .catch(() => { window.print(); })
+    .finally(() => {
+      document.body.classList.remove('mode-export-pdf');
+      btn.disabled = false;
+      btn.innerHTML = texteInitial;
+    });
+}
 
 // ---------- Boîte à outils fractions exactes (numérateur/dénominateur entiers) ----------
 function pgcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=b;b=a%b;a=t;}return a||1;}
