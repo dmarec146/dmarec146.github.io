@@ -242,8 +242,10 @@ window.MathJax = {
   .calcul-titre:first-child { margin-top: 0; }
   .picto-niveau {
     display: inline-flex;
+    align-items: center;
     gap: 2px;
     flex-shrink: 0;
+    margin-left: auto;
     text-decoration: none;
   }
 
@@ -1990,13 +1992,14 @@ function injecterAideGroupe(gridId, indices) {
   if (titre.querySelector('.q-aide-btn')) return;
   const texte = texteAideGroupe(indices);
   if (!texte) return;
-  const conteneur = titre.querySelector('span:not(.picto-niveau)') || titre;
-  const btn = document.createElement('button');
-  btn.className = 'q-aide-btn';
-  btn.title = 'Comment répondre ?';
-  btn.textContent = '?';
-  btn.onclick = () => toggleAideGroupe(gridId);
-  conteneur.appendChild(btn);
+  const picto = titre.querySelector('.picto-niveau');
+    const conteneur = picto || titre.querySelector('span:not(.picto-niveau)') || titre;
+    const btn = document.createElement('button');
+    btn.className = 'q-aide-btn';
+    btn.title = 'Comment répondre ?';
+    btn.textContent = '?';
+    btn.onclick = () => toggleAideGroupe(gridId);
+    if (picto) conteneur.prepend(btn); else conteneur.appendChild(btn);
   const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
   if (ancienneBulle) ancienneBulle.remove();
   const bulle = document.createElement('div');
