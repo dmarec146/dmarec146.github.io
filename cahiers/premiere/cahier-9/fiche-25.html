@@ -677,6 +677,38 @@ window.MathJax = {
     padding: 0;
     vertical-align: middle;
   }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
 </style>
 
 <body>
@@ -685,6 +717,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-26.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -722,10 +755,10 @@ Dans toute cette fiche, on fixe un repère orthonormé du plan. Les coordonnées
 <p class="calcul-titre"><span>Calcul 25.3 — Les vecteurs \(\vec{u}\) et \(\vec{v}\) sont orthogonaux : « oui » ou « non » ?</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-25-3"></div>
 
-<p class="calcul-titre"><span>Calcul 25.4 — Trouver le réel x. Dans chacun des cas suivants, déterminer le réel x pour que \(\vec{u}\) et \(\vec{v}\) soient orthogonaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 25.4 — Trouver le réel \(x\). Dans chacun des cas suivants, déterminer le réel \(x\) pour que \(\vec{u}\) et \(\vec{v}\) soient orthogonaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-25-4"></div>
 
-<p class="calcul-titre"><span>Calcul 25.5 — Trouver les deux réels x. Dans chacun des cas suivants, déterminer les deux réels x pour que \(\vec{u}\) et \(\vec{v}\) soient orthogonaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 25.5 — Trouver les deux réels \(x\). Dans chacun des cas suivants, déterminer les deux réels \(x\) pour que \(\vec{u}\) et \(\vec{v}\) soient orthogonaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-25-5"></div>
 
 <p class="section-titre">Équations réduites de droite</p>
@@ -748,7 +781,7 @@ Dans toute cette fiche, on fixe un repère orthonormé du plan. Les coordonnées
 <div class="section-barre"></div>
 
 <p class="calcul-titre"><span>Calcul 25.10 — Être ou ne pas être un rectangle ?</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<p id="texte-25-10">On considère les points \(A\left(-\frac{1}{2};1\right)\), \(B\left(-\frac{1}{2};\frac{5}{2}\right)\), \(C\left(\frac{3}{2};1\right)\) et \(D(x;y)\).</p>
+<p id="texte-25-10">On considère les points \(A\left(-\dfrac{1}{2};1\right)\), \(B\left(-\dfrac{1}{2};\dfrac{5}{2}\right)\), \(C\left(\dfrac{3}{2};1\right)\) et \(D(x;y)\).</p>
 <div class="question-grille" id="grille-25-10"></div>
 
 <p class="calcul-titre"><span id="titre-25-11">Calcul 25.11 — On considère la fonction f définie sur \(\mathbb{R}\) par \(f(x)=x^2+2\sqrt{2}x+3\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
@@ -779,10 +812,12 @@ Dans toute cette fiche, on fixe un repère orthonormé du plan. Les coordonnées
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-26.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
 function melanger(tableau) {
@@ -807,7 +842,7 @@ function fracLatexSigned(f) {
 function coordLatex(f) {
   f = math.fraction(f);
   if (f.d === 1) return String(f.s * f.n);
-  return `${f.s < 0 ? '-' : ''}\\frac{${f.n}}{${f.d}}`;
+  return `${f.s < 0 ? '-' : ''}\\dfrac{${f.n}}{${f.d}}`;
 }
 function coefAscii(f) {
   f = math.fraction(f);
@@ -978,11 +1013,11 @@ function genererExercices() {
   (function() {
     const p = aleaNonNul(-6,6), q = alea(2,6), A = aleaNonNul(-6,6);
     const B = math.fraction(-A*q, p);
-    ex.push({id:"25.3 b)", type:"qcm", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}x\\\\${coordLatex(math.fraction(p,q))}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\frac{${A}}{x}\\\\${coordLatex(B)}\\end{pmatrix}\\) où x est un réel non nul`, bonneReponse:"a", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]});
+    ex.push({id:"25.3 b)", type:"qcm", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}x\\\\${coordLatex(math.fraction(p,q))}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\dfrac{${A}}{x}\\\\${coordLatex(B)}\\end{pmatrix}\\) où \\(x\\) est un réel non nul`, bonneReponse:"a", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]});
   })();
   (function() {
     let a,b; do { a = alea(1,6); b = alea(1,6); } while (a===b);
-    ex.push({id:"25.3 c)", type:"qcm", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}x-${a}\\\\${b}+x\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}x+${a}\\\\${b}-x\\end{pmatrix}\\) où x est un réel`, bonneReponse:"b", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]});
+    ex.push({id:"25.3 c)", type:"qcm", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}x-${a}\\\\${b}+x\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}x+${a}\\\\${b}-x\\end{pmatrix}\\) où \\(x\\) est un réel`, bonneReponse:"b", options:[{lettre:"a",texte:"oui",texteLibreOption:true},{lettre:"b",texte:"non",texteLibreOption:true}]});
   })();
   // Calcul 25.4 - trouver le reel x (3 items)
   (function() {
@@ -1003,7 +1038,7 @@ function genererExercices() {
       A = alea(2,4); B = aleaNonNul(-4,4); C = aleaNonNul(2,8); D = alea(2,9); E = alea(2,6);
       denom = C*E + B*A*D;
     } while (denom === 0);
-    ex.push({id:"25.4 c)", type:"num", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}\\frac{1+x}{${A}}\\\\${B}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\frac{${C}}{${D}}\\\\\\frac{x-1}{${E}}\\end{pmatrix}\\)`, reponse: fracToStr(math.fraction(B*A*D-C*E, denom))});
+    ex.push({id:"25.4 c)", type:"num", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{1+x}{${A}}\\\\${B}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\dfrac{${C}}{${D}}\\\\\\dfrac{x-1}{${E}}\\end{pmatrix}\\)`, reponse: fracToStr(math.fraction(B*A*D-C*E, denom))});
   })();
   // Calcul 25.5 - trouver les deux reels x (2 items)
   (function() {
@@ -1057,7 +1092,7 @@ function genererExercices() {
     const m = math.fraction(-nx, ny);
     const pFrac = math.fraction(V, ny*D);
     const pTerm = pFrac.n===0 ? '0' : `${surdTerm(pFrac, D)}`;
-    ex.push({id:"25.7 c)", type:"alg", texteLibre:true, formeYax:true, enonce:`La droite (d4) passant par le point \\(D\\left(\\frac{${p0}}{\\sqrt{${D}}};\\frac{${q0}}{\\sqrt{${D}}}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, pTerm)});
+    ex.push({id:"25.7 c)", type:"alg", texteLibre:true, formeYax:true, enonce:`La droite (d4) passant par le point \\(D\\left(\\dfrac{${p0}}{\\sqrt{${D}}};\\dfrac{${q0}}{\\sqrt{${D}}}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, pTerm)});
   })();
   // Calcul 25.8 - equation reduite perpendiculaire (1 item, contexte partage : titre + enonce)
   (function() {
@@ -1066,9 +1101,7 @@ function genererExercices() {
     const pa = `-sqrt(${D0})`;
     const pb = String(k*D0 + e);
     ctx.c8 = {D0, k, e, C0};
-    const kTerm = (k===1?'':(k===-1?'-':k)) + `√${D0}`;
-    const c0Term = C0>=0 ? `+${C0}` : `-${-C0}`;
-    ex.push({id:"25.8", type:"alg", texteLibre:true, formeYax:true, enonce:`Déterminer l'équation réduite de la droite (d5) passant par le point \\(E(${kTerm};${e})\\) et perpendiculaire à la droite (D) d'équation \\(x-\\sqrt{${D0}}y${c0Term}=0\\)`, reponse: equationReduiteAscii(pa, pb)});
+    ex.push({id:"25.8", type:"alg", texteLibre:true, formeYax:true, enonce:"", reponse: equationReduiteAscii(pa, pb)});
   })();
   // Calcul 25.9 - equations reduites perpendiculaires (2 items, contexte partage : titre)
   (function() {
@@ -1097,13 +1130,13 @@ function genererExercices() {
     // AC.CD = w*x - w*(Ax+w) = w*x - (w*Ax + w^2)
     const constB = math.add(math.multiply(w, Ax), math.multiply(w, w));
     const reponseBascii = `${coefAscii(w)}x${constB.n===0?'':(constB.s<0?'+':'-')+fracToStr(math.abs(constB))}`;
-    ex.push({id:"25.10 b)", type:"alg", texteLibre:true, enonce:"Exprimer en fonction de x le produit scalaire \\(\\overrightarrow{AC}\\cdot\\overrightarrow{CD}\\)", reponse: reponseBascii});
+    ex.push({id:"25.10 b)", type:"alg", texteLibre:true, enonce:"Exprimer en fonction de \\(x\\) le produit scalaire \\(\\overrightarrow{AC}\\cdot\\overrightarrow{CD}\\)", reponse: reponseBascii});
     // AB.BD = h*y - h*(Ay+h)
     const constC = math.add(math.multiply(h, Ay), math.multiply(h, h));
     const reponseCascii = `${coefAscii(h)}y${constC.n===0?'':(constC.s<0?'+':'-')+fracToStr(math.abs(constC))}`;
-    ex.push({id:"25.10 c)", type:"alg", texteLibre:true, enonce:"Exprimer en fonction de y le produit scalaire \\(\\overrightarrow{AB}\\cdot\\overrightarrow{BD}\\)", reponse: reponseCascii});
+    ex.push({id:"25.10 c)", type:"alg", texteLibre:true, enonce:"Exprimer en fonction de \\(y\\) le produit scalaire \\(\\overrightarrow{AB}\\cdot\\overrightarrow{BD}\\)", reponse: reponseCascii});
     const Dx = math.add(Ax, w), Dy = math.add(Ay, h);
-    ex.push({id:"25.10 d)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les réels x et y pour que le quadrilatère ABDC soit un rectangle", pa: fracToStr(Dx), pb: fracToStr(Dy)});
+    ex.push({id:"25.10 d)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les réels \\(x\\) et \\(y\\) pour que le quadrilatère ABDC soit un rectangle", pa: fracToStr(Dx), pb: fracToStr(Dy)});
   })();
   // Calcul 25.11 - tangentes perpendiculaires (1 item, avance, contexte partage : titre)
   (function() {
@@ -1112,14 +1145,14 @@ function genererExercices() {
     ctx.c11 = {D, d};
     const s = simplifierRacine(4*D+1);
     const terme = surdTerm(math.fraction(s.coef,2), s.radicand);
-    ex.push({id:"25.11", type:"num", texteLibre:true, enonce:"Déterminer les valeurs de x telles que les tangentes aux points d'abscisse x et −x soient perpendiculaires", reponse: `{-${terme};${terme}}`});
+    ex.push({id:"25.11", type:"num", texteLibre:true, enonce:"Déterminer les valeurs de \\(x\\) telles que les tangentes aux points d'abscisse \\(x\\) et \\(-x\\) soient perpendiculaires", reponse: `{-${terme};${terme}}`});
   })();
   // Calcul 25.12 - tangentes perpendiculaires avec b (1 item, avance)
   (function() {
     const p = alea(1,3);
     const s = simplifierRacine(4*p*p-1);
     const terme = surdTerm(s.coef, s.radicand);
-    ex.push({id:"25.12", type:"num", texteLibre:true, enonce:`Déterminer les valeurs possibles de b, en sachant que les tangentes aux points d'abscisse ${p} et −${p} sont perpendiculaires`, reponse: `{-${terme};${terme}}`});
+    ex.push({id:"25.12", type:"num", texteLibre:true, enonce:`Déterminer les valeurs possibles de \\(b\\), en sachant que les tangentes aux points d'abscisse \\(${p}\\) et \\(-${p}\\) sont perpendiculaires`, reponse: `{-${terme};${terme}}`});
   })();
   contexte25 = ctx;
   return ex;

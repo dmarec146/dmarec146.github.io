@@ -622,6 +622,38 @@ window.MathJax = {
     padding: 0;
     vertical-align: middle;
   }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
 </style>
 
 <body>
@@ -630,6 +662,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-14.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -738,10 +771,12 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-14.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
 function fracStr(n, d) {

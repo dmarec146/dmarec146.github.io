@@ -677,6 +677,38 @@ window.MathJax = {
     padding: 0;
     vertical-align: middle;
   }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
 </style>
 
 <body>
@@ -685,6 +717,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-21.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -825,10 +858,12 @@ Dans toute cette fiche, le plan est muni d'un repère orthonormé.</div>
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-21.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
 function fracStr(n, d) { if (d < 0) { n = -n; d = -d; } const g = pgcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; }
@@ -1064,7 +1099,7 @@ function genererExercices() {
     const eqcCoefT = -c3*x0+c1*y0, eqcConst = -c4*x0+c2*y0;
     const eqcStr = joinSigned([signedFracTerm(eqcCoefT,'t'), signedFracTerm(eqcConst)]);
     ex.push({id:"20.10 a)", type:"eqcart", texteLibre:true, enonce:"Déterminer une équation cartésienne de (d)", eqa:eqaStr, eqb:eqbStr, eqc:eqcStr, vars:["t"]});
-    ex.push({id:"20.10 b)", type:"num", texteLibre:true, enonce:"Déterminer la valeur de t pour que la droite (d) soit parallèle à (Ox)", reponse: fracStr(-c4,c3)});
+    ex.push({id:"20.10 b)", type:"num", texteLibre:true, enonce:"Déterminer la valeur de \\(t\\) pour que la droite (d) soit parallèle à (Ox)", reponse: fracStr(-c4,c3)});
     paramsAvances.g10 = {c1,c2,c3,c4,x0,y0};
   }
 
@@ -1078,7 +1113,7 @@ function genererExercices() {
     const eqbStr = "-t^2";
     const eqcStr = joinSigned([signedFracTerm(y0f,'t^2'), signedFracTerm(math.multiply(-cB,x0f),'t'), signedFracTerm(math.multiply(-cD,x0f))]);
     ex.push({id:"20.11 a)", type:"eqcart", texteLibre:true, enonce:"Déterminer une équation cartésienne de (d)", eqa:eqaStr, eqb:eqbStr, eqc:eqcStr, vars:["t"]});
-    ex.push({id:"20.11 b)", type:"num", texteLibre:true, enonce:"Déterminer la valeur de t pour que la droite (d) soit parallèle à (Oy)", reponse:"0"});
+    ex.push({id:"20.11 b)", type:"num", texteLibre:true, enonce:"Déterminer la valeur de \\(t\\) pour que la droite (d) soit parallèle à (Oy)", reponse:"0"});
     paramsAvances.g11 = {cB,cD,x0f,y0f};
   }
 
@@ -1201,8 +1236,8 @@ function genererExercices() {
     const reponse18a = `(${C18}*a^2-a+${C18*N18})/(a^4-${N18*N18})`;
     // b) x at y=(a-K18) : x = -a^5+K18*a^4+C18*a^2+N18^2*a+N18*C18-N18^2*K18
     const reponse18b = joinSigned(["-a^5", signedFracTerm(K18,'a^4'), signedFracTerm(C18,'a^2'), signedFracTerm(N18*N18,'a'), signedFracTerm(N18*C18-N18*N18*K18)]);
-    ex.push({id:"20.18 a)", type:"alg", texteLibre:true, enonce:"Déterminer, si elle existe, l'ordonnée du point de (d) d'abscisse a", reponse: reponse18a});
-    ex.push({id:"20.18 b)", type:"alg", texteLibre:true, enonce:`Déterminer l'abscisse du point de (d) d'ordonnée (a−${K18})`, reponse: reponse18b});
+    ex.push({id:"20.18 a)", type:"alg", texteLibre:true, enonce:"Déterminer, si elle existe, l'ordonnée du point de (d) d'abscisse \\(a\\)", reponse: reponse18a});
+    ex.push({id:"20.18 b)", type:"alg", texteLibre:true, enonce:`Déterminer l'abscisse du point de (d) d'ordonnée \\(a-${K18}\\)`, reponse: reponse18b});
     paramsAvances.g18 = {N18,C18,K18};
   }
 
@@ -1225,8 +1260,8 @@ function genererExercices() {
     const xNum = joinSigned([signedFracTerm(P19*T19-R19,'m'), signedFracTerm(Q19*T19)]);
     const yNum = joinSigned([signedFracTerm(-T19,'m'), signedFracTerm(R19*S19)]);
     const Dstr = joinSigned(['m^2', signedFracTerm(-SP,'m'), signedFracTerm(-SQ)]);
-    ex.push({id:"20.19 a)", type:"num", texteLibre:true, enonce:"Déterminer les deux valeurs de m à exclure pour que les droites (d1) et (d2) soient sécantes", reponse: reponse19a});
-    ex.push({id:"20.19 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Dans les conditions précédentes, déterminer les coordonnées du point d'intersection de (d1) et (d2) en fonction de m", pa:`(${xNum})/(${Dstr})`, pb:`(${yNum})/(${Dstr})`, vars:["m"]});
+    ex.push({id:"20.19 a)", type:"num", texteLibre:true, enonce:"Déterminer les deux valeurs de \\(m\\) à exclure pour que les droites (d1) et (d2) soient sécantes", reponse: reponse19a});
+    ex.push({id:"20.19 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Dans les conditions précédentes, déterminer les coordonnées du point d'intersection de (d1) et (d2) en fonction de \\(m\\)", pa:`(${xNum})/(${Dstr})`, pb:`(${yNum})/(${Dstr})`, vars:["m"]});
     paramsAvances.g19 = {P19,Q19,R19,S19,T19};
   }
 
@@ -1239,11 +1274,11 @@ function genererExercices() {
     // intersection with eqa20*x+eqb20*y+eqc20=0 : x = (-eqb20*(C20-A20 m^2)-eqc20)/(eqa20+eqb20*(2A20 m+B20))
     const numX = joinSigned([signedFracTerm(eqb20*A20,'m^2'), signedFracTerm(-eqb20*C20-eqc20)]);
     const denX = joinSigned([signedFracTerm(2*eqb20*A20,'m'), signedFracTerm(eqa20+eqb20*B20)]);
-    ex.push({id:"20.20 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"On note \\(T_{f,m}\\) la tangente à la courbe de f au point d'abscisse m. Déterminer une équation de \\(T_{f,m}\\), sous la forme y=ax+b", reponse: reponse20a});
+    ex.push({id:"20.20 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"On note \\(T_{f,m}\\) la tangente à la courbe de \\(f\\) au point d'abscisse \\(m\\). Déterminer une équation de \\(T_{f,m}\\), sous la forme y=ax+b", reponse: reponse20a});
     const m1Str = joinSigned([signedFracTerm(2*A20,'m'), signedFracTerm(B20)]);
     const pbExpr = `(${m1Str})*((${numX})/(${denX}))${signedFracTerm(C20)}${signedFracTerm(-A20,'m^2')}`;
     const eqEnonce20 = joinSigned([signedFracTerm(eqa20,'x'), signedFracTerm(eqb20,'y'), signedFracTerm(eqc20)]);
-    ex.push({id:"20.20 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`Soit (d) la droite d'équation \\(${jsVersLatex(eqEnonce20)}=0\\). Déterminer les coordonnées de l'éventuel point d'intersection de \\(T_{f,m}\\) et (d), en fonction de m`, pa:`(${numX})/(${denX})`, pb:pbExpr, vars:["m"]});
+    ex.push({id:"20.20 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`Soit (d) la droite d'équation \\(${jsVersLatex(eqEnonce20)}=0\\). Déterminer les coordonnées de l'éventuel point d'intersection de \\(T_{f,m}\\) et (d), en fonction de \\(m\\)`, pa:`(${numX})/(${denX})`, pb:pbExpr, vars:["m"]});
     paramsAvances.g20 = {A20,B20,C20,eqa20,eqb20,eqc20};
   }
 
@@ -1261,11 +1296,11 @@ function genererExercices() {
     // m1-m2 = 2*(A1_21+A2_21)*a
     const xNum21 = joinSigned([signedFracTerm(A1_21-A2_21,'a^2'), signedFracTerm(C2_21-C1_21)]);
     const xDen21 = `${2*(A1_21+A2_21)}*a`;
-    ex.push({id:"20.21 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{f,a}\\), la tangente à la courbe de f au point d'abscisse a, sous la forme y=ax+b", reponse: reponse21a});
-    ex.push({id:"20.21 b)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{g,-a}\\), la tangente à la courbe de g au point d'abscisse −a, sous la forme y=ax+b", reponse: reponse21b});
+    ex.push({id:"20.21 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{f,a}\\), la tangente à la courbe de \\(f\\) au point d'abscisse \\(a\\), sous la forme y=ax+b", reponse: reponse21a});
+    ex.push({id:"20.21 b)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{g,-a}\\), la tangente à la courbe de \\(g\\) au point d'abscisse \\(-a\\), sous la forme y=ax+b", reponse: reponse21b});
     const m1_21 = joinSigned([signedFracTerm(2*A1_21,'a')]);
     const pb21 = `(${m1_21})*((${xNum21})/(${xDen21}))${signedFracTerm(C1_21)}${signedFracTerm(-A1_21,'a^2')}`;
-    ex.push({id:"20.21 c)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,-a}\\), en fonction de a", pa:`(${xNum21})/(${xDen21})`, pb:pb21, vars:["a"]});
+    ex.push({id:"20.21 c)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,-a}\\), en fonction de \\(a\\)", pa:`(${xNum21})/(${xDen21})`, pb:pb21, vars:["a"]});
     paramsAvances.g21 = {A1_21,C1_21,A2_21,C2_21};
   }
 

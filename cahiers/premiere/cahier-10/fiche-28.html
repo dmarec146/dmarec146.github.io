@@ -265,6 +265,7 @@ window.MathJax = {
     padding: 10px;
     border: 1.5px solid #e2e2e2;
     transition: border-color 0.15s, background-color 0.15s;
+    min-width: 0;
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
@@ -676,6 +677,38 @@ window.MathJax = {
     padding: 0;
     vertical-align: middle;
   }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
 </style>
 
 <body>
@@ -684,6 +717,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-27.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -740,17 +774,17 @@ window.MathJax = {
 <p class="calcul-titre"><span>Calcul 28.8 — Intersection d'intervalles – avec un paramètre. On note a un paramètre réel. Déterminer l'ensemble des valeurs de a pour lesquelles les intersections suivantes sont non vides. On donnera la réponse sous la forme d'un intervalle.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
 <div class="question-grille" id="grille-28-8"></div>
 
+<p class="calcul-titre"><span>Calcul 28.9 — Cardinal.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
 <div class="rappel-formule">On appelle <em>cardinal</em> d'un ensemble fini A, et on note Card(A), le nombre d'éléments de cet ensemble. On donne la formule suivante : \[\text{Card}(A\cup B)=\text{Card}(A)+\text{Card}(B)-\text{Card}(A\cap B).\] On fixe trois ensembles finis A, B et C.</div>
 <p>Exprimer en fonction des cardinaux \(\text{Card}(A)\), \(\text{Card}(B)\), \(\text{Card}(C)\), \(\text{Card}(A\cap B)\), \(\text{Card}(A\cap C)\), \(\text{Card}(B\cap C)\) et \(\text{Card}(A\cap B\cap C)\) le cardinal \(\text{Card}(A\cup B\cup C)\).</p>
 <p><em>Écrire la réponse avec le mot <code>card</code>, le symbole <code>∩</code> pour l'intersection, sous la forme <code>card(a)+card(b)+card(c)-card(a∩b)-...</code>.</em></p>
-
-<p class="calcul-titre"><span>Calcul 28.9 — Cardinal.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
 <div class="question-grille" id="grille-28-9"></div>
 </div>
 
 <div class="barre-controle">
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -761,14 +795,18 @@ window.MathJax = {
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
 
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-27.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 
 const exercices = [
   // Calcul 28.1 - equations (4 items)
@@ -784,34 +822,34 @@ const exercices = [
   {id:"28.3 a)", type:"intervalle", texteLibre:true, enonce:"\\(2-\\dfrac{x}{2}\\leqslant x+\\dfrac{1}{4}\\)", intervalleSpec:{type:'intervalles', liste:[{bas:1.1666666666666667,haut:Infinity,inclusBas:true,inclusHaut:false}]}},
   {id:"28.3 b)", type:"intervalle", texteLibre:true, enonce:"\\(\\left(1-\\dfrac{1}{4}\\right)x\\leqslant 1-\\dfrac{1}{2}-\\dfrac{x}{2}\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:0.4,inclusBas:false,inclusHaut:true}]}},
   {id:"28.3 c)", type:"intervalle", texteLibre:true, enonce:"\\(\\dfrac{1}{x}-\\dfrac{1}{2}\\leqslant \\dfrac{2}{3}\\left(\\dfrac{1}{x}-\\dfrac{3}{4}\\right)\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:0,inclusBas:false,inclusHaut:false}]}},
-  {id:"28.3 d)", type:"intervalle", texteLibre:true, enonce:"\\(\\begin{cases}\\frac{1}{2}-x\\geqslant x+\\frac{1}{3}\\\\ x-\\frac{4}{5}\\lt 2x+\\frac{1}{10}\\end{cases}\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-0.9,haut:0.08333333333333333,inclusBas:false,inclusHaut:true}]}},
+  {id:"28.3 d)", type:"intervalle", texteLibre:true, enonce:"\\(\\begin{cases}\\dfrac{1}{2}-x\\geqslant x+\\dfrac{1}{3}\\\\ x-\\dfrac{4}{5}\\lt 2x+\\dfrac{1}{10}\\end{cases}\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-0.9,haut:0.08333333333333333,inclusBas:false,inclusHaut:true}]}},
   // Calcul 28.4 - appartenances (4 items)
-  {id:"28.4 a)", type:"intervalle", texteLibre:true, enonce:"\\(2+2x\\in\\,]-2,3]\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-2,haut:0.5,inclusBas:false,inclusHaut:true}]}},
-  {id:"28.4 b)", type:"intervalle", texteLibre:true, enonce:"\\(3x+1\\in\\,\\left]\\dfrac{3\\pi}{2},\\dfrac{5\\pi}{3}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:1.237462993461563,haut:1.411995918660996,inclusBas:false,inclusHaut:false}]}},
-  {id:"28.4 c)", type:"intervalle", texteLibre:true, enonce:"\\(\\dfrac{3-x}{5}\\in\\,\\left]\\dfrac{2}{15},\\dfrac{34}{35}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-1.857142857142857,haut:2.3333333333333335,inclusBas:false,inclusHaut:false}]}},
-  {id:"28.4 d)", type:"intervalle", texteLibre:true, enonce:"\\(\\dfrac{1}{2-3x}\\in\\,\\left[\\dfrac{2}{3},\\dfrac{7}{4}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:0.16666666666666666,haut:0.47619047619047616,inclusBas:true,inclusHaut:false}]}},
+  {id:"28.4 a)", type:"intervalle", texteLibre:true, enonce:"\\(2+2x\\in\\,]-2;3]\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-2,haut:0.5,inclusBas:false,inclusHaut:true}]}},
+  {id:"28.4 b)", type:"intervalle", texteLibre:true, enonce:"\\(3x+1\\in\\,\\left]\\dfrac{3\\pi}{2};\\dfrac{5\\pi}{3}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:1.237462993461563,haut:1.411995918660996,inclusBas:false,inclusHaut:false}]}},
+  {id:"28.4 c)", type:"intervalle", texteLibre:true, enonce:"\\(\\dfrac{3-x}{5}\\in\\,\\left]\\dfrac{2}{15};\\dfrac{34}{35}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-1.857142857142857,haut:2.3333333333333335,inclusBas:false,inclusHaut:false}]}},
+  {id:"28.4 d)", type:"intervalle", texteLibre:true, enonce:"\\(\\dfrac{1}{2-3x}\\in\\,\\left[\\dfrac{2}{3};\\dfrac{7}{4}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:0.16666666666666666,haut:0.47619047619047616,inclusBas:true,inclusHaut:false}]}},
   // Calcul 28.5 - inclusions d'intervalles I (4 items)
-  {id:"28.5 a)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{1}{2},\\dfrac{3}{4}\\right[\\ \\subset\\ \\left[\\dfrac{7}{15},\\dfrac{4}{5}\\right[\\)", estVrai:true},
-  {id:"28.5 b)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]-\\infty,\\dfrac{3}{5}\\right[\\ \\subset\\ \\left]-\\infty,\\dfrac{7}{12}\\right[\\)", estVrai:false},
-  {id:"28.5 c)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{5}{4},+\\infty\\right[\\ \\subset\\ \\left[\\dfrac{25}{20},+\\infty\\right[\\)", estVrai:true},
-  {id:"28.5 d)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]1+\\dfrac{2}{7},3+\\dfrac{1}{4}\\right]\\ \\subset\\ \\left]\\dfrac{18}{14},\\dfrac{26}{8}\\right[\\)", estVrai:false},
+  {id:"28.5 a)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{1}{2};\\dfrac{3}{4}\\right[\\ \\subset\\ \\left[\\dfrac{7}{15};\\dfrac{4}{5}\\right[\\)", estVrai:true},
+  {id:"28.5 b)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]-\\infty;\\dfrac{3}{5}\\right[\\ \\subset\\ \\left]-\\infty;\\dfrac{7}{12}\\right[\\)", estVrai:false},
+  {id:"28.5 c)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{5}{4};+\\infty\\right[\\ \\subset\\ \\left[\\dfrac{25}{20};+\\infty\\right[\\)", estVrai:true},
+  {id:"28.5 d)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]1+\\dfrac{2}{7};3+\\dfrac{1}{4}\\right]\\ \\subset\\ \\left]\\dfrac{18}{14};\\dfrac{26}{8}\\right[\\)", estVrai:false},
   // Calcul 28.6 - inclusions d'intervalles II (4 items)
-  {id:"28.6 a)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left[1,\\dfrac{7}{3}\\right[\\ \\subset\\ \\left]\\dfrac{4}{3},\\dfrac{9}{4}\\right[\\)", estVrai:false},
-  {id:"28.6 b)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]4,2+\\dfrac{8}{3}\\right]\\ \\subset\\ \\left]-\\infty,\\dfrac{13}{2}\\right[\\)", estVrai:true},
-  {id:"28.6 c)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{\\frac{1}{2}+\\frac{1}{3}}{\\frac{1}{2}},+\\infty\\right[\\ \\subset\\ \\left[\\dfrac{3}{\\frac{1}{2}-\\frac{1}{6}},+\\infty\\right[\\)", estVrai:false},
-  {id:"28.6 d)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{2}{1+\\frac{1}{2}},\\dfrac{3}{1+\\frac{1}{3}}\\right[\\ \\subset\\ ]1,2[\\)", estVrai:false},
+  {id:"28.6 a)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left[1;\\dfrac{7}{3}\\right[\\ \\subset\\ \\left]\\dfrac{4}{3};\\dfrac{9}{4}\\right[\\)", estVrai:false},
+  {id:"28.6 b)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]4;2+\\dfrac{8}{3}\\right]\\ \\subset\\ \\left]-\\infty;\\dfrac{13}{2}\\right[\\)", estVrai:true},
+  {id:"28.6 c)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{\\dfrac{1}{2}+\\dfrac{1}{3}}{\\dfrac{1}{2}};+\\infty\\right[\\ \\subset\\ \\left[\\dfrac{3}{\\dfrac{1}{2}-\\dfrac{1}{6}};+\\infty\\right[\\)", estVrai:false},
+  {id:"28.6 d)", type:"vraifaux", texteLibre:true, enonce:"\\(\\left]\\dfrac{2}{1+\\dfrac{1}{2}};\\dfrac{3}{1+\\dfrac{1}{3}}\\right[\\ \\subset\\ ]1;2[\\)", estVrai:false},
   // Calcul 28.7 - inclusions parametrees (4 items, avance)
-  {id:"28.7 a)", type:"texte", texteLibre:true, enonce:"Soit a>0. Déterminer à quelle condition sur a on a l'inclusion \\([a,+\\infty[\\ \\subset\\ [2,+\\infty[\\)", reponse:"a>=2"},
-  {id:"28.7 b)", type:"texte", texteLibre:true, enonce:"\\([a,+\\infty[\\ \\subset\\ [a^2,+\\infty[\\)", reponse:"a<=1"},
-  {id:"28.7 c)", type:"texte", texteLibre:true, enonce:"\\([\\sqrt{a},+\\infty[\\ \\subset\\ [a^2,+\\infty[\\)", reponse:"a<=1"},
-  {id:"28.7 d)", type:"texte", texteLibre:true, enonce:"\\(]-\\infty,a^2]\\ \\subset\\ ]-\\infty,a^3]\\)", reponse:"a>=1"},
+  {id:"28.7 a)", type:"texte", texteLibre:true, enonce:"Soit \\(a>0\\). Déterminer à quelle condition sur \\(a\\) on a l'inclusion \\([a;+\\infty[\\ \\subset\\ [2;+\\infty[\\)", reponse:"a>=2"},
+  {id:"28.7 b)", type:"texte", texteLibre:true, enonce:"\\([a;+\\infty[\\ \\subset\\ [a^2;+\\infty[\\)", reponse:"a<=1"},
+  {id:"28.7 c)", type:"texte", texteLibre:true, enonce:"\\([\\sqrt{a};+\\infty[\\ \\subset\\ [a^2;+\\infty[\\)", reponse:"a<=1"},
+  {id:"28.7 d)", type:"texte", texteLibre:true, enonce:"\\(]-\\infty;a^2]\\ \\subset\\ ]-\\infty;a^3]\\)", reponse:"a>=1"},
   // Calcul 28.8 - intersections avec parametre (4 items, avance)
-  {id:"28.8 a)", type:"intervalle", texteLibre:true, enonce:"\\(]-\\infty,a+1[\\ \\cap\\ \\left]\\dfrac{1}{3},+\\infty\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-0.6666666666666666,haut:Infinity,inclusBas:false,inclusHaut:false}]}},
-  {id:"28.8 b)", type:"intervalle", texteLibre:true, enonce:"\\(\\left]-\\infty,\\dfrac{a}{3}+2\\right]\\ \\cap\\ \\left[\\dfrac{1}{3},2\\right]\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-5,haut:Infinity,inclusBas:true,inclusHaut:false}]}},
-  {id:"28.8 c)", type:"intervalle", texteLibre:true, enonce:"\\(\\left]-\\infty,\\dfrac{1}{5}-\\dfrac{3}{5}a\\right]\\ \\cap\\ \\left]\\dfrac{3}{10}a-1,+\\infty\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:1.3333333333333333,inclusBas:false,inclusHaut:false}]}},
-  {id:"28.8 d)", type:"intervalle", texteLibre:true, enonce:"\\(\\left]2-\\dfrac{3a}{4},+\\infty\\right[\\ \\cap\\ \\left]\\dfrac{1}{4},\\dfrac{2}{5}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:2.1333333333333333,haut:Infinity,inclusBas:false,inclusHaut:false}]}},
+  {id:"28.8 a)", type:"intervalle", texteLibre:true, enonce:"\\(]-\\infty;a+1[\\ \\cap\\ \\left]\\dfrac{1}{3};+\\infty\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-0.6666666666666666,haut:Infinity,inclusBas:false,inclusHaut:false}]}},
+  {id:"28.8 b)", type:"intervalle", texteLibre:true, enonce:"\\(\\left]-\\infty;\\dfrac{a}{3}+2\\right]\\ \\cap\\ \\left[\\dfrac{1}{3};2\\right]\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-5,haut:Infinity,inclusBas:true,inclusHaut:false}]}},
+  {id:"28.8 c)", type:"intervalle", texteLibre:true, enonce:"\\(\\left]-\\infty;\\dfrac{1}{5}-\\dfrac{3}{5}a\\right]\\ \\cap\\ \\left]\\dfrac{3}{10}a-1;+\\infty\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:1.3333333333333333,inclusBas:false,inclusHaut:false}]}},
+  {id:"28.8 d)", type:"intervalle", texteLibre:true, enonce:"\\(\\left]2-\\dfrac{3a}{4};+\\infty\\right[\\ \\cap\\ \\left]\\dfrac{1}{4};\\dfrac{2}{5}\\right[\\)", intervalleSpec:{type:'intervalles', liste:[{bas:2.1333333333333333,haut:Infinity,inclusBas:false,inclusHaut:false}]}},
   // Calcul 28.9 - cardinal (1 item, avance)
-  {id:"28.9", type:"texte", texteLibre:true, enonce:"", reponse:"card(a)+card(b)+card(c)-card(a∩b)-card(a∩c)-card(b∩c)+card(a∩b∩c)"}
+  {id:"28.9", type:"texte", texteLibre:true, avecInter:true, enonce:"", reponse:"card(a)+card(b)+card(c)-card(a∩b)-card(a∩c)-card(b∩c)+card(a∩b∩c)"}
 ];
 
 const groupes = {
@@ -1710,6 +1748,9 @@ function reinitialiser() {
     if (clavier) clavier.classList.remove('ouvert');
   });
   document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
 }
 
 function genererNouvelleFiche() {
@@ -1719,7 +1760,28 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  panneauToutes.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+
+function toggleToutesReponses() {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
+  }
 }
 
 
@@ -1960,12 +2022,13 @@ function genererClavierPour(idx, ex) {
         <button class="touche-large" onclick="inserer(${idx},'x')">x</button>
         <button class="touche-large" onclick="inserer(${idx},'lam')">λ</button>
         ${ex.avecSomme ? `<button class="touche-large" onclick="insererSomme(${idx})">&Sigma;</button>` : ''}
+        ${ex.avecInter ? `<button class="touche-large" onclick="inserer(${idx},'card(')">card(</button><button class="touche-large" onclick="inserer(${idx},'∩')">∩</button>` : ''}
       </div>
       <div class="clavier-groupe">
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">${ex.avecSomme ? 'Astuce : le bouton &Sigma; insère &laquo; sum(k,1,n,...) &raquo; — compléter avec le terme général en fonction de k et x.' : 'Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ'}</div>`;
+      <div class="clavier-apercu">${ex.avecSomme ? 'Astuce : le bouton &Sigma; insère &laquo; sum(k,1,n,...) &raquo; — compléter avec le terme général en fonction de k et x.' : (ex.avecInter ? 'Astuce : les boutons « card( » et « ∩ » insèrent les symboles nécessaires à la réponse.' : 'Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ')}</div>`;
 }
 
 function genererSVGParabole(a, alpha, beta, largeur, hauteur) {

@@ -677,6 +677,38 @@ window.MathJax = {
     padding: 0;
     vertical-align: middle;
   }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
 </style>
 
 <body>
@@ -685,6 +717,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-21.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -822,10 +855,12 @@ Toutes les coordonnées sont exprimées dans un repère orthonormé du plan.</di
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-21.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 
 function fracStr(n, d) { const f = math.fraction(n, d); return f.d === 1 ? String((f.s < 0 ? -1 : 1) * f.n) : `${f.s < 0 ? '-' : ''}${f.n}/${f.d}`; }
@@ -1059,7 +1094,7 @@ function genererExercices() {
     const k3 = alea(1,4);
     ex.push({id:"22.14 c)", type:"alg", texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${coefPrefixeL(k3)}\\sqrt{\\alpha^2-1}}{2};-\\dfrac{${k3}}{2}\\right)\\) et \\(B\\left(\\dfrac{${k3}}{2};\\dfrac{${coefPrefixeL(k3)}\\sqrt{\\alpha^2-1}}{2}\\right)\\)`, reponse: `${k3}*sqrt(2)*lam/2`});
     const k4 = alea(1,4);
-    ex.push({id:"22.14 d)", type:"alg", texteLibre:true, enonce:`Avec \\(A(${coefPrefixeL(-k4)}\\alpha^{n-1};${coefPrefixeL(-k4)}\\alpha^n)\\) et \\(B(${coefPrefixeL(k4)}\\alpha^n;${coefPrefixeL(-k4)}\\alpha^{n-1})\\), où n est un entier fixé`, reponse: `${k4}*lam^(n-1)*sqrt(2)*sqrt(lam^2+1)`});
+    ex.push({id:"22.14 d)", type:"alg", texteLibre:true, enonce:`Avec \\(A(${coefPrefixeL(-k4)}\\alpha^{n-1};${coefPrefixeL(-k4)}\\alpha^n)\\) et \\(B(${coefPrefixeL(k4)}\\alpha^n;${coefPrefixeL(-k4)}\\alpha^{n-1})\\), où \\(n\\) est un entier fixé`, reponse: `${k4}*lam^(n-1)*sqrt(2)*sqrt(lam^2+1)`});
   })();
   // Calcul 22.15 - colinearite (3 items, QCM parallele/secant)
   (function() {
@@ -1100,7 +1135,7 @@ function genererExercices() {
     ex.push({id:"22.17 c)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(${m3};\\sqrt{${D3}}\\right)\\) et \\(B\\left(-\\sqrt{${D3}};${p3}\\right)\\)`, pa: joinSigned([signedFracTerm(AI3x_rat,''), signedFracTerm(math.fraction(-1,2), `sqrt(${D3})`)]), pb: joinSigned([signedFracTerm(AI3y_rat,''), signedFracTerm(math.fraction(-1,2), `sqrt(${D3})`)])});
     const k4b = alea(1,4);
     const k4bpref = k4b===1 ? '' : `${k4b}\\times `;
-    ex.push({id:"22.17 d)", type:"paire", texteLibre:true, enonce:`Soit n un entier fixé. Avec \\(A(${k4bpref}2^{n+1};${k4bpref}2^{2n})\\) et \\(B(${k4bpref}2^n;${k4bpref}2^{2n+1})\\)`, pa: `${k4b}*(-2^(n-1))`, pb: `${k4b}*4^n/2`, vars:["n"]});
+    ex.push({id:"22.17 d)", type:"paire", texteLibre:true, enonce:`Soit \\(n\\) un entier fixé. Avec \\(A(${k4bpref}2^{n+1};${k4bpref}2^{2n})\\) et \\(B(${k4bpref}2^n;${k4bpref}2^{2n+1})\\)`, pa: `${k4b}*(-2^(n-1))`, pb: `${k4b}*4^n/2`, vars:["n"]});
   })();
   // Calcul 22.18 - milieu I avec alpha (mise a l'echelle globale, 4 items)
   (function() {
@@ -1112,15 +1147,15 @@ function genererExercices() {
     ex.push({id:"22.18 c)", type:"paire", texteLibre:true, enonce:`Avec \\(A(${k3}+${coefPrefixeL(3*k3)}\\sqrt{\\alpha};-${coefPrefixeL(k3)}\\sqrt{\\alpha})\\) et \\(B(${k3}+${coefPrefixeL(k3)}\\sqrt{\\alpha};${coefPrefixeL(3*k3)}\\sqrt{\\alpha})\\)`, pa: `-${k3}*sqrt(a)`, pb: `${2*k3}*sqrt(a)`, vars:["a"]});
     const k4 = alea(1,4);
     const k4pref = k4===1 ? '' : `${k4}\\times `;
-    ex.push({id:"22.18 d)", type:"paire", texteLibre:true, enonce:`Soit n un entier fixé. Avec \\(A(${k4pref}2^{n+2}\\alpha^{n+1};-${k4pref}2^{n+1}\\alpha^n)\\) et \\(B(${k4pref}2^{n+3}\\alpha^{n+1};-${k4pref}2^{n+2}\\alpha^n)\\)`, pa: `${k4}*(2*a)^(n+1)`, pb: `-${k4}*(2*a)^n`, vars:["a","n"]});
+    ex.push({id:"22.18 d)", type:"paire", texteLibre:true, enonce:`Soit \\(n\\) un entier fixé. Avec \\(A(${k4pref}2^{n+2}\\alpha^{n+1};-${k4pref}2^{n+1}\\alpha^n)\\) et \\(B(${k4pref}2^{n+3}\\alpha^{n+1};-${k4pref}2^{n+2}\\alpha^n)\\)`, pa: `${k4}*(2*a)^(n+1)`, pb: `-${k4}*(2*a)^n`, vars:["a","n"]});
   })();
   // Calcul 22.19 - menelienne : relations purement symboliques en p,q,r, non randomisables (theoreme formel)
-  ex.push({id:"22.19 a)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{A'B}\\) en fonction de p et de \\(\\overrightarrow{BC}\\) (donner le coefficient de \\(\\overrightarrow{BC}\\))", reponse:"p/(1-p)"});
-  ex.push({id:"22.19 b)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{B'A}\\) en fonction de q et de \\(\\overrightarrow{AC}\\) (donner le coefficient de \\(\\overrightarrow{AC}\\))", reponse:"1/(q-1)"});
-  ex.push({id:"22.19 c)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{C'A}\\) en fonction de r et de \\(\\overrightarrow{AB}\\) (donner le coefficient de \\(\\overrightarrow{AB}\\), utiliser b pour désigner r)", reponse:"b/(1-b)"});
-  ex.push({id:"22.19 d)", type:"paire", texteLibre:true, enonce:"Donner les coordonnées de \\(\\overrightarrow{B'C'}\\), en fonction de q et r (utiliser b pour désigner r)", pa:"b/(b-1)", pb:"1/(q-1)", vars:["b","q"]});
-  ex.push({id:"22.19 e)", type:"paire", texteLibre:true, enonce:"Donner les coordonnées de \\(\\overrightarrow{A'B'}\\), en fonction de p et q", pa:"1/(p-1)", pb:"-(p*q-1)/((p-1)*(q-1))", vars:["p","q"]});
-  ex.push({id:"22.19 f)", type:"num", texteLibre:true, enonce:"Supposons que \\(pqr=1\\). Exprimer le vecteur \\(r(p-1)\\overrightarrow{A'B'}\\) en fonction de r et de \\(\\overrightarrow{B'C'}\\) (donner le coefficient de \\(\\overrightarrow{B'C'}\\), utiliser b pour désigner r)", reponse:"b-1"});
+  ex.push({id:"22.19 a)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{A'B}\\) en fonction de \\(p\\) et de \\(\\overrightarrow{BC}\\) (donner le coefficient de \\(\\overrightarrow{BC}\\))", reponse:"p/(1-p)"});
+  ex.push({id:"22.19 b)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{B'A}\\) en fonction de \\(q\\) et de \\(\\overrightarrow{AC}\\) (donner le coefficient de \\(\\overrightarrow{AC}\\))", reponse:"1/(q-1)"});
+  ex.push({id:"22.19 c)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{C'A}\\) en fonction de \\(r\\) et de \\(\\overrightarrow{AB}\\) (donner le coefficient de \\(\\overrightarrow{AB}\\), utiliser \\(b\\) pour désigner \\(r\\))", reponse:"b/(1-b)"});
+  ex.push({id:"22.19 d)", type:"paire", texteLibre:true, enonce:"Donner les coordonnées de \\(\\overrightarrow{B'C'}\\), en fonction de \\(q\\) et \\(r\\) (utiliser \\(b\\) pour désigner \\(r\\))", pa:"b/(b-1)", pb:"1/(q-1)", vars:["b","q"]});
+  ex.push({id:"22.19 e)", type:"paire", texteLibre:true, enonce:"Donner les coordonnées de \\(\\overrightarrow{A'B'}\\), en fonction de \\(p\\) et \\(q\\)", pa:"1/(p-1)", pb:"-(p*q-1)/((p-1)*(q-1))", vars:["p","q"]});
+  ex.push({id:"22.19 f)", type:"num", texteLibre:true, enonce:"Supposons que \\(pqr=1\\). Exprimer le vecteur \\(r(p-1)\\overrightarrow{A'B'}\\) en fonction de \\(r\\) et de \\(\\overrightarrow{B'C'}\\) (donner le coefficient de \\(\\overrightarrow{B'C'}\\), utiliser \\(b\\) pour désigner \\(r\\))", reponse:"b-1"});
   // Calcul 22.20 - determinant d'un couple de vecteurs (5 items, avance)
   (function() {
     const P1=alea(-3,3),Q1=alea(-4,4),P2=alea(-3,3),Q2=alea(-4,4),P3=alea(-3,3),Q3=alea(-4,4),P4=alea(-3,3),Q4=alea(-4,4);

@@ -265,6 +265,7 @@ window.MathJax = {
     padding: 10px;
     border: 1.5px solid #e2e2e2;
     transition: border-color 0.15s, background-color 0.15s;
+    min-width: 0;
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
@@ -676,6 +677,38 @@ window.MathJax = {
     padding: 0;
     vertical-align: middle;
   }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
 </style>
 
 <body>
@@ -684,6 +717,7 @@ window.MathJax = {
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-28.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
@@ -770,6 +804,7 @@ window.MathJax = {
 <div class="barre-controle">
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -780,14 +815,18 @@ window.MathJax = {
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
 
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <a class="nav-btn" href="fiche-28.html">Fiche suivante &rarr;</a>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <script>
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function exporterPDF() { window.print(); }
 
 const exercices = [
   // Calcul 27.1 - developpements (6 items)
@@ -812,26 +851,26 @@ const exercices = [
   // Calcul 27.4 - vraies ou fausses (4 items)
   {id:"27.4 a)", type:"vraifaux", texteLibre:true, enonce:"« Si j'habite en Espagne, alors j'habite à Madrid »", estVrai:false},
   {id:"27.4 b)", type:"vraifaux", texteLibre:true, enonce:"« Si je n'ai pas de sœur, alors je suis fils unique »", estVrai:false},
-  {id:"27.4 c)", type:"vraifaux", texteLibre:true, enonce:"« Si a et b sont des nombres pairs, alors a+b est pair »", estVrai:true},
-  {id:"27.4 d)", type:"vraifaux", texteLibre:true, enonce:"« Pour tout x∈ℝ, si x>1, alors \\(\\dfrac{2x}{x+1}>1\\) »", estVrai:true},
+  {id:"27.4 c)", type:"vraifaux", texteLibre:true, enonce:"« Si \\(a\\) et \\(b\\) sont des nombres pairs, alors \\(a+b\\) est pair »", estVrai:true},
+  {id:"27.4 d)", type:"vraifaux", texteLibre:true, enonce:"« Pour tout \\(x\\in\\mathbb{R}\\), si \\(x>1\\), alors \\(\\dfrac{2x}{x+1}>1\\) »", estVrai:true},
   // Calcul 27.5 - avec quantificateurs (2 items)
   {id:"27.5 a)", type:"vraifaux", texteLibre:true, enonce:"\\(\\exists x\\in\\mathbb{N},\\ x^2>7\\)", estVrai:true},
   {id:"27.5 b)", type:"vraifaux", texteLibre:true, enonce:"\\(\\forall x\\in\\mathbb{N},\\ x^2>7\\)", estVrai:false},
   // Calcul 27.6 - negation de phrases (5 items)
-  {id:"27.6 a)", type:"texte", texteLibre:true, enonce:"Quelle est la négation de « Tous les bonbons dans le sac sont rouges » ? (répondre exactement : Au moins un bonbon du sac n'est pas rouge)", reponse:"au moins un bonbon du sac n'est pas rouge"},
-  {id:"27.6 b)", type:"texte", texteLibre:true, enonce:"Quelle est la négation de « Certains élèves ont un âge impair » ? (répondre exactement : Tous les élèves ont un âge pair)", reponse:"tous les élèves ont un âge pair"},
-  {id:"27.6 c)", type:"texte", texteLibre:true, enonce:"Quelle est la négation de « Si un nombre entier est divisible par 4, alors il se termine par 4 » ? (répondre exactement : Il existe un nombre entier divisible par 4 mais qui ne se termine pas par 4)", reponse:"il existe un nombre entier divisible par 4 mais qui ne se termine pas par 4"},
-  {id:"27.6 d)", type:"texte", texteLibre:true, enonce:"Quelle est la négation de « La fonction f est croissante » ? (répondre exactement : La fonction f n'est pas croissante)", reponse:"la fonction f n'est pas croissante"},
-  {id:"27.6 e)", type:"texte", texteLibre:true, enonce:"Quelle est la négation de « La fonction f est à valeurs strictement positives » ? (répondre exactement : La fonction atteint au moins une valeur négative, au sens large)", reponse:"la fonction atteint au moins une valeur négative, au sens large"},
+  {id:"27.6 a)", type:"texte", texteLibre:true, negationTexte:true, enonce:"« Tous les bonbons dans le sac sont rouges »", reponse:"au moins un bonbon du sac n'est pas rouge"},
+  {id:"27.6 b)", type:"texte", texteLibre:true, negationTexte:true, enonce:"« Certains élèves ont un âge impair »", reponse:"tous les élèves ont un âge pair"},
+  {id:"27.6 c)", type:"texte", texteLibre:true, negationTexte:true, enonce:"« Si un nombre entier est divisible par 4, alors il se termine par 4 »", reponse:"il existe un nombre entier divisible par 4 mais qui ne se termine pas par 4"},
+  {id:"27.6 d)", type:"texte", texteLibre:true, negationTexte:true, enonce:"« La fonction f est croissante »", reponse:"la fonction f n'est pas croissante"},
+  {id:"27.6 e)", type:"texte", texteLibre:true, negationTexte:true, enonce:"« La fonction f est à valeurs strictement positives »", reponse:"la fonction atteint au moins une valeur négative, au sens large"},
   // Calcul 27.7 - avec des quantificateurs (4 items, QCM)
   {id:"27.7 a)", type:"qcm", texteLibre:true, enonce:"\\(\\forall x\\in\\mathbb{R},\\ x^2+x+1>0\\)", bonneReponse:"c", options:[{lettre:"a",texte:"\\forall x\\in\\mathbb{R},\\ x^2+x+1<0"},{lettre:"b",texte:"\\forall x\\in\\mathbb{R},\\ x^2+x+1\\leqslant 0"},{lettre:"c",texte:"\\exists x\\in\\mathbb{R},\\ x^2+x+1\\leqslant 0"}]},
   {id:"27.7 b)", type:"qcm", texteLibre:true, enonce:"\\(\\exists n\\in\\mathbb{N},\\ n^2=n\\)", bonneReponse:"a", options:[{lettre:"a",texte:"\\forall n\\in\\mathbb{N},\\ n^2\\ne n"},{lettre:"b",texte:"\\forall n\\in\\mathbb{N},\\ n^2=n"},{lettre:"c",texte:"\\exists n\\in\\mathbb{N},\\ n^2\\ne n"}]},
   {id:"27.7 c)", type:"qcm", texteLibre:true, enonce:"\\(\\exists x\\in\\mathbb{R},\\ x+8=15\\)", bonneReponse:"b", options:[{lettre:"a",texte:"\\forall x\\in\\mathbb{R},\\ x+8=15"},{lettre:"b",texte:"\\forall x\\in\\mathbb{R},\\ x+8\\ne 15"},{lettre:"c",texte:"\\forall x\\in\\mathbb{R},\\ x+8>15"}]},
   {id:"27.7 d)", type:"qcm", texteLibre:true, enonce:"\\(\\forall x\\in\\mathbb{R},\\ \\exists n\\in\\mathbb{N},\\ n\\leqslant x\\lt n+1\\)", bonneReponse:"b", options:[{lettre:"a",texte:"\\exists x\\in\\mathbb{R},\\ \\forall n\\in\\mathbb{N},\\ n\\leqslant x\\lt n+1"},{lettre:"b",texte:"\\exists x\\in\\mathbb{R},\\ \\forall n\\in\\mathbb{N},\\ x\\lt n\\text{ ou }x\\geqslant n+1"},{lettre:"c",texte:"\\exists x\\in\\mathbb{R},\\ \\forall n\\in\\mathbb{N},\\ x\\ne n\\text{ ou }x\\ne n+1"}], optionsSurUneLigne:true},
   // Calcul 27.8 - autour de l'implication (3 items, QCM)
-  {id:"27.8 a)", type:"qcm", texteLibre:true, enonce:"Avec P: « Jean Dupont est le fils de Pierre Dupont » et Q: « Pierre Dupont est le père de Jean Dupont »", bonneReponse:"d", options:[{lettre:"a",texte:"L'implication P\\Longrightarrow Q est vraie.",texteLibreOption:true},{lettre:"b",texte:"L'implication Q\\Longrightarrow P est vraie.",texteLibreOption:true},{lettre:"c",texte:"Aucune implication n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux implications sont vraies.",texteLibreOption:true}]},
-  {id:"27.8 b)", type:"qcm", texteLibre:true, enonce:"Avec P: « Je suis européen » et Q: « Je suis français »", bonneReponse:"b", options:[{lettre:"a",texte:"L'implication P\\Longrightarrow Q est vraie.",texteLibreOption:true},{lettre:"b",texte:"L'implication Q\\Longrightarrow P est vraie.",texteLibreOption:true},{lettre:"c",texte:"Aucune implication n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux implications sont vraies.",texteLibreOption:true}]},
-  {id:"27.8 c)", type:"qcm", texteLibre:true, enonce:"Avec P: « ABCD est un rectangle » et Q: « ABCD est un carré »", bonneReponse:"b", options:[{lettre:"a",texte:"L'implication P\\Longrightarrow Q est vraie.",texteLibreOption:true},{lettre:"b",texte:"L'implication Q\\Longrightarrow P est vraie.",texteLibreOption:true},{lettre:"c",texte:"Aucune implication n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux implications sont vraies.",texteLibreOption:true}]},
+  {id:"27.8 a)", type:"qcm", texteLibre:true, enonce:"Avec P: « Jean Dupont est le fils de Pierre Dupont » et Q: « Pierre Dupont est le père de Jean Dupont »", bonneReponse:"d", options:[{lettre:"a",texte:"L'implication \\(P\\Longrightarrow Q\\) est vraie.",texteLibreOption:true},{lettre:"b",texte:"L'implication \\(Q\\Longrightarrow P\\) est vraie.",texteLibreOption:true},{lettre:"c",texte:"Aucune implication n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux implications sont vraies.",texteLibreOption:true}]},
+  {id:"27.8 b)", type:"qcm", texteLibre:true, enonce:"Avec P: « Je suis européen » et Q: « Je suis français »", bonneReponse:"b", options:[{lettre:"a",texte:"L'implication \\(P\\Longrightarrow Q\\) est vraie.",texteLibreOption:true},{lettre:"b",texte:"L'implication \\(Q\\Longrightarrow P\\) est vraie.",texteLibreOption:true},{lettre:"c",texte:"Aucune implication n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux implications sont vraies.",texteLibreOption:true}]},
+  {id:"27.8 c)", type:"qcm", texteLibre:true, enonce:"Avec P: « ABCD est un rectangle » et Q: « ABCD est un carré »", bonneReponse:"b", options:[{lettre:"a",texte:"L'implication \\(P\\Longrightarrow Q\\) est vraie.",texteLibreOption:true},{lettre:"b",texte:"L'implication \\(Q\\Longrightarrow P\\) est vraie.",texteLibreOption:true},{lettre:"c",texte:"Aucune implication n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux implications sont vraies.",texteLibreOption:true}]},
   // Calcul 27.9 - autour de l'implication, suite (2 items, QCM)
   {id:"27.9 a)", type:"qcm", texteLibre:true, enonce:"Avec \\(P(n)\\): « \\(n\\geqslant 5\\) » et \\(Q(n)\\): « \\(n\\leqslant 6\\) »", bonneReponse:"c", options:[{lettre:"a",texte:"\\forall n\\in\\mathbb{N},\\ P(n)\\Longrightarrow Q(n)\\text{ est vraie.}"},{lettre:"b",texte:"\\forall n\\in\\mathbb{N},\\ Q(n)\\Longrightarrow P(n)\\text{ est vraie.}"},{lettre:"c",texte:"Aucune proposition n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux propositions sont vraies.",texteLibreOption:true}]},
   {id:"27.9 b)", type:"qcm", texteLibre:true, enonce:"Avec \\(P(n)\\): « \\(n=0\\) ou \\(n=1\\) » et \\(Q(n)\\): « \\(n^2=n\\) »", bonneReponse:"d", options:[{lettre:"a",texte:"\\forall n\\in\\mathbb{N},\\ P(n)\\Longrightarrow Q(n)\\text{ est vraie.}"},{lettre:"b",texte:"\\forall n\\in\\mathbb{N},\\ Q(n)\\Longrightarrow P(n)\\text{ est vraie.}"},{lettre:"c",texte:"Aucune proposition n'est vraie.",texteLibreOption:true},{lettre:"d",texte:"Les deux propositions sont vraies.",texteLibreOption:true}]},
@@ -847,9 +886,9 @@ const exercices = [
   {id:"27.12 b)", type:"vraifaux", texteLibre:true, enonce:"\\(\\exists y\\in\\mathbb{N},\\ \\forall x\\in\\mathbb{N},\\ x\\leqslant y\\)", estVrai:false},
   {id:"27.12 c)", type:"vraifaux", texteLibre:true, enonce:"\\((\\forall x\\in\\mathbb{N},\\ \\exists y\\in\\mathbb{N},\\ x\\leqslant y)\\Longleftrightarrow (\\exists y\\in\\mathbb{N},\\ \\forall x\\in\\mathbb{N},\\ x\\leqslant y)\\)", estVrai:false},
   {id:"27.13", type:"qcm", texteLibre:true, enonce:"", bonneReponse:"b", options:[{lettre:"a",texte:"vrai",texteLibreOption:true},{lettre:"b",texte:"faux",texteLibreOption:true}]},
-  {id:"27.14 a)", type:"texte", texteLibre:true, enonce:"\\(\\forall x\\in E,\\ \\forall y\\geqslant 0,\\ xy\\geqslant 1\\) (répondre exactement : Il existe x dans E, il existe y&gt;=0, xy&lt;1)", reponse:"il existe x dans e, il existe y>=0, xy<1"},
-  {id:"27.14 b)", type:"texte", texteLibre:true, enonce:"\\(\\forall a\\in I,\\ \\forall b\\in I,\\ (a\\lt b\\Longrightarrow f(a)\\lt f(b))\\) (répondre exactement : Il existe a dans I, il existe b dans I, a&lt;b et f(a)&gt;=f(b))", reponse:"il existe a dans i, il existe b dans i, a<b et f(a)>=f(b)"},
-  {id:"27.15", type:"qcm", texteLibre:true, enonce:"Soient a et b deux réels. On considère la proposition P : « Si \\((a+b)^2=a^2+b^2\\), alors \\(a=0\\) ou \\(b=0\\) ». La négation de P est :", bonneReponse:"b", options:[{lettre:"a",texte:"(a+b)^2=a^2+b^2\\text{ ou }(a=0\\text{ et }b=0)"},{lettre:"b",texte:"(a+b)^2=a^2+b^2\\text{ et }(a\\ne 0\\text{ et }b\\ne 0)"},{lettre:"c",texte:"(a+b)^2=a^2+b^2\\text{ et }(a\\ne 0\\text{ ou }b\\ne 0)"}], optionsSurUneLigne:true}
+  {id:"27.14 a)", type:"texte", texteLibre:true, negationSymbolique:true, enonce:"\\(\\forall x\\in E,\\ \\forall y\\geqslant 0,\\ xy\\geqslant 1\\)", reponse:"il existe x dans e, il existe y>=0, xy<1"},
+  {id:"27.14 b)", type:"texte", texteLibre:true, negationSymbolique:true, enonce:"\\(\\forall a\\in I,\\ \\forall b\\in I,\\ (a\\lt b\\Longrightarrow f(a)\\lt f(b))\\)", reponse:"il existe a dans i, il existe b dans i, a<b et f(a)>=f(b)"},
+  {id:"27.15", type:"qcm", texteLibre:true, enonce:"Soient \\(a\\) et \\(b\\) deux réels. On considère la proposition P : « Si \\((a+b)^2=a^2+b^2\\), alors \\(a=0\\) ou \\(b=0\\) ». La négation de P est :", bonneReponse:"b", options:[{lettre:"a",texte:"(a+b)^2=a^2+b^2\\text{ ou }(a=0\\text{ et }b=0)"},{lettre:"b",texte:"(a+b)^2=a^2+b^2\\text{ et }(a\\ne 0\\text{ et }b\\ne 0)"},{lettre:"c",texte:"(a+b)^2=a^2+b^2\\text{ et }(a\\ne 0\\text{ ou }b\\ne 0)"}], optionsSurUneLigne:true}
 ];
 
 const groupes = {
@@ -1754,6 +1793,9 @@ function reinitialiser() {
     if (clavier) clavier.classList.remove('ouvert');
   });
   document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
 }
 
 function genererNouvelleFiche() {
@@ -1763,7 +1805,28 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  panneauToutes.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
+}
+
+function toggleToutesReponses() {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex => {
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
+  }
 }
 
 
@@ -1777,6 +1840,12 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.negationTexte) {
+    return "Écrire la négation sous la forme d'une phrase complète en français (pas de majuscule initiale ni de point final nécessaires). Une seule formulation exacte est acceptée.";
+  }
+  if (ex.negationSymbolique) {
+    return "Écrire la négation en mélangeant mots et symboles comme dans l'énoncé : « il existe » / « pour tout », <code>&gt;=</code> et <code>&lt;</code> pour les inégalités. Une seule formulation exacte est acceptée.";
+  }
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) {
     return "Écrire les lettres des bonnes réponses séparées par des virgules, par exemple <code>a,c,d</code>.";
   }
@@ -1823,6 +1892,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.negationTexte || ex.negationSymbolique) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) return true;
   if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) return true;
