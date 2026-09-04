@@ -1527,6 +1527,9 @@ function checkVecteur(userInput, correctX, correctY, vars) {
 
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
   const parties = nettoye.split(';');
   if (parties.length !== 2) return false;
   try {
@@ -1550,6 +1553,9 @@ function checkPaire(userInput, correctA, correctB, vars) {
 
 function checkTriplet(userInput, correctA, correctB, correctC, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
   const parties = nettoye.split(';');
   if (parties.length !== 3) return false;
   try {
@@ -1645,7 +1651,7 @@ function valeurDuChamp(el) {
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
     // normaliser les lettres grecques residuelles vers la convention interne (alpha/lambda -> lam, beta -> bet)
-    v = v.replace(/\balpha\b/g, 'lam').replace(/\blambda\b/g, 'lam').replace(/\bbeta\b/g, 'bet');
+    v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     return v;
   }
   return el.value.trim();

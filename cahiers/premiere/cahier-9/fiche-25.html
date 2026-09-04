@@ -885,7 +885,7 @@ function genererExercices() {
     const lettresQ = ['a','b','c'];
     const options = shuffled.map((o,i) => ({lettre:lettresQ[i], texte:o.texte}));
     const bonne = lettresQ[shuffled.findIndex(o=>o.correct)];
-    ex.push({id:"25.1 a)", type:"qcm", texteLibre:true, enonce:`On considère les points A(${Ax};${Ay}), B(${Bx};${By}) et C(${Cx};${Cy}). Alors, le vecteur \\(\\vec{p}=\\overrightarrow{AB}+2\\overrightarrow{AC}\\) a pour coordonnées :`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"25.1 a)", type:"qcm", texteLibre:true, enonce:`On considère les points \\(A(${Ax};${Ay})\\), \\(B(${Bx};${By})\\) et \\(C(${Cx};${Cy})\\). Alors, le vecteur \\(\\vec{p}=\\overrightarrow{AB}+2\\overrightarrow{AC}\\) a pour coordonnées :`, bonneReponse:bonne, options, optionsSurUneLigne:true});
   })();
   (function() {
     const A = alea(2,5), C = aleaNonNul(-9,9), D = alea(2,5), E = aleaNonNul(-9,9);
@@ -1068,7 +1068,7 @@ function genererExercices() {
     ctx.c8 = {D0, k, e, C0};
     const kTerm = (k===1?'':(k===-1?'-':k)) + `√${D0}`;
     const c0Term = C0>=0 ? `+${C0}` : `-${-C0}`;
-    ex.push({id:"25.8", type:"alg", texteLibre:true, formeYax:true, enonce:`Déterminer l'équation réduite de la droite (d5) passant par le point E(${kTerm};${e}) et perpendiculaire à la droite (D) d'équation x−√${D0}y${c0Term}=0`, reponse: equationReduiteAscii(pa, pb)});
+    ex.push({id:"25.8", type:"alg", texteLibre:true, formeYax:true, enonce:`Déterminer l'équation réduite de la droite (d5) passant par le point \\(E(${kTerm};${e})\\) et perpendiculaire à la droite (D) d'équation \\(x-\\sqrt{${D0}}y${c0Term}=0\\)`, reponse: equationReduiteAscii(pa, pb)});
   })();
   // Calcul 25.9 - equations reduites perpendiculaires (2 items, contexte partage : titre)
   (function() {
@@ -1566,6 +1566,9 @@ function checkPointCoordonnees(userInput, correctA, correctB, vars) {
 }
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
   const parties = nettoye.split(';');
   if (parties.length !== 2) return false;
   try {
@@ -1589,6 +1592,9 @@ function checkPaire(userInput, correctA, correctB, vars) {
 
 function checkTriplet(userInput, correctA, correctB, correctC, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
   const parties = nettoye.split(';');
   if (parties.length !== 3) return false;
   try {
@@ -1698,7 +1704,7 @@ function valeurDuChamp(el) {
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
     // normaliser les lettres grecques residuelles vers la convention interne (alpha/lambda -> lam, beta -> bet)
-    v = v.replace(/\balpha\b/g, 'lam').replace(/\blambda\b/g, 'lam').replace(/\bbeta\b/g, 'bet');
+    v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
     v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
     // normaliser f'/g'/h' (frappe naturelle du prime, converti par MathLive en f^′) vers la convention interne fp/gp/hp

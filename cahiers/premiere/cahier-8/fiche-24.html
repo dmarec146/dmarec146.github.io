@@ -1571,6 +1571,9 @@ function checkVecteur(userInput, correctX, correctY, vars) {
 
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
   const parties = nettoye.split(';');
   if (parties.length !== 2) return false;
   try {
@@ -1594,6 +1597,9 @@ function checkPaire(userInput, correctA, correctB, vars) {
 
 function checkTriplet(userInput, correctA, correctB, correctC, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+    nettoye = nettoye.slice(1,-1);
+  }
   const parties = nettoye.split(';');
   if (parties.length !== 3) return false;
   try {
@@ -1703,7 +1709,7 @@ function valeurDuChamp(el) {
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
     // normaliser les lettres grecques residuelles vers la convention interne (alpha/lambda -> lam, beta -> bet)
-    v = v.replace(/\balpha\b/g, 'lam').replace(/\blambda\b/g, 'lam').replace(/\bbeta\b/g, 'bet');
+    v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
     v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
     // normaliser les indices a_n, a_1, a_2, a_3, a_4 (saisis via MathLive) vers la convention interne an, a1, a2, a3, a4
@@ -2364,13 +2370,16 @@ function genererSVGCourbeTrigo(fonctionJs, largeur, hauteur) {
   const ox = toSvgX(0).toFixed(1), oy = toSvgY(0).toFixed(1);
 
   let graduations = '';
+  // etiquettes en unicode brut (pas de LaTeX) : ce sont des <text> SVG, jamais passees a MathJax
   const labelsX = [
-    [-2*Math.PI,'-2\\pi'], [-3*Math.PI/2,'-\\frac{3\\pi}{2}'], [-Math.PI,'-\\pi'], [-Math.PI/2,'-\\frac{\\pi}{2}'],
-    [Math.PI/2,'\\frac{\\pi}{2}'], [Math.PI,'\\pi'], [3*Math.PI/2,'\\frac{3\\pi}{2}'], [2*Math.PI,'2\\pi']
+    [-2*Math.PI,'-2π'], [-3*Math.PI/2,'-3π/2'], [-Math.PI,'-π'], [-Math.PI/2,'-π/2'],
+    [Math.PI/2,'π/2'], [Math.PI,'π'], [3*Math.PI/2,'3π/2'], [2*Math.PI,'2π']
   ];
-  labelsX.forEach(([gx, lbl]) => {
+  labelsX.forEach(([gx, lbl], i) => {
     const sx = toSvgX(gx).toFixed(1);
-    graduations += `<line x1="${sx}" y1="${(parseFloat(oy)-2).toFixed(1)}" x2="${sx}" y2="${(parseFloat(oy)+2).toFixed(1)}" stroke="#999" stroke-width="0.8"/>`;
+    // eviter que les etiquettes extremes (-2pi, 2pi) debordent du viewBox et soient rognees
+    const ancre = i === 0 ? 'start' : (i === labelsX.length-1 ? 'end' : 'middle');
+    graduations += `<line x1="${sx}" y1="${(parseFloat(oy)-2).toFixed(1)}" x2="${sx}" y2="${(parseFloat(oy)+2).toFixed(1)}" stroke="#999" stroke-width="0.8"/><text x="${sx}" y="${(parseFloat(oy)+11).toFixed(1)}" font-size="7" text-anchor="${ancre}" fill="#666">${lbl}</text>`;
   });
   [-1,-0.5,0.5,1].forEach(gy => {
     const sy = toSvgY(gy).toFixed(1);
