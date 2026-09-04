@@ -865,99 +865,11 @@ const groupes = {
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
-function construireGrilles() {
-  for (const [gridId, indices] of Object.entries(groupes)) {
-    const grille = document.getElementById(gridId);
-    grille.innerHTML = '';
-    indices.forEach((idx, pos) => {
-      const ex = exercices[idx];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.id = 'q-' + idx;
-      div.innerHTML = `
-        <span class="q-lettre">${lettres[pos]})</span>
-        <span class="q-enonce">\\(${ex.enonce}\\) =</span>
-        <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-        <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-        <span class="q-statut" id="statut-${idx}"></span>
-        <div class="clavier-visuel" id="clavier-${idx}">
-          <div class="clavier-groupe">
-            <span class="clavier-label">Chiffres</span>
-            <button onclick="inserer(${idx},'7')">7</button>
-            <button onclick="inserer(${idx},'8')">8</button>
-            <button onclick="inserer(${idx},'9')">9</button>
-            <button onclick="inserer(${idx},'4')">4</button>
-            <button onclick="inserer(${idx},'5')">5</button>
-            <button onclick="inserer(${idx},'6')">6</button>
-            <button onclick="inserer(${idx},'1')">1</button>
-            <button onclick="inserer(${idx},'2')">2</button>
-            <button onclick="inserer(${idx},'3')">3</button>
-            <button onclick="inserer(${idx},'0')">0</button>
-            <button onclick="inserer(${idx},',')">,</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Opérations</span>
-            <button onclick="inserer(${idx},'+')">+</button>
-            <button onclick="inserer(${idx},'-')">−</button>
-            <button onclick="insererFonction(${idx},'*')">×</button>
-            <button onclick="insererFonction(${idx},'/')">÷</button>
-            <button onclick="inserer(${idx},'(')">(</button>
-            <button onclick="inserer(${idx},')')">)</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Puissances</span>
-            <button onclick="insererPuissance(${idx},'2')">x²</button>
-            <button onclick="insererPuissance(${idx},'3')">x³</button>
-            <button onclick="insererExposant(${idx})">xⁿ</button>
-            <button onclick="insererRacine(${idx})">√</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Fraction</span>
-            <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-            <button class="touche-large" onclick="inserer(${idx},'x')">lettre x</button>
-          </div>
-          <div class="clavier-groupe">
-            <span class="clavier-label">Comparaison</span>
-            <button onclick="inserer(${idx},'>')">&gt;</button>
-            <button onclick="inserer(${idx},'<')">&lt;</button>
-            <button onclick="inserer(${idx},'>=')">&geq;</button>
-            <button onclick="inserer(${idx},'<=')">&leq;</button>
-          </div>
-          <div class="clavier-groupe">
-            <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-            <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-          </div>
-          <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
-        </div>
-      `;
-      grille.appendChild(div);
-    });
-  }
-}
-
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  fermerAutresAides(idx);
   clavier.classList.toggle('ouvert', !etaitOuvert);
-}
-
-function toggleAide(idx) {
-  const aide = document.getElementById('aide-' + idx);
-  const etaitOuverte = aide.classList.contains('ouverte');
-  fermerAutresAides(idx);
-  fermerAutresClaviers(idx);
-  aide.classList.toggle('ouverte', !etaitOuverte);
-}
-
-function fermerAutresAides(idxActuel) {
-  exercices.forEach((ex, idx) => {
-    if (idx !== idxActuel) {
-      const aide = document.getElementById('aide-' + idx);
-      if (aide) aide.classList.remove('ouverte');
-    }
-  });
 }
 
 function placerCurseur(input, pos, fin) {
@@ -1863,12 +1775,6 @@ function construireGrilles() {
       div.id = 'q-' + idx;
       const lettre = lettresEtendues[pos] || '';
       const suffixe = ex.avecEgal ? ' =' : '';
-      const boutonAide = necessiteAide(ex)
-        ? `<button class="q-aide-btn" onclick="toggleAide(${idx})" title="Comment répondre ?">?</button>`
-        : '';
-      const bulleAide = necessiteAide(ex)
-        ? `<div class="q-aide-bulle" id="aide-${idx}">${aideContextuellePour(ex)}</div>`
-        : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options-wrapper${ex.optionsSurUneLigne ? ' q-qcm-options-wrapper--scroll' : ''}"><div class="q-qcm-options${ex.optionsSurUneLigne ? ' q-qcm-options--scroll' : ''}">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
@@ -1879,13 +1785,59 @@ function construireGrilles() {
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
-        ${boutonAide}
         <span class="q-statut" id="statut-${idx}"></span>
-        ${bulleAide}
       `;
       grille.appendChild(div);
     });
+    injecterAideGroupe(gridId, indices);
   }
+}
+
+function texteAideGroupe(indices) {
+  const groupes = [];
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (!necessiteAide(ex)) continue;
+    const texte = aideContextuellePour(ex);
+    const lettre = (ex.id.match(/([a-zA-Z])\)\s*$/) || [])[1];
+    let g = groupes.find(g => g.texte === texte);
+    if (!g) { g = { texte, lettres: [] }; groupes.push(g); }
+    if (lettre) g.lettres.push(lettre);
+  }
+  if (groupes.length === 0) return null;
+  if (groupes.length === 1) return groupes[0].texte;
+  return groupes.map(g => (g.lettres.length ? `<strong>${g.lettres.join(', ')})</strong> ` : '') + g.texte).join('<br><br>');
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const picto = titre.querySelector('.picto-niveau');
+    const conteneur = picto || titre.querySelector('span:not(.picto-niveau)') || titre;
+    const btn = document.createElement('button');
+    btn.className = 'q-aide-btn';
+    btn.title = 'Comment répondre ?';
+    btn.textContent = '?';
+    btn.onclick = () => toggleAideGroupe(gridId);
+    if (picto) conteneur.prepend(btn); else conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.after(bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  if (!aide) return;
+  const etaitOuverte = aide.classList.contains('ouverte');
+  document.querySelectorAll('.q-aide-bulle').forEach(b => b.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
 }
 
 const TYPES_MATHFIELD = ['num', 'alg', 'somme'];
