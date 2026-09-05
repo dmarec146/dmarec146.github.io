@@ -537,11 +537,32 @@
     </div>`;
   }
 
+  /* Bilan du mode fiche. Il paraît dès que l'élève a répondu à toutes les
+     questions — donc avant d'avoir demandé la correction — ou dès qu'il révèle
+     les réponses. Tant qu'il en reste une sans réponse, rien ne s'affiche : un
+     compteur qui monterait à chaque clic dirait, question par question, si elle
+     est juste, ce qui reviendrait au mode « au fur et à mesure » écarté du
+     projet. Rien non plus si l'élève n'a rien coché : révéler le corrigé sans
+     avoir répondu, c'est vouloir le lire, pas être noté zéro. */
+  function bilanFicheHTML() {
+    const revelees = ETAT.corrigees.every(c => c);
+    const aRepondu = ETAT.reponses.some(r => r !== null);
+    const toutRepondu = ETAT.reponses.every(r => r !== null);
+    if (!aRepondu || !(toutRepondu || revelees)) return '';
+    return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}</div>`;
+  }
+  // le bilan se met à jour sans redessiner toute la fiche (ni retypeser les formules)
+  function majBilan() {
+    const el = document.getElementById('bilan-fiche');
+    if (el) el.innerHTML = bilanFicheHTML();
+  }
+
   // ----- vue fiche -----
   function vueFicheHTML() {
     const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i], neutre: true })).join('');
     const revelees = ETAT.corrigees.every(c => c);
     return `<div class="liste-questions" id="liste-questions">${cartes}</div>
+      <div id="bilan-fiche">${bilanFicheHTML()}</div>
       <div class="barre-controle">
         <button class="btn-principal" data-action="reponses">${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
         <button class="btn-secondaire" data-action="recommencer">Recommencer</button>
@@ -582,7 +603,8 @@
       if (ETAT.reponses[i] === q.bonne) parBanque[q.banqueTitre].ok++;
     });
     const cles = Object.keys(parBanque);
-    if (cles.length > 1) {
+    // le sujet blanc s'en tient à la note : le détail par thème est réservé aux fiches
+    if (cles.length > 1 && ETAT.config.detailParTheme !== false) {
       html += '<div class="score-detail">' + cles.map(k => `${echapper(k)} : ${parBanque[k].ok}/${parBanque[k].n}`).join(' · ') + '</div>';
     }
     return html;
@@ -735,6 +757,7 @@
       if (ETAT.corrigees[i]) return;
       ETAT.reponses[i] = (ETAT.reponses[i] === k) ? null : k;
       majCarte(i);
+      majBilan();
     } else {
       const c = ETAT.chrono;
       if (c.phase !== 'question' || i !== c.index) return;
