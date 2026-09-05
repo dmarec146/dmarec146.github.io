@@ -716,24 +716,65 @@ function longueurPeriode(b) {
   return n;
 }
 
+// ---------- vivier de calculs numeriques ----------
+// Quatre generateurs figes donneraient toujours les memes quatre calculs, d'une fiche a l'autre
+// comme d'une version a l'autre. On tire donc quatre modeles DISTINCTS dans ce vivier, une fois
+// par generation (voir genererExercices) : tirer modele par modele permettrait des doublons.
+function melanger(tab) {
+  const a = tab.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = alea(0, i); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const MODELES_CALCUL = [
+  // priorites : un produit dans une somme
+  () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
+  // produit d'un negatif par une difference
+  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+  // carre puis soustraction
+  () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
+  // double negation
+  () => { const a = alea(2,15), b = alea(2,15);
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+  // produit de trois facteurs signes
+  () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+  // quotient exact suivi d'une addition
+  () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+  // quotient d'une somme : la barre de fraction joue le role d'une parenthese
+  () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+  // moyenne de trois entiers
+  () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+  // suite d'additions et de soustractions
+  () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+  // distributivite mentale : a x 99 = a x 100 - a
+  () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+  // cube et difference
+  () => { const a = alea(2,6), b = alea(2,40);
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+  // priorites imbriquees
+  () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+  // double et moitie
+  () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+];
+// les quatre modeles retenus pour la version courante de la fiche
+let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
+
 const generateurs = [
-  // ---------- 3.1 : calcul numerique (priorites, relatifs) ----------
-  {id:"3.1 a)", type:"num", gen: () => {
-    const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-    return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` };
-  }},
-  {id:"3.1 b)", type:"num", gen: () => {
-    const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-    return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` };
-  }},
-  {id:"3.1 c)", type:"num", gen: () => {
-    const a = alea(2,15), b = alea(2,15);
-    return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` };
-  }},
-  {id:"3.1 d)", type:"num", gen: () => {
-    const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-    return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` };
-  }},
+  // ---------- 3.1 : calcul numerique (modeles tires dans le vivier ci-dessus) ----------
+  {id:"3.1 a)", type:"num", gen: () => tirageCalculs[0]()},
+  {id:"3.1 b)", type:"num", gen: () => tirageCalculs[1]()},
+  {id:"3.1 c)", type:"num", gen: () => tirageCalculs[2]()},
+  {id:"3.1 d)", type:"num", gen: () => tirageCalculs[3]()},
 
   // ---------- 3.2 : developper et reduire ----------
   {id:"3.2 a)", type:"alg", gen: () => {
@@ -795,12 +836,39 @@ const generateurs = [
     return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*k - c, d) };
   }},
   {id:"3.4 c)", type:"num", fractionIrreductible:true, gen: () => {
+    // une fois sur deux, un entier au lieu d'une des deux fractions
+    if (alea(0,1) === 0) {
+      const [c,d] = fractionIrreductibleAlea(), A = alea(2,9);
+      return { enonce:`${A}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(A*d - c, d) };
+    }
     const [b,d] = denominateursPourSomme(), a = numerateurPour(b), c = numerateurPour(d);
     return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d + c*b, b*d) };
   }},
   {id:"3.4 d)", type:"num", fractionIrreductible:true, gen: () => {
-    const [c,d] = fractionIrreductibleAlea(), A = alea(2,9);
-    return { enonce:`${A}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(A*d - c, d) };
+    // Le dernier exercice du groupe est nettement plus exigeant : trois ou quatre fractions,
+    // aux denominateurs DEUX A DEUX non multiples, donc aucun raccourci possible — il faut
+    // vraiment construire le denominateur commun.
+    const ppcm = (u, v) => u * v / pgcd(u, v);
+    const nb = alea(3, 4);
+    const pool = [2,3,4,5,6,7,8,9,10];
+    let dens, den, essais = 0;
+    do {
+      dens = melanger(pool).slice(0, nb);
+      den = dens.reduce(ppcm, 1);
+      essais++;
+      // La condition qui compte : le denominateur commun ne doit pas etre l'un des
+      // denominateurs affiches, sinon il suffirait de convertir vers le plus grand.
+      // Exiger en plus qu'ils soient DEUX A DEUX non multiples serait insatisfiable a
+      // quatre fractions : le plus petit PPCM d'un tel quadruplet de 2 a 10 vaut deja 180.
+    } while (essais < 200 && (den > 180 || dens.includes(den)));
+    let num = 0;
+    const morceaux = dens.map((v, i) => {
+      const p = numerateurPour(v);
+      const signe = i === 0 ? 1 : choix([1, -1]);
+      num += signe * p * (den / v);
+      return (i === 0 ? '' : (signe > 0 ? '+' : '-')) + `\\dfrac{${p}}{${v}}`;
+    });
+    return { enonce: morceaux.join(''), reponse: fractionTexte(num, den) };
   }},
 
   // ---------- 3.5 : produit, quotient, inverse ----------
@@ -851,13 +919,23 @@ const generateurs = [
              reponse: den === 1 ? `${num}*x` : `${num}*x/${den}` };
   }},
   {id:"3.7 b)", type:"alg", gen: () => {
-    const a = alea(2,9), b = alea(2,9);
-    return { enonce:`\\dfrac{${a}}{x}+\\dfrac{${b}}{x}`, reponse:`${a+b}/x` };
-  }},
-  {id:"3.7 c)", type:"alg", gen: () => {
     // simplification d'un quotient de monomes
     const m = alea(2,6), q = alea(2,7), k = m*q, p = alea(2,4);
     return { enonce:`\\dfrac{${k}${varPuissanceLatex('x', p+1)}}{${m}${varPuissanceLatex('x', p)}}`, reponse:`${q}*x` };
+  }},
+  {id:"3.7 c)", type:"alg", gen: () => {
+    // Le dernier exercice du groupe est nettement plus exigeant : deux fractions dont les
+    // numerateurs sont des expressions, et des denominateurs non multiples. Le resultat est
+    // une seule fraction dont le numerateur reste un binome — il ne se reduit pas a « qx ».
+    let b, d;
+    do { b = alea(2,9); d = alea(2,9); } while (b === d || b % d === 0 || d % b === 0);
+    const a = alea(1,9), c = alea(1,9);
+    // (x+a)/b - (x-c)/d = ((d-b)x + (a*d + c*b)) / (b*d)
+    const coefX = d - b, cst = a*d + c*b, den = b*d;
+    const g = pgcd(pgcd(Math.abs(coefX), cst), den) || 1;
+    const num = polynomeTexte([cst / g, coefX / g]);
+    return { enonce:`\\dfrac{x+${a}}{${b}}-\\dfrac{x-${c}}{${d}}`,
+             reponse: den / g === 1 ? num : `(${num})/${den / g}` };
   }},
 
   // ---------- 3.8 : calculs plus avances ----------
@@ -894,6 +972,8 @@ const generateurs = [
 ];
 
 function genererExercices() {
+  // on renouvelle le tirage des modeles de calcul a chaque version de la fiche
+  tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   return generateurs.map(g => {
     // on recopie tous les champs declares sur le modele (id, type, fractionIrreductible...)
     // sauf le generateur lui-meme : un `{id, type, ...gen()}` ecrase silencieusement les autres
