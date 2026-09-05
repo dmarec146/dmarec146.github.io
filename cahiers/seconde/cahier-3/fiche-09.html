@@ -8,7 +8,8 @@
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
-  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
@@ -223,6 +224,7 @@ window.MathJax = {
     padding: 10px;
     border: 1.5px solid #e2e2e2;
     transition: border-color 0.15s, background-color 0.15s;
+    min-width: 0;
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
@@ -548,6 +550,7 @@ window.MathJax = {
   <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 
 <div class="score-panneau" id="score-panneau">
@@ -557,6 +560,8 @@ window.MathJax = {
   </div>
   <div class="correction-panneau" id="correction-panneau"></div>
 </div>
+
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
@@ -909,14 +914,23 @@ function reculer(idx) {
   reinitialiserStatut(idx);
 }
 
-function checkEqualNumeric(userInput, correctExpr) {
+const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs']);
+
+function normaliserSaisie(str) {
+  let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
   // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
-  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
-  // une parenthese fermante directement suivie d'une lettre est une multiplication implicite pour l'utilisateur
-  // (ex: une fraction MathLive "(5)/(2)x" tapee via le clavier virtuel puis suivie de x sans operateur),
-  // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
-  // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
-  userInput = userInput.replace(/\)([a-zA-Z])/g, ')*$1');
+  s = s.replace(/(\d),(\d)/g, '$1.$2');
+  // une lettre suivie de '(' est une multiplication implicite pour l'eleve (ex: "x(3x+7)" en reponse
+  // a une factorisation), mais math.js y lit l'appel de fonction "x(...)" et rejette la reponse.
+  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  // une parenthese fermante suivie d'une lettre : math.js traite cette juxtaposition comme prioritaire
+  // sur une division qui precede, donc "(5)/(2)x" vaudrait 5/(2x) au lieu de (5/2)*x.
+  s = s.replace(/\)([a-zA-Z])/g, ')*$1');
+  return s;
+}
+
+function checkEqualNumeric(userInput, correctExpr) {
+  userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z'];
   try {
     const userNode = math.parse(userInput);
@@ -1003,7 +1017,7 @@ function valeurDuChamp(el) {
   if (!el) return '';
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
-    v = v.replace(/\balpha\b/g, 'lam').replace(/\blambda\b/g, 'lam').replace(/\bbeta\b/g, 'bet');
+    v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     // normaliser le symbole de multiplication (MathLive exporte un "*" tape au clavier sous la forme du
     // caractere unicode "∗", que math.js ne reconnait pas) vers l'asterisque ascii standard
     v = v.replace(/[∗×·]/g, '*');
@@ -1100,6 +1114,60 @@ function definirMode(immediat) {
   }
 }
 
+// --- affichage des reponses en vraie ecriture mathematique -----------------------------------
+// Plusieurs lettres servant de parametres ('m', 't', 'b', 'c'...) sont aussi des symboles d'unites
+// reconnus par math.js : toTex() les rendrait en romain avec un "\times" force. On les protege.
+const VARS_A_PROTEGER = ['x','t','u','v','a','b','c','m','k','y','z'];
+function protegerVariables(s) {
+  const mapping = [];
+  let out = s;
+  VARS_A_PROTEGER.forEach((v, i) => {
+    const placeholder = `qvarplaceholder${String(i).padStart(2,'0')}`;
+    const re = new RegExp('\\b' + v + '\\b', 'g');
+    if (re.test(out)) { out = out.replace(re, placeholder); mapping.push([placeholder, v]); }
+  });
+  return { out, mapping };
+}
+function restaurerVariables(tex, mapping) {
+  let out = tex;
+  mapping.forEach(([placeholder, v]) => { out = out.split(placeholder).join(v); });
+  return out;
+}
+// supprime le "\cdot" entre un coefficient entier et une lettre isolee ("8x", pas "8 fois x").
+// Le lookbehind (?<!\}) exclut la fraction : "(27)/(2)x" se reevaluerait en 27/(2x).
+function collerCoefficientLettre(tex) {
+  let out = tex;
+  out = out.replace(/(^|[^0-9])1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '$1$2');
+  out = out.replace(/-1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '-$1');
+  out = out.replace(/(?<!\})(\d)\\cdot\s*(\\[a-zA-Z]+(?:\{[^{}]*\})*|\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, '$1$2');
+  out = out.replace(/(?<!\})(\d)\\cdot\s*\\left\(/g, '$1\\left(');
+  out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
+  out = out.replace(/([a-zA-Z])\}?\s*\\cdot\s*(\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, (m) => m.replace(/\\cdot\s*/, ''));
+  out = out.replace(/([a-zA-Z])\}?\s*\\cdot\s*\\left\(/g, (m) => m.replace(/\\cdot\s*/, ''));
+  return out;
+}
+function jsVersLatex(expr) {
+  const s = String(expr);
+  try {
+    const { out: sProtege, mapping } = protegerVariables(s);
+    const node = math.parse(sProtege);
+    let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = restaurerVariables(tex, mapping);
+    tex = collerCoefficientLettre(tex);
+    tex = tex.replace(/\\cdot/g, '\\times ');
+    tex = tex.replace(/\\frac\{/g, '\\dfrac{');
+    return tex;
+  } catch(e) {
+    let out = s;
+    out = out.replace(/(^|[^0-9])1\*([a-zA-Z\\])/g, '$1$2');
+    out = out.replace(/-1\*([a-zA-Z\\])/g, '-$1');
+    out = out.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
+    out = out.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
+    out = out.replace(/\*/g, '\\times ');
+    return out;
+  }
+}
+
 function formaterReponse(ex) {
   try {
     if (ex.type === 'ineq') {
@@ -1118,7 +1186,7 @@ function formaterReponse(ex) {
       const frac = math.fraction(val);
       return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
     }
-    return ex.reponse;
+    return jsVersLatex(ex.reponse);
   } catch(e) {
     return ex.reponse || '';
   }
@@ -1143,7 +1211,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee.replace(/\*/g,'\\times ')}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
@@ -1167,6 +1235,25 @@ function reinitialiser() {
     if (clavier) clavier.classList.remove('ouvert');
   });
   document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
+}
+
+function toggleToutesReponses() {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex =>
+      `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
+    ).join('');
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
+  }
 }
 
 function genererNouvelleFiche() {
@@ -1176,6 +1263,10 @@ function genererNouvelleFiche() {
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panneauToutes2 = document.getElementById('toutes-reponses-panneau');
+  panneauToutes2.classList.remove('visible');
+  panneauToutes2.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
 }
 

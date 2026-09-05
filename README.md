@@ -11,7 +11,7 @@ index.html                     page d'accueil du site
 assets/css/style.css            feuille de style commune
 cahiers/index.html              page listant tous les cahiers
 cahiers/premiere/cahier-N/      cahiers de Première (N = 1 à 10)
-cahiers/seconde/cahier-N/       cahiers de Seconde (N = 1 à 4)
+cahiers/seconde/cahier-N/       cahiers de Seconde (N = 1 à 3)
 ```
 
 Chaque dossier `cahier-N/` contient :
@@ -23,6 +23,10 @@ Chaque dossier `cahier-N/` contient :
 1. Créer le fichier `fiche-XX.html` dans le dossier du cahier concerné, en repartant de la structure d'une fiche existante du même niveau (mêmes balises `<head>`, mêmes classes CSS).
 2. Ajouter le lien vers la nouvelle fiche dans l'`index.html` du cahier.
 3. Si c'est un nouveau cahier : créer le dossier `cahier-N/`, son `index.html`, puis l'ajouter dans `cahiers/index.html`.
+
+## Chantiers en cours
+
+- **Contrôle de forme factorisée à porter en Première.** Sur les fiches de Première, une consigne « Factoriser » est corrigée par simple égalité numérique : répondre `x²−64` à « factoriser `x²−64` » est donc accepté. Le correctif (une fonction `estFactorise` qui vérifie que la racine de l'expression saisie est un produit ou une puissance, plus un indicateur `formeFactorisee` sur les exercices concernés) est écrit et vérifié dans `cahiers/seconde/cahier-1/fiche-01.html` : il reste à le transposer aux fiches 01 à 05 de Première.
 
 ## Publier une modification
 
