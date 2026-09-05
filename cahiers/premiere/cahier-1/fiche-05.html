@@ -1004,7 +1004,8 @@ function genGroupe5_5() {
   }
   function itemB() {
     let p,q,k;
-    do { p = aleaNonNul(1,7); q = aleaNonNul(-8,8); k = p+q; } while (k===0);
+    // |k|=1 donnerait (x-p) ou -(x-p) : un facteur unique, ou il n'y a plus rien a factoriser
+    do { p = aleaNonNul(1,7); q = aleaNonNul(-8,8); k = p+q; } while (k===0 || Math.abs(k)===1);
     const enonce = `\\(x^2${fmtConst(-p*p)}-(x${fmtConst(-p)})(x${fmtConst(-q)})\\)`;
     const reponse = (k===1?'':(k===-1?'-':`${k}*`))+`(x${fmtConst(-p)})`;
     return {id:"5.5 b)", type:"alg", texteLibre:true, enonce, reponse};
@@ -1238,7 +1239,24 @@ function genererExercices() {
   ];
 }
 
-let exercices = genererExercices();
+// Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
+// Table declarative, cle = identifiant complet ou prefixe de groupe. La valeur 'numerateur'
+// restreint l'exigence au numerateur du quotient obtenu. Tout exercice absent de cette table
+// est volontairement hors exigence (consigne souple, simplification, question preparatoire).
+const FORMES_FACTORISEES = { '5.2': true, '5.3': true, '5.4': true, '5.5': true, '5.6': true,
+  '5.10': true, '5.12': true, '5.13': true, '5.14': true, '5.15': true, '5.16': true };
+function marquerFormesFactorisees(liste) {
+  return liste.map(function (ex) {
+    const id = String(ex.id).trim();
+    const groupe = id.replace(/\s*[a-z]\)\s*$/, '').trim();
+    const portee = Object.prototype.hasOwnProperty.call(FORMES_FACTORISEES, id)
+      ? FORMES_FACTORISEES[id]
+      : FORMES_FACTORISEES[groupe];
+    return portee ? Object.assign({}, ex, { formeFactorisee: portee }) : ex;
+  });
+}
+
+let exercices = marquerFormesFactorisees(genererExercices());
 const groupes = {
   "grille-5-1": [0,1],
   "grille-5-2": [2,3,4,5],
@@ -1405,6 +1423,39 @@ function normaliserSaisie(str) {
   // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
   s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
+}
+
+// Une consigne "Factoriser" n'etait controlee que par l'egalite numerique : repondre x^2-64
+// a « factoriser x^2-64 » etait donc accepte, la question passant pour sa propre reponse.
+// On controle aussi la FORME : la racine de l'arbre doit etre un produit ou une puissance.
+// portee vaut 'numerateur' quand la consigne ne demande de factoriser que le numerateur
+// du quotient obtenu (« calculer f'(x) puis factoriser le numerateur »).
+function estFactorise(userInput, portee) {
+  try {
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    // un noeud est constant si son evaluation aboutit sans variable libre
+    const estConstant = (n) => { try { n.evaluate(); return true; } catch(e) { return false; } };
+    const estProduit = (n) => {
+      n = sansParentheses(n);
+      if (n.type !== 'OperatorNode') return false;
+      if (n.op === '*' || n.op === '^') return true;
+      if (n.op === '-' && n.args.length === 1) return estProduit(n.args[0]); // -(x-3)(x+3)
+      // un produit divise par une constante reste une forme factorisee : (3x-1)^2/9
+      if (n.op === '/' && estConstant(n.args[1])) return estProduit(n.args[0]);
+      return false; // somme, difference, quotient par une expression : rien n'est factorise
+    };
+    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
+    if (portee === 'numerateur') {
+      while (noeud.type === 'OperatorNode' && noeud.op === '-' && noeud.args.length === 1) {
+        noeud = sansParentheses(noeud.args[0]);
+      }
+      if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
+      return estProduit(noeud.args[0]);
+    }
+    return estProduit(noeud);
+  } catch(e) {
+    return false;
+  }
 }
 
 function checkEqualNumeric(userInput, correctExpr) {
@@ -1744,6 +1795,7 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
   statut.textContent = ok ? '✓ correct' : '✗ à revoir';
@@ -2015,7 +2067,7 @@ function reinitialiser() {
 }
 
 function genererNouvelleFiche() {
-  exercices = genererExercices();
+  exercices = marquerFormesFactorisees(genererExercices());
   construireGrilles();
   attacherEcouteurs();
   document.getElementById('score-panneau').classList.remove('visible');
@@ -2050,6 +2102,12 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.formeFactorisee === 'numerateur') {
+    return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
+  }
+  if (ex.formeFactorisee) {
+    return "La réponse doit être un produit de facteurs : par exemple <code>(x+2)(x-2)</code>, <code>(x+5)^2</code> ou <code>x(3x+1)</code>. Une expression développée n'est pas acceptée, même si elle est égale.";
+  }
   if (ex.type === 'texte') {
     return "Écrire simplement <code>oui</code> ou <code>non</code>.";
   }
@@ -2060,6 +2118,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.formeFactorisee) return true;
   if (ex.type === 'texte') return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;

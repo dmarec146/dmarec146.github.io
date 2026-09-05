@@ -879,6 +879,9 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.formeFactorisee === 'numerateur') {
+    return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
+  }
   if (ex.formeFactorisee) {
     return "La réponse doit être un produit de facteurs : par exemple <code>(x+2)(x-2)</code>, <code>(x+5)^2</code> ou <code>x(3x+1)</code>. Une expression développée n'est pas acceptée, même si elle est égale.";
   }
@@ -1171,19 +1174,31 @@ function normaliserSaisie(str) {
 // Une reponse a une consigne "factoriser" doit etre un produit (ou une puissance d'une somme) :
 // l'egalite numerique seule ne distingue pas x^2-64 de (x-8)(x+8), qui sont pourtant la question
 // et sa reponse. On controle donc aussi la FORME de l'expression saisie, via la racine de son arbre.
-function estFactorise(userInput) {
+// portee vaut 'numerateur' quand la consigne ne demande de factoriser que le numerateur
+// du quotient obtenu (« calculer f'(x) puis factoriser le numerateur »).
+function estFactorise(userInput, portee) {
   try {
-    let noeud = math.parse(normaliserSaisie(userInput));
-    while (noeud.type === 'ParenthesisNode') noeud = noeud.content;
-    if (noeud.type !== 'OperatorNode') return false;
-    if (noeud.op === '*' || noeud.op === '^') return true;
-    // moins unaire : -(x-3)(x+3) reste une forme factorisee
-    if (noeud.op === '-' && noeud.args.length === 1) {
-      let interne = noeud.args[0];
-      while (interne.type === 'ParenthesisNode') interne = interne.content;
-      return interne.type === 'OperatorNode' && (interne.op === '*' || interne.op === '^');
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    // un noeud est constant si son evaluation aboutit sans variable libre
+    const estConstant = (n) => { try { n.evaluate(); return true; } catch(e) { return false; } };
+    const estProduit = (n) => {
+      n = sansParentheses(n);
+      if (n.type !== 'OperatorNode') return false;
+      if (n.op === '*' || n.op === '^') return true;
+      if (n.op === '-' && n.args.length === 1) return estProduit(n.args[0]); // -(x-3)(x+3)
+      // un produit divise par une constante reste une forme factorisee : (3x-1)^2/9
+      if (n.op === '/' && estConstant(n.args[1])) return estProduit(n.args[0]);
+      return false; // somme, difference, quotient par une expression : rien n'est factorise
+    };
+    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
+    if (portee === 'numerateur') {
+      while (noeud.type === 'OperatorNode' && noeud.op === '-' && noeud.args.length === 1) {
+        noeud = sansParentheses(noeud.args[0]);
+      }
+      if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
+      return estProduit(noeud.args[0]);
     }
-    return false; // somme, difference, quotient : la factorisation n'est pas faite
+    return estProduit(noeud);
   } catch(e) {
     return false;
   }
@@ -1332,7 +1347,7 @@ function verifierUne(idx) {
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
-  else if (ex.formeFactorisee) ok = estFactorise(val) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');

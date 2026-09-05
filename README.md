@@ -26,9 +26,16 @@ Chaque dossier `cahier-N/` contient :
 
 ## Chantiers en cours
 
-Certaines consignes portent sur la **forme** de la réponse, mais n'étaient contrôlées que par l'égalité numérique, ce qui les rendait inopérantes.
+Certaines consignes portent sur la **forme** de la réponse, mais n'étaient contrôlées que par l'égalité numérique, ce qui les rendait inopérantes. Les deux contrôles ci-dessous sont désormais en place ; cette section reste pour documenter leur périmètre et leurs exclusions volontaires.
 
-- **Contrôle de forme factorisée — à faire.** Une consigne « Factoriser » est corrigée par simple égalité numérique : répondre `x²−64` à « factoriser `x²−64` » est donc accepté. Le correctif est la fonction `estFactorise`, qui vérifie que la racine de l'expression saisie est un produit ou une puissance, plus un indicateur `formeFactorisee` sur les exercices concernés. Écrit et vérifié dans `cahiers/seconde/cahier-1/fiche-01.html`, il reste à le porter sur les fiches 01 à 05 de Première.
+- **Contrôle de forme factorisée — fait.** La fonction `estFactorise` vérifie que la racine de l'expression saisie est un produit ou une puissance ; un produit divisé par une constante (`(3x−1)²/9`) en est un. Son second paramètre `'numerateur'` restreint l'exigence au numérateur du quotient obtenu, pour les consignes « calculer f'(x) puis factoriser le numérateur ». Elle est en place sur la fiche 01 de Seconde et sur les fiches 01, 03, 05, 07, 09, 10, 12, 15, 22 et 28 de Première, soit 109 exercices.
+
+  L'exigence est posée **par table déclarative** (`FORMES_FACTORISEES`, en tête de chaque fiche), et non exercice par exercice : les formes de déclaration diffèrent trop d'une fiche à l'autre. La clé est un identifiant complet ou un préfixe de groupe. **Tout exercice absent de la table est volontairement hors exigence** — il ne s'agit pas d'un oubli. Sont ainsi exclus :
+
+  - les consignes souples « lorsque cela est possible, on s'efforcera de fournir la réponse sous forme factorisée » (groupes 12.4, 12.5, 12.7, 12.8, 12.10, 12.14 à 12.16) : elles n'exigent rien, et beaucoup de leurs corrigés ne sont eux-mêmes pas factorisés ;
+  - le groupe 6.2, qui demande de *simplifier* une fraction en factorisant par `n^k` — la réponse est un quotient ;
+  - les questions préparatoires 3.11 a) et 3.12 a), qui sont des calculs de `P(r)` ;
+  - le groupe 9.16, dont les réponses sont vides.
 
 - **Contrôle d'irréductibilité — fait.** La fonction `estFractionIrreductible` exige un entier ou un quotient de deux entiers premiers entre eux ; son paramètre `facteurSymbolique` (`"pi"`) couvre les angles en radians. Elle est en place sur la fiche 01 de Seconde et sur les fiches 02, 04, 09, 10, 14, 19 et 23 de Première, via l'indicateur `fractionIrreductible` posé sur 46 exercices.
 
