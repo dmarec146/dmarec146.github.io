@@ -168,28 +168,6 @@
     throw new Error('Impossible de générer une question valide : ' + banqueId + ' / ' + familleId);
   }
 
-  // répartition proportionnelle (plus forts restes)
-  function repartir(poids, total) {
-    const ids = Object.keys(poids);
-    const somme = ids.reduce((s, k) => s + poids[k], 0);
-    const brut = ids.map(k => ({ id: k, exact: poids[k] / somme * total }));
-    const res = {};
-    let attribue = 0;
-    brut.forEach(b => { res[b.id] = Math.floor(b.exact); attribue += res[b.id]; });
-    brut.sort((a, b) => (b.exact - Math.floor(b.exact)) - (a.exact - Math.floor(a.exact)));
-    for (let i = 0; attribue < total; i++, attribue++) res[brut[i % brut.length].id]++;
-    return res;
-  }
-
-  function melangerSansRepetition(plan) {
-    for (let essai = 0; essai < 60; essai++) {
-      const p = melanger(plan);
-      let ok = true;
-      for (let i = 1; i < p.length; i++) if (p[i][1] === p[i - 1][1] && p[i][0] === p[i - 1][0]) { ok = false; break; }
-      if (ok) return p;
-    }
-    return melanger(plan);
-  }
 
   // familles d'une banque disponibles à un niveau donné (une famille peut déclarer `niveaux: [2, 3]`)
   function famillesDispo(banqueId, niveau) {
@@ -199,26 +177,73 @@
 
   function tirerSerie(config, niveau) {
     niveau = niveau || 2;
+    if (config.domaines) return tirerSerieParDomaines(config, niveau);
+    // fiche : `nbThemes` banques tirées au sort parmi celles disponibles au niveau (2 par défaut)
+    const dispo = config.banques.filter(b => banques[b] && famillesDispo(b, niveau).length);
+    if (!dispo.length) throw new Error('Aucune banque disponible au niveau ' + niveau);
+    const k = Math.min(config.nbThemes || 1, dispo.length);
+    return construireSeriePourBanques(config, niveau, melanger(dispo).slice(0, k));
+  }
+
+  // tirage pondéré dans une liste [{id, poids}, …]
+  function tirerPondere(liste) {
+    const total = liste.reduce((s, x) => s + x.poids, 0);
+    let t = Math.random() * total;
+    for (const x of liste) { t -= x.poids; if (t <= 0) return x; }
+    return liste[liste.length - 1];
+  }
+
+  /* Sujet blanc : la série se répartit entre les grands domaines du programme,
+     dans les proportions relevées sur le corpus des sujets. Chaque domaine reçoit
+     d'abord son plancher proportionnel — il est donc toujours représenté — puis les
+     places restantes sont tirées au sort, pondérées par les décimales : deux sujets
+     blancs n'ont ainsi pas la même composition. Dans un domaine, la banque est
+     choisie selon ses propres poids, sans qu'aucune ne dépasse `maxParBanque`.
+     Les minimums par famille ne s'appliquent pas ici : conçus pour une fiche
+     thématique de 10 questions, ils ramèneraient toujours la même famille quand
+     une banque n'a qu'une ou deux places. */
+  function tirerSerieParDomaines(config, niveau) {
     const nb = config.nb;
-    let plan = [];
-    if (config.poids) {
-      const dispo = {};
-      Object.keys(config.poids).forEach(b => { if (banques[b] && famillesDispo(b, niveau).length) dispo[b] = config.poids[b]; });
-      const comptes = repartir(dispo, nb);
-      Object.keys(comptes).forEach(b => {
-        const fams = melanger(famillesDispo(b, niveau));
-        for (let i = 0; i < comptes[b]; i++) plan.push([b, fams[i % fams.length]]);
-      });
-    } else {
-      // fiche : `nbThemes` banques tirées au sort parmi celles disponibles au niveau (2 par défaut)
-      const dispo = config.banques.filter(b => banques[b] && famillesDispo(b, niveau).length);
-      if (!dispo.length) throw new Error('Aucune banque disponible au niveau ' + niveau);
-      const k = Math.min(config.nbThemes || 1, dispo.length);
-      const choisies = melanger(dispo).slice(0, k);
-      return construireSeriePourBanques(config, niveau, choisies);
+    const doms = config.domaines.map(d => ({
+      nom: d.nom, poids: d.poids,
+      banques: Object.keys(d.banques)
+        .filter(b => banques[b] && famillesDispo(b, niveau).length)
+        .map(b => ({ id: b, poids: d.banques[b] }))
+    })).filter(d => d.banques.length);
+    if (!doms.length) throw new Error('Aucun domaine disponible au niveau ' + niveau);
+
+    const somme = doms.reduce((s, d) => s + d.poids, 0);
+    const exact = doms.map(d => d.poids / somme * nb);
+    const places = exact.map(Math.floor);
+    let libres = nb - places.reduce((s, p) => s + p, 0);
+    let pool = doms.map((d, i) => ({ poids: exact[i] - places[i] || 0.001, i }));
+    while (libres > 0) {
+      if (!pool.length) pool = doms.map((d, i) => ({ poids: 1, i }));   // plus de places que de domaines
+      const choisi = tirerPondere(pool);
+      places[choisi.i]++;
+      pool = pool.filter(x => x !== choisi);
+      libres--;
     }
-    plan = melangerSansRepetition(plan);
-    return plan.map(([b, f]) => genererQuestion(b, f, niveau));
+
+    let questions = [];
+    const repartition = [];
+    doms.forEach((d, i) => {
+      if (!places[i]) return;
+      const comptes = {};
+      for (let k = 0; k < places[i]; k++) {
+        const libre = d.banques.filter(b => (comptes[b.id] || 0) < (config.maxParBanque || 2));
+        const cible = tirerPondere(libre.length ? libre : d.banques);
+        comptes[cible.id] = (comptes[cible.id] || 0) + 1;
+      }
+      Object.keys(comptes).forEach(b => {
+        questions = questions.concat(tirerDansBanque(b, niveau, comptes[b], { sansMinimums: true }));
+      });
+      repartition.push({ nom: d.nom, nb: places[i] });
+    });
+    questions = melangerQuestions(questions);
+    // pas de tri par difficulté : le sujet d'examen mêle les thèmes et les niveaux
+    questions.repartition = repartition;
+    return questions;
   }
 
   // construit une série (mode fiche) pour un jeu de banques déjà choisi — places réparties
@@ -246,14 +271,15 @@
   //   priorite : ordre dans lequel les minimums sont honorés quand la série est courte.
   //   Sur n places, on honore au plus max(1, 40 % de n) familles à minimum — sur 10 places, toutes
   //   les familles habituelles ; sur 5 places, deux d'entre elles, choisies par priorité puis au hasard.
-  function tirerDansBanque(b, niveau, n) {
+  function tirerDansBanque(b, niveau, n, options) {
     const fams = famillesDispo(b, niveau);
     const def = f => banques[b].familles[f];
     const quota = f => ((def(f).quota || {})[niveau]) || {};
     const plan = [], comptes = {};
     const ajouter = f => { plan.push(f); comptes[f] = (comptes[f] || 0) + 1; };
     const capMin = Math.max(1, Math.round(n * 0.4));
-    const avecMin = melanger(fams.filter(f => quota(f).min > 0)).sort((x, y) => (quota(y).priorite || 1) - (quota(x).priorite || 1));
+    const avecMin = (options && options.sansMinimums) ? []
+      : melanger(fams.filter(f => quota(f).min > 0)).sort((x, y) => (quota(y).priorite || 1) - (quota(x).priorite || 1));
     let honores = 0;
     for (const f of avecMin) {
       if (honores >= capMin || plan.length >= n) break;
@@ -363,8 +389,14 @@
     typeset(r);
   }
 
-  // thèmes tirés au sort pour cette série (fiches à plusieurs thèmes)
+  // thèmes tirés au sort pour cette série (fiches à plusieurs thèmes),
+  // ou répartition par domaines (sujet blanc)
   function bandeauThemesHTML() {
+    const rep = ETAT.questions.repartition;
+    if (rep && rep.length) {
+      return `<div class="themes-bandeau"><span class="themes-label">Ce sujet couvre :</span> `
+        + rep.map(d => `<span class="theme-puce">${echapper(d.nom)} <b>×${d.nb}</b></span>`).join('') + '</div>';
+    }
     const th = ETAT.questions.themes;
     if (!th || !th.length || !ETAT.config.nbThemes) return '';
     const libelle = ETAT.config.themeImpose ? 'Thème choisi'
@@ -425,9 +457,13 @@
     + '<line x1="15.3" y1="15.3" x2="21" y2="21" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>'
     + '<line x1="7.8" y1="10.5" x2="13.2" y2="10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
     + '<line x1="10.5" y1="7.8" x2="10.5" y2="13.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  // Un repère quadrillé a de la marge dans ses angles ; un tableau ou un arbre,
+  // non : la loupe y masquerait une donnée. Ces figures-là reçoivent une classe
+  // qui réserve la place du bouton en dehors du dessin.
+  const FIGURE_DENSE = /tab-croise-svg|tab-signes-svg|arbre-svg|boite-svg/;
   function figureZoomable(html) {
     if (!html || String(html).indexOf('<svg') === -1) return html;
-    return '<span class="figure-zoom">' + html
+    return '<span class="figure-zoom' + (FIGURE_DENSE.test(html) ? ' figure-zoom-dense' : '') + '">' + html
       + '<span class="zoom-btn" data-action="zoom" role="button" title="Agrandir la figure" aria-label="Agrandir la figure">'
       + ICONE_LOUPE + '</span></span>';
   }
@@ -490,8 +526,13 @@
     const corps = q.figure
       ? `<div class="carte-corps avec-figure"><div class="carte-enonce">${q.enonce}</div><div class="carte-figure">${figureZoomable(q.figure)}</div><div class="carte-options${q.optionsLarges ? ' options-larges' : ''}">${options}</div></div>`
       : `<div class="carte-corps"><div class="carte-enonce">${q.enonce}</div><div class="carte-options${q.optionsLarges ? ' options-larges' : ''}">${options}</div></div>`;
+    // Sujet blanc : l'étiquette nomme le thème ET la méthode (« intersection sur un
+    // arbre pondéré ») — c'est un indice que l'épreuve ne donne pas. On ne l'affiche
+    // qu'une fois la question corrigée.
+    const etiquette = (ETAT.config.masquerEtiquette && !corrigee)
+      ? '' : `<span class="carte-famille">${echapper(q.banqueTitre)} · ${echapper(q.familleNom)}</span>`;
     return `<div class="${classe}" id="carte-${i}">
-      <div class="carte-entete"><span class="carte-num">Question ${i + 1}</span><span class="carte-famille">${echapper(q.banqueTitre)} · ${echapper(q.familleNom)}</span></div>
+      <div class="carte-entete"><span class="carte-num">Question ${i + 1}</span>${etiquette}</div>
       ${corps}${retour}
     </div>`;
   }

@@ -251,7 +251,192 @@
     return pts;
   }
 
-  const G = { repere, segmentDroite, noeudsDroite, tableauSignes, echantillonner };
+
+  /* ------------------------------------------------------------------
+     Arbre pondéré
+       o.noeuds : [{ nom, barre, p, enfants: [{ nom, barre, p }, …] }, …]
+       - « p » est l'étiquette portée par la branche : texte brut (« 0,4 »,
+         « ? », « »). Une étiquette vide laisse la branche nue.
+       - « barre » note l'événement contraire : la barre est tracée, car un
+         <text> SVG ne connaît ni \overline ni les diacritiques combinants.
+       Règle du projet (voir la note sur la Q1 du sujet zéro) : les deux
+       probabilités de chaque nœud sont toujours écrites.
+     ------------------------------------------------------------------ */
+  // texte éventuellement surligné d'une barre (événement contraire)
+  function texteNoeud(x, y, t, barre, fs) {
+    const s = `<text x="${n2(x)}" y="${n2(y)}" font-size="${fs}" font-style="italic" fill="${NOIR}">${esc(t)}</text>`;
+    if (!barre) return s;
+    const w = String(t).length * fs * 0.58;
+    return s + `<line x1="${n2(x)}" y1="${n2(y - fs * 0.92)}" x2="${n2(x + w)}" y2="${n2(y - fs * 0.92)}" stroke="${NOIR}" stroke-width="1.1"/>`;
+  }
+
+  function arbrePondere(o) {
+    const noeuds = o.noeuds || [];
+    const petit = !!o.petit;
+    const fs = petit ? 11 : 13;
+    const hF = petit ? 26 : 32;                       // hauteur réservée à une feuille
+    const xR = petit ? 8 : 10;                        // abscisse de la racine
+    const x1 = petit ? 66 : 86;                       // nœuds du premier niveau
+    const x2 = petit ? 150 : 192;                     // feuilles
+    const dTexte = petit ? 5 : 6;                     // décalage du nom après le point
+    const feuilles = noeuds.reduce((s, nd) => s + Math.max(1, (nd.enfants || []).length), 0);
+    const H = n2(feuilles * hF);
+    const W = n2(x2 + (petit ? 26 : 32));
+    const yR = n2(H / 2);
+
+    const s = [];
+    s.push(`<svg class="arbre-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, 'Times New Roman', serif">`);
+    s.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="white"/>`);
+    // Étiquette d'une branche : au milieu du segment, décalée perpendiculairement.
+    // Un décalage purement vertical suffit pour une branche plate mais laisse le
+    // texte toucher le trait dès que la pente est forte.
+    const brancheEtiq = (xa, ya, xb, yb, t) => {
+      if (t === undefined || t === null || t === '') return '';
+      const mx = (xa + xb) / 2, my = (ya + yb) / 2;
+      const dx = xb - xa, dy = yb - ya;
+      const L = Math.hypot(dx, dy) || 1;
+      // normale dirigée du côté opposé au centre de l'arbre (haut pour une
+      // branche montante, bas pour une descendante), puis recentrage du texte
+      const nx = (dy < 0 ? dy : -dy) / L, ny = (dy < 0 ? -dx : dx) / L;
+      // Le cadre du texte reste horizontal : plus la branche est pentue, plus il
+      // faut s'en écarter pour que le trait ne le traverse pas. On prend donc la
+      // demi-largeur du cadre projetée sur la normale, plus une marge.
+      const fsE = fs - 1;
+      const demiL = String(t).length * fsE * 0.55 / 2, demiH = fsE * 0.35;
+      const d = Math.abs(nx) * demiL + Math.abs(ny) * demiH + (petit ? 2.5 : 3.5);
+      return `<text x="${n2(mx + nx * d)}" y="${n2(my + ny * d + fsE * 0.35)}" text-anchor="middle" font-size="${n2(fsE)}" fill="${ROUGE}">${esc(t)}</text>`;
+    };
+
+    let rang = 0;
+    noeuds.forEach(nd => {
+      const enfants = nd.enfants || [];
+      const k = Math.max(1, enfants.length);
+      const ys = [];
+      for (let i = 0; i < k; i++) ys.push(n2((rang + i + 0.5) * hF));
+      rang += k;
+      const y1 = n2(ys.reduce((a, b) => a + b, 0) / ys.length);
+      // branche racine → nœud du premier niveau
+      s.push(`<line x1="${n2(xR + dTexte)}" y1="${yR}" x2="${n2(x1)}" y2="${y1}" stroke="${NOIR}" stroke-width="1.2"/>`);
+      s.push(brancheEtiq(xR + dTexte, yR, x1, y1, nd.p));
+      s.push(texteNoeud(x1 + dTexte, y1 + fs * 0.36, nd.nom, nd.barre, fs));
+      const xd = x1 + dTexte + String(nd.nom).length * fs * 0.66;
+      enfants.forEach((en, i) => {
+        s.push(`<line x1="${n2(xd)}" y1="${y1}" x2="${n2(x2)}" y2="${ys[i]}" stroke="${NOIR}" stroke-width="1.2"/>`);
+        s.push(brancheEtiq(xd, y1, x2, ys[i], en.p));
+        s.push(texteNoeud(x2 + dTexte, ys[i] + fs * 0.36, en.nom, en.barre, fs));
+      });
+    });
+    s.push('</svg>');
+    return s.join('');
+  }
+
+  /* ------------------------------------------------------------------
+     Tableau à double entrée
+       o.coin     : contenu de la case en haut à gauche
+       o.colonnes : en-têtes de colonnes (la dernière est le total si o.totaux)
+       o.lignes   : [{ label, cases: [ … ] }, …] (la dernière ligne est le
+                    total si o.totaux)
+       Une case valant « ? » est mise en évidence : c'est celle à trouver.
+     ------------------------------------------------------------------ */
+  function tableauCroise(o) {
+    const colonnes = o.colonnes || [];
+    const lignes = o.lignes || [];
+    const totaux = o.totaux !== false;
+    const petit = !!o.petit;
+    const fs = petit ? 10.5 : 12.5;
+    const hL = petit ? 24 : 28;
+    const coin = o.coin || '';
+    // largeurs : la colonne des libellés s'adapte au plus long
+    const libelles = [coin].concat(lignes.map(l => l.label));
+    const wL = Math.max(petit ? 54 : 66, Math.max.apply(null, libelles.map(t => String(t).length)) * fs * 0.56 + 14);
+    const wC = Math.max.apply(null, colonnes.map(t => String(t).length)) * fs * 0.56 + 16;
+    const wCol = Math.max(petit ? 44 : 54, n2(wC));
+    const W = n2(wL + colonnes.length * wCol);
+    const H = n2((lignes.length + 1) * hL);
+    const px = j => n2(wL + j * wCol);
+    const py = k => n2(k * hL);
+    const cx = j => n2(wL + (j + 0.5) * wCol);
+    const cy = k => n2(k * hL + hL / 2 + fs * 0.36);
+
+    const s = [];
+    s.push(`<svg class="tab-croise-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, 'Times New Roman', serif">`);
+    // fonds d'en-tête, tracés avant les traits
+    s.push(`<rect x="0" y="0" width="${W}" height="${hL}" fill="#f2f4f8"/>`);
+    s.push(`<rect x="0" y="0" width="${n2(wL)}" height="${H}" fill="#f2f4f8"/>`);
+    s.push(`<rect x="0.6" y="0.6" width="${n2(W - 1.2)}" height="${n2(H - 1.2)}" fill="none" stroke="${NOIR}" stroke-width="1.2"/>`);
+    for (let k = 1; k <= lignes.length; k++) {
+      const gras = totaux && k === lignes.length;
+      s.push(`<line x1="0" y1="${py(k)}" x2="${W}" y2="${py(k)}" stroke="${NOIR}" stroke-width="${gras ? 1.6 : 0.9}"/>`);
+    }
+    for (let j = 0; j < colonnes.length; j++) {
+      const gras = j === 0 || (totaux && j === colonnes.length - 1);
+      s.push(`<line x1="${px(j)}" y1="0" x2="${px(j)}" y2="${H}" stroke="${NOIR}" stroke-width="${gras ? 1.6 : 0.9}"/>`);
+    }
+    s.push(`<text x="${n2(wL / 2)}" y="${cy(0)}" text-anchor="middle" font-size="${n2(fs - 0.5)}" fill="${NOIR}">${esc(coin)}</text>`);
+    colonnes.forEach((t, j) => {
+      // l'inconnue peut aussi se trouver en en-tête, quand ce sont les valeurs
+      // de la série qui sont portées par les colonnes
+      const inconnue = String(t) === '?' || String(t) === 'x';
+      const style = String(t) === 'x' ? ' font-style="italic"' : '';
+      s.push(`<text x="${cx(j)}" y="${cy(0)}" text-anchor="middle" font-size="${fs}" fill="${inconnue ? ROUGE : NOIR}"${inconnue ? ' font-weight="bold"' : ''}${style}>${esc(t)}</text>`);
+    });
+    lignes.forEach((l, k) => {
+      s.push(`<text x="${n2(wL / 2)}" y="${cy(k + 1)}" text-anchor="middle" font-size="${fs}" fill="${NOIR}">${esc(l.label)}</text>`);
+      // une case « ? » ou « x » est l'inconnue de la question : elle est mise en évidence
+      (l.cases || []).forEach((c, j) => {
+        const inconnue = String(c) === '?' || String(c) === 'x';
+        const style = String(c) === 'x' ? ' font-style="italic"' : '';
+        s.push(`<text x="${cx(j)}" y="${cy(k + 1)}" text-anchor="middle" font-size="${fs}" fill="${inconnue ? ROUGE : NOIR}"${inconnue ? ' font-weight="bold"' : ''}${style}>${esc(String(c).replace(/-/g, '−'))}</text>`);
+      });
+    });
+    s.push('</svg>');
+    return s.join('');
+  }
+
+  /* ------------------------------------------------------------------
+     Diagramme en boîte
+       o.min, o.q1, o.med, o.q3, o.max — les cinq valeurs, dans l'unité
+       de l'axe ; o.xmin, o.xmax, o.pas — l'axe gradué.
+     ------------------------------------------------------------------ */
+  function diagrammeBoite(o) {
+    const xmin = o.xmin, xmax = o.xmax;
+    const pas = o.pas || 1;
+    const petit = !!o.petit;
+    const fs = petit ? 9 : 11;
+    const u = o.unite || (petit ? 11 : 17);           // pixels par unité
+    const margeG = petit ? 14 : 18, margeD = petit ? 14 : 18;
+    const hBoite = petit ? 22 : 30;                   // hauteur de la boîte
+    const yBoite = petit ? 10 : 14;                   // haut de la boîte
+    const yAxe = yBoite + hBoite + (petit ? 16 : 22);
+    const W = n2(margeG + (xmax - xmin) * u + margeD);
+    const H = n2(yAxe + (petit ? 17 : 21));
+    const X = x => n2(margeG + (x - xmin) * u);
+    const yMil = n2(yBoite + hBoite / 2);
+
+    const s = [];
+    s.push(`<svg class="boite-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, 'Times New Roman', serif">`);
+    s.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="white"/>`);
+    // moustaches
+    s.push(`<line x1="${X(o.min)}" y1="${yMil}" x2="${X(o.q1)}" y2="${yMil}" stroke="${NOIR}" stroke-width="1.2"/>`);
+    s.push(`<line x1="${X(o.q3)}" y1="${yMil}" x2="${X(o.max)}" y2="${yMil}" stroke="${NOIR}" stroke-width="1.2"/>`);
+    [o.min, o.max].forEach(v => {
+      s.push(`<line x1="${X(v)}" y1="${n2(yBoite + hBoite * 0.2)}" x2="${X(v)}" y2="${n2(yBoite + hBoite * 0.8)}" stroke="${NOIR}" stroke-width="1.2"/>`);
+    });
+    // boîte et médiane
+    s.push(`<rect x="${X(o.q1)}" y="${yBoite}" width="${n2(X(o.q3) - X(o.q1))}" height="${hBoite}" fill="#eef3fb" stroke="${NOIR}" stroke-width="1.3"/>`);
+    s.push(`<line x1="${X(o.med)}" y1="${yBoite}" x2="${X(o.med)}" y2="${n2(yBoite + hBoite)}" stroke="${ROUGE}" stroke-width="1.8"/>`);
+    // axe gradué
+    s.push(`<line x1="${n2(margeG - 8)}" y1="${yAxe}" x2="${n2(W - 4)}" y2="${yAxe}" stroke="${NOIR}" stroke-width="1.2"/>`);
+    s.push(`<polygon points="${n2(W - 4)},${yAxe} ${n2(W - 11)},${n2(yAxe - 3.2)} ${n2(W - 11)},${n2(yAxe + 3.2)}" fill="${NOIR}"/>`);
+    for (let i = 0; xmin + i * pas <= xmax + 1e-9; i++) {
+      const x = n2(xmin + i * pas);
+      s.push(`<line x1="${X(x)}" y1="${n2(yAxe - 3)}" x2="${X(x)}" y2="${n2(yAxe + 3)}" stroke="${NOIR}" stroke-width="1"/>`);
+      s.push(`<text x="${X(x)}" y="${n2(yAxe + fs + 5)}" text-anchor="middle" font-size="${fs}" fill="${NOIR}">${esc(String(x).replace('.', ','))}</text>`);
+    }
+    s.push('</svg>');
+    return s.join('');
+  }
+  const G = { repere, segmentDroite, noeudsDroite, tableauSignes, echantillonner, arbrePondere, tableauCroise, diagrammeBoite };
   window.AutomatismesGraphiques = G;
   if (window.Automatismes && window.Automatismes.outils) window.Automatismes.outils.graph = G;
 })();

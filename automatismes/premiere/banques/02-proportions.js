@@ -122,7 +122,7 @@
       { intro: 'Dans un lycée', tout: 'élèves', a: 'sont en première', b: 'suivent la spécialité mathématiques', question: 'L’effectif du lycée est :', valeurs: [300, 400, 500, 600, 800, 1000, 1200] },
       { intro: 'Dans une ville', tout: 'habitants', a: 'ont moins de 30 ans', b: 'sont étudiants', question: 'La population de la ville est :', valeurs: [2000, 4000, 5000, 8000, 10000, 12000, 20000] },
       { intro: 'Dans une entreprise', tout: 'salariés', a: 'sont des cadres', b: 'travaillent au siège', question: 'Le nombre de salariés est :', valeurs: [100, 120, 200, 300, 400, 500, 800] },
-      { intro: 'Dans un club de tennis', tout: 'adhérents', a: 'sont des femmes', b: 'jouent en compétition', question: 'Le nombre d’adhérents est :', valeurs: [100, 120, 160, 200, 240, 300, 400] }
+      { intro: 'Dans un club de tennis', tout: 'adhérents', a: 'sont juniors', b: 'jouent en compétition', question: 'Le nombre d’adhérents est :', valeurs: [100, 120, 160, 200, 240, 300, 400] }
     ]);
     const total = aleaParmi(c.valeurs);
     c.court = c.tout;

@@ -653,8 +653,8 @@
     const bonne = forme(eu, ew);
     const cands = [
       forme(eu + s * z, ew + t * z), forme(-eu, ew), forme(eu, -ew), forme(eu + 1, ew), forme(i * k + l + o, j * k)
-    ].filter(x => x !== bonne).map(x => opt(x, x));
-    return qcm(`Soient ${m(u)} et ${m(w)} deux réels non nuls.<br>${m(e)} est égal à :`, opt(bonne, bonne), cands, {
+    ].filter(x => x !== bonne).map(x => opt(m(x), x));   // « opt » n'ajoute pas les délimiteurs
+    return qcm(`Soient ${m(u)} et ${m(w)} deux réels non nuls.<br>${m(e)} est égal à :`, opt(m(bonne), bonne), cands, {
       explication: `Au numérateur : ${m('(' + u + '^{' + i + '}' + (j === 1 ? w : w + '^{' + j + '}') + ')^{' + k + '} = ' + u + '^{' + (i * k) + '}' + w + '^{' + (j * k) + '}')}, puis on ajoute les exposants de ${m(u)} : ${m(u + '^{' + (i * k) + ' + (' + l + ') + ' + o + '} = ' + u + '^{' + (i * k + l + o) + '}')}. Au dénominateur : ${m(u + '^{' + (s * z) + '}' + w + '^{' + (t * z) + '}')}. En soustrayant les exposants : ${m(bonne)}.`
     });
   }

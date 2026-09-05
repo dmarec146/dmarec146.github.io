@@ -135,7 +135,7 @@
     { a: 'des habitants ont moins de 30 ans', b: 'sont étudiants', q: 'La part des étudiants de moins de 30 ans dans la population de la ville est :', intro: 'Dans une ville,' },
     { a: 'des clients achètent en ligne', b: 'se font livrer à domicile', q: 'La part des clients livrés à domicile parmi tous les clients est :', intro: 'Dans un magasin,' },
     { a: 'des salariés sont des cadres', b: 'travaillent au siège', q: 'La part des cadres travaillant au siège parmi tous les salariés est :', intro: 'Dans une entreprise,' },
-    { a: 'des adhérents sont des femmes', b: 'ont plus de 40 ans', q: 'La part des femmes de plus de 40 ans parmi tous les adhérents est :', intro: 'Dans un club de tennis,' },
+    { a: 'des adhérents pratiquent la natation', b: 'participent aux compétitions', q: 'La part des nageurs participant aux compétitions, parmi tous les adhérents, est :', intro: 'Dans un club omnisports,' },
     { a: 'des passagers voyagent en première classe', b: 'ont réservé un repas', q: 'La part des passagers de première classe ayant réservé un repas, parmi tous les passagers, est :', intro: 'Dans un train,' }
   ];
   function pourcentageDePourcentage() {
@@ -314,7 +314,7 @@
 
   // N3-a : points de pourcentage ≠ pourcentage
   const POINTS = [[60, 75], [40, 50], [8, 10], [50, 60], [25, 30], [80, 60], [20, 25], [75, 60], [10, 12], [5, 6], [16, 20], [12, 15], [30, 33], [20, 22], [50, 40], [60, 45], [25, 20], [4, 5], [15, 12], [40, 30], [12, 9]];
-  const CONTEXTES_TAUX = ['Le taux de réussite à un examen', 'Le taux de chômage d’une région', 'La part de marché d’une entreprise', 'Le taux de participation à une élection', 'La proportion d’élèves demi-pensionnaires d’un lycée', 'Le taux d’occupation d’un hôtel', 'La part des énergies renouvelables dans la production d’un pays'];
+  const CONTEXTES_TAUX = ['Le taux de réussite à un examen', 'Le taux de recyclage des déchets d’une commune','La part de marché d’une entreprise', 'Le taux de participation à une élection', 'La proportion d’élèves demi-pensionnaires d’un lycée', 'Le taux d’occupation d’un hôtel', 'La part des énergies renouvelables dans la production d’un pays'];
   function tauxPoints() {
     const [a, b] = aleaParmi(POINTS);
     const t = R((b - a) / a * 100);

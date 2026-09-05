@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sujet blanc — Automatismes Première</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
+<link rel="stylesheet" href="../assets/automatismes.css">
+</head>
+<body>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <a class="nav-btn" href="../index.html">Automatismes</a>
+</div>
+
+<div class="entete">
+  <div class="badge" title="Sujet blanc">&#9733;</div>
+  <div>
+    <h1>Sujet blanc</h1>
+    <p class="sous-titre">Épreuve anticipée de Première — 10 questions sur tout le programme, notées sur 6 points</p>
+  </div>
+</div>
+<div class="filet"></div>
+
+<div class="bandeau-calculatrice">Calculatrice interdite — comme le jour de l'épreuve</div>
+
+<div class="consigne-epreuve">
+  <b>Rappel de la consigne officielle.</b> Pour chaque question, une seule réponse est possible. Aucune justification n'est demandée. Une réponse fausse ou l'absence de réponse n'enlève aucun point.
+  <br><b>Barème.</b> 0,6 point par bonne réponse, soit 6 points au total — le poids de la première partie de l'épreuve.
+  <br>Les thèmes sont tirés au sort dans les proportions relevées sur les sujets de l'année, et l'ordre des questions est mêlé, comme dans un vrai sujet. Le thème de chaque question n'est révélé qu'à la correction.
+</div>
+
+<div id="app"></div>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <a class="nav-btn" href="../index.html">Automatismes</a>
+</div>
+
+<script src="../assets/moteur.js"></script>
+<script src="../assets/graphiques.js"></script>
+<!-- toutes les banques : un sujet blanc peut piocher dans n'importe laquelle -->
+<script src="banques/01-pourcentages.js"></script>
+<script src="banques/02-proportions.js"></script>
+<script src="banques/03-calcul-numerique.js"></script>
+<script src="banques/04-developper-factoriser.js"></script>
+<script src="banques/05-equations.js"></script>
+<script src="banques/06-droites.js"></script>
+<script src="banques/07-lectures-graphiques.js"></script>
+<script src="banques/08-probabilites.js"></script>
+<script>
+  /* Poids des domaines : distribution cumulée des 53 questions analysées
+     (41 questions des sessions de juin 2026 + les 12 du sujet zéro) —
+       pourcentages, proportions, ordres de grandeur ....... 26 %
+       calcul littéral, équations, formules ................ 25 %
+       fonctions et lectures graphiques .................... 23 %
+       calcul numérique .................................... 11 %
+       probabilités ........................................ 11 %
+       statistiques .........................................  4 %
+     Les deux derniers domaines partagent la banque 08, d'où ses 15 %.
+     À l'intérieur d'un domaine, les poids répartissent les places entre les
+     banques qui le composent. */
+  Automatismes.demarrer({
+    domaines: [
+      { nom: 'Pourcentages et proportions', poids: 26, banques: { 'pourcentages': 7, 'proportions': 3 } },
+      { nom: 'Calcul littéral et équations', poids: 25, banques: { 'developper-factoriser': 4, 'equations': 6 } },
+      { nom: 'Fonctions et lectures graphiques', poids: 23, banques: { 'droites': 5, 'lectures-graphiques': 5 } },
+      { nom: 'Calcul numérique', poids: 11, banques: { 'calcul-numerique': 1 } },
+      { nom: 'Probabilités et statistiques', poids: 15, banques: { 'probabilites': 1 } }
+    ],
+    nb: 10,
+    // Plafond à 3 et non à 2 : avec 2, dès qu'un domaine reçoit 3 places la
+    // troisième tombe forcément dans sa banque minoritaire, ce qui déforme la
+    // répartition interne (pourcentages tombait à 16 % au lieu de 18).
+    maxParBanque: 3,
+    modeDefaut: 'chrono',
+    duree: 120,
+    bareme: { parQuestion: 0.6, total: 6 },
+    masquerEtiquette: true,
+    cible: '#app',
+    labelNouvelle: 'Nouveau sujet blanc'
+  });
+</script>
+</body>
+</html>

@@ -115,13 +115,16 @@
     });
     const surCoef = Math.random() < 0.65;
     if (surCoef) {
-      const bonne = opt(cL(c), c.p + '/' + c.q);
+      // Les clés sont laissées à l'écriture affichée : deux fractions non réduites
+      // différentes (2/-1 et -2/1, par exemple) donnent la même écriture une fois
+      // réduites, et deux options identiques se retrouveraient dans la question.
+      const bonne = opt(cL(c));
       const cands = [
-        opt(cL(coef(-c.p, c.q)), -c.p + '/' + c.q),
-        opt(cL(coef(c.q, c.p)), c.q + '/' + c.p),
-        opt(String(b), 'b' + b),
-        opt(cL(coef(c.p * 2, c.q)), 2 * c.p + '/' + c.q),
-        opt(cL(coef(-c.q, c.p)), -c.q + '/' + c.p)
+        opt(cL(coef(-c.p, c.q))),
+        opt(cL(coef(c.q, c.p))),
+        opt(String(b)),
+        opt(cL(coef(c.p * 2, c.q))),
+        opt(cL(coef(-c.q, c.p)))
       ];
       const noeuds = O.graph.noeudsDroite(cVal(c), b, f.xmin, f.xmax, f.ymin, f.ymax);
       const A = noeuds[0], B = noeuds[noeuds.length - 1];
@@ -130,8 +133,8 @@
         explication: `Entre ${m('(' + A[0] + '\\,;\\,' + A[1] + ')')} et ${m('(' + B[0] + '\\,;\\,' + B[1] + ')')}, l'ordonnée varie de ${m(String(B[1] - A[1]))} quand l'abscisse varie de ${m(String(B[0] - A[0]))} : le coefficient directeur est ${m('\\dfrac{' + (B[1] - A[1]) + '}{' + (B[0] - A[0]) + '} = ' + cL(c))}. C'est la variation de ${m('y')} divisée par celle de ${m('x')}, dans cet ordre.`
       });
     }
-    const bonne = opt(String(b), 'b' + b);
-    const cands = [opt(String(-b), 'b' + (-b)), opt(cL(c), 'a'), opt(String(b + 1), 'b' + (b + 1)), opt(String(b - 1), 'b' + (b - 1))];
+    const bonne = opt(String(b));
+    const cands = [opt(String(-b)), opt(cL(c)), opt(String(b + 1)), opt(String(b - 1))];
     return qcm(`L’ordonnée à l’origine de la droite ${m('(d)')} tracée ci-contre est :`, bonne, cands, {
       figure: figure,
       explication: `L'ordonnée à l'origine est l'ordonnée du point d'intersection de la droite avec l'axe des ordonnées, c'est-à-dire la valeur de ${m('y')} quand ${m('x = 0')} : ici ${m(String(b))}.`
@@ -373,6 +376,80 @@
   }
 
   // =====================================================================
+  // Famille F (niveau 3) : nature d'un triangle donné par trois points
+  // (fiche maison 1, Q7). Le repère est orthonormé : les longueurs se
+  // calculent, et la réciproque de Pythagore tranche.
+  // =====================================================================
+  const optNature = t => ({ affichage: t, cle: t });
+
+  function triangleRectangle() {
+    const noms = ['A', 'B', 'C'];
+    // Le cas « pas rectangle » reste possible, mais la construction d'un triangle
+    // rectangle est plus souvent rejetée par les contrôles de lisibilité : ce seuil
+    // est réglé pour que les quatre réponses tombent à peu près à égalité (25 %),
+    // sans quoi répondre toujours « il n'est pas rectangle » paierait.
+    const rectangle = Math.random() < 0.84;
+    let P;
+    if (rectangle) {
+      // sommet de l'angle droit + deux vecteurs orthogonaux à coordonnées entières
+      const S = [alea(-4, 4), alea(-4, 4)];
+      const a = aleaNonNul(-3, 3), b = aleaNonNul(-3, 3);
+      const k = aleaParmi([1, 1, 2, 2, 3]);           // k ≠ 1 évite le triangle isocèle systématique
+      P = [S, [S[0] + a, S[1] + b], [S[0] - k * b, S[1] + k * a]];
+    } else {
+      P = [[alea(-4, 4), alea(-4, 4)], [alea(-4, 4), alea(-4, 4)], [alea(-4, 4), alea(-4, 4)]];
+    }
+    // contrôles de validité : points distincts, non alignés, lisibles
+    for (const p of P) if (Math.abs(p[0]) > 5 || Math.abs(p[1]) > 5) return null;
+    const d2 = (u, v) => (u[0] - v[0]) * (u[0] - v[0]) + (u[1] - v[1]) * (u[1] - v[1]);
+    const cotes = [d2(P[1], P[2]), d2(P[0], P[2]), d2(P[0], P[1])];   // opposé à A, à B, à C
+    if (cotes.some(c => c === 0)) return null;
+    const aire2 = Math.abs((P[1][0] - P[0][0]) * (P[2][1] - P[0][1]) - (P[2][0] - P[0][0]) * (P[1][1] - P[0][1]));
+    if (aire2 === 0) return null;                     // points alignés
+    // sommet où l'angle est droit : celui dont le côté opposé est l'hypoténuse
+    let droit = -1;
+    for (let i = 0; i < 3; i++) {
+      const autres = [0, 1, 2].filter(j => j !== i);
+      if (cotes[autres[0]] + cotes[autres[1]] === cotes[i]) droit = i;
+    }
+    if (rectangle !== (droit !== -1)) return null;
+
+    // on brasse les étiquettes pour que l'angle droit ne soit pas toujours en A
+    const perm = melanger([0, 1, 2]);
+    const Q = perm.map(i => P[i]);
+    const dQ2 = [d2(Q[1], Q[2]), d2(Q[0], Q[2]), d2(Q[0], Q[1])];
+    let droitQ = -1;
+    for (let i = 0; i < 3; i++) {
+      const autres = [0, 1, 2].filter(j => j !== i);
+      if (dQ2[autres[0]] + dQ2[autres[1]] === dQ2[i]) droitQ = i;
+    }
+    const coord = i => `${noms[i]}(${Q[i][0]}\\,;\\,${Q[i][1]})`;
+    const bonne = optNature(droitQ === -1 ? 'Il n’est pas rectangle.' : `Il est rectangle en ${noms[droitQ]}.`);
+    const cands = melanger([0, 1, 2].filter(i => i !== droitQ).map(i => optNature(`Il est rectangle en ${noms[i]}.`))
+      .concat(droitQ === -1 ? [] : [optNature('Il n’est pas rectangle.')]));
+
+    const carre = i => `${noms[[1, 0, 0][i]]}${noms[[2, 2, 1][i]]}^2 = ${dQ2[i]}`;
+    const detail = droitQ === -1
+      ? `Aucune des trois égalités de Pythagore n’est vérifiée : ${m(dQ2[0] + ' + ' + dQ2[1])} ${m('\\neq')} ${m(String(dQ2[2]))}, `
+        + `${m(dQ2[0] + ' + ' + dQ2[2])} ${m('\\neq')} ${m(String(dQ2[1]))} et ${m(dQ2[1] + ' + ' + dQ2[2])} ${m('\\neq')} ${m(String(dQ2[0]))}. `
+        + `Le triangle n’est donc rectangle en aucun de ses sommets.`
+      : (function () {
+        const autres = [0, 1, 2].filter(j => j !== droitQ);
+        return `${m(String(dQ2[autres[0]]) + ' + ' + String(dQ2[autres[1]]) + ' = ' + String(dQ2[droitQ]))} : `
+          + `d’après la réciproque du théorème de Pythagore, le triangle est rectangle en ${m(noms[droitQ])}, `
+          + `le côté le plus long étant celui qui lui est opposé.`;
+      })();
+
+    return qcm(`Dans un repère orthonormé, on considère les points ${m(coord(0))}, ${m(coord(1))} et ${m(coord(2))}. `
+      + `Que peut-on dire du triangle ${m('ABC')} ?`,
+      bonne, cands, {
+        optionsLarges: true,
+        explication: `On calcule les carrés des longueurs, ce qui évite toute racine : `
+          + `${m(carre(0))}, ${m(carre(1))} et ${m(carre(2))}. ${detail}`
+      });
+  }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('droites', {
     titre: 'Droites et repères',
     familles: {
@@ -395,6 +472,10 @@
       }),
       'positions-relatives': famille({
         nom: 'positions relatives', niveaux: [3], base: () => null, variantes3: [positionsRelatives]
+      }),
+      'triangle-rectangle': famille({
+        nom: 'nature d’un triangle', niveaux: [3], base: () => null, variantes3: [triangleRectangle],
+        quota: { 3: { max: 1 } }
       })
     }
   });
