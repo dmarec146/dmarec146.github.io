@@ -1226,6 +1226,58 @@ function checkTexte(userInput, correctText) {
   return u === c;
 }
 
+// tolerance aux fautes d'orthographe pour les reponses en langage naturel (negationTexte/negationSymbolique) :
+// chaque mot est compare avec une distance de Levenshtein (nombre de caracteres a changer), sauf les mots-cles
+// logiques (quantificateurs, negation, mots courts, tokens contenant un chiffre/symbole) qui restent exacts,
+// car une petite difference sur ces mots-la change le sens de la proposition plutot que d'etre une simple faute de frappe.
+function distanceLevenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({length: n + 1}, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      const cout = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + cout);
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+const KEYWORDS_LOGIQUES = new Set(["tous","toutes","tout","toute","aucun","aucune","certains","certaines","existe","chaque","moins","plus","alors","donc","dans","sans","avec","pour","jamais","toujours","seulement"]);
+const ACCENTS_VERS_PLAIN = {'à':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','î':'i','ï':'i','ô':'o','ö':'o','ù':'u','û':'u','ü':'u','ç':'c','œ':'oe','æ':'ae'};
+function normaliserTexteApprox(s) {
+  let r = s.toLowerCase().trim().replace(/\s+/g, ' ');
+  for (const [accent, plain] of Object.entries(ACCENTS_VERS_PLAIN)) r = r.split(accent).join(plain);
+  return r;
+}
+function tokeniser(s) {
+  return normaliserTexteApprox(s).split(' ').map(t => t.replace(/^[.,;:!?»«"'()]+|[.,;:!?»«"'()]+$/g, '')).filter(t => t.length > 0);
+}
+function estTokenExact(tok) {
+  if (tok.length <= 3) return true;
+  if (KEYWORDS_LOGIQUES.has(tok)) return true;
+  if (!/^[a-z'-]+$/.test(tok)) return true; // chiffre/symbole/operateur mele au mot : comparaison stricte (ex: "y>=0", "4")
+  return false;
+}
+function checkTexteApproximatif(userInput, correctText) {
+  const tu = tokeniser(userInput);
+  const tc = tokeniser(correctText);
+  if (tu.length !== tc.length) return false;
+  for (let i = 0; i < tc.length; i++) {
+    const motCorrect = tc[i], motUser = tu[i];
+    if (motUser === motCorrect) continue;
+    if (estTokenExact(motCorrect)) return false;
+    // un prefixe/suffixe ajoute ou retire (dé-, im-, non-... - souvent l'antonyme exact du mot attendu) n'est
+    // jamais une simple faute de frappe : n'autoriser qu'un seul caractere de difference de longueur, et un
+    // seul caractere modifie au total (une faute d'orthographe, pas deux).
+    if (Math.abs(motUser.length - motCorrect.length) > 1) return false;
+    if (distanceLevenshtein(motUser, motCorrect) > 1) return false;
+  }
+  return true;
+}
+
 function checkVecteur(userInput, correctX, correctY, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
   if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
@@ -1423,7 +1475,7 @@ function verifierUne(idx) {
   else if (ex.type === 'vraifaux') ok = checkVraiFaux(val, ex.estVrai);
   else if (ex.type === 'qcm') ok = checkTexte(val, ex.bonneReponse);
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
-  else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
+  else if (ex.type === 'texte') ok = (ex.negationTexte || ex.negationSymbolique) ? checkTexteApproximatif(val, ex.reponse) : checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
@@ -1753,10 +1805,10 @@ function placeholderPour(ex) {
 
 function aideContextuellePour(ex) {
   if (ex.negationTexte) {
-    return "Écrire la négation sous la forme d'une phrase complète en français (pas de majuscule initiale ni de point final nécessaires). Une seule formulation exacte est acceptée.";
+    return "Écrire la négation sous la forme d'une phrase complète en français (pas de majuscule initiale ni de point final nécessaires). Une seule formulation est acceptée, mais les petites fautes d'orthographe sont tolérées (les mots-clés logiques comme « pas », « tous », « il existe »... doivent rester exacts).";
   }
   if (ex.negationSymbolique) {
-    return "Écrire la négation en mélangeant mots et symboles comme dans l'énoncé : « il existe » / « pour tout », <code>&gt;=</code> et <code>&lt;</code> pour les inégalités. Une seule formulation exacte est acceptée.";
+    return "Écrire la négation en mélangeant mots et symboles comme dans l'énoncé : « il existe » / « pour tout », <code>&gt;=</code> et <code>&lt;</code> pour les inégalités. Une seule formulation est acceptée, mais les petites fautes d'orthographe sont tolérées (les mots-clés logiques et les symboles doivent rester exacts).";
   }
   if (ex.type === 'texte' && ex.reponse && /^[a-z](,[a-z])*$/.test(ex.reponse)) {
     return "Écrire les lettres des bonnes réponses séparées par des virgules, par exemple <code>a,c,d</code>.";

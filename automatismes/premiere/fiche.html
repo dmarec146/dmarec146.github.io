@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Fiche d'automatismes — Première</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
+<link rel="stylesheet" href="../assets/automatismes.css">
+</head>
+<body>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <a class="nav-btn" href="../index.html">Automatismes</a>
+</div>
+
+<div class="entete">
+  <div class="badge" title="Thèmes tirés au sort"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg></div>
+  <div>
+    <h1 id="titre-fiche">Fiche d'automatismes</h1>
+    <p class="sous-titre" id="sous-titre-fiche">Épreuve anticipée de Première — deux thèmes tirés au sort, 10 questions</p>
+  </div>
+</div>
+<div class="filet"></div>
+
+<div class="bandeau-calculatrice">Calculatrice interdite — comme le jour de l'épreuve</div>
+
+<div class="consigne-epreuve">
+  <b>Rappel de la consigne officielle.</b> Pour chaque question, une seule réponse est possible. Aucune justification n'est demandée. Une réponse fausse ou l'absence de réponse n'enlève aucun point.
+</div>
+
+<div id="app"></div>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <a class="nav-btn" href="../index.html">Automatismes</a>
+</div>
+
+<script src="../assets/moteur.js"></script>
+<script src="../assets/graphiques.js"></script>
+<!-- Banques de questions : une par thème (les thèmes de chaque fiche sont tirés au sort parmi elles) -->
+<script src="banques/01-pourcentages.js"></script>
+<script src="banques/02-proportions.js"></script>
+<script src="banques/03-calcul-numerique.js"></script>
+<script src="banques/04-developper-factoriser.js"></script>
+<script src="banques/05-equations.js"></script>
+<script src="banques/06-droites.js"></script>
+<script src="banques/07-lectures-graphiques.js"></script>
+<script>
+  Automatismes.demarrer({
+    banques: ['pourcentages', 'proportions', 'calcul-numerique', 'developper-factoriser', 'equations', 'droites', 'lectures-graphiques'],
+    nbThemes: 2,
+    nb: 10,
+    modeDefaut: 'fiche',
+    duree: 120,
+    cible: '#app',
+    labelNouvelle: 'Nouvelle fiche (autres thèmes)'
+  });
+
+  // titre adapté quand un thème unique est demandé dans l'adresse (fiche.html?theme=…)
+  (function () {
+    const impose = Automatismes.etat.config.themeImpose;
+    if (!impose) return;
+    const titre = Automatismes.titreBanque(impose);
+    document.title = titre + ' — Automatismes Première';
+    document.getElementById('titre-fiche').textContent = titre;
+    document.getElementById('sous-titre-fiche').textContent =
+      'Automatismes de Première — un seul thème, 10 questions';
+  })();
+</script>
+</body>
+</html>
