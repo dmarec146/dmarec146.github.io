@@ -26,11 +26,13 @@ Chaque dossier `cahier-N/` contient :
 
 ## Chantiers en cours
 
-Deux consignes ne sont contrôlées que par l'égalité numérique, ce qui les rend inopérantes. Les deux correctifs sont écrits et vérifiés dans `cahiers/seconde/cahier-1/fiche-01.html` ; il reste à les transposer en Première.
+Certaines consignes portent sur la **forme** de la réponse, mais n'étaient contrôlées que par l'égalité numérique, ce qui les rendait inopérantes.
 
-- **Contrôle de forme factorisée.** Une consigne « Factoriser » est corrigée par simple égalité numérique : répondre `x²−64` à « factoriser `x²−64` » est donc accepté. Le correctif est la fonction `estFactorise`, qui vérifie que la racine de l'expression saisie est un produit ou une puissance, plus un indicateur `formeFactorisee` sur les exercices concernés. À porter sur les fiches 01 à 05.
+- **Contrôle de forme factorisée — à faire.** Une consigne « Factoriser » est corrigée par simple égalité numérique : répondre `x²−64` à « factoriser `x²−64` » est donc accepté. Le correctif est la fonction `estFactorise`, qui vérifie que la racine de l'expression saisie est un produit ou une puissance, plus un indicateur `formeFactorisee` sur les exercices concernés. Écrit et vérifié dans `cahiers/seconde/cahier-1/fiche-01.html`, il reste à le porter sur les fiches 01 à 05 de Première.
 
-- **Contrôle d'irréductibilité.** Une consigne « sous forme de fraction irréductible » accepte `4/6` pour `2/3`, ainsi qu'une écriture décimale ou un calcul non effectué. Le correctif est la fonction `estFractionIrreductible`, qui exige un entier ou un quotient de deux entiers premiers entre eux, plus un indicateur `fractionIrreductible`. Attention : là où la réponse enregistrée est le calcul de départ et non son résultat, il faut aussi la remplacer par la fraction réduite, sinon le corrigé affiche l'énoncé. À porter sur les fiches 02, 04, 09, 10, 11, 14, 19 et 23.
+- **Contrôle d'irréductibilité — fait.** La fonction `estFractionIrreductible` exige un entier ou un quotient de deux entiers premiers entre eux ; son paramètre `facteurSymbolique` (`"pi"`) couvre les angles en radians. Elle est en place sur la fiche 01 de Seconde et sur les fiches 02, 04, 09, 10, 14, 19 et 23 de Première, via l'indicateur `fractionIrreductible` posé sur 46 exercices.
+
+  Deux réserves à connaître. La fiche 11 de Première est **volontairement exclue** : son groupe 11.1 porte sur des fractions en `n`, où l'irréductibilité est celle de deux polynômes — un contrôle numérique ne la teste pas. Et là où la réponse enregistrée était le calcul de départ plutôt que son résultat, il a fallu la remplacer par la fraction réduite, sinon le corrigé affichait l'énoncé : c'était le cas du groupe 2.2.
 
 ## Publier une modification
 

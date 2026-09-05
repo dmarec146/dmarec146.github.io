@@ -844,15 +844,15 @@ function genererExercices() {
   // ---------- 9.1 : arithmetique de fractions ----------
   {
     const A = alea(2,6), B = alea(2,7);
-    ex.push({id:"9.1 a)", type:"num", enonce:`${A}-\\dfrac{1}{${B}}`, reponse: fracStr(A*B-1, B)});
+    ex.push({id:"9.1 a)", type:"num", fractionIrreductible:true, enonce:`${A}-\\dfrac{1}{${B}}`, reponse: fracStr(A*B-1, B)});
   }
   {
     const P = alea(2,6), Q = alea(2,6), R = alea(2,5);
-    ex.push({id:"9.1 b)", type:"num", enonce:`\\dfrac{\\frac{${P}}{${Q}}}{${R}}`, reponse: fracStr(P, Q*R)});
+    ex.push({id:"9.1 b)", type:"num", fractionIrreductible:true, enonce:`\\dfrac{\\frac{${P}}{${Q}}}{${R}}`, reponse: fracStr(P, Q*R)});
   }
   {
     const P = alea(2,6), Q = alea(2,6);
-    ex.push({id:"9.1 c)", type:"num", enonce:`\\dfrac{1-\\frac{1}{${P}}}{1+\\frac{1}{${Q}}}`, reponse: fracStr(Q*(P-1), P*(Q+1))});
+    ex.push({id:"9.1 c)", type:"num", fractionIrreductible:true, enonce:`\\dfrac{1-\\frac{1}{${P}}}{1+\\frac{1}{${Q}}}`, reponse: fracStr(Q*(P-1), P*(Q+1))});
   }
 
   // ---------- 9.2 : puissances de 2 en n ----------
@@ -1347,6 +1347,52 @@ function normaliserSaisie(str) {
   return s;
 }
 
+// Une consigne "sous forme de fraction irreductible" n'etait controlee que par l'egalite
+// numerique : 4/6 passait pour 2/3, de meme qu'une ecriture decimale ou le calcul non effectue.
+// On controle donc aussi la FORME : un entier, ou un quotient de deux entiers premiers entre eux.
+// facteurSymbolique ('pi' pour les angles en radians) exige en plus la presence de ce symbole.
+function estFractionIrreductible(userInput, facteurSymbolique) {
+  try {
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
+    const estDivision = (n) => n.type === 'OperatorNode' && n.op === '/';
+    const valeurEntiere = (n) => {
+      const v = n.evaluate();
+      return (typeof v === 'number' && Number.isInteger(v)) ? v : null;
+    };
+    let noeud = math.parse(normaliserSaisie(userInput));
+    if (facteurSymbolique) {
+      // on remplace le symbole par 1 pour se ramener au cas numerique, apres avoir verifie
+      // qu'il figure bien dans la reponse : un angle en radians doit s'exprimer avec pi
+      let present = false;
+      noeud = noeud.transform((n) => {
+        if (n.type === 'SymbolNode' && n.name === facteurSymbolique) { present = true; return new math.ConstantNode(1); }
+        return n;
+      });
+      if (!present) return false;
+    }
+    noeud = sansParentheses(noeud);
+    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
+    // ecriture "fraction en facteur" : (5/12)*pi devient (5/12)*1 apres substitution
+    if (noeud.type === 'OperatorNode' && noeud.op === '*') {
+      const membres = noeud.args.map(sansParentheses);
+      const divisions = membres.filter(estDivision);
+      if (divisions.length === 1 && membres.filter((m) => !estDivision(m)).every((m) => valeurEntiere(m) === 1)) {
+        noeud = divisions[0];
+      }
+    }
+    if (!estDivision(noeud)) return valeurEntiere(noeud) !== null;
+    const num = valeurEntiere(sansParentheses(noeud.args[0]));
+    let denNoeud = sansParentheses(noeud.args[1]);
+    if (moinsUnaire(denNoeud)) denNoeud = sansParentheses(denNoeud.args[0]);
+    const den = valeurEntiere(denNoeud);
+    if (num === null || den === null || den === 0) return false;
+    return pgcd(num, den) === 1;
+  } catch(e) {
+    return false;
+  }
+}
+
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','lam','X','yt','f','g','h','fp','gp','hp','q','S1','S2','N','p','a1','a2','a3','a4','an','bet'];
@@ -1700,6 +1746,7 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
   statut.textContent = ok ? '✓ correct' : '✗ à revoir';
@@ -2039,6 +2086,11 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.fractionIrreductible) {
+    return ex.facteurSymbolique === 'pi'
+      ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
+      : "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>, ni un calcul comme <code>1/2+1/6</code>. Si le résultat est un entier, l'écrire tel quel.";
+  }
   if (ex.type === 'ineq') {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
@@ -2076,6 +2128,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.fractionIrreductible) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;

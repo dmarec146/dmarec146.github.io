@@ -952,41 +952,41 @@ function genGroupe4_1() {
   function itemA() {
     const p1=fracSimple(9,denoms), p2=fracSimple(9,denoms);
     const enonce = `\\dfrac{${p1.n}}{${p1.d}}-\\dfrac{${p2.n}}{${p2.d}}`;
-    return {id:"4.1 a)", type:"num", enonce, reponse: fracStr(fracSub(p1,p2))};
+    return {id:"4.1 a)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(fracSub(p1,p2))};
   }
   function itemB() {
     const p1=fracSimple(9,denoms), p2=fracSimple(9,denoms), p3=fracSimple(9,denoms);
     const enonce = `-\\dfrac{${p1.n}}{${p1.d}}+\\dfrac{${p2.n}}{${p2.d}}+\\dfrac{${p3.n}}{${p3.d}}`;
     const reponse = fracAdd(fracAdd(fracNeg(p1),p2),p3);
-    return {id:"4.1 b)", type:"num", enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 b)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
   function itemC() {
     const k = alea(2,3);
     const p1=fracSimple(9,denoms), p2=fracSimple(9,denoms), p3=fracSimple(9,denoms);
     const enonce = `${k}\\left(\\dfrac{${p1.n}}{${p1.d}}-\\dfrac{${p2.n}}{${p2.d}}\\right)+\\dfrac{${p3.n}}{${p3.d}}`;
     const reponse = fracAdd(fracMul(F(k),fracSub(p1,p2)),p3);
-    return {id:"4.1 c)", type:"num", enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 c)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
   function itemD() {
     const p1=fracSimple(6,denoms), p2=fracSimple(6,denoms), p3=fracSimple(9,denoms);
     const diff = fracSub(p1,p2);
     const enonce = `\\left(\\dfrac{${p1.n}}{${p1.d}}-\\dfrac{${p2.n}}{${p2.d}}\\right)^2+\\dfrac{${p3.n}}{${p3.d}}`;
     const reponse = fracAdd(fracMul(diff,diff),p3);
-    return {id:"4.1 d)", type:"num", enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 d)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
   function itemE() {
     const p1=fracSimple(6,denoms), p2=fracSimple(9,denoms);
     const k = alea(2,4);
     const enonce = `\\left(\\dfrac{${p1.n}}{${p1.d}}\\right)^2-${k}\\times \\left(-\\dfrac{${p1.n}}{${p1.d}}\\right)-\\dfrac{${p2.n}}{${p2.d}}`;
     const reponse = fracSub(fracAdd(fracMul(p1,p1), fracMul(F(k),p1)), p2);
-    return {id:"4.1 e)", type:"num", enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 e)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
   function itemF() {
     const p1=fracSimple(5,denoms), p2=fracSimple(6,denoms);
     const enonce = `\\left(-\\dfrac{${p1.n}}{${p1.d}}\\right)^3+\\dfrac{${p2.n}}{${p2.d}}\\times \\left(-\\dfrac{${p1.n}}{${p1.d}}\\right)^2`;
     const negP1 = fracNeg(p1);
     const reponse = fracAdd(fracMul(fracMul(negP1,negP1),negP1), fracMul(p2,fracMul(negP1,negP1)));
-    return {id:"4.1 f)", type:"num", enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 f)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
   return [itemA(),itemB(),itemC(),itemD(),itemE(),itemF()];
 }
@@ -1591,6 +1591,11 @@ function placeholderPour(ex) {
   return 'réponse';
 }
 function aideContextuellePour(ex) {
+  if (ex.fractionIrreductible) {
+    return ex.facteurSymbolique === 'pi'
+      ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
+      : "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>, ni un calcul comme <code>1/2+1/6</code>. Si le résultat est un entier, l'écrire tel quel.";
+  }
   if (ex.type === 'texte') {
     return "Écrire simplement <code>oui</code> ou <code>non</code>.";
   }
@@ -1600,6 +1605,7 @@ function aideContextuellePour(ex) {
   return "Utiliser <code>^</code> pour une puissance (x^2), le bouton √ pour une racine carrée, <code>/</code> pour une fraction. Toute écriture équivalente est acceptée.";
 }
 function necessiteAide(ex) {
+  if (ex.fractionIrreductible) return true;
   if (ex.type === 'texte') return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
@@ -1740,6 +1746,52 @@ function normaliserSaisie(str) {
   s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
 }
+// Une consigne "sous forme de fraction irreductible" n'etait controlee que par l'egalite
+// numerique : 4/6 passait pour 2/3, de meme qu'une ecriture decimale ou le calcul non effectue.
+// On controle donc aussi la FORME : un entier, ou un quotient de deux entiers premiers entre eux.
+// facteurSymbolique ('pi' pour les angles en radians) exige en plus la presence de ce symbole.
+function estFractionIrreductible(userInput, facteurSymbolique) {
+  try {
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
+    const estDivision = (n) => n.type === 'OperatorNode' && n.op === '/';
+    const valeurEntiere = (n) => {
+      const v = n.evaluate();
+      return (typeof v === 'number' && Number.isInteger(v)) ? v : null;
+    };
+    let noeud = math.parse(normaliserSaisie(userInput));
+    if (facteurSymbolique) {
+      // on remplace le symbole par 1 pour se ramener au cas numerique, apres avoir verifie
+      // qu'il figure bien dans la reponse : un angle en radians doit s'exprimer avec pi
+      let present = false;
+      noeud = noeud.transform((n) => {
+        if (n.type === 'SymbolNode' && n.name === facteurSymbolique) { present = true; return new math.ConstantNode(1); }
+        return n;
+      });
+      if (!present) return false;
+    }
+    noeud = sansParentheses(noeud);
+    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
+    // ecriture "fraction en facteur" : (5/12)*pi devient (5/12)*1 apres substitution
+    if (noeud.type === 'OperatorNode' && noeud.op === '*') {
+      const membres = noeud.args.map(sansParentheses);
+      const divisions = membres.filter(estDivision);
+      if (divisions.length === 1 && membres.filter((m) => !estDivision(m)).every((m) => valeurEntiere(m) === 1)) {
+        noeud = divisions[0];
+      }
+    }
+    if (!estDivision(noeud)) return valeurEntiere(noeud) !== null;
+    const num = valeurEntiere(sansParentheses(noeud.args[0]));
+    let denNoeud = sansParentheses(noeud.args[1]);
+    if (moinsUnaire(denNoeud)) denNoeud = sansParentheses(denNoeud.args[0]);
+    const den = valeurEntiere(denNoeud);
+    if (num === null || den === null || den === 0) return false;
+    return pgcd(num, den) === 1;
+  } catch(e) {
+    return false;
+  }
+}
+
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n'];
@@ -1808,6 +1860,7 @@ function verifierUne(idx) {
   let ok;
   if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
   statut.textContent = ok ? '✓ correct' : '✗ à revoir';
