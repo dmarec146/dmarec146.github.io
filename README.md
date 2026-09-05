@@ -26,7 +26,11 @@ Chaque dossier `cahier-N/` contient :
 
 ## Chantiers en cours
 
-- **Contrôle de forme factorisée à porter en Première.** Sur les fiches de Première, une consigne « Factoriser » est corrigée par simple égalité numérique : répondre `x²−64` à « factoriser `x²−64` » est donc accepté. Le correctif (une fonction `estFactorise` qui vérifie que la racine de l'expression saisie est un produit ou une puissance, plus un indicateur `formeFactorisee` sur les exercices concernés) est écrit et vérifié dans `cahiers/seconde/cahier-1/fiche-01.html` : il reste à le transposer aux fiches 01 à 05 de Première.
+Deux consignes ne sont contrôlées que par l'égalité numérique, ce qui les rend inopérantes. Les deux correctifs sont écrits et vérifiés dans `cahiers/seconde/cahier-1/fiche-01.html` ; il reste à les transposer en Première.
+
+- **Contrôle de forme factorisée.** Une consigne « Factoriser » est corrigée par simple égalité numérique : répondre `x²−64` à « factoriser `x²−64` » est donc accepté. Le correctif est la fonction `estFactorise`, qui vérifie que la racine de l'expression saisie est un produit ou une puissance, plus un indicateur `formeFactorisee` sur les exercices concernés. À porter sur les fiches 01 à 05.
+
+- **Contrôle d'irréductibilité.** Une consigne « sous forme de fraction irréductible » accepte `4/6` pour `2/3`, ainsi qu'une écriture décimale ou un calcul non effectué. Le correctif est la fonction `estFractionIrreductible`, qui exige un entier ou un quotient de deux entiers premiers entre eux, plus un indicateur `fractionIrreductible`. Attention : là où la réponse enregistrée est le calcul de départ et non son résultat, il faut aussi la remplacer par la fraction réduite, sinon le corrigé affiche l'énoncé. À porter sur les fiches 02, 04, 09, 10, 11, 14, 19 et 23.
 
 ## Publier une modification
 
