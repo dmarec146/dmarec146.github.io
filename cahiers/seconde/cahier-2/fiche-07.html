@@ -735,51 +735,51 @@ const generateurs = [
   {id:"7.5 a)", type:"encadrement", texteLibre:true, gen: () => {
     const a = alea(1,10), b = a + alea(1,10), c = alea(1,10), d = c + alea(1,10);
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(x+y\\).`,
-             bas: a+c, haut: b+d };
+             bas: a+c, haut: b+d, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.5 b)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat : une soustraction, il faut d'abord encadrer -y (les bornes s'inversent)
     const a = alea(1,10), b = a + alea(1,10), c = alea(1,10), d = c + alea(1,10);
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(x-y\\).`,
-             bas: a-d, haut: b-c };
+             bas: a-d, haut: b-c, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.5 c)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat encore : mise a l'echelle puis somme
     const a = alea(1,8), b = a + alea(1,8), c = alea(1,8), d = c + alea(1,8), k = alea(2,4);
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(${k}x+y\\).`,
-             bas: k*a+c, haut: k*b+d };
+             bas: k*a+c, haut: k*b+d, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.5 d)", type:"encadrement", texteLibre:true, gen: () => {
     // le plus delicat : mise a l'echelle ET soustraction combinees
     const a = alea(1,8), b = a + alea(1,8), c = alea(1,8), d = c + alea(1,8), k = alea(2,4);
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(${k}x-y\\).`,
-             bas: k*a-d, haut: k*b-c };
+             bas: k*a-d, haut: k*b-c, inclusBas:false, inclusHaut:false };
   }},
 
   // ---------- 7.6 : multiplier ou diviser une inegalite par un reel positif ou negatif ----------
   {id:"7.6 a)", type:"encadrement", texteLibre:true, gen: () => {
     const a = alea(1,9), b = a + alea(1,10), k = alea(2,6);
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(${k}x\\).`,
-             bas: k*a, haut: k*b };
+             bas: k*a, haut: k*b, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.6 b)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat : coefficient negatif, les bornes s'inversent
     const a = alea(1,9), b = a + alea(1,10), k = alea(2,6);
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(-${k}x\\).`,
-             bas: -k*b, haut: -k*a };
+             bas: -k*b, haut: -k*a, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.6 c)", type:"encadrement", texteLibre:true, gen: () => {
     // egalement delicat : diviser par un nombre negatif
     const div = alea(2,6), a0 = alea(1,8), b0 = a0 + alea(1,8), a = div*a0, b = div*b0;
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{x}{-${div}}\\).`,
-             bas: -b0, haut: -a0 };
+             bas: -b0, haut: -a0, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.6 d)", type:"encadrement", texteLibre:true, gen: () => {
     // le plus delicat de ce groupe : coefficient negatif ET terme constant
     const a = alea(1,9), b = a + alea(1,10), k = alea(2,6), p = entierSigne(1,15);
     const termeP = p<0?`-${-p}`:`+${p}`;
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(-${k}x${termeP}\\).`,
-             bas: -k*b+p, haut: -k*a+p };
+             bas: -k*b+p, haut: -k*a+p, inclusBas:false, inclusHaut:false };
   }},
 
   // ---------- 7.7 : calculs plus avances (aucune contextualisation : calcul plus complexe
@@ -812,7 +812,7 @@ const generateurs = [
     const k = alea(2,5), n = alea(2,4), j = alea(1,4), m1 = entierSigne(1,8);
     const m2 = m1 + n*j, a = alea(1,10), b = a + k*j, p = k*m1 + n*b;
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{${p}-${n}x}{${k}}\\).`,
-             bas: m1, haut: m2 };
+             bas: m1, haut: m2, inclusBas:false, inclusHaut:false };
   }},
   {id:"7.7 d)", type:"alg", texteLibre:true, gen: () => {
     // propriete a demontrer : l'etape-cle de la preuve de monotonie d'une fonction affine
@@ -1275,23 +1275,20 @@ function checkInequation(userInput, correctSens, correctSeuil) {
   return Math.abs(parsed.seuil - correctSeuil) < 1e-6 && sensEquivalent;
 }
 
-function checkEncadrement(userInput, bas, haut) {
+function checkEncadrement(userInput, bas, haut, inclusBas, inclusHaut) {
   const s = userInput.replace(/(\d),(\d)/g, '$1.$2').trim();
-  // forme enseignee et attendue : l'encadrement complet "a<...<b" (ou "a<=...<=b"), avec
+  // forme enseignee et exigee : l'encadrement complet "a<...<b" (ou "a<=...<=b"), avec
   // l'expression encadree au milieu — son contenu n'est pas verifie, seules les deux bornes
-  // le sont, extraites de part et d'autre du premier et du dernier symbole de comparaison.
-  const m = s.match(/^(.+?)(?:<=|<)(.+?)(?:<=|<)(.+)$/);
-  if (m) {
-    try {
-      const vals = [m[1], m[3]].map(x => math.evaluate(x.trim())).sort((a,b) => a - b);
-      return Math.abs(vals[0] - bas) < 1e-9 && Math.abs(vals[1] - haut) < 1e-9;
-    } catch(e) { return false; }
-  }
-  // repli tolere : l'ancienne forme courte "a;b" ou "a et b"
-  const nums = s.split(/[;\s]+et\s+|[;]+/).map(x => x.trim()).filter(x => x !== '');
-  if (nums.length !== 2) return false;
+  // ET le caractere strict/large de CHAQUE cote (< vs <=) le sont, chacun compare a ce qui
+  // est reellement attendu — ne jamais se contenter d'extraire les deux nombres en ignorant
+  // l'operateur tape, sinon "a<3x<=b" passe a tort pour "a<3x<b" (bug reel signale par David).
+  const m = s.match(/^(.+?)(<=|<)(.+?)(<=|<)(.+)$/);
+  if (!m) return false;
+  const [, gauche, op1, , op2, droite] = m;
+  if ((op1 === '<=') !== !!inclusBas) return false;
+  if ((op2 === '<=') !== !!inclusHaut) return false;
   try {
-    const vals = nums.map(x => math.evaluate(x)).sort((a,b) => a - b);
+    const vals = [gauche, droite].map(x => math.evaluate(x.trim())).sort((a,b) => a - b);
     return Math.abs(vals[0] - bas) < 1e-9 && Math.abs(vals[1] - haut) < 1e-9;
   } catch(e) {
     return false;
@@ -1397,7 +1394,7 @@ function verifierUne(idx) {
   if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
-  else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
+  else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut, ex.inclusBas, ex.inclusHaut);
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
@@ -1532,7 +1529,8 @@ function formaterReponse(ex) {
       return `x ${symb} ${ex.seuil}`;
     }
     if (ex.type === 'encadrement') {
-      return `${ex.bas} \\lt \\ldots \\lt ${ex.haut}`;
+      const opBas = ex.inclusBas ? '\\leqslant' : '\\lt', opHaut = ex.inclusHaut ? '\\leqslant' : '\\lt';
+      return `${ex.bas} ${opBas} \\ldots ${opHaut} ${ex.haut}`;
     }
     if (ex.type === 'intervalle') {
       return formaterIntervalleSpec(ex.intervalleSpec);
