@@ -631,8 +631,9 @@ function entierSigne(min, max) {
 // le type 'ineq' plus etroit — c'est precisement le groupe cense enseigner l'ecriture en
 // intervalle (titre de 7.4), il doit donc utiliser reellement ce mecanisme.
 function intervalleDemiDroite(sens, seuil) {
-  if (sens === '>') return {type:'intervalles', liste:[{bas:seuil, haut:Infinity, inclusBas:false, inclusHaut:false}]};
-  return {type:'intervalles', liste:[{bas:-Infinity, haut:seuil, inclusBas:false, inclusHaut:false}]};
+  const incl = sens === '>=' || sens === '<=';
+  if (sens === '>' || sens === '>=') return {type:'intervalles', liste:[{bas:seuil, haut:Infinity, inclusBas:incl, inclusHaut:false}]};
+  return {type:'intervalles', liste:[{bas:-Infinity, haut:seuil, inclusBas:false, inclusHaut:incl}]};
 }
 // ecrit "coefX*x" en omettant le coefficient quand il vaut 1 ou -1 ("x", "-x")
 function coefXTexte(coefX) {
@@ -680,16 +681,16 @@ const generateurs = [
   {id:"7.1 d)", type:"num", gen: () => tirageCalculs[3]()},
 
   // ---------- 7.2 : resoudre ax>b, a positif ----------
-  {id:"7.2 a)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\gt ${a*x}`, sens:'>', seuil:x}; }},
-  {id:"7.2 b)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\lt ${a*x}`, sens:'<', seuil:x}; }},
-  {id:"7.2 c)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\geqslant ${a*x}`, sens:'>=', seuil:x}; }},
-  {id:"7.2 d)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\leqslant ${a*x}`, sens:'<=', seuil:x}; }},
+  {id:"7.2 a)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\gt ${a*x}`, intervalleSpec: intervalleDemiDroite('>', x)}; }},
+  {id:"7.2 b)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\lt ${a*x}`, intervalleSpec: intervalleDemiDroite('<', x)}; }},
+  {id:"7.2 c)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\geqslant ${a*x}`, intervalleSpec: intervalleDemiDroite('>=', x)}; }},
+  {id:"7.2 d)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\leqslant ${a*x}`, intervalleSpec: intervalleDemiDroite('<=', x)}; }},
 
   // ---------- 7.3 : resoudre ax>b, a negatif (le signe s'inverse) ----------
-  {id:"7.3 a)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\gt ${-a*x}`, sens:'<', seuil:x}; }},
-  {id:"7.3 b)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\lt ${-a*x}`, sens:'>', seuil:x}; }},
-  {id:"7.3 c)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\geqslant ${-a*x}`, sens:'<=', seuil:x}; }},
-  {id:"7.3 d)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\leqslant ${-a*x}`, sens:'>=', seuil:x}; }},
+  {id:"7.3 a)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\gt ${-a*x}`, intervalleSpec: intervalleDemiDroite('<', x)}; }},
+  {id:"7.3 b)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\lt ${-a*x}`, intervalleSpec: intervalleDemiDroite('>', x)}; }},
+  {id:"7.3 c)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\geqslant ${-a*x}`, intervalleSpec: intervalleDemiDroite('<=', x)}; }},
+  {id:"7.3 d)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\leqslant ${-a*x}`, intervalleSpec: intervalleDemiDroite('>=', x)}; }},
 
   // ---------- 7.4 : resoudre, ecrire la solution sous forme d'intervalle ----------
   {id:"7.4 a)", type:"intervalle", gen: () => {
@@ -803,7 +804,7 @@ const generateurs = [
     const termeB1 = b1<0?`-${-b1}`:`+${b1}`, termeB2 = b2<0?`-${-b2}`:`+${b2}`;
     // bornes strictes (inegalites strictes des deux cotes) : intervalle ouvert des deux cotes
     const intervalleSpec = p >= q ? {type:'vide'} : {type:'intervalles', liste:[{bas:p, haut:q, inclusBas:false, inclusHaut:false}]};
-    return { enonce: `Résoudre le système suivant : \\(${coefXTexte(a1)}${termeB1}${symb1}${c1}\\) et \\(${coefXTexte(a2)}${termeB2}${symb2}${c2}\\).`,
+    return { enonce: `Résoudre le système suivant : \\[\\begin{cases} ${coefXTexte(a1)}${termeB1}${symb1}${c1} \\\\ ${coefXTexte(a2)}${termeB2}${symb2}${c2} \\end{cases}\\]`,
              intervalleSpec };
   }},
   {id:"7.7 c)", type:"encadrement", texteLibre:true, gen: () => {
@@ -867,10 +868,10 @@ function aideContextuellePour(ex) {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
   if (ex.type === 'encadrement') {
-    return "Écrire les deux nombres séparés par un point-virgule ou « et » : par exemple <code>7;8</code> ou <code>7 et 8</code>.";
+    return "Écrire l'encadrement complet, avec les deux inégalités : par exemple <code>7&lt;x&lt;8</code> (ou <code>7&lt;=x&lt;=8</code> selon les bornes).";
   }
   if (ex.type === 'intervalle') {
-    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » ou « ou » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>R</code> si la réponse est l'ensemble des réels, ou <code>vide</code> s'il n'y a aucune solution.";
+    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
@@ -940,12 +941,12 @@ function genererClavierIntervalle(idx) {
         <span class="clavier-label">Autre</span>
         <button onclick="insererFraction(${idx})">a/b</button>
         <button onclick="insererRacine(${idx})">√</button>
-        <button class="touche-large" onclick="inserer(${idx},' ou ')">ou</button>
-        <button class="touche-large" onclick="inserer(${idx},'R')">R</button>
-        <button class="touche-large" onclick="inserer(${idx},'vide')">vide</button>
+        <button class="touche-large" onclick="inserer(${idx},'∪')">∪</button>
+        <button class="touche-large" onclick="inserer(${idx},'ℝ')">ℝ</button>
+        <button class="touche-large" onclick="inserer(${idx},'∅')">∅</button>
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
       </div>
-      <div class="clavier-apercu">Astuce : « ]-inf;1[ ou ]3/2;+inf[ » pour une réunion de deux intervalles.</div>`;
+      <div class="clavier-apercu">Astuce : « ]-∞;1[ ∪ ]3/2;+∞[ » pour une réunion de deux intervalles.</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -1275,11 +1276,22 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
-  const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
+  const s = userInput.replace(/(\d),(\d)/g, '$1.$2').trim();
+  // forme enseignee et attendue : l'encadrement complet "a<...<b" (ou "a<=...<=b"), avec
+  // l'expression encadree au milieu — son contenu n'est pas verifie, seules les deux bornes
+  // le sont, extraites de part et d'autre du premier et du dernier symbole de comparaison.
+  const m = s.match(/^(.+?)(?:<=|<)(.+?)(?:<=|<)(.+)$/);
+  if (m) {
+    try {
+      const vals = [m[1], m[3]].map(x => math.evaluate(x.trim())).sort((a,b) => a - b);
+      return Math.abs(vals[0] - bas) < 1e-9 && Math.abs(vals[1] - haut) < 1e-9;
+    } catch(e) { return false; }
+  }
+  // repli tolere : l'ancienne forme courte "a;b" ou "a et b"
+  const nums = s.split(/[;\s]+et\s+|[;]+/).map(x => x.trim()).filter(x => x !== '');
   if (nums.length !== 2) return false;
   try {
-    const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
+    const vals = nums.map(x => math.evaluate(x)).sort((a,b) => a - b);
     return Math.abs(vals[0] - bas) < 1e-9 && Math.abs(vals[1] - haut) < 1e-9;
   } catch(e) {
     return false;
