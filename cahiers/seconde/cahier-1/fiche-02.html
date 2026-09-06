@@ -618,6 +618,50 @@ function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0
 function choix(tab) { return tab[alea(0, tab.length - 1)]; }
 // echange les deux elements une fois sur deux : evite que la plus petite base soit toujours a gauche
 function melangerDeux(paire) { return alea(0,1) === 0 ? paire : [paire[1], paire[0]]; }
+// ecrit un polynome sous une forme lisible par math.js, coefficients indexes par le degre :
+// polynomeTexte([2,-3,1]) rend « x^2-3*x+2 ». Construire les signes a la main est le motif qui
+// produit les « +- » et les coefficients « 1x » ; on les laisse donc entierement a cette fonction.
+function polynomeTexte(coefs, variable = 'x') {
+  let s = '';
+  for (let p = coefs.length - 1; p >= 0; p--) {
+    const c = coefs[p];
+    if (c === 0) continue;
+    const signe = c < 0 ? '-' : (s === '' ? '' : '+');
+    const abs = Math.abs(c);
+    const base = p === 0 ? '' : (p === 1 ? variable : `${variable}^${p}`);
+    s += signe + (p === 0 ? `${abs}` : (abs === 1 ? base : `${abs}*${base}`));
+  }
+  return s === '' ? '0' : s;
+}
+function melanger(tab) {
+  const a = tab.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = alea(0, i); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+// ---------- viviers du groupe 2.7 ----------
+// Ces deux listes sont calculees une fois au chargement plutot que tirees a la main : ecrire
+// « b appartient a {2,3} » a la volee reduisait 2.7 c) a douze enonces et 2.7 d) a deux.
+// Triplets (base, i, j) tels que b^i et b^j restent des nombres lisibles, avec i different de j.
+const TRIPLETS_BASE_COMMUNE = (() => {
+  const out = [];
+  for (const b of [2,3,5,7]) {
+    for (let i = 2; i <= 8; i++) for (let j = 2; j <= 8; j++) {
+      if (i !== j && Math.pow(b,i) <= 250 && Math.pow(b,j) <= 250) out.push([b, i, j]);
+    }
+  }
+  return out;
+})();
+// Couples (base, exposant) pour lesquels « b^n > n^k a partir de n0 » a un rang n0 non trivial.
+const COUPLES_CROISSANCE = (() => {
+  const out = [];
+  for (let b = 2; b <= 6; b++) for (let k = 2; k <= 6; k++) {
+    let dernierEchec = 0;
+    for (let n = 1; n <= 200; n++) if (Math.pow(b, n) <= Math.pow(n, k)) dernierEchec = n;
+    if (dernierEchec + 1 >= 3 && dernierEchec + 1 <= 30) out.push([b, k]);
+  }
+  return out;
+})();
 function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
 
 // ---------- fractions ----------
@@ -719,36 +763,43 @@ const generateurs = [
   }},
 
   // ---------- 2.3 : developper et reduire ----------
+  // Chaque exercice a deux degres de liberte au moins (signe, coefficient), sinon un unique
+  // parametre limiterait le groupe a une quinzaine d'enonces et les memes nombres reviendraient
+  // d'une version a l'autre.
   {id:"2.3 a)", type:"alg", gen: () => {
-    const a = alea(2,9);
-    return { enonce:`(x+${a})^2`, reponse:`x^2+${2*a}*x+${a*a}` };
+    const a = alea(2,25), s = choix([1,-1]);
+    return { enonce:`(x${s > 0 ? '+' : '-'}${a})^2`, reponse: polynomeTexte([a*a, 2*s*a, 1]) };
   }},
   {id:"2.3 b)", type:"alg", gen: () => {
-    const a = alea(2,9);
-    return { enonce:`(x-${a})^2`, reponse:`x^2-${2*a}*x+${a*a}` };
+    let k, a;
+    do { k = alea(2,9); a = alea(2,15); } while (pgcd(k, a) !== 1);
+    const s = choix([1,-1]);
+    return { enonce:`(${k}x${s > 0 ? '+' : '-'}${a})^2`, reponse: polynomeTexte([a*a, 2*s*k*a, k*k]) };
   }},
   {id:"2.3 c)", type:"alg", gen: () => {
-    const a = alea(2,11);
-    return { enonce:`(x-${a})(x+${a})`, reponse:`x^2-${a*a}` };
+    const a = alea(2,30);
+    return { enonce:`(x-${a})(x+${a})`, reponse: polynomeTexte([-a*a, 0, 1]) };
   }},
   {id:"2.3 d)", type:"alg", gen: () => {
-    const k = alea(2,6), a = alea(2,9);
-    return { enonce:`(${k}x+${a})^2`, reponse:`${k*k}*x^2+${2*k*a}*x+${a*a}` };
+    // difference de deux carres avec un coefficient : (kx-a)(kx+a)
+    let k, a;
+    do { k = alea(2,9); a = alea(2,15); } while (pgcd(k, a) !== 1);
+    return { enonce:`(${k}x-${a})(${k}x+${a})`, reponse: polynomeTexte([-a*a, 0, k*k]) };
   }},
 
   // ---------- 2.4 : une seule puissance, une seule base (les trois regles de base) ----------
   {id:"2.4 a)", type:"num", gen: () => {
-    const a = alea(2,7);
+    const a = alea(2,13);
     let m, n;
     do { m = alea(2,5); n = alea(2,5); } while (m + n > 9);
     return { enonce:`${a}^{${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, m+n) };
   }},
   {id:"2.4 b)", type:"num", gen: () => {
-    const a = alea(2,8), n = alea(1,4), m = n + alea(2,5);
+    const a = alea(2,15), n = alea(1,4), m = n + alea(2,5);
     return { enonce:`\\dfrac{${puissanceLatex(a,m)}}{${puissanceLatex(a,n)}}`, reponse: puissanceTexte(a, m-n) };
   }},
   {id:"2.4 c)", type:"num", gen: () => {
-    const a = alea(2,6);
+    const a = alea(2,12);
     let m, n;
     do { m = alea(2,4); n = alea(2,3); } while (m * n > 9);
     return { enonce:`\\left(${a}^{${m}}\\right)^{${n}}`, reponse: puissanceTexte(a, m*n) };
@@ -756,15 +807,15 @@ const generateurs = [
 
   // ---------- 2.5 : exposants negatifs ----------
   {id:"2.5 a)", type:"num", gen: () => {
-    const a = alea(2,7), n = alea(2,5);
+    const a = alea(2,13), n = alea(2,6);
     return { enonce:`${a}^{-${n}}`, reponse:`1/${a}^${n}` };
   }},
   {id:"2.5 b)", type:"num", gen: () => {
-    const a = alea(2,7), n = alea(2,5);
+    const a = alea(2,13), n = alea(2,6);
     return { enonce:`\\dfrac{1}{${a}^{-${n}}}`, reponse: puissanceTexte(a, n) };
   }},
   {id:"2.5 c)", type:"num", gen: () => {
-    const a = alea(2,7), m = alea(1,4), n = m + alea(2,5);
+    const a = alea(2,13), m = alea(1,4), n = m + alea(2,5);
     return { enonce:`${a}^{-${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, n-m) };
   }},
 
@@ -843,43 +894,42 @@ const generateurs = [
 
   // ---------- 2.7 : calculs plus avances ----------
   {id:"2.7 a)", type:"num", texteLibre:true, gen: () => {
-    // « premiere puissance de a depassant N » : l'algorithme donne en exemple par le programme
-    const a = choix([2,3,5,7]), N = choix([1000, 10000, 100000, 1000000]);
+    // « premiere puissance de a depassant N » : l'algorithme donne en exemple par le programme.
+    // Onze bases et douze seuils, au lieu de quatre et quatre : 132 enonces possibles.
+    const a = choix([2,3,4,5,6,7,8,9,11,12,13]);
+    const N = choix([1,2,5]) * Math.pow(10, alea(3,6));
     let n = 0, v = 1;
     while (v <= N) { v *= a; n++; }
     return { enonce:`Déterminer le plus petit entier \\(n\\) tel que \\(${a}^n > ${grouperMilliers(String(N))}\\)`, reponse:`${n}` };
   }},
   {id:"2.7 b)", type:"alg", gen: () => {
-    // regrouper une somme de puissances consecutives : a^n + a^(n+1) = (1+a) a^n
-    const a = choix([2,3,5,10]), nbTermes = alea(2,3);
-    let coef = 0, termes = [];
-    for (let k = 0; k < nbTermes; k++) {
-      coef += Math.pow(a, k);
-      termes.push(k === 0 ? `${a}^n` : `${a}^{n+${k}}`);
-    }
+    // Regrouper une somme de puissances : a^n + a^(n+i) + ... = (1 + a^i + ...) a^n.
+    // Les decalages ne sont plus forcement consecutifs, ce qui multiplie les enonces.
+    const a = choix([2,3,4,5,6,7,10]);
+    const decalages = [0].concat(melanger([1,2,3]).slice(0, alea(1,2)).sort((u,v) => u - v));
+    const coef = decalages.reduce((s, d) => s + Math.pow(a, d), 0);
+    const termes = decalages.map(d => d === 0 ? `${a}^n` : `${a}^{n+${d}}`);
     return { enonce: termes.join('+'), reponse:`${coef}*${a}^n` };
   }},
   {id:"2.7 c)", type:"alg", texteLibre:true, gen: () => {
-    // ramener deux puissances a une base commune
-    const b = choix([2,3]);
-    let i, j;
-    do { i = alea(2,4); j = alea(2,4); } while (i === j);
+    // Ramener deux puissances a une base commune. Le vivier retient tous les triplets dont les
+    // deux bases affichees restent lisibles, soit 32 possibilites au lieu de 12.
+    const [b, i, j] = choix(TRIPLETS_BASE_COMMUNE);
     // On demande l'exposant seul, pas l'expression entiere : au clavier physique, la touche
     // « ^ » n'englobe que le caractere suivant, si bien que « 3^7n » se lit 3^7 x n.
     return { enonce:`\\(${Math.pow(b,i)}^n\\times ${Math.pow(b,j)}^n\\) peut s'écrire sous la forme \\(${b}^p\\), où \\(p\\) dépend de \\(n\\). Donner \\(p\\)`,
              reponse:`${i+j}*n` };
   }},
   {id:"2.7 d)", type:"num", texteLibre:true, gen: () => {
-    // Croissance comparee de 2^n et de n^k. On demande le rang A PARTIR DUQUEL l'inegalite
-    // vaut : « le plus petit n tel que 2^n > n^k » serait satisfait par n=1 (2 > 1), ce qui ne
-    // dit rien. On cherche donc le dernier rang qui echoue, et on repond le suivant.
-    const k = alea(2,3);
+    // Croissance comparee de b^n et de n^k. On demande le rang A PARTIR DUQUEL l'inegalite
+    // vaut : « le plus petit n tel que b^n > n^k » serait satisfait par n=1, ce qui ne dit rien.
+    // Le vivier ne retient que les couples dont le rang cherche est franchement non trivial.
+    const [b, k] = choix(COUPLES_CROISSANCE);
     let dernierEchec = 0;
-    for (let n = 1; n <= 60; n++) { if (Math.pow(2, n) <= Math.pow(n, k)) dernierEchec = n; }
-    return { enonce:`Déterminer le plus petit entier \\(n_0\\) tel que \\(2^n > n^{${k}}\\) pour tout entier \\(n\\geqslant n_0\\)`,
+    for (let n = 1; n <= 200; n++) { if (Math.pow(b, n) <= Math.pow(n, k)) dernierEchec = n; }
+    return { enonce:`Déterminer le plus petit entier \\(n_0\\) tel que \\(${b}^n > n^{${k}}\\) pour tout entier \\(n\\geqslant n_0\\)`,
              reponse:`${dernierEchec + 1}` };
-  }},
-  {id:"2.7 e)", type:"num", texteLibre:true, gen: () => {
+  }},  {id:"2.7 e)", type:"num", texteLibre:true, gen: () => {
     // Chiffre des unites d'une tres grande puissance : la calculatrice etant inutile ici,
     // il faut remarquer que les unites de a^k se repetent. Pour ces bases, le motif se
     // referme en quatre etapes au plus, donc le chiffre ne depend que de N modulo 4.
