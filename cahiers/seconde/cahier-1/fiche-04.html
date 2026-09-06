@@ -929,7 +929,7 @@ const generateurs = [
     bas = Math.round(bas * Math.pow(10,p)) / Math.pow(10,p);
     const haut = Math.round((bas + pas) * Math.pow(10,p)) / Math.pow(10,p);
     return { enonce:`Donner un encadrement de \\(\\sqrt{${N}}\\) d'amplitude \\(${p===1?'0{,}1':'0{,}01'}\\), par balayage`,
-             bas, haut };
+             bas, haut, inclusBas:false, inclusHaut:false };
   }},
   {id:"4.8 e)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     // comparer p-racine(a) et q-racine(b) sans calculatrice, par elevation au carre : p^2 a vs q^2 b
@@ -1022,7 +1022,7 @@ function aideContextuellePour(ex) {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
   if (ex.type === 'encadrement') {
-    return "Écrire les deux nombres séparés par un point-virgule ou « et » : par exemple <code>7;8</code> ou <code>7 et 8</code>.";
+    return "Écrire l'encadrement complet, avec les deux inégalités : par exemple <code>7&lt;x&lt;8</code>.";
   }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
@@ -1095,7 +1095,7 @@ function champReponsePour(idx, ex) {
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
+      <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7&lt;x&lt;8 » pour un encadrement</div>
     </div>`;
 }
 
@@ -1399,12 +1399,15 @@ function checkInequation(userInput, correctSens, correctSeuil) {
   return Math.abs(parsed.seuil - correctSeuil) < 1e-6 && sensEquivalent;
 }
 
-function checkEncadrement(userInput, bas, haut) {
-  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
-  const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
-  if (nums.length !== 2) return false;
+function checkEncadrement(userInput, bas, haut, inclusBas, inclusHaut) {
+  const s = userInput.replace(/(\d),(\d)/g, '$1.$2').trim();
+  const m = s.match(/^(.+?)(<=|<)(.+?)(<=|<)(.+)$/);
+  if (!m) return false;
+  const [, gauche, op1, , op2, droite] = m;
+  if ((op1 === '<=') !== !!inclusBas) return false;
+  if ((op2 === '<=') !== !!inclusHaut) return false;
   try {
-    const vals = nums.map(s => math.evaluate(s)).sort((a,b) => a - b);
+    const vals = [gauche, droite].map(x => math.evaluate(x.trim())).sort((a,b) => a - b);
     return Math.abs(vals[0] - bas) < 1e-9 && Math.abs(vals[1] - haut) < 1e-9;
   } catch(e) {
     return false;
@@ -1440,7 +1443,7 @@ function verifierUne(idx) {
   if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
-  else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
+  else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut, ex.inclusBas, ex.inclusHaut);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
