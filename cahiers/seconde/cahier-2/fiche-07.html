@@ -672,14 +672,14 @@ const generateurs = [
   {id:"7.1 d)", type:"num", gen: () => tirageCalculs[3]()},
 
   // ---------- 7.2 : resoudre ax>b, a positif ----------
-  {id:"7.2 a)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x>${a*x}`, sens:'>', seuil:x}; }},
-  {id:"7.2 b)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x<${a*x}`, sens:'<', seuil:x}; }},
+  {id:"7.2 a)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\gt ${a*x}`, sens:'>', seuil:x}; }},
+  {id:"7.2 b)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\lt ${a*x}`, sens:'<', seuil:x}; }},
   {id:"7.2 c)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\geqslant ${a*x}`, sens:'>=', seuil:x}; }},
   {id:"7.2 d)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\leqslant ${a*x}`, sens:'<=', seuil:x}; }},
 
   // ---------- 7.3 : resoudre ax>b, a negatif (le signe s'inverse) ----------
-  {id:"7.3 a)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x>${-a*x}`, sens:'<', seuil:x}; }},
-  {id:"7.3 b)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x<${-a*x}`, sens:'>', seuil:x}; }},
+  {id:"7.3 a)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\gt ${-a*x}`, sens:'<', seuil:x}; }},
+  {id:"7.3 b)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\lt ${-a*x}`, sens:'>', seuil:x}; }},
   {id:"7.3 c)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\geqslant ${-a*x}`, sens:'<=', seuil:x}; }},
   {id:"7.3 d)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\leqslant ${-a*x}`, sens:'>=', seuil:x}; }},
 
@@ -698,7 +698,7 @@ const generateurs = [
     const x = entierSigne(1,10), b = alea(1,15);
     const d = b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (a-c) > 0 ? '<' : '>';
-    return { enonce:`${coefXTexte(a)}+${b}<${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
+    return { enonce:`${coefXTexte(a)}+${b}\\lt ${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
   }},
   {id:"7.4 c)", type:"ineq", gen: () => {
     // plus delicat : coefficient fractionnaire devant x
@@ -773,39 +773,46 @@ const generateurs = [
              bas: -k*b+p, haut: -k*a+p };
   }},
 
-  // ---------- 7.7 : calculs plus avances ----------
+  // ---------- 7.7 : calculs plus avances (aucune contextualisation : calcul plus complexe
+  // ou propriete a demontrer, quitte a deborder legerement du programme) ----------
   {id:"7.7 a)", type:"ineq", texteLibre:true, gen: () => {
-    // modeliser un problème par une inequation
-    const prise = alea(2,8), tarif = alea(1,5), km = alea(3,20);
-    const budget = prise + tarif*km;
-    return { enonce: `Un taxi facture ${prise} € de prise en charge puis ${tarif} € par kilomètre. Avec ${budget} €, quel est le nombre maximal \\(x\\) de kilomètres que l'on peut parcourir ?`,
-             sens: '<=', seuil: km };
+    // le plus exigeant en calcul : une fraction de CHAQUE cote, x des deux cotes
+    let b, d; do { b = alea(2,6); d = alea(2,6); } while (b === d);
+    const s = entierSigne(1,6), x0 = entierSigne(1,9);
+    const a = b*s - x0, c = d*s - x0;
+    const termeA = a<0?`-${-a}`:`+${a}`, termeC = c<0?`-${-c}`:`+${c}`;
+    const sensFinal = (d-b) > 0 ? '<' : '>';
+    return { enonce: `Résoudre l'inéquation \\(\\dfrac{x${termeA}}{${b}}\\lt \\dfrac{x${termeC}}{${d}}\\).`,
+             sens: sensFinal, seuil: x0 };
   }},
-  {id:"7.7 b)", type:"encadrement", texteLibre:true, gen: () => {
-    // encadrer une expression plus riche : soustraction ET division combinees
-    const k = alea(2,5), m1 = entierSigne(1,8), m2 = m1 + alea(1,6), p = alea(5,20);
-    const a = p - k*m2, b = p - k*m1;
-    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{${p}-x}{${k}}\\).`,
+  {id:"7.7 b)", type:"intervalle", texteLibre:true, gen: () => {
+    // un systeme de deux inequations : l'ensemble solution est une intersection d'intervalles,
+    // eventuellement vide - le plus caracteristique des "avances" de cette fiche
+    const a1 = entierSigne(2,7), b1 = alea(1,15), p = entierSigne(1,12);
+    const c1 = a1*p + b1, symb1 = a1 > 0 ? '\\gt' : '\\lt';
+    const a2 = entierSigne(2,7), b2 = alea(1,15), q = entierSigne(1,12);
+    const c2 = a2*q + b2, symb2 = a2 > 0 ? '\\lt' : '\\gt';
+    const termeB1 = b1<0?`-${-b1}`:`+${b1}`, termeB2 = b2<0?`-${-b2}`:`+${b2}`;
+    return { enonce: `Résoudre le système suivant : \\(${coefXTexte(a1)}${termeB1}${symb1}${c1}\\) et \\(${coefXTexte(a2)}${termeB2}${symb2}${c2}\\).`,
+             vide: p >= q, bas: p, haut: q };
+  }},
+  {id:"7.7 c)", type:"encadrement", texteLibre:true, gen: () => {
+    // plus exigeant que le coeur : x est lui-meme mis a l'echelle avant la soustraction et la division
+    const k = alea(2,5), n = alea(2,4), j = alea(1,4), m1 = entierSigne(1,8);
+    const m2 = m1 + n*j, a = alea(1,10), b = a + k*j, p = k*m1 + n*b;
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{${p}-${n}x}{${k}}\\).`,
              bas: m1, haut: m2 };
   }},
-  {id:"7.7 c)", type:"texte", variation:true, texteLibre:true, gen: () => {
-    // lien avec le sens de variation d'une fonction affine
-    const a = entierSigne(1,9), b = entierSigne(1,15), termeB = b<0?`-${-b}`:`+${b}`;
-    return { enonce: `La fonction \\(f\\) est définie par \\(f(x)=${coefXTexte(a)}${termeB}\\). \\(f\\) est-elle croissante ou décroissante sur \\(\\mathbb{R}\\) ?`,
-             reponse: a>0 ? 'croissante' : 'décroissante' };
+  {id:"7.7 d)", type:"alg", texteLibre:true, gen: () => {
+    // propriete a demontrer : l'etape-cle de la preuve de monotonie d'une fonction affine
+    const a = entierSigne(2,9), b = alea(1,15);
+    return { enonce: `Soit \\(f\\) la fonction affine définie par \\(f(x)=${coefXTexte(a)}+${b}\\), et deux réels \\(p\\lt q\\). Factoriser \\(f(q)-f(p)\\) (ne pas développer).`,
+             reponse: `${a}*(q-p)` };
   }},
-  {id:"7.7 d)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
+  {id:"7.7 e)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     const a = entierSigne(1,20);
     return { enonce: `La fonction \\(f\\) est définie par \\(f(x)=${coefXTexte(a)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\) : répondre par \\(\\lt\\) ou par \\(\\gt\\).`,
              reponse: a>0 ? '<' : '>' };
-  }},
-  {id:"7.7 e)", type:"ineq", texteLibre:true, gen: () => {
-    // le plus exigeant : modeliser ET tenir compte du signe du coefficient
-    const v = entierSigne(2,8), p = alea(1,20), t0 = entierSigne(1,10);
-    const seuilPosition = v*t0 + p;
-    const sensFinal = v > 0 ? '>' : '<';
-    return { enonce: `La position d'un mobile à l'instant \\(t\\) est donnée par \\(f(t)=${v}t+${p}\\) (en mètres). Pour quelles valeurs de \\(t\\) a-t-on \\(f(t)>${seuilPosition}\\) ?`,
-             sens: sensFinal, seuil: t0 };
   }}
 ];
 
@@ -834,7 +841,7 @@ const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 function necessiteAide(ex) {
   if (ex.comparaison) return true;
   if (ex.variation) return true;
-  if (['ineq', 'encadrement'].includes(ex.type)) return true;
+  if (['ineq', 'encadrement', 'intervalle'].includes(ex.type)) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
@@ -851,6 +858,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'encadrement') {
     return "Écrire les deux nombres séparés par un point-virgule ou « et » : par exemple <code>7;8</code> ou <code>7 et 8</code>.";
+  }
+  if (ex.type === 'intervalle') {
+    return "Si le système admet des solutions, écrire l'intersection sous forme d'encadrement, comme <code>3;8</code>. S'il n'admet aucune solution, écrire <code>vide</code> (ou <code>aucune solution</code>, <code>∅</code>).";
   }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
@@ -920,10 +930,17 @@ function champReponsePour(idx, ex) {
         <button onclick="inserer(${idx},'<=')">&leq;</button>
       </div>
       <div class="clavier-groupe">
+        <span class="clavier-label">Intervalle</span>
+        <button onclick="inserer(${idx},'[')">[</button>
+        <button onclick="inserer(${idx},']')">]</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'inf')">&infin;</button>
+      </div>
+      <div class="clavier-groupe">
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>
+      <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement, « ]4;+inf[ » pour un intervalle</div>
     </div>`;
 }
 
@@ -936,7 +953,7 @@ function construireGrilles() {
       const div = document.createElement('div');
       div.className = 'question';
       div.id = 'q-' + idx;
-      const typesSansEgal = ['ineq', 'encadrement'];
+      const typesSansEgal = ['ineq', 'encadrement', 'intervalle'];
       const reponseEnsemble = ex.reponse && ex.reponse.trim().startsWith('{');
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal) ? '' : ' =';
@@ -1136,7 +1153,8 @@ function checkTexte(userInput, correctText) {
     '<': ['<', 'inferieur', 'plusPetit'], '>': ['>', 'superieur', 'plusGrand'],
     'oui': ['oui', 'o', 'vrai'], 'non': ['non', 'n', 'faux'],
     'croissante': ['croissante', 'croissant'],
-    'decroissante': ['decroissante', 'decroissant']
+    'decroissante': ['decroissante', 'decroissant'],
+    'vide': ['vide', 'aucunesolution', 'aucune', 'impossible', '∅', 'emptyset']
   };
   const f = familles[attendu];
   return !!f && f.map(nettoyer).includes(saisi);
@@ -1215,7 +1233,10 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
+  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2').trim();
+  // tolere des crochets d'intervalle optionnels autour de la saisie ("[3;8]", "]3;8["...) :
+  // le clavier virtuel propose desormais [ ] pour la notation intervalle (voir 7.7 b).
+  userInput = userInput.replace(/^[\[\]]/, '').replace(/[\[\]]$/, '');
   const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
   if (nums.length !== 2) return false;
   try {
@@ -1224,6 +1245,13 @@ function checkEncadrement(userInput, bas, haut) {
   } catch(e) {
     return false;
   }
+}
+
+// reponse d'un systeme de deux inequations : soit une intersection d'intervalles (memes
+// bornes qu'un encadrement), soit "vide" si l'intersection est vide (voir 7.7 b).
+function checkIntervalle(userInput, ex) {
+  if (ex.vide) return checkTexte(userInput, 'vide');
+  return checkEncadrement(userInput, ex.bas, ex.haut);
 }
 
 function valeurDuChamp(el) {
@@ -1256,6 +1284,7 @@ function verifierUne(idx) {
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
+  else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -1389,7 +1418,10 @@ function formaterReponse(ex) {
       return `x ${symb} ${ex.seuil}`;
     }
     if (ex.type === 'encadrement') {
-      return `${ex.bas} < \\ldots < ${ex.haut}`;
+      return `${ex.bas} \\lt \\ldots \\lt ${ex.haut}`;
+    }
+    if (ex.type === 'intervalle') {
+      return ex.vide ? '\\text{aucune solution}' : `${ex.bas} \\lt \\ldots \\lt ${ex.haut}`;
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
