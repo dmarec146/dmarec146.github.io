@@ -685,18 +685,20 @@ const generateurs = [
 
   // ---------- 7.4 : resoudre, ecrire la solution sous forme d'intervalle ----------
   {id:"7.4 a)", type:"ineq", gen: () => {
-    let a, c; do { a = alea(2,9); c = alea(2,9); } while (a === c);
+    // coefficients directeurs signes des deux cotes (positifs ou negatifs)
+    let a, c; do { a = entierSigne(2,9); c = entierSigne(2,9); } while (a === c);
     const x = entierSigne(1,10), b = alea(1,15);
     const d = b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (a-c) > 0 ? '>' : '<';
-    return { enonce:`${a}x+${b}>${c}x${termeD}`, sens: sensFinal, seuil: x };
+    return { enonce:`${coefXTexte(a)}+${b}>${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
   }},
   {id:"7.4 b)", type:"ineq", gen: () => {
-    let a, c; do { a = alea(2,9); c = alea(2,9); } while (a === c);
+    // coefficients directeurs signes des deux cotes (positifs ou negatifs)
+    let a, c; do { a = entierSigne(2,9); c = entierSigne(2,9); } while (a === c);
     const x = entierSigne(1,10), b = alea(1,15);
     const d = b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (a-c) > 0 ? '<' : '>';
-    return { enonce:`${a}x+${b}<${c}x${termeD}`, sens: sensFinal, seuil: x };
+    return { enonce:`${coefXTexte(a)}+${b}<${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
   }},
   {id:"7.4 c)", type:"ineq", gen: () => {
     // plus delicat : coefficient fractionnaire devant x
@@ -705,8 +707,8 @@ const generateurs = [
     return { enonce:`\\dfrac{x}{${a}}${termeB}>${c}`, sens:'>', seuil:x };
   }},
   {id:"7.4 d)", type:"ineq", gen: () => {
-    // plus delicat : il faut distribuer un membre avant de rassembler les x
-    const m = alea(2,7), x = entierSigne(1,10), q = entierSigne(1,9);
+    // plus delicat : il faut distribuer un membre avant de rassembler les x (m signe)
+    const m = entierSigne(2,7), x = entierSigne(1,10), q = entierSigne(1,9);
     const p = m*(q+x) - x;
     const termeP = p<0?`-${-p}`:`+${p}`, termeQ = q<0?`-${-q}`:`+${q}`;
     const sensFinal = (1-m) > 0 ? '>' : '<';
@@ -723,51 +725,51 @@ const generateurs = [
   // ---------- 7.5 : additionner ou soustraire deux inegalites ----------
   {id:"7.5 a)", type:"encadrement", texteLibre:true, gen: () => {
     const a = alea(1,10), b = a + alea(1,10), c = alea(1,10), d = c + alea(1,10);
-    return { enonce: `Sachant que \\(${a}<x<${b}\\) et \\(${c}<y<${d}\\), donner un encadrement de \\(x+y\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(x+y\\).`,
              bas: a+c, haut: b+d };
   }},
   {id:"7.5 b)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat : une soustraction, il faut d'abord encadrer -y (les bornes s'inversent)
     const a = alea(1,10), b = a + alea(1,10), c = alea(1,10), d = c + alea(1,10);
-    return { enonce: `Sachant que \\(${a}<x<${b}\\) et \\(${c}<y<${d}\\), donner un encadrement de \\(x-y\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(x-y\\).`,
              bas: a-d, haut: b-c };
   }},
   {id:"7.5 c)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat encore : mise a l'echelle puis somme
     const a = alea(1,8), b = a + alea(1,8), c = alea(1,8), d = c + alea(1,8), k = alea(2,4);
-    return { enonce: `Sachant que \\(${a}<x<${b}\\) et \\(${c}<y<${d}\\), donner un encadrement de \\(${k}x+y\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(${k}x+y\\).`,
              bas: k*a+c, haut: k*b+d };
   }},
   {id:"7.5 d)", type:"encadrement", texteLibre:true, gen: () => {
     // le plus delicat : mise a l'echelle ET soustraction combinees
     const a = alea(1,8), b = a + alea(1,8), c = alea(1,8), d = c + alea(1,8), k = alea(2,4);
-    return { enonce: `Sachant que \\(${a}<x<${b}\\) et \\(${c}<y<${d}\\), donner un encadrement de \\(${k}x-y\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\), donner un encadrement de \\(${k}x-y\\).`,
              bas: k*a-d, haut: k*b-c };
   }},
 
   // ---------- 7.6 : multiplier ou diviser une inegalite par un reel positif ou negatif ----------
   {id:"7.6 a)", type:"encadrement", texteLibre:true, gen: () => {
     const a = alea(1,9), b = a + alea(1,10), k = alea(2,6);
-    return { enonce: `Sachant que \\(${a}<x<${b}\\), donner un encadrement de \\(${k}x\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(${k}x\\).`,
              bas: k*a, haut: k*b };
   }},
   {id:"7.6 b)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat : coefficient negatif, les bornes s'inversent
     const a = alea(1,9), b = a + alea(1,10), k = alea(2,6);
-    return { enonce: `Sachant que \\(${a}<x<${b}\\), donner un encadrement de \\(-${k}x\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(-${k}x\\).`,
              bas: -k*b, haut: -k*a };
   }},
   {id:"7.6 c)", type:"encadrement", texteLibre:true, gen: () => {
     // egalement delicat : diviser par un nombre negatif
     const div = alea(2,6), a0 = alea(1,8), b0 = a0 + alea(1,8), a = div*a0, b = div*b0;
-    return { enonce: `Sachant que \\(${a}<x<${b}\\), donner un encadrement de \\(\\dfrac{x}{-${div}}\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{x}{-${div}}\\).`,
              bas: -b0, haut: -a0 };
   }},
   {id:"7.6 d)", type:"encadrement", texteLibre:true, gen: () => {
     // le plus delicat de ce groupe : coefficient negatif ET terme constant
     const a = alea(1,9), b = a + alea(1,10), k = alea(2,6), p = entierSigne(1,15);
     const termeP = p<0?`-${-p}`:`+${p}`;
-    return { enonce: `Sachant que \\(${a}<x<${b}\\), donner un encadrement de \\(-${k}x${termeP}\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(-${k}x${termeP}\\).`,
              bas: -k*b+p, haut: -k*a+p };
   }},
 
@@ -783,7 +785,7 @@ const generateurs = [
     // encadrer une expression plus riche : soustraction ET division combinees
     const k = alea(2,5), m1 = entierSigne(1,8), m2 = m1 + alea(1,6), p = alea(5,20);
     const a = p - k*m2, b = p - k*m1;
-    return { enonce: `Sachant que \\(${a}<x<${b}\\), donner un encadrement de \\(\\dfrac{${p}-x}{${k}}\\).`,
+    return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{${p}-x}{${k}}\\).`,
              bas: m1, haut: m2 };
   }},
   {id:"7.7 c)", type:"texte", variation:true, texteLibre:true, gen: () => {
@@ -794,7 +796,7 @@ const generateurs = [
   }},
   {id:"7.7 d)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     const a = entierSigne(1,20);
-    return { enonce: `La fonction \\(f\\) est définie par \\(f(x)=${coefXTexte(a)}\\). Sachant que \\(x_1<x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\) : répondre par \\(<\\) ou par \\(>\\).`,
+    return { enonce: `La fonction \\(f\\) est définie par \\(f(x)=${coefXTexte(a)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\) : répondre par \\(\\lt\\) ou par \\(\\gt\\).`,
              reponse: a>0 ? '<' : '>' };
   }},
   {id:"7.7 e)", type:"ineq", texteLibre:true, gen: () => {
