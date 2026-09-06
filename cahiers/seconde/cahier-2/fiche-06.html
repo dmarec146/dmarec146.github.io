@@ -880,12 +880,28 @@ const generateurs = [
   }}
 ];
 
+// Groupes ou la reponse est LA solution unique d'une equation (pas un ensemble a plusieurs
+// valeurs, pas une expression) : l'eleve hesite naturellement entre "4", "x=4" et "{4}", d'ou
+// l'aide de groupe dediee (voir necessiteAide/aideContextuellePour) et la tolerance ajoutee
+// dans normaliserSaisie pour les accolades.
+const IDS_SOLUTION_UNIQUE = new Set([
+  '6.2 a)','6.2 b)','6.2 c)','6.2 d)',
+  '6.3 a)','6.3 b)','6.3 c)','6.3 d)',
+  '6.4 a)','6.4 b)','6.4 c)','6.4 d)',
+  '6.5 a)','6.5 b)','6.5 c)','6.5 d)',
+  '6.7 a)','6.7 b)','6.7 c)',
+  '6.8 a)','6.8 b)','6.8 c)','6.8 d)',
+  '6.9 c)'
+]);
+
 function genererExercices() {
   // on renouvelle le tirage des modeles de calcul a chaque version de la fiche
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   return generateurs.map(g => {
     const { gen, ...modele } = g;
-    return { ...modele, ...gen() };
+    const resultat = { ...modele, ...gen() };
+    if (IDS_SOLUTION_UNIQUE.has(resultat.id)) resultat.solutionEquation = true;
+    return resultat;
   });
 }
 
@@ -905,12 +921,16 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (ex.solutionEquation) return true;
   if (['ineq', 'encadrement'].includes(ex.type)) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
 
 function aideContextuellePour(ex) {
+  if (ex.solutionEquation) {
+    return "Écrire uniquement la valeur de la solution : <code>4</code>, <code>x=4</code> et <code>{4}</code> sont tous acceptés.";
+  }
   if (ex.type === 'ineq') {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
@@ -1170,7 +1190,14 @@ function reculer(idx) {
 const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs']);
 
 function normaliserSaisie(str) {
-  let s = String(str).replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
+  let s = String(str).trim();
+  // "{4}" est tolere comme synonyme de "4" pour une equation a solution unique (l'eleve hesite
+  // naturellement entre "4", "x=4" et "{4}") ; le VRAI ensemble a plusieurs valeurs passe par
+  // checkEnsemble, jamais par cette fonction, donc retirer une seule paire d'accolades ici est
+  // sans risque de confondre les deux formats.
+  const accolades = s.match(/^\{(.*)\}$/);
+  if (accolades) s = accolades[1].trim();
+  s = s.replace(/√/g, 'sqrt').replace(/[∗×·]/g, '*');
   // virgule decimale a la francaise (ex: "1,5") -> point, uniquement entre deux chiffres
   s = s.replace(/(\d),(\d)/g, '$1.$2');
   // une lettre suivie de '(' est une multiplication implicite pour l'eleve (ex: "x(3x+7)" en reponse
