@@ -599,7 +599,7 @@ window.MathJax = {
 </div>
 
 <div class="score-panneau" id="score-panneau">
-  <span class="score-chiffre" id="score-chiffre">0 / 30</span> bonnes réponses
+  <span class="score-chiffre" id="score-chiffre">0 / 35</span> bonnes réponses
   <div style="margin-top:10px;">
     <button class="btn-secondaire" id="btn-correction" onclick="toggleCorrection()">Voir la correction des erreurs</button>
   </div>
@@ -748,6 +748,13 @@ const generateurs = [
     const termeB = b<0?`-${-b}`:`+${b}`, termeD = d<0?`-${-d}`:`+${d}`;
     return { enonce:`${a}x${termeB}=${c}x${termeD}`, reponse:`${x}` };
   }},
+  {id:"6.4 d)", type:"num", gen: () => {
+    // egalement delicat : il faut distribuer un cote avant de rassembler les x
+    let a, c; do { a = alea(2,7); c = alea(2,9); } while (a === c);
+    const x = entierSigne(1,10), p = entierSigne(1,9);
+    const d = a*(x+p) - c*x, termeP = p<0?`-${-p}`:`+${p}`, termeD = d<0?`-${-d}`:`+${d}`;
+    return { enonce:`${a}(x${termeP})=${c}x${termeD}`, reponse:`${x}` };
+  }},
 
   // ---------- 6.5 : coefficients fractionnaires ----------
   {id:"6.5 a)", type:"num", gen: () => {
@@ -767,6 +774,12 @@ const generateurs = [
     const x = a*b*k, c = k*(a+b);
     return { enonce:`\\dfrac{x}{${a}}+\\dfrac{x}{${b}}=${c}`, reponse:`${x}` };
   }},
+  {id:"6.5 d)", type:"num", gen: () => {
+    // egalement delicat : un coefficient multiplie toute la fraction
+    const k = alea(2,6), b = alea(2,7), t = entierSigne(1,8), a = entierSigne(1,9);
+    const x = b*t - a, c = k*t, termeA = a<0?`-${-a}`:`+${a}`;
+    return { enonce:`\\dfrac{${k}(x${termeA})}{${b}}=${c}`, reponse:`${x}` };
+  }},
 
   // ---------- 6.6 : x^2 = a ----------
   {id:"6.6 a)", type:"num", gen: () => {
@@ -779,6 +792,12 @@ const generateurs = [
     do { n = alea(2,40); } while (Number.isInteger(Math.sqrt(n)));
     return { enonce:`x^2=${n}`, reponse:`{-sqrt(${n});sqrt(${n})}` };
   }},
+  {id:"6.6 c)", type:"num", gen: () => {
+    // egalement delicat : il faut isoler x^2 avant de reconnaitre la forme x^2=a
+    const n = alea(2,15), a = entierSigne(1,20);
+    const b = n*n + a, termeA = a<0?`-${-a}`:`+${a}`;
+    return { enonce:`x^2${termeA}=${b}`, reponse:`{-${n};${n}}` };
+  }},
 
   // ---------- 6.7 : a/x = b ----------
   {id:"6.7 a)", type:"num", gen: () => {
@@ -789,6 +808,14 @@ const generateurs = [
     // plus delicat : b negatif, et l'egalite est ecrite dans l'autre sens
     const b = entierSigne(2,9), x = entierSigne(1,10), a = b*x;
     return { enonce:`${b}=\\dfrac{${a}}{x}`, reponse:`${x}` };
+  }},
+  {id:"6.7 c)", type:"num", gen: () => {
+    // egalement delicat : le numerateur est une somme non encore calculee
+    const b = alea(2,9), x = entierSigne(1,10);
+    const total = b*x;
+    const p = entierSigne(1, Math.abs(total)+6);
+    const q = total - p, termeQ = q<0?`-${-q}`:`+${q}`;
+    return { enonce:`\\dfrac{${p}${termeQ}}{x}=${b}`, reponse:`${x}` };
   }},
 
   // ---------- 6.8 : mise en equation d'un enonce ----------
@@ -807,6 +834,12 @@ const generateurs = [
     // plus delicat : deux inconnues liees par une relation, a traduire en une seule equation
     const x = alea(3,20), p = alea(2,15), s = 2*x+p;
     return { enonce: `Un livre coûte ${p} € de plus qu'un stylo. Ensemble, ils coûtent ${s} €. Quel est le prix du stylo \\(x\\) (en €) ?`,
+             reponse: `${x}` };
+  }},
+  {id:"6.8 d)", type:"num", texteLibre:true, gen: () => {
+    // egalement delicat : trois entiers consecutifs, l'equation doit etre construite a partir de trois termes
+    const x = entierSigne(1,20), s = 3*x+3;
+    return { enonce: `La somme de trois entiers consécutifs est ${s}. Quel est le plus petit de ces trois entiers \\(x\\) ?`,
              reponse: `${x}` };
   }},
 
@@ -862,12 +895,12 @@ const groupes = {
   "grille-6-1": [0,1,2,3],
   "grille-6-2": [4,5,6,7],
   "grille-6-3": [8,9,10,11],
-  "grille-6-4": [12,13,14],
-  "grille-6-5": [15,16,17],
-  "grille-6-6": [18,19],
-  "grille-6-7": [20,21],
-  "grille-6-8": [22,23,24],
-  "grille-6-9": [25,26,27,28,29]
+  "grille-6-4": [12,13,14,15],
+  "grille-6-5": [16,17,18,19],
+  "grille-6-6": [20,21,22],
+  "grille-6-7": [23,24,25],
+  "grille-6-8": [26,27,28,29],
+  "grille-6-9": [30,31,32,33,34]
 };
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
