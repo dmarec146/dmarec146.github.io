@@ -626,6 +626,14 @@ function entierSigne(min, max) {
   const v = alea(min, max);
   return alea(0,1) === 0 ? v : -v;
 }
+// demi-droite x>seuil ou x<seuil, ecrite comme intervalleSpec (borne infinie du cote ouvert) :
+// permet a 7.4 d'utiliser le meme type/clavier/verificateur 'intervalle' que 7.7 b, plutot que
+// le type 'ineq' plus etroit — c'est precisement le groupe cense enseigner l'ecriture en
+// intervalle (titre de 7.4), il doit donc utiliser reellement ce mecanisme.
+function intervalleDemiDroite(sens, seuil) {
+  if (sens === '>') return {type:'intervalles', liste:[{bas:seuil, haut:Infinity, inclusBas:false, inclusHaut:false}]};
+  return {type:'intervalles', liste:[{bas:-Infinity, haut:seuil, inclusBas:false, inclusHaut:false}]};
+}
 // ecrit "coefX*x" en omettant le coefficient quand il vaut 1 ou -1 ("x", "-x")
 function coefXTexte(coefX) {
   if (coefX === 1) return 'x';
@@ -684,42 +692,42 @@ const generateurs = [
   {id:"7.3 d)", type:"ineq", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\leqslant ${-a*x}`, sens:'>=', seuil:x}; }},
 
   // ---------- 7.4 : resoudre, ecrire la solution sous forme d'intervalle ----------
-  {id:"7.4 a)", type:"ineq", gen: () => {
+  {id:"7.4 a)", type:"intervalle", gen: () => {
     // coefficients directeurs signes des deux cotes (positifs ou negatifs)
     let a, c; do { a = entierSigne(2,9); c = entierSigne(2,9); } while (a === c);
     const x = entierSigne(1,10), b = alea(1,15);
     const d = b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (a-c) > 0 ? '>' : '<';
-    return { enonce:`${coefXTexte(a)}+${b}>${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
+    return { enonce:`${coefXTexte(a)}+${b}>${coefXTexte(c)}${termeD}`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
   }},
-  {id:"7.4 b)", type:"ineq", gen: () => {
+  {id:"7.4 b)", type:"intervalle", gen: () => {
     // coefficients directeurs signes des deux cotes (positifs ou negatifs)
     let a, c; do { a = entierSigne(2,9); c = entierSigne(2,9); } while (a === c);
     const x = entierSigne(1,10), b = alea(1,15);
     const d = b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (a-c) > 0 ? '<' : '>';
-    return { enonce:`${coefXTexte(a)}+${b}\\lt ${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
+    return { enonce:`${coefXTexte(a)}+${b}\\lt ${coefXTexte(c)}${termeD}`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
   }},
-  {id:"7.4 c)", type:"ineq", gen: () => {
+  {id:"7.4 c)", type:"intervalle", gen: () => {
     // plus delicat : coefficient fractionnaire devant x
     const a = alea(2,9), q = entierSigne(1,10), b = entierSigne(1,12);
     const x = a*q, c = q+b, termeB = b<0?`-${-b}`:`+${b}`;
-    return { enonce:`\\dfrac{x}{${a}}${termeB}>${c}`, sens:'>', seuil:x };
+    return { enonce:`\\dfrac{x}{${a}}${termeB}>${c}`, intervalleSpec: intervalleDemiDroite('>', x) };
   }},
-  {id:"7.4 d)", type:"ineq", gen: () => {
+  {id:"7.4 d)", type:"intervalle", gen: () => {
     // plus delicat : il faut distribuer un membre avant de rassembler les x (m signe)
     const m = entierSigne(2,7), x = entierSigne(1,10), q = entierSigne(1,9);
     const p = m*(q+x) - x;
     const termeP = p<0?`-${-p}`:`+${p}`, termeQ = q<0?`-${-q}`:`+${q}`;
     const sensFinal = (1-m) > 0 ? '>' : '<';
-    return { enonce:`(x${termeP})>${m}(x${termeQ})`, sens: sensFinal, seuil: x };
+    return { enonce:`(x${termeP})>${m}(x${termeQ})`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
   }},
-  {id:"7.4 e)", type:"ineq", gen: () => {
+  {id:"7.4 e)", type:"intervalle", gen: () => {
     // encore plus delicat : coefficient fractionnaire ET x des deux cotes
     const a = alea(2,7), c = entierSigne(1,6), q = entierSigne(1,9), b = entierSigne(1,12);
     const x = a*q, d = q + b - c*x, termeB = b<0?`-${-b}`:`+${b}`, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (1 - a*c) > 0 ? '>' : '<';
-    return { enonce:`\\dfrac{x}{${a}}${termeB}>${coefXTexte(c)}${termeD}`, sens: sensFinal, seuil: x };
+    return { enonce:`\\dfrac{x}{${a}}${termeB}>${coefXTexte(c)}${termeD}`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
   }},
 
   // ---------- 7.5 : additionner ou soustraire deux inegalites ----------
@@ -775,7 +783,7 @@ const generateurs = [
 
   // ---------- 7.7 : calculs plus avances (aucune contextualisation : calcul plus complexe
   // ou propriete a demontrer, quitte a deborder legerement du programme) ----------
-  {id:"7.7 a)", type:"ineq", texteLibre:true, gen: () => {
+  {id:"7.7 a)", type:"intervalle", texteLibre:true, gen: () => {
     // le plus exigeant en calcul : une fraction de CHAQUE cote, x des deux cotes
     let b, d; do { b = alea(2,6); d = alea(2,6); } while (b === d);
     const s = entierSigne(1,6), x0 = entierSigne(1,9);
@@ -783,7 +791,7 @@ const generateurs = [
     const termeA = a<0?`-${-a}`:`+${a}`, termeC = c<0?`-${-c}`:`+${c}`;
     const sensFinal = (d-b) > 0 ? '<' : '>';
     return { enonce: `Résoudre l'inéquation \\(\\dfrac{x${termeA}}{${b}}\\lt \\dfrac{x${termeC}}{${d}}\\).`,
-             sens: sensFinal, seuil: x0 };
+             intervalleSpec: intervalleDemiDroite(sensFinal, x0) };
   }},
   {id:"7.7 b)", type:"intervalle", texteLibre:true, gen: () => {
     // un systeme de deux inequations : l'ensemble solution est une intersection d'intervalles,
