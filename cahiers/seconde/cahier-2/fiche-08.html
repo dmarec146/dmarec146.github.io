@@ -732,32 +732,31 @@ function resoudreSigneParBalayage(expr, seuils, op) {
 // {a, b, denom, label} : "denom:true" marque un facteur du DENOMINATEUR (sa racine est une valeur
 // interdite : la ligne FINALE y affiche "‖" au lieu de "0" ; la ligne du facteur lui-meme affiche un
 // simple "0", puisque ce facteur pris seul n'a rien d'interdit — seul le quotient l'est).
-// Convention papier (tableau de signes reel, cf. tkz-tab) : sous un seuil qui N'EST PAS la racine
-// PROPRE d'une ligne, on ne repete JAMAIS le signe voisin — le signe reste un seul segment continu,
-// fusionne visuellement de part et d'autre de ce seuil (le seul "evenement" d'une ligne de facteur
-// affine est SA PROPRE racine, il n'y en a qu'une). D'ou le modele choisi ici : chaque ligne de
-// facteur n'a que 3 valeurs (avant sa racine / a sa racine / apres), jamais 2k+1 comme la ligne finale
-// (qui, elle, change reellement de valeur a CHAQUE seuil, puisque chacun est la racine d'un facteur
-// different du produit/quotient).
+// Chaque ligne (facteur ou finale) a une case par colonne (2k+1, comme la ligne finale) : jamais un
+// signe repete sous un seuil qui N'EST PAS la racine propre de cette ligne — cette case porte alors
+// un simple trait "|" (rien ne se passe ici pour CE facteur), jamais le signe voisin recopie. Les
+// signes n'apparaissent donc jamais directement sous un seuil : ils restent toujours decales dans
+// les colonnes de region, entre deux seuils (ou entre un seuil et une borne infinie).
 function construireSpecTableauSigne(facteurs) {
   const seuils = facteurs
     .map(f => ({ valeur: -f.b / f.a, denom: !!f.denom }))
     .sort((p, q) => p.valeur - q.valeur);
   const k = seuils.length;
-  const lignes = facteurs.map(f => {
-    const racineIndex = seuils.findIndex(s => egaliteBorneIntervalle(s.valeur, -f.b / f.a));
-    // le signe "avant" s'evalue juste a gauche de la racine PROPRE du facteur : valide quel que
-    // soit le nombre de seuils ETRANGERS traverses, puisqu'un facteur affine seul n'a qu'une racine
-    const avant = (f.a * (seuils[racineIndex].valeur - 1) + f.b) > 0 ? '+' : '-';
-    const apres = avant === '+' ? '-' : '+';
-    return { label: f.label, denom: !!f.denom, racineIndex, avant, marqueur: f.denom ? '‖' : '0', apres };
-  });
-  // ligne finale : un point-test par region (echantillonnage numerique, jamais une regle de parite
-  // derivee a la main) — elle garde ses 2k+1 colonnes completes, sans fusion, puisqu'a CHAQUE seuil
-  // il se passe reellement quelque chose pour le produit/quotient global.
   const points = [seuils[0].valeur - 1];
   for (let i = 0; i < k - 1; i++) points.push((seuils[i].valeur + seuils[i + 1].valeur) / 2);
   points.push(seuils[k - 1].valeur + 1);
+  const lignes = facteurs.map(f => {
+    const valeurs = new Array(2 * k + 1);
+    for (let i = 0; i <= k; i++) valeurs[2 * i] = (f.a * points[i] + f.b) > 0 ? '+' : '-';
+    for (let j = 0; j < k; j++) {
+      const estSaRacine = egaliteBorneIntervalle(seuils[j].valeur, -f.b / f.a);
+      valeurs[2 * j + 1] = estSaRacine ? (f.denom ? '‖' : '0') : '|';
+    }
+    return { label: f.label, denom: !!f.denom, valeurs };
+  });
+  // ligne finale : un point-test par region (echantillonnage numerique, jamais une regle de parite
+  // derivee a la main) — a CHAQUE seuil il se passe reellement quelque chose pour le produit/quotient
+  // global (chacun est la racine d'un facteur different), donc jamais de "|" sur cette ligne.
   const finale = new Array(2 * k + 1);
   for (let i = 0; i <= k; i++) {
     const v = facteurs.reduce((acc, f) => acc * (f.a * points[i] + f.b), 1);
@@ -768,7 +767,7 @@ function construireSpecTableauSigne(facteurs) {
 }
 
 // --- rendu et interaction du tableau de signes -------------------------------------------------
-const CYCLE_SIGNES = ['', '+', '-', '0', '‖'];
+const CYCLE_SIGNES = ['', '+', '-', '0', '‖', '|'];
 const CS_LARGEUR_LABEL = 92;
 const CS_LARGEUR_COL = 46;
 
@@ -777,12 +776,11 @@ function celluleVide(id, onclick) {
 }
 
 // construit le tableau interactif (seuils a saisir + cases de signe a cycler) pour un exercice.
-// Convention papier respectee : chaque ligne de facteur n'a que 3 cases (avant/a/apres SA propre
-// racine), fusionnees visuellement sur plusieurs colonnes via colspan quand elles traversent des
-// seuils etrangers — jamais de signe reecrit sous une valeur seuil qui n'est pas la racine de cette
-// ligne. Les filets verticaux (pointilles = seuil normal, double trait = valeur interdite) sont des
-// calques positionnes en pixels par-dessus le tableau, independants du decoupage en cellules : ils
-// restent visibles meme derriere une case fusionnee, exactement comme sur un tableau papier.
+// Chaque ligne (facteur ou finale) a une case par colonne (2k+1) : jamais de case fusionnee. Sous un
+// seuil qui n'est pas la racine propre d'une ligne, la case attendue est "|" (trait simple : rien ne
+// se passe ici pour ce facteur) — jamais le signe voisin recopie, ni une case vide/absente. Les
+// filets verticaux (pointilles = seuil normal, double trait = valeur interdite) restent des calques
+// positionnes en pixels par-dessus le tableau, pour rester visibles nettement meme sous une case "|".
 function tableauSigneHTML(idx, ex) {
   const spec = ex.spec;
   const k = spec.k;
@@ -809,19 +807,15 @@ function tableauSigneHTML(idx, ex) {
     }
   }
   html += `</tr>`;
-  // une ligne par facteur, fusionnee en 3 segments (avant / marqueur / apres sa propre racine)
+  // une ligne par facteur : une case par colonne, comme la ligne finale
   spec.lignes.forEach((ligne, li) => {
-    const r = ligne.racineIndex;
-    const avantSpan = 2 * r + 1;
-    const apresSpan = 2 * k - 2 * r - 1;
     html += `<tr class="cs-ligne-facteur"><td class="cs-label">\\(${ligne.label}\\)</td>`;
-    if (avantSpan > 0) html += `<td colspan="${avantSpan}">${celluleVide(`cs-cell-${idx}-${li}-avant`, `cyclerCelluleSigne(${idx},${li},'avant')`)}</td>`;
-    html += `<td>${celluleVide(`cs-cell-${idx}-${li}-marqueur`, `cyclerCelluleSigne(${idx},${li},'marqueur')`)}</td>`;
-    if (apresSpan > 0) html += `<td colspan="${apresSpan}">${celluleVide(`cs-cell-${idx}-${li}-apres`, `cyclerCelluleSigne(${idx},${li},'apres')`)}</td>`;
+    for (let c = 0; c < nbCols; c++) {
+      html += `<td>${celluleVide(`cs-cell-${idx}-${li}-${c}`, `cyclerCelluleSigne(${idx},${li},${c})`)}</td>`;
+    }
     html += `</tr>`;
   });
-  // ligne finale (signe du produit ou du quotient) : 2k+1 colonnes distinctes, jamais fusionnees,
-  // puisqu'a CHAQUE seuil il se passe reellement quelque chose pour l'expression globale
+  // ligne finale (signe du produit ou du quotient)
   html += `<tr class="cs-ligne-finale"><td class="cs-label">Signe</td>`;
   for (let c = 0; c < nbCols; c++) {
     html += `<td>${celluleVide(`cs-cell-${idx}-fin-${c}`, `cyclerCelluleSigne(${idx},'fin',${c})`)}</td>`;
@@ -845,19 +839,14 @@ function reinitialiserStatutTableau(idx) {
   if (statut) { statut.textContent = ''; statut.className = 'q-statut'; }
 }
 
-// une ligne de facteur a TOUJOURS ses 3 cases (avant/marqueur/apres) : meme quand sa racine est le
-// premier seuil, il reste toujours la region -infini avant lui ; meme au dernier seuil, il reste
-// toujours la region +infini apres. avantSpan=2r+1 et apresSpan=2k-2r-1 ne sont jamais nuls (r etant
-// un indice de seuil valide entre 0 et k-1) — donc aucune garde conditionnelle n'est necessaire ici.
 function verifierTableauSigneRempli(idx, ex) {
   const spec = ex.spec;
   for (let j = 0; j < spec.k; j++) {
     if (document.getElementById(`cs-seuil-${idx}-${j}`).value.trim() === '') return false;
   }
   const rempli = (id) => document.getElementById(id).textContent !== '';
-  return spec.lignes.every((ligne, li) =>
-    rempli(`cs-cell-${idx}-${li}-avant`) && rempli(`cs-cell-${idx}-${li}-marqueur`) && rempli(`cs-cell-${idx}-${li}-apres`)
-  ) && spec.finale.every((v, c) => rempli(`cs-cell-${idx}-fin-${c}`));
+  return spec.lignes.every((ligne, li) => ligne.valeurs.every((v, c) => rempli(`cs-cell-${idx}-${li}-${c}`)))
+    && spec.finale.every((v, c) => rempli(`cs-cell-${idx}-fin-${c}`));
 }
 
 // verifie chaque case du tableau independamment (seuils ET signes), la colore, et renvoie
@@ -886,11 +875,7 @@ function verifierTableauSigne(idx, ex) {
     btn.classList.add(ok ? 'correct' : 'incorrect');
     if (!ok) toutCorrect = false;
   };
-  spec.lignes.forEach((ligne, li) => {
-    verifierCase(`cs-cell-${idx}-${li}-avant`, ligne.avant);
-    verifierCase(`cs-cell-${idx}-${li}-marqueur`, ligne.marqueur);
-    verifierCase(`cs-cell-${idx}-${li}-apres`, ligne.apres);
-  });
+  spec.lignes.forEach((ligne, li) => ligne.valeurs.forEach((v, c) => verifierCase(`cs-cell-${idx}-${li}-${c}`, v)));
   spec.finale.forEach((v, c) => verifierCase(`cs-cell-${idx}-fin-${c}`, v));
   if (!toutRempli) return null;
   return toutCorrect;
@@ -909,17 +894,11 @@ function reinitialiserTableauSigne(idx, ex) {
     btn.textContent = '';
     btn.classList.remove('correct', 'incorrect');
   };
-  spec.lignes.forEach((ligne, li) => {
-    vider(`cs-cell-${idx}-${li}-avant`);
-    vider(`cs-cell-${idx}-${li}-marqueur`);
-    vider(`cs-cell-${idx}-${li}-apres`);
-  });
+  spec.lignes.forEach((ligne, li) => ligne.valeurs.forEach((v, c) => vider(`cs-cell-${idx}-${li}-${c}`)));
   spec.finale.forEach((v, c) => vider(`cs-cell-${idx}-fin-${c}`));
 }
 
 // tableau de signes ENTIEREMENT REMPLI, en lecture seule : utilise dans les panneaux de correction
-// (meme fusion en 3 segments que la version interactive, sans les filets verticaux superposes —
-// simple resume texte, pas la reproduction pixel-perfect du widget)
 function tableCorrigeSigneHTML(ex) {
   const spec = ex.spec;
   const k = spec.k;
@@ -932,12 +911,8 @@ function tableCorrigeSigneHTML(ex) {
   }
   html += `</tr>`;
   spec.lignes.forEach(ligne => {
-    const r = ligne.racineIndex;
-    const avantSpan = 2 * r + 1, apresSpan = 2 * k - 2 * r - 1;
     html += `<tr><td class="cs-label">\\(${ligne.label}\\)</td>`;
-    if (avantSpan > 0) html += `<td colspan="${avantSpan}">${ligne.avant}</td>`;
-    html += `<td>${ligne.marqueur}</td>`;
-    if (apresSpan > 0) html += `<td colspan="${apresSpan}">${ligne.apres}</td>`;
+    ligne.valeurs.forEach(v => html += `<td>${v}</td>`);
     html += `</tr>`;
   });
   html += `<tr class="cs-ligne-finale"><td class="cs-label">Signe</td>`;
@@ -1242,7 +1217,7 @@ function aideContextuellePour(ex) {
     return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.type === 'tableauSigne') {
-    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant). Pour chaque facteur, il n'y a que 3 cases à remplir : le signe avant sa valeur qui l'annule, ce qui se passe à cette valeur (cliquer fait défiler <code>0</code>, <code>‖</code> pour une valeur interdite, ou une case vide), et le signe après — le signe ne change qu'à cet endroit, pas ailleurs. La ligne du bas donne le signe de l'expression complète, avec une case par valeur.";
+    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant). Pour chaque ligne (un facteur ou l'expression complète), cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (le facteur s'annule ici), <code>‖</code> (valeur interdite) et <code>|</code> (rien ne se passe ici pour ce facteur : le signe ne change qu'à sa propre valeur qui l'annule, jamais à celle d'un autre facteur).";
   }
   return "";
 }
