@@ -446,6 +446,40 @@ window.MathJax = {
   }
   .correction-ligne .id { font-weight: bold; color: var(--gris); }
 
+  /* ---------- Tableau de signes interactif ---------- */
+  .cs-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .cs-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .cs-table { border-collapse: collapse; font-family: Georgia, serif; font-size: 14px; margin: 6px 0; }
+  .cs-table td { padding: 5px 7px; text-align: center; vertical-align: middle; white-space: nowrap; }
+  .cs-table .cs-label { text-align: left; font-weight: bold; padding-right: 12px; }
+  .cs-table .cs-region { min-width: 44px; }
+  .cs-table .cs-seuil-col { border-left: 1px solid #aaa; border-right: 1px solid #aaa; }
+  .cs-table .cs-seuil-col.cs-interdit { border-left: 3px double #333; border-right: 3px double #333; }
+  .cs-table tr.cs-ligne-finale td { border-top: 2px solid #1a1a1a; padding-top: 8px; }
+  .cs-cellule {
+    width: 34px; height: 34px;
+    border: 1.5px solid #ccc; border-radius: 5px;
+    background: white; font-size: 15px; font-family: Georgia, serif;
+    cursor: pointer; color: #1a1a1a;
+  }
+  .cs-cellule:hover { border-color: var(--bleu); }
+  .cs-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .cs-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .cs-seuil {
+    width: 46px; padding: 5px 4px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    text-align: center; font-family: 'Courier New', monospace; font-size: 14px;
+  }
+  .cs-seuil:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .cs-seuil.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .cs-seuil.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .cs-corrige { border-collapse: collapse; font-family: Georgia, serif; font-size: 13px; margin: 4px 0; }
+  .cs-corrige td { padding: 3px 6px; text-align: center; white-space: nowrap; }
+  .cs-corrige .cs-label { text-align: left; font-weight: bold; padding-right: 10px; }
+  .cs-corrige tr.cs-ligne-finale td { border-top: 1.5px solid #1a1a1a; }
+  .cs-corrige td.cs-seuil-col { border-left: 1px solid #aaa; border-right: 1px solid #aaa; }
+  .cs-corrige td.cs-seuil-col.cs-interdit { border-left: 2px double #333; border-right: 2px double #333; }
+
   /* ---------- À partir des tablettes (>=600px) ---------- */
   @media (min-width: 600px) {
     body { padding: 24px 24px 60px; }
@@ -571,21 +605,24 @@ window.MathJax = {
   <p class="calcul-titre"><span>Calcul 8.4 — Signe de \(ax+b\) selon le signe de \(a\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
   <div class="question-grille" id="grille-8-4"></div>
 
-  <p class="calcul-titre"><span>Calcul 8.5 — Tableau de signes d'un produit de deux facteurs affines.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 8.5 — Construire un tableau de signes complet.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
   <div class="question-grille" id="grille-8-5"></div>
 
-  <p class="calcul-titre"><span>Calcul 8.6 — Tableau de signes d'un produit de trois facteurs affines.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 8.6 — Tableau de signes d'un produit de deux facteurs affines.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
   <div class="question-grille" id="grille-8-6"></div>
 
-  <p class="calcul-titre"><span>Calcul 8.7 — Tableau de signes d'un quotient ; valeurs interdites.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 8.7 — Tableau de signes d'un produit de trois facteurs affines.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
   <div class="question-grille" id="grille-8-7"></div>
+
+  <p class="calcul-titre"><span>Calcul 8.8 — Tableau de signes d'un quotient ; valeurs interdites.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="question-grille" id="grille-8-8"></div>
 
 <div class="bloc-avance">
   <p class="section-titre">Calculs plus avancés</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 8.8 — Factoriser avant d'étudier le signe ; carré parfait ; ramener un quotient à une étude de signe ; discussion selon un paramètre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-  <div class="question-grille" id="grille-8-8"></div>
+  <p class="calcul-titre"><span>Calcul 8.9 — Factoriser avant d'étudier le signe ; carré parfait ; ramener un quotient à une étude de signe ; discussion selon un paramètre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+  <div class="question-grille" id="grille-8-9"></div>
 
 </div>
 <div class="barre-controle">
@@ -596,7 +633,7 @@ window.MathJax = {
 </div>
 
 <div class="score-panneau" id="score-panneau">
-  <span class="score-chiffre" id="score-chiffre">0 / 30</span> bonnes réponses
+  <span class="score-chiffre" id="score-chiffre">0 / 33</span> bonnes réponses
   <div style="margin-top:10px;">
     <button class="btn-secondaire" id="btn-correction" onclick="toggleCorrection()">Voir la correction des erreurs</button>
   </div>
@@ -685,6 +722,202 @@ function resoudreSigneParBalayage(expr, seuils, op) {
   if (liste.length === 0) return { type: 'vide' };
   if (liste.length === 1 && liste[0].bas === -Infinity && liste[0].haut === Infinity) return { type: 'tout' };
   return { type: 'intervalles', liste };
+}
+
+// ---------- tableau de signes complet (seuils + signe de chaque facteur + ligne finale) ----------
+// Construit la grille attendue d'un vrai tableau de signes a partir d'une liste de facteurs affines
+// {a, b, denom, label} : "denom:true" marque un facteur du DENOMINATEUR (sa racine est une valeur
+// interdite, affichee "||" au lieu de "0", ligne finale uniquement). Meme principe que
+// resoudreSigneParBalayage (echantillonner numeriquement un point-test par region, jamais une regle
+// de parite derivee a la main) mais applique LIGNE PAR LIGNE, pas seulement au produit global.
+// Colonnes de la grille : 2k+1, alternees region/seuil/region/.../seuil/region (k = nombre de seuils
+// distincts). column paire = region ; colonne impaire (2j+1) = seuil numero j (0-indexe).
+function construireSpecTableauSigne(facteurs) {
+  const seuils = facteurs
+    .map(f => ({ valeur: -f.b / f.a, denom: !!f.denom }))
+    .sort((p, q) => p.valeur - q.valeur);
+  const k = seuils.length;
+  const points = [seuils[0].valeur - 1];
+  for (let i = 0; i < k - 1; i++) points.push((seuils[i].valeur + seuils[i + 1].valeur) / 2);
+  points.push(seuils[k - 1].valeur + 1);
+  const nbCols = 2 * k + 1;
+  const lignes = facteurs.map(f => {
+    const valeurs = new Array(nbCols);
+    for (let i = 0; i <= k; i++) valeurs[2 * i] = (f.a * points[i] + f.b) > 0 ? '+' : '-';
+    for (let j = 0; j < k; j++) {
+      const estSaRacine = egaliteBorneIntervalle(seuils[j].valeur, -f.b / f.a);
+      valeurs[2 * j + 1] = estSaRacine ? (f.denom ? '‖' : '0') : valeurs[2 * j];
+    }
+    return { label: f.label, denom: !!f.denom, valeurs };
+  });
+  const finale = new Array(nbCols);
+  for (let i = 0; i <= k; i++) {
+    const v = facteurs.reduce((acc, f) => acc * (f.a * points[i] + f.b), 1);
+    finale[2 * i] = v > 0 ? '+' : '-';
+  }
+  for (let j = 0; j < k; j++) finale[2 * j + 1] = seuils[j].denom ? '‖' : '0';
+  return { seuils, lignes, finale, k };
+}
+
+// --- rendu et interaction du tableau de signes -------------------------------------------------
+const CYCLE_SIGNES = ['', '+', '-', '0', '‖'];
+
+function celluleVide(id, onclick) {
+  return `<button type="button" class="cs-cellule" id="${id}" onclick="${onclick}"></button>`;
+}
+
+// construit le tableau interactif (seuils a saisir + cases de signe a cycler) pour un exercice
+function tableauSigneHTML(idx, ex) {
+  const spec = ex.spec;
+  const k = spec.k;
+  const nbCols = 2 * k + 1;
+  const colClasse = (c) => {
+    if (c % 2 === 0) return 'cs-region';
+    const interdit = spec.seuils[(c - 1) / 2].denom;
+    return 'cs-seuil-col' + (interdit ? ' cs-interdit' : '');
+  };
+  let html = `<table class="cs-table"><tbody>`;
+  // ligne des seuils, a completer par l'eleve
+  html += `<tr class="cs-ligne-x"><td class="cs-label">\\(x\\)</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 1) {
+      const j = (c - 1) / 2;
+      html += `<td class="${colClasse(c)}"><input type="text" class="cs-seuil" id="cs-seuil-${idx}-${j}" placeholder="seuil" oninput="reinitialiserStatutTableau(${idx})"></td>`;
+    } else {
+      const bord = c === 0 ? '-\\infty' : (c === nbCols - 1 ? '+\\infty' : '');
+      html += `<td class="${colClasse(c)}">${bord ? `\\(${bord}\\)` : ''}</td>`;
+    }
+  }
+  html += `</tr>`;
+  // une ligne par facteur
+  spec.lignes.forEach((ligne, li) => {
+    html += `<tr class="cs-ligne-facteur"><td class="cs-label">\\(${ligne.label}\\)</td>`;
+    for (let c = 0; c < nbCols; c++) {
+      const id = `cs-cell-${idx}-${li}-${c}`;
+      html += `<td class="${colClasse(c)}">${celluleVide(id, `cyclerCelluleSigne(${idx},${li},${c})`)}</td>`;
+    }
+    html += `</tr>`;
+  });
+  // ligne finale (signe du produit ou du quotient)
+  html += `<tr class="cs-ligne-finale"><td class="cs-label">Signe</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    const id = `cs-cell-${idx}-fin-${c}`;
+    html += `<td class="${colClasse(c)}">${celluleVide(id, `cyclerCelluleSigne(${idx},'fin',${c})`)}</td>`;
+  }
+  html += `</tr></tbody></table>`;
+  return `<div class="cs-conteneur"><div class="cs-scroll">${html}</div></div>`;
+}
+
+function cyclerCelluleSigne(idx, ligne, col) {
+  const btn = document.getElementById(`cs-cell-${idx}-${ligne}-${col}`);
+  const i = CYCLE_SIGNES.indexOf(btn.textContent);
+  btn.textContent = CYCLE_SIGNES[(i + 1) % CYCLE_SIGNES.length];
+  btn.classList.remove('correct', 'incorrect');
+  reinitialiserStatutTableau(idx);
+}
+
+function reinitialiserStatutTableau(idx) {
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  if (div) div.classList.remove('correct', 'incorrect');
+  if (statut) { statut.textContent = ''; statut.className = 'q-statut'; }
+}
+
+// verifie chaque case du tableau independamment (seuils ET signes), la colore, et renvoie
+// correct=true seulement si TOUTES les cases correspondent a ex.spec
+// verifie juste que toutes les cases sont remplies, sans les colorer (utilise pour decider si le
+// mode "au fur et a mesure" doit declencher automatiquement la correction globale)
+function verifierTableauSigneRempli(idx, ex) {
+  const spec = ex.spec;
+  for (let j = 0; j < spec.k; j++) {
+    if (document.getElementById(`cs-seuil-${idx}-${j}`).value.trim() === '') return false;
+  }
+  const ligneRemplie = (li, longueur) => {
+    for (let c = 0; c < longueur; c++) {
+      if (document.getElementById(`cs-cell-${idx}-${li}-${c}`).textContent === '') return false;
+    }
+    return true;
+  };
+  return spec.lignes.every((ligne, li) => ligneRemplie(li, ligne.valeurs.length)) && ligneRemplie('fin', spec.finale.length);
+}
+
+function verifierTableauSigne(idx, ex) {
+  const spec = ex.spec;
+  const k = spec.k;
+  let toutCorrect = true;
+  let toutRempli = true;
+  for (let j = 0; j < k; j++) {
+    const input = document.getElementById(`cs-seuil-${idx}-${j}`);
+    const val = input.value.trim();
+    input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - spec.seuils[j].valeur) < 1e-9; } catch(e) { ok = false; }
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
+  const verifierLigne = (li, attendu) => {
+    for (let c = 0; c < attendu.length; c++) {
+      const btn = document.getElementById(`cs-cell-${idx}-${li}-${c}`);
+      const val = btn.textContent;
+      btn.classList.remove('correct', 'incorrect');
+      if (!val) { toutRempli = false; continue; }
+      const ok = (val === attendu[c]);
+      btn.classList.add(ok ? 'correct' : 'incorrect');
+      if (!ok) toutCorrect = false;
+    }
+  };
+  spec.lignes.forEach((ligne, li) => verifierLigne(li, ligne.valeurs));
+  verifierLigne('fin', spec.finale);
+  if (!toutRempli) return null;
+  return toutCorrect;
+}
+
+// remet a zero toutes les cases d'un tableau de signes (bouton "Recommencer")
+function reinitialiserTableauSigne(idx, ex) {
+  const spec = ex.spec;
+  for (let j = 0; j < spec.k; j++) {
+    const input = document.getElementById(`cs-seuil-${idx}-${j}`);
+    input.value = '';
+    input.classList.remove('correct', 'incorrect');
+  }
+  const viderLigne = (li, longueur) => {
+    for (let c = 0; c < longueur; c++) {
+      const btn = document.getElementById(`cs-cell-${idx}-${li}-${c}`);
+      btn.textContent = '';
+      btn.classList.remove('correct', 'incorrect');
+    }
+  };
+  spec.lignes.forEach((ligne, li) => viderLigne(li, ligne.valeurs.length));
+  viderLigne('fin', spec.finale.length);
+}
+
+// tableau de signes ENTIEREMENT REMPLI, en lecture seule : utilise dans les panneaux de correction
+function tableCorrigeSigneHTML(ex) {
+  const spec = ex.spec;
+  const k = spec.k;
+  const nbCols = 2 * k + 1;
+  const colClasse = (c) => {
+    if (c % 2 === 0) return '';
+    const interdit = spec.seuils[(c - 1) / 2].denom;
+    return 'cs-seuil-col' + (interdit ? ' cs-interdit' : '');
+  };
+  const formaterSeuil = (v) => Number.isInteger(v) ? String(v) : v.toFixed(2);
+  let html = `<table class="cs-corrige"><tbody><tr><td class="cs-label">\\(x\\)</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 1) html += `<td class="${colClasse(c)}">\\(${formaterSeuil(spec.seuils[(c-1)/2].valeur)}\\)</td>`;
+    else html += `<td class="${colClasse(c)}">${c===0?'\\(-\\infty\\)':(c===nbCols-1?'\\(+\\infty\\)':'')}</td>`;
+  }
+  html += `</tr>`;
+  spec.lignes.forEach(ligne => {
+    html += `<tr><td class="cs-label">\\(${ligne.label}\\)</td>`;
+    ligne.valeurs.forEach((v, c) => html += `<td class="${colClasse(c)}">${v}</td>`);
+    html += `</tr>`;
+  });
+  html += `<tr class="cs-ligne-finale"><td class="cs-label">Signe</td>`;
+  spec.finale.forEach((v, c) => html += `<td class="${colClasse(c)}">${v}</td>`);
+  html += `</tr></tbody></table>`;
+  return html;
 }
 
 // ---------- vivier de calculs numeriques (groupe 8.1), identique a celui des fiches 3, 4, 5, 6 et 7 ----------
@@ -783,22 +1016,57 @@ const generateurs = [
     return { enonce:`${affineTexte(a,b)}\\leqslant 0`, intervalleSpec: intervalleDemiDroite('>=', x0) };
   }},
 
-  // ---------- 8.5 : tableau de signes d'un produit de deux facteurs affines ----------
-  {id:"8.5 a)", type:"intervalle", gen: () => {
+  // ---------- 8.5 : construire un tableau de signes complet (seuils places par l'eleve, puis
+  // signe de chaque facteur et de l'expression finale) ----------
+  {id:"8.5 a)", type:"tableauSigne", texteLibre:true, gen: () => {
+    let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
+    const a = alea(2,7), b = -a*x1, c = alea(2,7), d = -c*x2;
+    const facteurs = [
+      {a, b, denom:false, label: affineTexte(a,b)},
+      {a:c, b:d, denom:false, label: affineTexte(c,d)}
+    ];
+    const spec = construireSpecTableauSigne(facteurs);
+    return { enonce: `Construire le tableau de signes de \\(E(x)=(${affineTexte(a,b)})(${affineTexte(c,d)})\\).`, facteurs, spec };
+  }},
+  {id:"8.5 b)", type:"tableauSigne", texteLibre:true, gen: () => {
+    let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
+    const a=alea(2,6), b=-a*x1, c=alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
+    const facteurs = [
+      {a, b, denom:false, label: affineTexte(a,b)},
+      {a:c, b:d, denom:false, label: affineTexte(c,d)},
+      {a:e, b:f, denom:false, label: affineTexte(e,f)}
+    ];
+    const spec = construireSpecTableauSigne(facteurs);
+    return { enonce: `Construire le tableau de signes de \\(E(x)=(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\).`, facteurs, spec };
+  }},
+  {id:"8.5 c)", type:"tableauSigne", texteLibre:true, gen: () => {
+    let xn, xd; do { xn = entierSigne(1,9); xd = entierSigne(1,9); } while (xn === xd);
+    const a=alea(2,7), b=-a*xn, c=alea(2,7), d=-c*xd;
+    const facteurs = [
+      {a, b, denom:false, label: affineTexte(a,b)},
+      {a:c, b:d, denom:true, label: affineTexte(c,d)}
+    ];
+    const spec = construireSpecTableauSigne(facteurs);
+    return { enonce: `Construire le tableau de signes de \\(E(x)=\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\).`, facteurs, spec };
+  }},
+
+  // ---------- 8.6 : tableau de signes d'un produit de deux facteurs affines (reponse directe en
+  // intervalle, sans repasser par le tableau complet — l'etape "raccourci" apres 8.5) ----------
+  {id:"8.6 a)", type:"intervalle", gen: () => {
     let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
     const a = alea(2,7), b = -a*x1, c = alea(2,7), d = -c*x2;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false}], '>');
     return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\gt 0`, intervalleSpec: spec };
   }},
-  {id:"8.5 b)", type:"intervalle", gen: () => {
+  {id:"8.6 b)", type:"intervalle", gen: () => {
     let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
     const a = alea(2,7), b = -a*x1, c = -alea(2,7), d = -c*x2;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false}], '>');
     return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\gt 0`, intervalleSpec: spec };
   }},
-  {id:"8.5 c)", type:"intervalle", gen: () => {
+  {id:"8.6 c)", type:"intervalle", gen: () => {
     let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
     const a = -alea(2,7), b = -a*x1, c = -alea(2,7), d = -c*x2;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
@@ -806,22 +1074,22 @@ const generateurs = [
     return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\lt 0`, intervalleSpec: spec };
   }},
 
-  // ---------- 8.6 : tableau de signes d'un produit de trois facteurs affines ----------
-  {id:"8.6 a)", type:"intervalle", gen: () => {
+  // ---------- 8.7 : tableau de signes d'un produit de trois facteurs affines ----------
+  {id:"8.7 a)", type:"intervalle", gen: () => {
     let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
     const a=alea(2,6), b=-a*x1, c=alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d},{a:e,b:f}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false},{valeur:x3,interdit:false}], '>');
     return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\gt 0`, intervalleSpec: spec };
   }},
-  {id:"8.6 b)", type:"intervalle", gen: () => {
+  {id:"8.7 b)", type:"intervalle", gen: () => {
     let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
     const a=alea(2,6), b=-a*x1, c=-alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d},{a:e,b:f}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false},{valeur:x3,interdit:false}], '<');
     return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\lt 0`, intervalleSpec: spec };
   }},
-  {id:"8.6 c)", type:"intervalle", gen: () => {
+  {id:"8.7 c)", type:"intervalle", gen: () => {
     let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
     const a=-alea(2,6), b=-a*x1, c=-alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d},{a:e,b:f}]),
@@ -829,22 +1097,22 @@ const generateurs = [
     return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\geqslant 0`, intervalleSpec: spec };
   }},
 
-  // ---------- 8.7 : tableau de signes d'un quotient, valeurs interdites ----------
-  {id:"8.7 a)", type:"intervalle", gen: () => {
+  // ---------- 8.8 : tableau de signes d'un quotient, valeurs interdites ----------
+  {id:"8.8 a)", type:"intervalle", gen: () => {
     let xn, xd; do { xn = entierSigne(1,9); xd = entierSigne(1,9); } while (xn === xd);
     const a=alea(2,7), b=-a*xn, c=alea(2,7), d=-c*xd;
     const spec = resoudreSigneParBalayage(x => (a*x+b)/(c*x+d),
       [{valeur:xn,interdit:false},{valeur:xd,interdit:true}], '>');
     return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\gt 0`, intervalleSpec: spec };
   }},
-  {id:"8.7 b)", type:"intervalle", gen: () => {
+  {id:"8.8 b)", type:"intervalle", gen: () => {
     let xn, xd; do { xn = entierSigne(1,9); xd = entierSigne(1,9); } while (xn === xd);
     const a=alea(2,7), b=-a*xn, c=-alea(2,7), d=-c*xd;
     const spec = resoudreSigneParBalayage(x => (a*x+b)/(c*x+d),
       [{valeur:xn,interdit:false},{valeur:xd,interdit:true}], '<');
     return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\lt 0`, intervalleSpec: spec };
   }},
-  {id:"8.7 c)", type:"intervalle", gen: () => {
+  {id:"8.8 c)", type:"intervalle", gen: () => {
     // op large (<=) : le seuil du DENOMINATEUR reste exclu malgre tout
     let xn, xd; do { xn = entierSigne(1,9); xd = entierSigne(1,9); } while (xn === xd);
     const a=alea(2,7), b=-a*xn, c=alea(2,7), d=-c*xd;
@@ -852,7 +1120,7 @@ const generateurs = [
       [{valeur:xn,interdit:false},{valeur:xd,interdit:true}], '<=');
     return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\leqslant 0`, intervalleSpec: spec };
   }},
-  {id:"8.7 d)", type:"intervalle", gen: () => {
+  {id:"8.8 d)", type:"intervalle", gen: () => {
     // quotient de trois facteurs (deux au numerateur, un au denominateur), op large
     let x1,x2,xd; do { x1=entierSigne(1,9); x2=entierSigne(1,9); xd=entierSigne(1,9); } while (x1===x2||x1===xd||x2===xd);
     const a=alea(2,6), b=-a*x1, c=alea(2,6), d=-c*x2, e=alea(2,6), f=-e*xd;
@@ -861,10 +1129,10 @@ const generateurs = [
     return { enonce:`\\dfrac{(${affineTexte(a,b)})(${affineTexte(c,d)})}{${affineTexte(e,f)}}\\geqslant 0`, intervalleSpec: spec };
   }},
 
-  // ---------- 8.8 : calculs plus avances (aucune contextualisation : factoriser avant d'etudier
+  // ---------- 8.9 : calculs plus avances (aucune contextualisation : factoriser avant d'etudier
   // le signe, facteur toujours positif, ramener un quotient=k a une etude de signe, discussion
   // selon un parametre) ----------
-  {id:"8.8 a)", type:"intervalle", texteLibre:true, gen: () => {
+  {id:"8.9 a)", type:"intervalle", texteLibre:true, gen: () => {
     // identite remarquable non factorisee dans l'enonce : x^2-a^2 = (x-a)(x+a) ; le sens de
     // l'inegalite est lui-meme tire au hasard pour couvrir aussi le cas "interieur" (produit < 0)
     const a = alea(2,25), op = choix(['>','<']);
@@ -872,14 +1140,14 @@ const generateurs = [
     const symb = op === '>' ? '\\gt' : '\\lt';
     return { enonce: `Résoudre l'inéquation \\(x^2-${a*a}${symb} 0\\).`, intervalleSpec: spec };
   }},
-  {id:"8.8 b)", type:"intervalle", texteLibre:true, gen: () => {
+  {id:"8.9 b)", type:"intervalle", texteLibre:true, gen: () => {
     // facteur commun cache : ax^2+bx = x(ax+b), non factorise dans l'enonce
     const a = alea(2,7), x0 = entierSigne(1,9), b = -a*x0;
     const spec = resoudreSigneParBalayage(x => a*x*x + b*x, [{valeur:0,interdit:false},{valeur:x0,interdit:false}], '<');
     const termeB = b > 0 ? `+${coefXTexte(b)}` : coefXTexte(b);
     return { enonce: `Résoudre l'inéquation \\(${a}x^2${termeB}\\lt 0\\).`, intervalleSpec: spec };
   }},
-  {id:"8.8 c)", type:"intervalle", texteLibre:true, gen: () => {
+  {id:"8.9 c)", type:"intervalle", texteLibre:true, gen: () => {
     // facteur toujours positif (carre parfait) : ne change jamais de signe, s'annule sans "passer"
     let xc, x1; do { xc = entierSigne(1,7); x1 = entierSigne(1,7); } while (xc === x1);
     const p = alea(2,6), q = -p*x1;
@@ -887,7 +1155,7 @@ const generateurs = [
       [{valeur:xc,interdit:false},{valeur:x1,interdit:false}], '>');
     return { enonce: `Résoudre l'inéquation \\((${xMoinsTexte(xc)})^2(${affineTexte(p,q)})\\gt 0\\).`, intervalleSpec: spec };
   }},
-  {id:"8.8 d)", type:"intervalle", texteLibre:true, gen: () => {
+  {id:"8.9 d)", type:"intervalle", texteLibre:true, gen: () => {
     // ramener (ax+b)/(cx+d) >= k a une etude de signe : (ax+b)/(cx+d)-k >= 0
     let a,b,c,d,k,aPrime;
     do {
@@ -899,7 +1167,7 @@ const generateurs = [
       [{valeur:(-(b - k*d))/aPrime, interdit:false},{valeur:-d/c, interdit:true}], '>=');
     return { enonce: `Résoudre l'inéquation \\(\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\geqslant ${k}\\).`, intervalleSpec: spec };
   }},
-  {id:"8.8 e)", type:"intervalle", texteLibre:true, gen: () => {
+  {id:"8.9 e)", type:"intervalle", texteLibre:true, gen: () => {
     // discussion selon un parametre : il faut d'abord comparer m a -2 pour ordonner les racines
     let m; do { m = entierSigne(1,25); } while (m === -2);
     const spec = resoudreSigneParBalayage(x => (x-m)*(x+2), [{valeur:m,interdit:false},{valeur:-2,interdit:false}], '>');
@@ -927,14 +1195,16 @@ const groupes = {
   "grille-8-4": [12,13,14],
   "grille-8-5": [15,16,17],
   "grille-8-6": [18,19,20],
-  "grille-8-7": [21,22,23,24],
-  "grille-8-8": [25,26,27,28,29]
+  "grille-8-7": [21,22,23],
+  "grille-8-8": [24,25,26,27],
+  "grille-8-9": [28,29,30,31,32]
 };
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
   if (ex.signe) return true;
   if (ex.type === 'intervalle') return true;
+  if (ex.type === 'tableauSigne') return true;
   return false;
 }
 
@@ -944,6 +1214,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'intervalle') {
     return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
+  }
+  if (ex.type === 'tableauSigne') {
+    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant). Dans les autres cases, cliquer fait défiler les symboles <code>+</code>, <code>-</code>, <code>0</code> et <code>‖</code> (valeur interdite) ; cliquer à nouveau après <code>‖</code> revient à une case vide.";
   }
   return "";
 }
@@ -1062,10 +1335,11 @@ function construireGrilles() {
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal) ? '' : ' =';
       // un enonce texteLibre est une phrase : il porte lui-meme ses delimiteurs \( \)
       const enonceHtml = ex.texteLibre ? ex.enonce : `\\(${ex.enonce}\\)${suffixe}`;
+      const champ = ex.type === 'tableauSigne' ? tableauSigneHTML(idx, ex) : champReponsePour(idx, ex);
       div.innerHTML = `
         <span class="q-lettre">${lettres[pos] || ''})</span>
         <span class="q-enonce">${enonceHtml}</span>
-        ${champReponsePour(idx, ex)}
+        ${champ}
         <span class="q-statut" id="statut-${idx}"></span>
       `;
       grille.appendChild(div);
@@ -1387,11 +1661,19 @@ function valeurDuChamp(el) {
 
 function verifierUne(idx) {
   const ex = exercices[idx];
-  const input = document.getElementById('input-' + idx);
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
-  const val = valeurDuChamp(input);
   div.classList.remove('correct','incorrect');
+  if (ex.type === 'tableauSigne') {
+    const ok = verifierTableauSigne(idx, ex);
+    if (ok === null) { statut.textContent=''; statut.className='q-statut'; return null; }
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    return ok;
+  }
+  const input = document.getElementById('input-' + idx);
+  const val = valeurDuChamp(input);
   if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
   let ok;
   if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
@@ -1407,11 +1689,15 @@ function verifierUne(idx) {
 let modeImmediat = true;
 
 function toutesLesReponsesSontSaisies() {
-  return exercices.every((ex, idx) => valeurDuChamp(document.getElementById('input-' + idx)) !== '');
+  return exercices.every((ex, idx) => {
+    if (ex.type === 'tableauSigne') return verifierTableauSigneRempli(idx, ex);
+    return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
+  });
 }
 
 function attacherEcouteurs() {
   exercices.forEach((ex, idx) => {
+    if (ex.type === 'tableauSigne') return; // deja cable via oninput/onclick au moment du rendu
     const input = document.getElementById('input-' + idx);
     let ignorerProchainInput = false;
     input.addEventListener('keydown', (evenement) => {
@@ -1554,6 +1840,9 @@ function verifierTout() {
   } else {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
+      if (ex.type === 'tableauSigne') {
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeSigneHTML(ex)}`;
+      }
       const reponseFormatee = formaterReponse(ex);
       return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
     }).join('');
@@ -1572,9 +1861,10 @@ function toggleCorrection() {
 
 function reinitialiser() {
   exercices.forEach((ex, idx) => {
-    document.getElementById('input-' + idx).value = '';
     document.getElementById('q-' + idx).classList.remove('correct','incorrect');
     document.getElementById('statut-' + idx).textContent = '';
+    if (ex.type === 'tableauSigne') { reinitialiserTableauSigne(idx, ex); return; }
+    document.getElementById('input-' + idx).value = '';
     const clavier = document.getElementById('clavier-' + idx);
     if (clavier) clavier.classList.remove('ouvert');
   });
@@ -1588,8 +1878,9 @@ function toggleToutesReponses() {
   const panneau = document.getElementById('toutes-reponses-panneau');
   const btn = document.getElementById('btn-toutes-reponses');
   if (!panneau.classList.contains('visible')) {
-    panneau.innerHTML = exercices.map(ex =>
-      `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
+    panneau.innerHTML = exercices.map(ex => ex.type === 'tableauSigne'
+      ? `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeSigneHTML(ex)}`
+      : `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
     ).join('');
     if (window.MathJax) MathJax.typesetPromise([panneau]);
     panneau.classList.add('visible');
