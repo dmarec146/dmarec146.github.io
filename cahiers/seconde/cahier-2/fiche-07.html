@@ -793,8 +793,10 @@ const generateurs = [
     const a2 = entierSigne(2,7), b2 = alea(1,15), q = entierSigne(1,12);
     const c2 = a2*q + b2, symb2 = a2 > 0 ? '\\lt' : '\\gt';
     const termeB1 = b1<0?`-${-b1}`:`+${b1}`, termeB2 = b2<0?`-${-b2}`:`+${b2}`;
+    // bornes strictes (inegalites strictes des deux cotes) : intervalle ouvert des deux cotes
+    const intervalleSpec = p >= q ? {type:'vide'} : {type:'intervalles', liste:[{bas:p, haut:q, inclusBas:false, inclusHaut:false}]};
     return { enonce: `Résoudre le système suivant : \\(${coefXTexte(a1)}${termeB1}${symb1}${c1}\\) et \\(${coefXTexte(a2)}${termeB2}${symb2}${c2}\\).`,
-             vide: p >= q, bas: p, haut: q };
+             intervalleSpec };
   }},
   {id:"7.7 c)", type:"encadrement", texteLibre:true, gen: () => {
     // plus exigeant que le coeur : x est lui-meme mis a l'echelle avant la soustraction et la division
@@ -854,13 +856,13 @@ function aideContextuellePour(ex) {
     return "Répondre par <code>croissante</code> ou par <code>décroissante</code>.";
   }
   if (ex.type === 'ineq') {
-    return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤), ou sous la forme d'un intervalle : par exemple <code>]4;+inf[</code> ou <code>]-inf;-2]</code>.";
+    return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
   if (ex.type === 'encadrement') {
     return "Écrire les deux nombres séparés par un point-virgule ou « et » : par exemple <code>7;8</code> ou <code>7 et 8</code>.";
   }
   if (ex.type === 'intervalle') {
-    return "Si le système admet des solutions, écrire l'intersection sous forme d'encadrement, comme <code>3;8</code>. S'il n'admet aucune solution, écrire <code>vide</code> (ou <code>aucune solution</code>, <code>∅</code>).";
+    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » ou « ou » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>R</code> si la réponse est l'ensemble des réels, ou <code>vide</code> s'il n'y a aucune solution.";
   }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
@@ -876,6 +878,13 @@ function utiliseMathfield(ex) {
   return true;
 }
 
+function placeholderPour(ex) {
+  if (ex.type === 'ineq') return 'x>4';
+  if (ex.type === 'intervalle') return ']a;b[';
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) return '{a;b}';
+  return 'réponse';
+}
+
 function champReponsePour(idx, ex) {
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
@@ -884,9 +893,12 @@ function champReponsePour(idx, ex) {
     <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
   }
   return `
-    <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
+    <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">
+    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierPour(idx, ex)}</div>`;
+}
+
+const GROUPE_CHIFFRES = (idx) => `
       <div class="clavier-groupe">
         <span class="clavier-label">Chiffres</span>
         <button onclick="inserer(${idx},'7')">7</button>
@@ -900,7 +912,37 @@ function champReponsePour(idx, ex) {
         <button onclick="inserer(${idx},'3')">3</button>
         <button onclick="inserer(${idx},'0')">0</button>
         <button onclick="inserer(${idx},',')">,</button>
+      </div>`;
+
+// clavier specifique a l'ensemble-solution en notation intervalle (union, R, vide) — repris
+// tel quel du clavier deja etabli en Premiere (cahiers/premiere/cahier-1/fiche-01.html) pour
+// rester coherent avec le systeme deja construit la-bas, plutot que d'en re-inventer un autre.
+function genererClavierIntervalle(idx) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Intervalle</span>
+        <button onclick="inserer(${idx},']')">]</button>
+        <button onclick="inserer(${idx},'[')">[</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button class="touche-large" onclick="inserer(${idx},'+∞')">+∞</button>
+        <button class="touche-large" onclick="inserer(${idx},'-∞')">−∞</button>
       </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Autre</span>
+        <button onclick="insererFraction(${idx})">a/b</button>
+        <button onclick="insererRacine(${idx})">√</button>
+        <button class="touche-large" onclick="inserer(${idx},' ou ')">ou</button>
+        <button class="touche-large" onclick="inserer(${idx},'R')">R</button>
+        <button class="touche-large" onclick="inserer(${idx},'vide')">vide</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « ]-inf;1[ ou ]3/2;+inf[ » pour une réunion de deux intervalles.</div>`;
+}
+
+function genererClavierPour(idx, ex) {
+  if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
+  return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
         <span class="clavier-label">Opérations</span>
         <button onclick="inserer(${idx},'+')">+</button>
@@ -909,6 +951,7 @@ function champReponsePour(idx, ex) {
         <button onclick="insererFonction(${idx},'/')">÷</button>
         <button onclick="inserer(${idx},'(')">(</button>
         <button onclick="inserer(${idx},')')">)</button>
+        <button onclick="inserer(${idx},';')">;</button>
       </div>
       <div class="clavier-groupe">
         <span class="clavier-label">Puissances</span>
@@ -930,18 +973,10 @@ function champReponsePour(idx, ex) {
         <button onclick="inserer(${idx},'<=')">&leq;</button>
       </div>
       <div class="clavier-groupe">
-        <span class="clavier-label">Intervalle</span>
-        <button onclick="inserer(${idx},'[')">[</button>
-        <button onclick="inserer(${idx},']')">]</button>
-        <button onclick="inserer(${idx},';')">;</button>
-        <button onclick="inserer(${idx},'inf')">&infin;</button>
-      </div>
-      <div class="clavier-groupe">
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement, « ]4;+inf[ » pour un intervalle</div>
-    </div>`;
+      <div class="clavier-apercu">Astuce : « x^2 » = x², « (a+b)/c » = fraction, « sqrt(2) » = √2, « x&gt;4 » pour une inéquation, « 7;8 » pour un encadrement</div>`;
 }
 
 function construireGrilles() {
@@ -1153,8 +1188,7 @@ function checkTexte(userInput, correctText) {
     '<': ['<', 'inferieur', 'plusPetit'], '>': ['>', 'superieur', 'plusGrand'],
     'oui': ['oui', 'o', 'vrai'], 'non': ['non', 'n', 'faux'],
     'croissante': ['croissante', 'croissant'],
-    'decroissante': ['decroissante', 'decroissant'],
-    'vide': ['vide', 'aucunesolution', 'aucune', 'impossible', '∅', 'emptyset']
+    'decroissante': ['decroissante', 'decroissant']
   };
   const f = familles[attendu];
   return !!f && f.map(nettoyer).includes(saisi);
@@ -1233,10 +1267,7 @@ function checkInequation(userInput, correctSens, correctSeuil) {
 }
 
 function checkEncadrement(userInput, bas, haut) {
-  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2').trim();
-  // tolere des crochets d'intervalle optionnels autour de la saisie ("[3;8]", "]3;8["...) :
-  // le clavier virtuel propose desormais [ ] pour la notation intervalle (voir 7.7 b).
-  userInput = userInput.replace(/^[\[\]]/, '').replace(/[\[\]]$/, '');
+  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
   const nums = userInput.split(/[;\s]+et\s+|[;]+/).map(s => s.trim()).filter(s => s !== '');
   if (nums.length !== 2) return false;
   try {
@@ -1247,11 +1278,74 @@ function checkEncadrement(userInput, bas, haut) {
   }
 }
 
-// reponse d'un systeme de deux inequations : soit une intersection d'intervalles (memes
-// bornes qu'un encadrement), soit "vide" si l'intersection est vide (voir 7.7 b).
-function checkIntervalle(userInput, ex) {
-  if (ex.vide) return checkTexte(userInput, 'vide');
-  return checkEncadrement(userInput, ex.bas, ex.haut);
+// ---------- notation intervalle (ensemble solution) : repris tel quel du systeme deja etabli
+// en Premiere (cahiers/premiere/cahier-1/fiche-01.html) plutot que d'en re-inventer un autre ----------
+function parseUnIntervalle(str) {
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^;]+);([^;\]\[]+)([\]\[])$/);
+  if (!m) return null;
+  const [_, cg, a, b, cd] = m;
+  try {
+    const va = (a.includes('inf')||a.includes('∞')) ? -Infinity : math.evaluate(a);
+    const vb = (b.includes('inf')||b.includes('∞')) ? Infinity : math.evaluate(b);
+    return {bas:va, haut:vb, inclusBas: cg==='[', inclusHaut: cd===']'};
+  } catch(e) { return null; }
+}
+
+function parseReponseIntervalle(str) {
+  str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g,'');
+  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels' || str === 'ℝ') return {type:'tout'};
+  if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return {type:'vide'};
+  const parties = str.split(/ou|∪|u(?![a-z])/);
+  const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
+  if (intervalles.length === 0) return null;
+  return {type:'intervalles', liste: intervalles};
+}
+
+function egaliteBorneIntervalle(a, b) {
+  if (a === b) return true;
+  if (!isFinite(a) || !isFinite(b)) return false;
+  return Math.abs(a - b) < 1e-9;
+}
+
+function checkIntervalle(userInput, correctSpec) {
+  const userParsed = parseReponseIntervalle(userInput);
+  if (!userParsed) return false;
+  if (userParsed.type !== correctSpec.type) return false;
+  if (correctSpec.type === 'tout' || correctSpec.type === 'vide') return true;
+  if (userParsed.liste.length !== correctSpec.liste.length) return false;
+  for (const iv of correctSpec.liste) {
+    const matchBorne = userParsed.liste.some(uiv =>
+      egaliteBorneIntervalle(uiv.bas, iv.bas) && egaliteBorneIntervalle(uiv.haut, iv.haut) &&
+      uiv.inclusBas === iv.inclusBas && uiv.inclusHaut === iv.inclusHaut
+    );
+    if (!matchBorne) return false;
+  }
+  return true;
+}
+
+function formaterUneBorne(v) {
+  if (v === Infinity) return '+\\infty';
+  if (v === -Infinity) return '-\\infty';
+  if (Number.isInteger(v)) return String(v);
+  try {
+    const frac = math.fraction(v);
+    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
+  } catch(e) {}
+  return v.toFixed(3);
+}
+
+function formaterIntervalleSpec(spec) {
+  if (!spec) return '';
+  if (spec.type === 'tout') return '\\mathbb{R}';
+  if (spec.type === 'vide') return '\\emptyset';
+  if (spec.type === 'intervalles') {
+    return spec.liste.map(iv => {
+      const cg = iv.inclusBas ? '[' : ']';
+      const cd = iv.inclusHaut ? ']' : '[';
+      return `${cg}${formaterUneBorne(iv.bas)}\\,;\\,${formaterUneBorne(iv.haut)}${cd}`;
+    }).join('\\ \\cup\\ ');
+  }
+  return '';
 }
 
 function valeurDuChamp(el) {
@@ -1284,7 +1378,7 @@ function verifierUne(idx) {
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
-  else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex);
+  else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -1421,7 +1515,7 @@ function formaterReponse(ex) {
       return `${ex.bas} \\lt \\ldots \\lt ${ex.haut}`;
     }
     if (ex.type === 'intervalle') {
-      return ex.vide ? '\\text{aucune solution}' : `${ex.bas} \\lt \\ldots \\lt ${ex.haut}`;
+      return formaterIntervalleSpec(ex.intervalleSpec);
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
