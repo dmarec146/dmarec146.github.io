@@ -729,22 +729,22 @@ const generateurs = [
   {id:"8.2 a)", type:"texte", signe:true, gen: () => {
     const a = entierSigne(2,9), b = alea(-9,9), x = alea(-9,9);
     const v = a*x+b;
-    return { enonce:`Signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\)`, reponse: v>0?'+':(v<0?'-':'0') };
+    return { enonce:`Donner le signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\).`, texteLibre:true, reponse: v>0?'+':(v<0?'-':'0') };
   }},
   {id:"8.2 b)", type:"texte", signe:true, gen: () => {
     const a = entierSigne(2,9), b = alea(-9,9), x = alea(-9,9);
     const v = a*x+b;
-    return { enonce:`Signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\)`, reponse: v>0?'+':(v<0?'-':'0') };
+    return { enonce:`Donner le signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\).`, texteLibre:true, reponse: v>0?'+':(v<0?'-':'0') };
   }},
   {id:"8.2 c)", type:"texte", signe:true, gen: () => {
     const a = entierSigne(2,12), b = entierSigne(1,20), x = entierSigne(1,12);
     const v = a*x+b;
-    return { enonce:`Signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\)`, reponse: v>0?'+':(v<0?'-':'0') };
+    return { enonce:`Donner le signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\).`, texteLibre:true, reponse: v>0?'+':(v<0?'-':'0') };
   }},
   {id:"8.2 d)", type:"texte", signe:true, gen: () => {
     // cas particulier : x est exactement la valeur qui annule l'expression
     const a = entierSigne(2,9), x = entierSigne(1,9), b = -a*x;
-    return { enonce:`Signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\)`, reponse:'0' };
+    return { enonce:`Donner le signe de \\(${affineTexte(a,b)}\\) pour \\(x=${x}\\).`, texteLibre:true, reponse:'0' };
   }},
 
   // ---------- 8.3 : trouver la valeur qui annule ax+b (resoudre ax+b=0) ----------
@@ -903,7 +903,9 @@ const generateurs = [
     // discussion selon un parametre : il faut d'abord comparer m a -2 pour ordonner les racines
     let m; do { m = entierSigne(1,25); } while (m === -2);
     const spec = resoudreSigneParBalayage(x => (x-m)*(x+2), [{valeur:m,interdit:false},{valeur:-2,interdit:false}], '>');
-    return { enonce: `On donne un réel \\(m=${m}\\). Résoudre l'inéquation \\((${xMoinsTexte(m)})(x+2)\\gt 0\\).`, intervalleSpec: spec };
+    // le parametre m reste une lettre dans l'inequation affichee (pas sa valeur substituee) : c'est
+    // bien lui que l'eleve doit manipuler pour ordonner les racines, sa valeur n'etant donnee qu'a part
+    return { enonce: `On donne un réel \\(m=${m}\\). Résoudre l'inéquation \\((x-m)(x+2)\\gt 0\\).`, intervalleSpec: spec };
   }}
 ];
 
