@@ -698,11 +698,14 @@ function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, total, ctx) {
     <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
   </table>`;
 }
-// widget interactif (9.8 e) : la case "Ligne 1/Colonne 1" est donnee dans l'enonce (pas dans le
-// tableau) ; les 3 autres cases internes sont de vraies cases a remplir (meme principe que le
-// tableau de signes de la fiche 8 : saisie directement dans la case, bouton "Valider" dedie, pas de
-// validation prematuree au fil de la frappe). Une fois le tableau complete, une deuxieme partie (le
-// meme exercice, pas une question separee) demande un pourcentage calcule a partir du tableau.
+// widget interactif (9.8 e) : la valeur de la case "Ligne 1/Colonne 1" est donnee dans l'enonce
+// (pas affichee dans le tableau), mais les 4 cases internes sont TOUTES de vraies cases a remplir,
+// y compris celle-la — la laisser vide indiquerait par construction laquelle des 4 cases correspond
+// au fait donne dans le texte, un indice que le tableau ne doit pas fournir lui-meme. Meme principe
+// que le tableau de signes de la fiche 8 : saisie directement dans la case, bouton "Valider" dedie,
+// pas de validation prematuree au fil de la frappe. Une fois le tableau complete, une deuxieme
+// partie (le meme exercice, pas une question separee) demande un pourcentage calcule a partir du
+// tableau.
 function tableauCroiseRempliHTML(idx, ex) {
   const { t, ctx } = ex;
   const totalL2 = t.total - t.totalL1, totalC2 = t.total - t.totalC1;
@@ -711,7 +714,7 @@ function tableauCroiseRempliHTML(idx, ex) {
   const cellule = (id) => `<input type="text" class="tc-cellule" id="${id}" oninput="reinitialiserStatut(${idx})">`;
   const table = `<table style="border-collapse:collapse;margin:10px auto;">
     <tr><td style="${ent}"></td><td style="${ent}">${ctx.colonne1}</td><td style="${ent}">${ctx.colonne2}</td><td style="${ent}">Total</td></tr>
-    <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}"></td><td style="${std}">${cellule('tc-b-'+idx)}</td><td style="${std}">${t.totalL1}</td></tr>
+    <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}">${cellule('tc-a-'+idx)}</td><td style="${std}">${cellule('tc-b-'+idx)}</td><td style="${std}">${t.totalL1}</td></tr>
     <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}">${cellule('tc-c-'+idx)}</td><td style="${std}">${cellule('tc-d-'+idx)}</td><td style="${std}">${totalL2}</td></tr>
     <tr><td style="${ent}">Total</td><td style="${std}">${t.totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${t.total}</td></tr>
   </table>`;
@@ -732,6 +735,7 @@ function verifierTableauCroiseRempli(idx, ex) {
     input.classList.add(ok ? 'correct' : 'incorrect');
     if (!ok) toutCorrect = false;
   };
+  verifierCellule(`tc-a-${idx}`, t.a);
   verifierCellule(`tc-b-${idx}`, t.b);
   verifierCellule(`tc-c-${idx}`, t.c);
   verifierCellule(`tc-d-${idx}`, t.d);
@@ -748,7 +752,7 @@ function verifierTableauCroiseRempli(idx, ex) {
   return toutCorrect;
 }
 function reinitialiserTableauCroiseRempli(idx) {
-  ['tc-b-'+idx, 'tc-c-'+idx, 'tc-d-'+idx, 'tc-pct-'+idx].forEach(id => {
+  ['tc-a-'+idx, 'tc-b-'+idx, 'tc-c-'+idx, 'tc-d-'+idx, 'tc-pct-'+idx].forEach(id => {
     const el = document.getElementById(id);
     el.value = ''; el.classList.remove('correct','incorrect');
   });
@@ -1357,7 +1361,7 @@ let modeImmediat = true;
 function toutesLesReponsesSontSaisies() {
   return exercices.every((ex, idx) => {
     if (ex.type === 'tableauCroiseRempli') {
-      return ['tc-b-'+idx,'tc-c-'+idx,'tc-d-'+idx,'tc-pct-'+idx].every(id => document.getElementById(id).value.trim() !== '');
+      return ['tc-a-'+idx,'tc-b-'+idx,'tc-c-'+idx,'tc-d-'+idx,'tc-pct-'+idx].every(id => document.getElementById(id).value.trim() !== '');
     }
     return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
   });
