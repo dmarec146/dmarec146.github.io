@@ -1201,13 +1201,15 @@ const generateurs = [
       [{valeur:(-(b - k*d))/aPrime, interdit:false},{valeur:-d/c, interdit:true}], '>=');
     return { enonce: `Résoudre l'inéquation \\(\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\geqslant ${k}\\).`, intervalleSpec: spec };
   }},
-  {id:"8.9 e)", type:"intervalle", texteLibre:true, gen: () => {
-    // discussion selon un parametre : il faut d'abord comparer m a -2 pour ordonner les racines
-    let m; do { m = entierSigne(1,25); } while (m === -2);
-    const spec = resoudreSigneParBalayage(x => (x-m)*(x+2), [{valeur:m,interdit:false},{valeur:-2,interdit:false}], '>');
-    // le parametre m reste une lettre dans l'inequation affichee (pas sa valeur substituee) : c'est
-    // bien lui que l'eleve doit manipuler pour ordonner les racines, sa valeur n'etant donnee qu'a part
-    return { enonce: `On donne un réel \\(m=${m}\\). Résoudre l'inéquation \\((x-m)(x+2)\\gt 0\\).`, intervalleSpec: spec };
+  {id:"8.9 e)", type:"discussionParametre", texteLibre:true, gen: () => {
+    // discussion VERITABLE : m est un reel quelconque (pas une valeur tiree au hasard) — seul le
+    // second seuil fixe s varie d'un tirage a l'autre, pour garder un peu de variete sans changer
+    // la structure de la discussion (comparer m a s pour ordonner les deux racines).
+    const s = entierSigne(1,9);
+    return {
+      enonce: `Le réel \\(m\\) est un paramètre quelconque. Résoudre, en discutant selon les valeurs de \\(m\\), l'inéquation \\((x-m)(${affineTexte(1,-s)})\\gt 0\\).`,
+      parametre: 'm', seuilFixe: s
+    };
   }}
 ];
 
@@ -1239,6 +1241,7 @@ function necessiteAide(ex) {
   if (ex.signe) return true;
   if (ex.type === 'intervalle') return true;
   if (ex.type === 'tableauSigne') return true;
+  if (ex.type === 'discussionParametre') return true;
   return false;
 }
 
@@ -1251,6 +1254,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'tableauSigne') {
     return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant) — cette valeur n'est pas toujours un entier, une fraction comme <code>7/2</code> est acceptée. Pour la ligne d'un facteur, cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (ce facteur s'annule ici) et <code>|</code> (rien ne se passe ici pour ce facteur) : jamais <code>‖</code>, réservé à la ligne du bas — un facteur pris seul n'a rien d'interdit, seule l'expression complète (s'il est au dénominateur) peut l'être.";
+  }
+  if (ex.type === 'discussionParametre') {
+    return `Écrire un cas par « si ... alors ... », par exemple <code>si ${ex.parametre}>${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[∪]${ex.parametre};+∞[, si ${ex.parametre}<${ex.seuilFixe} alors ...</code> : autant de cas que nécessaire pour couvrir toutes les valeurs possibles de <code>${ex.parametre}</code> (y compris le cas où les deux racines sont égales), chaque intervalle pouvant contenir la lettre <code>${ex.parametre}</code> elle-même comme borne.`;
   }
   return "";
 }
@@ -1265,6 +1271,7 @@ function utiliseMathfield(ex) {
 
 function placeholderPour(ex) {
   if (ex.type === 'intervalle') return ']a;b[';
+  if (ex.type === 'discussionParametre') return 'si ... alors ...';
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return '{a;b}';
   return 'réponse';
 }
@@ -1323,8 +1330,39 @@ function genererClavierIntervalle(idx) {
       <div class="clavier-apercu">Astuce : « ]-∞;1[ ∪ ]3/2;+∞[ » pour une réunion de deux intervalles.</div>`;
 }
 
+// clavier de la discussion selon un parametre : le clavier intervalle, plus les mots-cles
+// "si"/"alors" qui separent les cas et la lettre du parametre lui-meme (utilisable comme borne)
+function genererClavierDiscussion(idx, ex) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Cas</span>
+        <button class="touche-large" onclick="inserer(${idx},'si ')">si</button>
+        <button class="touche-large" onclick="inserer(${idx},' alors ')">alors</button>
+        <button class="touche-large" onclick="inserer(${idx},'${ex.parametre}')">lettre ${ex.parametre}</button>
+        <button onclick="inserer(${idx},'>')">&gt;</button>
+        <button onclick="inserer(${idx},'<')">&lt;</button>
+        <button onclick="inserer(${idx},'>=')">&geq;</button>
+        <button onclick="inserer(${idx},'<=')">&leq;</button>
+        <button onclick="inserer(${idx},'=')">=</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Intervalle</span>
+        <button onclick="inserer(${idx},']')">]</button>
+        <button onclick="inserer(${idx},'[')">[</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button class="touche-large" onclick="inserer(${idx},'+∞')">+∞</button>
+        <button class="touche-large" onclick="inserer(${idx},'-∞')">−∞</button>
+        <button class="touche-large" onclick="inserer(${idx},'∪')">∪</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « si ${ex.parametre}&gt;${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[∪]${ex.parametre};+∞[, si ${ex.parametre}&lt;${ex.seuilFixe} alors ... »</div>`;
+}
+
 function genererClavierPour(idx, ex) {
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
+  if (ex.type === 'discussionParametre') return genererClavierDiscussion(idx, ex);
   return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
         <span class="clavier-label">Opérations</span>
@@ -1653,6 +1691,106 @@ function checkIntervalle(userInput, correctSpec) {
   return true;
 }
 
+// ---------- reponse en plusieurs cas conditionnels sur un parametre litteral (discussion selon un
+// parametre, cf. "8.9 e)") : l'eleve ecrit "si [condition sur m] alors [intervalle]" pour chaque cas,
+// separes par "si" (autant de fois que necessaire) — aucun decoupage impose a l'avance, cf. verifieur.
+
+// coupe la reponse en cas ("si ... alors ...", un decoupage possible parmi d'autres tolere)
+function parseReponseCasParametre(str) {
+  const morceaux = String(str).split(/\bsi\b/i).map(s => s.trim()).filter(s => s !== '');
+  const cas = morceaux.map(m => {
+    const parties = m.split(/\balors\b/i);
+    if (parties.length !== 2) return null;
+    return { conditionTexte: parties[0].trim(), intervalleTexte: parties[1].replace(/^[,;]+|[,;]+$/g, '').trim() };
+  });
+  if (cas.some(c => c === null)) return null;
+  return cas;
+}
+
+// "m>-2", "m<=3", "m=-2"... : le parametre doit rester seul a gauche (pas de reecriture algebrique
+// du type "m+2>0" — la comparaison directe au seuil est ce qui est enseigne dans la discussion)
+function parseConditionParametre(str, nomParametre) {
+  const s = str.trim().toLowerCase().replace(/\s/g, '').replace(/,/g, '.');
+  const re = new RegExp('^' + nomParametre + '(>=|<=|>|<|=)(-?[\\d./]+)$');
+  const m = s.match(re);
+  if (!m) return null;
+  try { return { op: m[1], seuil: math.evaluate(m[2]) }; } catch(e) { return null; }
+}
+
+function conditionParametreVraie(cond, valeur) {
+  const eps = 1e-9;
+  if (cond.op === '>') return valeur > cond.seuil + eps;
+  if (cond.op === '<') return valeur < cond.seuil - eps;
+  if (cond.op === '>=') return valeur > cond.seuil - eps;
+  if (cond.op === '<=') return valeur < cond.seuil + eps;
+  if (cond.op === '=') return Math.abs(valeur - cond.seuil) < 1e-6;
+  return false;
+}
+
+// meme grammaire que parseUnIntervalle/parseReponseIntervalle, mais les bornes peuvent contenir le
+// parametre litteral (ex: "m", "m+1") : evaluees avec une valeur-test concrete via "scope"
+function parseUnIntervalleParametre(str, scope) {
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^;]+);([^;\]\[]+)([\]\[])$/);
+  if (!m) return null;
+  const [_, cg, a, b, cd] = m;
+  try {
+    const va = (a.includes('inf') || a.includes('∞')) ? -Infinity : math.evaluate(normaliserSaisie(a), scope);
+    const vb = (b.includes('inf') || b.includes('∞')) ? Infinity : math.evaluate(normaliserSaisie(b), scope);
+    if (typeof va !== 'number' || typeof vb !== 'number') return null;
+    return { bas: va, haut: vb, inclusBas: cg === '[', inclusHaut: cd === ']' };
+  } catch(e) { return null; }
+}
+function parseReponseIntervalleParametre(str, scope) {
+  const s = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g, '');
+  if (s === 'r' || s === 'ir' || s === 'reel' || s === 'reels' || s === 'ℝ') return { type: 'tout' };
+  if (s === 'vide' || s === 'empty' || s === '∅' || s === 'aucun' || s === 'aucune') return { type: 'vide' };
+  const parties = s.split(/ou|∪|u(?![a-z])/);
+  const intervalles = parties.map(p => parseUnIntervalleParametre(p, scope)).filter(x => x !== null);
+  if (intervalles.length !== parties.length) return null;
+  return { type: 'intervalles', liste: intervalles };
+}
+function specsIntervalleEquivalentes(specA, specB) {
+  if (specA.type !== specB.type) return false;
+  if (specA.type === 'tout' || specA.type === 'vide') return true;
+  if (specA.liste.length !== specB.liste.length) return false;
+  return specB.liste.every(iv => specA.liste.some(uiv =>
+    egaliteBorneIntervalle(uiv.bas, iv.bas) && egaliteBorneIntervalle(uiv.haut, iv.haut) &&
+    uiv.inclusBas === iv.inclusBas && uiv.inclusHaut === iv.inclusHaut
+  ));
+}
+
+// verite terrain de l'exercice 8.9 e) pour une valeur concrete du parametre : (x-mValeur)(x-seuilFixe)>0
+function veriteDiscussionParametre(ex, mValeur) {
+  return resoudreSigneParBalayage(x => (x - mValeur) * (x - ex.seuilFixe),
+    [{ valeur: mValeur, interdit: false }, { valeur: ex.seuilFixe, interdit: false }], '>');
+}
+
+// verifie une reponse en plusieurs cas : pour un large echantillon de valeurs-test du parametre (dont
+// la valeur exacte du seuil fixe, le cas degenere), un cas de la reponse doit s'appliquer et son
+// intervalle, une fois le parametre substitue, doit correspondre a la verite terrain — n'importe quel
+// decoupage en cas mathematiquement correct et complet est accepte (2 cas avec >=/<=, 3 cas avec un
+// cas degenere separe, cas redondants coherents, etc.), aucun decoupage particulier n'est impose.
+function checkDiscussionParametre(userInput, ex) {
+  const cas = parseReponseCasParametre(userInput);
+  if (!cas || cas.length === 0) return false;
+  const casAnalyses = cas.map(c => ({ condition: parseConditionParametre(c.conditionTexte, ex.parametre), intervalleTexte: c.intervalleTexte }));
+  if (casAnalyses.some(c => c.condition === null)) return false;
+  const valeursTest = [ex.seuilFixe];
+  for (let i = 0; i < 20; i++) valeursTest.push(ex.seuilFixe + (Math.random() * 40 - 20));
+  for (const mValeur of valeursTest) {
+    const attendu = veriteDiscussionParametre(ex, mValeur);
+    const applicables = casAnalyses.filter(c => conditionParametreVraie(c.condition, mValeur));
+    if (applicables.length === 0) return false;
+    for (const c of applicables) {
+      const scope = { [ex.parametre]: mValeur };
+      const parse = parseReponseIntervalleParametre(c.intervalleTexte, scope);
+      if (!parse) return false;
+      if (!specsIntervalleEquivalentes(parse, attendu)) return false;
+    }
+  }
+  return true;
+}
+
 function formaterUneBorne(v) {
   if (v === Infinity) return '+\\infty';
   if (v === -Infinity) return '-\\infty';
@@ -1714,6 +1852,7 @@ function verifierUne(idx) {
   if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
   let ok;
   if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
+  else if (ex.type === 'discussionParametre') ok = checkDiscussionParametre(val, ex);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -1846,6 +1985,12 @@ function formaterReponse(ex) {
   try {
     if (ex.type === 'intervalle') {
       return formaterIntervalleSpec(ex.intervalleSpec);
+    }
+    if (ex.type === 'discussionParametre') {
+      const s = ex.seuilFixe, p = ex.parametre;
+      return `\\text{si }${p}\\gt ${s}\\text{ : }]-\\infty\\,;\\,${s}[\\,\\cup\\,]${p}\\,;\\,+\\infty[` +
+             `\\text{ ; si }${p}\\lt ${s}\\text{ : }]-\\infty\\,;\\,${p}[\\,\\cup\\,]${s}\\,;\\,+\\infty[` +
+             `\\text{ ; si }${p}=${s}\\text{ : }]-\\infty\\,;\\,${s}[\\,\\cup\\,]${s}\\,;\\,+\\infty[`;
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
