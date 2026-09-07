@@ -690,8 +690,23 @@ const CONTEXTES_TABLEAU_CROISE = [
   { intro: "On a recensé 100 trajets domicile-travail.", ligne1: "À vélo", ligne2: "En voiture",
     colonne1: "Moins de 20 minutes", colonne2: "Plus de 20 minutes" },
   { intro: "Un magasin a enregistré 100 achats.", ligne1: "Paiement par carte", ligne2: "Paiement en espèces",
-    colonne1: "Achat alimentaire", colonne2: "Achat non alimentaire" }
+    colonne1: "Achat alimentaire", colonne2: "Achat non alimentaire" },
+  { intro: "Une bibliothèque a enregistré 100 emprunts.", ligne1: "Livre papier", ligne2: "Livre audio",
+    colonne1: "Emprunt d'une semaine", colonne2: "Emprunt de trois semaines" },
+  { intro: "Un restaurant a servi 100 repas.", ligne1: "Repas sur place", ligne2: "Repas à emporter",
+    colonne1: "Service du midi", colonne2: "Service du soir" },
+  { intro: "Un parking a enregistré 100 stationnements.", ligne1: "Voiture", ligne2: "Moto",
+    colonne1: "Courte durée (moins de 2 h)", colonne2: "Longue durée (plus de 2 h)" },
+  { intro: "Une salle de sport a enregistré 100 passages.", ligne1: "Cours collectif", ligne2: "Musculation libre",
+    colonne1: "Créneau du matin", colonne2: "Créneau du soir" },
+  { intro: "Un loueur de vélos a enregistré 100 locations.", ligne1: "Vélo classique", ligne2: "Vélo électrique",
+    colonne1: "Location d'une heure", colonne2: "Location d'une journée" },
+  { intro: "Une salle de concert a vendu 100 billets.", ligne1: "Billet standard", ligne2: "Billet premium",
+    colonne1: "Concert du vendredi", colonne2: "Concert du samedi" }
 ];
+// 3 contextes distincts par version de la fiche (sans remise), pour ne jamais montrer deux fois
+// la meme phrase d'introduction entre 9.8 c), d) et e)
+let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 3);
 
 // ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
 // en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
@@ -842,18 +857,18 @@ const generateurs = [
     return { enonce:`Dans un lycée, \\(${p1}\\,\\%\\) des \\(${total}\\) élèves sont en filière générale. Parmi eux, \\(${finalV}\\) suivent une spécialité mathématiques. Quel pourcentage des élèves de la filière générale cela représente-t-il ?`, reponsePourcent:p2 };
   }},
   {id:"9.8 c)", type:"pourcentage", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise(), ctx = choix(CONTEXTES_TABLEAU_CROISE);
+    const t = tirerTableauCroise(), ctx = tirageContextesTableau[0];
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,ctx);
     return { enonce:`${ctx.intro} Les résultats sont résumés dans ce tableau :${table}Quel pourcentage de l'effectif total correspond à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} » ?`, reponsePourcent:t.a };
   }},
   {id:"9.8 d)", type:"pourcentage", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise(), ctx = choix(CONTEXTES_TABLEAU_CROISE);
+    const t = tirerTableauCroise(), ctx = tirageContextesTableau[1];
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,ctx);
     const p = Math.round(t.a/t.totalL1*1000)/10;
     return { enonce:`${ctx.intro} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.ligne1} », quel pourcentage correspond à « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
   }},
   {id:"9.8 e)", type:"pourcentage", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise(), ctx = choix(CONTEXTES_TABLEAU_CROISE);
+    const t = tirerTableauCroise(), ctx = tirageContextesTableau[2];
     // la case "Ligne 2 / Colonne 2" est masquee : a reconstituer a partir des marges avant de calculer sa proportion
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,'?',t.totalL1,t.totalC1,ctx);
     return { enonce:`${ctx.intro} Ce tableau est incomplet :${table}Après avoir complété la case manquante, quel pourcentage de l'effectif total représente-t-elle ?`, reponsePourcent:t.d };
@@ -861,8 +876,9 @@ const generateurs = [
 ];
 
 function genererExercices() {
-  // on renouvelle le tirage des modeles de calcul a chaque version de la fiche
+  // on renouvelle le tirage des modeles de calcul et des contextes de tableau croise a chaque version de la fiche
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
+  tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 3);
   return generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
