@@ -678,34 +678,29 @@ function tirerTableauCroise() {
   return { a, b, c, d, totalL1, totalC1 };
 }
 
-// ---------- vivier de calculs numeriques (groupe 9.1), identique a celui des fiches 3 a 8 ----------
+// ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
+// en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
 const MODELES_CALCUL = [
-  () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
-  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
-  () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
-  () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
-  () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
-  () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
-  () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
-  () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
-  () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
-  () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
-  () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
-  () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
-  () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+  () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:`${a}/${b}+${c}/${d}` }; },
+  () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
+          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:`${a}/${b}-${c}/${d}` }; },
+  () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:`(${a}/${b})*(${c}/${d})` }; },
+  () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}+\\dfrac{${e}}{${f}}`, reponse:`(${a}/${b})*(${c}/${d})+${e}/${f}` }; },
+  () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:`${a}/${b}+(${c}/${d})*(${e}/${f})` }; },
+  () => { const c = alea(2,9), e = alea(2,9), b = alea(1,c-1), d = alea(1,e-1), a = alea(2,9);
+          return { enonce:`${a}\\times \\dfrac{${b}}{${c}}-\\dfrac{${d}}{${e}}`, reponse:`${a}*${b}/${c}-${d}/${e}` }; },
+  () => { const b = alea(2,9), e = alea(2,9), a = alea(1,b-1), d = alea(1,e-1), c = alea(2,9);
+          return { enonce:`\\dfrac{${a}}{${b}}-${c}\\times \\dfrac{${d}}{${e}}`, reponse:`${a}/${b}-${c}*${d}/${e}` }; },
+  () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
+          return { enonce:`\\left(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse:`(${a}/${b}+${c}/${d})*(${e}/${f})` }; },
+  () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:`(${a}/${b})*(${c}/${d})*(${e}/${f})` }; },
+  () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}-\\dfrac{${e}}{${f}}`, reponse:`${a}/${b}+${c}/${d}-${e}/${f}` }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 
