@@ -783,7 +783,7 @@ function construireSpecTableauSigne(facteurs) {
 }
 
 // --- rendu et interaction du tableau de signes -------------------------------------------------
-const CYCLE_SIGNES = ['', '+', '-', '0', '‖', '|'];
+const CYCLE_SIGNES = ['', '+', '-', '0', '|', '‖'];
 const CS_LARGEUR_LABEL = 92;
 const CS_LARGEUR_COL = 46;
 const CS_LARGEUR_BORD = 34;
@@ -806,11 +806,13 @@ function tableauSigneHTML(idx, ex) {
   const k = spec.k;
   const nbCols = 2 * k + 1;
   const largeurTotale = CS_LARGEUR_LABEL + 2 * CS_LARGEUR_BORD + nbCols * CS_LARGEUR_COL;
+  // le filet reste identique (pointille) pour tous les seuils, meme une valeur interdite : le
+  // reconnaitre comme tel est precisement ce que l'eleve doit trouver lui-meme, pas quelque chose
+  // que l'affichage devoile a l'avance en distinguant visuellement sa colonne des autres.
   let diviseurs = '';
   for (let j = 0; j < k; j++) {
     const centre = CS_LARGEUR_LABEL + CS_LARGEUR_BORD + (2 * j + 1.5) * CS_LARGEUR_COL;
-    const classe = spec.seuils[j].denom ? 'cs-diviseur cs-diviseur-interdit' : 'cs-diviseur';
-    diviseurs += `<div class="${classe}" style="left:${centre}px"></div>`;
+    diviseurs += `<div class="cs-diviseur" style="left:${centre}px"></div>`;
   }
   let html = `<table class="cs-table"><colgroup><col style="width:${CS_LARGEUR_LABEL}px"><col style="width:${CS_LARGEUR_BORD}px">`;
   for (let c = 0; c < nbCols; c++) html += `<col style="width:${CS_LARGEUR_COL}px">`;
