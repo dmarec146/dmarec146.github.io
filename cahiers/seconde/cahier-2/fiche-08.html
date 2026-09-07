@@ -453,7 +453,10 @@ window.MathJax = {
   .cs-table { position: relative; z-index: 1; border-collapse: collapse; table-layout: fixed; font-family: Georgia, serif; font-size: 14px; }
   .cs-table td { padding: 5px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
   .cs-table .cs-label { text-align: left; font-weight: bold; padding-left: 4px; }
+  .cs-table .cs-bord-inf { text-align: left; padding-left: 2px; }
+  .cs-table .cs-bord-sup { text-align: right; padding-right: 2px; }
   .cs-table tr.cs-ligne-x td { border-bottom: 1px solid #1a1a1a; padding-bottom: 8px; }
+  .cs-table tr.cs-ligne-facteur td { border-bottom: 1px solid #ccc; padding-bottom: 8px; }
   .cs-table tr.cs-ligne-finale td { border-top: 2px solid #1a1a1a; padding-top: 8px; }
   /* filets verticaux des seuils : calques positionnes en pixels, independants du decoupage en
      cellules — restent visibles derriere une case de signe fusionnee sur plusieurs colonnes */
@@ -770,6 +773,7 @@ function construireSpecTableauSigne(facteurs) {
 const CYCLE_SIGNES = ['', '+', '-', '0', '‖', '|'];
 const CS_LARGEUR_LABEL = 92;
 const CS_LARGEUR_COL = 46;
+const CS_LARGEUR_BORD = 34;
 
 function celluleVide(id, onclick) {
   return `<button type="button" class="cs-cellule" id="${id}" onclick="${onclick}"></button>`;
@@ -781,46 +785,48 @@ function celluleVide(id, onclick) {
 // se passe ici pour ce facteur) — jamais le signe voisin recopie, ni une case vide/absente. Les
 // filets verticaux (pointilles = seuil normal, double trait = valeur interdite) restent des calques
 // positionnes en pixels par-dessus le tableau, pour rester visibles nettement meme sous une case "|".
+// -infini/+infini vivent dans deux colonnes de bordure DEDIEES (etroites, hors grille des cases) :
+// jamais de case a remplir en dessous, le symbole est decale vers l'exterieur (aligne a gauche pour
+// -infini, a droite pour +infini) plutot que centre au-dessus d'une case de signe.
 function tableauSigneHTML(idx, ex) {
   const spec = ex.spec;
   const k = spec.k;
   const nbCols = 2 * k + 1;
-  const largeurTotale = CS_LARGEUR_LABEL + nbCols * CS_LARGEUR_COL;
+  const largeurTotale = CS_LARGEUR_LABEL + 2 * CS_LARGEUR_BORD + nbCols * CS_LARGEUR_COL;
   let diviseurs = '';
   for (let j = 0; j < k; j++) {
-    const centre = CS_LARGEUR_LABEL + (2 * j + 1.5) * CS_LARGEUR_COL;
+    const centre = CS_LARGEUR_LABEL + CS_LARGEUR_BORD + (2 * j + 1.5) * CS_LARGEUR_COL;
     const classe = spec.seuils[j].denom ? 'cs-diviseur cs-diviseur-interdit' : 'cs-diviseur';
     diviseurs += `<div class="${classe}" style="left:${centre}px"></div>`;
   }
-  let html = `<table class="cs-table"><colgroup><col style="width:${CS_LARGEUR_LABEL}px">`;
+  let html = `<table class="cs-table"><colgroup><col style="width:${CS_LARGEUR_LABEL}px"><col style="width:${CS_LARGEUR_BORD}px">`;
   for (let c = 0; c < nbCols; c++) html += `<col style="width:${CS_LARGEUR_COL}px">`;
-  html += `</colgroup><tbody>`;
+  html += `<col style="width:${CS_LARGEUR_BORD}px"></colgroup><tbody>`;
   // ligne des seuils, a completer par l'eleve
-  html += `<tr class="cs-ligne-x"><td class="cs-label">\\(x\\)</td>`;
+  html += `<tr class="cs-ligne-x"><td class="cs-label">\\(x\\)</td><td class="cs-bord-inf">\\(-\\infty\\)</td>`;
   for (let c = 0; c < nbCols; c++) {
     if (c % 2 === 1) {
       const j = (c - 1) / 2;
-      html += `<td><input type="text" class="cs-seuil" id="cs-seuil-${idx}-${j}" placeholder="seuil" oninput="reinitialiserStatutTableau(${idx})"></td>`;
+      html += `<td><input type="text" class="cs-seuil" id="cs-seuil-${idx}-${j}" placeholder="seuil" oninput="reinitialiserStatutTableau(${idx});verifierAutoTableauSigne(${idx})"></td>`;
     } else {
-      const bord = c === 0 ? '-\\infty' : (c === nbCols - 1 ? '+\\infty' : '');
-      html += `<td>${bord ? `\\(${bord}\\)` : ''}</td>`;
+      html += `<td></td>`;
     }
   }
-  html += `</tr>`;
-  // une ligne par facteur : une case par colonne, comme la ligne finale
+  html += `<td class="cs-bord-sup">\\(+\\infty\\)</td></tr>`;
+  // une ligne par facteur : une case par colonne, comme la ligne finale (colonnes de bordure vides)
   spec.lignes.forEach((ligne, li) => {
-    html += `<tr class="cs-ligne-facteur"><td class="cs-label">\\(${ligne.label}\\)</td>`;
+    html += `<tr class="cs-ligne-facteur"><td class="cs-label">\\(${ligne.label}\\)</td><td></td>`;
     for (let c = 0; c < nbCols; c++) {
       html += `<td>${celluleVide(`cs-cell-${idx}-${li}-${c}`, `cyclerCelluleSigne(${idx},${li},${c})`)}</td>`;
     }
-    html += `</tr>`;
+    html += `<td></td></tr>`;
   });
   // ligne finale (signe du produit ou du quotient)
-  html += `<tr class="cs-ligne-finale"><td class="cs-label">Signe</td>`;
+  html += `<tr class="cs-ligne-finale"><td class="cs-label">Signe</td><td></td>`;
   for (let c = 0; c < nbCols; c++) {
     html += `<td>${celluleVide(`cs-cell-${idx}-fin-${c}`, `cyclerCelluleSigne(${idx},'fin',${c})`)}</td>`;
   }
-  html += `</tr></tbody></table>`;
+  html += `<td></td></tr></tbody></table>`;
   return `<div class="cs-conteneur"><div class="cs-scroll"><div class="cs-table-wrap" style="width:${largeurTotale}px">${html}${diviseurs}</div></div></div>`;
 }
 
@@ -830,6 +836,7 @@ function cyclerCelluleSigne(idx, ligne, col) {
   btn.textContent = CYCLE_SIGNES[(i + 1) % CYCLE_SIGNES.length];
   btn.classList.remove('correct', 'incorrect');
   reinitialiserStatutTableau(idx);
+  verifierAutoTableauSigne(idx);
 }
 
 function reinitialiserStatutTableau(idx) {
@@ -837,6 +844,17 @@ function reinitialiserStatutTableau(idx) {
   const statut = document.getElementById('statut-' + idx);
   if (div) div.classList.remove('correct', 'incorrect');
   if (statut) { statut.textContent = ''; statut.className = 'q-statut'; }
+}
+
+// contrairement a un champ texte normal (verifie a l'appui sur Entree), une case a cycler n'a pas
+// de moment de "validation" naturel — on verifie donc automatiquement des que le tableau devient
+// entierement rempli, en mode "au fur et a mesure" (meme logique que verifierUne sur Entree pour
+// les autres types d'exercice, y compris le declenchement de verifierTout si tout est repondu).
+function verifierAutoTableauSigne(idx) {
+  if (!modeImmediat) return;
+  if (!verifierTableauSigneRempli(idx, exercices[idx])) return;
+  verifierUne(idx);
+  if (toutesLesReponsesSontSaisies()) verifierTout();
 }
 
 function verifierTableauSigneRempli(idx, ex) {
