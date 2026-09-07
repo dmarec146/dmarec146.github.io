@@ -655,10 +655,10 @@ function checkPourcentage(userInput, valeurPourcent, tolerance) {
   return Math.abs(val - valeurPourcent) < tolerance;
 }
 
-// tableau croise 2x2 avec marges, affiche en HTML statique (lecture seule, pas un widget a remplir) ;
-// une case peut recevoir la chaine '?' pour representer une case manquante a reconstituer (9.8 e).
-// ctx fournit les intitules de ligne/colonne (deux categories factuelles, jamais une caracteristique
-// de personne croisee avec un comportement — voir la banque de contextes CONTEXTES_TABLEAU_CROISE).
+// tableau croise 2x2, affiche en HTML statique (lecture seule, pas un widget a remplir) : les 4
+// cases internes et les marges sont toutes donnees (9.8 c/d). ctx fournit les intitules de ligne/
+// colonne (deux categories factuelles, jamais une caracteristique de personne croisee avec un
+// comportement — voir la banque de contextes CONTEXTES_TABLEAU_CROISE).
 function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, ctx) {
   const total = 100, totalL2 = total - totalL1, totalC2 = total - totalC1;
   const std = 'border:1px solid #999;padding:6px 12px;text-align:center;font-family:Georgia,serif;font-size:14px;';
@@ -667,6 +667,22 @@ function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, ctx) {
     <tr><td style="${ent}"></td><td style="${ent}">${ctx.colonne1}</td><td style="${ent}">${ctx.colonne2}</td><td style="${ent}">Total</td></tr>
     <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}">${a}</td><td style="${std}">${b}</td><td style="${std}">${totalL1}</td></tr>
     <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}">${c}</td><td style="${std}">${d}</td><td style="${std}">${totalL2}</td></tr>
+    <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
+  </table>`;
+}
+// variante ne montrant que les marges (totaux par ligne et par colonne) : les 4 cases internes
+// restent vides dans le tableau lui-meme. Un fait donne dans l'enonce (pas dans une case) fournit
+// la valeur d'UNE case interne ; les 3 autres se deduisent alors par soustraction des marges (9.8 e) —
+// une partie de l'information est dans le tableau, une autre dans le texte, un peu plus subtil qu'une
+// lecture directe.
+function construireTableauCroiseMargesHTML(totalL1, totalC1, ctx) {
+  const total = 100, totalL2 = total - totalL1, totalC2 = total - totalC1;
+  const std = 'border:1px solid #999;padding:6px 12px;text-align:center;font-family:Georgia,serif;font-size:14px;';
+  const ent = std + 'font-weight:bold;background:#f1efe8;';
+  return `<table style="border-collapse:collapse;margin:10px auto;">
+    <tr><td style="${ent}"></td><td style="${ent}">${ctx.colonne1}</td><td style="${ent}">${ctx.colonne2}</td><td style="${ent}">Total</td></tr>
+    <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}"></td><td style="${std}"></td><td style="${std}">${totalL1}</td></tr>
+    <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}"></td><td style="${std}"></td><td style="${std}">${totalL2}</td></tr>
     <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
   </table>`;
 }
@@ -683,25 +699,25 @@ function tirerTableauCroise() {
 // (jamais une caracteristique de personne comme le genre ou la nationalite), tout est donne dans
 // le tableau — l'exercice est une lecture, pas une recherche d'information.
 const CONTEXTES_TABLEAU_CROISE = [
-  { intro: "Un cinéma a vendu 100 billets.", ligne1: "Version originale", ligne2: "Version doublée",
+  { intro: "Un cinéma a vendu 100 billets.", unite: "billets", ligne1: "Version originale", ligne2: "Version doublée",
     colonne1: "Séance de l'après-midi", colonne2: "Séance du soir" },
-  { intro: "Un camping a enregistré 100 séjours.", ligne1: "Tente", ligne2: "Camping-car",
+  { intro: "Un camping a enregistré 100 séjours.", unite: "séjours", ligne1: "Tente", ligne2: "Camping-car",
     colonne1: "Séjour d'une semaine", colonne2: "Séjour de deux semaines" },
-  { intro: "On a recensé 100 trajets domicile-travail.", ligne1: "À vélo", ligne2: "En voiture",
+  { intro: "On a recensé 100 trajets domicile-travail.", unite: "trajets", ligne1: "À vélo", ligne2: "En voiture",
     colonne1: "Moins de 20 minutes", colonne2: "Plus de 20 minutes" },
-  { intro: "Un magasin a enregistré 100 achats.", ligne1: "Paiement par carte", ligne2: "Paiement en espèces",
+  { intro: "Un magasin a enregistré 100 achats.", unite: "achats", ligne1: "Paiement par carte", ligne2: "Paiement en espèces",
     colonne1: "Achat alimentaire", colonne2: "Achat non alimentaire" },
-  { intro: "Une bibliothèque a enregistré 100 emprunts.", ligne1: "Livre papier", ligne2: "Livre audio",
+  { intro: "Une bibliothèque a enregistré 100 emprunts.", unite: "emprunts", ligne1: "Livre papier", ligne2: "Livre audio",
     colonne1: "Emprunt d'une semaine", colonne2: "Emprunt de trois semaines" },
-  { intro: "Un restaurant a servi 100 repas.", ligne1: "Repas sur place", ligne2: "Repas à emporter",
+  { intro: "Un restaurant a servi 100 repas.", unite: "repas", ligne1: "Repas sur place", ligne2: "Repas à emporter",
     colonne1: "Service du midi", colonne2: "Service du soir" },
-  { intro: "Un parking a enregistré 100 stationnements.", ligne1: "Voiture", ligne2: "Moto",
+  { intro: "Un parking a enregistré 100 stationnements.", unite: "stationnements", ligne1: "Voiture", ligne2: "Moto",
     colonne1: "Courte durée (moins de 2 h)", colonne2: "Longue durée (plus de 2 h)" },
-  { intro: "Une salle de sport a enregistré 100 passages.", ligne1: "Cours collectif", ligne2: "Musculation libre",
+  { intro: "Une salle de sport a enregistré 100 passages.", unite: "passages", ligne1: "Cours collectif", ligne2: "Musculation libre",
     colonne1: "Créneau du matin", colonne2: "Créneau du soir" },
-  { intro: "Un loueur de vélos a enregistré 100 locations.", ligne1: "Vélo classique", ligne2: "Vélo électrique",
+  { intro: "Un loueur de vélos a enregistré 100 locations.", unite: "locations", ligne1: "Vélo classique", ligne2: "Vélo électrique",
     colonne1: "Location d'une heure", colonne2: "Location d'une journée" },
-  { intro: "Une salle de concert a vendu 100 billets.", ligne1: "Billet standard", ligne2: "Billet premium",
+  { intro: "Une salle de concert a vendu 100 billets.", unite: "billets", ligne1: "Billet standard", ligne2: "Billet premium",
     colonne1: "Concert du vendredi", colonne2: "Concert du samedi" }
 ];
 // 3 contextes distincts par version de la fiche (sans remise), pour ne jamais montrer deux fois
@@ -869,9 +885,11 @@ const generateurs = [
   }},
   {id:"9.8 e)", type:"pourcentage", texteLibre:true, gen: () => {
     const t = tirerTableauCroise(), ctx = tirageContextesTableau[2];
-    // la case "Ligne 2 / Colonne 2" est masquee : a reconstituer a partir des marges avant de calculer sa proportion
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,'?',t.totalL1,t.totalC1,ctx);
-    return { enonce:`${ctx.intro} Ce tableau est incomplet :${table}Après avoir complété la case manquante, quel pourcentage de l'effectif total représente-t-elle ?`, reponsePourcent:t.d };
+    // seules les marges figurent dans le tableau ; la valeur de la case "Ligne 1 / Colonne 1" est
+    // donnee dans le texte (pas dans une case) — il faut la combiner aux marges pour reconstituer
+    // toutes les cases avant de calculer la case demandee
+    const table = construireTableauCroiseMargesHTML(t.totalL1, t.totalC1, ctx);
+    return { enonce:`${ctx.intro} Seuls les totaux par ligne et par colonne figurent dans ce tableau :${table}On sait de plus que ${t.a} ${ctx.unite} correspondent à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} ». Quel pourcentage de l'effectif total correspond à la fois à « ${ctx.ligne2} » et « ${ctx.colonne2} » ?`, reponsePourcent:t.d };
   }}
 ];
 
