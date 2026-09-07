@@ -656,15 +656,17 @@ function checkPourcentage(userInput, valeurPourcent, tolerance) {
 }
 
 // tableau croise 2x2 avec marges, affiche en HTML statique (lecture seule, pas un widget a remplir) ;
-// une case peut recevoir la chaine '?' pour representer une case manquante a reconstituer (9.8 e)
-function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1) {
+// une case peut recevoir la chaine '?' pour representer une case manquante a reconstituer (9.8 e).
+// ctx fournit les intitules de ligne/colonne (deux categories factuelles, jamais une caracteristique
+// de personne croisee avec un comportement — voir la banque de contextes CONTEXTES_TABLEAU_CROISE).
+function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, ctx) {
   const total = 100, totalL2 = total - totalL1, totalC2 = total - totalC1;
   const std = 'border:1px solid #999;padding:6px 12px;text-align:center;font-family:Georgia,serif;font-size:14px;';
   const ent = std + 'font-weight:bold;background:#f1efe8;';
   return `<table style="border-collapse:collapse;margin:10px auto;">
-    <tr><td style="${ent}"></td><td style="${ent}">Colonne 1</td><td style="${ent}">Colonne 2</td><td style="${ent}">Total</td></tr>
-    <tr><td style="${ent}">Ligne 1</td><td style="${std}">${a}</td><td style="${std}">${b}</td><td style="${std}">${totalL1}</td></tr>
-    <tr><td style="${ent}">Ligne 2</td><td style="${std}">${c}</td><td style="${std}">${d}</td><td style="${std}">${totalL2}</td></tr>
+    <tr><td style="${ent}"></td><td style="${ent}">${ctx.colonne1}</td><td style="${ent}">${ctx.colonne2}</td><td style="${ent}">Total</td></tr>
+    <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}">${a}</td><td style="${std}">${b}</td><td style="${std}">${totalL1}</td></tr>
+    <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}">${c}</td><td style="${std}">${d}</td><td style="${std}">${totalL2}</td></tr>
     <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
   </table>`;
 }
@@ -677,6 +679,19 @@ function tirerTableauCroise() {
   } while (a < 5 || b < 5 || c < 5 || d < 5);
   return { a, b, c, d, totalL1, totalC1 };
 }
+// contextes pour les tableaux croises 9.8 c/d/e : deux categories factuelles et non personnelles
+// (jamais une caracteristique de personne comme le genre ou la nationalite), tout est donne dans
+// le tableau — l'exercice est une lecture, pas une recherche d'information.
+const CONTEXTES_TABLEAU_CROISE = [
+  { intro: "Un cinéma a vendu 100 billets.", ligne1: "Version originale", ligne2: "Version doublée",
+    colonne1: "Séance de l'après-midi", colonne2: "Séance du soir" },
+  { intro: "Un camping a enregistré 100 séjours.", ligne1: "Tente", ligne2: "Camping-car",
+    colonne1: "Séjour d'une semaine", colonne2: "Séjour de deux semaines" },
+  { intro: "On a recensé 100 trajets domicile-travail.", ligne1: "À vélo", ligne2: "En voiture",
+    colonne1: "Moins de 20 minutes", colonne2: "Plus de 20 minutes" },
+  { intro: "Un magasin a enregistré 100 achats.", ligne1: "Paiement par carte", ligne2: "Paiement en espèces",
+    colonne1: "Achat alimentaire", colonne2: "Achat non alimentaire" }
+];
 
 // ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
 // en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
@@ -827,21 +842,21 @@ const generateurs = [
     return { enonce:`Dans un lycée, \\(${p1}\\,\\%\\) des \\(${total}\\) élèves sont en filière générale. Parmi eux, \\(${finalV}\\) suivent une spécialité mathématiques. Quel pourcentage des élèves de la filière générale cela représente-t-il ?`, reponsePourcent:p2 };
   }},
   {id:"9.8 c)", type:"pourcentage", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise();
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1);
-    return { enonce:`On interroge 100 personnes ; les résultats sont résumés dans ce tableau :${table}Quel pourcentage de l'effectif total appartient à la fois à la Ligne 1 et à la Colonne 1 ?`, reponsePourcent:t.a };
+    const t = tirerTableauCroise(), ctx = choix(CONTEXTES_TABLEAU_CROISE);
+    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,ctx);
+    return { enonce:`${ctx.intro} Les résultats sont résumés dans ce tableau :${table}Quel pourcentage de l'effectif total correspond à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} » ?`, reponsePourcent:t.a };
   }},
   {id:"9.8 d)", type:"pourcentage", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise();
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1);
+    const t = tirerTableauCroise(), ctx = choix(CONTEXTES_TABLEAU_CROISE);
+    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,ctx);
     const p = Math.round(t.a/t.totalL1*1000)/10;
-    return { enonce:`On interroge 100 personnes ; les résultats sont résumés dans ce tableau :${table}Parmi les personnes de la Ligne 1, quel pourcentage appartient à la Colonne 1 (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
+    return { enonce:`${ctx.intro} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.ligne1} », quel pourcentage correspond à « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
   }},
   {id:"9.8 e)", type:"pourcentage", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise();
+    const t = tirerTableauCroise(), ctx = choix(CONTEXTES_TABLEAU_CROISE);
     // la case "Ligne 2 / Colonne 2" est masquee : a reconstituer a partir des marges avant de calculer sa proportion
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,'?',t.totalL1,t.totalC1);
-    return { enonce:`On interroge 100 personnes ; ce tableau est incomplet :${table}Après avoir complété la case manquante, quel pourcentage de l'effectif total représente-t-elle ?`, reponsePourcent:t.d };
+    const table = construireTableauCroiseHTML(t.a,t.b,t.c,'?',t.totalL1,t.totalC1,ctx);
+    return { enonce:`${ctx.intro} Ce tableau est incomplet :${table}Après avoir complété la case manquante, quel pourcentage de l'effectif total représente-t-elle ?`, reponsePourcent:t.d };
   }}
 ];
 
