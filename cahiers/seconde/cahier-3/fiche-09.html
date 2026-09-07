@@ -343,6 +343,34 @@ window.MathJax = {
   .q-statut.ok { color: var(--vert); background: var(--vert-clair); }
   .q-statut.ko { color: var(--rouge); background: var(--rouge-clair); }
 
+  /* ---------- Tableau croise a completer (9.8 e) ---------- */
+  .tc-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .tc-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .tc-cellule {
+    width: 56px; padding: 5px 4px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    text-align: center; font-family: 'Courier New', monospace; font-size: 14px;
+    background: white;
+  }
+  .tc-cellule:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .tc-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tc-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tc-question-pct { margin: 10px 0; font-size: 14.5px; }
+  .tc-pourcentage {
+    width: 80px; padding: 5px 8px; margin-left: 6px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    font-family: 'Courier New', monospace; font-size: 15px; background: white;
+  }
+  .tc-pourcentage:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .tc-pourcentage.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tc-pourcentage.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tc-btn-valider {
+    margin-top: 8px; padding: 8px 14px; font-size: 13px; font-family: Georgia, serif;
+    background: white; color: var(--bleu); border: 1.5px solid var(--bleu); border-radius: 8px;
+    cursor: pointer;
+  }
+  .tc-btn-valider:hover { background: var(--bleu-clair); }
+
   /* ---------- Clavier virtuel ---------- */
   .clavier-visuel {
     display: none;
@@ -670,21 +698,68 @@ function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, total, ctx) {
     <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
   </table>`;
 }
-// variante ne montrant que les marges (totaux par ligne et par colonne) : les 4 cases internes
-// restent vides dans le tableau lui-meme. Un fait donne dans l'enonce (pas dans une case) fournit
-// la valeur d'UNE case interne ; les 3 autres se deduisent alors par soustraction des marges (9.8 e) —
-// une partie de l'information est dans le tableau, une autre dans le texte, un peu plus subtil qu'une
-// lecture directe.
-function construireTableauCroiseMargesHTML(totalL1, totalC1, total, ctx) {
-  const totalL2 = total - totalL1, totalC2 = total - totalC1;
-  const std = 'border:1px solid #999;padding:6px 12px;text-align:center;font-family:Georgia,serif;font-size:14px;';
+// widget interactif (9.8 e) : la case "Ligne 1/Colonne 1" est donnee dans l'enonce (pas dans le
+// tableau) ; les 3 autres cases internes sont de vraies cases a remplir (meme principe que le
+// tableau de signes de la fiche 8 : saisie directement dans la case, bouton "Valider" dedie, pas de
+// validation prematuree au fil de la frappe). Une fois le tableau complete, une deuxieme partie (le
+// meme exercice, pas une question separee) demande un pourcentage calcule a partir du tableau.
+function tableauCroiseRempliHTML(idx, ex) {
+  const { t, ctx } = ex;
+  const totalL2 = t.total - t.totalL1, totalC2 = t.total - t.totalC1;
+  const std = 'border:1px solid #999;padding:6px 4px;text-align:center;font-family:Georgia,serif;font-size:14px;';
   const ent = std + 'font-weight:bold;background:#f1efe8;';
-  return `<table style="border-collapse:collapse;margin:10px auto;">
+  const cellule = (id) => `<input type="text" class="tc-cellule" id="${id}" oninput="reinitialiserStatut(${idx})">`;
+  const table = `<table style="border-collapse:collapse;margin:10px auto;">
     <tr><td style="${ent}"></td><td style="${ent}">${ctx.colonne1}</td><td style="${ent}">${ctx.colonne2}</td><td style="${ent}">Total</td></tr>
-    <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}"></td><td style="${std}"></td><td style="${std}">${totalL1}</td></tr>
-    <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}"></td><td style="${std}"></td><td style="${std}">${totalL2}</td></tr>
-    <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
+    <tr><td style="${ent}">${ctx.ligne1}</td><td style="${std}"></td><td style="${std}">${cellule('tc-b-'+idx)}</td><td style="${std}">${t.totalL1}</td></tr>
+    <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}">${cellule('tc-c-'+idx)}</td><td style="${std}">${cellule('tc-d-'+idx)}</td><td style="${std}">${totalL2}</td></tr>
+    <tr><td style="${ent}">Total</td><td style="${std}">${t.totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${t.total}</td></tr>
   </table>`;
+  const questionPct = `<div class="tc-question-pct">Pourcentage de l'effectif total pour « ${ctx.ligne2} » et « ${ctx.colonne2} » : <input type="text" class="tc-pourcentage" id="tc-pct-${idx}" placeholder="25%" oninput="reinitialiserStatut(${idx})"></div>`;
+  const bouton = `<button type="button" class="tc-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
+  return `<div class="tc-conteneur"><div class="tc-scroll">${table}</div>${questionPct}${bouton}</div>`;
+}
+function verifierTableauCroiseRempli(idx, ex) {
+  const { t } = ex;
+  let toutRempli = true, toutCorrect = true;
+  const verifierCellule = (id, attendu) => {
+    const input = document.getElementById(id);
+    const val = input.value.trim();
+    input.classList.remove('correct','incorrect');
+    if (!val) { toutRempli = false; return; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - attendu) < 1e-9; } catch(e) { ok = false; }
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  };
+  verifierCellule(`tc-b-${idx}`, t.b);
+  verifierCellule(`tc-c-${idx}`, t.c);
+  verifierCellule(`tc-d-${idx}`, t.d);
+  const pctInput = document.getElementById(`tc-pct-${idx}`);
+  const pctVal = pctInput.value.trim();
+  pctInput.classList.remove('correct','incorrect');
+  if (!pctVal) { toutRempli = false; }
+  else {
+    const ok = checkPourcentage(pctVal, ex.pourcentageAttendu, 0.05);
+    pctInput.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
+  if (!toutRempli) return null;
+  return toutCorrect;
+}
+function reinitialiserTableauCroiseRempli(idx) {
+  ['tc-b-'+idx, 'tc-c-'+idx, 'tc-d-'+idx, 'tc-pct-'+idx].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = ''; el.classList.remove('correct','incorrect');
+  });
+}
+// tableau croise ENTIEREMENT REMPLI, en lecture seule : utilise dans les panneaux de correction
+function tableCorrigeCroiseHTML(ex) {
+  const { t, ctx } = ex;
+  const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
+  const p = ex.pourcentageAttendu;
+  const pctTxt = Number.isInteger(p) ? String(p) : String(p).replace('.','{,}');
+  return `${table}<p>Pourcentage attendu : \\(${pctTxt}\\,\\%\\)</p>`;
 }
 // construit un tableau croise 2x2 coherent, toutes les cases >= 5% de l'effectif ; l'effectif total
 // varie d'un tirage a l'autre (ne reste pas toujours 100) pour que le calcul de pourcentage soit un
@@ -730,11 +805,8 @@ const CONTEXTES_TABLEAU_CROISE = [
 ];
 function introContexte(ctx, total) { return ctx.intro.replace('{n}', total); }
 // 3 contextes distincts par version de la fiche (sans remise), pour ne jamais montrer deux fois
-// la meme phrase d'introduction entre 9.8 c), d) et e/f)
+// la meme phrase d'introduction entre 9.8 c), d) et e)
 let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 3);
-// partage entre 9.8 e) (completer la case manquante) et 9.8 f) (calculer le pourcentage demande),
-// qui portent sur le meme tableau et doivent donc utiliser le meme tirage
-let tirageTableauEF = null;
 
 // ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
 // en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
@@ -896,21 +968,13 @@ const generateurs = [
     const p = Math.round(t.a/t.totalL1*1000)/10;
     return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.ligne1} », quel pourcentage correspond à « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
   }},
-  {id:"9.8 e)", type:"num", texteLibre:true, gen: () => {
+  {id:"9.8 e)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const t = tirerTableauCroise(), ctx = tirageContextesTableau[2];
-    tirageTableauEF = { t, ctx };
-    // seules les marges figurent dans le tableau ; la valeur de la case "Ligne 1 / Colonne 1" est
-    // donnee dans le texte (pas dans une case) — il faut la combiner aux marges pour reconstituer
-    // la case manquante. Cette case (e) et le calcul du pourcentage qui la concerne (f) sont deux
-    // questions distinctes portant sur le meme tableau, plutot qu'une seule question a deux etapes.
-    const table = construireTableauCroiseMargesHTML(t.totalL1, t.totalC1, t.total, ctx);
-    return { enonce:`${introContexte(ctx,t.total)} Seuls les totaux par ligne et par colonne figurent dans ce tableau :${table}On sait de plus que ${t.a} ${ctx.unite} correspondent à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} ». Combien de ${ctx.unite} correspondent à la fois à « ${ctx.ligne2} » et « ${ctx.colonne2} » ?`, reponse:`${t.d}` };
-  }},
-  {id:"9.8 f)", type:"pourcentage", texteLibre:true, gen: () => {
-    const { t, ctx } = tirageTableauEF;
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
-    const p = Math.round(t.d/t.total*1000)/10;
-    return { enonce:`On complète le tableau de la question précédente :${table}Quel pourcentage de l'effectif total correspond à la fois à « ${ctx.ligne2} » et « ${ctx.colonne2} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
+    // la case "Ligne 1 / Colonne 1" est donnee dans le texte (pas dans une case du tableau) ; les 3
+    // autres cases sont de vraies cases a completer, puis un pourcentage se calcule a partir du
+    // tableau une fois complet — deux etapes de la MEME question, pas deux questions separees.
+    const pourcentageAttendu = Math.round(t.d/t.total*1000)/10;
+    return { enonce:`${introContexte(ctx,t.total)} Seuls les totaux par ligne et par colonne sont connus, ainsi que le fait que ${t.a} ${ctx.unite} correspondent à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} ». Compléter le tableau ci-dessous, puis calculer le pourcentage demandé.`, t, ctx, pourcentageAttendu };
   }}
 ];
 
@@ -934,13 +998,14 @@ const groupes = {
   "grille-9-5": [15,16,17],
   "grille-9-6": [18,19,20],
   "grille-9-7": [21,22,23,24],
-  "grille-9-8": [25,26,27,28,29,30]
+  "grille-9-8": [25,26,27,28,29]
 };
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
   if (ex.fractionIrreductible) return true;
   if (ex.type === 'pourcentage') return true;
+  if (ex.type === 'tableauCroiseRempli') return true;
   return false;
 }
 
@@ -950,6 +1015,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'pourcentage') {
     return "Écrire la réponse avec le symbole <code>%</code> (par exemple <code>25%</code>), ou sous forme décimale (<code>0,25</code>) ou fractionnaire (<code>1/4</code>) — jamais un nombre seul sans le signe %, qui serait compris comme une valeur décimale (<code>25</code> ≠ <code>25%</code>).";
+  }
+  if (ex.type === 'tableauCroiseRempli') {
+    return "Compléter chaque case vide du tableau par un nombre entier, puis indiquer le pourcentage demandé (avec le symbole <code>%</code>, ou sous forme décimale/fractionnaire) dans le champ prévu — avant de cliquer sur « Valider ce tableau ».";
   }
   return "";
 }
@@ -1035,10 +1103,11 @@ function construireGrilles() {
       // un enonce texteLibre est une phrase (ou contient du HTML, ex. un tableau croise) : il porte
       // lui-meme ses delimiteurs \( \), jamais un enveloppement automatique par-dessus
       const enonceHtml = ex.texteLibre ? ex.enonce : `\\(${ex.enonce}\\)${suffixe}`;
+      const champ = ex.type === 'tableauCroiseRempli' ? tableauCroiseRempliHTML(idx, ex) : champReponsePour(idx, ex);
       div.innerHTML = `
         <span class="q-lettre">${lettres[pos] || ''})</span>
         <span class="q-enonce">${enonceHtml}</span>
-        ${champReponsePour(idx, ex)}
+        ${champ}
         <span class="q-statut" id="statut-${idx}"></span>
       `;
       grille.appendChild(div);
@@ -1261,6 +1330,14 @@ function verifierUne(idx) {
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
   div.classList.remove('correct','incorrect');
+  if (ex.type === 'tableauCroiseRempli') {
+    const ok = verifierTableauCroiseRempli(idx, ex);
+    if (ok === null) { statut.textContent='remplir toutes les cases'; statut.className='q-statut'; return null; }
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    return ok;
+  }
   const input = document.getElementById('input-' + idx);
   const val = valeurDuChamp(input);
   if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
@@ -1278,11 +1355,17 @@ function verifierUne(idx) {
 let modeImmediat = true;
 
 function toutesLesReponsesSontSaisies() {
-  return exercices.every((ex, idx) => valeurDuChamp(document.getElementById('input-' + idx)) !== '');
+  return exercices.every((ex, idx) => {
+    if (ex.type === 'tableauCroiseRempli') {
+      return ['tc-b-'+idx,'tc-c-'+idx,'tc-d-'+idx,'tc-pct-'+idx].every(id => document.getElementById(id).value.trim() !== '');
+    }
+    return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
+  });
 }
 
 function attacherEcouteurs() {
   exercices.forEach((ex, idx) => {
+    if (ex.type === 'tableauCroiseRempli') return; // deja cable via oninput/onclick au moment du rendu
     const input = document.getElementById('input-' + idx);
     let ignorerProchainInput = false;
     input.addEventListener('keydown', (evenement) => {
@@ -1422,6 +1505,9 @@ function verifierTout() {
   } else {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
+      if (ex.type === 'tableauCroiseRempli') {
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
+      }
       const reponseFormatee = formaterReponse(ex);
       return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
     }).join('');
@@ -1440,9 +1526,10 @@ function toggleCorrection() {
 
 function reinitialiser() {
   exercices.forEach((ex, idx) => {
-    document.getElementById('input-' + idx).value = '';
     document.getElementById('q-' + idx).classList.remove('correct','incorrect');
     document.getElementById('statut-' + idx).textContent = '';
+    if (ex.type === 'tableauCroiseRempli') { reinitialiserTableauCroiseRempli(idx); return; }
+    document.getElementById('input-' + idx).value = '';
     const clavier = document.getElementById('clavier-' + idx);
     if (clavier) clavier.classList.remove('ouvert');
   });
@@ -1456,8 +1543,9 @@ function toggleToutesReponses() {
   const panneau = document.getElementById('toutes-reponses-panneau');
   const btn = document.getElementById('btn-toutes-reponses');
   if (!panneau.classList.contains('visible')) {
-    panneau.innerHTML = exercices.map(ex =>
-      `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
+    panneau.innerHTML = exercices.map(ex => ex.type === 'tableauCroiseRempli'
+      ? `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeCroiseHTML(ex)}`
+      : `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
     ).join('');
     if (window.MathJax) MathJax.typesetPromise([panneau]);
     panneau.classList.add('visible');
