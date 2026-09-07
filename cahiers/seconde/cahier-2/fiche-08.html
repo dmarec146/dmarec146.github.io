@@ -766,7 +766,10 @@ function construireSpecTableauSigne(facteurs) {
     for (let i = 0; i <= k; i++) valeurs[2 * i] = (f.a * points[i] + f.b) > 0 ? '+' : '-';
     for (let j = 0; j < k; j++) {
       const estSaRacine = egaliteBorneIntervalle(seuils[j].valeur, -f.b / f.a);
-      valeurs[2 * j + 1] = estSaRacine ? (f.denom ? '‖' : '0') : '|';
+      // "‖" ne s'affiche JAMAIS sur la ligne d'un facteur pris seul, meme s'il est au denominateur :
+      // ce facteur, individuellement, vaut simplement 0 la ou il s'annule — seul le PRODUIT/QUOTIENT
+      // final devient interdit a cet endroit (ligne "finale" ci-dessous, qui porte seule le "‖").
+      valeurs[2 * j + 1] = estSaRacine ? '0' : '|';
     }
     return { label: f.label, denom: !!f.denom, valeurs };
   });
@@ -1247,7 +1250,7 @@ function aideContextuellePour(ex) {
     return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.type === 'tableauSigne') {
-    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant) — cette valeur n'est pas toujours un entier, une fraction comme <code>7/2</code> est acceptée. Pour chaque ligne (un facteur ou l'expression complète), cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (le facteur s'annule ici), <code>‖</code> (valeur interdite) et <code>|</code> (rien ne se passe ici pour ce facteur : le signe ne change qu'à sa propre valeur qui l'annule, jamais à celle d'un autre facteur).";
+    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant) — cette valeur n'est pas toujours un entier, une fraction comme <code>7/2</code> est acceptée. Pour la ligne d'un facteur, cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (ce facteur s'annule ici) et <code>|</code> (rien ne se passe ici pour ce facteur) : jamais <code>‖</code>, réservé à la ligne du bas — un facteur pris seul n'a rien d'interdit, seule l'expression complète (s'il est au dénominateur) peut l'être.";
   }
   return "";
 }
