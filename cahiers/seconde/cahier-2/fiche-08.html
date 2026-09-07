@@ -448,6 +448,12 @@ window.MathJax = {
 
   /* ---------- Tableau de signes interactif ---------- */
   .cs-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .cs-btn-valider {
+    margin-top: 8px; padding: 8px 14px; font-size: 13px; font-family: Georgia, serif;
+    background: white; color: var(--bleu); border: 1.5px solid var(--bleu); border-radius: 8px;
+    cursor: pointer;
+  }
+  .cs-btn-valider:hover { background: var(--bleu-clair); }
   .cs-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .cs-table-wrap { position: relative; margin: 6px 0; }
   .cs-table { position: relative; z-index: 1; border-collapse: collapse; table-layout: fixed; font-family: Georgia, serif; font-size: 14px; }
@@ -697,6 +703,13 @@ function xMoinsTexte(v) {
   if (v === 0) return 'x';
   return v > 0 ? `x-${v}` : `x+${-v}`;
 }
+// facteur affine {a,b} dont la racine -b/a n'est ni forcee entiere ni evitee : a et b tires
+// independamment (contrairement a construire b=-a*x0 depuis un entier x0 choisi d'avance), pour que
+// les seuils resultants soient generiquement des fractions non entieres, comme un vrai calcul.
+function facteurAleatoire(minA, maxA, minB, maxB) {
+  const a = entierSigne(minA, maxA), b = entierSigne(minB, maxB);
+  return { a, b, racine: -b / a };
+}
 // evalue le produit de plusieurs facteurs affines en x ; carre:true => le facteur reel est (ax+b)^2
 function produitAffine(facteurs) {
   return (x) => facteurs.reduce((acc, f) => { const v = f.a * x + f.b; return acc * (f.carre ? v * v : v); }, 1);
@@ -827,7 +840,11 @@ function tableauSigneHTML(idx, ex) {
     html += `<td>${celluleVide(`cs-cell-${idx}-fin-${c}`, `cyclerCelluleSigne(${idx},'fin',${c})`)}</td>`;
   }
   html += `<td></td></tr></tbody></table>`;
-  return `<div class="cs-conteneur"><div class="cs-scroll"><div class="cs-table-wrap" style="width:${largeurTotale}px">${html}${diviseurs}</div></div></div>`;
+  // bouton de validation dedie : verifier au fil des clics validerait dans un etat intermediaire
+  // (cliquer sur une case fait forcement passer par des symboles transitoires avant le bon), d'ou
+  // le choix d'un declenchement explicite plutot qu'automatique, propre a chaque tableau.
+  const boutonValider = `<button type="button" class="cs-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
+  return `<div class="cs-conteneur"><div class="cs-scroll"><div class="cs-table-wrap" style="width:${largeurTotale}px">${html}${diviseurs}</div></div>${boutonValider}</div>`;
 }
 
 function cyclerCelluleSigne(idx, ligne, col) {
@@ -836,7 +853,6 @@ function cyclerCelluleSigne(idx, ligne, col) {
   btn.textContent = CYCLE_SIGNES[(i + 1) % CYCLE_SIGNES.length];
   btn.classList.remove('correct', 'incorrect');
   reinitialiserStatutTableau(idx);
-  verifierAutoTableauSigne(idx);
 }
 
 function reinitialiserStatutTableau(idx) {
@@ -844,17 +860,6 @@ function reinitialiserStatutTableau(idx) {
   const statut = document.getElementById('statut-' + idx);
   if (div) div.classList.remove('correct', 'incorrect');
   if (statut) { statut.textContent = ''; statut.className = 'q-statut'; }
-}
-
-// contrairement a un champ texte normal (verifie a l'appui sur Entree), une case a cycler n'a pas
-// de moment de "validation" naturel — on verifie donc automatiquement des que le tableau devient
-// entierement rempli, en mode "au fur et a mesure" (meme logique que verifierUne sur Entree pour
-// les autres types d'exercice, y compris le declenchement de verifierTout si tout est repondu).
-function verifierAutoTableauSigne(idx) {
-  if (!modeImmediat) return;
-  if (!verifierTableauSigneRempli(idx, exercices[idx])) return;
-  verifierUne(idx);
-  if (toutesLesReponsesSontSaisies()) verifierTout();
 }
 
 function verifierTableauSigneRempli(idx, ex) {
@@ -1037,36 +1042,41 @@ const generateurs = [
 
   // ---------- 8.5 : construire un tableau de signes complet (seuils places par l'eleve, puis
   // signe de chaque facteur et de l'expression finale) ----------
+  // a et b tires INDEPENDAMMENT (racine -b/a generiquement fractionnaire, jamais forcee entiere ni
+  // evitee) : David a signale que tous les seuils tombaient sur des entiers, ce qui ne testait
+  // jamais la lecture d'une valeur rationnelle non entiere sur la ligne x.
   {id:"8.5 a)", type:"tableauSigne", texteLibre:true, gen: () => {
-    let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
-    const a = entierSigne(2,7), b = -a*x1, c = entierSigne(2,7), d = -c*x2;
+    let f1, f2;
+    do { f1 = facteurAleatoire(2,7,1,20); f2 = facteurAleatoire(2,7,1,20); } while (Math.abs(f1.racine - f2.racine) < 1e-6);
     const facteurs = [
-      {a, b, denom:false, label: affineTexte(a,b)},
-      {a:c, b:d, denom:false, label: affineTexte(c,d)}
+      {a:f1.a, b:f1.b, denom:false, label: affineTexte(f1.a,f1.b)},
+      {a:f2.a, b:f2.b, denom:false, label: affineTexte(f2.a,f2.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `Construire le tableau de signes de \\(E(x)=(${affineTexte(a,b)})(${affineTexte(c,d)})\\).`, facteurs, spec };
+    return { enonce: `Construire le tableau de signes de \\(E(x)=(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})\\).`, facteurs, spec };
   }},
   {id:"8.5 b)", type:"tableauSigne", texteLibre:true, gen: () => {
-    let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
-    const a=entierSigne(2,6), b=-a*x1, c=entierSigne(2,6), d=-c*x2, e=entierSigne(2,6), f=-e*x3;
+    let f1, f2, f3;
+    do {
+      f1 = facteurAleatoire(2,6,1,15); f2 = facteurAleatoire(2,6,1,15); f3 = facteurAleatoire(2,6,1,15);
+    } while (Math.abs(f1.racine-f2.racine)<1e-6 || Math.abs(f1.racine-f3.racine)<1e-6 || Math.abs(f2.racine-f3.racine)<1e-6);
     const facteurs = [
-      {a, b, denom:false, label: affineTexte(a,b)},
-      {a:c, b:d, denom:false, label: affineTexte(c,d)},
-      {a:e, b:f, denom:false, label: affineTexte(e,f)}
+      {a:f1.a, b:f1.b, denom:false, label: affineTexte(f1.a,f1.b)},
+      {a:f2.a, b:f2.b, denom:false, label: affineTexte(f2.a,f2.b)},
+      {a:f3.a, b:f3.b, denom:false, label: affineTexte(f3.a,f3.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `Construire le tableau de signes de \\(E(x)=(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\).`, facteurs, spec };
+    return { enonce: `Construire le tableau de signes de \\(E(x)=(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})(${affineTexte(f3.a,f3.b)})\\).`, facteurs, spec };
   }},
   {id:"8.5 c)", type:"tableauSigne", texteLibre:true, gen: () => {
-    let xn, xd; do { xn = entierSigne(1,9); xd = entierSigne(1,9); } while (xn === xd);
-    const a=entierSigne(2,7), b=-a*xn, c=entierSigne(2,7), d=-c*xd;
+    let fn, fd;
+    do { fn = facteurAleatoire(2,7,1,20); fd = facteurAleatoire(2,7,1,20); } while (Math.abs(fn.racine - fd.racine) < 1e-6);
     const facteurs = [
-      {a, b, denom:false, label: affineTexte(a,b)},
-      {a:c, b:d, denom:true, label: affineTexte(c,d)}
+      {a:fn.a, b:fn.b, denom:false, label: affineTexte(fn.a,fn.b)},
+      {a:fd.a, b:fd.b, denom:true, label: affineTexte(fd.a,fd.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `Construire le tableau de signes de \\(E(x)=\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\).`, facteurs, spec };
+    return { enonce: `Construire le tableau de signes de \\(E(x)=\\dfrac{${affineTexte(fn.a,fn.b)}}{${affineTexte(fd.a,fd.b)}}\\).`, facteurs, spec };
   }},
 
   // ---------- 8.6 : tableau de signes d'un produit de deux facteurs affines (reponse directe en
@@ -1235,7 +1245,7 @@ function aideContextuellePour(ex) {
     return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.type === 'tableauSigne') {
-    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant). Pour chaque ligne (un facteur ou l'expression complète), cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (le facteur s'annule ici), <code>‖</code> (valeur interdite) et <code>|</code> (rien ne se passe ici pour ce facteur : le signe ne change qu'à sa propre valeur qui l'annule, jamais à celle d'un autre facteur).";
+    return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant) — cette valeur n'est pas toujours un entier, une fraction comme <code>7/2</code> est acceptée. Pour chaque ligne (un facteur ou l'expression complète), cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (le facteur s'annule ici), <code>‖</code> (valeur interdite) et <code>|</code> (rien ne se passe ici pour ce facteur : le signe ne change qu'à sa propre valeur qui l'annule, jamais à celle d'un autre facteur).";
   }
   return "";
 }
@@ -1685,7 +1695,10 @@ function verifierUne(idx) {
   div.classList.remove('correct','incorrect');
   if (ex.type === 'tableauSigne') {
     const ok = verifierTableauSigne(idx, ex);
-    if (ok === null) { statut.textContent=''; statut.className='q-statut'; return null; }
+    // les cases deja remplies sont quand meme coloriees correct/incorrect individuellement par
+    // verifierTableauSigne ; seul le statut global de l'exercice reste neutre tant que tout n'est
+    // pas rempli — message explicite plutot qu'un silence qui pourrait passer pour "rien ne s'est passe"
+    if (ok === null) { statut.textContent='remplir toutes les cases'; statut.className='q-statut'; return null; }
     div.classList.add(ok ? 'correct' : 'incorrect');
     statut.textContent = ok ? '✓ correct' : '✗ à revoir';
     statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
