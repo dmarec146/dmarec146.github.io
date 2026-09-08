@@ -379,6 +379,7 @@ window.MathJax = {
     text-align: center; font-family: 'Courier New', monospace; font-size: 13px;
     background: white; position: relative; z-index: 1;
   }
+  .se-cellule-cm { text-align: left; padding-left: 8px; }
   .se-cellule:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
   .se-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
   .se-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
@@ -577,8 +578,8 @@ window.MathJax = {
 
 <svg width="0" height="0" style="position:absolute;">
   <defs>
-    <marker id="se-fleche" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    <marker id="se-fleche" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#999"/>
     </marker>
   </defs>
 </svg>
@@ -688,6 +689,9 @@ const CONTEXTES_EVOLUTION = [
 ];
 
 function formatDecimalFr(v) { return String(v).replace('.', '{,}'); }
+// arrondit a 9 decimales pour eliminer le bruit flottant (ex. base*coef = 84.00000000000001 alors
+// que la valeur mathematique exacte est 84) sans arrondir de vraies decimales (1,05 reste 1,05)
+function arrondi(v) { return Math.round(v * 1e9) / 1e9; }
 // multiple de (100/pgcd(p,100)) : p% de ce nombre est toujours entier
 function baseDivisiblePar(p) { const den = 100 / pgcd(p, 100); return den * alea(2, 12); }
 
@@ -759,15 +763,18 @@ function enonceGroupe107HTML(t) {
 // laisser un maximum d'initiative : c'est l'enonce partage du groupe (enonce-10-7) qui porte les
 // faits donnes, l'eleve doit les retrouver et les placer lui-meme au bon endroit. Un simple format
 // (« 8 % », « × ») est suggere en placeholder, jamais la valeur attendue.
+// deux arcs distincts (pas un seul "oeil" partageant ses deux extremites) : l'arc du haut part et
+// arrive plus haut sur chaque cercle que l'arc du bas, comme dans le corrige (bend left/bend right
+// depuis des points differents du cercle, pas depuis un point commun).
 function segmentEvolutionSVG() {
   return `<svg viewBox="0 0 120 74" width="120" height="74">
-    <path d="M5,37 Q60,6 115,37" fill="none" stroke="#555" stroke-width="1.5" marker-end="url(#se-fleche)"/>
-    <path d="M5,37 Q60,68 115,37" fill="none" stroke="#555" stroke-width="1.5" marker-end="url(#se-fleche)"/>
+    <path d="M8,25 Q60,5 112,25" fill="none" stroke="#999" stroke-width="1" marker-end="url(#se-fleche)"/>
+    <path d="M8,49 Q60,69 112,49" fill="none" stroke="#999" stroke-width="1" marker-end="url(#se-fleche)"/>
   </svg>`;
 }
 function schemaEvolutionHTML(idx, t) {
   const celluleTaux = (id) => `<input type="text" class="se-cellule" id="${id}" placeholder="8 %" oninput="reinitialiserStatut(${idx})">`;
-  const celluleCM = (id) => `<input type="text" class="se-cellule" id="${id}" placeholder="×" oninput="reinitialiserStatut(${idx})">`;
+  const celluleCM = (id) => `<input type="text" class="se-cellule se-cellule-cm" id="${id}" placeholder="×…" oninput="reinitialiserStatut(${idx})">`;
   const segment = (tauxId, cmId) => `<div class="se-segment">${celluleTaux(tauxId)}${segmentEvolutionSVG()}${celluleCM(cmId)}</div>`;
   const schema = `<div class="se-schema">
     <div class="se-cercle">P1</div>
@@ -832,19 +839,19 @@ function tableCorrigeSchemaHTML(t) {
 // pourcentages d'evolution, en preparation directe du reste de la fiche ----------
 const MODELES_CALCUL = [
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p), coef=1+p/100;
-          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${base}*(1+${p}/100)` }; },
+          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${arrondi(base*coef)}` }; },
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p), coef=1-p/100;
-          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${base}*(1-${p}/100)` }; },
+          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${arrondi(base*coef)}` }; },
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p);
-          return { enonce:`${p}\\,\\%\\text{ de }${base}`, reponse:`${p}/100*${base}` }; },
+          return { enonce:`${p}\\,\\%\\text{ de }${base}`, reponse:`${arrondi(p/100*base)}` }; },
   () => { const a=alea(2,20), b=alea(2,9), c=alea(2,9);
           return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a-b*c}` }; },
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p), coef=1+p/100;
-          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${base}*(1+${p}/100)` }; },
+          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${arrondi(base*coef)}` }; },
   () => { const a=alea(2,9), b=alea(2,12), c=alea(2,15);
           return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p), coef=1-p/100;
-          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${base}*(1-${p}/100)` }; },
+          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${arrondi(base*coef)}` }; },
   () => { const a=alea(3,25), m=choix([99, 101, 999, 98, 102]);
           return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; }
 ];
@@ -862,19 +869,19 @@ const generateurs = [
   // chacun de ces trois groupes, plutot que 4 puis 4 puis 3 exercices separes) ----------
   {id:"10.2 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE);
-    return { enonce:`Donner le coefficient multiplicateur associé à une augmentation de \\(${p}\\,\\%\\).`, reponse:`1+${p}/100` };
+    return { enonce:`Donner le coefficient multiplicateur associé à une augmentation de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}` };
   }},
   {id:"10.2 b)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE);
-    return { enonce:`Donner le coefficient multiplicateur associé à une diminution de \\(${p}\\,\\%\\).`, reponse:`1-${p}/100` };
+    return { enonce:`Donner le coefficient multiplicateur associé à une diminution de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1-p/100)}` };
   }},
   {id:"10.2 c)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE), base = baseDivisiblePar(p);
-    return { enonce:`Calculer \\(${base}\\) augmenté de \\(${p}\\,\\%\\).`, reponse:`${base}*(1+${p}/100)` };
+    return { enonce:`Calculer \\(${base}\\) augmenté de \\(${p}\\,\\%\\).`, reponse:`${arrondi(base*(1+p/100))}` };
   }},
   {id:"10.2 d)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE), base = baseDivisiblePar(p);
-    return { enonce:`Calculer \\(${base}\\) diminué de \\(${p}\\,\\%\\).`, reponse:`${base}*(1-${p}/100)` };
+    return { enonce:`Calculer \\(${base}\\) diminué de \\(${p}\\,\\%\\).`, reponse:`${arrondi(base*(1-p/100))}` };
   }},
   {id:"10.2 e)", type:"pourcentage", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE), coef = 1+p/100;
