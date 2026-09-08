@@ -358,25 +358,26 @@ window.MathJax = {
   .se-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
   .se-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .se-schema {
-    display: flex; align-items: center; flex-wrap: nowrap; gap: 2px;
-    min-width: 480px; padding: 10px 4px; justify-content: center;
+    display: flex; align-items: center; flex-wrap: nowrap; gap: 0;
+    min-width: 620px; padding: 10px 4px; justify-content: center;
   }
   .se-cercle {
     width: 46px; height: 46px; min-width: 46px; border-radius: 50%;
     border: 1.5px solid #333; display: flex; align-items: center; justify-content: center;
     font-weight: bold; font-family: Georgia, serif; font-size: 14px; background: white;
+    flex: 0 0 auto; z-index: 1;
   }
   .se-segment {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 12.5px; font-family: Georgia, serif; min-width: 84px; gap: 2px;
+    font-size: 12.5px; font-family: Georgia, serif; min-width: 120px; gap: 0;
+    margin: 0 -8px;
   }
-  .se-fleche { font-size: 18px; color: #555; line-height: 1; }
-  .se-valeur-donnee { white-space: nowrap; }
+  .se-segment svg { display: block; }
   .se-cellule {
-    width: 68px; padding: 4px 4px;
+    width: 64px; padding: 4px 4px;
     border: 1.5px solid #bbb; border-radius: 5px;
     text-align: center; font-family: 'Courier New', monospace; font-size: 13px;
-    background: white;
+    background: white; position: relative; z-index: 1;
   }
   .se-cellule:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
   .se-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
@@ -574,6 +575,14 @@ window.MathJax = {
 
 <body>
 
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <marker id="se-fleche" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="fiche-09.html">&larr; Fiche précédente</a>
@@ -744,20 +753,29 @@ function enonceGroupe107HTML(t) {
   </ul>`;
 }
 
-// schema "P1 -> P2 -> P3 -> P4" a completer : par periode, l'une des deux valeurs (taux ou CM) est
-// donnee, l'autre est une vraie case a remplir (meme principe que les autres widgets de la fiche :
-// bouton "Valider" dedie, correction case par case).
+// schema "P1 -> P2 -> P3 -> P4" a completer : DEUX fleches courbes par segment (taux en haut,
+// coefficient multiplicateur en bas, comme dans le corrige du DS), et les 6 cases (3 taux + 3 CM)
+// sont TOUTES a remplir — aucune donnee de l'enonce n'est reecrite sur le schema lui-meme, pour
+// laisser un maximum d'initiative : c'est l'enonce partage du groupe (enonce-10-7) qui porte les
+// faits donnes, l'eleve doit les retrouver et les placer lui-meme au bon endroit. Un simple format
+// (« 8 % », « × ») est suggere en placeholder, jamais la valeur attendue.
+function segmentEvolutionSVG() {
+  return `<svg viewBox="0 0 120 74" width="120" height="74">
+    <path d="M5,37 Q60,6 115,37" fill="none" stroke="#555" stroke-width="1.5" marker-end="url(#se-fleche)"/>
+    <path d="M5,37 Q60,68 115,37" fill="none" stroke="#555" stroke-width="1.5" marker-end="url(#se-fleche)"/>
+  </svg>`;
+}
 function schemaEvolutionHTML(idx, t) {
-  const cellule = (id) => `<input type="text" class="se-cellule" id="${id}" oninput="reinitialiserStatut(${idx})">`;
-  const pct = (h, p) => (h ? '+' : '-') + p + ' %';
-  const dec = (v) => String(v).replace('.', ',');
+  const celluleTaux = (id) => `<input type="text" class="se-cellule" id="${id}" placeholder="8 %" oninput="reinitialiserStatut(${idx})">`;
+  const celluleCM = (id) => `<input type="text" class="se-cellule" id="${id}" placeholder="×" oninput="reinitialiserStatut(${idx})">`;
+  const segment = (tauxId, cmId) => `<div class="se-segment">${celluleTaux(tauxId)}${segmentEvolutionSVG()}${celluleCM(cmId)}</div>`;
   const schema = `<div class="se-schema">
     <div class="se-cercle">P1</div>
-    <div class="se-segment"><span class="se-valeur-donnee">${pct(t.h1, t.p1)}</span><span class="se-fleche">→</span>${cellule('se-cm1-'+idx)}</div>
+    ${segment('se-taux1-'+idx, 'se-cm1-'+idx)}
     <div class="se-cercle">P2</div>
-    <div class="se-segment">${cellule('se-taux2-'+idx)}<span class="se-fleche">→</span><span class="se-valeur-donnee">×${dec(t.c2)}</span></div>
+    ${segment('se-taux2-'+idx, 'se-cm2-'+idx)}
     <div class="se-cercle">P3</div>
-    <div class="se-segment"><span class="se-valeur-donnee">${pct(t.h3, t.p3)}</span><span class="se-fleche">→</span>${cellule('se-cm3-'+idx)}</div>
+    ${segment('se-taux3-'+idx, 'se-cm3-'+idx)}
     <div class="se-cercle">P4</div>
   </div>`;
   const bouton = `<button type="button" class="se-btn-valider" onclick="verifierUne(${idx})">Valider ce schéma</button>`;
@@ -784,14 +802,17 @@ function verifierSchemaEvolution(idx, t) {
     input.classList.add(ok ? 'correct' : 'incorrect');
     if (!ok) toutCorrect = false;
   };
+  verifierTaux(`se-taux1-${idx}`, t.h1 ? t.p1 : -t.p1);
   verifierNumerique(`se-cm1-${idx}`, t.c1);
   verifierTaux(`se-taux2-${idx}`, t.taux2);
+  verifierNumerique(`se-cm2-${idx}`, t.c2);
+  verifierTaux(`se-taux3-${idx}`, t.h3 ? t.p3 : -t.p3);
   verifierNumerique(`se-cm3-${idx}`, t.c3);
   if (!toutRempli) return null;
   return toutCorrect;
 }
 function reinitialiserSchemaEvolution(idx) {
-  ['se-cm1-'+idx, 'se-taux2-'+idx, 'se-cm3-'+idx].forEach(id => {
+  ['se-taux1-'+idx, 'se-cm1-'+idx, 'se-taux2-'+idx, 'se-cm2-'+idx, 'se-taux3-'+idx, 'se-cm3-'+idx].forEach(id => {
     const el = document.getElementById(id);
     el.value = ''; el.classList.remove('correct','incorrect');
   });
@@ -957,7 +978,7 @@ const generateurs = [
   // renouvele dans genererExercices(). ----------
   {id:"10.7 a)", type:"schemaEvolution", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
-    return { enonce:`Compléter le schéma ci-dessous représentant les évolutions successives (taux et coefficient multiplicateur manquants pour chaque période).`, t };
+    return { enonce:`Compléter le schéma ci-dessous représentant les évolutions successives : indiquer, pour chaque période, le taux d'évolution (en haut) et le coefficient multiplicateur (en bas) — à partir des informations données plus haut, jamais réécrites sur le schéma.`, t };
   }},
   {id:"10.7 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
@@ -1322,7 +1343,7 @@ let modeImmediat = true;
 function toutesLesReponsesSontSaisies() {
   return exercices.every((ex, idx) => {
     if (ex.type === 'schemaEvolution') {
-      return ['se-cm1-'+idx,'se-taux2-'+idx,'se-cm3-'+idx].every(id => document.getElementById(id).value.trim() !== '');
+      return ['se-taux1-'+idx,'se-cm1-'+idx,'se-taux2-'+idx,'se-cm2-'+idx,'se-taux3-'+idx,'se-cm3-'+idx].every(id => document.getElementById(id).value.trim() !== '');
     }
     return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
   });
