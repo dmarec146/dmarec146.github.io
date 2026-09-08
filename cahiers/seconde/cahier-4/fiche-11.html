@@ -934,7 +934,7 @@ function aideContextuellePour(ex) {
     return "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>. Si le résultat est un entier, l'écrire tel quel.";
   }
   if (ex.type === 'ecritureSci') {
-    return "Écrire la réponse sous la forme <code>a×10^n</code>, avec <code>a</code> compris entre 1 et 10 (par exemple <code>4.5×10^3</code>, obtenu avec les boutons « × » puis « xⁿ » du clavier).";
+    return "Écrire la réponse sous la forme <code>a×10^n</code>, avec <code>a</code> compris entre 1 et 10 (par exemple <code>4.5×10^3</code> : taper « 4.5*10 » puis la touche <code>^</code> pour l'exposant, ou utiliser le clavier virtuel).";
   }
   if (ex.type === 'ensembleNombre') {
     return "Répondre par le nom du plus petit ensemble contenant le nombre : <code>N</code> (entiers naturels), <code>Z</code> (entiers relatifs), <code>D</code> (décimaux), <code>Q</code> (rationnels) ou <code>R</code> (réels).";
@@ -945,7 +945,7 @@ function aideContextuellePour(ex) {
   return "";
 }
 
-const TYPES_MATHFIELD = ['num'];
+const TYPES_MATHFIELD = ['num', 'ecritureSci'];
 
 function utiliseMathfield(ex) {
   if (!TYPES_MATHFIELD.includes(ex.type)) return false;
@@ -998,22 +998,6 @@ function genererClavierPour(idx) {
       <div class="clavier-apercu">Astuce : « (a+b)/c » = fraction</div>`;
 }
 
-function genererClavierSci(idx) {
-  return GROUPE_CHIFFRES(idx) + `
-      <div class="clavier-groupe">
-        <span class="clavier-label">Écriture scientifique</span>
-        <button onclick="insererFonction(${idx},'*')">×</button>
-        <button onclick="inserer(${idx},'10')">10</button>
-        <button onclick="insererExposant(${idx})">xⁿ</button>
-        <button onclick="inserer(${idx},'-')">−</button>
-      </div>
-      <div class="clavier-groupe">
-        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-      </div>
-      <div class="clavier-apercu">Astuce : écrire par exemple « 4.5×10^3 » (bouton × puis bouton xⁿ pour l'exposant)</div>`;
-}
-
 function champReponsePour(idx, ex) {
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
@@ -1027,7 +1011,7 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${ex.type === 'ecritureSci' ? genererClavierSci(idx) : genererClavierPour(idx)}</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierPour(idx)}</div>`;
 }
 
 function construireGrilles() {
@@ -1260,7 +1244,9 @@ function estFractionIrreductible(userInput) {
 // et on compare mantisse/exposant plutot que de reconstruire a*10**n (qui introduirait du bruit flottant).
 function checkEcritureSci(userInput, mantisseAttendue, exposantAttendu) {
   const s = normaliserSaisie(userInput).replace(/\s/g, '');
-  const m = s.match(/^(-?\d+(?:\.\d+)?)\*10\^(-?\d+)$/);
+  // le champ etant un math-field, un exposant negatif ou a plusieurs chiffres est exporte
+  // entre parentheses par MathLive (ex: "4.5*10^(-3)") : on les accepte, optionnelles.
+  const m = s.match(/^(-?\d+(?:\.\d+)?)\*10\^\(?(-?\d+)\)?$/);
   if (!m) return false;
   const mantisse = parseFloat(m[1]);
   const exposant = parseInt(m[2], 10);
