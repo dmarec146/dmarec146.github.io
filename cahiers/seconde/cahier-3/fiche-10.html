@@ -723,13 +723,16 @@ const TAUX_MOYEN_VIVIER = [
 // (une periode sur les trois est donnee directement en CM, jamais en %), un schema a completer
 // (type 'schemaEvolution'), puis un coefficient global et son reciproque. sujetDe et pronom evitent
 // tout probleme d'accord (elision "d'un prix"/"de la population", genre "il"/"elle").
+// sujetSentence : premiere mention (article indefini, "une ville") dans l'enonce du groupe.
+// sujetRef : reference ulterieure a la MEME grandeur (article defini, "de la ville") dans les
+// questions b) et c), qui parlent de la grandeur deja introduite, pas d'une nouvelle.
 const CONTEXTES_SUITE_EVOLUTION = [
-  { sujetSentence: "La population d'une ville", sujetDe: "de la population d'une ville", pronom: "elle" },
-  { sujetSentence: "Le nombre d'abonnés d'une chaîne", sujetDe: "du nombre d'abonnés d'une chaîne", pronom: "il" },
-  { sujetSentence: "La production d'une usine", sujetDe: "de la production d'une usine", pronom: "elle" },
-  { sujetSentence: "Le chiffre d'affaires d'une entreprise", sujetDe: "du chiffre d'affaires d'une entreprise", pronom: "il" },
-  { sujetSentence: "Un prix", sujetDe: "d'un prix", pronom: "il" },
-  { sujetSentence: "Le nombre de visiteurs d'un site internet", sujetDe: "du nombre de visiteurs d'un site internet", pronom: "il" }
+  { sujetSentence: "La population d'une ville", sujetDe: "de la population d'une ville", sujetRef: "la population de la ville", pronom: "elle" },
+  { sujetSentence: "Le nombre d'abonnés d'une chaîne", sujetDe: "du nombre d'abonnés d'une chaîne", sujetRef: "le nombre d'abonnés de la chaîne", pronom: "il" },
+  { sujetSentence: "La production d'une usine", sujetDe: "de la production d'une usine", sujetRef: "la production de l'usine", pronom: "elle" },
+  { sujetSentence: "Le chiffre d'affaires d'une entreprise", sujetDe: "du chiffre d'affaires d'une entreprise", sujetRef: "le chiffre d'affaires de l'entreprise", pronom: "il" },
+  { sujetSentence: "Un prix", sujetDe: "d'un prix", sujetRef: "le prix", pronom: "il" },
+  { sujetSentence: "Le nombre de visiteurs d'un site internet", sujetDe: "du nombre de visiteurs d'un site internet", sujetRef: "le nombre de visiteurs du site internet", pronom: "il" }
 ];
 function tirer107() {
   const ctx = choix(CONTEXTES_SUITE_EVOLUTION);
@@ -935,7 +938,7 @@ const generateurs = [
   // ---------- 10.5 : cas moins immediats (pourcentages decimaux, evolutions > 100%) ----------
   {id:"10.5 a)", type:"num", texteLibre:true, gen: () => {
     const [n,d,p] = choix(FRACTIONS_POURCENT_DEC);
-    return { enonce:`Écrire le coefficient multiplicateur correspondant à une augmentation de \\(${formatDecimalFr(String(p))}\\,\\%\\).`, reponse:`1+${p}/100` };
+    return { enonce:`Écrire le coefficient multiplicateur correspondant à une augmentation de \\(${formatDecimalFr(String(p))}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}` };
   }},
   {id:"10.5 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const [n,d,p] = choix(FRACTIONS_POURCENT_DEC), hausse = Math.random() < 0.5;
@@ -989,12 +992,12 @@ const generateurs = [
   }},
   {id:"10.7 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
-    return { enonce:`Déterminer si ${t.ctx.sujetSentence.toLowerCase()} a augmenté ou diminué de la période 1 à la période 4, en donnant le taux d'évolution global (arrondi au dixième).`, reponsePourcent: t.tauxGlobal, tolerancePourcent: 0.05 };
+    return { enonce:`Déterminer si ${t.ctx.sujetRef} a augmenté ou diminué de la période 1 à la période 4, en donnant le taux d'évolution global (arrondi au dixième).`, reponsePourcent: t.tauxGlobal, tolerancePourcent: 0.05 };
   }},
   {id:"10.7 c)", type:"num", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
-    const reciproqueArrondi = Math.round(t.reciproque*10000)/10000;
-    return { enonce:`On suppose qu'à la période 5, ${t.ctx.sujetSentence.toLowerCase()} est revenu(e) à sa valeur de la période 1. Quel est le coefficient réciproque associé à cette dernière évolution (arrondi au dix-millième) ?`, reponse:String(reciproqueArrondi), toleranceNumerique: 0.0005 };
+    const reciproqueArrondi = Math.round(t.reciproque*100)/100;
+    return { enonce:`On suppose qu'à la période 5, ${t.ctx.sujetRef} est revenu(e) à sa valeur de la période 1. Quel est le coefficient réciproque associé à cette dernière évolution (arrondi au centième, calculatrice interdite) ?`, reponse:String(reciproqueArrondi), toleranceNumerique: 0.005 };
   }}
 ];
 
@@ -1030,7 +1033,7 @@ function necessiteAide(ex) {
 
 function aideContextuellePour(ex) {
   if (ex.type === 'pourcentage') {
-    return "Écrire la réponse avec le symbole <code>%</code> (par exemple <code>8%</code> ou <code>-8%</code>), ou sous forme décimale (<code>0,08</code> ou <code>-0,08</code>) — jamais un nombre seul sans le signe %. Une diminution se répond par un nombre négatif.";
+    return "Écrire la réponse avec le symbole <code>%</code> (par exemple <code>8%</code> ou <code>-8%</code>) — jamais un nombre seul sans le signe %. Une diminution se répond par un nombre négatif.";
   }
   if (ex.type === 'schemaEvolution') {
     return "Compléter les cases vides : un coefficient multiplicateur se répond par un nombre décimal (par exemple <code>1,08</code>), un taux d'évolution avec le symbole <code>%</code> (positif si augmentation, négatif si diminution) — avant de cliquer sur « Valider ce schéma ».";
