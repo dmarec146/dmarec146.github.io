@@ -1524,7 +1524,10 @@ function placeholderPour(ex) {
   if (ex.comparaison) return '< ou >';
   if (ex.type === 'approx') return 'valeur approchée';
   if (ex.type === 'intervalle') return ']a;b[';
-  if (ex.reponse && ex.reponse.trim().startsWith('{')) return '{a;b}';
+  // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
+  // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
+  // il faut les echapper pour obtenir de vraies accolades visibles.
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) return '\\{a;b\\}';
   return 'réponse';
 }
 
