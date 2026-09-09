@@ -746,6 +746,26 @@ function xIndiceMoinsTexte(indice, v) {
   if (v === 0) return `x_${indice}`;
   return v > 0 ? `x_${indice}-${v}` : `x_${indice}+${-v}`;
 }
+// ecrit un polynome deja developpe (jamais sous forme d'identite remarquable) a partir de ses
+// coefficients, du degre le plus haut au plus bas ; ex. [1,3,-1] -> "x^2+3x-1", [2,-1,0,5] -> "2x^3-x^2+5"
+function polyTexte(coeffs) {
+  const degre = coeffs.length - 1;
+  let out = '';
+  coeffs.forEach((c, i) => {
+    if (c === 0) return;
+    const puissance = degre - i;
+    let terme;
+    if (puissance === 0) terme = `${Math.abs(c)}`;
+    else if (puissance === 1) terme = (Math.abs(c) === 1 ? '' : Math.abs(c)) + 'x';
+    else terme = (Math.abs(c) === 1 ? '' : Math.abs(c)) + `x^${puissance}`;
+    out += (out === '' ? (c < 0 ? '-' : '') : (c < 0 ? '-' : '+')) + terme;
+  });
+  return out || '0';
+}
+// evalue le meme polynome en x (methode de Horner)
+function polyEval(coeffs, x) {
+  return coeffs.reduce((acc, c) => acc * x + c, 0);
+}
 
 // ---------- graphique en grand format, reutilise par plusieurs questions de lecture graphique
 // (images et antecedents) : graduations et police agrandies par rapport au format compact
@@ -1022,18 +1042,20 @@ const generateurs = [
     return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${affineTexte(a,b)}\\). Calculer \\(f(${k})\\).`, reponse:`${a*k+b}` };
   }},
   {id:"14.4 c)", type:"num", texteLibre:true, gen: () => {
-    const p = entierSigne(1,9), k = entierSigne(1,8);
     const estCube = alea(0,1) === 1;
-    const nom = estCube ? 'h' : 'g', expo = estCube ? 3 : 2;
-    const valeur = estCube ? (k-p)*(k-p)*(k-p) : (k-p)*(k-p);
-    return { enonce:`On considère la fonction \\(${nom}\\) définie par \\(${nom}(x)=(${xMoinsTexte(p)})^${expo}\\). Calculer \\(${nom}(${k})\\).`, reponse:`${valeur}` };
+    const coeffs = estCube
+      ? [aleaNonNul(1,4), entierSigne(1,6), entierSigne(1,9), entierSigne(1,9)]
+      : [entierSigne(1,5), entierSigne(1,9), entierSigne(1,9)];
+    const k = entierSigne(1, estCube ? 4 : 6);
+    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${polyTexte(coeffs)}\\). Calculer \\(f(${k})\\).`, reponse:`${polyEval(coeffs,k)}` };
   }},
   {id:"14.4 d)", type:"num", texteLibre:true, gen: () => {
-    const p = entierSigne(1,9), k = entierSigne(1,8);
     const estCube = alea(0,1) === 1;
-    const nom = estCube ? 'h' : 'g', expo = estCube ? 3 : 2;
-    const valeur = estCube ? (k-p)*(k-p)*(k-p) : (k-p)*(k-p);
-    return { enonce:`On considère la fonction \\(${nom}\\) définie par \\(${nom}(x)=(${xMoinsTexte(p)})^${expo}\\). Calculer \\(${nom}(${k})\\).`, reponse:`${valeur}` };
+    const coeffs = estCube
+      ? [aleaNonNul(1,4), entierSigne(1,6), entierSigne(1,9), entierSigne(1,9)]
+      : [entierSigne(1,5), entierSigne(1,9), entierSigne(1,9)];
+    const k = entierSigne(1, estCube ? 4 : 6);
+    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${polyTexte(coeffs)}\\). Calculer \\(f(${k})\\).`, reponse:`${polyEval(coeffs,k)}` };
   }},
 
   // ---------- 14.5 : programme de calcul a trois etapes (parametres partages) ----------
