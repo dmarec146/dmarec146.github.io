@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Fiche 14 — Images et antécédents (interactif)</title>
+<title>Fiche 15 — Résolution graphique (interactif)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script>
 window.MathJax = {
@@ -286,25 +286,45 @@ window.MathJax = {
   .q-mathfield::part(virtual-keyboard-toggle) { display: none; }
   .q-mathfield:focus-within { outline: 2px solid var(--bleu); border-color: var(--bleu); }
 
-  /* ---------- Tableau a completer directement dedans (14.5 b) — repris du motif deja etabli
-     en fiche 9, cahier 3 de Seconde (tableauCroiseRempli) ---------- */
-  .tc-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
-  .tc-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
-  .tc-cellule {
-    width: 64px; padding: 5px 4px;
-    border: 1.5px solid #bbb; border-radius: 5px;
-    text-align: center; font-family: 'Courier New', monospace; font-size: 14px;
-    background: white;
-  }
-  .tc-cellule:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
-  .tc-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
-  .tc-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
-  .tc-btn-valider {
+  /* ---------- Tableau de variations a completer directement dedans (15.7) — motif repris du
+     tableau de signes de la fiche 8, cahier 2 de Seconde (seuils a saisir + case cyclable),
+     adapte a 3 lignes (x / fleche / valeur) et 2k-1 colonnes (pas de bornes -infini/+infini
+     ici : le domaine est borne, les 2 bornes SONT les seuils extremes) ---------- */
+  .tv-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .tv-btn-valider {
     margin-top: 8px; padding: 8px 14px; font-size: 13px; font-family: Georgia, serif;
     background: white; color: var(--bleu); border: 1.5px solid var(--bleu); border-radius: 8px;
     cursor: pointer;
   }
-  .tc-btn-valider:hover { background: var(--bleu-clair); }
+  .tv-btn-valider:hover { background: var(--bleu-clair); }
+  .tv-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .tv-table { border-collapse: collapse; table-layout: fixed; font-family: Georgia, serif; font-size: 14px; margin: 6px 0; }
+  .tv-table td { padding: 5px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
+  .tv-table .tv-label { text-align: left; font-weight: bold; padding-left: 4px; }
+  .tv-table tr.tv-ligne-x td { border-bottom: 1px solid #1a1a1a; padding-bottom: 8px; }
+  .tv-table tr.tv-ligne-fleche td { border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+  .tv-cellule {
+    width: 34px; height: 34px;
+    border: 1.5px solid #ccc; border-radius: 5px;
+    background: white; font-size: 17px; font-family: Georgia, serif;
+    cursor: pointer; color: #1a1a1a;
+  }
+  .tv-cellule:hover { border-color: var(--bleu); }
+  .tv-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tv-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tv-champ {
+    width: 44px; padding: 5px 2px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    text-align: center; font-family: 'Courier New', monospace; font-size: 13px;
+    background: white;
+  }
+  .tv-champ:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .tv-champ.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tv-champ.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tv-corrige { border-collapse: collapse; font-family: Georgia, serif; font-size: 13px; margin: 4px 0; }
+  .tv-corrige td { padding: 3px 8px; text-align: center; white-space: nowrap; border-left: 1px solid #ccc; }
+  .tv-corrige td:first-child { border-left: none; }
+  .tv-corrige .tv-label { text-align: left; font-weight: bold; padding-right: 10px; }
   .q-clavier-btn {
     background: none;
     border: 1.5px solid #ccc;
@@ -636,14 +656,14 @@ window.MathJax = {
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <a class="nav-btn" href="../cahier-4/fiche-13.html">&larr; Fiche précédente</a>
-  <a class="nav-btn" href="fiche-15.html">Fiche suivante &rarr;</a>
+  <a class="nav-btn" href="fiche-14.html">&larr; Fiche précédente</a>
+  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
-  <div class="badge">14</div>
-  <h1>Images et antécédents — version interactive</h1>
+  <div class="badge">15</div>
+  <h1>Résolution graphique — version interactive</h1>
 </div>
 <div class="filet"></div>
 
@@ -660,38 +680,39 @@ window.MathJax = {
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.1 — Calcul numérique.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
-  <div class="question-grille" id="grille-14-1"></div>
+  <p class="calcul-titre"><span>Calcul 15.1 — Calcul numérique.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <div class="question-grille" id="grille-15-1"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.2.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
-  <div class="question-grille" id="grille-14-2"></div>
+  <p class="calcul-titre"><span>Calcul 15.2.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <div class="question-grille" id="grille-15-2"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.3.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
-  <div class="question-grille" id="grille-14-3"></div>
+  <p class="calcul-titre"><span>Calcul 15.3.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <div class="question-grille" id="grille-15-3"></div>
 </div>
 
-<p class="section-titre">Images et antécédents</p>
+<p class="section-titre">Résolution graphique</p>
 <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.4 — Calculer une image.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-  <div class="question-grille" id="grille-14-4"></div>
+  <p class="calcul-titre"><span>Calcul 15.4 — Résoudre graphiquement une équation \(f(x)=k\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div id="graphique-eq"></div>
+  <div class="question-grille" id="grille-15-4"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.5 — Programme de calcul : image, tableau de valeurs, antécédent.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-  <div class="question-grille" id="grille-14-5"></div>
+  <p class="calcul-titre"><span>Calcul 15.5 — Résoudre graphiquement une inéquation \(f(x)\) op \(k\), sur la même courbe.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="question-grille" id="grille-15-5"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.6 — Déterminer, par le calcul, le ou les antécédents de la valeur indiquée pour chacune des fonctions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-  <div class="question-grille" id="grille-14-6"></div>
+  <p class="calcul-titre"><span>Calcul 15.6 — Résoudre graphiquement un encadrement \(k_1\lt f(x)\leqslant k_2\), toujours sur la même courbe.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="question-grille" id="grille-15-6"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.7 — Lecture graphique : images et antécédents sur une courbe.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-  <div id="graphique-14-7"></div>
-  <div class="question-grille" id="grille-14-7"></div>
+  <p class="calcul-titre"><span>Calcul 15.7 — Lire un tableau de variations sur une courbe.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="question-grille" id="grille-15-7"></div>
 
 <div class="bloc-avance">
   <p class="section-titre">Calculs plus avancés</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 14.8 — Exploiter l'équation d'une courbe : appartenance, coordonnée manquante, comparaison sans calcul.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-  <div class="question-grille" id="grille-14-8"></div>
+  <p class="calcul-titre"><span>Calcul 15.8 — Position relative de deux courbes ; confronter lecture graphique et calcul exact.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+  <div id="graphique-deux"></div>
+  <div class="question-grille" id="grille-15-8"></div>
 
 </div>
 <div class="barre-controle">
@@ -702,7 +723,7 @@ window.MathJax = {
 </div>
 
 <div class="score-panneau" id="score-panneau">
-  <span class="score-chiffre" id="score-chiffre">0 / 30</span> bonnes réponses
+  <span class="score-chiffre" id="score-chiffre">0 / 26</span> bonnes réponses
   <div style="margin-top:10px;">
     <button class="btn-secondaire" id="btn-correction" onclick="toggleCorrection()">Voir la correction des erreurs</button>
   </div>
@@ -713,8 +734,8 @@ window.MathJax = {
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <a class="nav-btn" href="../cahier-4/fiche-13.html">&larr; Fiche précédente</a>
-  <a class="nav-btn" href="fiche-15.html">Fiche suivante &rarr;</a>
+  <a class="nav-btn" href="fiche-14.html">&larr; Fiche précédente</a>
+  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
@@ -803,7 +824,7 @@ function fmtGraduation(v) {
   const arrondi = Math.round(v * 1000) / 1000;
   return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
 }
-function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hauteur) {
+function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hauteur, courbeSecondaire) {
   largeur = largeur || 720; hauteur = hauteur || 380;
   const marge = 36;
   const toSvgX = x => marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
@@ -870,12 +891,40 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
   axes += `<polygon points="${ox.toFixed(1)},${axeYFin.toFixed(1)} ${(ox-4.5).toFixed(1)},${(axeYFin+9).toFixed(1)} ${(ox+4.5).toFixed(1)},${(axeYFin+9).toFixed(1)}" fill="#1a1a1a"/>`;
   axes += `<text x="${(ox-14).toFixed(1)}" y="${(oy+18).toFixed(1)}" font-size="13" fill="#333">O</text>`;
 
+  // courbe secondaire optionnelle (position relative de deux courbes, calcul 15.8) : meme
+  // quadrillage/axes, un second trace de couleur differente avec une etiquette Cf/Cg pres de
+  // son extremite la plus a droite qui reste dans le cadre.
+  let courbeSecondaireSvg = '';
+  if (courbeSecondaire) {
+    let points2 = [];
+    for (let i = 0; i <= 200; i++) {
+      const x = xmin + (xmax-xmin)*i/200;
+      const y = courbeSecondaire.fonctionJs(x);
+      if (y >= ymin - 1 && y <= ymax + 1) points2.push({x, y, sx: toSvgX(x), sy: toSvgY(y)});
+    }
+    const path2 = 'M ' + points2.map(pt => pt.sx.toFixed(1) + ',' + pt.sy.toFixed(1)).join(' L ');
+    courbeSecondaireSvg = `<path d="${path2}" fill="none" stroke="${courbeSecondaire.couleur}" stroke-width="2.8"/>`;
+    if (points2.length > 0) {
+      const dernier = points2[points2.length - 1];
+      const decalageY = dernier.sy < marge + 20 ? 16 : -8;
+      courbeSecondaireSvg += `<text x="${(dernier.sx-6).toFixed(1)}" y="${(dernier.sy+decalageY).toFixed(1)}" font-size="15" font-style="italic" fill="${courbeSecondaire.couleur}" text-anchor="end">${courbeSecondaire.label}</text>`;
+    }
+  }
+  let etiquettePrincipale = '';
+  if (courbeSecondaire && points.length > 0) {
+    const [sxStr, syStr] = points[points.length - 1].split(',');
+    const sx = parseFloat(sxStr), sy = parseFloat(syStr);
+    const decalageY = sy < marge + 20 ? 16 : -8;
+    etiquettePrincipale = `<text x="${(sx-6).toFixed(1)}" y="${(sy+decalageY).toFixed(1)}" font-size="15" font-style="italic" fill="#4B46C7" text-anchor="end">${courbeSecondaire.labelPrincipale || 'Cf'}</text>`;
+  }
   return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-grande-figure svg-police-manuel">
     ${sousQuadrillage}
     ${quadrillage}
     ${axes}
     ${graduations}
     <path d="${path}" fill="none" stroke="#4B46C7" stroke-width="2.8"/>
+    ${etiquettePrincipale}
+    ${courbeSecondaireSvg}
   </svg>`;
 }
 
@@ -992,6 +1041,11 @@ function checkIntervalle(userInput, correctSpec, tolerance) {
 function formaterUneBorne(v) {
   if (v === Infinity) return '+\\infty';
   if (v === -Infinity) return '-\\infty';
+  // arrondit un entier bruite par le flottant (ex. 1.9999999999999987 issu d'un Math.sqrt) avant
+  // le test d'entier : sinon la borne tombe dans la branche fraction ci-dessous et s'affiche en
+  // "2/1" au lieu de "2" — remarque en construisant 15.5/15.6, qui calculent plus de racines
+  // carrees que la fiche 14 d'origine et rencontrent le bruit plus souvent.
+  if (Math.abs(v - Math.round(v)) < 1e-6) v = Math.round(v);
   if (Number.isInteger(v)) return String(v);
   try {
     const frac = math.fraction(v);
@@ -1013,8 +1067,11 @@ function formaterIntervalleSpec(spec) {
   return '';
 }
 
-let paramsGraphique14 = {};
-function genererParametresGraphique14() {
+// ---------- graphique partage pour la lecture graphique d'equations/inequations (15.4-15.6) :
+// meme famille parabole/cubique que la fiche 14 (racines generalement approchees, voir
+// racinesApprochees), reprise telle quelle ----------
+let paramsGraphiqueEq = {};
+function genererParametresGraphiqueEq() {
   // tirage aleatoire du degre : 2 (parabole (x-p)^2+r) ou 3 (cubique deprimee (x-p)^3-b(x-p)+r
   // avec b>0, "deux variations" comme x^3-x+1). Les racines de f(x)=0 ne sont PAS forcees a etre
   // entieres : r varie librement, donc la lecture d'image/antecedent/inequation reste generalement
@@ -1028,7 +1085,7 @@ function genererParametresGraphique14() {
     const D = 4;
     // r<=0 assure que l'axe des abscisses reste toujours visible dans le cadre ; le sommet
     // (minimum) et les deux bords sont exactement les bornes du cadre, aucun rognage possible.
-    paramsGraphique14 = { degre, p, r, xmin: p - D, xmax: p + D, ymin: r, ymax: r + D * D };
+    paramsGraphiqueEq = { degre, p, r, xmin: p - D, xmax: p + D, ymin: r, ymax: r + D * D };
   } else {
     const p = alea(-1, 1);
     let b, r;
@@ -1044,10 +1101,10 @@ function genererParametresGraphique14() {
     // b<=3, D=2 (cas limite b=3 : egalite exacte) donc le minimum/maximum sur le domaine est
     // TOUJOURS atteint aux bords x=p-D et x=p+D, jamais rogne.
     const amplitude = D * D * D - b * D;
-    paramsGraphique14 = { degre, p, b, r, xmin: p - D, xmax: p + D, ymin: r - amplitude, ymax: r + amplitude };
+    paramsGraphiqueEq = { degre, p, b, r, xmin: p - D, xmax: p + D, ymin: r - amplitude, ymax: r + amplitude };
   }
 }
-function fonctionGraphique14(params) {
+function fonctionGraphiqueEq(params) {
   if (params.degre === 2) {
     const { p, r } = params;
     return x => (x - p) * (x - p) + r;
@@ -1055,80 +1112,246 @@ function fonctionGraphique14(params) {
   const { p, b, r } = params;
   return x => (x - p) * (x - p) * (x - p) - b * (x - p) + r;
 }
-function construireGraphique14_7() {
-  const params = paramsGraphique14;
+function construireGraphiqueEq() {
+  const params = paramsGraphiqueEq;
   const { xmin, xmax, ymin, ymax } = params;
-  const f = fonctionGraphique14(params);
+  const f = fonctionGraphiqueEq(params);
   const svg = genererSVGCourbeGrande(f, xmin, xmax, ymin, ymax);
-  document.getElementById('graphique-14-7').innerHTML = `
+  document.getElementById('graphique-eq').innerHTML = `
     <p>Répondre aux questions suivantes à partir du graphique ci-dessous, qui représente une fonction \\(f\\) définie sur \\([${xmin}\\,;\\,${xmax}]\\), avec la précision permise par la lecture graphique.</p>
     <div class="figure-centree">${svg}</div>`;
-  activerZoomSvg(document.getElementById('graphique-14-7'));
+  activerZoomSvg(document.getElementById('graphique-eq'));
 }
 
-// ---------- programme de calcul partage par le groupe 14.5 : trois etapes desormais
-// (multiplier, ajouter/soustraire, multiplier a nouveau), f(x) = c*(a*x+b) ----------
-let paramsProgramme = {};
-function genererParametresProgramme() {
-  const a = entierSigne(2, 6);
-  const b = entierSigne(1, 12);
-  const c = alea(2, 6);
-  // quatre nombres de depart DISTINCTS (14.5a, l'exemple donne et les deux cases du tableau
-  // 14.5b) : evite qu'un resultat deja affiche ailleurs ne reapparaisse.
-  const valeurs = [];
-  while (valeurs.length < 4) {
-    const v = entierSigne(1, 8);
-    if (!valeurs.includes(v)) valeurs.push(v);
+// ---------- graphique dedie a la lecture d'un tableau de variations (15.7) : une seule
+// "vallee" ou "colline" (parabole ou pointe en valeur absolue), extremum et bornes toujours
+// des valeurs EXACTES (entieres) — contrairement a la cubique de graphiqueEq, le tableau de
+// variations doit rester remplissable avec des nombres simples, pas une valeur irrationnelle ----------
+// contrairement au graphique partage de 15.4-15.6, chaque exercice "tableau de variations" a
+// SA PROPRE courbe (tiree et affichee independamment, incluse directement dans la carte de
+// question — meme motif que le tableau du programme de calcul de la fiche 14) : deux items de
+// 15.7 doivent proposer deux exemples differents, pas relire deux fois le meme graphique.
+function genererParametresGraphiqueVar() {
+  const forme = choix(['carre', 'abs']);
+  const p = alea(-2, 2);
+  const r = entierSigne(1, 5);
+  const D = alea(3, 4);
+  const versLeHaut = alea(0,1) === 1; // true : creux (minimum), false : bosse (maximum)
+  return { forme, p, r, versLeHaut, xmin: p - D, xmax: p + D };
+}
+function fonctionGraphiqueVar(params) {
+  const { forme, p, r, versLeHaut } = params;
+  const signe = versLeHaut ? 1 : -1;
+  if (forme === 'carre') return x => signe * (x - p) * (x - p) + r;
+  return x => signe * Math.abs(x - p) + r;
+}
+// seuils du tableau : les deux bornes du domaine, plus l'unique extremum interieur (toujours
+// strictement entre les bornes puisque p est tire entre xmin+1 et xmax-1 par construction de D).
+function seuilsGraphiqueVar(params) {
+  const { p, r, xmin, xmax } = params;
+  const f = fonctionGraphiqueVar(params);
+  return [
+    { x: xmin, y: f(xmin) },
+    { x: p, y: r, extremum: true },
+    { x: xmax, y: f(xmax) }
+  ];
+}
+// genere le SVG d'un tableau-de-variations donne (utilise dans le rendu de la question elle-meme,
+// pas dans un conteneur partage — voir remarque ci-dessus).
+function svgGraphiqueVar(params) {
+  const { xmin, xmax } = params;
+  const f = fonctionGraphiqueVar(params);
+  const ys = seuilsGraphiqueVar(params).map(s => s.y);
+  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const marge = Math.max(1, Math.round((ymax - ymin) * 0.2)) || 1;
+  return genererSVGCourbeGrande(f, xmin, xmax, ymin - marge, ymax + marge, 480, 300);
+}
+
+// ---------- graphique a deux courbes Cf/Cg (15.8, position relative de deux courbes) : deux
+// fonctions affines ou une affine et une parabole, choisies pour se croiser EXACTEMENT une ou
+// deux fois sur le domaine (racines de f-g calculees par construction, jamais laissees au hasard
+// d'un tirage numerique) ----------
+let paramsGraphiqueDeux = {};
+function genererParametresGraphiqueDeux() {
+  const xmin = -3, xmax = 4;
+  // f affine, g parabole (x-p)^2+r : la droite f est construite pour passer EXACTEMENT par deux
+  // points choisis sur la parabole (xA;g(xA)) et (xB;g(xB)), ce qui garantit par construction que
+  // f(x)=g(x) a exactement ces deux solutions — jamais laisse a une recherche numerique. xA et xB
+  // sont tires INDEPENDAMMENT (pas symetriques autour de p) : deux points symetriques d'une
+  // parabole ont la meme image, ce qui donnerait une droite horizontale (piege rencontre en
+  // ecrivant ce generateur, corrige ici).
+  const p = alea(0, 1);
+  const r = alea(-2, 2);
+  let xA, xB;
+  do {
+    xA = alea(-2, 3);
+    xB = alea(-2, 3);
+  } while (xA === xB || (xA - p) === -(xB - p));
+  if (xA > xB) { const t = xA; xA = xB; xB = t; }
+  const g = x => (x - p) * (x - p) + r;
+  const yA = g(xA), yB = g(xB);
+  const pente = (yB - yA) / (xB - xA);
+  const ordonnee = yA - pente * xA;
+  paramsGraphiqueDeux = { xmin, xmax, p, r, pente, ordonnee, xA, xB };
+}
+function fonctionsGraphiqueDeux(params) {
+  const { p, r, pente, ordonnee } = params;
+  const f = x => pente * x + ordonnee;
+  const g = x => (x - p) * (x - p) + r;
+  return { f, g };
+}
+function construireGraphiqueDeux() {
+  const params = paramsGraphiqueDeux;
+  const { xmin, xmax, xA, xB } = params;
+  const { f, g } = fonctionsGraphiqueDeux(params);
+  const ys = [f(xmin), f(xmax), g(xmin), g(xmax), g(params.p)];
+  const ymin = Math.min(...ys) - 1, ymax = Math.max(...ys) + 1;
+  const svg = genererSVGCourbeGrande(g, xmin, xmax, ymin, ymax, 720, 380, { fonctionJs: f, couleur: '#1D9E75', label: 'Cf', labelPrincipale: 'Cg' });
+  document.getElementById('graphique-deux').innerHTML = `
+    <p>Les courbes ci-dessous représentent deux fonctions \\(f\\) et \\(g\\) définies sur \\([${xmin}\\,;\\,${xmax}]\\).</p>
+    <div class="figure-centree">${svg}</div>`;
+  activerZoomSvg(document.getElementById('graphique-deux'));
+}
+
+// ---------- tableau de variations a completer (15.7) : structure analogue au tableau de signes
+// de la fiche 8, cahier 2 de Seconde (seuils a saisir + case cyclable), mais 3 lignes (x / fleche
+// / valeur) sur 2k-1 colonnes — pas de colonnes -infini/+infini ici : le domaine est borne et
+// les 2 bornes SONT les seuils extremes ----------
+const CYCLE_FLECHES = ['', '↗', '↘'];
+const TV_LARGEUR_LABEL = 78;
+const TV_LARGEUR_COL = 56;
+
+function celluleVideFleche(id, onclick) {
+  return `<button type="button" class="tv-cellule" id="${id}" onclick="${onclick}"></button>`;
+}
+
+function tableauVariationsHTML(idx, ex) {
+  const seuils = ex.seuils;
+  const k = seuils.length;
+  const nbCols = 2 * k - 1;
+  const largeurTotale = TV_LARGEUR_LABEL + nbCols * TV_LARGEUR_COL;
+  const svg = svgGraphiqueVar(ex.paramsVar);
+  let html = `<div class="figure-centree">${svg}</div><table class="tv-table"><colgroup><col style="width:${TV_LARGEUR_LABEL}px">`;
+  for (let c = 0; c < nbCols; c++) html += `<col style="width:${TV_LARGEUR_COL}px">`;
+  html += `</colgroup><tbody>`;
+  html += `<tr class="tv-ligne-x"><td class="tv-label">\\(x\\)</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 0) {
+      const j = c / 2;
+      if (j === 0 || j === k - 1) html += `<td>\\(${fmtGraduation(seuils[j].x)}\\)</td>`;
+      else html += `<td><input type="text" class="tv-champ" id="tv-x-${idx}-${j}" placeholder="?" oninput="reinitialiserStatutTableau(${idx})"></td>`;
+    } else html += `<td></td>`;
   }
-  const [k1, k2, k3, x0] = valeurs;
-  paramsProgramme = { a, b, c, k1, k2, k3, x0 };
+  html += `</tr>`;
+  html += `<tr class="tv-ligne-fleche"><td class="tv-label">Variations</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 1) {
+      const j = (c - 1) / 2;
+      html += `<td>${celluleVideFleche(`tv-fleche-${idx}-${j}`, `cyclerFlecheVariation(${idx},${j})`)}</td>`;
+    } else html += `<td></td>`;
+  }
+  html += `</tr>`;
+  html += `<tr><td class="tv-label">\\(g(x)\\)</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 0) {
+      const j = c / 2;
+      html += `<td><input type="text" class="tv-champ" id="tv-y-${idx}-${j}" placeholder="?" oninput="reinitialiserStatutTableau(${idx})"></td>`;
+    } else html += `<td></td>`;
+  }
+  html += `</tr></tbody></table>`;
+  const boutonValider = `<button type="button" class="tv-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
+  return `<div class="tv-conteneur"><div class="tv-scroll"><div style="width:${largeurTotale}px">${html}</div></div>${boutonValider}</div>`;
 }
-function texteProgramme14(a, b, c) {
-  const operation2 = b >= 0 ? `ajouter ${b}` : `soustraire ${Math.abs(b)}`;
-  return `choisir un nombre, le multiplier par ${a}, ${operation2}, puis multiplier le résultat par ${c}`;
+function cyclerFlecheVariation(idx, j) {
+  const btn = document.getElementById(`tv-fleche-${idx}-${j}`);
+  const i = CYCLE_FLECHES.indexOf(btn.textContent);
+  btn.textContent = CYCLE_FLECHES[(i + 1) % CYCLE_FLECHES.length];
+  btn.classList.remove('correct', 'incorrect');
+  reinitialiserStatutTableau(idx);
 }
-
-// ---------- tableau a completer directement dedans (14.5 b) : une case "image" (nombre connu,
-// resultat a trouver) et une case "antecedent" (resultat connu, nombre a trouver) — motif repris
-// tel quel de tableauCroiseRempli (fiche 9, cahier 3 de Seconde) ----------
-function tableauProgrammeHTML(idx, ex) {
-  const { k2, k3, resultatK2, x0, resultatAntecedent } = ex;
-  const std = 'border:1px solid #999;padding:6px 10px;text-align:center;font-family:Georgia,serif;font-size:14px;';
-  const ent = std + 'font-weight:bold;background:#f1efe8;';
-  const cellule = (id) => `<input type="text" class="tc-cellule" id="${id}" oninput="reinitialiserStatut(${idx})">`;
-  const table = `<table style="border-collapse:collapse;margin:10px auto;">
-    <tr><td style="${ent}">Nombre choisi</td><td style="${std}">${k2}</td><td style="${std}">${k3}</td><td style="${std}">${cellule('tp-ant-'+idx)}</td></tr>
-    <tr><td style="${ent}">Résultat</td><td style="${std}">${resultatK2}</td><td style="${std}">${cellule('tp-img-'+idx)}</td><td style="${std}">${resultatAntecedent}</td></tr>
-  </table>`;
-  const bouton = `<button type="button" class="tc-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
-  return `<div class="tc-conteneur"><div class="tc-scroll">${table}</div>${bouton}</div>`;
+function reinitialiserStatutTableau(idx) {
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  if (div) div.classList.remove('correct', 'incorrect');
+  if (statut) { statut.textContent = ''; statut.className = 'q-statut'; }
 }
-function verifierTableauProgramme(idx, ex) {
-  let toutRempli = true, toutCorrect = true;
-  const verifierCellule = (id, attendu) => {
-    const input = document.getElementById(id);
+function verifierTableauVariationsRempli(idx, ex) {
+  const k = ex.seuils.length;
+  for (let j = 1; j < k - 1; j++) {
+    if (document.getElementById(`tv-x-${idx}-${j}`).value.trim() === '') return false;
+  }
+  for (let j = 0; j < k - 1; j++) {
+    if (document.getElementById(`tv-fleche-${idx}-${j}`).textContent === '') return false;
+  }
+  for (let j = 0; j < k; j++) {
+    if (document.getElementById(`tv-y-${idx}-${j}`).value.trim() === '') return false;
+  }
+  return true;
+}
+function verifierTableauVariations(idx, ex) {
+  const seuils = ex.seuils;
+  const k = seuils.length;
+  let toutCorrect = true, toutRempli = true;
+  for (let j = 1; j < k - 1; j++) {
+    const input = document.getElementById(`tv-x-${idx}-${j}`);
     const val = input.value.trim();
-    input.classList.remove('correct','incorrect');
-    if (!val) { toutRempli = false; return; }
+    input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
     let ok = false;
-    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - attendu) < 1e-9; } catch(e) { ok = false; }
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - seuils[j].x) < 1e-9; } catch(e) { ok = false; }
     input.classList.add(ok ? 'correct' : 'incorrect');
     if (!ok) toutCorrect = false;
-  };
-  verifierCellule(`tp-img-${idx}`, ex.resultatK3);
-  verifierCellule(`tp-ant-${idx}`, ex.x0);
+  }
+  for (let j = 0; j < k - 1; j++) {
+    const btn = document.getElementById(`tv-fleche-${idx}-${j}`);
+    const val = btn.textContent;
+    btn.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
+    const attendu = seuils[j + 1].y > seuils[j].y ? '↗' : '↘';
+    const ok = val === attendu;
+    btn.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
+  for (let j = 0; j < k; j++) {
+    const input = document.getElementById(`tv-y-${idx}-${j}`);
+    const val = input.value.trim();
+    input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - seuils[j].y) < 1e-9; } catch(e) { ok = false; }
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
   if (!toutRempli) return null;
   return toutCorrect;
 }
-function reinitialiserTableauProgramme(idx) {
-  ['tp-img-'+idx, 'tp-ant-'+idx].forEach(id => {
-    const el = document.getElementById(id);
-    el.value = ''; el.classList.remove('correct','incorrect');
-  });
+function reinitialiserTableauVariations(idx, ex) {
+  const k = ex.seuils.length;
+  for (let j = 1; j < k - 1; j++) {
+    const input = document.getElementById(`tv-x-${idx}-${j}`);
+    input.value = ''; input.classList.remove('correct', 'incorrect');
+  }
+  for (let j = 0; j < k - 1; j++) {
+    const btn = document.getElementById(`tv-fleche-${idx}-${j}`);
+    btn.textContent = ''; btn.classList.remove('correct', 'incorrect');
+  }
+  for (let j = 0; j < k; j++) {
+    const input = document.getElementById(`tv-y-${idx}-${j}`);
+    input.value = ''; input.classList.remove('correct', 'incorrect');
+  }
 }
-function tableCorrigeProgrammeHTML(ex) {
-  const { k2, k3, resultatK2, resultatK3, x0, resultatAntecedent } = ex;
-  return `<table style="border-collapse:collapse;margin:10px auto;"><tr><td style="border:1px solid #999;padding:6px 10px;font-weight:bold;background:#f1efe8;">Nombre choisi</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${k2}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${k3}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${x0}</td></tr><tr><td style="border:1px solid #999;padding:6px 10px;font-weight:bold;background:#f1efe8;">Résultat</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${resultatK2}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${resultatK3}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${resultatAntecedent}</td></tr></table>`;
+function tableCorrigeVariationsHTML(ex) {
+  const seuils = ex.seuils;
+  const k = seuils.length;
+  let html = `<table class="tv-corrige"><tr><td class="tv-label">\\(x\\)</td>`;
+  seuils.forEach(s => html += `<td>\\(${fmtGraduation(s.x)}\\)</td>`);
+  html += `</tr><tr><td class="tv-label">\\(g(x)\\)</td>`;
+  seuils.forEach(s => html += `<td>\\(${fmtGraduation(s.y)}\\)</td>`);
+  html += `</tr></table>`;
+  const sens = [];
+  for (let j = 0; j < k - 1; j++) sens.push(seuils[j+1].y > seuils[j].y ? 'croissante' : 'décroissante');
+  html += `<p style="font-size:13px;margin:4px 0 0;">Sens de variation : ${sens.map((s,j) => `${s} sur \\([${fmtGraduation(seuils[j].x)}\\,;\\,${fmtGraduation(seuils[j+1].x)}]\\)`).join(', puis ')}.</p>`;
+  return html;
 }
 
 // ---------- vivier de revisions melangees (groupes 14.2/14.3) : developpement, racines
@@ -1187,234 +1410,260 @@ const MODELES_REVISION = [
 ];
 let tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
 
+// resout f(x) op k sur le domaine de la courbe partagee de graphiqueEq (degre 2 : algebre exacte
+// via (x-p)^2 op (k-r) ; degre 3 : balayage numerique via racinesApprochees) — generalise le
+// motif deja etabli en fiche 14 (14.7e, qui ne comparait qu'a 0) a un seuil k quelconque, pour
+// pouvoir aussi resoudre f(x)=k (15.4) et l'encadrement k1<f(x)<=k2 (15.6, par intersection de
+// deux appels a cette fonction).
+function resoudreInequationCourbe(params, op, k) {
+  const { xmin, xmax, p } = params;
+  const f = fonctionGraphiqueEq(params);
+  const inclus = (op === '>=' || op === '<=');
+  if (params.degre === 2) {
+    const { r } = params;
+    const dd = k - r;
+    if (dd < -1e-9) {
+      return (op === '>' || op === '>=') ? {type:'intervalles', liste:[{bas:xmin,haut:xmax,inclusBas:true,inclusHaut:true}]} : {type:'vide'};
+    }
+    const d = Math.sqrt(Math.max(dd, 0));
+    if (d < 1e-9) {
+      if (op === '>') return {type:'intervalles', liste:[{bas:xmin,haut:p,inclusBas:true,inclusHaut:false},{bas:p,haut:xmax,inclusBas:false,inclusHaut:true}]};
+      if (op === '>=') return {type:'intervalles', liste:[{bas:xmin,haut:xmax,inclusBas:true,inclusHaut:true}]};
+      if (op === '<') return {type:'vide'};
+      return {type:'intervalles', liste:[{bas:p,haut:p,inclusBas:true,inclusHaut:true}]};
+    }
+    const gauche = Math.max(xmin, p - d), droite = Math.min(xmax, p + d);
+    if (op === '>') return {type:'intervalles', liste:[{bas:xmin,haut:gauche,inclusBas:true,inclusHaut:false},{bas:droite,haut:xmax,inclusBas:false,inclusHaut:true}]};
+    if (op === '>=') return {type:'intervalles', liste:[{bas:xmin,haut:gauche,inclusBas:true,inclusHaut:true},{bas:droite,haut:xmax,inclusBas:true,inclusHaut:true}]};
+    if (op === '<') return {type:'intervalles', liste:[{bas:gauche,haut:droite,inclusBas:false,inclusHaut:false}]};
+    return {type:'intervalles', liste:[{bas:gauche,haut:droite,inclusBas:true,inclusHaut:true}]};
+  }
+  function satisfait(y) {
+    if (op === '>') return y > k + 1e-9;
+    if (op === '>=') return y > k - 1e-9;
+    if (op === '<') return y < k - 1e-9;
+    return y < k + 1e-9;
+  }
+  const brutes = racinesApprochees(f, xmin, xmax, k).sort((a,b) => a-b);
+  const racines = [];
+  for (const rc of brutes) { if (racines.length === 0 || rc - racines[racines.length-1] > 1e-4) racines.push(rc); }
+  const interieures = racines.filter(rc => rc > xmin + 1e-6 && rc < xmax - 1e-6);
+  const points = [xmin, ...interieures, xmax];
+  const pieces = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const bas = points[i], haut = points[i+1];
+    if (haut - bas < 1e-6) continue;
+    if (!satisfait(f((bas + haut) / 2))) continue;
+    pieces.push({
+      bas, haut,
+      inclusBas: (i === 0) ? satisfait(f(xmin)) : inclus,
+      inclusHaut: (i === points.length - 2) ? satisfait(f(xmax)) : inclus
+    });
+  }
+  return pieces.length === 0 ? {type:'vide'} : {type:'intervalles', liste: pieces};
+}
+// intersection de deux specs d'intervalles (utilise par 15.6 pour k1<f(x)<=k2, comme intersection
+// de {f(x)>k1} et {f(x)<=k2}) : pour chaque paire d'intervalles, borne basse = max des deux bornes
+// basses (inclusion determinee par celle des deux bornes qui "gagne" strictement, ou l'ET logique
+// en cas d'egalite), symetriquement pour la borne haute.
+function intersectionIntervalles(specA, specB) {
+  if (specA.type === 'vide' || specB.type === 'vide') return {type:'vide'};
+  if (specA.type === 'tout') return specB;
+  if (specB.type === 'tout') return specA;
+  const resultat = [];
+  for (const a of specA.liste) {
+    for (const b of specB.liste) {
+      const bas = Math.max(a.bas, b.bas);
+      const haut = Math.min(a.haut, b.haut);
+      if (bas > haut + 1e-9 || Math.abs(bas - haut) < 1e-9) continue;
+      const inclusBas = a.bas > b.bas + 1e-9 ? a.inclusBas : b.bas > a.bas + 1e-9 ? b.inclusBas : (a.inclusBas && b.inclusBas);
+      const inclusHaut = a.haut < b.haut - 1e-9 ? a.inclusHaut : b.haut < a.haut - 1e-9 ? b.inclusHaut : (a.inclusHaut && b.inclusHaut);
+      resultat.push({ bas, haut, inclusBas, inclusHaut });
+    }
+  }
+  return resultat.length === 0 ? {type:'vide'} : {type:'intervalles', liste: resultat};
+}
+
 const generateurs = [
-  // ---------- 14.1 : calcul numerique (vivier partage avec les autres fiches) ----------
-  {id:"14.1 a)", type:"num", gen: () => tirageCalculs[0]()},
-  {id:"14.1 b)", type:"num", gen: () => tirageCalculs[1]()},
-  {id:"14.1 c)", type:"num", gen: () => tirageCalculs[2]()},
-  {id:"14.1 d)", type:"num", gen: () => tirageCalculs[3]()},
+  // ---------- 15.1 : calcul numerique (vivier partage avec les autres fiches) ----------
+  {id:"15.1 a)", type:"num", gen: () => tirageCalculs[0]()},
+  {id:"15.1 b)", type:"num", gen: () => tirageCalculs[1]()},
+  {id:"15.1 c)", type:"num", gen: () => tirageCalculs[2]()},
+  {id:"15.1 d)", type:"num", gen: () => tirageCalculs[3]()},
 
-  // ---------- 14.2 / 14.3 : revisions melangees (developpement, racines carrees, evolutions) ----------
-  {id:"14.2 a)", type:"num", texteLibre:true, gen: () => tirageRevision[0]()},
-  {id:"14.2 b)", type:"num", texteLibre:true, gen: () => tirageRevision[1]()},
-  {id:"14.2 c)", type:"num", texteLibre:true, gen: () => tirageRevision[2]()},
-  {id:"14.2 d)", type:"num", texteLibre:true, gen: () => tirageRevision[3]()},
-  {id:"14.3 a)", type:"num", texteLibre:true, gen: () => tirageRevision[4]()},
-  {id:"14.3 b)", type:"num", texteLibre:true, gen: () => tirageRevision[5]()},
-  {id:"14.3 c)", type:"num", texteLibre:true, gen: () => tirageRevision[6]()},
-  {id:"14.3 d)", type:"num", texteLibre:true, gen: () => tirageRevision[7]()},
+  // ---------- 15.2 / 15.3 : revisions melangees (developpement, racines carrees, evolutions) ----------
+  {id:"15.2 a)", type:"num", texteLibre:true, gen: () => tirageRevision[0]()},
+  {id:"15.2 b)", type:"num", texteLibre:true, gen: () => tirageRevision[1]()},
+  {id:"15.2 c)", type:"num", texteLibre:true, gen: () => tirageRevision[2]()},
+  {id:"15.2 d)", type:"num", texteLibre:true, gen: () => tirageRevision[3]()},
+  {id:"15.3 a)", type:"num", texteLibre:true, gen: () => tirageRevision[4]()},
+  {id:"15.3 b)", type:"num", texteLibre:true, gen: () => tirageRevision[5]()},
+  {id:"15.3 c)", type:"num", texteLibre:true, gen: () => tirageRevision[6]()},
+  {id:"15.3 d)", type:"num", texteLibre:true, gen: () => tirageRevision[7]()},
 
-  // ---------- 14.4 : calculer une image pour une fonction affine ----------
-  {id:"14.4 a)", type:"num", texteLibre:true, gen: () => {
-    const a = entierSigne(1,9), b = entierSigne(1,20), k = entierSigne(1,10);
-    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${affineTexte(a,b)}\\). Calculer \\(f(${k})\\).`, reponse:`${a*k+b}` };
-  }},
-  {id:"14.4 b)", type:"num", texteLibre:true, gen: () => {
-    const a = entierSigne(1,9), b = entierSigne(1,20), k = entierSigne(1,10);
-    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${affineTexte(a,b)}\\). Calculer \\(f(${k})\\).`, reponse:`${a*k+b}` };
-  }},
-  {id:"14.4 c)", type:"num", texteLibre:true, gen: () => {
-    const estCube = alea(0,1) === 1;
-    const coeffs = estCube
-      ? [aleaNonNul(1,4), entierSigne(1,6), entierSigne(1,9), entierSigne(1,9)]
-      : [entierSigne(1,5), entierSigne(1,9), entierSigne(1,9)];
-    const k = entierSigne(1, estCube ? 4 : 6);
-    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${polyTexte(coeffs)}\\). Calculer \\(f(${k})\\).`, reponse:`${polyEval(coeffs,k)}` };
-  }},
-  {id:"14.4 d)", type:"num", texteLibre:true, gen: () => {
-    const estCube = alea(0,1) === 1;
-    const coeffs = estCube
-      ? [aleaNonNul(1,4), entierSigne(1,6), entierSigne(1,9), entierSigne(1,9)]
-      : [entierSigne(1,5), entierSigne(1,9), entierSigne(1,9)];
-    const k = entierSigne(1, estCube ? 4 : 6);
-    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${polyTexte(coeffs)}\\). Calculer \\(f(${k})\\).`, reponse:`${polyEval(coeffs,k)}` };
-  }},
-
-  // ---------- 14.5 : programme de calcul a trois etapes (parametres partages) ----------
-  {id:"14.5 a)", type:"num", texteLibre:true, gen: () => {
-    const { a, b, c, k1 } = paramsProgramme;
-    return { enonce:`Voici un programme de calcul : ${texteProgramme14(a,b,c)}. Appliquer ce programme au nombre \\(${k1}\\). Quel résultat obtient-on ?`, reponse:`${c*(a*k1+b)}` };
-  }},
-  {id:"14.5 b)", type:"tableauProgramme", texteLibre:true, gen: () => {
-    const { a, b, c, k2, k3, x0 } = paramsProgramme;
-    const resultatK2 = c*(a*k2+b), resultatK3 = c*(a*k3+b), resultatAntecedent = c*(a*x0+b);
-    return { enonce:`Avec le même programme de calcul, compléter le tableau suivant : une image à calculer, un antécédent à déterminer.`, k2, k3, resultatK2, resultatK3, x0, resultatAntecedent };
-  }},
-
-  // ---------- 14.6 : trouver un antecedent par le calcul — affine, x^2=A (3 cas), puis deux
-  // exemples plus delicats ou A n'est pas un carre parfait (reponse avec racine carree) ----------
-  {id:"14.6 a)", type:"num", texteLibre:true, gen: () => {
-    const a = entierSigne(2,9), b = entierSigne(1,25), x0 = entierSigne(1,12), c = a*x0+b;
-    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), antécédent de \\(${c}\\).`, reponse:`${x0}` };
-  }},
-  {id:"14.6 b)", type:"num", texteLibre:true, gen: () => {
-    const n = alea(2,20), A = n*n;
-    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{-${n};${n}}` };
-  }},
-  {id:"14.6 c)", type:"num", texteLibre:true, gen: () => {
-    const p = entierSigne(1,15);
-    return { enonce:`\\(h(x)=(${xMoinsTexte(p)})^2\\), antécédent(s) de \\(0\\).`, reponse:`{${p}}` };
-  }},
-  {id:"14.6 d)", type:"num", texteLibre:true, gen: () => {
-    const A = -alea(1,40);
-    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{}` };
-  }},
-  {id:"14.6 e)", type:"num", texteLibre:true, gen: () => {
-    const A = choix([2,3,5,6,7,8,10,11,12,13]);
-    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{-sqrt(${A});sqrt(${A})}` };
-  }},
-  {id:"14.6 f)", type:"num", texteLibre:true, gen: () => {
-    const p = entierSigne(1,9), A = choix([2,3,5,6,7,8,10,11,12,13]);
-    return { enonce:`\\(h(x)=(${xMoinsTexte(p)})^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{${p}-sqrt(${A});${p}+sqrt(${A})}` };
-  }},
-
-  // ---------- 14.7 : lecture graphique sur la courbe partagee (degre 2 exact, degre 3 approche
-  // pour l'image/l'antecedent quelconque — voir genererParametresGraphique14/racinesApprochees).
-  // Deux images (a, b), deux antecedents (c, d), une inequation f(x) op 0 (e) ----------
-  {id:"14.7 a)", type:"num", texteLibre:true, gen: () => {
-    const params = paramsGraphique14;
-    const f = fonctionGraphique14(params);
-    const { p } = params;
-    if (params.degre === 2) {
-      const { r } = params;
-      const decalage = choix([-3,-2,-1,1,2,3]);
-      return { enonce:`Déterminer \\(f(${p+decalage})\\).`, type:'num', reponse:`${r+decalage*decalage}` };
-    }
-    const decalage = choix([-2,-1,0,1,2]);
-    const x0 = p + decalage;
-    const valeur = f(x0);
-    return { enonce:`Déterminer \\(f(${x0})\\).`, type:'approx', valeurApprox: valeur, tolerance: 0.5 };
-  }},
-  {id:"14.7 b)", type:"num", texteLibre:true, gen: () => {
-    const params = paramsGraphique14;
-    const f = fonctionGraphique14(params);
-    const { p } = params;
-    if (params.degre === 2) {
-      const { r } = params;
-      const decalage = choix([-3,-2,-1,1,2,3]);
-      return { enonce:`Déterminer \\(f(${p+decalage})\\).`, type:'num', reponse:`${r+decalage*decalage}` };
-    }
-    const decalage = choix([-2,-1,0,1,2]);
-    const x0 = p + decalage;
-    const valeur = f(x0);
-    return { enonce:`Déterminer \\(f(${x0})\\).`, type:'approx', valeurApprox: valeur, tolerance: 0.5 };
-  }},
-  {id:"14.7 c)", type:"num", texteLibre:true, gen: () => {
-    const params = paramsGraphique14;
-    const f = fonctionGraphique14(params);
+  // ---------- 15.4 : resoudre graphiquement f(x)=k sur la courbe partagee (degre 2 exact,
+  // degre 3 approche via racinesApprochees) ----------
+  {id:"15.4 a)", type:"num", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
     const { p, xmin, xmax } = params;
     if (params.degre === 2) {
       const { r } = params;
       const decalage = choix([1,2,3]);
-      return { enonce:`Déterminer le ou les antécédents de \\(${r+decalage*decalage}\\) par \\(f\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}` };
+      return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${r+decalage*decalage}\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}` };
     }
     const decalage = choix([-2,-1,1,2]);
-    const x0 = p + decalage;
-    const cible = f(x0);
+    const cible = f(p + decalage);
     const racines = racinesApprochees(f, xmin, xmax, cible);
-    return { enonce:`Déterminer un antécédent de \\(${cible}\\) par \\(f\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.5 };
+    return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${cible}\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.5 };
   }},
-  {id:"14.7 d)", type:"num", texteLibre:true, gen: () => {
-    const params = paramsGraphique14;
-    const f = fonctionGraphique14(params);
+  {id:"15.4 b)", type:"num", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
     const { p, xmin, xmax } = params;
     if (params.degre === 2) {
       const { r } = params;
-      const cible = r - choix([1,2]);
-      return { enonce:`Déterminer le ou les antécédents de \\(${cible}\\) par \\(f\\).`, type:'num', reponse:`{}` };
+      const decalage = choix([1,2,3]);
+      return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${r+decalage*decalage}\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}` };
     }
-    let decalage = choix([-2,0,2]);
-    const x0 = p + decalage;
-    const cible = f(x0);
+    const decalage = choix([-2,-1,1,2]);
+    const cible = f(p + decalage);
     const racines = racinesApprochees(f, xmin, xmax, cible);
-    return { enonce:`Déterminer un antécédent de \\(${cible}\\) par \\(f\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.5 };
+    return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${cible}\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.5 };
   }},
-  {id:"14.7 e)", type:"intervalle", texteLibre:true, gen: () => {
-    const params = paramsGraphique14;
-    const { xmin, xmax, p } = params;
-    const op = choix(['>','>=','<','<=']);
-    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
-    const inclus = (op === '>=' || op === '<=');
-    let spec;
+  {id:"15.4 c)", type:"num", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const { p } = params;
     if (params.degre === 2) {
-      // resolution algebrique exacte : (x-p)^2+r op 0 <=> (x-p)^2 op -r. La racine d=sqrt(-r)
-      // n'est PAS forcee a etre entiere (r varie librement) : elle est generalement irrationnelle,
-      // d'ou la tolerance ci-dessous — mais reste calculable exactement, pas de recherche numerique
-      // necessaire ni de risque de rater la racine double quand r=0 (cas gere explicitement).
       const { r } = params;
-      const d = Math.sqrt(-r);
-      if (d < 1e-9) {
-        if (op === '>') spec = {type:'intervalles', liste:[{bas:xmin,haut:p,inclusBas:true,inclusHaut:false},{bas:p,haut:xmax,inclusBas:false,inclusHaut:true}]};
-        else if (op === '>=') spec = {type:'intervalles', liste:[{bas:xmin,haut:xmax,inclusBas:true,inclusHaut:true}]};
-        else if (op === '<') spec = {type:'vide'};
-        else spec = {type:'intervalles', liste:[{bas:p,haut:p,inclusBas:true,inclusHaut:true}]};
-      } else {
-        const gauche = p - d, droite = p + d;
-        if (op === '>') spec = {type:'intervalles', liste:[{bas:xmin,haut:gauche,inclusBas:true,inclusHaut:false},{bas:droite,haut:xmax,inclusBas:false,inclusHaut:true}]};
-        else if (op === '>=') spec = {type:'intervalles', liste:[{bas:xmin,haut:gauche,inclusBas:true,inclusHaut:true},{bas:droite,haut:xmax,inclusBas:true,inclusHaut:true}]};
-        else if (op === '<') spec = {type:'intervalles', liste:[{bas:gauche,haut:droite,inclusBas:false,inclusHaut:false}]};
-        else spec = {type:'intervalles', liste:[{bas:gauche,haut:droite,inclusBas:true,inclusHaut:true}]};
-      }
-    } else {
-      // cubique : pas de forme fermee simple en general, recherche numerique des racines
-      // (racinesApprochees suppose un changement de signe : le tirage de b/r evite deja la
-      // coincidence exacte d'une racine double — voir genererParametresGraphique14).
-      const f = fonctionGraphique14(params);
-      function satisfait(y) {
-        if (op === '>') return y > 1e-9;
-        if (op === '>=') return y > -1e-9;
-        if (op === '<') return y < -1e-9;
-        return y < 1e-9;
-      }
-      const brutes = racinesApprochees(f, xmin, xmax, 0).sort((a,b) => a-b);
-      const racines = [];
-      for (const rc of brutes) { if (racines.length === 0 || rc - racines[racines.length-1] > 1e-4) racines.push(rc); }
-      const interieures = racines.filter(rc => rc > xmin + 1e-6 && rc < xmax - 1e-6);
-      const points = [xmin, ...interieures, xmax];
-      const pieces = [];
-      for (let i = 0; i < points.length - 1; i++) {
-        const bas = points[i], haut = points[i+1];
-        if (haut - bas < 1e-6) continue;
-        if (!satisfait(f((bas + haut) / 2))) continue;
-        pieces.push({
-          bas, haut,
-          inclusBas: (i === 0) ? satisfait(f(xmin)) : inclus,
-          inclusHaut: (i === points.length - 2) ? satisfait(f(xmax)) : inclus
-        });
-      }
-      spec = pieces.length === 0 ? {type:'vide'} : {type:'intervalles', liste: pieces};
+      return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${r}\\).`, type:'num', reponse:`{${p}}` };
     }
-    return { enonce:`Résoudre \\(f(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: 0.5 };
+    const f = fonctionGraphiqueEq(params);
+    return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${f(p)}\\).`, type:'num', reponse:`{${p}}` };
   }},
 
-  // ---------- 14.8 : exploiter y=f(x), appartenance, coordonnee manquante, comparaison ----------
-  {id:"14.8 a)", type:"ouiNon", texteLibre:true, gen: () => {
-    const a = entierSigne(2,9), b = entierSigne(1,20), x0 = entierSigne(1,10);
-    const vraiPoint = a*x0+b;
-    const appartient = alea(0,1) === 1;
-    const y0 = appartient ? vraiPoint : vraiPoint + choix([1,-1,2,-2,3,-3]);
-    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${affineTexte(a,b)}\\). Le point de coordonnées \\((${x0}\\,;\\,${y0})\\) appartient-il à la courbe de \\(f\\) ?`, reponseOuiNon: appartient };
+  // ---------- 15.5 : resoudre graphiquement une inequation f(x) op k (k choisi comme une valeur
+  // reellement atteinte sur la courbe, jamais au hasard — voir resoudreInequationCourbe) ----------
+  {id:"15.5 a)", type:"intervalle", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
+    const { p } = params;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const k = params.degre === 2 ? params.r + (choix([1,2,3])**2) : f(p + choix([-2,-1,1,2]));
+    const spec = resoudreInequationCourbe(params, op, k);
+    return { enonce:`Résoudre graphiquement l'inéquation \\(f(x)${opSymb}${k}\\).`, intervalleSpec: spec, tolerance: 0.5 };
   }},
-  {id:"14.8 b)", type:"num", texteLibre:true, gen: () => {
-    const a = entierSigne(2,9), b = entierSigne(1,20), x0 = entierSigne(1,10);
-    return { enonce:`Un point de la courbe de \\(f\\), où \\(f(x)=${affineTexte(a,b)}\\), a pour abscisse \\(${x0}\\). Quelle est son ordonnée ?`, reponse:`${a*x0+b}` };
+  {id:"15.5 b)", type:"intervalle", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
+    const { p } = params;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const k = params.degre === 2 ? params.r + (choix([1,2,3])**2) : f(p + choix([-2,-1,1,2]));
+    const spec = resoudreInequationCourbe(params, op, k);
+    return { enonce:`Résoudre graphiquement l'inéquation \\(f(x)${opSymb}${k}\\).`, intervalleSpec: spec, tolerance: 0.5 };
   }},
-  {id:"14.8 c)", type:"num", texteLibre:true, gen: () => {
-    const a = entierSigne(1,9), b = entierSigne(1,10), n = alea(1,8);
-    const y0 = b + n*n;
-    return { enonce:`Un point de la courbe de \\(g\\), où \\(g(x)=(${xMoinsTexte(-a)})^2${b>=0?'+':'-'}${Math.abs(b)}\\), a pour ordonnée \\(${y0}\\). Quelle(s) est/sont son ou ses abscisse(s) ?`, reponse:`{${-a-n};${-a+n}}` };
+  {id:"15.5 c)", type:"intervalle", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
+    const { p } = params;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const k = params.degre === 2 ? params.r + (choix([1,2,3])**2) : f(p + choix([-2,-1,1,2]));
+    const spec = resoudreInequationCourbe(params, op, k);
+    return { enonce:`Résoudre graphiquement l'inéquation \\(f(x)${opSymb}${k}\\).`, intervalleSpec: spec, tolerance: 0.5 };
   }},
-  {id:"14.8 d)", type:"texte", comparaison:true, nomFonction:"f", texteLibre:true, gen: () => {
-    const a = entierSigne(1,20), b = entierSigne(1,15);
-    const symbole = a>0 ? '<' : '>';
-    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=${affineTexte(a,b)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\).`, reponse: `f(x1)${symbole}f(x2)` };
+
+  // ---------- 15.6 : encadrement k1<f(x)<=k2, par intersection des deux inequations simples
+  // {f(x)>k1} et {f(x)<=k2} (voir intersectionIntervalles) ----------
+  {id:"15.6 a)", type:"intervalle", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
+    const { p } = params;
+    let k1, k2;
+    if (params.degre === 2) {
+      let d1, d2; do { d1 = choix([1,2,3]); d2 = choix([1,2,3]); } while (d1 === d2);
+      if (d1 > d2) { const t = d1; d1 = d2; d2 = t; }
+      k1 = params.r + d1*d1; k2 = params.r + d2*d2;
+    } else {
+      let dec1, dec2, v1, v2;
+      do {
+        dec1 = choix([-2,-1,1,2]); dec2 = choix([-2,-1,1,2]);
+        v1 = f(p+dec1); v2 = f(p+dec2);
+      } while (dec1 === dec2 || Math.abs(v1 - v2) < 1e-6);
+      k1 = Math.min(v1,v2); k2 = Math.max(v1,v2);
+    }
+    const spec = intersectionIntervalles(resoudreInequationCourbe(params,'>',k1), resoudreInequationCourbe(params,'<=',k2));
+    return { enonce:`Résoudre graphiquement l'inéquation \\(${k1}\\lt f(x)\\leqslant ${k2}\\).`, intervalleSpec: spec, tolerance: 0.5 };
   }},
-  {id:"14.8 e)", type:"texte", comparaison:true, nomFonction:"g", texteLibre:true, gen: () => {
-    const p = entierSigne(1,9);
-    let d1 = alea(1,6), d2 = alea(1,6);
-    while (d2 === d1) d2 = alea(1,6);
-    const symbole = d1<d2 ? '<' : '>';
-    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(|${xIndiceMoinsTexte(1,p)}|=${d1}\\) et que \\(|${xIndiceMoinsTexte(2,p)}|=${d2}\\). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer.`, reponse: `g(x1)${symbole}g(x2)` };
+  {id:"15.6 b)", type:"intervalle", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
+    const { p } = params;
+    let k1, k2;
+    if (params.degre === 2) {
+      let d1, d2; do { d1 = choix([1,2,3]); d2 = choix([1,2,3]); } while (d1 === d2);
+      if (d1 > d2) { const t = d1; d1 = d2; d2 = t; }
+      k1 = params.r + d1*d1; k2 = params.r + d2*d2;
+    } else {
+      let dec1, dec2, v1, v2;
+      do {
+        dec1 = choix([-2,-1,1,2]); dec2 = choix([-2,-1,1,2]);
+        v1 = f(p+dec1); v2 = f(p+dec2);
+      } while (dec1 === dec2 || Math.abs(v1 - v2) < 1e-6);
+      k1 = Math.min(v1,v2); k2 = Math.max(v1,v2);
+    }
+    const spec = intersectionIntervalles(resoudreInequationCourbe(params,'>',k1), resoudreInequationCourbe(params,'<=',k2));
+    return { enonce:`Résoudre graphiquement l'inéquation \\(${k1}\\lt f(x)\\leqslant ${k2}\\).`, intervalleSpec: spec, tolerance: 0.5 };
+  }},
+
+  // ---------- 15.7 : tableau de variations a completer, sur une courbe INDEPENDANTE et propre
+  // a chaque item (voir remarque au-dessus de genererParametresGraphiqueVar) ----------
+  {id:"15.7 a)", type:"tableauVariations", texteLibre:true, gen: () => {
+    const paramsVar = genererParametresGraphiqueVar();
+    const seuils = seuilsGraphiqueVar(paramsVar);
+    return { enonce:`La fonction \\(g\\) ci-dessous est définie sur \\([${paramsVar.xmin}\\,;\\,${paramsVar.xmax}]\\). Compléter son tableau de variations à partir du graphique.`, paramsVar, seuils };
+  }},
+  {id:"15.7 b)", type:"tableauVariations", texteLibre:true, gen: () => {
+    const paramsVar = genererParametresGraphiqueVar();
+    const seuils = seuilsGraphiqueVar(paramsVar);
+    return { enonce:`La fonction \\(g\\) ci-dessous est définie sur \\([${paramsVar.xmin}\\,;\\,${paramsVar.xmax}]\\). Compléter son tableau de variations à partir du graphique.`, paramsVar, seuils };
+  }},
+
+  // ---------- 15.8 : calculs avances — position relative de deux courbes (a, b), confronter
+  // lecture graphique et calcul exact (c), lecture approchee plus fine (d) ----------
+  {id:"15.8 a)", type:"num", texteLibre:true, gen: () => {
+    const { xA, xB } = paramsGraphiqueDeux;
+    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, reponse:`{${xA};${xB}}` };
+  }},
+  {id:"15.8 b)", type:"intervalle", texteLibre:true, gen: () => {
+    const { xmin, xmax, xA, xB } = paramsGraphiqueDeux;
+    const spec = {type:'intervalles', liste:[
+      {bas:xmin, haut:xA, inclusBas:true, inclusHaut:false},
+      {bas:xB, haut:xmax, inclusBas:false, inclusHaut:true}
+    ]};
+    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'inéquation \\(f(x)\\lt g(x)\\).`, intervalleSpec: spec };
+  }},
+  {id:"15.8 c)", type:"num", texteLibre:true, gen: () => {
+    const a = alea(1,3), n = alea(1,4), p = alea(-1,1);
+    const f = x => a*(x-p)*(x-p) - a*n*n;
+    const xmin = p-n-1, xmax = p+n+1;
+    const svg = genererSVGCourbeGrande(f, xmin, xmax, -a*n*n-1, f(xmin)+1, 480, 300);
+    return {
+      enonce:`On donne \\(f(x)=${a}(${xMoinsTexte(p)})^2-${a*n*n}\\), représentée ci-dessous sur \\([${xmin}\\,;\\,${xmax}]\\).<div class="figure-centree">${svg}</div>Résoudre par le calcul l'équation \\(f(x)=0\\), et vérifier la cohérence du résultat avec le graphique.`,
+      reponse:`{${p-n};${p+n}}`
+    };
+  }},
+  {id:"15.8 d)", type:"num", texteLibre:true, gen: () => {
+    const params = paramsGraphiqueEq;
+    const f = fonctionGraphiqueEq(params);
+    const { xmin, xmax, p } = params;
+    const candidats = [-1.5,-0.5,0.5,1.5].filter(d => p+d > xmin+0.5 && p+d < xmax-0.5);
+    const decalage = choix(candidats.length ? candidats : [0.5]);
+    const x0 = p + decalage;
+    const k = Math.round(f(x0)*100)/100;
+    return { enonce:`À l'aide du graphique, donner une valeur approchée à \\(0,1\\) près d'une solution de l'équation \\(f(x)=${k}\\).`, type:'approx', valeurApprox: x0, tolerance: 0.1 };
   }}
 ];
 
@@ -1452,8 +1701,8 @@ let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 function genererExercices() {
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
-  genererParametresProgramme();
-  genererParametresGraphique14();
+  genererParametresGraphiqueEq();
+  genererParametresGraphiqueDeux();
   return generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
@@ -1463,14 +1712,14 @@ function genererExercices() {
 let exercices = genererExercices();
 
 const groupes = {
-  "grille-14-1": [0,1,2,3],
-  "grille-14-2": [4,5,6,7],
-  "grille-14-3": [8,9,10,11],
-  "grille-14-4": [12,13,14,15],
-  "grille-14-5": [16,17],
-  "grille-14-6": [18,19,20,21,22,23],
-  "grille-14-7": [24,25,26,27,28],
-  "grille-14-8": [29,30,31,32,33]
+  "grille-15-1": [0,1,2,3],
+  "grille-15-2": [4,5,6,7],
+  "grille-15-3": [8,9,10,11],
+  "grille-15-4": [12,13,14],
+  "grille-15-5": [15,16,17],
+  "grille-15-6": [18,19],
+  "grille-15-7": [20,21],
+  "grille-15-8": [22,23,24,25]
 };
 const lettres = ["a","b","c","d","e","f"];
 
@@ -1479,7 +1728,7 @@ function necessiteAide(ex) {
   if (ex.comparaison) return true;
   if (ex.type === 'approx') return true;
   if (ex.type === 'intervalle') return true;
-  if (ex.type === 'tableauProgramme') return true;
+  if (ex.type === 'tableauVariations') return true;
   if (ex.fractionIrreductible) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
@@ -1499,8 +1748,8 @@ function aideContextuellePour(ex) {
     const base = "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
     return ex.tolerance ? base + ` Les bornes lues sur le graphique peuvent être approchées (tolérance de <code>${ex.tolerance}</code>).` : base;
   }
-  if (ex.type === 'tableauProgramme') {
-    return "Compléter chaque case vide du tableau (un nombre entier), puis cliquer sur « Valider ce tableau ».";
+  if (ex.type === 'tableauVariations') {
+    return "Compléter les abscisses manquantes et les valeurs de \\(g\\), puis cliquer sur les cases vides de la ligne « Variations » pour faire apparaître la flèche (↗ ou ↘). Cliquer enfin sur « Valider ce tableau ».";
   }
   if (ex.fractionIrreductible) {
     return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
@@ -1648,7 +1897,7 @@ function construireGrilles() {
       div.className = 'question';
       div.id = 'q-' + idx;
       const enonceHtml = ex.texteLibre ? ex.enonce : `\\(${ex.enonce}\\)`;
-      const champ = ex.type === 'tableauProgramme' ? tableauProgrammeHTML(idx, ex) : champReponsePour(idx, ex);
+      const champ = ex.type === 'tableauVariations' ? tableauVariationsHTML(idx, ex) : champReponsePour(idx, ex);
       div.innerHTML = `
         <span class="q-lettre">${lettres[pos] || ''})</span>
         <span class="q-enonce">${enonceHtml}</span>
@@ -1658,6 +1907,7 @@ function construireGrilles() {
       grille.appendChild(div);
     });
     injecterAideGroupe(gridId, indices);
+    activerZoomSvg(grille);
   }
 }
 
@@ -1969,8 +2219,8 @@ function verifierUne(idx) {
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
   div.classList.remove('correct','incorrect');
-  if (ex.type === 'tableauProgramme') {
-    const ok = verifierTableauProgramme(idx, ex);
+  if (ex.type === 'tableauVariations') {
+    const ok = verifierTableauVariations(idx, ex);
     if (ok === null) { statut.textContent = 'remplir toutes les cases'; statut.className = 'q-statut'; return null; }
     div.classList.add(ok ? 'correct' : 'incorrect');
     statut.textContent = ok ? '✓ correct' : '✗ à revoir';
@@ -2003,8 +2253,8 @@ let modeImmediat = true;
 
 function toutesLesReponsesSontSaisies() {
   return exercices.every((ex, idx) => {
-    if (ex.type === 'tableauProgramme') {
-      return ['tp-img-'+idx, 'tp-ant-'+idx].every(id => document.getElementById(id).value.trim() !== '');
+    if (ex.type === 'tableauVariations') {
+      return verifierTableauVariationsRempli(idx, ex);
     }
     return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
   });
@@ -2012,7 +2262,7 @@ function toutesLesReponsesSontSaisies() {
 
 function attacherEcouteurs() {
   exercices.forEach((ex, idx) => {
-    if (ex.type === 'tableauProgramme') return; // deja cable via oninput/onclick au moment du rendu
+    if (ex.type === 'tableauVariations') return; // deja cable via oninput/onclick au moment du rendu
     const input = document.getElementById('input-' + idx);
     let ignorerProchainInput = false;
     input.addEventListener('keydown', (evenement) => {
@@ -2171,8 +2421,8 @@ function verifierTout() {
   } else {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
-      if (ex.type === 'tableauProgramme') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeProgrammeHTML(ex)}`;
+      if (ex.type === 'tableauVariations') {
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
       return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
@@ -2194,7 +2444,7 @@ function reinitialiser() {
   exercices.forEach((ex, idx) => {
     document.getElementById('q-' + idx).classList.remove('correct','incorrect');
     document.getElementById('statut-' + idx).textContent = '';
-    if (ex.type === 'tableauProgramme') { reinitialiserTableauProgramme(idx); return; }
+    if (ex.type === 'tableauVariations') { reinitialiserTableauVariations(idx, ex); return; }
     document.getElementById('input-' + idx).value = '';
     boiteRacineOuverte[idx] = false;
     const clavier = document.getElementById('clavier-' + idx);
@@ -2210,8 +2460,8 @@ function toggleToutesReponses() {
   const panneau = document.getElementById('toutes-reponses-panneau');
   const btn = document.getElementById('btn-toutes-reponses');
   if (!panneau.classList.contains('visible')) {
-    panneau.innerHTML = exercices.map(ex => ex.type === 'tableauProgramme'
-      ? `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeProgrammeHTML(ex)}`
+    panneau.innerHTML = exercices.map(ex => ex.type === 'tableauVariations'
+      ? `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeVariationsHTML(ex)}`
       : `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
     ).join('');
     if (window.MathJax) MathJax.typesetPromise([panneau]);
@@ -2226,7 +2476,8 @@ function toggleToutesReponses() {
 function genererNouvelleFiche() {
   exercices = genererExercices();
   construireGrilles();
-  construireGraphique14_7();
+  construireGraphiqueEq();
+  construireGraphiqueDeux();
   attacherEcouteurs();
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
@@ -2239,7 +2490,8 @@ function genererNouvelleFiche() {
 }
 
 construireGrilles();
-construireGraphique14_7();
+construireGraphiqueEq();
+construireGraphiqueDeux();
 attacherEcouteurs();
 definirMode(true);
 if (window.MathJax) MathJax.typesetPromise();
