@@ -1206,13 +1206,18 @@ const generateurs = [
     return { enonce: `Résoudre l'inéquation \\(\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\geqslant ${k}\\).`, intervalleSpec: spec };
   }},
   {id:"8.9 e)", type:"discussionParametre", texteLibre:true, gen: () => {
-    // discussion VERITABLE : m est un reel quelconque (pas une valeur tiree au hasard) — seul le
-    // second seuil fixe s varie d'un tirage a l'autre, pour garder un peu de variete sans changer
-    // la structure de la discussion (comparer m a s pour ordonner les deux racines).
+    // discussion VERITABLE : m est un reel quelconque (pas une valeur tiree au hasard) — le
+    // second seuil fixe s et le sens de l'inegalite varient d'un tirage a l'autre, pour garder
+    // un peu de variete sans changer la structure de la discussion (comparer m a s pour ordonner
+    // les deux racines). Le sens de l'inegalite change la nature du cas degenere m=s : ensemble
+    // vide (strict, produit jamais negatif), R (large, positif), R prive d'un point (strict,
+    // positif) ou un singleton {s} (large, negatif) — voir veriteDiscussionParametre.
     const s = entierSigne(1,9);
+    const op = choix(['>','>=','<','<=']);
+    const symb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
     return {
-      enonce: `Le réel \\(m\\) est un paramètre quelconque. Résoudre, en discutant selon les valeurs de \\(m\\), l'inéquation \\((x-m)(${affineTexte(1,-s)})\\gt 0\\).`,
-      parametre: 'm', seuilFixe: s
+      enonce: `Le réel \\(m\\) est un paramètre quelconque. Résoudre, en discutant selon les valeurs de \\(m\\), l'inéquation \\((x-m)(${affineTexte(1,-s)})${symb} 0\\).`,
+      parametre: 'm', seuilFixe: s, op
     };
   }}
 ];
@@ -1260,7 +1265,7 @@ function aideContextuellePour(ex) {
     return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant) — cette valeur n'est pas toujours un entier, une fraction comme <code>7/2</code> est acceptée. Pour la ligne d'un facteur, cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (ce facteur s'annule ici) et <code>|</code> (rien ne se passe ici pour ce facteur) : jamais <code>‖</code>, réservé à la ligne du bas — un facteur pris seul n'a rien d'interdit, seule l'expression complète (s'il est au dénominateur) peut l'être.";
   }
   if (ex.type === 'discussionParametre') {
-    return `Écrire un cas par « si ... alors ... », par exemple <code>si ${ex.parametre}>${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[∪]${ex.parametre};+∞[, si ${ex.parametre}<${ex.seuilFixe} alors ...</code> : autant de cas que nécessaire pour couvrir toutes les valeurs possibles de <code>${ex.parametre}</code> (y compris le cas où les deux racines sont égales), chaque intervalle pouvant contenir la lettre <code>${ex.parametre}</code> elle-même comme borne.`;
+    return `Écrire un cas par « si ... alors ... », par exemple <code>si ${ex.parametre}>${ex.seuilFixe} alors ...(intervalle)..., si ${ex.parametre}<${ex.seuilFixe} alors ...</code> : autant de cas que nécessaire pour couvrir toutes les valeurs possibles de <code>${ex.parametre}</code>, chaque intervalle pouvant contenir la lettre <code>${ex.parametre}</code> elle-même comme borne. Ne pas oublier le cas où les deux racines sont égales (<code>${ex.parametre}=${ex.seuilFixe}</code>) : selon l'inégalité de l'énoncé, sa réponse peut être un intervalle, mais aussi <code>∅</code> (ensemble vide), <code>{${ex.seuilFixe}}</code> (un seul réel) ou <code>ℝ</code>.`;
   }
   return "";
 }
@@ -1745,6 +1750,18 @@ function parseUnIntervalleParametre(str, scope) {
   } catch(e) { return null; }
 }
 function parseReponseIntervalleParametre(str, scope) {
+  // singleton {valeur} : a detecter AVANT normaliserSaisie, qui epluche elle-meme un seul niveau
+  // d'accolades exterieures (convention "{a;b}" des ensembles ailleurs sur le site) et livrerait
+  // donc ici un "3" nu, indiscernable d'un intervalle mal forme.
+  const brut = String(str).trim();
+  const singleton = brut.match(/^\{(.+)\}$/);
+  if (singleton) {
+    try {
+      const v = math.evaluate(normaliserSaisie(singleton[1]), scope);
+      if (typeof v !== 'number') return null;
+      return { type: 'intervalles', liste: [{ bas: v, haut: v, inclusBas: true, inclusHaut: true }] };
+    } catch(e) { return null; }
+  }
   const s = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g, '');
   if (s === 'r' || s === 'ir' || s === 'reel' || s === 'reels' || s === 'ℝ') return { type: 'tout' };
   if (s === 'vide' || s === 'empty' || s === '∅' || s === 'aucun' || s === 'aucune') return { type: 'vide' };
@@ -1763,10 +1780,23 @@ function specsIntervalleEquivalentes(specA, specB) {
   ));
 }
 
-// verite terrain de l'exercice 8.9 e) pour une valeur concrete du parametre : (x-mValeur)(x-seuilFixe)>0
+// verite terrain de l'exercice 8.9 e) pour une valeur concrete du parametre : (x-mValeur)(x-seuilFixe) op 0
 function veriteDiscussionParametre(ex, mValeur) {
-  return resoudreSigneParBalayage(x => (x - mValeur) * (x - ex.seuilFixe),
-    [{ valeur: mValeur, interdit: false }, { valeur: ex.seuilFixe, interdit: false }], '>');
+  const s = ex.seuilFixe;
+  if (Math.abs(mValeur - s) < 1e-9) {
+    // racine double : (x-s)^2 ne change jamais de signe (toujours >=0, nul seulement en x=s) —
+    // resoudreSigneParBalayage suppose une alternance de signe a chaque seuil, ce qui est faux
+    // pour une racine double ; on traite ce cas exactement plutot que par echantillonnage.
+    if (ex.op === '>') return { type: 'intervalles', liste: [
+      { bas: -Infinity, haut: s, inclusBas: false, inclusHaut: false },
+      { bas: s, haut: Infinity, inclusBas: false, inclusHaut: false }
+    ] };
+    if (ex.op === '>=') return { type: 'tout' };
+    if (ex.op === '<') return { type: 'vide' };
+    return { type: 'intervalles', liste: [{ bas: s, haut: s, inclusBas: true, inclusHaut: true }] }; // '<='
+  }
+  return resoudreSigneParBalayage(x => (x - mValeur) * (x - s),
+    [{ valeur: mValeur, interdit: false }, { valeur: s, interdit: false }], ex.op);
 }
 
 // verifie une reponse en plusieurs cas : pour un large echantillon de valeurs-test du parametre (dont
@@ -1992,9 +2022,29 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'discussionParametre') {
       const s = ex.seuilFixe, p = ex.parametre;
-      return `\\text{si }${p}\\gt ${s}\\text{ : }]-\\infty\\,;\\,${s}[\\,\\cup\\,]${p}\\,;\\,+\\infty[` +
-             `\\text{ ; si }${p}\\lt ${s}\\text{ : }]-\\infty\\,;\\,${p}[\\,\\cup\\,]${s}\\,;\\,+\\infty[` +
-             `\\text{ ; si }${p}=${s}\\text{ : }]-\\infty\\,;\\,${s}[\\,\\cup\\,]${s}\\,;\\,+\\infty[`;
+      // cas m<s / m>s / m=s ; la forme des deux premiers cas et du cas degenere depend du sens
+      // de l'inegalite de l'enonce (ex.op) — voir veriteDiscussionParametre pour le detail des 4.
+      let casInf, casSup, casEgal;
+      if (ex.op === '>') {
+        casInf = `]-\\infty\\,;\\,${p}[\\,\\cup\\,]${s}\\,;\\,+\\infty[`;
+        casSup = `]-\\infty\\,;\\,${s}[\\,\\cup\\,]${p}\\,;\\,+\\infty[`;
+        casEgal = `]-\\infty\\,;\\,${s}[\\,\\cup\\,]${s}\\,;\\,+\\infty[`;
+      } else if (ex.op === '>=') {
+        casInf = `]-\\infty\\,;\\,${p}]\\,\\cup\\,[${s}\\,;\\,+\\infty[`;
+        casSup = `]-\\infty\\,;\\,${s}]\\,\\cup\\,[${p}\\,;\\,+\\infty[`;
+        casEgal = `\\mathbb{R}`;
+      } else if (ex.op === '<') {
+        casInf = `]${p}\\,;\\,${s}[`;
+        casSup = `]${s}\\,;\\,${p}[`;
+        casEgal = `\\emptyset`;
+      } else {
+        casInf = `[${p}\\,;\\,${s}]`;
+        casSup = `[${s}\\,;\\,${p}]`;
+        casEgal = `\\{${s}\\}`;
+      }
+      return `\\text{si }${p}\\lt ${s}\\text{ : }${casInf}` +
+             `\\text{ ; si }${p}\\gt ${s}\\text{ : }${casSup}` +
+             `\\text{ ; si }${p}=${s}\\text{ : }${casEgal}`;
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
