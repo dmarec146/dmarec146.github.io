@@ -1167,44 +1167,37 @@ function svgGraphiqueVar(params) {
   return genererSVGCourbeGrande(f, xmin, xmax, ymin - marge, ymax + marge, 480, 300);
 }
 
-// ---------- graphique a deux courbes Cf/Cg (15.8, position relative de deux courbes) : deux
-// fonctions affines ou une affine et une parabole, choisies pour se croiser EXACTEMENT une ou
-// deux fois sur le domaine (racines de f-g calculees par construction, jamais laissees au hasard
-// d'un tirage numerique) ----------
+// ---------- graphique a deux courbes Cf/Cg (15.8, position relative de deux courbes) : g
+// (parabole) est construite A PARTIR de f (droite), jamais l'inverse — motif repris de
+// automatismes/premiere/banques/07-lectures-graphiques.js (comparerCourbes), plus robuste que la
+// version initiale de ce generateur (droite reconstruite par calcul de pente entre deux points
+// CHOISIS SUR la parabole : si ces deux points sont symetriques autour du sommet, ils ont la
+// meme image et la droite obtenue est TOUJOURS horizontale — bug trouve et corrige le
+// 2026-09-09, puis remplace le 2026-09-10 par cette construction structurellement immunisee).
+// g(x) = f(x) + a(x-xA)(x-xB) : par construction f(xA)=g(xA) et f(xB)=g(xB) EXACTEMENT, et
+// g-f = a(x-xA)(x-xB) est un vrai trinome du second degre (jamais degenere) des que a != 0. ----------
 let paramsGraphiqueDeux = {};
 function genererParametresGraphiqueDeux() {
   const xmin = -3, xmax = 4;
-  // f affine, g parabole (x-p)^2+r : la droite f est construite pour passer EXACTEMENT par deux
-  // points choisis sur la parabole (xA;g(xA)) et (xB;g(xB)), ce qui garantit par construction que
-  // f(x)=g(x) a exactement ces deux solutions — jamais laisse a une recherche numerique. xA et xB
-  // sont tires INDEPENDAMMENT (pas symetriques autour de p) : deux points symetriques d'une
-  // parabole ont la meme image, ce qui donnerait une droite horizontale (piege rencontre en
-  // ecrivant ce generateur, corrige ici).
-  const p = alea(0, 1);
-  const r = alea(-2, 2);
   let xA, xB;
-  do {
-    xA = alea(-2, 3);
-    xB = alea(-2, 3);
-  } while (xA === xB || (xA - p) === -(xB - p));
+  do { xA = alea(-2, 3); xB = alea(-2, 3); } while (xA === xB);
   if (xA > xB) { const t = xA; xA = xB; xB = t; }
-  const g = x => (x - p) * (x - p) + r;
-  const yA = g(xA), yB = g(xB);
-  const pente = (yB - yA) / (xB - xA);
-  const ordonnee = yA - pente * xA;
-  paramsGraphiqueDeux = { xmin, xmax, p, r, pente, ordonnee, xA, xB };
+  const pente = choix([-2, -1, 1, 2]);
+  const ordonnee = alea(-2, 2);
+  const a = choix([0.5, 1, -0.5, -1]);
+  paramsGraphiqueDeux = { xmin, xmax, pente, ordonnee, a, xA, xB };
 }
 function fonctionsGraphiqueDeux(params) {
-  const { p, r, pente, ordonnee } = params;
+  const { pente, ordonnee, a, xA, xB } = params;
   const f = x => pente * x + ordonnee;
-  const g = x => (x - p) * (x - p) + r;
+  const g = x => f(x) + a * (x - xA) * (x - xB);
   return { f, g };
 }
 function construireGraphiqueDeux() {
   const params = paramsGraphiqueDeux;
-  const { xmin, xmax, xA, xB } = params;
+  const { xmin, xmax } = params;
   const { f, g } = fonctionsGraphiqueDeux(params);
-  const ys = [f(xmin), f(xmax), g(xmin), g(xmax), g(params.p)];
+  const ys = [f(xmin), f(xmax), g(xmin), g(xmax), g((params.xA + params.xB) / 2)];
   const ymin = Math.min(...ys) - 1, ymax = Math.max(...ys) + 1;
   const svg = genererSVGCourbeGrande(g, xmin, xmax, ymin, ymax, 720, 380, { fonctionJs: f, couleur: '#1D9E75', label: 'Cf', labelPrincipale: 'Cg' });
   document.getElementById('graphique-deux').innerHTML = `
@@ -1638,11 +1631,15 @@ const generateurs = [
     return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, reponse:`{${xA};${xB}}` };
   }},
   {id:"15.8 b)", type:"intervalle", texteLibre:true, gen: () => {
-    const { xmin, xmax, xA, xB } = paramsGraphiqueDeux;
-    const spec = {type:'intervalles', liste:[
-      {bas:xmin, haut:xA, inclusBas:true, inclusHaut:false},
-      {bas:xB, haut:xmax, inclusBas:false, inclusHaut:true}
-    ]};
+    const { xmin, xmax, xA, xB, a } = paramsGraphiqueDeux;
+    // g-f = a(x-xA)(x-xB) : negatif entre xA et xB si a>0 (donc f>g dedans, f<g dehors) — et
+    // l'inverse si a<0 (le signe de a n'est plus fixe depuis que g est construite a partir de f).
+    const spec = a > 0
+      ? {type:'intervalles', liste:[
+          {bas:xmin, haut:xA, inclusBas:true, inclusHaut:false},
+          {bas:xB, haut:xmax, inclusBas:false, inclusHaut:true}
+        ]}
+      : {type:'intervalles', liste:[{bas:xA, haut:xB, inclusBas:false, inclusHaut:false}]};
     return { enonce:`À l'aide du graphique ci-dessus, résoudre l'inéquation \\(f(x)\\lt g(x)\\).`, intervalleSpec: spec };
   }},
   {id:"15.8 c)", type:"num", texteLibre:true, gen: () => {
