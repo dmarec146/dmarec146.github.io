@@ -1265,7 +1265,7 @@ function aideContextuellePour(ex) {
     return "Sur la ligne <code>x</code>, écrire dans chaque case la valeur qui annule le facteur correspondant (dans l'ordre croissant) — cette valeur n'est pas toujours un entier, une fraction comme <code>7/2</code> est acceptée. Pour la ligne d'un facteur, cliquer sur une case fait défiler <code>+</code>, <code>-</code>, <code>0</code> (ce facteur s'annule ici) et <code>|</code> (rien ne se passe ici pour ce facteur) : jamais <code>‖</code>, réservé à la ligne du bas — un facteur pris seul n'a rien d'interdit, seule l'expression complète (s'il est au dénominateur) peut l'être.";
   }
   if (ex.type === 'discussionParametre') {
-    return `Écrire un cas par « si [condition] alors [réponse] », séparés par des points-virgules. Le mot <code>alors</code> peut être remplacé par <code>:</code>, les deux sont acceptés : <code>si ${ex.parametre}>${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[ ∪ ]${ex.parametre};+∞[ ; si ${ex.parametre}<${ex.seuilFixe} : ]-∞;${ex.parametre}[ ∪ ]${ex.seuilFixe};+∞[</code> — autant de cas que nécessaire pour couvrir toutes les valeurs possibles de <code>${ex.parametre}</code>, chaque intervalle pouvant contenir la lettre <code>${ex.parametre}</code> elle-même comme borne. Ne pas oublier le cas où les deux racines sont égales (<code>${ex.parametre}=${ex.seuilFixe}</code>) : selon l'inégalité de l'énoncé, sa réponse à ce cas particulier peut s'écrire, au choix, <code>∅</code> (ensemble vide), <code>{${ex.seuilFixe}}</code> (un seul réel), <code>ℝ</code> (tous les réels), ou <code>ℝ\\{${ex.seuilFixe}}</code> / <code>ℝ-{${ex.seuilFixe}}</code> (tous les réels sauf ${ex.seuilFixe}).`;
+    return `Écrire un cas par « si [condition] alors [réponse] », plusieurs cas séparés par des points-virgules : <code>si ${ex.parametre}>${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[ ∪ ]${ex.parametre};+∞[ ; si ${ex.parametre}<${ex.seuilFixe} alors ...</code>, chaque intervalle pouvant contenir la lettre <code>${ex.parametre}</code> elle-même comme borne. La réponse d'un cas peut aussi être <code>∅</code>, <code>ℝ</code>, <code>{valeur}</code> ou <code>ℝ\\{valeur}</code> (ou <code>ℝ-{valeur}</code>).`;
   }
   return "";
 }
@@ -1347,7 +1347,6 @@ function genererClavierDiscussion(idx, ex) {
         <span class="clavier-label">Cas</span>
         <button class="touche-large" onclick="inserer(${idx},'si ')">si</button>
         <button class="touche-large" onclick="inserer(${idx},' alors ')">alors</button>
-        <button onclick="inserer(${idx},' : ')">:</button>
         <button class="touche-large" onclick="inserer(${idx},'${ex.parametre}')">lettre ${ex.parametre}</button>
         <button onclick="inserer(${idx},'>')">&gt;</button>
         <button onclick="inserer(${idx},'<')">&lt;</button>
@@ -1375,7 +1374,7 @@ function genererClavierDiscussion(idx, ex) {
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">Astuce : « si ${ex.parametre}&gt;${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[∪]${ex.parametre};+∞[ ; si ${ex.parametre}&lt;${ex.seuilFixe} : ... » (« alors » et « : » sont équivalents) — le cas ${ex.parametre}=${ex.seuilFixe} peut valoir ∅, ℝ, {${ex.seuilFixe}} ou ℝ\\{${ex.seuilFixe}} selon l'inégalité.</div>`;
+      <div class="clavier-apercu">Astuce : « si ${ex.parametre}&gt;${ex.seuilFixe} alors ]-∞;${ex.seuilFixe}[∪]${ex.parametre};+∞[ ; si ${ex.parametre}&lt;${ex.seuilFixe} alors ... » — une réponse peut aussi être ∅, ℝ, {valeur} ou ℝ\\{valeur}.</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -1717,9 +1716,7 @@ function checkIntervalle(userInput, correctSpec) {
 function parseReponseCasParametre(str) {
   const morceaux = String(str).split(/\bsi\b/i).map(s => s.trim()).filter(s => s !== '');
   const cas = morceaux.map(m => {
-    // "alors" ou ":" separent la condition de la reponse — les deux sont une notation
-    // mathematique courante et legitime, aucune des deux n'est imposee a l'eleve.
-    const parties = m.split(/\balors\b|:/i);
+    const parties = m.split(/\balors\b/i);
     if (parties.length !== 2) return null;
     return { conditionTexte: parties[0].trim(), intervalleTexte: parties[1].replace(/^[,;]+|[,;]+$/g, '').trim() };
   });
