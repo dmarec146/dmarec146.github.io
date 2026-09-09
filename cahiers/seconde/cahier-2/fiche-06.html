@@ -950,13 +950,23 @@ function aideContextuellePour(ex) {
 
 const TYPES_MATHFIELD = ['num', 'alg'];
 
+function estEnsemble(ex) {
+  return !!(ex.reponse && ex.reponse.trim().startsWith('{'));
+}
+
 function utiliseMathfield(ex) {
-  if (!TYPES_MATHFIELD.includes(ex.type)) return false;
-  if (ex.reponse && ex.reponse.trim().startsWith('{')) return false;
-  return true;
+  return TYPES_MATHFIELD.includes(ex.type);
 }
 
 function champReponsePour(idx, ex) {
+  if (utiliseMathfield(ex) && estEnsemble(ex)) {
+    // ensemble de solutions : vrai champ mathematique (symbole racine avec case a remplir),
+    // mais avec notre propre clavier visuel (celui de mathlive ne propose pas ";" ni "∅").
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="\\{a;b\\}"
+              smart-fence="off" smart-superscript="on" virtual-keyboard-mode="off"></math-field>
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierMathEnsemble(idx)}</div>`;
+  }
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
               smart-fence="off" smart-superscript="on"
@@ -1119,8 +1129,63 @@ function reinitialiserStatut(idx) {
   statut.className = 'q-statut';
 }
 
+// clavier des exercices "ensemble de solutions" (reponse "{...}") lorsque le champ est un vrai
+// champ mathematique : chiffres deja fournis par GROUPE_CHIFFRES-equivalent ci-dessous, plus les
+// symboles propres a un ensemble. Le clavier de mathlive lui-meme n'a ni ";" ni "∅".
+function genererClavierMathEnsemble(idx) {
+  return `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Chiffres</span>
+        <button onclick="inserer(${idx},'7')">7</button>
+        <button onclick="inserer(${idx},'8')">8</button>
+        <button onclick="inserer(${idx},'9')">9</button>
+        <button onclick="inserer(${idx},'4')">4</button>
+        <button onclick="inserer(${idx},'5')">5</button>
+        <button onclick="inserer(${idx},'6')">6</button>
+        <button onclick="inserer(${idx},'1')">1</button>
+        <button onclick="inserer(${idx},'2')">2</button>
+        <button onclick="inserer(${idx},'3')">3</button>
+        <button onclick="inserer(${idx},'0')">0</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="inserer(${idx},'/')">/</button>
+        <button onclick="inserer(${idx},'∅')">∅</button>
+        <button onclick="inserer(${idx},'√')">√</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « {-2;2} » pour deux solutions, « {} » ou « ∅ » s'il n'y en a aucune, « √5 » pour une racine carrée.</div>`;
+}
+
+// pour un champ mathematique (math-field), suit si le curseur est encore dans la case
+// d'une racine carree en cours de saisie (\sqrt{...}), pour savoir si un chiffre suivant
+// doit rester dans la case ou s'il faut d'abord en sortir (voir inserer ci-dessous).
+const boiteRacineOuverte = {};
+
 function inserer(idx, symbole) {
   const input = document.getElementById('input-' + idx);
+  if (input.tagName === 'MATH-FIELD') {
+    if (symbole === '√') {
+      if (boiteRacineOuverte[idx]) input.executeCommand('moveToNextChar');
+      input.insert('\\sqrt{}');
+      input.executeCommand('moveToPreviousChar');
+      boiteRacineOuverte[idx] = true;
+    } else if (/^[0-9]$/.test(symbole) && boiteRacineOuverte[idx]) {
+      input.insert(symbole);
+    } else {
+      if (boiteRacineOuverte[idx]) { input.executeCommand('moveToNextChar'); boiteRacineOuverte[idx] = false; }
+      input.insert(symbole);
+    }
+    reinitialiserStatut(idx);
+    return;
+  }
   const start = input.selectionStart ?? input.value.length;
   const end = input.selectionEnd ?? input.value.length;
   input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
@@ -1177,6 +1242,12 @@ function insererFraction(idx) {
 
 function effacer(idx) {
   const input = document.getElementById('input-' + idx);
+  if (input.tagName === 'MATH-FIELD') {
+    input.value = '';
+    boiteRacineOuverte[idx] = false;
+    reinitialiserStatut(idx);
+    return;
+  }
   input.value = '';
   placerCurseur(input, 0);
   reinitialiserStatut(idx);
@@ -1184,6 +1255,12 @@ function effacer(idx) {
 
 function reculer(idx) {
   const input = document.getElementById('input-' + idx);
+  if (input.tagName === 'MATH-FIELD') {
+    input.executeCommand('deleteBackward');
+    boiteRacineOuverte[idx] = false;
+    reinitialiserStatut(idx);
+    return;
+  }
   const start = input.selectionStart ?? input.value.length;
   if (start > 0) {
     input.value = input.value.slice(0, start - 1) + input.value.slice(start);
@@ -1245,10 +1322,16 @@ function checkEqualNumeric(userInput, correctExpr) {
 }
 
 function checkEnsemble(userInput, correctSet) {
-  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
   const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
-  const userVals = nettoyerEtSplit(userInput);
+  const estVide = (s) => {
+    const n = s.trim().toLowerCase().replace(/\s/g,'');
+    // "o/" : export ascii-math d'un champ mathlive quand l'eleve clique sur le symbole ∅
+    return n === '' || n === '{}' || n === '∅' || n === 'o/' || n === 'vide' || n === 'aucune' || n === 'aucunesolution';
+  };
   const correctVals = nettoyerEtSplit(correctSet);
+  if (estVide(userInput)) return correctVals.length === 0;
+  userInput = userInput.replace(/(\d),(\d)/g, '$1.$2');
+  const userVals = nettoyerEtSplit(userInput);
   if (userVals.length !== correctVals.length) return false;
   try {
     const uNums = userVals.map(s => math.evaluate(s)).sort((a,b)=>a-b);
@@ -1361,7 +1444,10 @@ function attacherEcouteurs() {
       if (ignorerProchainInput) { ignorerProchainInput = false; return; }
       reinitialiserStatut(idx);
     });
-    input.addEventListener('focus', () => fermerAutresClaviers(idx));
+    input.addEventListener('focus', () => {
+      fermerAutresClaviers(idx);
+      if (input.tagName === 'MATH-FIELD') boiteRacineOuverte[idx] = false;
+    });
   });
 }
 
@@ -1514,6 +1600,7 @@ function toggleCorrection() {
 function reinitialiser() {
   exercices.forEach((ex, idx) => {
     document.getElementById('input-' + idx).value = '';
+    boiteRacineOuverte[idx] = false;
     document.getElementById('q-' + idx).classList.remove('correct','incorrect');
     document.getElementById('statut-' + idx).textContent = '';
     const clavier = document.getElementById('clavier-' + idx);
