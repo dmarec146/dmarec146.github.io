@@ -1182,23 +1182,45 @@ function svgGraphiqueVar(params) {
 // changement du degre 2 (parabole, k=2 racines) au degre 3 (cubique, k=3 racines), pour eviter de
 // se limiter a une seule famille de courbe (voir la regle "elargir le champ de l'aleatoire") :
 // la cubique est tiree AU MOINS aussi souvent que la parabole, comme demande explicitement. ----------
+// domaine ADAPTATIF aux racines tirees (pas un domaine large fixe partage par tous les tirages) et
+// coefficient directeur CALCULE pour cibler une amplitude donnee de g-f, plutot que fixe : sinon,
+// pres des bords d'un domaine large, le terme (x-r1)*...*(x-rk) grandit vite (cube de la distance
+// aux racines en degre 3) et ecrase visuellement la zone interessante autour des racines — meme
+// defaut deja rencontre sur des fiches de Premiere (containment/amplitude), voir la memoire
+// feedback-graph-visual-legibility : "preferer un domaine adaptatif aux racines/points de la
+// courbe elle-meme" et "cibler une amplitude et resoudre le coefficient qui l'atteint", plutot que
+// choisir un coefficient a la main et esperer qu'il reste lisible.
 let paramsGraphiqueDeux = {};
 function genererParametresGraphiqueDeux() {
-  const xmin = -3, xmax = 4;
   const degre = choix([2, 3, 3]); // cubique un peu plus frequente que parabole
   const k = degre; // nombre de racines = degre de g-f
-  // racines distinctes ET suffisamment espacees (>=1) pour rester lisibles sur le graphique
+  // racines distinctes, suffisamment espacees (>=1) pour rester lisibles, et pas trop etalees
+  // (etalement total <= 4 en degre 2, <= 5 en degre 3) pour que le domaine adaptatif reste compact.
   let racines;
   let ok = false;
   while (!ok) {
     racines = [];
-    while (racines.length < k) racines.push(alea(-2, 3));
+    while (racines.length < k) racines.push(alea(-3, 3));
     racines.sort((p, q) => p - q);
-    ok = racines.every((r, i) => i === 0 || r - racines[i - 1] >= 1);
+    const etale = racines[racines.length - 1] - racines[0];
+    ok = racines.every((r, i) => i === 0 || r - racines[i - 1] >= 1) && etale <= (degre === 2 ? 4 : 5);
   }
+  const marge = 1;
+  const xmin = racines[0] - marge, xmax = racines[racines.length - 1] + marge;
   const pente = choix([-2, -1, 1, 2]);
   const ordonnee = alea(-2, 2);
-  const a = degre === 2 ? choix([0.5, 1, -0.5, -1]) : choix([0.3, 0.5, -0.3, -0.5]);
+  // coefficient directeur resolu pour que |g-f| atteigne une amplitude cible sur le domaine
+  // (echantillonnage dense du produit (x-r1)*...*(x-rk), le coefficient est ensuite juste une
+  // division — le produit varie continument, son maximum sur un domaine dense est bien approche).
+  const AMPLITUDE_CIBLE = 6;
+  let maxProduit = 0;
+  for (let i = 0; i <= 200; i++) {
+    const x = xmin + (xmax - xmin) * i / 200;
+    let p = 1;
+    for (const r of racines) p *= (x - r);
+    maxProduit = Math.max(maxProduit, Math.abs(p));
+  }
+  const a = choix([1, -1]) * AMPLITUDE_CIBLE / maxProduit;
   paramsGraphiqueDeux = { xmin, xmax, degre, pente, ordonnee, a, racines };
 }
 function fonctionsGraphiqueDeux(params) {
