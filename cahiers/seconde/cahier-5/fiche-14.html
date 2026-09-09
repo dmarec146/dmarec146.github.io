@@ -821,8 +821,31 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
 
   const pasX = pasGraduation(xmax - xmin);
   const pasY = pasGraduation(ymax - ymin);
+  // graduations intermediaires (sous-quadrillage), un quart du pas principal : la lecture
+  // graphique de 14.7 se fait a une tolerance de 0.5, donc il faut des reperes plus rapproches
+  // que les seules graduations entieres pour rester lisible sans trop d'approximation.
+  const sousPasX = pasX / 4;
+  const sousPasY = pasY / 4;
 
-  let quadrillage = '', graduations = '';
+  let quadrillage = '', sousQuadrillage = '', graduations = '';
+  const sousDebutX = Math.ceil(xmin / sousPasX) * sousPasX;
+  for (let i = 0; i <= Math.floor((xmax - sousDebutX) / sousPasX) + 1e-9; i++) {
+    const gx = +(sousDebutX + i * sousPasX).toFixed(6);
+    const rangX = gx / pasX;
+    if (Math.abs(rangX - Math.round(rangX)) < 1e-6) continue; // deja trace par le quadrillage principal
+    const sx = toSvgX(gx).toFixed(1);
+    sousQuadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#ececec" stroke-width="0.6"/>`;
+    sousQuadrillage += `<line x1="${sx}" y1="${(oy-2.5).toFixed(1)}" x2="${sx}" y2="${(oy+2.5).toFixed(1)}" stroke="#999" stroke-width="1"/>`;
+  }
+  const sousDebutY = Math.ceil(ymin / sousPasY) * sousPasY;
+  for (let i = 0; i <= Math.floor((ymax - sousDebutY) / sousPasY) + 1e-9; i++) {
+    const gy = +(sousDebutY + i * sousPasY).toFixed(6);
+    const rangY = gy / pasY;
+    if (Math.abs(rangY - Math.round(rangY)) < 1e-6) continue;
+    const sy = toSvgY(gy).toFixed(1);
+    sousQuadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#ececec" stroke-width="0.6"/>`;
+    sousQuadrillage += `<line x1="${(ox-2.5).toFixed(1)}" y1="${sy}" x2="${(ox+2.5).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="1"/>`;
+  }
   const debutX = Math.ceil(xmin / pasX) * pasX;
   for (let i = 0; i <= Math.floor((xmax - debutX) / pasX) + 1e-9; i++) {
     const gx = +(debutX + i * pasX).toFixed(6);
@@ -848,6 +871,7 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
   axes += `<text x="${(ox-14).toFixed(1)}" y="${(oy+18).toFixed(1)}" font-size="13" fill="#333">O</text>`;
 
   return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-grande-figure svg-police-manuel">
+    ${sousQuadrillage}
     ${quadrillage}
     ${axes}
     ${graduations}
