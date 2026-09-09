@@ -320,7 +320,7 @@
   function intersectionParaboleDroite() {
     const a = aleaParmi([1, -1]);
     const al = alea(-2, 2), be = alea(-4, 4);
-    const mPente = alea(-3, 3);
+    const mPente = aleaNonNul(-3, 3);
     const cas = aleaParmi(['deux', 'deux', 'un', 'zero']);
     // f(x) − (mx + p) = a x² + (…)x + (…) : on choisit p pour fixer le discriminant
     // f(x) = a(x−al)² + be  →  a x² − 2a·al x + (a·al² + be)
