@@ -1997,7 +1997,10 @@ function placeholderPour(ex) {
   if (ex.type === 'ineq') return 'x>4';
   if (ex.type === 'intervalle') return ']a;b[';
   if (ex.type === 'texte') return 'réponse';
-  if (ex.reponse && ex.reponse.trim().startsWith('{')) return '{a;b}';
+  // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
+  // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
+  // il faut les echapper pour obtenir de vraies accolades visibles.
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) return '\\{a;b\\}';
   return 'réponse';
 }
 
