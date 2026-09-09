@@ -270,6 +270,7 @@ window.MathJax = {
   .q-mathfield {
     --selection-background-color: rgba(75, 70, 199, 0.18);
     --selection-color: #1a1a1a;
+    --contains-highlight-background-color: transparent;
     font-size: 17px;
     padding: 6px 8px;
     border: 1.5px solid #bbb;
@@ -1028,11 +1029,15 @@ function genererParametresProgramme() {
   const a = entierSigne(2, 6);
   const b = entierSigne(1, 12);
   const c = alea(2, 6);
-  const k1 = entierSigne(1, 6);
-  let k2 = entierSigne(1, 6);
-  while (k2 === k1) k2 = entierSigne(1, 6);
-  const x0 = entierSigne(1, 6);
-  paramsProgramme = { a, b, c, k1, k2, x0, resultatAntecedent: c * (a * x0 + b) };
+  // quatre nombres de depart DISTINCTS (14.5a, l'exemple donne et la case a trouver du tableau
+  // 14.5b, l'antecedent de 14.5c) : evite qu'un resultat deja affiche ailleurs ne reapparaisse.
+  const valeurs = [];
+  while (valeurs.length < 4) {
+    const v = entierSigne(1, 8);
+    if (!valeurs.includes(v)) valeurs.push(v);
+  }
+  const [k1, k2, k3, x0] = valeurs;
+  paramsProgramme = { a, b, c, k1, k2, k3, x0, resultatAntecedent: c * (a * x0 + b) };
 }
 function texteProgramme14(a, b, c) {
   const operation2 = b >= 0 ? `ajouter ${b}` : `soustraire ${Math.abs(b)}`;
@@ -1087,7 +1092,10 @@ const MODELES_REVISION = [
   },
   () => {
     const a=alea(1,6), b=alea(2,9), c=alea(1,6), d=alea(2,9);
-    return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\).`, reponse:`${a}/${b}+${c}/${d}` };
+    const num = a*d + c*b, den = b*d, g = pgcd(num, den);
+    const numR = num/g, denR = den/g;
+    const reponse = denR === 1 ? `${numR}` : `${numR}/${denR}`;
+    return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\) (donner le résultat sous forme de fraction irréductible).`, reponse, fractionIrreductible:true };
   }
 ];
 let tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
@@ -1141,13 +1149,14 @@ const generateurs = [
     return { enonce:`Voici un programme de calcul : ${texteProgramme14(a,b,c)}. Appliquer ce programme au nombre \\(${k1}\\). Quel résultat obtient-on ?`, reponse:`${c*(a*k1+b)}` };
   }},
   {id:"14.5 b)", type:"num", texteLibre:true, gen: () => {
-    const { a, b, c, k1, k2 } = paramsProgramme;
-    const tableau = `<table><tr><th>Nombre choisi</th><td>${k1}</td><td>${k2}</td></tr><tr><th>Résultat</th><td>${c*(a*k1+b)}</td><td>?</td></tr></table>`;
-    return { enonce:`Avec le même programme de calcul, compléter le tableau de valeurs suivant.${tableau}`, reponse:`${c*(a*k2+b)}` };
+    const { a, b, c, k2, k3 } = paramsProgramme;
+    const tableau = `<table><tr><th>Nombre choisi</th><td>${k2}</td><td>${k3}</td></tr><tr><th>Résultat</th><td>${c*(a*k2+b)}</td><td>?</td></tr></table>`;
+    return { enonce:`Avec le même programme de calcul, compléter le tableau de valeurs suivant.${tableau}`, reponse:`${c*(a*k3+b)}` };
   }},
   {id:"14.5 c)", type:"num", texteLibre:true, gen: () => {
     const { x0, resultatAntecedent } = paramsProgramme;
-    return { enonce:`Toujours avec le même programme de calcul, quel nombre fallait-il choisir au départ pour obtenir \\(${resultatAntecedent}\\) ?`, reponse:`${x0}` };
+    const tableau = `<table><tr><th>Nombre choisi</th><td>?</td></tr><tr><th>Résultat</th><td>${resultatAntecedent}</td></tr></table>`;
+    return { enonce:`Toujours avec le même programme de calcul, quel nombre fallait-il choisir au départ pour obtenir le résultat indiqué dans le tableau suivant ?${tableau}`, reponse:`${x0}` };
   }},
 
   // ---------- 14.6 : trouver un antecedent par le calcul — affine, x^2=A (3 cas), puis deux
@@ -1386,6 +1395,7 @@ function necessiteAide(ex) {
   if (ex.comparaison) return true;
   if (ex.type === 'approx') return true;
   if (ex.type === 'intervalle') return true;
+  if (ex.fractionIrreductible) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
@@ -1403,6 +1413,9 @@ function aideContextuellePour(ex) {
   if (ex.type === 'intervalle') {
     const base = "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
     return ex.tolerance ? base + ` Les bornes lues sur le graphique peuvent être approchées (tolérance de <code>${ex.tolerance}</code>).` : base;
+  }
+  if (ex.fractionIrreductible) {
+    return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
   }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des antécédents entre accolades, séparés par un point-virgule : par exemple <code>{-2;2}</code>, ou <code>{0}</code> s'il n'y en a qu'un seul, ou <code>{}</code> (ou <code>∅</code>) s'il n'y en a aucun. Une valeur peut contenir une racine carrée, par exemple <code>{-sqrt(5);sqrt(5)}</code> ou <code>{-√5;√5}</code>.";
@@ -1646,6 +1659,28 @@ function normaliserSaisie(str) {
   return s;
 }
 
+// controle de FORME (pas seulement de valeur) : la saisie doit etre un entier ou une fraction
+// d'entiers a/b avec pgcd(a,b)=1 — repris tel quel de la fiche 11 de Seconde (cahier 4).
+function estFractionIrreductible(userInput) {
+  try {
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
+    const entier = (n) => n.type === 'ConstantNode' && Number.isInteger(n.value);
+    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
+    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
+    if (entier(noeud)) return true;
+    if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
+    let num = sansParentheses(noeud.args[0]);
+    let den = sansParentheses(noeud.args[1]);
+    if (moinsUnaire(num)) num = sansParentheses(num.args[0]);
+    if (moinsUnaire(den)) den = sansParentheses(den.args[0]);
+    if (!entier(num) || !entier(den) || den.value === 0) return false;
+    return pgcd(num.value, den.value) === 1;
+  } catch(e) {
+    return false;
+  }
+}
+
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','p','q'];
@@ -1775,6 +1810,7 @@ function verifierUne(idx) {
       : checkApprox(val, ex.valeurApprox, ex.tolerance);
   }
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec, ex.tolerance);
+  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   div.classList.add(ok ? 'correct' : 'incorrect');
