@@ -1404,15 +1404,17 @@ const generateurs = [
     const y0 = b + n*n;
     return { enonce:`Un point de la courbe de \\(g\\), où \\(g(x)=(${xMoinsTexte(-a)})^2${b>=0?'+':'-'}${Math.abs(b)}\\), a pour ordonnée \\(${y0}\\). Quelle(s) est/sont son ou ses abscisse(s) ?`, reponse:`{${-a-n};${-a+n}}` };
   }},
-  {id:"14.8 d)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
+  {id:"14.8 d)", type:"texte", comparaison:true, nomFonction:"f", texteLibre:true, gen: () => {
     const a = entierSigne(1,20), b = entierSigne(1,15);
-    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=${affineTexte(a,b)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\) : répondre par \\(\\lt\\) ou par \\(\\gt\\).`, reponse: a>0 ? '<' : '>' };
+    const symbole = a>0 ? '<' : '>';
+    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=${affineTexte(a,b)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\).`, reponse: `f(x1)${symbole}f(x2)` };
   }},
-  {id:"14.8 e)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
+  {id:"14.8 e)", type:"texte", comparaison:true, nomFonction:"g", texteLibre:true, gen: () => {
     const p = entierSigne(1,9);
     let d1 = alea(1,6), d2 = alea(1,6);
     while (d2 === d1) d2 = alea(1,6);
-    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(|${xIndiceMoinsTexte(1,p)}|=${d1}\\) et que \\(|${xIndiceMoinsTexte(2,p)}|=${d2}\\). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer : répondre par \\(\\lt\\) ou par \\(\\gt\\).`, reponse: d1<d2 ? '<' : '>' };
+    const symbole = d1<d2 ? '<' : '>';
+    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(|${xIndiceMoinsTexte(1,p)}|=${d1}\\) et que \\(|${xIndiceMoinsTexte(2,p)}|=${d2}\\). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer.`, reponse: `g(x1)${symbole}g(x2)` };
   }}
 ];
 
@@ -1488,7 +1490,7 @@ function aideContextuellePour(ex) {
     return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
   }
   if (ex.comparaison) {
-    return "Répondre par le symbole seul : <code>&lt;</code> ou <code>&gt;</code>.";
+    return `Écrire la comparaison complète, avec les deux images, pas seulement le symbole seul : par exemple <code>${ex.nomFonction}(x1)&gt;${ex.nomFonction}(x2)</code> ou <code>${ex.nomFonction}(x1)&lt;${ex.nomFonction}(x2)</code> selon le sens de l'inégalité.`;
   }
   if (ex.type === 'approx') {
     return `Donner une valeur approchée décimale (par exemple <code>2,5</code> ou <code>-1,5</code>) : une tolérance de <code>${ex.tolerance}</code> autour de la valeur exacte est acceptée.`;
@@ -1521,7 +1523,7 @@ function utiliseMathfield(ex) {
 
 function placeholderPour(ex) {
   if (ex.type === 'ouiNon') return 'oui / non';
-  if (ex.comparaison) return '< ou >';
+  if (ex.comparaison) return `${ex.nomFonction}(x1) > ${ex.nomFonction}(x2)`;
   if (ex.type === 'approx') return 'valeur approchée';
   if (ex.type === 'intervalle') return ']a;b[';
   // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
@@ -1567,8 +1569,32 @@ function genererClavierIntervalle(idx) {
       <div class="clavier-apercu">Astuce : « ]-2;5[ » (bornes exclues), « ∪ » pour une réunion de deux intervalles.</div>`;
 }
 
+// clavier de 14.8 d/e : la reponse attendue est l'inegalite complete (ex. "f(x1)<f(x2)"), donc
+// il faut pouvoir ecrire le nom de la fonction, les parentheses et le "x" sans clavier physique.
+function genererClavierComparaison(idx, ex) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Écriture</span>
+        <button class="touche-large" onclick="inserer(${idx},'${ex.nomFonction}')">${ex.nomFonction}</button>
+        <button onclick="inserer(${idx},'(')">(</button>
+        <button onclick="inserer(${idx},')')">)</button>
+        <button onclick="inserer(${idx},'x')">x</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Comparaison</span>
+        <button onclick="inserer(${idx},'<')">&lt;</button>
+        <button onclick="inserer(${idx},'>')">&gt;</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire la comparaison complète, par exemple « ${ex.nomFonction}(x1)&gt;${ex.nomFonction}(x2) ».</div>`;
+}
+
 function genererClavierPour(idx, ex) {
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
+  if (ex.comparaison) return genererClavierComparaison(idx, ex);
   return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
         <span class="clavier-label">Ensemble</span>
@@ -1883,6 +1909,18 @@ function checkTexte(userInput, correctText) {
   return !!f && f.map(nettoyer).includes(saisi);
 }
 
+// ---------- comparaison de deux images (14.8 d/e) : la reponse attendue est l'inegalite
+// complete ("f(x1)<f(x2)"), pas seulement le symbole seul — on tolere les variantes de notation
+// courantes (espaces, "x_1" au lieu de "x1", indices unicode) mais pas l'omission des f(...) ----------
+function checkComparaisonFonctions(userInput, correctText) {
+  const nettoyer = (s) => String(s).trim().toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/_/g, '')
+    .replace(/₁/g, '1').replace(/₂/g, '2')
+    .replace(/⩽|≤/g, '<=').replace(/⩾|≥/g, '>=');
+  return nettoyer(userInput) === nettoyer(correctText);
+}
+
 const SYNONYMES_OUI = ['oui','o','vrai','v'];
 const SYNONYMES_NON = ['non','n','faux','f'];
 function normaliserTexte(s) {
@@ -1944,6 +1982,7 @@ function verifierUne(idx) {
   if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
   let ok;
   if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
+  else if (ex.comparaison) ok = checkComparaisonFonctions(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'approx') {
     ok = ex.typeApprox === 'racine'
@@ -2086,6 +2125,9 @@ function formaterReponse(ex) {
   try {
     if (ex.type === 'ouiNon') {
       return ex.reponseOuiNon ? '\\text{Oui}' : '\\text{Non}';
+    }
+    if (ex.comparaison) {
+      return ex.reponse.replace(/x1/g, 'x_1').replace(/x2/g, 'x_2');
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
