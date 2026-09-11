@@ -848,8 +848,9 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
   // graduations intermediaires (sous-quadrillage), un quart du pas principal : la lecture
   // graphique de 14.7 se fait a une tolerance de 0.5, donc il faut des reperes plus rapproches
   // que les seules graduations entieres pour rester lisible sans trop d'approximation. Certains
-  // graphiques (15.7, racines demi-entieres, tolerance 0.2) imposent un pas de sous-graduation
-  // explicite plutot que le quart du pas principal, pour passer exactement par chaque demi-entier.
+  // graphiques (15.7, racines a un quart d'entier pres, tolerance 0.2) imposent un pas de
+  // sous-graduation explicite plutot que le quart du pas principal, pour passer exactement par
+  // chaque quart d'entier.
   const sousPasX = sousPasXForce || pasX / 4;
   const sousPasY = pasY / 4;
 
@@ -1192,9 +1193,10 @@ function svgGraphiqueVar(params) {
 // feedback-graph-visual-legibility : "preferer un domaine adaptatif aux racines/points de la
 // courbe elle-meme" et "cibler une amplitude et resoudre le coefficient qui l'atteint", plutot que
 // choisir un coefficient a la main et esperer qu'il reste lisible.
-// tolerance de lecture pour les intersections de 15.7/15.9 (racines demi-entieres, voir plus haut) :
-// plus fine que la tolerance de 0.5 de la fiche 14, rendue possible par les sous-graduations
-// dediees passees a genererSVGCourbeGrande (sousPasXForce) qui passent par chaque demi-entier.
+// tolerance de lecture pour les intersections de 15.7/15.9 (racines a un quart d'entier pres, voir
+// plus haut) : plus fine que la tolerance de 0.5 de la fiche 14, rendue possible par les
+// sous-graduations dediees passees a genererSVGCourbeGrande (sousPasXForce) qui passent par
+// chaque quart d'entier.
 const TOLERANCE_GRAPHIQUE_DEUX = 0.2;
 let paramsGraphiqueDeux = {};
 function genererParametresGraphiqueDeux() {
@@ -1202,15 +1204,15 @@ function genererParametresGraphiqueDeux() {
   const k = degre; // nombre de racines = degre de g-f
   // racines distinctes, suffisamment espacees (>=1) pour rester lisibles, et pas trop etalees
   // (etalement total <= 4 en degre 2, <= 5 en degre 3) pour que le domaine adaptatif reste compact.
-  // Valeurs entieres OU demi-entieres (pas de contrainte d'entier force) : la lecture graphique se
-  // fait alors a une tolerance plus fine (0.2, voir TOLERANCE_GRAPHIQUE_DEUX) qu'en fiche 14 (0.5),
-  // avec des sous-graduations dediees (voir genererSVGCourbeGrande, sousPasXForce) qui passent
-  // exactement par chaque demi-entier pour rester lisible malgre la valeur non entiere.
+  // Valeurs entieres, demi-entieres OU au quart d'entier pres (pas de contrainte d'entier force) :
+  // la lecture graphique se fait alors a une tolerance plus fine (0.2, voir
+  // TOLERANCE_GRAPHIQUE_DEUX) qu'en fiche 14 (0.5), avec des sous-graduations dediees (voir
+  // genererSVGCourbeGrande, sousPasXForce) qui passent exactement par chaque quart d'entier.
   let racines;
   let ok = false;
   while (!ok) {
     racines = [];
-    while (racines.length < k) racines.push(alea(-6, 6) / 2);
+    while (racines.length < k) racines.push(alea(-12, 12) / 4);
     racines.sort((p, q) => p - q);
     const etale = racines[racines.length - 1] - racines[0];
     ok = racines.every((r, i) => i === 0 || r - racines[i - 1] >= 1) && etale <= (degre === 2 ? 4 : 5);
@@ -1731,7 +1733,7 @@ const generateurs = [
   // a la demande explicite de David — voir genererParametresGraphiqueDeux pour la construction) ----------
   {id:"15.7 a)", type:"num", texteLibre:true, gen: () => {
     const { racines } = paramsGraphiqueDeux;
-    // lecture approchee (racines pouvant etre demi-entieres) : tolerance plus fine qu'en fiche 14
+    // lecture approchee (racines pouvant etre au quart d'entier pres) : tolerance plus fine qu'en fiche 14
     // grace aux sous-graduations dediees du graphique (voir TOLERANCE_GRAPHIQUE_DEUX).
     return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
   }},
