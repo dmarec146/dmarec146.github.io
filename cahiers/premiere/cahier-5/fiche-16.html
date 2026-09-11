@@ -1115,7 +1115,6 @@ function genererExercices() {
 
 let exercices = genererExercices();
 
-
 const groupes = {
   "grille-16-1": [0,1,2],
   "grille-16-2": [3,4,5,6],
@@ -1133,7 +1132,6 @@ const groupes = {
   "grille-16-14": [44,45]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
-
 
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
@@ -1996,7 +1994,6 @@ function toggleToutesReponses() {
   document.getElementById('btn-toutes-reponses').textContent = !estOuvert ? 'Masquer toutes les réponses' : 'Voir toutes les réponses';
 }
 
-
 function placeholderPour(ex) {
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
@@ -2282,46 +2279,6 @@ function genererClavierPour(idx, ex) {
       <div class="clavier-apercu">Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ</div>`;
 }
 
-function genererSVGParabole(a, alpha, beta, largeur, hauteur) {
-  largeur = largeur || 170; hauteur = hauteur || 130;
-  const xmin=-6, xmax=6, ymin=-6, ymax=6;
-  const toSvgX = x => (x - xmin) / (xmax - xmin) * largeur;
-  const toSvgY = y => hauteur - (y - ymin) / (ymax - ymin) * hauteur;
-  let points = [];
-  for (let i = 0; i <= 80; i++) {
-    const x = xmin + (xmax-xmin)*i/80;
-    const y = a * (x - alpha) * (x - alpha) + beta;
-    if (y >= ymin - 3 && y <= ymax + 3) {
-      points.push(toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1));
-    }
-  }
-  const path = 'M ' + points.join(' L ');
-  const ox = toSvgX(0).toFixed(1), oy = toSvgY(0).toFixed(1);
-
-  // graduations tous les 2 unités sur x et y (sauf 0)
-  let graduations = '';
-  for (let gx = xmin; gx <= xmax; gx += 2) {
-    if (gx === 0) continue;
-    const sx = toSvgX(gx).toFixed(1);
-    graduations += `<line x1="${sx}" y1="${(parseFloat(oy)-2.5).toFixed(1)}" x2="${sx}" y2="${(parseFloat(oy)+2.5).toFixed(1)}" stroke="#999" stroke-width="1"/>`;
-    graduations += `<text x="${sx}" y="${(parseFloat(oy)+11).toFixed(1)}" font-size="7" text-anchor="middle" fill="#666">${gx}</text>`;
-  }
-  for (let gy = ymin; gy <= ymax; gy += 2) {
-    if (gy === 0) continue;
-    const sy = toSvgY(gy).toFixed(1);
-    graduations += `<line x1="${(parseFloat(ox)-2.5).toFixed(1)}" y1="${sy}" x2="${(parseFloat(ox)+2.5).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="1"/>`;
-    graduations += `<text x="${(parseFloat(ox)-6).toFixed(1)}" y="${(parseFloat(sy)+2.5).toFixed(1)}" font-size="7" text-anchor="middle" fill="#666">${gy}</text>`;
-  }
-
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg">
-    <line x1="0" y1="${oy}" x2="${largeur}" y2="${oy}" stroke="#ccc" stroke-width="1"/>
-    <line x1="${ox}" y1="0" x2="${ox}" y2="${hauteur}" stroke="#ccc" stroke-width="1"/>
-    ${graduations}
-    <path d="${path}" fill="none" stroke="#4B46C7" stroke-width="2.2"/>
-    <circle cx="${ox}" cy="${oy}" r="2" fill="#333"/>
-  </svg>`;
-}
-
 function labelFormeCanonique(a, alpha, beta) {
   const decalage = -alpha;
   const signeDecalage = decalage >= 0 ? '+' : '-';
@@ -2331,7 +2288,6 @@ function labelFormeCanonique(a, alpha, beta) {
   const coeffStr = (a === 1) ? '' : (a === -1 ? '-' : a + '');
   return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
 }
-
 
 construireGrilles();
 attacherEcouteurs();
