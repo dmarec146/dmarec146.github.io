@@ -827,7 +827,7 @@ function fmtGraduation(v) {
   const arrondi = Math.round(v * 1000) / 1000;
   return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
 }
-function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hauteur, courbeSecondaire) {
+function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hauteur, courbeSecondaire, sousPasXForce) {
   largeur = largeur || 720; hauteur = hauteur || 380;
   const marge = 36;
   const toSvgX = x => marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
@@ -847,8 +847,10 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
   const pasY = pasGraduation(ymax - ymin);
   // graduations intermediaires (sous-quadrillage), un quart du pas principal : la lecture
   // graphique de 14.7 se fait a une tolerance de 0.5, donc il faut des reperes plus rapproches
-  // que les seules graduations entieres pour rester lisible sans trop d'approximation.
-  const sousPasX = pasX / 4;
+  // que les seules graduations entieres pour rester lisible sans trop d'approximation. Certains
+  // graphiques (15.7, racines demi-entieres, tolerance 0.2) imposent un pas de sous-graduation
+  // explicite plutot que le quart du pas principal, pour passer exactement par chaque demi-entier.
+  const sousPasX = sousPasXForce || pasX / 4;
   const sousPasY = pasY / 4;
 
   let quadrillage = '', sousQuadrillage = '', graduations = '';
@@ -1190,17 +1192,25 @@ function svgGraphiqueVar(params) {
 // feedback-graph-visual-legibility : "preferer un domaine adaptatif aux racines/points de la
 // courbe elle-meme" et "cibler une amplitude et resoudre le coefficient qui l'atteint", plutot que
 // choisir un coefficient a la main et esperer qu'il reste lisible.
+// tolerance de lecture pour les intersections de 15.7/15.9 (racines demi-entieres, voir plus haut) :
+// plus fine que la tolerance de 0.5 de la fiche 14, rendue possible par les sous-graduations
+// dediees passees a genererSVGCourbeGrande (sousPasXForce) qui passent par chaque demi-entier.
+const TOLERANCE_GRAPHIQUE_DEUX = 0.2;
 let paramsGraphiqueDeux = {};
 function genererParametresGraphiqueDeux() {
   const degre = choix([2, 3, 3]); // cubique un peu plus frequente que parabole
   const k = degre; // nombre de racines = degre de g-f
   // racines distinctes, suffisamment espacees (>=1) pour rester lisibles, et pas trop etalees
   // (etalement total <= 4 en degre 2, <= 5 en degre 3) pour que le domaine adaptatif reste compact.
+  // Valeurs entieres OU demi-entieres (pas de contrainte d'entier force) : la lecture graphique se
+  // fait alors a une tolerance plus fine (0.2, voir TOLERANCE_GRAPHIQUE_DEUX) qu'en fiche 14 (0.5),
+  // avec des sous-graduations dediees (voir genererSVGCourbeGrande, sousPasXForce) qui passent
+  // exactement par chaque demi-entier pour rester lisible malgre la valeur non entiere.
   let racines;
   let ok = false;
   while (!ok) {
     racines = [];
-    while (racines.length < k) racines.push(alea(-3, 3));
+    while (racines.length < k) racines.push(alea(-6, 6) / 2);
     racines.sort((p, q) => p - q);
     const etale = racines[racines.length - 1] - racines[0];
     ok = racines.every((r, i) => i === 0 || r - racines[i - 1] >= 1) && etale <= (degre === 2 ? 4 : 5);
@@ -1242,9 +1252,9 @@ function construireGraphiqueDeux() {
     ymax = Math.max(ymax, f(x), g(x));
   }
   ymin -= 1; ymax += 1;
-  const svg = genererSVGCourbeGrande(g, xmin, xmax, ymin, ymax, 720, 380, { fonctionJs: f, couleur: '#1D9E75', label: 'Cf', labelPrincipale: 'Cg' });
+  const svg = genererSVGCourbeGrande(g, xmin, xmax, ymin, ymax, 720, 380, { fonctionJs: f, couleur: '#1D9E75', label: 'Cf', labelPrincipale: 'Cg' }, 0.25);
   document.getElementById('graphique-deux').innerHTML = `
-    <p>Les courbes ci-dessous représentent deux fonctions \\(f\\) et \\(g\\) définies sur \\([${xmin}\\,;\\,${xmax}]\\).</p>
+    <p>Les courbes ci-dessous représentent deux fonctions \\(f\\) et \\(g\\) définies sur \\([${fmtGraduation(xmin)}\\,;\\,${fmtGraduation(xmax)}]\\).</p>
     <div class="figure-centree">${svg}</div>`;
   activerZoomSvg(document.getElementById('graphique-deux'));
 }
@@ -1721,13 +1731,15 @@ const generateurs = [
   // a la demande explicite de David — voir genererParametresGraphiqueDeux pour la construction) ----------
   {id:"15.7 a)", type:"num", texteLibre:true, gen: () => {
     const { racines } = paramsGraphiqueDeux;
-    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, reponse:`{${racines.join(';')}}` };
+    // lecture approchee (racines pouvant etre demi-entieres) : tolerance plus fine qu'en fiche 14
+    // grace aux sous-graduations dediees du graphique (voir TOLERANCE_GRAPHIQUE_DEUX).
+    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
   }},
   {id:"15.7 b)", type:"intervalle", texteLibre:true, gen: () => {
     const { xmin, xmax, racines, a } = paramsGraphiqueDeux;
     // f(x)<g(x) <=> g(x)-f(x)>0 <=> a*(x-r1)*...*(x-rk) > 0 — algebre exacte, racines connues.
     const spec = specSigneGMoinsF(xmin, xmax, racines, a, true);
-    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'inéquation \\(f(x)\\lt g(x)\\).`, intervalleSpec: spec };
+    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'inéquation \\(f(x)\\lt g(x)\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
   }},
 
   // ---------- 15.8 : tableau de variations a completer, sur une courbe INDEPENDANTE et propre
@@ -1760,7 +1772,7 @@ const generateurs = [
     const op = choix(['<','>']);
     const opSymb = op === '<' ? '\\lt' : '\\gt';
     const spec = resoudreSigneProduit(paramsGraphiqueDeux, op === '>');
-    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.7, résoudre l'inéquation \\(f(x)\\times g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: 0.3 };
+    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.7, résoudre l'inéquation \\(f(x)\\times g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
   }},
   {id:"15.9 c)", type:"num", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
