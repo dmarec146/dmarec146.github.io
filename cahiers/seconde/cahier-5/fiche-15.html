@@ -474,31 +474,31 @@ window.MathJax = {
     outline: 2px solid var(--bleu-clair);
     outline-offset: 2px;
   }
-  /* ---------- bouton-icone "curseur avec coordonnees" (test sur le graphique de 15.4/15.5) :
-     meme gabarit que le bouton loupe d'automatismes/assets/automatismes.css (.zoom-btn), seul
-     precedent d'icone en coin de figure trouve sur le site — bouton rond-carre semi-transparent,
-     hover en bleu plein. Place LEGEREMENT EN DEHORS du cadre du graphique (au-dessus, pas par-dessus
-     la courbe) via un padding-top dedie sur le conteneur, meme technique que .figure-zoom-dense
-     dans automatismes/assets/automatismes.css pour les figures sans marge interieure. Masque sur les
-     appareils sans survol reel (tablette/telephone, media (hover:none)) : un curseur "au doigt"
-     cacherait en permanence le point vise, ce n'est pas une bonne experience tactile (desktop
-     uniquement, voir echange avec David). ---------- */
-  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-top: 26px; }
+  /* ---------- bouton-icone "curseur avec coordonnees", sur tous les graphiques generes par
+     genererSVGCourbeGrande : meme gabarit que le bouton loupe d'automatismes/assets/automatismes.css
+     (.zoom-btn), seul precedent d'icone en coin de figure trouve sur le site — bouton rond-carre
+     semi-transparent, hover en bleu plein. Place LEGEREMENT EN DEHORS du cadre du graphique, A
+     DROITE (pas au-dessus) via un padding-right dedie sur le conteneur, meme technique que
+     .figure-zoom-dense dans automatismes/assets/automatismes.css pour les figures sans marge
+     interieure. Masque sur les appareils sans survol reel (tablette/telephone, media (hover:none)) :
+     un curseur "au doigt" cacherait en permanence le point vise, ce n'est pas une bonne experience
+     tactile (desktop uniquement, voir echange avec David). ---------- */
+  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
   .btn-curseur {
-    position: absolute; top: 0; right: 2px;
+    position: absolute; top: 4px; right: 0;
     display: inline-flex; align-items: center; justify-content: center;
     width: 24px; height: 24px; border-radius: 6px;
     background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
     color: var(--bleu); cursor: pointer; line-height: 0;
   }
   .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
-  @media (hover: none) { .figure-avec-curseur { padding-top: 0; } .btn-curseur { display: none; } }
+  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
   /* variante dans la modale de zoom (voir ouvrirModalSvg) : le svg y est en "width:100%" (pas
      inline-block, sinon la largeur en pourcentage n'a plus de base de calcul et le graphique
-     s'ecrase de nouveau) ; la modale a deja 32px de marge au-dessus (pour son bouton fermer, en
-     haut a droite), donc pas besoin d'un padding-top supplementaire — et le bouton curseur passe
-     a gauche pour ne pas se superposer au bouton fermer. */
-  .figure-avec-curseur-modale { display: block; width: 100%; padding-top: 0; }
+     s'ecrase de nouveau) ; le bouton reste par-dessus le graphique agrandi (moins genant qu'en
+     petit format) plutot que d'ajouter une marge qui reduirait sa taille, et passe a gauche pour
+     ne pas se superposer au bouton fermer de la modale (en haut a droite). */
+  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
   .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
   .curseur-groupe { pointer-events: none; }
   svg.qcm-svg.curseur-actif { cursor: crosshair; }
@@ -813,6 +813,25 @@ function quartEntierMagnitude(maxAbs) {
 function decalageQuartEntier(maxAbs) {
   return choix([1, -1]) * quartEntierMagnitude(maxAbs);
 }
+// meme chose, mais au demi-entier pres : utilisee specifiquement quand la magnitude est ensuite
+// ELEVEE AU CARRE (parabole, k=r+decalage^2) — un decalage au quart d'entier donnerait alors un k
+// a 4 decimales (n^2/16, ex. 1.25^2=1.5625), affiche arrondi au millieme par fmtGraduation : bien
+// trop precis pour une lecture graphique. Un decalage au demi-entier donne un decalage^2 TOUJOURS
+// multiple exact de 0.25 (n^2/4), donc jamais plus de 2 decimales — corrige suite a la remarque de
+// David du 2026-09-11 ("il ne faut pas aller jusqu'au millieme").
+function demiEntierMagnitude(maxAbs) {
+  const nbDemis = Math.max(0, Math.floor((maxAbs - 0.5) * 2));
+  return 0.5 + alea(0, nbDemis) / 2;
+}
+// valeur au quart d'entier pres, tiree DIRECTEMENT dans [bas;haut] (pas une magnitude autour de 0) :
+// utilisee pour choisir k directement sur la cubique (voir 15.4/15.5) plutot que de le deriver
+// d'un decalage puis l'evaluer via f — evaluer une cubique en un point au quart d'entier pres
+// produit un resultat a 6 decimales (n^3/64), le meme probleme de precision que ci-dessus mais en
+// pire (impossible a nettoyer en changeant juste le pas du decalage, car degre 3).
+function quartEntierDansIntervalle(bas, haut) {
+  const nbQuarts = Math.max(0, Math.floor((haut - bas) * 4));
+  return bas + alea(0, nbQuarts) / 4;
+}
 // ecrit "ax" en gerant les coefficients +-1 (repris tel quel de la fiche 8 de Seconde)
 function coefXTexte(coefX) {
   if (coefX === 1) return 'x';
@@ -986,10 +1005,9 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
     ${etiquettePrincipale}
     ${courbeSecondaireSvg}
     <g class="curseur-groupe" visibility="hidden">
-      <line class="curseur-ligne-v" x1="0" y1="${marge}" x2="0" y2="${(hauteur-marge).toFixed(1)}" stroke="#888" stroke-width="1" stroke-dasharray="3,3"/>
-      <line class="curseur-ligne-h" x1="${marge}" y1="0" x2="${(largeur-marge).toFixed(1)}" y2="0" stroke="#888" stroke-width="1" stroke-dasharray="3,3"/>
-      <circle class="curseur-point" r="3.2" fill="#c0392b"/>
-      <text class="curseur-texte" font-size="13" fill="#c0392b" font-family="Georgia, serif"></text>
+      <line class="curseur-ligne-v" x1="0" y1="${marge}" x2="0" y2="${(hauteur-marge).toFixed(1)}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <line class="curseur-ligne-h" x1="${marge}" y1="0" x2="${(largeur-marge).toFixed(1)}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <text class="curseur-texte" font-size="13" fill="#666" font-family="Georgia, serif"></text>
     </g>
   </svg>`;
 }
@@ -1010,7 +1028,7 @@ function cablerCurseurUnique(svg) {
   const marge = parseFloat(svg.dataset.marge);
   const groupe = svg.querySelector('.curseur-groupe');
   const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
-  const point = svg.querySelector('.curseur-point'), texte = svg.querySelector('.curseur-texte');
+  const texte = svg.querySelector('.curseur-texte');
   const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
   svg.addEventListener('mousemove', (evt) => {
     if (!svg.classList.contains('curseur-actif')) return;
@@ -1026,7 +1044,6 @@ function cablerCurseurUnique(svg) {
     groupe.setAttribute('visibility', 'visible');
     ligneV.setAttribute('x1', local.x.toFixed(1)); ligneV.setAttribute('x2', local.x.toFixed(1));
     ligneH.setAttribute('y1', local.y.toFixed(1)); ligneH.setAttribute('y2', local.y.toFixed(1));
-    point.setAttribute('cx', local.x.toFixed(1)); point.setAttribute('cy', local.y.toFixed(1));
     const texteX = local.x < largeur - 90 ? local.x + 8 : local.x - 8;
     const ancrage = local.x < largeur - 90 ? 'start' : 'end';
     const texteY = local.y > marge + 16 ? local.y - 8 : local.y + 16;
@@ -1048,17 +1065,17 @@ const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidd
   + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
   + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
   + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-function boutonCurseurHTML(idFigure) {
-  return `<span class="btn-curseur" id="btn-curseur-${idFigure}" onclick="toggleCurseurSvg('${idFigure}')"
-    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg('${idFigure}')}"
+// pas d'id a fournir : le bouton retrouve son svg via son propre parent (toujours le meme span
+// .figure-avec-curseur, voir chaque appelant) — marche donc aussi bien pour les figures dans un
+// conteneur nomme (#graphique-eq...) que pour celles generees en masse dans une carte d'exercice
+// (id dynamique "q-IDX") ou clonees dans la modale de zoom, sans avoir a threader un identifiant.
+function boutonCurseurHTML() {
+  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
     role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
 }
-function toggleCurseurSvg(idFigure) {
-  const conteneur = document.getElementById(idFigure);
-  const btn = document.getElementById(`btn-curseur-${idFigure}`);
-  // selecteur generique (pas de svg.qcm-svg) : le clone affiche dans la modale de zoom n'a plus
-  // cette classe (voir ouvrirModalSvg), mais reste le seul svg de son conteneur.
-  const svg = conteneur.querySelector('svg');
+function toggleCurseurSvg(btn) {
+  const svg = btn.parentElement.querySelector('svg');
   if (!svg) return;
   const actif = svg.classList.toggle('curseur-actif');
   btn.classList.toggle('actif', actif);
@@ -1094,14 +1111,13 @@ function ouvrirModalSvg(svg) {
   if (aCurseur) {
     const enveloppe = document.createElement('span');
     enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
-    enveloppe.id = 'modal-svg-figure';
     enveloppe.appendChild(clone);
-    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML('modal-svg-figure'));
+    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
     interieur.appendChild(enveloppe);
     cablerCurseurUnique(clone);
     if (svg.classList.contains('curseur-actif')) {
       clone.classList.add('curseur-actif');
-      document.getElementById('btn-curseur-modal-svg-figure').classList.add('actif');
+      enveloppe.querySelector('.btn-curseur').classList.add('actif');
     }
   } else {
     interieur.appendChild(clone);
@@ -1294,7 +1310,7 @@ function construireGraphiqueEq() {
   const svg = genererSVGCourbeGrande(f, xmin, xmax, ymin, ymax, 720, 380, null, 0.25);
   document.getElementById('graphique-eq').innerHTML = `
     <p>Répondre aux questions suivantes à partir du graphique ci-dessous, qui représente une fonction \\(f\\) définie sur \\([${xmin}\\,;\\,${xmax}]\\), avec la précision permise par la lecture graphique.</p>
-    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML('graphique-eq')}</span></div>`;
+    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
   activerZoomSvg(document.getElementById('graphique-eq'));
   activerCurseurSvg(document.getElementById('graphique-eq'));
 }
@@ -1454,8 +1470,9 @@ function construireGraphiqueDeux() {
   const svg = genererSVGCourbeGrande(g, xmin, xmax, ymin, ymax, 720, 380, { fonctionJs: f, couleur: '#1D9E75', label: 'Cf', labelPrincipale: 'Cg' }, 0.25);
   document.getElementById('graphique-deux').innerHTML = `
     <p>Les courbes ci-dessous représentent deux fonctions \\(f\\) et \\(g\\) définies sur \\([${fmtGraduation(xmin)}\\,;\\,${fmtGraduation(xmax)}]\\).</p>
-    <div class="figure-centree">${svg}</div>`;
+    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
   activerZoomSvg(document.getElementById('graphique-deux'));
+  activerCurseurSvg(document.getElementById('graphique-deux'));
 }
 // resout le signe de g-f = a*(x-r1)*...*(x-rk) sur [xmin;xmax] : ALGEBRE EXACTE (les racines sont
 // connues par construction, aucune recherche numerique necessaire), utilise pour f(x)<g(x) (15.6 b).
@@ -1551,7 +1568,7 @@ function tableauVariationsHTML(idx, ex) {
   const nbCols = 2 * k - 1;
   const largeurTotale = TV_LARGEUR_LABEL + nbCols * TV_LARGEUR_COL;
   const svg = svgGraphiqueVar(ex.paramsVar);
-  let html = `<div class="figure-centree">${svg}</div><table class="tv-table"><colgroup><col style="width:${TV_LARGEUR_LABEL}px">`;
+  let html = `<div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div><table class="tv-table"><colgroup><col style="width:${TV_LARGEUR_LABEL}px">`;
   for (let c = 0; c < nbCols; c++) html += `<col style="width:${TV_LARGEUR_COL}px">`;
   html += `</colgroup><tbody>`;
   html += `<tr class="tv-ligne-x"><td class="tv-label">\\(x\\)</td>`;
@@ -1836,30 +1853,36 @@ const generateurs = [
   {id:"15.4 a)", type:"num", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
     const f = fonctionGraphiqueEq(params);
-    const { p, xmin, xmax } = params;
+    const { p, xmin, xmax, ymin, ymax } = params;
     if (params.degre === 2) {
       const { r } = params;
-      const decalage = quartEntierMagnitude(xmax - p);
+      // demi-entier (pas quart) : eleve au carre juste apres, voir demiEntierMagnitude pour
+      // pourquoi c'est necessaire pour rester a 2 decimales maximum.
+      const decalage = demiEntierMagnitude(xmax - p);
       const k = r + decalage*decalage;
       return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${fmtGraduation(k)}\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}` };
     }
-    const decalage = decalageQuartEntier(xmax - p);
-    const cible = f(p + decalage);
+    // k choisi DIRECTEMENT au quart d'entier pres dans la plage atteinte (avec marge, pour rester
+    // loin des extrema) plutot que via un decalage evalue par f — voir quartEntierDansIntervalle.
+    const cible = quartEntierDansIntervalle(ymin + (ymax-ymin)*0.15, ymax - (ymax-ymin)*0.15);
     const racines = racinesApprochees(f, xmin, xmax, cible);
     return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${fmtGraduation(cible)}\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.2 };
   }},
   {id:"15.4 b)", type:"num", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
     const f = fonctionGraphiqueEq(params);
-    const { p, xmin, xmax } = params;
+    const { p, xmin, xmax, ymin, ymax } = params;
     if (params.degre === 2) {
       const { r } = params;
-      const decalage = quartEntierMagnitude(xmax - p);
+      // demi-entier (pas quart) : eleve au carre juste apres, voir demiEntierMagnitude pour
+      // pourquoi c'est necessaire pour rester a 2 decimales maximum.
+      const decalage = demiEntierMagnitude(xmax - p);
       const k = r + decalage*decalage;
       return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${fmtGraduation(k)}\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}` };
     }
-    const decalage = decalageQuartEntier(xmax - p);
-    const cible = f(p + decalage);
+    // k choisi DIRECTEMENT au quart d'entier pres dans la plage atteinte (avec marge, pour rester
+    // loin des extrema) plutot que via un decalage evalue par f — voir quartEntierDansIntervalle.
+    const cible = quartEntierDansIntervalle(ymin + (ymax-ymin)*0.15, ymax - (ymax-ymin)*0.15);
     const racines = racinesApprochees(f, xmin, xmax, cible);
     return { enonce:`Résoudre graphiquement l'équation \\(f(x)=${fmtGraduation(cible)}\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.2 };
   }},
@@ -1880,30 +1903,36 @@ const generateurs = [
   {id:"15.4 d)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
     const f = fonctionGraphiqueEq(params);
-    const { p, xmax } = params;
+    const { p, xmax, ymin, ymax } = params;
     const op = choix(['>','>=','<','<=']);
     const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
-    const k = params.degre === 2 ? params.r + (quartEntierMagnitude(xmax - p)**2) : f(p + decalageQuartEntier(xmax - p));
+    // meme raisonnement qu'en 15.4 a/b : demi-entier au carre (degre 2) ou quart d'entier choisi
+    // directement dans la plage atteinte (degre 3), jamais un decalage evalue par f.
+    const k = params.degre === 2 ? params.r + (demiEntierMagnitude(xmax - p)**2) : quartEntierDansIntervalle(ymin + (ymax-ymin)*0.15, ymax - (ymax-ymin)*0.15);
     const spec = resoudreInequationCourbe(params, op, k);
     return { enonce:`Résoudre graphiquement l'inéquation \\(f(x)${opSymb}${fmtGraduation(k)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
   }},
   {id:"15.4 e)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
     const f = fonctionGraphiqueEq(params);
-    const { p, xmax } = params;
+    const { p, xmax, ymin, ymax } = params;
     const op = choix(['>','>=','<','<=']);
     const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
-    const k = params.degre === 2 ? params.r + (quartEntierMagnitude(xmax - p)**2) : f(p + decalageQuartEntier(xmax - p));
+    // meme raisonnement qu'en 15.4 a/b : demi-entier au carre (degre 2) ou quart d'entier choisi
+    // directement dans la plage atteinte (degre 3), jamais un decalage evalue par f.
+    const k = params.degre === 2 ? params.r + (demiEntierMagnitude(xmax - p)**2) : quartEntierDansIntervalle(ymin + (ymax-ymin)*0.15, ymax - (ymax-ymin)*0.15);
     const spec = resoudreInequationCourbe(params, op, k);
     return { enonce:`Résoudre graphiquement l'inéquation \\(f(x)${opSymb}${fmtGraduation(k)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
   }},
   {id:"15.4 f)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
     const f = fonctionGraphiqueEq(params);
-    const { p, xmax } = params;
+    const { p, xmax, ymin, ymax } = params;
     const op = choix(['>','>=','<','<=']);
     const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
-    const k = params.degre === 2 ? params.r + (quartEntierMagnitude(xmax - p)**2) : f(p + decalageQuartEntier(xmax - p));
+    // meme raisonnement qu'en 15.4 a/b : demi-entier au carre (degre 2) ou quart d'entier choisi
+    // directement dans la plage atteinte (degre 3), jamais un decalage evalue par f.
+    const k = params.degre === 2 ? params.r + (demiEntierMagnitude(xmax - p)**2) : quartEntierDansIntervalle(ymin + (ymax-ymin)*0.15, ymax - (ymax-ymin)*0.15);
     const spec = resoudreInequationCourbe(params, op, k);
     return { enonce:`Résoudre graphiquement l'inéquation \\(f(x)${opSymb}${fmtGraduation(k)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
   }},
@@ -1913,20 +1942,19 @@ const generateurs = [
   // {f(x)>k1} et {f(x)<=k2} (voir intersectionIntervalles) ----------
   {id:"15.5 a)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
-    const f = fonctionGraphiqueEq(params);
-    const { p, xmax } = params;
+    const { p, xmax, ymin, ymax } = params;
     let k1, k2;
     if (params.degre === 2) {
-      let d1, d2; do { d1 = quartEntierMagnitude(xmax - p); d2 = quartEntierMagnitude(xmax - p); } while (Math.abs(d1 - d2) < 0.2);
+      let d1, d2; do { d1 = demiEntierMagnitude(xmax - p); d2 = demiEntierMagnitude(xmax - p); } while (d1 === d2);
       if (d1 > d2) { const t = d1; d1 = d2; d2 = t; }
       k1 = params.r + d1*d1; k2 = params.r + d2*d2;
     } else {
-      let dec1, dec2, v1, v2;
-      do {
-        dec1 = decalageQuartEntier(xmax - p); dec2 = decalageQuartEntier(xmax - p);
-        v1 = f(p+dec1); v2 = f(p+dec2);
-      } while (Math.abs(dec1 - dec2) < 0.2 || Math.abs(v1 - v2) < 1e-6);
-      k1 = Math.min(v1,v2); k2 = Math.max(v1,v2);
+      // k1/k2 choisis DIRECTEMENT au quart d'entier pres dans la plage atteinte, jamais via un
+      // decalage evalue par f (voir 15.4 a/b pour la raison : sinon 6 decimales, arrondies au
+      // millieme par fmtGraduation — bien trop precis pour une lecture graphique).
+      const marge3 = (ymax - ymin) * 0.15;
+      do { k1 = quartEntierDansIntervalle(ymin + marge3, ymax - marge3); k2 = quartEntierDansIntervalle(ymin + marge3, ymax - marge3); } while (Math.abs(k1 - k2) < 0.5);
+      if (k1 > k2) { const t = k1; k1 = k2; k2 = t; }
     }
     const op1 = choix(['>','>=']), op2 = choix(['<','<=']);
     const symb1 = op1 === '>' ? '\\lt' : '\\leqslant', symb2 = op2 === '<' ? '\\lt' : '\\leqslant';
@@ -1935,20 +1963,19 @@ const generateurs = [
   }},
   {id:"15.5 b)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
-    const f = fonctionGraphiqueEq(params);
-    const { p, xmax } = params;
+    const { p, xmax, ymin, ymax } = params;
     let k1, k2;
     if (params.degre === 2) {
-      let d1, d2; do { d1 = quartEntierMagnitude(xmax - p); d2 = quartEntierMagnitude(xmax - p); } while (Math.abs(d1 - d2) < 0.2);
+      let d1, d2; do { d1 = demiEntierMagnitude(xmax - p); d2 = demiEntierMagnitude(xmax - p); } while (d1 === d2);
       if (d1 > d2) { const t = d1; d1 = d2; d2 = t; }
       k1 = params.r + d1*d1; k2 = params.r + d2*d2;
     } else {
-      let dec1, dec2, v1, v2;
-      do {
-        dec1 = decalageQuartEntier(xmax - p); dec2 = decalageQuartEntier(xmax - p);
-        v1 = f(p+dec1); v2 = f(p+dec2);
-      } while (Math.abs(dec1 - dec2) < 0.2 || Math.abs(v1 - v2) < 1e-6);
-      k1 = Math.min(v1,v2); k2 = Math.max(v1,v2);
+      // k1/k2 choisis DIRECTEMENT au quart d'entier pres dans la plage atteinte, jamais via un
+      // decalage evalue par f (voir 15.4 a/b pour la raison : sinon 6 decimales, arrondies au
+      // millieme par fmtGraduation — bien trop precis pour une lecture graphique).
+      const marge3 = (ymax - ymin) * 0.15;
+      do { k1 = quartEntierDansIntervalle(ymin + marge3, ymax - marge3); k2 = quartEntierDansIntervalle(ymin + marge3, ymax - marge3); } while (Math.abs(k1 - k2) < 0.5);
+      if (k1 > k2) { const t = k1; k1 = k2; k2 = t; }
     }
     const op1 = choix(['>','>=']), op2 = choix(['<','<=']);
     const symb1 = op1 === '>' ? '\\lt' : '\\leqslant', symb2 = op2 === '<' ? '\\lt' : '\\leqslant';
@@ -1993,7 +2020,7 @@ const generateurs = [
     const xmin = p-n-1, xmax = p+n+1;
     const svg = genererSVGCourbeGrande(f, xmin, xmax, -a*n*n-1, f(xmin)+1, 480, 300);
     return {
-      enonce:`On donne \\(f(x)=${a===1?'':a}(${xMoinsTexte(p)})^2-${a*n*n}\\), représentée ci-dessous sur \\([${xmin}\\,;\\,${xmax}]\\).<div class="figure-centree">${svg}</div>Résoudre par le calcul l'équation \\(f(x)=0\\), et vérifier la cohérence du résultat avec le graphique.`,
+      enonce:`On donne \\(f(x)=${a===1?'':a}(${xMoinsTexte(p)})^2-${a*n*n}\\), représentée ci-dessous sur \\([${xmin}\\,;\\,${xmax}]\\).<div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>Résoudre par le calcul l'équation \\(f(x)=0\\), et vérifier la cohérence du résultat avec le graphique.`,
       reponse:`{${p-n};${p+n}}`
     };
   }},
@@ -2298,6 +2325,7 @@ function construireGrilles() {
     });
     injecterAideGroupe(gridId, indices);
     activerZoomSvg(grille);
+    activerCurseurSvg(grille);
   }
 }
 
