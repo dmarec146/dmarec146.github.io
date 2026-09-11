@@ -302,6 +302,11 @@ window.MathJax = {
   .tv-table td { padding: 5px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
   .tv-table .tv-label { text-align: left; font-weight: bold; padding-left: 4px; }
   .tv-table tr.tv-ligne-x td { border-bottom: 1px solid #1a1a1a; padding-bottom: 8px; }
+  /* effet "escalier" : une valeur haute (maximum) remonte en haut de la ligne, une valeur basse
+     (minimum) descend en bas — la fleche, restee au milieu (voir .tv-cellule), relie alors
+     visuellement les deux, comme un vrai tableau de variations trace a la main. */
+  .tv-table tr.tv-ligne-gx td.tv-haut { vertical-align: top; padding-top: 4px; padding-bottom: 42px; }
+  .tv-table tr.tv-ligne-gx td.tv-bas { vertical-align: bottom; padding-bottom: 4px; padding-top: 42px; }
   .tv-cellule {
     width: 34px; height: 34px;
     border: 1.5px solid #ccc; border-radius: 5px;
@@ -324,6 +329,8 @@ window.MathJax = {
   .tv-corrige td { padding: 3px 8px; text-align: center; white-space: nowrap; border-left: 1px solid #ccc; }
   .tv-corrige td:first-child { border-left: none; }
   .tv-corrige .tv-label { text-align: left; font-weight: bold; padding-right: 10px; }
+  .tv-corrige tr.tv-ligne-gx td.tv-haut { vertical-align: top; padding-top: 2px; padding-bottom: 22px; }
+  .tv-corrige tr.tv-ligne-gx td.tv-bas { vertical-align: bottom; padding-bottom: 2px; padding-top: 22px; }
   .q-clavier-btn {
     background: none;
     border: 1.5px solid #ccc;
@@ -710,7 +717,7 @@ window.MathJax = {
   <p class="section-titre">Calculs plus avancés</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 15.8 — Confronter lecture graphique et calcul exact ; signe du produit \(f(x)\times g(x)\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 15.8 — Confronter lecture graphique et calcul exact ; signe du produit \(f(x)\times g(x)\) et de la différence \(f(x)-g(x)\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
   <div class="question-grille" id="grille-15-8"></div>
 
 </div>
@@ -1394,6 +1401,16 @@ const TV_LARGEUR_COL = 56;
 function celluleVideFleche(id, onclick) {
   return `<button type="button" class="tv-cellule" id="${id}" onclick="${onclick}"></button>`;
 }
+// role visuel d'un seuil (extremum "haut" ou "bas") pour le decalage en escalier de la ligne g(x) :
+// un maximum (local ou une borne de domaine atteinte "par le haut") se place en haut de la ligne,
+// un minimum en bas — la fleche entre deux valeurs consecutives relie alors visuellement le bas au
+// haut (ou l'inverse), comme un vrai tableau de variations trace a la main.
+function roleSeuil(seuils, j) {
+  const k = seuils.length;
+  if (j === 0) return seuils[1].y > seuils[0].y ? 'bas' : 'haut';
+  if (j === k - 1) return seuils[k - 1].y > seuils[k - 2].y ? 'haut' : 'bas';
+  return seuils[j].y > seuils[j - 1].y ? 'haut' : 'bas';
+}
 
 function tableauVariationsHTML(idx, ex) {
   const seuils = ex.seuils;
@@ -1416,11 +1433,12 @@ function tableauVariationsHTML(idx, ex) {
   // ligne unique g(x) : valeurs ET fleches entrelacees (la fleche occupe la colonne intermediaire
   // entre deux valeurs consecutives, valeur d'arrivee immediatement a sa suite — convention
   // habituelle d'un tableau de variations, pas de ligne "Variations" separee).
-  html += `<tr><td class="tv-label">\\(g(x)\\)</td>`;
+  html += `<tr class="tv-ligne-gx"><td class="tv-label">\\(g(x)\\)</td>`;
   for (let c = 0; c < nbCols; c++) {
     if (c % 2 === 0) {
       const j = c / 2;
-      html += `<td><input type="text" class="tv-champ" id="tv-y-${idx}-${j}" placeholder="?" oninput="reinitialiserStatutTableau(${idx})"></td>`;
+      const role = roleSeuil(seuils, j);
+      html += `<td class="tv-${role}"><input type="text" class="tv-champ" id="tv-y-${idx}-${j}" placeholder="?" oninput="reinitialiserStatutTableau(${idx})"></td>`;
     } else {
       const j = (c - 1) / 2;
       html += `<td>${celluleVideFleche(`tv-fleche-${idx}-${j}`, `cyclerFlecheVariation(${idx},${j})`)}</td>`;
@@ -1520,9 +1538,10 @@ function tableCorrigeVariationsHTML(ex) {
     html += `<td>\\(${fmtGraduation(s.x)}\\)</td>`;
     if (j < k - 1) html += `<td></td>`;
   });
-  html += `</tr><tr><td class="tv-label">\\(g(x)\\)</td>`;
+  html += `</tr><tr class="tv-ligne-gx">`;
+  html += `<td class="tv-label">\\(g(x)\\)</td>`;
   seuils.forEach((s, j) => {
-    html += `<td>\\(${fmtGraduation(s.y)}\\)</td>`;
+    html += `<td class="tv-${roleSeuil(seuils, j)}">\\(${fmtGraduation(s.y)}\\)</td>`;
     if (j < k - 1) html += `<td>${sens[j] === 'croissante' ? '↗' : '↘'}</td>`;
   });
   html += `</tr></table>`;
@@ -1777,7 +1796,7 @@ const generateurs = [
     const op1 = choix(['>','>=']), op2 = choix(['<','<=']);
     const symb1 = op1 === '>' ? '\\lt' : '\\leqslant', symb2 = op2 === '<' ? '\\lt' : '\\leqslant';
     const spec = intersectionIntervalles(resoudreInequationCourbe(params,op1,k1), resoudreInequationCourbe(params,op2,k2));
-    return { enonce:`Résoudre graphiquement l'inéquation \\(${fmtGraduation(k1)}${symb1}f(x)${symb2}${fmtGraduation(k2)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
+    return { enonce:`Résoudre graphiquement l'inéquation \\(${fmtGraduation(k1)}${symb1}\\,f(x)${symb2}${fmtGraduation(k2)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
   }},
   {id:"15.5 b)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphiqueEq;
@@ -1799,7 +1818,7 @@ const generateurs = [
     const op1 = choix(['>','>=']), op2 = choix(['<','<=']);
     const symb1 = op1 === '>' ? '\\lt' : '\\leqslant', symb2 = op2 === '<' ? '\\lt' : '\\leqslant';
     const spec = intersectionIntervalles(resoudreInequationCourbe(params,op1,k1), resoudreInequationCourbe(params,op2,k2));
-    return { enonce:`Résoudre graphiquement l'inéquation \\(${fmtGraduation(k1)}${symb1}f(x)${symb2}${fmtGraduation(k2)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
+    return { enonce:`Résoudre graphiquement l'inéquation \\(${fmtGraduation(k1)}${symb1}\\,f(x)${symb2}${fmtGraduation(k2)}\\).`, intervalleSpec: spec, tolerance: 0.2 };
   }},
 
   // ---------- 15.6 : position relative de deux courbes (coeur, deplace depuis les calculs avances
@@ -1831,8 +1850,8 @@ const generateurs = [
   }},
 
   // ---------- 15.8 : calculs avances — confronter lecture graphique et calcul exact (a), signe
-  // du produit f(x)*g(x) sur les deux courbes du groupe 15.6 (b, inspire des exercices donnes en
-  // classe), lecture approchee plus fine (c) ----------
+  // du produit f(x)*g(x) (b) puis de la difference f(x)-g(x) (c) sur les deux courbes du groupe
+  // 15.6 (inspire des exercices donnes en classe) ----------
   {id:"15.8 a)", type:"num", texteLibre:true, gen: () => {
     const a = alea(1,3), n = alea(1,4), p = alea(-1,1);
     const f = x => a*(x-p)*(x-p) - a*n*n;
@@ -1849,15 +1868,14 @@ const generateurs = [
     const spec = resoudreSigneProduit(paramsGraphiqueDeux, op === '>');
     return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.6, résoudre l'inéquation \\(f(x)\\times g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
   }},
-  {id:"15.8 c)", type:"num", texteLibre:true, gen: () => {
-    const params = paramsGraphiqueEq;
-    const f = fonctionGraphiqueEq(params);
-    const { xmin, xmax, p } = params;
-    const candidats = [-1.5,-0.5,0.5,1.5].filter(d => p+d > xmin+0.5 && p+d < xmax-0.5);
-    const decalage = choix(candidats.length ? candidats : [0.5]);
-    const x0 = p + decalage;
-    const k = Math.round(f(x0)*100)/100;
-    return { enonce:`À l'aide du graphique, donner une valeur approchée à \\(0,1\\) près d'une solution de l'équation \\(f(x)=${k}\\).`, type:'approx', valeurApprox: x0, tolerance: 0.1 };
+  {id:"15.8 c)", type:"intervalle", texteLibre:true, gen: () => {
+    const { xmin, xmax, racines, a } = paramsGraphiqueDeux;
+    const op = choix(['<','>']);
+    const opSymb = op === '<' ? '\\lt' : '\\gt';
+    // f(x)-g(x) op 0 <=> g(x)-f(x) (op inverse) 0 : specSigneGMoinsF resout deja le signe de g-f
+    // (algebre exacte, racines connues) — f(x)-g(x)<0 <=> g(x)-f(x)>0, et inversement.
+    const spec = specSigneGMoinsF(xmin, xmax, racines, a, op === '<');
+    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.6, résoudre l'inéquation \\(f(x)-g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
   }}
 ];
 
