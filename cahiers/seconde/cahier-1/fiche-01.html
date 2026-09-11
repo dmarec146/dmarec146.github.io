@@ -1469,10 +1469,12 @@ function attacherEcouteurs() {
   exercices.forEach((ex, idx) => {
     const input = document.getElementById('input-' + idx);
     let ignorerProchainInput = false;
+    let valideeParEntree = false;
     input.addEventListener('keydown', (evenement) => {
       if (evenement.key === 'Enter') {
         evenement.preventDefault();
         ignorerProchainInput = true;
+        valideeParEntree = true;
         if (modeImmediat) {
           verifierUne(idx);
           if (toutesLesReponsesSontSaisies()) verifierTout();
@@ -1483,6 +1485,13 @@ function attacherEcouteurs() {
     input.addEventListener('input', () => {
       if (ignorerProchainInput) { ignorerProchainInput = false; return; }
       reinitialiserStatut(idx);
+    });
+    input.addEventListener('blur', () => {
+      if (valideeParEntree) { valideeParEntree = false; return; }
+      if (modeImmediat) {
+        verifierUne(idx);
+        if (toutesLesReponsesSontSaisies()) verifierTout();
+      }
     });
     input.addEventListener('focus', () => fermerAutresClaviers(idx));
   });
