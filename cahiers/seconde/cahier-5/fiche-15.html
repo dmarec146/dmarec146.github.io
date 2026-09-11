@@ -686,7 +686,7 @@ window.MathJax = {
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 15.1 — Calcul numérique.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 15.1 — Calcul littéral et inéquations.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
   <div class="question-grille" id="grille-15-1"></div>
 
   <p class="calcul-titre"><span>Calcul 15.2.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
@@ -1680,11 +1680,13 @@ function intersectionIntervalles(specA, specB) {
 }
 
 const generateurs = [
-  // ---------- 15.1 : calcul numerique (vivier partage avec les autres fiches) ----------
-  {id:"15.1 a)", type:"num", gen: () => tirageCalculs[0]()},
-  {id:"15.1 b)", type:"num", gen: () => tirageCalculs[1]()},
-  {id:"15.1 c)", type:"num", gen: () => tirageCalculs[2]()},
-  {id:"15.1 d)", type:"num", gen: () => tirageCalculs[3]()},
+  // ---------- 15.1 : automatismes de calcul litteral et d'inequations de degre 1/2, PLUS de
+  // calcul numerique pur en tout debut de fiche (regle demandee par David, voir memoire
+  // feedback-automatismes-calcul-litteral) ----------
+  {id:"15.1 a)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[0]()},
+  {id:"15.1 b)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[1]()},
+  {id:"15.1 c)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[2]()},
+  {id:"15.1 d)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[3]()},
 
   // ---------- 15.2 / 15.3 : revisions melangees (developpement, racines carrees, evolutions) ----------
   {id:"15.2 a)", type:"num", texteLibre:true, gen: () => tirageRevision[0]()},
@@ -1879,39 +1881,82 @@ const generateurs = [
   }}
 ];
 
-// ---------- vivier de calculs numeriques (groupe 14.1), identique a celui des fiches 8/12 ----------
-const MODELES_CALCUL = [
-  () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
-  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
-  () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
-  () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
-  () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
-  () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
-  () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
-  () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
-  () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
-  () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
-  () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
-  () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
-  () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+// ---------- vivier d'automatismes (groupe 15.1) : inequations de degre 1 (ax+b op 0, ax op b) et
+// de degre 2 deja factorisees ((x-a)(x-b) op 0, avec ou sans coefficient negatif devant), plus
+// deux modeles de calcul litteral (developpement) — remplace le calcul numerique pur, desormais
+// arrete en tout debut de fiche (regle demandee par David le 2026-09-11, voir memoire
+// feedback-automatismes-calcul-litteral, valable pour cette fiche et les suivantes) ----------
+const MODELES_AUTOMATISME = [
+  // inequation degre 1, regroupee a 0 : ax+b op 0
+  () => {
+    const a = choix([-4,-3,-2,2,3,4]);
+    const x0 = alea(-6,6);
+    const b = -a*x0;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const veutPositif = (op === '>' || op === '>=');
+    const inclus = (op === '>=' || op === '<=');
+    const auDessus = a > 0 ? veutPositif : !veutPositif; // sens de x par rapport a x0
+    const spec = auDessus
+      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
+      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
+    return { enonce:`Résoudre l'inéquation \\(${affineTexte(a,b)}${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // meme famille, presentee sans regrouper a 0 : ax op b (division directe, attention au signe de a).
+  () => {
+    const a = choix([-5,-4,-3,-2,2,3,4,5]);
+    const x0 = alea(-6,6);
+    const bDroite = a*x0;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const veutPositif = (op === '>' || op === '>=');
+    const inclus = (op === '>=' || op === '<=');
+    const auDessus = a > 0 ? veutPositif : !veutPositif;
+    const spec = auDessus
+      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
+      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
+    return { enonce:`Résoudre l'inéquation \\(${coefXTexte(a)}${opSymb}${bDroite}\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // inequation produit deja factorisee (degre 2) : (x-a)(x-b) op 0, signe direct par la regle du
+  // signe d'un produit — pas besoin de developper ni de graphique.
+  () => {
+    let a, b; do { a = alea(-5,5); b = alea(-5,5); } while (a === b);
+    if (a > b) { const t = a; a = b; b = t; }
+    const veutPositif = alea(0,1) === 1;
+    const spec = veutPositif
+      ? { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] }
+      : { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] };
+    const opSymb = veutPositif ? '\\gt' : '\\lt';
+    return { enonce:`Résoudre l'inéquation \\((${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // meme famille avec un coefficient negatif devant le produit (le signe global s'inverse).
+  () => {
+    let a, b; do { a = alea(-5,5); b = alea(-5,5); } while (a === b);
+    if (a > b) { const t = a; a = b; b = t; }
+    const veutPositif = alea(0,1) === 1;
+    const spec = veutPositif
+      ? { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] }
+      : { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] };
+    const opSymb = veutPositif ? '\\gt' : '\\lt';
+    return { enonce:`Résoudre l'inéquation \\(-(${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // calcul litteral : developper un carre
+  () => {
+    const a = entierSigne(1,9);
+    const double = 2*a, carre = a*a;
+    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})^2\\).`, reponse:`x^2${double>=0?'+':''}${double}*x+${carre}` };
+  },
+  // calcul litteral : developper (x+a)(x-b), signes melanges
+  () => {
+    const a = entierSigne(1,9), b = entierSigne(1,9);
+    const diff = a - b, produit = -a*b;
+    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(${xMoinsTexte(b)})\\).`, reponse:`x^2${diff>=0?'+':''}${diff}*x${produit>=0?'+':''}${produit}` };
+  }
 ];
-let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
+let tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
 
 function genererExercices() {
-  tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
+  tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
   tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
   genererParametresGraphiqueEq();
   genererParametresGraphiqueDeux();
