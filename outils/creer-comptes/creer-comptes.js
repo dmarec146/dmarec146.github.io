@@ -47,22 +47,63 @@ function genererMotDePasse(longueur = 10) {
   return mot;
 }
 
+// Ne garde que a-z (apres normalize('NFD') + suppression des diacritiques) :
+// enleve accents, espaces, traits d'union, apostrophes...
+function nettoyerPourPseudo(s) {
+  return s.trim().toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, '').replace(/[^a-z]/g, '');
+}
+
+// Premiere lettre du prenom + '.' + nom (ex. "David Marec" -> "d.marec").
+// En cas de doublon (meme initiale + meme nom), suffixe numerique : d.marec2, d.marec3...
+// Attribution stable d'une execution a l'autre tant que les lignes existantes du
+// CSV ne sont ni reordonnees ni retirees (ajouter des eleves a la fin ne change
+// rien aux pseudos deja attribues) : c'est ce qui rend le script idempotent
+// (relancer sur le meme fichier retrouve les memes pseudos, donc les memes
+// comptes, et ne recree rien).
+function genererPseudosUniques(eleves) {
+  const compteurs = new Map();
+  return eleves.map(({ classe, prenom, nom }) => {
+    const base = `${nettoyerPourPseudo(prenom).charAt(0)}.${nettoyerPourPseudo(nom)}`;
+    const n = (compteurs.get(base) || 0) + 1;
+    compteurs.set(base, n);
+    return { classe, pseudo: n === 1 ? base : `${base}${n}` };
+  });
+}
+
 function lireCsvEleves(cheminCsv) {
   const lignes = fs.readFileSync(cheminCsv, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const [entete, ...reste] = lignes;
   const colonnes = entete.split(',').map(c => c.trim().toLowerCase());
   const iClasse = colonnes.indexOf('classe');
   const iPseudo = colonnes.indexOf('pseudo');
-  if (iClasse === -1 || iPseudo === -1) {
-    throw new Error("Le CSV doit avoir un en-tete avec les colonnes 'classe' et 'pseudo'.");
+  const iPrenom = colonnes.indexOf('prenom');
+  const iNom = colonnes.indexOf('nom');
+
+  if (iClasse === -1) throw new Error("Le CSV doit avoir une colonne 'classe'.");
+
+  if (iPseudo !== -1) {
+    // Pseudo deja choisi par l'enseignant : utilise tel quel.
+    return reste.map((ligne, index) => {
+      const champs = ligne.split(',').map(c => c.trim());
+      const classe = champs[iClasse];
+      const pseudo = champs[iPseudo];
+      if (!classe || !pseudo) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
+      return { classe, pseudo };
+    });
   }
-  return reste.map((ligne, index) => {
+
+  if (iPrenom === -1 || iNom === -1) {
+    throw new Error("Le CSV doit avoir soit une colonne 'pseudo', soit les colonnes 'prenom' et 'nom'.");
+  }
+  const eleves = reste.map((ligne, index) => {
     const champs = ligne.split(',').map(c => c.trim());
     const classe = champs[iClasse];
-    const pseudo = champs[iPseudo];
-    if (!classe || !pseudo) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
-    return { classe, pseudo };
+    const prenom = champs[iPrenom];
+    const nom = champs[iNom];
+    if (!classe || !prenom || !nom) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
+    return { classe, prenom, nom };
   });
+  return genererPseudosUniques(eleves);
 }
 
 async function creerComptesEleves(cheminCsv) {

@@ -30,10 +30,19 @@ si le compte existe déjà, la commande se contente de lui (re)donner ce droit.
 
 ## Créer les comptes élèves
 
-1. Préparer un CSV avec deux colonnes `classe,pseudo` — voir
-   `eleves-exemple.csv`. Le pseudo est celui que tu choisis pour chaque
-   élève (pas son nom réel : voir la note de confidentialité du cahier de
-   suivi). Un compte existant (même pseudo) est ignoré, pas recréé.
+1. Préparer un CSV avec les colonnes `classe,prenom,nom` — voir
+   `eleves-exemple.csv`. Le pseudo (identifiant de connexion) est généré
+   automatiquement : première lettre du prénom + `.` + nom (`David Marec`
+   → `d.marec`). En cas de doublon (même initiale + même nom dans la même
+   liste), un chiffre est ajouté (`d.marec2`, `d.marec3`...).
+
+   Pour que les comptes déjà créés gardent le même pseudo d'un lancement à
+   l'autre (et ne soient pas recréés en double), **ajoute les nouveaux
+   élèves à la fin du fichier** plutôt que d'insérer une ligne au milieu ou
+   de réordonner celles qui existent déjà.
+
+   Variante : un CSV avec `classe,pseudo` (pseudo déjà choisi à la main)
+   fonctionne aussi, le pseudo est alors utilisé tel quel.
 2. Lancer :
    ```bash
    node creer-comptes.js mes-eleves.csv
