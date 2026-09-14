@@ -66,7 +66,7 @@ function genererPseudosUniques(eleves) {
     const base = `${nettoyerPourPseudo(prenom).charAt(0)}.${nettoyerPourPseudo(nom)}`;
     const n = (compteurs.get(base) || 0) + 1;
     compteurs.set(base, n);
-    return { classe, pseudo: n === 1 ? base : `${base}${n}` };
+    return { classe, prenom, nom, pseudo: n === 1 ? base : `${base}${n}` };
   });
 }
 
@@ -112,7 +112,7 @@ async function creerComptesEleves(cheminCsv) {
   const db = getFirestore();
   const resultats = [];
 
-  for (const { classe, pseudo } of eleves) {
+  for (const { classe, pseudo, prenom, nom } of eleves) {
     const email = emailDepuisPseudo(pseudo);
     let utilisateur;
     try {
@@ -131,7 +131,7 @@ async function creerComptesEleves(cheminCsv) {
       creeLe: FieldValue.serverTimestamp(),
     });
 
-    resultats.push({ classe, pseudo, motDePasse });
+    resultats.push({ classe, pseudo, motDePasse, prenom, nom });
     console.log(`Cree : ${pseudo} (${classe})`);
   }
 
@@ -140,11 +140,19 @@ async function creerComptesEleves(cheminCsv) {
     return;
   }
 
+  // Nom/prenom ne sont jamais envoyes a Firestore (seuls pseudo + classe le
+  // sont, ci-dessus) : ils ne servent qu'a produire une feuille de
+  // distribution lisible par l'enseignant, qui reste locale et hors git.
+  const avecIdentite = resultats.every(r => r.nom && r.prenom);
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
   const cheminSortie = path.join(__dirname, `comptes-crees-${horodatage}.csv`);
-  const contenu = ['classe,pseudo,motDePasse']
-    .concat(resultats.map(r => `${r.classe},${r.pseudo},${r.motDePasse}`))
-    .join('\n');
+  const contenu = avecIdentite
+    ? ['Nom,Prenom,Identifiant,MotDePasse']
+        .concat(resultats.map(r => `${r.nom},${r.prenom},${r.pseudo},${r.motDePasse}`))
+        .join('\n')
+    : ['Classe,Identifiant,MotDePasse']
+        .concat(resultats.map(r => `${r.classe},${r.pseudo},${r.motDePasse}`))
+        .join('\n');
   fs.writeFileSync(cheminSortie, contenu, 'utf8');
   console.log(`\n${resultats.length} compte(s) cree(s). Identifiants ecrits dans :\n${cheminSortie}`);
   console.log('Fichier a distribuer aux eleves puis a supprimer (mots de passe en clair, jamais commite).');
