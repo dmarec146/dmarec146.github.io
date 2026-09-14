@@ -8,7 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const CHEMIN_CLE_SERVICE = path.join(__dirname, 'service-account.json');
 const ALPHABET_MOT_DE_PASSE = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans 0/O/1/l/I
@@ -23,8 +25,8 @@ function initialiserAdmin() {
     );
     process.exit(1);
   }
-  admin.initializeApp({
-    credential: admin.credential.cert(require(CHEMIN_CLE_SERVICE)),
+  initializeApp({
+    credential: cert(require(CHEMIN_CLE_SERVICE)),
   });
 }
 
@@ -65,14 +67,15 @@ function lireCsvEleves(cheminCsv) {
 
 async function creerComptesEleves(cheminCsv) {
   const eleves = lireCsvEleves(cheminCsv);
-  const db = admin.firestore();
+  const auth = getAuth();
+  const db = getFirestore();
   const resultats = [];
 
   for (const { classe, pseudo } of eleves) {
     const email = emailDepuisPseudo(pseudo);
     let utilisateur;
     try {
-      utilisateur = await admin.auth().getUserByEmail(email);
+      utilisateur = await auth.getUserByEmail(email);
       console.log(`Deja existant, ignore : ${pseudo}`);
       continue;
     } catch (erreur) {
@@ -80,11 +83,11 @@ async function creerComptesEleves(cheminCsv) {
     }
 
     const motDePasse = genererMotDePasse();
-    utilisateur = await admin.auth().createUser({ email, password: motDePasse });
+    utilisateur = await auth.createUser({ email, password: motDePasse });
     await db.collection('eleves').doc(utilisateur.uid).set({
       pseudo,
       classe,
-      creeLe: admin.firestore.FieldValue.serverTimestamp(),
+      creeLe: FieldValue.serverTimestamp(),
     });
 
     resultats.push({ classe, pseudo, motDePasse });
@@ -107,16 +110,17 @@ async function creerComptesEleves(cheminCsv) {
 }
 
 async function creerOuPromouvoirAdmin(email, motDePasse) {
+  const auth = getAuth();
   let utilisateur;
   try {
-    utilisateur = await admin.auth().getUserByEmail(email);
+    utilisateur = await auth.getUserByEmail(email);
     console.log(`Compte existant : ${email}`);
   } catch (erreur) {
     if (erreur.code !== 'auth/user-not-found') throw erreur;
-    utilisateur = await admin.auth().createUser({ email, password: motDePasse });
+    utilisateur = await auth.createUser({ email, password: motDePasse });
     console.log(`Compte cree : ${email}`);
   }
-  await admin.auth().setCustomUserClaims(utilisateur.uid, { admin: true });
+  await auth.setCustomUserClaims(utilisateur.uid, { admin: true });
   console.log(`Droit "admin" accorde a ${email}. Deconnecte-toi puis reconnecte-toi sur le site pour que ca prenne effet.`);
 }
 
