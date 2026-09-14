@@ -48,6 +48,12 @@ si le compte existe déjà, la commande se contente de lui (re)donner ce droit.
    node creer-comptes.js mes-eleves.csv
    ```
 3. Le script affiche sa progression et écrit un fichier
-   `comptes-crees-<date>.csv` (pseudo + mot de passe généré pour chacun).
-   **Ce fichier contient des mots de passe en clair** : à distribuer aux
-   élèves puis à supprimer. Il est dans `.gitignore`, jamais commité.
+   `comptes-crees-<date>.csv` (nom, prénom, identifiant, mot de passe généré
+   pour chacun — séparateur `;`, compatible Excel en français). **Ce fichier
+   contient des mots de passe en clair** : à distribuer aux élèves puis à
+   supprimer.
+
+   Il est écrit **en dehors de ce dossier**, dans un dossier temporaire du
+   PC (le chemin exact s'affiche à l'écran) — pas dans ce projet, qui vit
+   dans Google Drive et se synchronise en continu vers le cloud. Une fois
+   les identifiants distribués, supprime ce fichier (et vide la corbeille).

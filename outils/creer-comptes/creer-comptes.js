@@ -6,6 +6,7 @@
 // Voir README.md pour l'installation et l'usage.
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { initializeApp, cert } = require('firebase-admin/app');
@@ -13,6 +14,10 @@ const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const CHEMIN_CLE_SERVICE = path.join(__dirname, 'service-account.json');
+// Hors du dossier du projet (celui-ci vit dans Google Drive, synchronise en
+// continu vers le cloud) : les fichiers de sortie contiennent des mots de
+// passe en clair, ils n'ont rien a faire dans un dossier synchronise.
+const DOSSIER_SORTIE = path.join(os.tmpdir(), 'cahiers-interactifs-comptes');
 const ALPHABET_MOT_DE_PASSE = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans 0/O/1/l/I
 
 function initialiserAdmin() {
@@ -70,10 +75,18 @@ function genererPseudosUniques(eleves) {
   });
 }
 
+// Excel en France enregistre/attend des CSV separes par ';' (la ',' est la
+// touche decimale) ; on accepte aussi ',' pour les fichiers ecrits a la main
+// ou par un autre outil. Detecte sur la ligne d'entete.
+function detecterSeparateur(entete) {
+  return entete.includes(';') ? ';' : ',';
+}
+
 function lireCsvEleves(cheminCsv) {
   const lignes = fs.readFileSync(cheminCsv, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const [entete, ...reste] = lignes;
-  const colonnes = entete.split(',').map(c => c.trim().toLowerCase());
+  const sep = detecterSeparateur(entete);
+  const colonnes = entete.split(sep).map(c => c.trim().toLowerCase());
   const iClasse = colonnes.indexOf('classe');
   const iPseudo = colonnes.indexOf('pseudo');
   const iPrenom = colonnes.indexOf('prenom');
@@ -84,7 +97,7 @@ function lireCsvEleves(cheminCsv) {
   if (iPseudo !== -1) {
     // Pseudo deja choisi par l'enseignant : utilise tel quel.
     return reste.map((ligne, index) => {
-      const champs = ligne.split(',').map(c => c.trim());
+      const champs = ligne.split(sep).map(c => c.trim());
       const classe = champs[iClasse];
       const pseudo = champs[iPseudo];
       if (!classe || !pseudo) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
@@ -96,7 +109,7 @@ function lireCsvEleves(cheminCsv) {
     throw new Error("Le CSV doit avoir soit une colonne 'pseudo', soit les colonnes 'prenom' et 'nom'.");
   }
   const eleves = reste.map((ligne, index) => {
-    const champs = ligne.split(',').map(c => c.trim());
+    const champs = ligne.split(sep).map(c => c.trim());
     const classe = champs[iClasse];
     const prenom = champs[iPrenom];
     const nom = champs[iNom];
@@ -142,20 +155,23 @@ async function creerComptesEleves(cheminCsv) {
 
   // Nom/prenom ne sont jamais envoyes a Firestore (seuls pseudo + classe le
   // sont, ci-dessus) : ils ne servent qu'a produire une feuille de
-  // distribution lisible par l'enseignant, qui reste locale et hors git.
+  // distribution lisible par l'enseignant, qui reste locale (hors du dossier
+  // du projet, donc hors Google Drive) et n'est jamais commitee.
   const avecIdentite = resultats.every(r => r.nom && r.prenom);
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
-  const cheminSortie = path.join(__dirname, `comptes-crees-${horodatage}.csv`);
+  fs.mkdirSync(DOSSIER_SORTIE, { recursive: true });
+  const cheminSortie = path.join(DOSSIER_SORTIE, `comptes-crees-${horodatage}.csv`);
   const contenu = avecIdentite
-    ? ['Nom,Prenom,Identifiant,MotDePasse']
-        .concat(resultats.map(r => `${r.nom},${r.prenom},${r.pseudo},${r.motDePasse}`))
+    ? ['Nom;Prenom;Identifiant;MotDePasse']
+        .concat(resultats.map(r => `${r.nom};${r.prenom};${r.pseudo};${r.motDePasse}`))
         .join('\n')
-    : ['Classe,Identifiant,MotDePasse']
-        .concat(resultats.map(r => `${r.classe},${r.pseudo},${r.motDePasse}`))
+    : ['Classe;Identifiant;MotDePasse']
+        .concat(resultats.map(r => `${r.classe};${r.pseudo};${r.motDePasse}`))
         .join('\n');
   fs.writeFileSync(cheminSortie, contenu, 'utf8');
   console.log(`\n${resultats.length} compte(s) cree(s). Identifiants ecrits dans :\n${cheminSortie}`);
-  console.log('Fichier a distribuer aux eleves puis a supprimer (mots de passe en clair, jamais commite).');
+  console.log('Fichier hors du dossier du projet (pas synchronise sur Google Drive).');
+  console.log('A distribuer aux eleves puis a supprimer (mots de passe en clair, jamais commite).');
 }
 
 async function creerOuPromouvoirAdmin(email, motDePasse) {
