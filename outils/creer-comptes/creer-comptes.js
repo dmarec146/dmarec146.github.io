@@ -6,7 +6,6 @@
 // Voir README.md pour l'installation et l'usage.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { initializeApp, cert } = require('firebase-admin/app');
@@ -14,10 +13,10 @@ const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const CHEMIN_CLE_SERVICE = path.join(__dirname, 'service-account.json');
-// Hors du dossier du projet (celui-ci vit dans Google Drive, synchronise en
-// continu vers le cloud) : les fichiers de sortie contiennent des mots de
-// passe en clair, ils n'ont rien a faire dans un dossier synchronise.
-const DOSSIER_SORTIE = path.join(os.tmpdir(), 'cahiers-interactifs-comptes');
+// Choix assume : reste dans ce dossier (donc dans Google Drive, synchronise
+// vers le cloud) pour rester accessible facilement depuis n'importe quel
+// poste. Le fichier est dans .gitignore : jamais commite sur GitHub.
+const DOSSIER_SORTIE = __dirname;
 const ALPHABET_MOT_DE_PASSE = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans 0/O/1/l/I
 
 function initialiserAdmin() {
