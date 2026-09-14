@@ -1,0 +1,54 @@
+// Règles de sécurité Firestore — projet Firebase "cahiers-interactifs".
+//
+// Ce fichier n'est PAS déployé automatiquement : il n'existe pas encore de
+// Firebase CLI configurée sur ce dépôt. Pour l'appliquer, copier-coller son
+// contenu dans Console Firebase → Firestore Database → Règles → Publier.
+//
+// Modèle de données :
+//   eleves/{uid}                    profil d'un élève (pseudo, classe...)
+//   eleves/{uid}/tentatives/{id}     une tentative sur un exercice (journal, non modifiable)
+//   devoirs/{id}                    un devoir attribué par l'enseignant
+//
+// Les comptes élèves et le compte enseignant sont créés côté serveur (script
+// outils/creer-comptes, SDK Admin, qui ignore ces règles). L'enseignant est
+// reconnu par un custom claim "admin" posé par ce même script — pas par un
+// UID codé en dur, pour ne pas casser les règles si le compte est recréé.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function estProprietaire(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /eleves/{uid} {
+      // Profil : l'élève lit le sien, l'enseignant lit/écrit tout (création
+      // en masse mise à part, gérée par le SDK Admin qui contourne ces règles).
+      allow read: if estProprietaire(uid) || estAdmin();
+      allow write: if estAdmin();
+
+      match /tentatives/{tentativeId} {
+        // Journal d'usage : l'élève ajoute ses propres tentatives, personne
+        // ne les modifie une fois écrites (y compris l'enseignant) ; seule
+        // une suppression par l'enseignant est permise, pour corriger un cas.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
+        allow delete: if estAdmin();
+      }
+    }
+
+    match /devoirs/{devoirId} {
+      // Tout élève connecté doit pouvoir voir les devoirs qui lui sont
+      // attribués ; seul l'enseignant les crée, modifie ou supprime.
+      allow read: if request.auth != null;
+      allow write: if estAdmin();
+    }
+  }
+}
