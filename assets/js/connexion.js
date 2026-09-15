@@ -30,6 +30,14 @@ const champPseudo = document.getElementById('pseudo');
 const champMotDePasse = document.getElementById('mot-de-passe');
 const zoneErreur = document.getElementById('connexion-erreur');
 const bouton = formulaire.querySelector('.connexion-bouton');
+const boutonAfficherMdp = document.getElementById('bouton-afficher-mdp');
+
+boutonAfficherMdp.addEventListener('click', () => {
+  const estVisible = champMotDePasse.type === 'text';
+  champMotDePasse.type = estVisible ? 'password' : 'text';
+  boutonAfficherMdp.textContent = estVisible ? 'Afficher' : 'Masquer';
+  boutonAfficherMdp.setAttribute('aria-pressed', String(!estVisible));
+});
 
 function afficherErreur(message) {
   zoneErreur.textContent = message;
