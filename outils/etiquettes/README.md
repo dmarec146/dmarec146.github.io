@@ -14,8 +14,13 @@ npm install
 ## Utilisation
 
 ```bash
-node generer-etiquettes.js "..\creer-comptes\comptes-crees-<date>.csv"
+node generer-etiquettes.js "..\creer-comptes\comptes-crees-<date>.csv" "2nde-207"
 ```
+
+Le deuxième argument (nom de la classe) est optionnel — s'il est fourni, il
+apparaît à côté du prénom sur chaque étiquette. Comme un fichier de comptes
+correspond en général à une seule classe, il s'applique à toutes les
+étiquettes du fichier.
 
 Écrit `etiquettes-<date>.pdf` dans ce dossier : 2 colonnes × 5 lignes par
 page A4, avec un repère pointillé de découpe autour de chaque étiquette.

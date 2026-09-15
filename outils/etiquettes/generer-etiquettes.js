@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 
-const ADRESSE_SITE = 'dmarec146.github.io/connexion';
+const ADRESSE_SITE = 'dmarec146.github.io';
 const COLONNES = 2;
 const LIGNES = 5;
 const MARGE = 28; // points (72pt = 1 pouce)
@@ -83,7 +83,7 @@ function lireCsvComptes(cheminCsv) {
   });
 }
 
-function genererPdf(eleves, cheminSortie) {
+function genererPdf(eleves, cheminSortie, classe) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: MARGE });
     const flux = fs.createWriteStream(cheminSortie);
@@ -119,8 +119,9 @@ function genererPdf(eleves, cheminSortie) {
       const contenuW = largeurCellule - 2 * pad;
       let curY = y + pad;
 
+      const entete = classe ? `${eleve.nom} ${eleve.prenom} — ${classe}` : `${eleve.nom} ${eleve.prenom}`;
       doc.fillColor('#000000').font('Helvetica-Bold').fontSize(13)
-        .text(`${eleve.nom} ${eleve.prenom}`, contenuX, curY, { width: contenuW });
+        .text(entete, contenuX, curY, { width: contenuW });
       curY += 20;
 
       doc.font('Helvetica').fontSize(9).fillColor('#555555')
@@ -142,9 +143,9 @@ function genererPdf(eleves, cheminSortie) {
 }
 
 async function main() {
-  const [, , cheminCsv] = process.argv;
+  const [, , cheminCsv, classe] = process.argv;
   if (!cheminCsv) {
-    console.error('Usage : node generer-etiquettes.js <comptes-crees-XXX.csv>');
+    console.error('Usage : node generer-etiquettes.js <comptes-crees-XXX.csv> [classe]');
     process.exit(1);
   }
   if (!fs.existsSync(cheminCsv)) {
@@ -155,7 +156,7 @@ async function main() {
   const eleves = lireCsvComptes(cheminCsv);
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
   const cheminSortie = path.join(__dirname, `etiquettes-${horodatage}.pdf`);
-  await genererPdf(eleves, cheminSortie);
+  await genererPdf(eleves, cheminSortie, classe);
 
   const parPage = COLONNES * LIGNES;
   const nbPages = Math.ceil(eleves.length / parPage);
