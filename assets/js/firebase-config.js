@@ -27,10 +27,15 @@ export const db = getFirestore(app);
 // normalize('NFD') sur une lettre accentuee (e.g. "e" + accent aigu separe).
 const MARQUES_DIACRITIQUES = /[̀-ͯ]/g;
 
-// Un pseudo (ex. "renard-bleu") n'est pas un email valide pour Firebase Auth ;
-// on le fait correspondre a une adresse fictive, jamais envoyee a personne.
-// Meme regle utilisee cote script de creation des comptes (outils/creer-comptes).
-export function emailDepuisPseudo(pseudo) {
-  const slug = pseudo.trim().toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, '');
+// Un pseudo eleve (ex. "renard-bleu") n'est pas un email valide pour Firebase
+// Auth ; on le fait correspondre a une adresse fictive, jamais envoyee a
+// personne. Meme regle utilisee cote script de creation des comptes
+// (outils/creer-comptes). Le compte enseignant, lui, est cree avec une
+// vraie adresse email (outils/creer-comptes --admin) : si l'identifiant
+// saisi contient un "@", on l'utilise tel quel plutot que de le "pseudo-iser".
+export function emailDepuisIdentifiant(identifiant) {
+  const valeur = identifiant.trim();
+  if (valeur.includes('@')) return valeur.toLowerCase();
+  const slug = valeur.toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, '');
   return `${slug}@cahiers-interactifs.local`;
 }

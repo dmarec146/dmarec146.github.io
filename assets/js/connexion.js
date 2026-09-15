@@ -1,4 +1,4 @@
-import { auth, emailDepuisPseudo } from './firebase-config.js';
+import { auth, emailDepuisIdentifiant } from './firebase-config.js';
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged
@@ -45,16 +45,16 @@ formulaire.addEventListener('submit', async (evenement) => {
   evenement.preventDefault();
   masquerErreur();
 
-  const pseudo = champPseudo.value;
+  const identifiant = champPseudo.value;
   const motDePasse = champMotDePasse.value;
-  if (!pseudo.trim() || !motDePasse) {
+  if (!identifiant.trim() || !motDePasse) {
     afficherErreur("Renseigne ton identifiant et ton mot de passe.");
     return;
   }
 
   bouton.disabled = true;
   try {
-    await signInWithEmailAndPassword(auth, emailDepuisPseudo(pseudo), motDePasse);
+    await signInWithEmailAndPassword(auth, emailDepuisIdentifiant(identifiant), motDePasse);
     // La redirection est déclenchée par onAuthStateChanged ci-dessus.
   } catch (erreur) {
     afficherErreur(messageErreur(erreur));
