@@ -1,0 +1,47 @@
+// Suivi du travail des eleves connectes, sur les fiches de cahiers.
+// Pilote sur une seule fiche pour l'instant (cahiers/premiere/cahier-1/fiche-01.html) ;
+// voir le "Cahier de suivi" pour le contexte complet.
+//
+// Point d'accroche dans une fiche : les fiches sont des scripts classiques
+// (pas des modules ES, trop risque de convertir un script de plus de 2000
+// lignes) ; ce module s'expose donc sur window.enregistrerTentative plutot
+// que d'etre importe directement. Cote fiche, un seul appel a ajouter,
+// juste apres le calcul du resultat dans verifierUne() :
+//
+//   window.enregistrerTentative(FICHE_ID, ex.id, ok);
+//
+// avec FICHE_ID = window.location.pathname (stable, automatique meme si la
+// fiche est copiee sous un nouveau nom/chemin).
+
+import { auth, db } from './firebase-config.js';
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {
+  collection,
+  addDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+let utilisateurCourant = null;
+onAuthStateChanged(auth, (u) => { utilisateurCourant = u; });
+
+// Ne bloque jamais la fiche : la correction affichee a l'eleve reste
+// 100% locale (calculee avant cet appel) ; cet enregistrement n'est qu'un
+// effet secondaire, silencieux en cas d'echec (hors ligne, visiteur non
+// connecte, quota Firestore depasse...).
+async function enregistrerTentative(ficheId, exerciceId, resultat) {
+  if (!utilisateurCourant) return;
+  try {
+    await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'tentatives'), {
+      ficheId,
+      exercice: exerciceId,
+      resultat,
+      horodatage: serverTimestamp(),
+    });
+  } catch (erreur) {
+    console.warn('Suivi : enregistrement de la tentative impossible.', erreur);
+  }
+}
+
+window.enregistrerTentative = enregistrerTentative;
