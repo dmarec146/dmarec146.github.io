@@ -57,7 +57,23 @@ function nettoyerPourPseudo(s) {
   return s.trim().toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, '').replace(/[^a-z]/g, '');
 }
 
-// Premiere lettre du prenom + '.' + nom (ex. "David Marec" -> "d.marec").
+// Un eleve peut avoir plusieurs prenoms ("Aicha Bénédicte") : seul le
+// premier sert, aussi bien pour l'identifiant que pour l'affichage.
+function premierPrenom(prenom) {
+  return prenom.trim().split(/\s+/)[0];
+}
+
+// Casse forcee par le code (independante de celle du fichier source) :
+// nom entierement en majuscules, prenom avec seule l'initiale en majuscule.
+function formaterNom(nom) {
+  return nom.trim().toLocaleUpperCase('fr-FR');
+}
+function formaterPrenom(prenom) {
+  const mot = premierPrenom(prenom).toLocaleLowerCase('fr-FR');
+  return mot.charAt(0).toLocaleUpperCase('fr-FR') + mot.slice(1);
+}
+
+// Premiere lettre du (premier) prenom + '.' + nom (ex. "David Marec" -> "d.marec").
 // En cas de doublon (meme initiale + meme nom), suffixe numerique : d.marec2, d.marec3...
 // Attribution stable d'une execution a l'autre tant que les lignes existantes du
 // CSV ne sont ni reordonnees ni retirees (ajouter des eleves a la fin ne change
@@ -67,10 +83,10 @@ function nettoyerPourPseudo(s) {
 function genererPseudosUniques(eleves) {
   const compteurs = new Map();
   return eleves.map(({ classe, prenom, nom }) => {
-    const base = `${nettoyerPourPseudo(prenom).charAt(0)}.${nettoyerPourPseudo(nom)}`;
+    const base = `${nettoyerPourPseudo(premierPrenom(prenom)).charAt(0)}.${nettoyerPourPseudo(nom)}`;
     const n = (compteurs.get(base) || 0) + 1;
     compteurs.set(base, n);
-    return { classe, prenom, nom, pseudo: n === 1 ? base : `${base}${n}` };
+    return { classe, prenom: formaterPrenom(prenom), nom: formaterNom(nom), pseudo: n === 1 ? base : `${base}${n}` };
   });
 }
 
@@ -154,8 +170,8 @@ async function creerComptesEleves(cheminCsv) {
 
   // Nom/prenom ne sont jamais envoyes a Firestore (seuls pseudo + classe le
   // sont, ci-dessus) : ils ne servent qu'a produire une feuille de
-  // distribution lisible par l'enseignant, qui reste locale (hors du dossier
-  // du projet, donc hors Google Drive) et n'est jamais commitee.
+  // distribution lisible par l'enseignant, dans ce meme dossier (jamais
+  // commitee, mais synchronisee sur Google Drive comme le reste du projet).
   const avecIdentite = resultats.every(r => r.nom && r.prenom);
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
   fs.mkdirSync(DOSSIER_SORTIE, { recursive: true });
@@ -169,7 +185,6 @@ async function creerComptesEleves(cheminCsv) {
         .join('\n');
   fs.writeFileSync(cheminSortie, contenu, 'utf8');
   console.log(`\n${resultats.length} compte(s) cree(s). Identifiants ecrits dans :\n${cheminSortie}`);
-  console.log('Fichier hors du dossier du projet (pas synchronise sur Google Drive).');
   console.log('A distribuer aux eleves puis a supprimer (mots de passe en clair, jamais commite).');
 }
 
