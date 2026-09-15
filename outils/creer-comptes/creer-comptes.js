@@ -176,12 +176,17 @@ async function creerComptesEleves(cheminCsv) {
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
   fs.mkdirSync(DOSSIER_SORTIE, { recursive: true });
   const cheminSortie = path.join(DOSSIER_SORTIE, `comptes-crees-${horodatage}.csv`);
+  // Chaque valeur entre guillemets : garantit qu'un nom compose ("EL SHIKH")
+  // reste dans UNE seule colonne a l'ouverture dans Excel, quel que soit le
+  // separateur que celui-ci decide d'appliquer (certains reglages regionaux
+  // scindent aussi sur l'espace si on ne protege pas le champ).
+  const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
   const contenu = avecIdentite
-    ? ['Nom;Prenom;Identifiant;MotDePasse']
-        .concat(resultats.map(r => `${r.nom};${r.prenom};${r.pseudo};${r.motDePasse}`))
+    ? [[q('Nom'), q('Prenom'), q('Identifiant'), q('MotDePasse')].join(';')]
+        .concat(resultats.map(r => [q(r.nom), q(r.prenom), q(r.pseudo), q(r.motDePasse)].join(';')))
         .join('\n')
-    : ['Classe;Identifiant;MotDePasse']
-        .concat(resultats.map(r => `${r.classe};${r.pseudo};${r.motDePasse}`))
+    : [[q('Classe'), q('Identifiant'), q('MotDePasse')].join(';')]
+        .concat(resultats.map(r => [q(r.classe), q(r.pseudo), q(r.motDePasse)].join(';')))
         .join('\n');
   fs.writeFileSync(cheminSortie, contenu, 'utf8');
   console.log(`\n${resultats.length} compte(s) cree(s). Identifiants ecrits dans :\n${cheminSortie}`);
