@@ -7,6 +7,7 @@
 // Modèle de données :
 //   eleves/{uid}                    profil d'un élève (pseudo, classe...)
 //   eleves/{uid}/tentatives/{id}     une tentative sur un exercice (journal, non modifiable)
+//   eleves/{uid}/connexions/{id}     une connexion reussie (journal, non modifiable)
 //   devoirs/{id}                    un devoir attribué par l'enseignant
 //
 // Les comptes élèves et le compte enseignant sont créés côté serveur (script
@@ -37,6 +38,16 @@ service cloud.firestore {
         // Journal d'usage : l'élève ajoute ses propres tentatives, personne
         // ne les modifie une fois écrites (y compris l'enseignant) ; seule
         // une suppression par l'enseignant est permise, pour corriger un cas.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
+        allow delete: if estAdmin();
+      }
+
+      match /connexions/{connexionId} {
+        // Meme principe que tentatives : un journal d'evenements, pas un
+        // etat -- l'eleve ajoute, personne ne modifie, seul l'enseignant
+        // peut supprimer une entree.
         allow read: if estProprietaire(uid) || estAdmin();
         allow create: if estProprietaire(uid);
         allow update: if false;

@@ -1,4 +1,5 @@
 import { auth, emailDepuisIdentifiant } from './firebase-config.js';
+import { enregistrerConnexion } from './suivi.js';
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged
@@ -21,8 +22,16 @@ function messageErreur(erreur) {
 // fois construite (brique 04 du cahier de suivi). Pour l'instant, l'accueil.
 const DESTINATION_APRES_CONNEXION = '../index.html';
 
+// Pendant une connexion fraiche (soumission du formulaire ci-dessous), la
+// redirection est geree explicitement APRES l'enregistrement de la
+// connexion (voir plus bas) : sans ce garde-fou, onAuthStateChanged se
+// declenche des que Firebase confirme l'identifiant/mot de passe, avant
+// meme que l'ecriture Firestore de la connexion ait eu le temps de partir
+// -- la navigation qui suit interrompt alors la requete en cours.
+let connexionEnCours = false;
+
 onAuthStateChanged(auth, (utilisateur) => {
-  if (utilisateur) window.location.replace(DESTINATION_APRES_CONNEXION);
+  if (utilisateur && !connexionEnCours) window.location.replace(DESTINATION_APRES_CONNEXION);
 });
 
 const formulaire = document.getElementById('form-connexion');
@@ -61,10 +70,13 @@ formulaire.addEventListener('submit', async (evenement) => {
   }
 
   bouton.disabled = true;
+  connexionEnCours = true;
   try {
-    await signInWithEmailAndPassword(auth, emailDepuisIdentifiant(identifiant), motDePasse);
-    // La redirection est déclenchée par onAuthStateChanged ci-dessus.
+    const identifiants = await signInWithEmailAndPassword(auth, emailDepuisIdentifiant(identifiant), motDePasse);
+    await enregistrerConnexion(identifiants.user.uid);
+    window.location.replace(DESTINATION_APRES_CONNEXION);
   } catch (erreur) {
+    connexionEnCours = false;
     afficherErreur(messageErreur(erreur));
     bouton.disabled = false;
   }

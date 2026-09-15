@@ -30,7 +30,7 @@ onAuthStateChanged(auth, (u) => { utilisateurCourant = u; });
 // 100% locale (calculee avant cet appel) ; cet enregistrement n'est qu'un
 // effet secondaire, silencieux en cas d'echec (hors ligne, visiteur non
 // connecte, quota Firestore depasse...).
-async function enregistrerTentative(ficheId, exerciceId, resultat) {
+export async function enregistrerTentative(ficheId, exerciceId, resultat) {
   if (!utilisateurCourant) return;
   try {
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'tentatives'), {
@@ -41,6 +41,20 @@ async function enregistrerTentative(ficheId, exerciceId, resultat) {
     });
   } catch (erreur) {
     console.warn('Suivi : enregistrement de la tentative impossible.', erreur);
+  }
+}
+
+// Appelee depuis connexion.js juste apres une connexion reussie. Prend le
+// uid en parametre plutot que de relire utilisateurCourant (evite toute
+// dependance a l'ordre entre la resolution de la connexion et le prochain
+// declenchement de onAuthStateChanged).
+export async function enregistrerConnexion(uid) {
+  try {
+    await addDoc(collection(db, 'eleves', uid, 'connexions'), {
+      horodatage: serverTimestamp(),
+    });
+  } catch (erreur) {
+    console.warn('Suivi : enregistrement de la connexion impossible.', erreur);
   }
 }
 

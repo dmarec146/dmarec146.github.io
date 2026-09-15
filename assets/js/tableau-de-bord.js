@@ -11,16 +11,29 @@ import {
 const zoneChargement = document.getElementById('tdb-chargement');
 const zoneErreur = document.getElementById('tdb-erreur');
 const zoneContenu = document.getElementById('tdb-contenu');
+const filtreClasse = document.getElementById('tdb-select-classe');
 const corpsTableau = document.getElementById('tdb-corps');
 const compteur = document.getElementById('tdb-compteur');
 const boutonDeconnexion = document.getElementById('tdb-deconnexion');
-const activiteVide = document.getElementById('tdb-activite-vide');
-const activiteTableau = document.getElementById('tdb-activite-tableau');
-const activiteCorps = document.getElementById('tdb-activite-corps');
+const zoneDetail = document.getElementById('tdb-detail');
+const detailTitre = document.getElementById('tdb-detail-titre');
+const detailVide = document.getElementById('tdb-detail-vide');
+const detailTableau = document.getElementById('tdb-detail-tableau');
+const detailCorps = document.getElementById('tdb-detail-corps');
+
+// classe -> [eleve...] ; uid -> { activite: [...par fiche...], nbConnexions }
+let elevesParClasse = new Map();
+let donneesParUid = new Map();
+let ligneSelectionnee = null;
 
 function afficherEtat(element, texte) {
   element.textContent = texte;
   element.hidden = false;
+}
+
+function masquerEtat(element) {
+  element.hidden = true;
+  element.textContent = '';
 }
 
 // "2nde-207" -> "207" : le niveau (2nde/1ere/term) n'apporte rien ici,
@@ -37,6 +50,12 @@ function formaterFicheId(ficheId) {
   if (!m) return ficheId;
   const niveau = m[1] === 'premiere' ? 'Première' : 'Seconde';
   return `${niveau} · Cahier ${m[2]} · Fiche ${parseInt(m[3], 10)}`;
+}
+
+function nomAffiche(eleve) {
+  return (eleve.nom || eleve.prenom)
+    ? `${eleve.nom || ''} ${eleve.prenom || ''}`.trim()
+    : (eleve.pseudo || '—');
 }
 
 function horodatageEnMillis(horodatage) {
@@ -57,62 +76,13 @@ onAuthStateChanged(auth, async (utilisateur) => {
     window.location.replace('../index.html');
     return;
   }
-  chargerEleves();
+  chargerTout();
 });
 
-async function chargerEleves() {
-  try {
-    const instantane = await getDocs(collection(db, 'eleves'));
-    const eleves = instantane.docs.map((d) => ({ uid: d.id, ...d.data() }));
-    eleves.sort((a, b) =>
-      (a.classe || '').localeCompare(b.classe || '') ||
-      (a.pseudo || '').localeCompare(b.pseudo || '')
-    );
-    afficherEleves(eleves);
-    chargerActivite(eleves);
-  } catch (erreur) {
-    console.error(erreur);
-    zoneChargement.hidden = true;
-    afficherEtat(zoneErreur, "Impossible de charger la liste des élèves.");
-  }
-}
-
-function afficherEleves(eleves) {
-  zoneChargement.hidden = true;
-
-  if (eleves.length === 0) {
-    afficherEtat(zoneErreur, "Aucun élève enregistré pour l'instant.");
-    return;
-  }
-
-  corpsTableau.innerHTML = '';
-  for (const eleve of eleves) {
-    const ligne = document.createElement('tr');
-
-    const celluleClasse = document.createElement('td');
-    celluleClasse.textContent = formaterClasseAffichee(eleve.classe);
-
-    const celluleNom = document.createElement('td');
-    celluleNom.textContent = (eleve.nom || eleve.prenom)
-      ? `${eleve.nom || ''} ${eleve.prenom || ''}`.trim()
-      : '—';
-
-    const celluleIdentifiant = document.createElement('td');
-    celluleIdentifiant.textContent = eleve.pseudo || '—';
-
-    ligne.append(celluleClasse, celluleNom, celluleIdentifiant);
-    corpsTableau.appendChild(ligne);
-  }
-
-  compteur.textContent = `${eleves.length} élève${eleves.length > 1 ? 's' : ''}`;
-  zoneContenu.hidden = false;
-}
-
-// Pour chaque eleve x fiche : score = exercices distincts dont la DERNIERE
-// tentative est correcte, sur le nombre d'exercices distincts tentes.
-// Le nombre de tentatives, lui, compte chaque verification (y compris les
-// re-verifications d'une meme reponse) : c'est le nombre de fois ou
-// l'eleve a demande une correction, pas le nombre d'exercices differents.
+// Regroupe une liste de tentatives par fiche : score = exercices distincts
+// dont la DERNIERE tentative est correcte, sur le nombre d'exercices
+// distincts tentes. Le nombre de tentatives compte chaque verification
+// (y compris les re-verifications d'une meme reponse).
 function agregerParFiche(tentatives) {
   const parFiche = new Map();
   for (const t of tentatives) {
@@ -145,54 +115,137 @@ function agregerParFiche(tentatives) {
   return resultats.sort((a, b) => b.derniereActivite - a.derniereActivite);
 }
 
-async function chargerActivite(eleves) {
+async function chargerTout() {
   try {
-    const parEleve = await Promise.all(eleves.map(async (eleve) => {
-      const instantane = await getDocs(collection(db, 'eleves', eleve.uid, 'tentatives'));
-      const tentatives = instantane.docs.map((d) => d.data());
-      return { eleve, activite: agregerParFiche(tentatives) };
+    const instantane = await getDocs(collection(db, 'eleves'));
+    const eleves = instantane.docs.map((d) => ({ uid: d.id, ...d.data() }));
+
+    await Promise.all(eleves.map(async (eleve) => {
+      const [instantaneTentatives, instantaneConnexions] = await Promise.all([
+        getDocs(collection(db, 'eleves', eleve.uid, 'tentatives')),
+        getDocs(collection(db, 'eleves', eleve.uid, 'connexions')),
+      ]);
+      donneesParUid.set(eleve.uid, {
+        activite: agregerParFiche(instantaneTentatives.docs.map((d) => d.data())),
+        nbConnexions: instantaneConnexions.size,
+      });
     }));
 
-    const lignes = [];
-    for (const { eleve, activite } of parEleve) {
-      for (const item of activite) lignes.push({ eleve, ...item });
+    elevesParClasse = new Map();
+    for (const eleve of eleves) {
+      const classe = eleve.classe || '—';
+      if (!elevesParClasse.has(classe)) elevesParClasse.set(classe, []);
+      elevesParClasse.get(classe).push(eleve);
     }
-    lignes.sort((a, b) => b.derniereActivite - a.derniereActivite);
+    for (const liste of elevesParClasse.values()) {
+      liste.sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b)));
+    }
 
-    if (lignes.length === 0) {
-      activiteVide.hidden = false;
+    zoneChargement.hidden = true;
+
+    if (eleves.length === 0) {
+      afficherEtat(zoneErreur, "Aucun élève enregistré pour l'instant.");
       return;
     }
 
-    activiteCorps.innerHTML = '';
-    for (const ligneDonnees of lignes) {
-      const ligne = document.createElement('tr');
-
-      const celluleIdentifiant = document.createElement('td');
-      celluleIdentifiant.textContent = ligneDonnees.eleve.pseudo || '—';
-
-      const celluleFiche = document.createElement('td');
-      celluleFiche.textContent = formaterFicheId(ligneDonnees.ficheId);
-
-      const celluleScore = document.createElement('td');
-      celluleScore.textContent = ligneDonnees.score;
-
-      const celluleTentatives = document.createElement('td');
-      celluleTentatives.textContent = String(ligneDonnees.nbTentatives);
-
-      const celluleDate = document.createElement('td');
-      celluleDate.textContent = ligneDonnees.derniereActivite
-        ? new Date(ligneDonnees.derniereActivite).toLocaleString('fr-FR')
-        : '—';
-
-      ligne.append(celluleIdentifiant, celluleFiche, celluleScore, celluleTentatives, celluleDate);
-      activiteCorps.appendChild(ligne);
-    }
-    activiteTableau.hidden = false;
+    remplirFiltreClasse();
+    zoneContenu.hidden = false;
+    afficherClasse(filtreClasse.value);
   } catch (erreur) {
     console.error(erreur);
-    afficherEtat(activiteVide, "Impossible de charger l'activité sur les fiches.");
+    zoneChargement.hidden = true;
+    afficherEtat(zoneErreur, "Impossible de charger les données.");
   }
+}
+
+function remplirFiltreClasse() {
+  const classes = [...elevesParClasse.keys()].sort();
+  filtreClasse.innerHTML = '';
+  for (const classe of classes) {
+    const option = document.createElement('option');
+    option.value = classe;
+    option.textContent = formaterClasseAffichee(classe);
+    filtreClasse.appendChild(option);
+  }
+}
+
+filtreClasse.addEventListener('change', () => afficherClasse(filtreClasse.value));
+
+function afficherClasse(classe) {
+  zoneDetail.hidden = true;
+  ligneSelectionnee = null;
+
+  const eleves = elevesParClasse.get(classe) || [];
+  corpsTableau.innerHTML = '';
+
+  for (const eleve of eleves) {
+    const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0 };
+    const ligne = document.createElement('tr');
+    ligne.classList.add('tdb-ligne-cliquable');
+    ligne.tabIndex = 0;
+
+    const celluleNom = document.createElement('td');
+    celluleNom.textContent = nomAffiche(eleve);
+
+    const celluleFiches = document.createElement('td');
+    celluleFiches.textContent = String(donnees.activite.length);
+
+    const celluleConnexions = document.createElement('td');
+    celluleConnexions.textContent = String(donnees.nbConnexions);
+
+    ligne.append(celluleNom, celluleFiches, celluleConnexions);
+
+    const ouvrir = () => afficherDetail(eleve, donnees, ligne);
+    ligne.addEventListener('click', ouvrir);
+    ligne.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Enter' || evenement.key === ' ') { evenement.preventDefault(); ouvrir(); }
+    });
+
+    corpsTableau.appendChild(ligne);
+  }
+
+  compteur.textContent = `${eleves.length} élève${eleves.length > 1 ? 's' : ''}`;
+}
+
+function afficherDetail(eleve, donnees, ligne) {
+  if (ligneSelectionnee) ligneSelectionnee.classList.remove('tdb-ligne-selectionnee');
+  ligne.classList.add('tdb-ligne-selectionnee');
+  ligneSelectionnee = ligne;
+
+  detailTitre.textContent = `Détail — ${nomAffiche(eleve)}`;
+
+  if (donnees.activite.length === 0) {
+    masquerEtat(detailTableau);
+    detailTableau.hidden = true;
+    afficherEtat(detailVide, "Aucune fiche travaillée pour l'instant.");
+  } else {
+    detailVide.hidden = true;
+    detailCorps.innerHTML = '';
+    for (const item of donnees.activite) {
+      const ligneDetail = document.createElement('tr');
+
+      const celluleFiche = document.createElement('td');
+      celluleFiche.textContent = formaterFicheId(item.ficheId);
+
+      const celluleScore = document.createElement('td');
+      celluleScore.textContent = item.score;
+
+      const celluleTentatives = document.createElement('td');
+      celluleTentatives.textContent = String(item.nbTentatives);
+
+      const celluleDate = document.createElement('td');
+      celluleDate.textContent = item.derniereActivite
+        ? new Date(item.derniereActivite).toLocaleString('fr-FR')
+        : '—';
+
+      ligneDetail.append(celluleFiche, celluleScore, celluleTentatives, celluleDate);
+      detailCorps.appendChild(ligneDetail);
+    }
+    detailTableau.hidden = false;
+  }
+
+  zoneDetail.hidden = false;
+  zoneDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 boutonDeconnexion.addEventListener('click', async () => {
