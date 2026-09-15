@@ -153,9 +153,13 @@ async function creerComptesEleves(cheminCsv) {
 
     const motDePasse = genererMotDePasse();
     utilisateur = await auth.createUser({ email, password: motDePasse });
+    // nom/prenom : optionnels si le CSV n'utilisait que classe,pseudo (pas
+    // de vraie identite dans ce cas-la, uniquement le pseudo choisi a la main).
     await db.collection('eleves').doc(utilisateur.uid).set({
       pseudo,
       classe,
+      ...(nom && { nom }),
+      ...(prenom && { prenom }),
       creeLe: FieldValue.serverTimestamp(),
     });
 

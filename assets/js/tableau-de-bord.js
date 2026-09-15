@@ -20,6 +20,14 @@ function afficherEtat(element, texte) {
   element.hidden = false;
 }
 
+// "2nde-207" -> "207" : le niveau (2nde/1ere/term) n'apporte rien ici,
+// seul le numero de classe distingue tes groupes au meme niveau.
+function formaterClasseAffichee(classe) {
+  if (!classe) return '—';
+  const i = classe.lastIndexOf('-');
+  return i === -1 ? classe : classe.slice(i + 1);
+}
+
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) {
     window.location.replace('../connexion/index.html');
@@ -66,17 +74,17 @@ function afficherEleves(eleves) {
     const ligne = document.createElement('tr');
 
     const celluleClasse = document.createElement('td');
-    celluleClasse.textContent = eleve.classe || '—';
+    celluleClasse.textContent = formaterClasseAffichee(eleve.classe);
+
+    const celluleNom = document.createElement('td');
+    celluleNom.textContent = (eleve.nom || eleve.prenom)
+      ? `${eleve.nom || ''} ${eleve.prenom || ''}`.trim()
+      : '—';
 
     const celluleIdentifiant = document.createElement('td');
     celluleIdentifiant.textContent = eleve.pseudo || '—';
 
-    const celluleDate = document.createElement('td');
-    celluleDate.textContent = eleve.creeLe?.toDate
-      ? eleve.creeLe.toDate().toLocaleDateString('fr-FR')
-      : '—';
-
-    ligne.append(celluleClasse, celluleIdentifiant, celluleDate);
+    ligne.append(celluleClasse, celluleNom, celluleIdentifiant);
     corpsTableau.appendChild(ligne);
   }
 
