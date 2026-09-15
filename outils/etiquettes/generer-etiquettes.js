@@ -83,6 +83,29 @@ function lireCsvComptes(cheminCsv) {
   });
 }
 
+// Petit engrenage vectoriel (pas de fichier image) : corps + dents en
+// rectangles tournes autour du centre, trou central troue par un cercle
+// de la couleur du fond.
+function dessinerEngrenage(doc, cx, cy, rayon, couleur, couleurFond = '#ffffff') {
+  const nbDents = 8;
+  const largeurDent = rayon * 0.6;
+  const hauteurDent = rayon * 0.45;
+
+  doc.save();
+  doc.fillColor(couleur);
+  doc.circle(cx, cy, rayon).fill();
+  for (let i = 0; i < nbDents; i++) {
+    doc.save();
+    doc.translate(cx, cy);
+    doc.rotate((360 / nbDents) * i);
+    doc.rect(-largeurDent / 2, -(rayon + hauteurDent * 0.7), largeurDent, hauteurDent).fill();
+    doc.restore();
+  }
+  doc.fillColor(couleurFond);
+  doc.circle(cx, cy, rayon * 0.42).fill();
+  doc.restore();
+}
+
 function genererPdf(eleves, cheminSortie, classe) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: MARGE });
@@ -119,10 +142,17 @@ function genererPdf(eleves, cheminSortie, classe) {
       const contenuW = largeurCellule - 2 * pad;
       let curY = y + pad;
 
+      // Petit engrenage decoratif en haut a droite : la 1ere ligne (nom,
+      // qui peut etre longue) laisse de la place pour ne pas passer dessous.
+      const rayonIcone = 9;
+      dessinerEngrenage(doc, x + largeurCellule - pad - rayonIcone, y + pad + rayonIcone, rayonIcone, '#c9c9c9');
+      const largeurEntete = contenuW - (rayonIcone * 2 + 8);
+
       const entete = classe ? `${eleve.nom} ${eleve.prenom} — ${classe}` : `${eleve.nom} ${eleve.prenom}`;
-      doc.fillColor('#000000').font('Helvetica-Bold').fontSize(13)
-        .text(entete, contenuX, curY, { width: contenuW });
-      curY += 20;
+      doc.fillColor('#000000').font('Helvetica-Bold').fontSize(13);
+      const hauteurEntete = doc.heightOfString(entete, { width: largeurEntete });
+      doc.text(entete, contenuX, curY, { width: largeurEntete });
+      curY += hauteurEntete + 6;
 
       doc.font('Helvetica').fontSize(9).fillColor('#555555')
         .text(ADRESSE_SITE, contenuX, curY, { width: contenuW });
