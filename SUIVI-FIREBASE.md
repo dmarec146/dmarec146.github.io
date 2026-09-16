@@ -65,10 +65,13 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   par spécificité égale et les boutons restent visibles même pour les élèves
   hors Première.
 - Menu du site : icône connexion/déconnexion + lien tableau de bord (admin
-  seulement) — chargée pour l'instant sur `index.html` et `/tableau-de-bord/`
-  (le bouton texte "Se déconnecter" du tableau de bord a été retiré au profit
-  de cette icône, pour rester cohérent avec le reste du site), pas sur les
-  fiches (hors périmètre du pilote).
+  seulement) — chargée désormais sur **toutes les pages** (`assets/js/nav-auth.js`) :
+  `.site-nav` sur l'accueil/sommaires/automatismes/tableau de bord (style
+  `nav-icone-profil`, voir `style.css`), et `.barre-navigation` sur les 44
+  fiches de calcul qui n'ont pas le header standard (CSS propre à chaque
+  fiche, pas de `style.css` chargé) — l'icône y reprend la classe `.nav-btn`
+  déjà définie dans le `<style>` de chaque fiche, ajoutée uniquement sur la
+  barre du haut (il y en a une identique en bas, volontairement pas touchée).
 - Suivi câblé sur **les 44 fiches de calcul** (Première + Seconde) — le
   pilote (`cahiers/premiere/cahier-1/fiche-01.html`) puis les 43 autres,
   même schéma partout (voir `assets/js/suivi.js`). Score = questions
@@ -92,23 +95,53 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
     ou non — validable à tout moment).
   Ces deux boutons ("Enregistrer"/"Valider") ne s'affichent que pour un
   élève connecté (le site reste utilisable sans compte, il ne faut rien
-  laisser croire à un visiteur anonyme). Pour un élève connecté, "Vérifier
-  mes réponses" et "Voir toutes les réponses" restent désactivés tant que
-  la fiche n'a pas été validée au moins une fois dans la session — évite
-  de pouvoir demander le corrigé complet sans avoir validé sa tentative
-  (icône "?" au survol sur le bouton Valider pour l'expliquer). Le mode
-  "Au fur et à mesure" continue lui de fonctionner normalement (correction
-  immédiate par question), choix explicite de l'utilisateur.
+  laisser croire à un visiteur anonyme).
+
+  **Pour un élève connecté uniquement**, le choix de mode ("Au fur et à
+  mesure" / "Tout à la fin") est masqué et rien n'est révélé (ni couleur
+  verte/rouge, ni statut, ni bilan) tant que la fiche n'a pas été validée
+  au moins une fois dans la session — le calcul et l'enregistrement dans
+  `saisies` se font quand même silencieusement à chaque réponse tapée. Un
+  clic sur "Valider ma fiche" révèle d'un coup les couleurs et le bilan sur
+  tout ce qui a été répondu (en rappelant `verifierTout()` après avoir posé
+  `ficheValidee = true`), en plus d'écrire le score. "Vérifier mes réponses"
+  a été renommé "Corrigé des erreurs" et reste désactivé, comme "Voir toutes
+  les réponses", tant que non validé (icône "?" au survol sur le bouton
+  Valider pour l'expliquer). Un visiteur anonyme garde le fonctionnement
+  d'origine à l'identique (choix de mode, correction immédiate).
+
+  Boutons de bas de fiche dans l'ordre : Recommencer, Générer une nouvelle
+  version, Enregistrer mon avancement, Valider ma fiche, Corrigé des
+  erreurs, Voir toutes les réponses — dans une seule barre.
+
+  Pastille "brouillon en attente" (`assets/js/brouillons-indicateur.js`,
+  chargé sur `cahiers/index.html` et les 15 sommaires de cahier) : pour un
+  élève connecté avec au moins une fiche enregistrée mais non validée,
+  petite icône disquette à côté du lien de la fiche dans son sommaire, et
+  sur la vignette du cahier dans la liste de tous les cahiers. Correspondance
+  par préfixe de chemin (pas de fiche codée en dur) — se généralise tout
+  seul au fur et à mesure de la migration des autres fiches.
+
   **Piloté pour l'instant sur une seule fiche**, `cahiers/seconde/cahier-1/fiche-01.html`
   — testé de bout en bout (enregistrement, reprise à l'identique après
-  rechargement, validation, coexistence avec l'ancien modèle sur une autre
-  fiche du même élève, affichage des trois états côté tableau de bord :
-  non commencée / en cours / validée). Les 43 autres fiches restent sur
-  l'ancien modèle (`tentatives`) ; le tableau de bord lit et agrège les
-  deux modèles en parallèle sans conflit, une fiche donnée n'étant jamais
-  câblée que sur l'un des deux. **Pas encore étendu aux 43 autres** — à
-  faire une fois le pilote definitivement validé par l'utilisateur, avec
-  le même script de câblage mécanique que pour le suivi initial.
+  rechargement, validation, révélation couleurs/bilan à la validation,
+  coexistence avec l'ancien modèle sur une autre fiche du même élève,
+  affichage des trois états côté tableau de bord : non commencée / en cours
+  / validée, pastille brouillon sur sommaire et liste des cahiers). Les 43
+  autres fiches restent sur l'ancien modèle (`tentatives`) ; le tableau de
+  bord lit et agrège les deux modèles en parallèle sans conflit, une fiche
+  donnée n'étant jamais câblée que sur l'un des deux. **Pas encore étendu
+  aux 43 autres** — à faire une fois le pilote definitivement validé par
+  l'utilisateur, avec le même script de câblage mécanique que pour le
+  suivi initial.
+
+  **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
+  branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
+  la réponse tapée plutôt que d'exiger un nombre déjà calculé — "144-72"
+  est accepté comme correct pour "12²-8×9" puisque l'expression s'évalue à
+  la bonne valeur. Concerne potentiellement les 44 fiches et `master` (pas
+  seulement cette branche) ; l'utilisateur a choisi de le traiter séparément
+  plus tard, pas maintenant.
 - Suivi des **automatismes de Première** : uniquement les sujets blancs
   (`automatismes/premiere/sujet-blanc.html`), pas les fiches thématiques
   libres (`fiche.html`, jamais suivies, même en mode chrono — non notées
@@ -169,6 +202,20 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   seulement en réaction à un clic plus tard) doit attendre
   `DOMContentLoaded` avant de s'exécuter — sinon `window.X` est encore
   `undefined` au moment de l'appel.
+- Dans un script Node de câblage mécanique multi-fichiers, ne jamais
+  construire les chemins relatifs avec `path.join()` sur ce PC (Windows) :
+  ça normalise en `\` et casse tout calcul de profondeur fait ensuite par
+  `chemin.split('/')`. Toujours construire les chemins avec `/` explicite
+  (template literal ou concaténation), comme pour les autres scripts de
+  câblage de ce projet. A cassé une premiere tentative d'ajout de
+  `nav-auth.js` sur les 44 fiches (chemin relatif faux sur toutes,
+  corrigé ensuite).
+- Un `style="display:...` en ligne l'emporte sur l'attribut `hidden`
+  (regle du navigateur, priorite plus faible) -- pas seulement une regle
+  de classe comme le piege `.tdb-onglets[hidden]` deja note plus haut, un
+  style en ligne aussi. Definir le `display` par une regle de CLASSE (avec
+  son `[hidden]` explicite a cote) plutot qu'en ligne des qu'un element
+  doit pouvoir etre masque via `.hidden`.
 
 ## Procédure de reprise sur une autre machine
 
