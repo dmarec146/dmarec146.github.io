@@ -122,18 +122,46 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   par préfixe de chemin (pas de fiche codée en dur) — se généralise tout
   seul au fur et à mesure de la migration des autres fiches.
 
-  **Piloté pour l'instant sur une seule fiche**, `cahiers/seconde/cahier-1/fiche-01.html`
-  — testé de bout en bout (enregistrement, reprise à l'identique après
-  rechargement, validation, révélation couleurs/bilan à la validation,
-  coexistence avec l'ancien modèle sur une autre fiche du même élève,
-  affichage des trois états côté tableau de bord : non commencée / en cours
-  / validée, pastille brouillon sur sommaire et liste des cahiers). Les 43
+  **Recensement avant extension aux 44 fiches** : 33 fiches partagent la
+  structure simple de la fiche pilote (un seul `exercices`, auto-suffisant).
+  **11 fiches ont des sections graphique/QCM dont le rendu dépend d'un état
+  auxiliaire externe** (nom de variable différent d'une fiche à l'autre —
+  `paramsGraphiques`, `paramsGraphique14`... — repéré en cherchant les
+  fiches qui appellent, en plus de `construireGrilles()`, d'autres fonctions
+  de construction au chargement) : `cahiers/premiere/cahier-1/fiche-01.html`,
+  `cahier-2/fiche-06.html`, `cahier-3/fiche-10.html`, `cahier-6/fiche-19.html`,
+  `cahier-7/fiche-20.html`, `cahier-7/fiche-21.html`, `cahier-7/fiche-22.html`,
+  `cahier-8/fiche-24.html`, et côté Seconde `cahier-5/fiche-14.html`,
+  `fiche-15.html`, `fiche-16.html` (chapitre Fonctions — courbes). Sans
+  traitement particulier, restaurer un brouillon sur ces fiches afficherait
+  une courbe/des options QCM différentes de celles vues au moment de
+  répondre, alors que la réponse attendue (`exercices[idx].bonneReponse`,
+  bien capturée) resterait celle d'origine — incohérent.
+
+  Résolu génériquement plutôt que fiche par fiche : `enregistrerBrouillon()`
+  (`assets/js/suivi.js`) accepte un 5ᵉ paramètre optionnel `extra` (un seul
+  document, une seule écriture quoi qu'il arrive — pas de coût Firestore
+  supplémentaire, juste quelques centaines d'octets de plus par brouillon).
+  Une fiche concernée définit deux petites fonctions,
+  `etatSupplementairePourBrouillon()` (retourne ses variables externes,
+  ex. `{ paramsGraphiques }`) et `restaurerEtatSupplementaire(extra)` (les
+  réaffecte), appelées automatiquement par `enregistrerBrouillonActuel()` et
+  `initialiserFiche()`. Une fiche simple n'a rien à faire.
+
+  **Pilotée sur deux fiches** : `cahiers/seconde/cahier-1/fiche-01.html`
+  (cas simple) et `cahiers/premiere/cahier-1/fiche-01.html` (cas complexe,
+  QCM + courbes 1.10-1.13) — testées de bout en bout toutes les deux
+  (enregistrement, reprise à l'identique après rechargement — y compris
+  `paramsGraphiques` restauré à l'identique sur la fiche complexe,
+  vérifié champ par champ —, validation, révélation couleurs/bilan à la
+  validation, coexistence avec l'ancien modèle, tableau de bord). Les 42
   autres fiches restent sur l'ancien modèle (`tentatives`) ; le tableau de
   bord lit et agrège les deux modèles en parallèle sans conflit, une fiche
   donnée n'étant jamais câblée que sur l'un des deux. **Pas encore étendu
-  aux 43 autres** — à faire une fois le pilote definitivement validé par
-  l'utilisateur, avec le même script de câblage mécanique que pour le
-  suivi initial.
+  aux 42 autres** — prochaine étape : script de câblage mécanique (comme
+  pour le suivi initial), en deux passes (33 fiches simples, puis les 9
+  fiches complexes restantes en adaptant `etatSupplementairePourBrouillon`/
+  `restaurerEtatSupplementaire` au nom de variable propre à chacune).
 
   **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
   branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement

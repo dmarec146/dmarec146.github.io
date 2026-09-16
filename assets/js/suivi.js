@@ -106,16 +106,21 @@ export async function enregistrerTentative(ficheId, exerciceId, resultat, passe,
 // telles que produites par la fiche, pas regenerees a la prochaine visite)
 // et l'etat de chaque reponse deja saisie (saisies, indexe par idx d'exercice
 // -> { id, valeur, correct }). Ecrase le brouillon precedent s'il existe.
-export async function enregistrerBrouillon(ficheId, exercices, saisies, passe) {
+//
+// "extra" (optionnel) : certaines fiches generent, en plus du tableau
+// exercices, un etat auxiliaire pour le rendu de sections graphiques/QCM
+// (ex. les parametres d'une courbe -- nom de variable different d'une fiche
+// a l'autre, "paramsGraphiques", "paramsGraphique14", etc.) -- jamais lu par
+// verifierUne() (qui se contente de exercices[idx]), mais necessaire pour
+// reafficher exactement la meme chose a la reprise plutot qu'une nouvelle
+// version generee au hasard, incoherente avec la reponse deja enregistree.
+// Une fiche simple (sans un tel etat) n'a rien a passer ici.
+export async function enregistrerBrouillon(ficheId, exercices, saisies, passe, extra) {
   if (!utilisateurCourant) return;
   try {
-    await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)), {
-      ficheId,
-      exercices,
-      saisies,
-      passe,
-      horodatage: serverTimestamp(),
-    });
+    const donnees = { ficheId, exercices, saisies, passe, horodatage: serverTimestamp() };
+    if (extra !== undefined) donnees.extra = extra;
+    await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)), donnees);
   } catch (erreur) {
     console.warn('Suivi : enregistrement du brouillon impossible.', erreur);
   }
