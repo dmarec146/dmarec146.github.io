@@ -178,10 +178,9 @@ function agregerResultats(docsResultats) {
   });
 }
 
-function agregerBrouillonsEnCours(docsBrouillons, ficheIdsDejaValidees) {
+function agregerBrouillonsEnCours(docsBrouillons) {
   return docsBrouillons
     .map((d) => d.data())
-    .filter((b) => !ficheIdsDejaValidees.has(b.ficheId))
     .map((b) => ({
       ficheId: b.ficheId,
       enCours: true,
@@ -227,9 +226,15 @@ async function chargerTout() {
       // l'un ou l'autre, jamais les deux (voir assets/js/suivi.js).
       const activiteAncienModele = agregerParFiche(instantaneTentatives.docs.map((d) => d.data()));
       const resultatsAgreges = agregerResultats(instantaneResultats.docs);
-      const ficheIdsValidees = new Set(resultatsAgreges.map((r) => r.ficheId));
-      const brouillonsAgreges = agregerBrouillonsEnCours(instantaneBrouillons.docs, ficheIdsValidees);
-      const activite = [...activiteAncienModele, ...resultatsAgreges, ...brouillonsAgreges]
+      const brouillonsAgreges = agregerBrouillonsEnCours(instantaneBrouillons.docs);
+      // Un brouillon et un resultat peuvent coexister pour la meme fiche
+      // (l'eleve a valide une fois, puis retravaille sans revalider depuis) :
+      // validerFiche() supprime toujours le brouillon a la validation, donc
+      // quand les deux existent le brouillon est forcement le plus recent --
+      // priorite a "en cours", pas de doublon avec l'ancien score affiche.
+      const ficheIdsEnCours = new Set(brouillonsAgreges.map((b) => b.ficheId));
+      const resultatsAffiches = resultatsAgreges.filter((r) => !ficheIdsEnCours.has(r.ficheId));
+      const activite = [...activiteAncienModele, ...resultatsAffiches, ...brouillonsAgreges]
         .sort((a, b) => b.derniereActivite - a.derniereActivite);
 
       donneesParUid.set(eleve.uid, {
