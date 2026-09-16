@@ -616,18 +616,15 @@ window.MathJax = {
 </div>
 
 <div class="barre-controle">
-  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
-  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
-</div>
-
-<div class="barre-controle" id="barre-suivi" hidden>
-  <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
-  <span style="position:relative;display:inline-block;">
+  <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()" hidden>Enregistrer mon avancement</button>
+  <span id="zone-valider" style="position:relative;display:inline-block;" hidden>
     <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
-    <span title="« Vérifier mes réponses » et « Voir toutes les réponses » ne s'activent qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#666;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+    <span title="« Corrigé des erreurs » et « Voir toutes les réponses » ne s'activent qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#666;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
   </span>
+  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 <p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
 
@@ -1637,7 +1634,7 @@ function definirMode(immediat) {
   document.getElementById('mode-fin-btn').classList.toggle('mode-actif', !immediat);
   document.getElementById('mode-explication').textContent = immediat
     ? 'Appuyer sur Entrée après chaque réponse pour la faire vérifier et passer à la suivante.'
-    : 'Entrée passe à la question suivante sans corriger. Cliquer sur « Vérifier mes réponses », en bas de la fiche, pour tout corriger d\'un coup.';
+    : 'Entrée passe à la question suivante sans corriger. Cliquer sur « Corrigé des erreurs », en bas de la fiche, pour tout corriger d\'un coup.';
   if (!immediat) {
     exercices.forEach((ex, idx) => reinitialiserStatut(idx));
   }
@@ -1817,8 +1814,10 @@ function genererNouvelleFiche() {
 // et les reponses deja saisies plutot que d'en tirer de nouvelles.
 async function initialiserFiche() {
   eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
-  const barreSuivi = document.getElementById('barre-suivi');
-  if (barreSuivi) barreSuivi.hidden = !eleveConnecte;
+  const boutonEnregistrer = document.getElementById('btn-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  if (boutonEnregistrer) boutonEnregistrer.hidden = !eleveConnecte;
+  if (zoneValider) zoneValider.hidden = !eleveConnecte;
 
   let brouillon = null;
   if (eleveConnecte && window.chargerBrouillon) {
