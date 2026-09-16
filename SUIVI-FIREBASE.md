@@ -1,9 +1,15 @@
 # Suivi Firebase — état des lieux et procédure de reprise
 
-Ce fichier est tenu à jour au fil du travail sur la branche `suivi-firebase`.
-Une nouvelle session Claude Code (sur une autre machine ou après une pause)
-doit le lire en premier pour comprendre où en est le projet, avant de faire
-quoi que ce soit.
+**À lire en premier**, avant toute action, par toute session Claude Code qui
+reprend ce travail — que ce soit sur une autre machine (PC perso ↔ PC pro)
+ou en revenant sur la même après une pause. Ce n'est pas à sens unique :
+PC pro doit le lire en revenant d'une session sur PC perso, tout comme
+PC perso en revenant d'une session sur PC pro.
+
+**À mettre à jour**, par la session en cours, dès que quelque chose change
+la procédure ou l'état décrits ici (nouvelle brique livrée, nouveau piège
+rencontré, fusion effectuée, etc.) — sans attendre que l'utilisateur le
+demande. Un petit ajout suffit ; pas besoin de tout réécrire.
 
 ## Avant toute chose : vérifier l'état du dépôt
 
