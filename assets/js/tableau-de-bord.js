@@ -79,10 +79,17 @@ onAuthStateChanged(auth, async (utilisateur) => {
   chargerTout();
 });
 
-// Regroupe une liste de tentatives par fiche : score = exercices distincts
-// dont la DERNIERE tentative est correcte, sur le nombre d'exercices
-// distincts tentes. Le nombre de tentatives compte chaque verification
-// (y compris les re-verifications d'une meme reponse).
+// Regroupe une liste de tentatives par fiche, puis par PASSAGE (champ
+// "passe", un identifiant regenere a chaque chargement/regeneration de la
+// fiche cote eleve -- voir assets/js/suivi.js et cahiers/premiere/cahier-1/
+// fiche-01.html). Les tentatives anterieures a cet ajout n'ont pas de champ
+// "passe" : elles sont regroupees dans un seul passage "_ancien" pour ne
+// pas planter, au prix d'un score approximatif sur ces vieilles donnees.
+//
+//   score       = celui du MEILLEUR passage (le plus haut ratio bon/total)
+//   nbTentatives = nombre de passages distincts (fiche allee au bout ou non)
+//   moyenneQuestions = nombre moyen de questions distinctes faites par passage
+//   derniereActivite = horodatage le plus recent, tous passages confondus
 function agregerParFiche(tentatives) {
   const parFiche = new Map();
   for (const t of tentatives) {
@@ -93,22 +100,42 @@ function agregerParFiche(tentatives) {
 
   const resultats = [];
   for (const [ficheId, listeTentatives] of parFiche) {
-    const derniereParExercice = new Map();
+    const parPasse = new Map();
     for (const t of listeTentatives) {
-      const precedente = derniereParExercice.get(t.exercice);
-      if (!precedente || horodatageEnMillis(t.horodatage) >= horodatageEnMillis(precedente.horodatage)) {
-        derniereParExercice.set(t.exercice, t);
-      }
+      const cle = t.passe || '_ancien';
+      if (!parPasse.has(cle)) parPasse.set(cle, []);
+      parPasse.get(cle).push(t);
     }
-    const dernieres = [...derniereParExercice.values()];
-    const correctes = dernieres.filter((t) => t.resultat === true).length;
-    const derniereActivite = listeTentatives.reduce(
-      (max, t) => Math.max(max, horodatageEnMillis(t.horodatage)), 0
-    );
+
+    const passages = [...parPasse.values()].map((tentativesPasse) => {
+      const derniereParExercice = new Map();
+      for (const t of tentativesPasse) {
+        const precedente = derniereParExercice.get(t.exercice);
+        if (!precedente || horodatageEnMillis(t.horodatage) >= horodatageEnMillis(precedente.horodatage)) {
+          derniereParExercice.set(t.exercice, t);
+        }
+      }
+      const dernieres = [...derniereParExercice.values()];
+      const correctes = dernieres.filter((t) => t.resultat === true).length;
+      const finPassage = tentativesPasse.reduce(
+        (max, t) => Math.max(max, horodatageEnMillis(t.horodatage)), 0
+      );
+      return { correctes, nbExercices: dernieres.length, finPassage };
+    });
+
+    const meilleur = passages.reduce((a, b) => {
+      const ratioA = a.nbExercices ? a.correctes / a.nbExercices : 0;
+      const ratioB = b.nbExercices ? b.correctes / b.nbExercices : 0;
+      return ratioB > ratioA ? b : a;
+    });
+    const moyenneQuestions = passages.reduce((s, p) => s + p.nbExercices, 0) / passages.length;
+    const derniereActivite = passages.reduce((max, p) => Math.max(max, p.finPassage), 0);
+
     resultats.push({
       ficheId,
-      score: `${correctes} / ${dernieres.length}`,
-      nbTentatives: listeTentatives.length,
+      score: `${meilleur.correctes} / ${meilleur.nbExercices}`,
+      nbTentatives: passages.length,
+      moyenneQuestions: Math.round(moyenneQuestions * 10) / 10,
       derniereActivite,
     });
   }
@@ -239,12 +266,15 @@ function afficherDetail(index) {
       const celluleTentatives = document.createElement('td');
       celluleTentatives.textContent = String(item.nbTentatives);
 
+      const celluleMoyenne = document.createElement('td');
+      celluleMoyenne.textContent = String(item.moyenneQuestions);
+
       const celluleDate = document.createElement('td');
       celluleDate.textContent = item.derniereActivite
         ? new Date(item.derniereActivite).toLocaleString('fr-FR')
         : '—';
 
-      ligneDetail.append(celluleFiche, celluleScore, celluleTentatives, celluleDate);
+      ligneDetail.append(celluleFiche, celluleScore, celluleTentatives, celluleMoyenne, celluleDate);
       detailCorps.appendChild(ligneDetail);
     }
     detailTableau.hidden = false;
