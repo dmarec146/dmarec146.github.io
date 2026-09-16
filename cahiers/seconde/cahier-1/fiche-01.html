@@ -153,8 +153,8 @@ window.MathJax = {
      la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
      l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
      faible), laissant le bouton visible malgre l'attribut hidden. */
-  .zone-valider { position: relative; display: inline-block; }
-  .zone-valider[hidden] { display: none; }
+  .zone-bouton-suivi { position: relative; display: inline-block; }
+  .zone-bouton-suivi[hidden] { display: none; }
   .mode-label {
     font-size: 13px;
     font-weight: bold;
@@ -626,10 +626,13 @@ window.MathJax = {
 <div class="barre-controle">
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
-  <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()" hidden>Enregistrer mon avancement</button>
-  <span id="zone-valider" class="zone-valider" hidden>
+  <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
+    <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
+    <span title="Sauvegarde ta fiche telle quelle (mêmes valeurs, réponses déjà tapées) pour la reprendre plus tard — sans révéler ton score ni la corriger." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#F8D7D5;color:#B23A2E;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <span id="zone-valider" class="zone-bouton-suivi" hidden>
     <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
-    <span title="« Corrigé des erreurs » et « Voir toutes les réponses » ne s'activent qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#666;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+    <span title="« Voir toutes les réponses » ne s'active qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#666;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
   </span>
   <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
@@ -1508,11 +1511,11 @@ let eleveConnecte = false;
 let ficheValidee = false;
 
 function mettreAJourEtatBoutons() {
-  const boutonVerifier = document.getElementById('btn-verifier');
+  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
+  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
+  // ce bouton n'apporterait plus rien une fois connecte.
   const boutonToutes = document.getElementById('btn-toutes-reponses');
-  const bloque = eleveConnecte && !ficheValidee;
-  boutonVerifier.disabled = bloque;
-  boutonToutes.disabled = bloque;
+  boutonToutes.disabled = eleveConnecte && !ficheValidee;
 }
 
 function verifierUne(idx) {
@@ -1847,15 +1850,20 @@ function genererNouvelleFiche() {
 // et les reponses deja saisies plutot que d'en tirer de nouvelles.
 async function initialiserFiche() {
   eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
-  const boutonEnregistrer = document.getElementById('btn-enregistrer');
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
   const zoneValider = document.getElementById('zone-valider');
   const panneauMode = document.getElementById('mode-panneau');
-  if (boutonEnregistrer) boutonEnregistrer.hidden = !eleveConnecte;
+  const boutonVerifier = document.getElementById('btn-verifier');
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !eleveConnecte;
   if (zoneValider) zoneValider.hidden = !eleveConnecte;
   // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
   // toute facon jamais affichee avant validation (voir "reveler" dans
   // verifierUne), ces boutons n'auraient plus de sens.
   if (panneauMode) panneauMode.hidden = eleveConnecte;
+  // Idem pour "Corrige des erreurs" : "Valider" declenche deja verifierTout(),
+  // ce bouton devient redondant une fois connecte (reste utile pour un
+  // visiteur anonyme, en mode "Tout a la fin").
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
 
   let brouillon = null;
   if (eleveConnecte && window.chargerBrouillon) {
