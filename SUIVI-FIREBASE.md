@@ -61,22 +61,38 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   fiches (hors périmètre du pilote).
 - Suivi câblé sur **les 44 fiches de calcul** (Première + Seconde) — le
   pilote (`cahiers/premiere/cahier-1/fiche-01.html`) puis les 43 autres,
-  même schéma partout (voir `assets/js/suivi.js`). Automatismes non
-  concernées (moteur différent, hors périmètre). Score = questions
+  même schéma partout (voir `assets/js/suivi.js`). Score = questions
   réussies au moins une fois, tous passages confondus, rapporté au nombre
   total de questions de la fiche.
+- Suivi des **automatismes de Première** : uniquement les sujets blancs
+  (`automatismes/premiere/sujet-blanc.html`), pas les fiches thématiques
+  libres (`fiche.html`, jamais suivies, même en mode chrono — non notées
+  par choix). Fonctionne quel que soit le mode (fiche ou chrono) utilisé
+  pour le sujet blanc lui-même, un seul enregistrement par série
+  (`verifierFinSerie()` dans `automatismes/assets/moteur.js`). Tableau de
+  bord : trois lignes par élève de Première (niveaux 1/2/3), note moyenne
+  sur 6 et nombre de sujets par niveau. Seconde/Terminale non concernées
+  (déterminé par le préfixe de `classe`, ex. "1ere-3" — aucune saisie
+  supplémentaire nécessaire à la création des comptes).
 
 ## Comptes existants dans Firebase
 
 - Compte enseignant (email réel, droit `admin`).
 - 21 élèves de la classe `2nde-207`.
 - Compte de démonstration hors classe : `demo-eleve` / `DemoEleve2026`
-  (classe `demo`), pour tester du point de vue élève sans toucher aux
-  vraies données. Historique de tentatives vidé après chaque test.
+  (classe `1ere-demo`, donc reconnu Première pour le suivi automatismes),
+  pour tester du point de vue élève sans toucher aux vraies données.
+  Historique de tentatives/automatismes vidé après chaque test.
 
 ## Pas encore fait
 
-- Devoirs (brique à venir, sur demande explicite de l'utilisateur).
+- Devoirs (brique à venir, sur demande explicite de l'utilisateur). Le mode
+  chrono sera imposé pour les devoirs (décidé, pas encore fait).
+- Fil d'ariane des 44 fiches de calcul : existe seulement sur `master`
+  (commit `02c07b7`, jamais fusionné ici), en 12px. L'utilisateur voulait
+  l'agrandir légèrement (fait pour les automatismes, 14px) — à reproduire
+  sur les fiches de calcul une fois la fusion faite (pas avant, pour ne pas
+  créer un vrai conflit en dupliquant ce bloc ici).
 - Fusion de `suivi-firebase` vers `master` — décidée : se fera une fois le
   reste du travail sur cette branche terminé (pas seulement le câblage),
   sur demande explicite de l'utilisateur le moment venu. Aucun élève n'a
