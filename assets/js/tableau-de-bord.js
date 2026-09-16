@@ -11,6 +11,7 @@ import {
 const zoneChargement = document.getElementById('tdb-chargement');
 const zoneErreur = document.getElementById('tdb-erreur');
 const zoneContenu = document.getElementById('tdb-contenu');
+const vueListe = document.getElementById('tdb-vue-liste');
 const filtreClasse = document.getElementById('tdb-select-classe');
 const corpsTableau = document.getElementById('tdb-corps');
 const compteur = document.getElementById('tdb-compteur');
@@ -20,20 +21,19 @@ const detailTitre = document.getElementById('tdb-detail-titre');
 const detailVide = document.getElementById('tdb-detail-vide');
 const detailTableau = document.getElementById('tdb-detail-tableau');
 const detailCorps = document.getElementById('tdb-detail-corps');
+const boutonPrecedent = document.getElementById('tdb-detail-precedent');
+const boutonSuivant = document.getElementById('tdb-detail-suivant');
+const boutonRetour = document.getElementById('tdb-detail-retour');
 
 // classe -> [eleve...] ; uid -> { activite: [...par fiche...], nbConnexions }
 let elevesParClasse = new Map();
 let donneesParUid = new Map();
-let ligneSelectionnee = null;
+let classeActuelle = null;
+let indexActuel = 0;
 
 function afficherEtat(element, texte) {
   element.textContent = texte;
   element.hidden = false;
-}
-
-function masquerEtat(element) {
-  element.hidden = true;
-  element.textContent = '';
 }
 
 // "2nde-207" -> "207" : le niveau (2nde/1ere/term) n'apporte rien ici,
@@ -172,13 +172,14 @@ function remplirFiltreClasse() {
 filtreClasse.addEventListener('change', () => afficherClasse(filtreClasse.value));
 
 function afficherClasse(classe) {
+  classeActuelle = classe;
   zoneDetail.hidden = true;
-  ligneSelectionnee = null;
+  vueListe.hidden = false;
 
   const eleves = elevesParClasse.get(classe) || [];
   corpsTableau.innerHTML = '';
 
-  for (const eleve of eleves) {
+  eleves.forEach((eleve, index) => {
     const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0 };
     const ligne = document.createElement('tr');
     ligne.classList.add('tdb-ligne-cliquable');
@@ -195,27 +196,32 @@ function afficherClasse(classe) {
 
     ligne.append(celluleNom, celluleFiches, celluleConnexions);
 
-    const ouvrir = () => afficherDetail(eleve, donnees, ligne);
+    const ouvrir = () => afficherDetail(index);
     ligne.addEventListener('click', ouvrir);
     ligne.addEventListener('keydown', (evenement) => {
       if (evenement.key === 'Enter' || evenement.key === ' ') { evenement.preventDefault(); ouvrir(); }
     });
 
     corpsTableau.appendChild(ligne);
-  }
+  });
 
   compteur.textContent = `${eleves.length} élève${eleves.length > 1 ? 's' : ''}`;
 }
 
-function afficherDetail(eleve, donnees, ligne) {
-  if (ligneSelectionnee) ligneSelectionnee.classList.remove('tdb-ligne-selectionnee');
-  ligne.classList.add('tdb-ligne-selectionnee');
-  ligneSelectionnee = ligne;
+function afficherDetail(index) {
+  const eleves = elevesParClasse.get(classeActuelle) || [];
+  if (index < 0 || index >= eleves.length) return;
+  indexActuel = index;
 
-  detailTitre.textContent = `Détail — ${nomAffiche(eleve)}`;
+  const eleve = eleves[index];
+  const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0 };
+
+  vueListe.hidden = true;
+  zoneDetail.hidden = false;
+
+  detailTitre.textContent = nomAffiche(eleve);
 
   if (donnees.activite.length === 0) {
-    masquerEtat(detailTableau);
     detailTableau.hidden = true;
     afficherEtat(detailVide, "Aucune fiche travaillée pour l'instant.");
   } else {
@@ -244,9 +250,15 @@ function afficherDetail(eleve, donnees, ligne) {
     detailTableau.hidden = false;
   }
 
-  zoneDetail.hidden = false;
-  zoneDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  boutonPrecedent.disabled = index === 0;
+  boutonSuivant.disabled = index === eleves.length - 1;
+
+  zoneDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+boutonPrecedent.addEventListener('click', () => afficherDetail(indexActuel - 1));
+boutonSuivant.addEventListener('click', () => afficherDetail(indexActuel + 1));
+boutonRetour.addEventListener('click', () => afficherClasse(classeActuelle));
 
 boutonDeconnexion.addEventListener('click', async () => {
   await signOut(auth);
