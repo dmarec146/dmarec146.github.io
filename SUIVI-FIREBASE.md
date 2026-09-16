@@ -22,6 +22,20 @@ Ne rien écraser (`checkout --`, `reset --hard`, etc.) sans comprendre ce qui
 est déjà là. S'il y a un commit local non poussé ou des branches inhabituelles,
 demander à l'utilisateur avant de les toucher.
 
+**État vérifié le 16/09/2026** : `siteCahierCalcul` est propre — `master`
+à jour avec `origin/master` (un commit local en attente, "fil d'ariane sur
+les fiches", a été vérifié sans chevauchement avec ce travail puis poussé),
+rien en suspens. Les branches locales `claude/adoring-engelbart-62b11c` et
+`worktree-agent-a776ebf0c56aba0bc` sont des résidus d'une session/worktree
+précédente, pas touchées.
+
+Important : `master` a donc avancé d'un commit depuis la création de
+`suivi-firebase`. La fusion ne sera plus un fast-forward mais une vraie
+fusion à 3 — sans conflit attendu (le commit poussé touche `fiche-01.html`
+mais dans des zones du fichier totalement différentes de celles modifiées
+ici : fil d'ariane en tête de `<body>` et CSS vers la ligne 39, contre le
+script de suivi vers la ligne 1720 et au-delà).
+
 ## Où en est-on
 
 Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs`) :
@@ -85,3 +99,11 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
    dans chaque dossier, et vérifier que `outils/creer-comptes/service-account.json`
    est présent (sinon le retélécharger depuis Console Firebase → Paramètres
    du projet → Comptes de service).
+
+   **Déjà fait** : `service-account.json`, le CSV de comptes de la 207
+   (`comptes-crees-2026-09-15T14-06-47-054Z.csv`) et le PDF d'étiquettes
+   correspondant ont été copiés à l'avance dans
+   `siteCahierCalcul/outils/creer-comptes/` et `.../outils/etiquettes/` —
+   ils se synchroniseront via Drive même si `suivi-firebase` n'est pas encore
+   fusionnée (ces fichiers ne sont de toute façon jamais suivis par git).
+   Il ne restera que `npm install` à lancer dans chaque dossier.
