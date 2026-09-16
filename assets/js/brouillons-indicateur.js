@@ -62,22 +62,29 @@ onAuthStateChanged(auth, async (utilisateur) => {
     pastille.style.display = 'inline-flex';
     pastille.style.color = '#B8860B';
 
+    pastille.innerHTML = ICONE_BROUILLON;
+
     // Sur une vignette de la liste de tous les cahiers (.bento-carte), la
-    // fleche (.bento-fleche) est positionnee en absolu en haut a droite de
-    // la carte -- ajoutee au fil du DOM, la pastille finirait tout en bas,
-    // loin de la fleche. On la positionne donc en absolu elle aussi, juste
-    // a sa droite (meme "top", "right" plus petit). Sur un lien de fiche
-    // dans un sommaire (.fiche-lien, disposition flex normale), un simple
-    // ecart suffit : elle atterrit deja naturellement apres la fleche.
+    // fleche (.bento-fleche) est en position absolue en haut a droite, dans
+    // un coin exigu (~20px de large en tout) -- ajoutee au fil du DOM comme
+    // sur un sommaire, la pastille finirait tout en bas, loin de la fleche.
+    // Positionnee en absolu elle aussi, juste a sa droite, mais reduite
+    // (l'espace ne permet pas 20px pleins avec un ecart des deux cotes) et
+    // recentree verticalement sur la fleche (hauteurs differentes sinon).
+    // Sur un lien de fiche dans un sommaire (.fiche-lien, flex normale, bien
+    // plus de place), la taille normale suffit et un simple ecart suffit --
+    // elle atterrit deja naturellement apres la fleche.
     if (lien.classList.contains('bento-carte')) {
+      const svg = pastille.querySelector('svg');
+      svg.setAttribute('width', '16');
+      svg.setAttribute('height', '16');
       pastille.style.position = 'absolute';
-      pastille.style.top = '18px';
-      pastille.style.right = '0px';
+      pastille.style.top = '25px';
+      pastille.style.right = '2px';
     } else {
       pastille.style.marginLeft = '6px';
     }
 
-    pastille.innerHTML = ICONE_BROUILLON;
     lien.appendChild(pastille);
   });
 });
