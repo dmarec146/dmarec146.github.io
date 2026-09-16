@@ -16,7 +16,7 @@ import {
 
 // Disquette, symbole universel de sauvegarde -- distinct de l'icone de
 // profil deja utilisee ailleurs (nav-auth.js), pour ne pas les confondre.
-const ICONE_BROUILLON = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM7 8V4h9v4H7z"/></svg>';
+const ICONE_BROUILLON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM7 8V4h9v4H7z"/></svg>';
 
 // "/cahiers/seconde/cahier-1/fiche-01.html" -> "/cahiers/seconde/cahier-1/"
 function dossierDe(chemin) {
@@ -60,8 +60,23 @@ onAuthStateChanged(auth, async (utilisateur) => {
     pastille.title = versUneFiche ? 'Fiche en cours, non terminée' : 'Au moins une fiche en cours dans ce cahier';
     pastille.setAttribute('aria-label', pastille.title);
     pastille.style.display = 'inline-flex';
-    pastille.style.marginLeft = '6px';
     pastille.style.color = '#B8860B';
+
+    // Sur une vignette de la liste de tous les cahiers (.bento-carte), la
+    // fleche (.bento-fleche) est positionnee en absolu en haut a droite de
+    // la carte -- ajoutee au fil du DOM, la pastille finirait tout en bas,
+    // loin de la fleche. On la positionne donc en absolu elle aussi, juste
+    // a sa droite (meme "top", "right" plus petit). Sur un lien de fiche
+    // dans un sommaire (.fiche-lien, disposition flex normale), un simple
+    // ecart suffit : elle atterrit deja naturellement apres la fleche.
+    if (lien.classList.contains('bento-carte')) {
+      pastille.style.position = 'absolute';
+      pastille.style.top = '18px';
+      pastille.style.right = '0px';
+    } else {
+      pastille.style.marginLeft = '6px';
+    }
+
     pastille.innerHTML = ICONE_BROUILLON;
     lien.appendChild(pastille);
   });
