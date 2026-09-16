@@ -74,6 +74,41 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   même schéma partout (voir `assets/js/suivi.js`). Score = questions
   réussies au moins une fois, tous passages confondus, rapporté au nombre
   total de questions de la fiche.
+- **Nouveau modèle de suivi pour les cahiers de calcul, en cours de
+  migration fiche par fiche** — motivé par le quota gratuit Firestore
+  (Spark) : l'ancien modèle (`tentatives`, une écriture par question
+  vérifiée) oblige le tableau de bord à relire tout l'historique de tous
+  les élèves à chaque ouverture, un volume de lectures qui grandit avec le
+  temps et pouvait finir par dépasser les 50 000 lectures/jour gratuites.
+  Le nouveau modèle remplace ça par deux documents mis à jour en place par
+  élève et par fiche :
+  - `eleves/{uid}/brouillons/{ficheId}` — état courant d'une fiche en
+    pause (valeurs générées + réponses déjà saisies), écrit uniquement au
+    clic sur "Enregistrer mon avancement", supprimé dès que la fiche est
+    validée. Permet la vraie reprise (mêmes valeurs, pas de nouvelles
+    générées au hasard).
+  - `eleves/{uid}/resultats/{ficheId}` — score cumulé (tous passages
+    confondus), mis à jour au clic sur "Valider ma fiche" (fiche complète
+    ou non — validable à tout moment).
+  Ces deux boutons ("Enregistrer"/"Valider") ne s'affichent que pour un
+  élève connecté (le site reste utilisable sans compte, il ne faut rien
+  laisser croire à un visiteur anonyme). Pour un élève connecté, "Vérifier
+  mes réponses" et "Voir toutes les réponses" restent désactivés tant que
+  la fiche n'a pas été validée au moins une fois dans la session — évite
+  de pouvoir demander le corrigé complet sans avoir validé sa tentative
+  (icône "?" au survol sur le bouton Valider pour l'expliquer). Le mode
+  "Au fur et à mesure" continue lui de fonctionner normalement (correction
+  immédiate par question), choix explicite de l'utilisateur.
+  **Piloté pour l'instant sur une seule fiche**, `cahiers/seconde/cahier-1/fiche-01.html`
+  — testé de bout en bout (enregistrement, reprise à l'identique après
+  rechargement, validation, coexistence avec l'ancien modèle sur une autre
+  fiche du même élève, affichage des trois états côté tableau de bord :
+  non commencée / en cours / validée). Les 43 autres fiches restent sur
+  l'ancien modèle (`tentatives`) ; le tableau de bord lit et agrège les
+  deux modèles en parallèle sans conflit, une fiche donnée n'étant jamais
+  câblée que sur l'un des deux. **Pas encore étendu aux 43 autres** — à
+  faire une fois le pilote definitivement validé par l'utilisateur, avec
+  le même script de câblage mécanique que pour le suivi initial.
 - Suivi des **automatismes de Première** : uniquement les sujets blancs
   (`automatismes/premiere/sujet-blanc.html`), pas les fiches thématiques
   libres (`fiche.html`, jamais suivies, même en mode chrono — non notées
@@ -126,6 +161,14 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
 - Excel en français attend `;` comme séparateur CSV, pas `,`.
 - Sur ce PC, Node.js est installé mais absent du PATH par défaut :
   `$env:PATH = "C:\Program Files\nodejs;" + $env:PATH` avant `node`/`npm`.
+- `assets/js/suivi.js` est chargé en `<script type="module">`, donc
+  **différé par nature** (comme `defer`) : un script classique placé plus
+  bas dans la page peut s'exécuter AVANT que ce module ait fini de tourner
+  et attaché ses fonctions sur `window`. Tout code de fiche qui a besoin de
+  `window.chargerBrouillon`/`estConnecte`/etc. dès le chargement (pas
+  seulement en réaction à un clic plus tard) doit attendre
+  `DOMContentLoaded` avant de s'exécuter — sinon `window.X` est encore
+  `undefined` au moment de l'appel.
 
 ## Procédure de reprise sur une autre machine
 

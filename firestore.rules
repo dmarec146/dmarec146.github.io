@@ -7,8 +7,13 @@
 // Modèle de données :
 //   eleves/{uid}                    profil d'un élève (pseudo, classe...)
 //   eleves/{uid}/tentatives/{id}     une tentative sur un exercice (journal, non modifiable)
+//                                    -- ancien modèle de suivi des cahiers de calcul,
+//                                       encore utilisé par les fiches pas migrées
 //   eleves/{uid}/connexions/{id}     une connexion reussie (journal, non modifiable)
 //   eleves/{uid}/automatismes/{id}   un sujet blanc termine (journal, non modifiable)
+//   eleves/{uid}/brouillons/{ficheId} état courant d'une fiche de calcul en pause
+//                                    -- nouveau modèle, mutable, écrasé/supprimé par l'élève
+//   eleves/{uid}/resultats/{ficheId}  score cumulé d'une fiche de calcul (nouveau modèle)
 //   devoirs/{id}                    un devoir attribué par l'enseignant
 //
 // Les comptes élèves et le compte enseignant sont créés côté serveur (script
@@ -61,6 +66,24 @@ service cloud.firestore {
         allow read: if estProprietaire(uid) || estAdmin();
         allow create: if estProprietaire(uid);
         allow update: if false;
+        allow delete: if estAdmin();
+      }
+
+      match /brouillons/{ficheId} {
+        // Etat courant d'une fiche de calcul en pause (pas un journal) :
+        // l'eleve peut l'ecraser ou le supprimer librement, contrairement
+        // aux collections ci-dessus. Uniquement les cahiers de calcul.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create, update, delete: if estProprietaire(uid);
+      }
+
+      match /resultats/{ficheId} {
+        // Score cumule par fiche de calcul (remplace le journal
+        // "tentatives" pour les fiches migrees vers ce nouveau modele) : mis
+        // a jour (merge) a chaque validation. Pas de suppression par
+        // l'eleve, comme les journaux ci-dessus.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create, update: if estProprietaire(uid);
         allow delete: if estAdmin();
       }
     }

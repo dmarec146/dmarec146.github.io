@@ -144,6 +144,7 @@ function agregerParFiche(tentatives) {
 
     resultats.push({
       ficheId,
+      enCours: false,
       score: totalExercices ? `${exercicesReussis.size} / ${totalExercices}` : `${exercicesReussis.size} / ?`,
       nbTentatives: passages.length,
       moyenneQuestions: Math.round(moyenneQuestions * 10) / 10,
@@ -151,7 +152,45 @@ function agregerParFiche(tentatives) {
       derniereActivite,
     });
   }
-  return resultats.sort((a, b) => b.derniereActivite - a.derniereActivite);
+  return resultats;
+}
+
+// Nouveau modele de suivi des cahiers de calcul (voir assets/js/suivi.js) :
+// un document "resultats" par fiche validee (remplace les tentatives
+// individuelles) et, tant qu'une fiche n'a pas ete validee, un document
+// "brouillons" qui indique juste qu'il y a une activite en cours, sans score
+// (le detail exact de la fiche en pause -- valeurs, reponses saisies -- ne
+// sert qu'a la reprise cote eleve, pas a l'affichage admin).
+function agregerResultats(docsResultats) {
+  return docsResultats.map((d) => {
+    const r = d.data();
+    const bonnes = Array.isArray(r.exercicesReussis) ? r.exercicesReussis.length : 0;
+    const nbValidations = r.nbValidations || 0;
+    return {
+      ficheId: r.ficheId,
+      enCours: false,
+      score: r.totalExercices ? `${bonnes} / ${r.totalExercices}` : `${bonnes} / ?`,
+      nbTentatives: nbValidations,
+      moyenneQuestions: nbValidations ? Math.round((r.sommeQuestionsRepondues / nbValidations) * 10) / 10 : 0,
+      totalExercices: r.totalExercices || 0,
+      derniereActivite: horodatageEnMillis(r.derniereActivite),
+    };
+  });
+}
+
+function agregerBrouillonsEnCours(docsBrouillons, ficheIdsDejaValidees) {
+  return docsBrouillons
+    .map((d) => d.data())
+    .filter((b) => !ficheIdsDejaValidees.has(b.ficheId))
+    .map((b) => ({
+      ficheId: b.ficheId,
+      enCours: true,
+      score: null,
+      nbTentatives: 0,
+      moyenneQuestions: 0,
+      totalExercices: Array.isArray(b.exercices) ? b.exercices.length : 0,
+      derniereActivite: horodatageEnMillis(b.horodatage),
+    }));
 }
 
 // Trois lignes fixes (niveaux 1, 2, 3), meme si un niveau n'a jamais ete
@@ -174,14 +213,27 @@ async function chargerTout() {
     const eleves = instantane.docs.map((d) => ({ uid: d.id, ...d.data() }));
 
     await Promise.all(eleves.map(async (eleve) => {
-      const [instantaneTentatives, instantaneConnexions, instantaneAutomatismes] = await Promise.all([
+      const [instantaneTentatives, instantaneConnexions, instantaneAutomatismes, instantaneResultats, instantaneBrouillons] = await Promise.all([
         getDocs(collection(db, 'eleves', eleve.uid, 'tentatives')),
         getDocs(collection(db, 'eleves', eleve.uid, 'connexions')),
         getDocs(collection(db, 'eleves', eleve.uid, 'automatismes')),
+        getDocs(collection(db, 'eleves', eleve.uid, 'resultats')),
+        getDocs(collection(db, 'eleves', eleve.uid, 'brouillons')),
       ]);
       const sujetsBlancs = instantaneAutomatismes.docs.map((d) => d.data());
+
+      // Ancien modele (tentatives) et nouveau modele (resultats/brouillons)
+      // portent chacun sur des fiches disjointes : une fiche est cablee sur
+      // l'un ou l'autre, jamais les deux (voir assets/js/suivi.js).
+      const activiteAncienModele = agregerParFiche(instantaneTentatives.docs.map((d) => d.data()));
+      const resultatsAgreges = agregerResultats(instantaneResultats.docs);
+      const ficheIdsValidees = new Set(resultatsAgreges.map((r) => r.ficheId));
+      const brouillonsAgreges = agregerBrouillonsEnCours(instantaneBrouillons.docs, ficheIdsValidees);
+      const activite = [...activiteAncienModele, ...resultatsAgreges, ...brouillonsAgreges]
+        .sort((a, b) => b.derniereActivite - a.derniereActivite);
+
       donneesParUid.set(eleve.uid, {
-        activite: agregerParFiche(instantaneTentatives.docs.map((d) => d.data())),
+        activite,
         nbConnexions: instantaneConnexions.size,
         automatismesParNiveau: agregerAutomatismesParNiveau(sujetsBlancs),
       });
@@ -244,8 +296,10 @@ function afficherClasse(classe) {
     const celluleNom = document.createElement('td');
     celluleNom.textContent = nomAffiche(eleve);
 
+    // Ne compte que les fiches terminees (une "en cours" -- brouillon non
+    // valide -- n'est pas encore "effectuee").
     const celluleFiches = document.createElement('td');
-    celluleFiches.textContent = String(donnees.activite.length);
+    celluleFiches.textContent = String(donnees.activite.filter((a) => !a.enCours).length);
 
     const celluleConnexions = document.createElement('td');
     celluleConnexions.textContent = String(donnees.nbConnexions);
@@ -287,18 +341,18 @@ function afficherDetail(index) {
       const ligneDetail = document.createElement('tr');
 
       const celluleFiche = document.createElement('td');
-      celluleFiche.textContent = formaterFicheId(item.ficheId);
+      celluleFiche.textContent = formaterFicheId(item.ficheId) + (item.enCours ? ' (en cours)' : '');
 
       const celluleScore = document.createElement('td');
-      celluleScore.textContent = item.score;
+      celluleScore.textContent = item.enCours ? '—' : item.score;
 
       const celluleTentatives = document.createElement('td');
-      celluleTentatives.textContent = String(item.nbTentatives);
+      celluleTentatives.textContent = item.enCours ? '—' : String(item.nbTentatives);
 
       const celluleMoyenne = document.createElement('td');
-      celluleMoyenne.textContent = item.totalExercices
-        ? `${item.moyenneQuestions} / ${item.totalExercices}`
-        : `${item.moyenneQuestions} / ?`;
+      celluleMoyenne.textContent = item.enCours
+        ? '—'
+        : (item.totalExercices ? `${item.moyenneQuestions} / ${item.totalExercices}` : `${item.moyenneQuestions} / ?`);
 
       const celluleDate = document.createElement('td');
       celluleDate.textContent = item.derniereActivite
