@@ -65,7 +65,9 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   par spécificité égale et les boutons restent visibles même pour les élèves
   hors Première.
 - Menu du site : icône connexion/déconnexion + lien tableau de bord (admin
-  seulement) — chargé pour l'instant uniquement sur `index.html`, pas sur les
+  seulement) — chargée pour l'instant sur `index.html` et `/tableau-de-bord/`
+  (le bouton texte "Se déconnecter" du tableau de bord a été retiré au profit
+  de cette icône, pour rester cohérent avec le reste du site), pas sur les
   fiches (hors périmètre du pilote).
 - Suivi câblé sur **les 44 fiches de calcul** (Première + Seconde) — le
   pilote (`cahiers/premiere/cahier-1/fiche-01.html`) puis les 43 autres,
@@ -91,6 +93,12 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   (classe `1ere-demo`, donc reconnu Première pour le suivi automatismes),
   pour tester du point de vue élève sans toucher aux vraies données.
   Historique de tentatives/automatismes vidé après chaque test.
+- Deux comptes élèves fictifs pour tester le tableau de bord avec des
+  données réalistes : `l.testeur` (classe `2nde-test`, deux fiches de calcul
+  travaillées) et `n.testeuse` (classe `1ere-test`, deux fiches de calcul +
+  deux sujets blancs, un par mode fiche/chrono). Identifiants dans
+  `outils/creer-comptes/comptes-crees-2026-09-16T09-33-55-634Z.csv`
+  (jamais commité). À supprimer si plus utiles.
 
 ## Pas encore fait
 

@@ -1,7 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import {
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import {
   collection,
@@ -15,7 +14,6 @@ const vueListe = document.getElementById('tdb-vue-liste');
 const filtreClasse = document.getElementById('tdb-select-classe');
 const corpsTableau = document.getElementById('tdb-corps');
 const compteur = document.getElementById('tdb-compteur');
-const boutonDeconnexion = document.getElementById('tdb-deconnexion');
 const zoneDetail = document.getElementById('tdb-detail');
 const detailTitre = document.getElementById('tdb-detail-titre');
 const zoneOnglets = document.getElementById('tdb-detail-onglets');
@@ -352,8 +350,3 @@ boutonOngletAutomatismes.addEventListener('click', () => afficherOnglet('automat
 boutonPrecedent.addEventListener('click', () => afficherDetail(indexActuel - 1));
 boutonSuivant.addEventListener('click', () => afficherDetail(indexActuel + 1));
 boutonRetour.addEventListener('click', () => afficherClasse(classeActuelle));
-
-boutonDeconnexion.addEventListener('click', async () => {
-  await signOut(auth);
-  window.location.replace('../connexion/index.html');
-});
