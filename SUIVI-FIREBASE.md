@@ -59,10 +59,12 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
 - Menu du site : icône connexion/déconnexion + lien tableau de bord (admin
   seulement) — chargé pour l'instant uniquement sur `index.html`, pas sur les
   fiches (hors périmètre du pilote).
-- Suivi câblé en PILOTE sur une seule fiche :
-  `cahiers/premiere/cahier-1/fiche-01.html` (voir `assets/js/suivi.js`).
-  Score = questions réussies au moins une fois, tous passages confondus,
-  rapporté au nombre total de questions de la fiche.
+- Suivi câblé sur **les 44 fiches de calcul** (Première + Seconde) — le
+  pilote (`cahiers/premiere/cahier-1/fiche-01.html`) puis les 43 autres,
+  même schéma partout (voir `assets/js/suivi.js`). Automatismes non
+  concernées (moteur différent, hors périmètre). Score = questions
+  réussies au moins une fois, tous passages confondus, rapporté au nombre
+  total de questions de la fiche.
 
 ## Comptes existants dans Firebase
 
@@ -75,9 +77,11 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
 ## Pas encore fait
 
 - Devoirs (brique à venir, sur demande explicite de l'utilisateur).
-- Câblage du suivi sur les 42 autres fiches (attend une fusion + validation
-  en conditions réelles sur la fiche pilote).
-- Fusion de `suivi-firebase` vers `master` (pas encore demandée).
+- Fusion de `suivi-firebase` vers `master` — décidée : se fera une fois le
+  reste du travail sur cette branche terminé (pas seulement le câblage),
+  sur demande explicite de l'utilisateur le moment venu. Aucun élève n'a
+  encore reçu ses identifiants, donc pas d'urgence ni de risque à continuer
+  sur cette branche.
 
 ## Pièges déjà rencontrés
 
