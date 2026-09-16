@@ -147,6 +147,14 @@ window.MathJax = {
     padding: 10px 12px;
     margin-bottom: 12px;
   }
+  .mode-panneau[hidden] { display: none; }
+  /* Span enveloppant "Valider ma fiche" + l'icone "?" : display:inline-block
+     doit etre porte par une regle de classe (pas un style en ligne) pour que
+     la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
+     l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
+     faible), laissant le bouton visible malgre l'attribut hidden. */
+  .zone-valider { position: relative; display: inline-block; }
+  .zone-valider[hidden] { display: none; }
   .mode-label {
     font-size: 13px;
     font-weight: bold;
@@ -569,7 +577,7 @@ window.MathJax = {
 
 <div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
 
-<div class="mode-panneau">
+<div class="mode-panneau" id="mode-panneau">
   <span class="mode-label">Vérifier chaque réponse</span>
   <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
   <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
@@ -619,7 +627,7 @@ window.MathJax = {
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
   <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()" hidden>Enregistrer mon avancement</button>
-  <span id="zone-valider" style="position:relative;display:inline-block;" hidden>
+  <span id="zone-valider" class="zone-valider" hidden>
     <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
     <span title="« Corrigé des erreurs » et « Voir toutes les réponses » ne s'activent qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#666;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
   </span>
@@ -1513,8 +1521,17 @@ function verifierUne(idx) {
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
   const val = valeurDuChamp(input);
-  div.classList.remove('correct','incorrect');
-  if (!val) { statut.textContent=''; statut.className='q-statut'; delete saisies[idx]; return null; }
+  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
+  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
+  // se font quand meme, silencieusement, a chaque reponse tapee. Un
+  // visiteur anonyme voit tout normalement, comme avant.
+  const reveler = !eleveConnecte || ficheValidee;
+  if (reveler) div.classList.remove('correct','incorrect');
+  if (!val) {
+    if (reveler) { statut.textContent=''; statut.className='q-statut'; }
+    delete saisies[idx];
+    return null;
+  }
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
@@ -1522,9 +1539,11 @@ function verifierUne(idx) {
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
-  div.classList.add(ok ? 'correct' : 'incorrect');
-  statut.textContent = ok ? '✓ correct' : '✗ à revoir';
-  statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  if (reveler) {
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  }
   saisies[idx] = { id: ex.id, valeur: val, correct: ok };
   return ok;
 }
@@ -1555,11 +1574,17 @@ async function validerFicheActuelle() {
   const bouton = document.getElementById('btn-valider');
   if (bouton) bouton.disabled = true;
   try {
+    // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
+    // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
+    // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
+    // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    ficheValidee = true;
+    mettreAJourEtatBoutons();
+    verifierTout();
+
     const reponses = Object.values(saisies);
     const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
     await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
-    ficheValidee = true;
-    mettreAJourEtatBoutons();
     afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
   } catch (erreur) {
     afficherEtatSuivi('Échec de la validation (connexion internet ?).');
@@ -1584,7 +1609,12 @@ function attacherEcouteurs() {
         evenement.preventDefault();
         ignorerProchainInput = true;
         valideeParEntree = true;
-        if (modeImmediat) {
+        if (eleveConnecte) {
+          // Calcule et enregistre silencieusement (voir reveler dans
+          // verifierUne) ; le bilan ne s'affiche que si deja valide.
+          verifierUne(idx);
+          if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+        } else if (modeImmediat) {
           verifierUne(idx);
           if (toutesLesReponsesSontSaisies()) verifierTout();
         }
@@ -1597,7 +1627,10 @@ function attacherEcouteurs() {
     });
     input.addEventListener('blur', () => {
       if (valideeParEntree) { valideeParEntree = false; return; }
-      if (modeImmediat) {
+      if (eleveConnecte) {
+        verifierUne(idx);
+        if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+      } else if (modeImmediat) {
         verifierUne(idx);
         if (toutesLesReponsesSontSaisies()) verifierTout();
       }
@@ -1816,8 +1849,13 @@ async function initialiserFiche() {
   eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
   const boutonEnregistrer = document.getElementById('btn-enregistrer');
   const zoneValider = document.getElementById('zone-valider');
+  const panneauMode = document.getElementById('mode-panneau');
   if (boutonEnregistrer) boutonEnregistrer.hidden = !eleveConnecte;
   if (zoneValider) zoneValider.hidden = !eleveConnecte;
+  // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
+  // toute facon jamais affichee avant validation (voir "reveler" dans
+  // verifierUne), ces boutons n'auraient plus de sens.
+  if (panneauMode) panneauMode.hidden = eleveConnecte;
 
   let brouillon = null;
   if (eleveConnecte && window.chargerBrouillon) {
@@ -1867,5 +1905,6 @@ if (document.readyState === 'loading') {
 }
 </script>
 
+<script type="module" src="../../../assets/js/nav-auth.js"></script>
 </body>
 </html>
