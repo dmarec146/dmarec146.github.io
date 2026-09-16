@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Fiche 4 — Polynômes I (Première) — interactif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
@@ -1871,6 +1872,21 @@ function valeurDuChamp(el) {
   }
   return el.value.trim();
 }
+// Identifiant stable de la fiche pour le suivi (assets/js/suivi.js) :
+// le chemin de la page lui-meme, donc correct automatiquement si ce
+// fichier est copie sous un autre nom/chemin pour une nouvelle fiche.
+const FICHE_ID = window.location.pathname;
+
+// Identifiant du passage en cours, regenere a chaque nouveau passage
+// (chargement initial ou "Generer une nouvelle fiche") : permet au tableau
+// de bord de compter les passages distincts, pas juste les verifications.
+function genererIdPasse() {
+  return (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+let PASSE_ACTUELLE = genererIdPasse();
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -1887,6 +1903,7 @@ function verifierUne(idx) {
   div.classList.add(ok ? 'correct' : 'incorrect');
   statut.textContent = ok ? '✓ correct' : '✗ à revoir';
   statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
   return ok;
 }
 let modeImmediat = true;
@@ -2085,6 +2102,7 @@ function reinitialiser() {
   document.getElementById('score-panneau').classList.remove('visible');
 }
 function genererNouvelleFiche() {
+  PASSE_ACTUELLE = genererIdPasse();
   exercices = genererExercices();
   construireGrilles();
   attacherEcouteurs();
