@@ -56,6 +56,14 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
 - `/tableau-de-bord/` : réservé à l'enseignant — liste par classe (nom,
   fiches effectuées, connexions), détail par élève au clic (score, tentatives,
   questions faites, dernière activité), navigation élève suivant/précédent.
+  Pour les élèves de Première : deux boutons sous le nom ("Cahiers de calcul"
+  / "Automatismes — sujets blancs") pour basculer entre les deux sections
+  plutôt que de les empiler (le tableau des cahiers de calcul grandira ligne
+  par ligne comme pour la Seconde). Piège rencontré : `.tdb-onglets[hidden]`
+  doit être explicitement redéfini en CSS (`display: none`), sinon
+  `.tdb-onglets { display: flex; }` prend le dessus sur l'attribut `hidden`
+  par spécificité égale et les boutons restent visibles même pour les élèves
+  hors Première.
 - Menu du site : icône connexion/déconnexion + lien tableau de bord (admin
   seulement) — chargé pour l'instant uniquement sur `index.html`, pas sur les
   fiches (hors périmètre du pilote).

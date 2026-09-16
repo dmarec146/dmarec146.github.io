@@ -18,6 +18,10 @@ const compteur = document.getElementById('tdb-compteur');
 const boutonDeconnexion = document.getElementById('tdb-deconnexion');
 const zoneDetail = document.getElementById('tdb-detail');
 const detailTitre = document.getElementById('tdb-detail-titre');
+const zoneOnglets = document.getElementById('tdb-detail-onglets');
+const boutonOngletCalcul = document.getElementById('tdb-onglet-calcul');
+const boutonOngletAutomatismes = document.getElementById('tdb-onglet-automatismes');
+const zoneSectionCalcul = document.getElementById('tdb-section-calcul');
 const detailVide = document.getElementById('tdb-detail-vide');
 const detailTableau = document.getElementById('tdb-detail-tableau');
 const detailCorps = document.getElementById('tdb-detail-corps');
@@ -318,8 +322,13 @@ function afficherDetail(index) {
         : `Niveau ${ligneNiveau.niveau} — aucun sujet blanc effectué.`;
       automatismesContenu.appendChild(li);
     }
-    zoneAutomatismes.hidden = false;
+    zoneOnglets.hidden = false;
+    afficherOnglet('calcul');
   } else {
+    // Pas d'automatismes suivis pour ce niveau : pas d'onglets, juste la
+    // section cahiers de calcul, comme avant.
+    zoneOnglets.hidden = true;
+    zoneSectionCalcul.hidden = false;
     zoneAutomatismes.hidden = true;
   }
 
@@ -328,6 +337,17 @@ function afficherDetail(index) {
 
   zoneDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+function afficherOnglet(nom) {
+  const surCalcul = nom === 'calcul';
+  zoneSectionCalcul.hidden = !surCalcul;
+  zoneAutomatismes.hidden = surCalcul;
+  boutonOngletCalcul.classList.toggle('tdb-onglet-actif', surCalcul);
+  boutonOngletAutomatismes.classList.toggle('tdb-onglet-actif', !surCalcul);
+}
+
+boutonOngletCalcul.addEventListener('click', () => afficherOnglet('calcul'));
+boutonOngletAutomatismes.addEventListener('click', () => afficherOnglet('automatismes'));
 
 boutonPrecedent.addEventListener('click', () => afficherDetail(indexActuel - 1));
 boutonSuivant.addEventListener('click', () => afficherDetail(indexActuel + 1));
