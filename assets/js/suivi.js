@@ -8,14 +8,16 @@
 // que d'etre importe directement. Cote fiche, un seul appel a ajouter,
 // juste apres le calcul du resultat dans verifierUne() :
 //
-//   window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE);
+//   window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
 //
 // avec FICHE_ID = window.location.pathname (stable, automatique meme si la
-// fiche est copiee sous un nouveau nom/chemin), et PASSE_ACTUELLE un
+// fiche est copiee sous un nouveau nom/chemin), PASSE_ACTUELLE un
 // identifiant unique regenere a chaque nouveau passage sur la fiche
-// (chargement de page ou "Generer une nouvelle fiche") : c'est ce qui
-// permet au tableau de bord de compter les passages distincts plutot que
-// les verifications individuelles.
+// (chargement de page ou "Generer une nouvelle fiche") -- ce qui permet au
+// tableau de bord de compter les passages distincts plutot que les
+// verifications individuelles --, et exercices.length le nombre total de
+// questions de la fiche, pour rapporter le score au total plutot qu'au
+// nombre de questions tentees.
 
 import { auth, db } from './firebase-config.js';
 import {
@@ -34,7 +36,7 @@ onAuthStateChanged(auth, (u) => { utilisateurCourant = u; });
 // 100% locale (calculee avant cet appel) ; cet enregistrement n'est qu'un
 // effet secondaire, silencieux en cas d'echec (hors ligne, visiteur non
 // connecte, quota Firestore depasse...).
-export async function enregistrerTentative(ficheId, exerciceId, resultat, passe) {
+export async function enregistrerTentative(ficheId, exerciceId, resultat, passe, totalExercices) {
   if (!utilisateurCourant) return;
   try {
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'tentatives'), {
@@ -42,6 +44,7 @@ export async function enregistrerTentative(ficheId, exerciceId, resultat, passe)
       exercice: exerciceId,
       resultat,
       passe,
+      totalExercices,
       horodatage: serverTimestamp(),
     });
   } catch (erreur) {

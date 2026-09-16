@@ -79,14 +79,21 @@ onAuthStateChanged(auth, async (utilisateur) => {
   chargerTout();
 });
 
-// Regroupe une liste de tentatives par fiche, puis par PASSAGE (champ
-// "passe", un identifiant regenere a chaque chargement/regeneration de la
-// fiche cote eleve -- voir assets/js/suivi.js et cahiers/premiere/cahier-1/
-// fiche-01.html). Les tentatives anterieures a cet ajout n'ont pas de champ
-// "passe" : elles sont regroupees dans un seul passage "_ancien" pour ne
-// pas planter, au prix d'un score approximatif sur ces vieilles donnees.
+// Regroupe une liste de tentatives par fiche. Le score mesure une MAITRISE
+// CUMULEE : chaque question reussie au moins une fois compte, meme si ce
+// n'est pas arrive le meme jour ni lors du meme passage -- rapportee au
+// nombre TOTAL de questions de la fiche (pas seulement celles tentees),
+// pour qu'un "1/1" trompeur (une seule question faite, par hasard juste)
+// devienne un "1/38" qui reflete vraiment l'avancement.
 //
-//   score       = celui du MEILLEUR passage (le plus haut ratio bon/total)
+// Le passage (champ "passe", un identifiant regenere a chaque chargement ou
+// regeneration de la fiche cote eleve -- voir assets/js/suivi.js et
+// cahiers/premiere/cahier-1/fiche-01.html) sert seulement a compter les
+// tentatives et la moyenne de questions par tentative, pas le score.
+// Tentatives anterieures a cet ajout (sans "passe") : regroupees dans un
+// seul passage "_ancien" pour ne pas planter sur d'anciennes donnees.
+//
+//   score       = questions reussies au moins une fois / total de la fiche
 //   nbTentatives = nombre de passages distincts (fiche allee au bout ou non)
 //   moyenneQuestions = nombre moyen de questions distinctes faites par passage
 //   derniereActivite = horodatage le plus recent, tous passages confondus
@@ -100,6 +107,13 @@ function agregerParFiche(tentatives) {
 
   const resultats = [];
   for (const [ficheId, listeTentatives] of parFiche) {
+    const exercicesReussis = new Set(
+      listeTentatives.filter((t) => t.resultat === true).map((t) => t.exercice)
+    );
+    const totalExercices = listeTentatives.reduce(
+      (max, t) => Math.max(max, t.totalExercices || 0), 0
+    );
+
     const parPasse = new Map();
     for (const t of listeTentatives) {
       const cle = t.passe || '_ancien';
@@ -108,32 +122,19 @@ function agregerParFiche(tentatives) {
     }
 
     const passages = [...parPasse.values()].map((tentativesPasse) => {
-      const derniereParExercice = new Map();
-      for (const t of tentativesPasse) {
-        const precedente = derniereParExercice.get(t.exercice);
-        if (!precedente || horodatageEnMillis(t.horodatage) >= horodatageEnMillis(precedente.horodatage)) {
-          derniereParExercice.set(t.exercice, t);
-        }
-      }
-      const dernieres = [...derniereParExercice.values()];
-      const correctes = dernieres.filter((t) => t.resultat === true).length;
+      const exercicesDistincts = new Set(tentativesPasse.map((t) => t.exercice));
       const finPassage = tentativesPasse.reduce(
         (max, t) => Math.max(max, horodatageEnMillis(t.horodatage)), 0
       );
-      return { correctes, nbExercices: dernieres.length, finPassage };
+      return { nbExercices: exercicesDistincts.size, finPassage };
     });
 
-    const meilleur = passages.reduce((a, b) => {
-      const ratioA = a.nbExercices ? a.correctes / a.nbExercices : 0;
-      const ratioB = b.nbExercices ? b.correctes / b.nbExercices : 0;
-      return ratioB > ratioA ? b : a;
-    });
     const moyenneQuestions = passages.reduce((s, p) => s + p.nbExercices, 0) / passages.length;
     const derniereActivite = passages.reduce((max, p) => Math.max(max, p.finPassage), 0);
 
     resultats.push({
       ficheId,
-      score: `${meilleur.correctes} / ${meilleur.nbExercices}`,
+      score: totalExercices ? `${exercicesReussis.size} / ${totalExercices}` : `${exercicesReussis.size} / ?`,
       nbTentatives: passages.length,
       moyenneQuestions: Math.round(moyenneQuestions * 10) / 10,
       derniereActivite,
