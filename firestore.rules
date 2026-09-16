@@ -8,6 +8,7 @@
 //   eleves/{uid}                    profil d'un élève (pseudo, classe...)
 //   eleves/{uid}/tentatives/{id}     une tentative sur un exercice (journal, non modifiable)
 //   eleves/{uid}/connexions/{id}     une connexion reussie (journal, non modifiable)
+//   eleves/{uid}/automatismes/{id}   un sujet blanc termine (journal, non modifiable)
 //   devoirs/{id}                    un devoir attribué par l'enseignant
 //
 // Les comptes élèves et le compte enseignant sont créés côté serveur (script
@@ -48,6 +49,15 @@ service cloud.firestore {
         // Meme principe que tentatives : un journal d'evenements, pas un
         // etat -- l'eleve ajoute, personne ne modifie, seul l'enseignant
         // peut supprimer une entree.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
+        allow delete: if estAdmin();
+      }
+
+      match /automatismes/{automatismeId} {
+        // Meme principe que tentatives/connexions : un sujet blanc termine,
+        // journal non modifiable.
         allow read: if estProprietaire(uid) || estAdmin();
         allow create: if estProprietaire(uid);
         allow update: if false;

@@ -66,4 +66,25 @@ export async function enregistrerConnexion(uid) {
   }
 }
 
+// Un sujet blanc termine (mode chrono uniquement, voir automatismes/premiere/
+// sujet-blanc.html et le callback onFinSerie dans assets/moteur.js). Pas de
+// suivi du mode fiche (pratique libre, non notee) ni des themes abordes
+// (tout est melange dans un sujet blanc).
+export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode) {
+  if (!utilisateurCourant) return;
+  try {
+    await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'automatismes'), {
+      bonnes,
+      total,
+      points,
+      niveau,
+      mode,
+      horodatage: serverTimestamp(),
+    });
+  } catch (erreur) {
+    console.warn('Suivi : enregistrement du sujet blanc impossible.', erreur);
+  }
+}
+
 window.enregistrerTentative = enregistrerTentative;
+window.enregistrerAutomatisme = enregistrerAutomatisme;

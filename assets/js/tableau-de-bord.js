@@ -24,6 +24,8 @@ const detailCorps = document.getElementById('tdb-detail-corps');
 const boutonPrecedent = document.getElementById('tdb-detail-precedent');
 const boutonSuivant = document.getElementById('tdb-detail-suivant');
 const boutonRetour = document.getElementById('tdb-detail-retour');
+const zoneAutomatismes = document.getElementById('tdb-automatismes');
+const automatismesContenu = document.getElementById('tdb-automatismes-contenu');
 
 // classe -> [eleve...] ; uid -> { activite: [...par fiche...], nbConnexions }
 let elevesParClasse = new Map();
@@ -60,6 +62,12 @@ function nomAffiche(eleve) {
 
 function horodatageEnMillis(horodatage) {
   return horodatage?.toMillis ? horodatage.toMillis() : 0;
+}
+
+// Seule la Premiere a des automatismes avec suivi pour l'instant (Seconde
+// peut les utiliser aussi, mais sans suivi demande ; Terminale a venir).
+function estPremiere(classe) {
+  return !!classe && classe.toLowerCase().startsWith('1ere');
 }
 
 onAuthStateChanged(auth, async (utilisateur) => {
@@ -144,19 +152,36 @@ function agregerParFiche(tentatives) {
   return resultats.sort((a, b) => b.derniereActivite - a.derniereActivite);
 }
 
+// Trois lignes fixes (niveaux 1, 2, 3), meme si un niveau n'a jamais ete
+// tente -- l'affichage decide alors quoi en faire (voir afficherDetail).
+function agregerAutomatismesParNiveau(sujetsBlancs) {
+  return [1, 2, 3].map((niveau) => {
+    const duNiveau = sujetsBlancs.filter((s) => s.niveau === niveau);
+    const notes = duNiveau.filter((s) => typeof s.points === 'number').map((s) => s.points);
+    return {
+      niveau,
+      nbSujetsBlancs: duNiveau.length,
+      noteMoyenne: notes.length ? Math.round((notes.reduce((s, n) => s + n, 0) / notes.length) * 10) / 10 : null,
+    };
+  });
+}
+
 async function chargerTout() {
   try {
     const instantane = await getDocs(collection(db, 'eleves'));
     const eleves = instantane.docs.map((d) => ({ uid: d.id, ...d.data() }));
 
     await Promise.all(eleves.map(async (eleve) => {
-      const [instantaneTentatives, instantaneConnexions] = await Promise.all([
+      const [instantaneTentatives, instantaneConnexions, instantaneAutomatismes] = await Promise.all([
         getDocs(collection(db, 'eleves', eleve.uid, 'tentatives')),
         getDocs(collection(db, 'eleves', eleve.uid, 'connexions')),
+        getDocs(collection(db, 'eleves', eleve.uid, 'automatismes')),
       ]);
+      const sujetsBlancs = instantaneAutomatismes.docs.map((d) => d.data());
       donneesParUid.set(eleve.uid, {
         activite: agregerParFiche(instantaneTentatives.docs.map((d) => d.data())),
         nbConnexions: instantaneConnexions.size,
+        automatismesParNiveau: agregerAutomatismesParNiveau(sujetsBlancs),
       });
     }));
 
@@ -209,7 +234,7 @@ function afficherClasse(classe) {
   corpsTableau.innerHTML = '';
 
   eleves.forEach((eleve, index) => {
-    const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0 };
+    const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0, automatismesParNiveau: [] };
     const ligne = document.createElement('tr');
     ligne.classList.add('tdb-ligne-cliquable');
     ligne.tabIndex = 0;
@@ -243,7 +268,7 @@ function afficherDetail(index) {
   indexActuel = index;
 
   const eleve = eleves[index];
-  const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0 };
+  const donnees = donneesParUid.get(eleve.uid) || { activite: [], nbConnexions: 0, automatismesParNiveau: [] };
 
   vueListe.hidden = true;
   zoneDetail.hidden = false;
@@ -282,6 +307,20 @@ function afficherDetail(index) {
       detailCorps.appendChild(ligneDetail);
     }
     detailTableau.hidden = false;
+  }
+
+  if (estPremiere(eleve.classe)) {
+    automatismesContenu.innerHTML = '';
+    for (const ligneNiveau of donnees.automatismesParNiveau) {
+      const li = document.createElement('li');
+      li.textContent = ligneNiveau.nbSujetsBlancs > 0
+        ? `Niveau ${ligneNiveau.niveau} — note moyenne : ${ligneNiveau.noteMoyenne} / 6 · ${ligneNiveau.nbSujetsBlancs} sujet${ligneNiveau.nbSujetsBlancs > 1 ? 's' : ''} blanc${ligneNiveau.nbSujetsBlancs > 1 ? 's' : ''} effectué${ligneNiveau.nbSujetsBlancs > 1 ? 's' : ''}.`
+        : `Niveau ${ligneNiveau.niveau} — aucun sujet blanc effectué.`;
+      automatismesContenu.appendChild(li);
+    }
+    zoneAutomatismes.hidden = false;
+  } else {
+    zoneAutomatismes.hidden = true;
   }
 
   boutonPrecedent.disabled = index === 0;
