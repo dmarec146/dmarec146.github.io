@@ -137,6 +137,7 @@ function agregerParFiche(tentatives) {
       score: totalExercices ? `${exercicesReussis.size} / ${totalExercices}` : `${exercicesReussis.size} / ?`,
       nbTentatives: passages.length,
       moyenneQuestions: Math.round(moyenneQuestions * 10) / 10,
+      totalExercices,
       derniereActivite,
     });
   }
@@ -268,7 +269,9 @@ function afficherDetail(index) {
       celluleTentatives.textContent = String(item.nbTentatives);
 
       const celluleMoyenne = document.createElement('td');
-      celluleMoyenne.textContent = String(item.moyenneQuestions);
+      celluleMoyenne.textContent = item.totalExercices
+        ? `${item.moyenneQuestions} / ${item.totalExercices}`
+        : `${item.moyenneQuestions} / ?`;
 
       const celluleDate = document.createElement('td');
       celluleDate.textContent = item.derniereActivite
