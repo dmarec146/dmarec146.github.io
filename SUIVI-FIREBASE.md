@@ -205,27 +205,40 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   brouillon peut différer de celui vu au premier passage sur les exercices
   6.3 à 6.8 — limitation cosmétique, pas un bug de notation.
 
-  **3 fiches ont un type d'exercice à widget interactif custom**
-  (`verifierUne()` entièrement différent, pas de `input`/`val` classique en
-  tête de fonction) — jamais examinées en détail, mécanisme pas encore
-  conçu : `cahiers/seconde/cahier-2/fiche-08.html` (`tableauSigne`),
+  **Les 6 fiches à widget interactif custom ont ensuite toutes été migrées
+  à la main** (pas par le script mécanique, structure trop spécifique à
+  chacune) — `cahiers/seconde/cahier-2/fiche-08.html` (`tableauSigne`),
   `cahier-3/fiche-09.html` (`tableauCroiseRempli`), `cahier-3/fiche-10.html`
-  (`schemaEvolution`).
+  (`schemaEvolution`), `cahier-5/fiche-14.html` (`tableauProgramme` +
+  état auxiliaire `paramsGraphique14`), `fiche-15.html`
+  (`tableauVariations` ×2 + état auxiliaire `paramsGraphiqueEq` et
+  `paramsGraphiqueDeux`), `fiche-16.html` (`tableauVariations` ×3 + état
+  auxiliaire `paramsGraphiqueAffine`). Principe commun aux 4 widgets
+  (tableauSigne/tableauCroiseRempli/schemaEvolution/tableauProgramme/
+  tableauVariations) : une fonction `capturerEtatXxx()` lit l'etat brut du
+  DOM (rempli ou non) et alimente `saisies[idx]` a CHAQUE case modifiee
+  (pas seulement au clic sur le bouton de validation dedie au widget), pour
+  que "Enregistrer mon avancement" retienne la progression meme partielle ;
+  une fonction `restaurerEtatXxx()` symetrique recopie cet etat dans le DOM
+  au chargement, avant d'appeler `verifierUne()` pour recolorier/rescorer
+  silencieusement (gating "reveler" applique aux cases du widget comme aux
+  exercices classiques). Quand la structure du widget a un nombre de
+  colonnes/cases VARIABLE (tableauSigne, tableauVariations), l'etat capture
+  est un objet indexe par numero de colonne, jamais un tableau de tableaux
+  — **Firestore rejette les tableaux imbriques** (`setDoc()` plante avec
+  `invalid-argument`), piege decouvert en testant reellement fiche-08 (voir
+  plus bas). Pour les 3 fiches a etat auxiliaire (14/15/16), meme mecanisme
+  `extra` que sur les fiches Premiere deja migrees : necessaire uniquement
+  pour que le graphique partage affiche a la reprise d'un brouillon
+  corresponde a celui vu au premier passage (les reponses elles-memes
+  restent justes independamment, deja copiees dans chaque exercice a la
+  generation) ; `paramsVar` (mini-graphique propre a chaque tableauVariations)
+  et `paramsProgramme` (14.5) n'en ont pas besoin, deja stockes dans
+  l'exercice concerne, comme une reponse normale.
 
-  **3 fiches cumulent état auxiliaire ET widget custom** (chapitre
-  Fonctions, Seconde) — découvertes lors de la vérification des 10 fiches
-  recensées, jamais examinées en détail non plus :
-  `cahiers/seconde/cahier-5/fiche-14.html` (`tableauProgramme` +
-  `paramsGraphique14`/`paramsProgramme`), `fiche-15.html`
-  (`tableauVariations` + `paramsGraphiqueEq`/`paramsGraphiqueDeux`),
-  `fiche-16.html` (`tableauVariations` + `paramsGraphiqueAffine`).
-
-  **État à date : 38 fiches sur 44 migrées** (2 pilotes + 29 + 3 état
-  auxiliaire + 3 statiques + 1 cas limite résolu). Il reste **6 fiches**
-  sur l'ancien modèle (`tentatives`), toutes avec un widget interactif
-  custom (voir ci-dessus) — le tableau de bord lit et agrège les deux
-  modèles en parallèle sans conflit, une fiche donnée n'étant jamais câblée
-  que sur l'un des deux.
+  **État à date : les 44 fiches de cahiers de calcul sont toutes migrées**
+  vers le nouveau modèle de suivi (brouillon/valider) — plus aucune fiche
+  sur l'ancien modèle (`tentatives`).
 
   **Phase de test systématique terminée** (demandée explicitement par
   l'utilisateur après l'extension aux 44 fiches : « je ne pourrai pas tester
@@ -256,19 +269,45 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   une saisie puis sauvegarde dans la même session) peut donner un faux
   positif.
 
-  **Les 38 fiches migrées ont toutes été testées de bout en bout**
-  (enregistrer → recharger → vérifier la restauration des saisies →
-  valider), pas seulement relues : les 12 déjà couvertes précédemment
-  (2 pilotes, fiche-02 à 05 Première, les 3 fiches à état auxiliaire, le
-  cas limite fiche-06, fiche-27/28 après correction) plus 26 fiches
-  supplémentaires passées en revue dans cette session, toutes propres
-  (aucune erreur console, saisies bien restaurées après rechargement,
-  validation fonctionnelle). Seul bug trouvé sur l'ensemble : celui
-  décrit ci-dessus (`const exercices`), déjà corrigé et revérifié.
-  Compte `l.testeur` : contient maintenant un `resultats` pour chacune
-  des 38 fiches (données de test, réponses volontairement fausses) — à
-  nettoyer avant que le compte serve à autre chose, ou à supprimer avec
-  les autres comptes fictifs le moment venu.
+  **Les 38 fiches déjà migrées à ce moment-là ont toutes été testées de
+  bout en bout** (enregistrer → recharger → vérifier la restauration des
+  saisies → valider), pas seulement relues : les 12 déjà couvertes
+  précédemment (2 pilotes, fiche-02 à 05 Première, les 3 fiches à état
+  auxiliaire, le cas limite fiche-06, fiche-27/28 après correction) plus 26
+  fiches supplémentaires, toutes propres (aucune erreur console, saisies
+  bien restaurées après rechargement, validation fonctionnelle). Seul bug
+  trouvé sur l'ensemble : celui décrit ci-dessus (`const exercices`), déjà
+  corrigé et revérifié.
+
+  **Un deuxième bug bloquant trouvé en migrant les 6 fiches à widget
+  custom, sur fiche-08 (le premier widget migré, `tableauSigne`)** :
+  Firestore refuse d'écrire un champ qui est un tableau contenant
+  lui-même des tableaux (`lignes: [[...], [...]]` pour les cases du
+  tableau, une ligne par facteur) — `setDoc()` échoue avec
+  `invalid-argument`. Plus grave : `enregistrerBrouillon()`
+  (`assets/js/suivi.js`) avalait cette erreur silencieusement
+  (`console.warn` sans la remonter à l'appelant), donc la fiche affichait
+  quand même "Avancement enregistré" à l'élève alors que rien n'avait été
+  écrit — un problème plus large que ce seul cas (n'importe quel échec
+  Firestore réel, ex. perte de connexion, aurait donné le même faux
+  positif sur **les 44 fiches**). Corrigé à deux niveaux : (1)
+  `enregistrerBrouillon()` relance désormais l'erreur après l'avoir
+  loguée, pour que le `catch` déjà câblé sur chaque fiche affiche le bon
+  message d'échec ; (2) sur fiche-08 précisément, restructuration de
+  `lignes` en objet indexé par numéro de ligne plutôt qu'en tableau de
+  tableaux. Repéré en testant réellement l'enregistrement (le brouillon
+  revenait tronqué après rechargement), pas à la relecture de code.
+  Commit `e8cbb5f`.
+
+  **Bilan final : les 44 fiches ont toutes été testées de bout en bout**
+  (35 avec le cycle enregistrer→recharger→valider complet, les 6 fiches à
+  widget en plus avec un test spécifique par widget — case entièrement
+  remplie ET partiellement remplie, capture avant clic sur le bouton dédié
+  du widget). Deux bugs bloquants trouvés et corrigés au total (`const
+  exercices`, tableaux imbriqués Firestore), tous les deux uniquement par
+  test réel. Compte `l.testeur` : nettoyé après chaque session de test
+  (`resultats`/`brouillons` supprimés) — laissé vide à la fin de cette
+  série de migrations.
 
   **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
   branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
