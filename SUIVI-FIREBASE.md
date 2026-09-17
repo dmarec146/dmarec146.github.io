@@ -227,6 +227,35 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   modèles en parallèle sans conflit, une fiche donnée n'étant jamais câblée
   que sur l'un des deux.
 
+  **Phase de test systématique en cours** (demandée explicitement par
+  l'utilisateur après l'extension aux 44 fiches : « je ne pourrai pas tester
+  autant de fiches avec autant de questions... prendre le temps de simuler
+  un grand nombre de fiches ») : chaque fiche migrée est rejouée de bout en
+  bout (saisie → Enregistrer → rechargement → vérification de la
+  restauration → Valider), pas juste relue. A déjà trouvé un **bug bloquant
+  qu'aucune vérification d'ancre n'aurait pu détecter** :
+
+  **`cahier-10/fiche-27.html` et `fiche-28.html` déclaraient `exercices` en
+  `const`** (contenu entièrement statique, jamais random, donc jamais
+  réaffecté avant la migration) — le script de câblage mécanique vérifie des
+  correspondances textuelles, pas le mot-clé `let`/`const` utilisé, donc rien
+  n'a signalé le problème à l'écriture. À la restauration d'un brouillon,
+  `exercices = brouillon.exercices;` (ajouté par la migration) plantait avec
+  `TypeError: Assignment to constant variable`, coupant `initialiserFiche()`
+  en plein milieu : saisies non restaurées, puis échec de la validation qui
+  suit. **Repéré uniquement par un test réel** (fiche-28, brouillon existant
+  d'un test précédent) — la relecture de code avait laissé passer les deux
+  fiches, y compris fiche-27 dont un test antérieur, moins poussé (pas de
+  vrai cycle enregistrer→recharger avec brouillon existant), avait semblé
+  passer. Corrigé en changeant `const exercices` en `let exercices` (les
+  deux seules occurrences dans les 44 fiches, vérifié par grep sur tout le
+  dossier `cahiers/`) — testé de bout en bout sur les deux après correction,
+  restauration et validation OK. Commit `8d7cf36`, poussé sur
+  `suivi-firebase`. **Leçon retenue** : un test qui ne force pas le vrai
+  chemin de restauration (brouillon préexistant au chargement, pas juste
+  une saisie puis sauvegarde dans la même session) peut donner un faux
+  positif.
+
   **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
   branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
   la réponse tapée plutôt que d'exiger un nombre déjà calculé — "144-72"
