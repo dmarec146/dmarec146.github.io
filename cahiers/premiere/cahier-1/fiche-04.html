@@ -147,6 +147,14 @@ window.MathJax = {
     padding: 10px 12px;
     margin-bottom: 12px;
   }
+  .mode-panneau[hidden] { display: none; }
+  /* Span enveloppant "Valider ma fiche" + l'icone "?" : display:inline-block
+     doit etre porte par une regle de classe (pas un style en ligne) pour que
+     la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
+     l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
+     faible), laissant le bouton visible malgre l'attribut hidden. */
+  .zone-bouton-suivi { position: relative; display: inline-block; }
+  .zone-bouton-suivi[hidden] { display: none; }
   .mode-label {
     font-size: 13px;
     font-weight: bold;
@@ -499,6 +507,12 @@ window.MathJax = {
     border: 1.5px solid var(--bleu);
   }
   .btn-secondaire:hover { background: var(--bleu-clair); }
+  .btn-principal:disabled, .btn-secondaire:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .btn-principal:disabled:hover { background: var(--bleu); }
+  .btn-secondaire:disabled:hover { background: white; }
 
   .score-panneau {
     display: none;
@@ -717,7 +731,7 @@ window.MathJax = {
 
 <div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
 
-<div class="mode-panneau">
+<div class="mode-panneau" id="mode-panneau">
   <span class="mode-label">Vérifier chaque réponse</span>
   <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
   <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
@@ -795,11 +809,20 @@ window.MathJax = {
 </div>
 
 <div class="barre-controle">
-  <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
+    <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
+    <span title="Sauvegarde ta fiche telle quelle (mêmes valeurs, réponses déjà tapées) pour la reprendre plus tard — sans révéler ton score ni la corriger." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <span id="zone-valider" class="zone-bouton-suivi" hidden>
+    <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
+    <span title="« Voir toutes les réponses » ne s'active qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
 
 <div class="score-panneau" id="score-panneau">
   <span class="score-chiffre" id="score-chiffre">0 / N</span> bonnes réponses
@@ -1887,24 +1910,103 @@ function genererIdPasse() {
 }
 let PASSE_ACTUELLE = genererIdPasse();
 
+// Reponses de la session en cours, indexe par idx d'exercice -> { id, valeur,
+// correct }. Sert a "Enregistrer" (brouillon) et "Valider" (score) plutot
+// que d'ecrire dans Firestore a chaque question verifiee (voir suivi.js).
+let saisies = {};
+
+// Determines une fois au chargement (voir initialiserFiche) : le site reste
+// utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
+// ni rien laisser croire a un visiteur anonyme.
+let eleveConnecte = false;
+// Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
+// false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
+// faux, un eleve connecte ne peut pas voir la correction (empeche de
+// simplement demander toutes les reponses sans avoir valide sa tentative).
+let ficheValidee = false;
+
+function mettreAJourEtatBoutons() {
+  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
+  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
+  // ce bouton n'apporterait plus rien une fois connecte.
+  const boutonToutes = document.getElementById('btn-toutes-reponses');
+  boutonToutes.disabled = eleveConnecte && !ficheValidee;
+}
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
   const val = valeurDuChamp(input);
-  div.classList.remove('correct','incorrect');
-  if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
+  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
+  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
+  // se font quand meme, silencieusement, a chaque reponse tapee. Un
+  // visiteur anonyme voit tout normalement, comme avant.
+  const reveler = !eleveConnecte || ficheValidee;
+  if (reveler) div.classList.remove('correct','incorrect');
+  if (!val) {
+    if (reveler) { statut.textContent=''; statut.className='q-statut'; }
+    delete saisies[idx];
+    return null;
+  }
   let ok;
   if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
-  div.classList.add(ok ? 'correct' : 'incorrect');
-  statut.textContent = ok ? '✓ correct' : '✗ à revoir';
-  statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
-  if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
+  if (reveler) {
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  }
+  saisies[idx] = { id: ex.id, valeur: val, correct: ok };
   return ok;
+}
+
+function afficherEtatSuivi(message) {
+  const zone = document.getElementById('suivi-etat');
+  if (!zone) return;
+  zone.textContent = message;
+  zone.hidden = false;
+}
+
+async function enregistrerBrouillonActuel() {
+  if (!window.enregistrerBrouillon) return;
+  const bouton = document.getElementById('btn-enregistrer');
+  if (bouton) bouton.disabled = true;
+  try {
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
+  } catch (erreur) {
+    afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
+}
+
+async function validerFicheActuelle() {
+  if (!window.validerFiche) return;
+  const bouton = document.getElementById('btn-valider');
+  if (bouton) bouton.disabled = true;
+  try {
+    // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
+    // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
+    // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
+    // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    ficheValidee = true;
+    mettreAJourEtatBoutons();
+    verifierTout();
+
+    const reponses = Object.values(saisies);
+    const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
+    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+  } catch (erreur) {
+    afficherEtatSuivi('Échec de la validation (connexion internet ?).');
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
 }
 let modeImmediat = true;
 function toutesLesReponsesSontSaisies() {
@@ -1920,7 +2022,12 @@ function attacherEcouteurs() {
         evenement.preventDefault();
         ignorerProchainInput = true;
         valideeParEntree = true;
-        if (modeImmediat) {
+        if (eleveConnecte) {
+          // Calcule et enregistre silencieusement (voir reveler dans
+          // verifierUne) ; le bilan ne s'affiche que si deja valide.
+          verifierUne(idx);
+          if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+        } else if (modeImmediat) {
           verifierUne(idx);
           if (toutesLesReponsesSontSaisies()) verifierTout();
         }
@@ -1933,7 +2040,10 @@ function attacherEcouteurs() {
     });
     input.addEventListener('blur', () => {
       if (valideeParEntree) { valideeParEntree = false; return; }
-      if (modeImmediat) {
+      if (eleveConnecte) {
+        verifierUne(idx);
+        if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+      } else if (modeImmediat) {
         verifierUne(idx);
         if (toutesLesReponsesSontSaisies()) verifierTout();
       }
@@ -2097,6 +2207,12 @@ function reinitialiser() {
     const clavier = document.getElementById('clavier-' + idx);
     if (clavier) clavier.classList.remove('ouvert');
   });
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatReinit = document.getElementById('suivi-etat');
+  if (zoneEtatReinit) zoneEtatReinit.hidden = true;
   document.getElementById('toutes-reponses-panneau').classList.remove('visible');
   document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   document.getElementById('score-panneau').classList.remove('visible');
@@ -2104,6 +2220,12 @@ function reinitialiser() {
 function genererNouvelleFiche() {
   PASSE_ACTUELLE = genererIdPasse();
   exercices = genererExercices();
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatGnf = document.getElementById('suivi-etat');
+  if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
   attacherEcouteurs();
   document.getElementById('score-panneau').classList.remove('visible');
@@ -2135,12 +2257,73 @@ document.addEventListener('mousedown', (e) => {
   if (champ && champ.tagName === 'MATH-FIELD') e.preventDefault();
 });
 
-exercices = genererExercices();
+// Au chargement : si un brouillon existe pour cette fiche (clic precedent
+// sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
+// et les reponses deja saisies plutot que d'en tirer de nouvelles.
+async function initialiserFiche() {
+  eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  const panneauMode = document.getElementById('mode-panneau');
+  const boutonVerifier = document.getElementById('btn-verifier');
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !eleveConnecte;
+  if (zoneValider) zoneValider.hidden = !eleveConnecte;
+  // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
+  // toute facon jamais affichee avant validation (voir "reveler" dans
+  // verifierUne), ces boutons n'auraient plus de sens.
+  if (panneauMode) panneauMode.hidden = eleveConnecte;
+  // Idem pour "Corrige des erreurs" : "Valider" declenche deja verifierTout(),
+  // ce bouton devient redondant une fois connecte (reste utile pour un
+  // visiteur anonyme, en mode "Tout a la fin").
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
+
+  exercices = genererExercices();
+
+  let brouillon = null;
+  if (eleveConnecte && window.chargerBrouillon) {
+    try {
+      brouillon = await window.chargerBrouillon(FICHE_ID);
+    } catch (erreur) {
+      brouillon = null;
+    }
+  }
+  const brouillonValide = brouillon
+    && Array.isArray(brouillon.exercices)
+    && brouillon.exercices.length === exercices.length;
+  if (brouillonValide) {
+    exercices = brouillon.exercices;
+    if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
+  }
 construireGrilles();
 attacherEcouteurs();
 definirMode(true);
-if (window.MathJax) MathJax.typesetPromise();
+  mettreAJourEtatBoutons();
 
+  if (brouillonValide && brouillon.saisies) {
+    for (const idx of Object.keys(brouillon.saisies)) {
+      const saisie = brouillon.saisies[idx];
+      const input = document.getElementById('input-' + idx);
+      if (input && saisie && typeof saisie.valeur === 'string') {
+        input.value = saisie.valeur;
+        verifierUne(Number(idx));
+      }
+    }
+    afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+  }
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// suivi.js est un script "module", differe par nature : il peut ne pas
+// avoir encore attache window.estConnecte/chargerBrouillon/etc. au moment
+// ou ce script classique (non differe) atteint cette ligne. DOMContentLoaded
+// ne se declenche qu'une fois tous les scripts differes/modules executes --
+// attendre cet evenement garantit que ces fonctions existent.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialiserFiche);
+} else {
+  initialiserFiche();
+}
 </script>
 
 <script type="module" src="../../../assets/js/nav-auth.js"></script>
