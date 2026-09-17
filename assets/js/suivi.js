@@ -120,6 +120,19 @@ export async function enregistrerBrouillon(ficheId, exercices, saisies, passe, e
   try {
     const donnees = { ficheId, exercices, saisies, passe, horodatage: serverTimestamp() };
     if (extra !== undefined) donnees.extra = extra;
+    // setDoc() refuse tout champ explicitement `undefined`, meme imbrique
+    // profondement (une fiche a exercices ou etat auxiliaire genere
+    // dynamiquement -- observe une fois, jamais reproduit de facon fiable
+    // malgre plusieurs dizaines d'essais, donc probablement une condition de
+    // course cote generation plutot qu'un champ systematiquement absent).
+    // Aller-retour JSON : supprime silencieusement tout `undefined`
+    // (comportement JSON standard), sans autre effet sur des donnees deja
+    // 100% serialisables (exercices/saisies/extra ne contiennent que des
+    // types simples). Ne s'applique qu'a exercices/extra, pas au document
+    // entier (deconseille de toucher horodatage, un objet Firestore special).
+    donnees.exercices = JSON.parse(JSON.stringify(donnees.exercices));
+    donnees.saisies = JSON.parse(JSON.stringify(donnees.saisies));
+    if (donnees.extra !== undefined) donnees.extra = JSON.parse(JSON.stringify(donnees.extra));
     await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)), donnees);
   } catch (erreur) {
     console.warn('Suivi : enregistrement du brouillon impossible.', erreur);

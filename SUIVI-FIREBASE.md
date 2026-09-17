@@ -173,27 +173,59 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   supposition initiale ("2 familles de template") était fausse — chaque
   fiche a pu être retouchée indépendamment au fil du temps.
 
-  **Découverte lors de ce lot : 3 fiches ont un type d'exercice à widget
-  interactif custom**, avec un `verifierUne()` entièrement différent (pas
-  de `input`/`val` classique en tête de fonction) — exclues de ce lot,
-  jamais examinées en détail : `cahiers/seconde/cahier-2/fiche-08.html`
-  (`tableauSigne`), `cahier-3/fiche-09.html` (`tableauCroiseRempli`),
-  `cahier-3/fiche-10.html` (`schemaEvolution`).
+  **Suite donnée aux 10 fiches à état auxiliaire recensées** : sur
+  vérification individuelle (pas juste le nombre d'appels `construireX()`),
+  seulement **3 avaient vraiment besoin du mécanisme `extra`** —
+  `cahiers/premiere/cahier-3/fiche-10.html`, `cahier-6/fiche-19.html`,
+  `cahier-7/fiche-20.html` — câblées et testées de bout en bout
+  (enregistrement, reprise identique, validation), aucun souci.
 
-  **État à date : 31 fiches sur 44 migrées** (2 pilotes + 29). Il reste
-  **13 fiches** sur l'ancien modèle (`tentatives`) — le tableau de bord lit
-  et agrège les deux modèles en parallèle sans conflit, une fiche donnée
-  n'étant jamais câblée que sur l'un des deux :
-  - **10 fiches à état auxiliaire** (QCM/graphique, mécanisme déjà résolu
-    génériquement via `extra`/`etatSupplementairePourBrouillon`/
-    `restaurerEtatSupplementaire` — juste à appliquer individuellement,
-    nom de variable propre à chacune) : `cahiers/premiere/cahier-2/fiche-06.html`,
-    `cahier-3/fiche-10.html`, `cahier-6/fiche-19.html`, `cahier-7/fiche-20.html`,
-    `cahier-7/fiche-21.html`, `cahier-7/fiche-22.html`, `cahier-8/fiche-24.html`,
-    `cahiers/seconde/cahier-5/fiche-14.html`, `fiche-15.html`, `fiche-16.html`.
-  - **3 fiches à widget custom** (voir ci-dessus) — mécanisme pas encore
-    conçu, `verifierUne()` à étudier au cas par cas avant de pouvoir
-    câbler Enregistrer/Valider dessus.
+  **3 autres se sont révélées statiques** (coordonnées fixes, aucun
+  `Math.random` ni référence à `exercices[idx]` dans leurs
+  `construireGraphiqueX()`) : `cahier-7/fiche-21.html`, `fiche-22.html`,
+  `cahier-8/fiche-24.html` — pas besoin d'état auxiliaire du tout, migrées
+  avec le modèle simple.
+
+  **1 fiche (`cahier-2/fiche-06.html`) a révélé une vraie limite du
+  mécanisme `extra`** : sa section graphique stocke une fonction JS *en
+  direct* dans ses données (`paramsGraphiques.g6_6.ordre[i].fn`), pas
+  seulement des nombres — une fonction n'est pas sérialisable en JSON/
+  Firestore. Détecté par un test réel (`TypeError: fonctionJs n'est pas une
+  fonction` à la restauration), pas par relecture de code — **utile
+  d'insister sur les tests en conditions réelles, pas seulement la
+  vérification syntaxique des ancres**. Corrigé en deux temps : (1)
+  `enregistrerBrouillon()` (`assets/js/suivi.js`) fait maintenant un
+  aller-retour JSON sur `exercices`/`saisies`/`extra` avant l'écriture
+  (supprime silencieusement tout `undefined` isolé, protège tout le monde,
+  aucun coût) ; (2) pour cette fiche précise, le mécanisme `extra` a été
+  abandonné (la fonction ne peut de toute façon pas survivre à l'aller-retour
+  JSON) — migrée avec le modèle simple à la place. Conséquence acceptée :
+  `exercices[idx].bonneReponse` est copiée au moment de la génération (donc
+  la correction reste juste), mais le graphique affiché à la reprise d'un
+  brouillon peut différer de celui vu au premier passage sur les exercices
+  6.3 à 6.8 — limitation cosmétique, pas un bug de notation.
+
+  **3 fiches ont un type d'exercice à widget interactif custom**
+  (`verifierUne()` entièrement différent, pas de `input`/`val` classique en
+  tête de fonction) — jamais examinées en détail, mécanisme pas encore
+  conçu : `cahiers/seconde/cahier-2/fiche-08.html` (`tableauSigne`),
+  `cahier-3/fiche-09.html` (`tableauCroiseRempli`), `cahier-3/fiche-10.html`
+  (`schemaEvolution`).
+
+  **3 fiches cumulent état auxiliaire ET widget custom** (chapitre
+  Fonctions, Seconde) — découvertes lors de la vérification des 10 fiches
+  recensées, jamais examinées en détail non plus :
+  `cahiers/seconde/cahier-5/fiche-14.html` (`tableauProgramme` +
+  `paramsGraphique14`/`paramsProgramme`), `fiche-15.html`
+  (`tableauVariations` + `paramsGraphiqueEq`/`paramsGraphiqueDeux`),
+  `fiche-16.html` (`tableauVariations` + `paramsGraphiqueAffine`).
+
+  **État à date : 38 fiches sur 44 migrées** (2 pilotes + 29 + 3 état
+  auxiliaire + 3 statiques + 1 cas limite résolu). Il reste **6 fiches**
+  sur l'ancien modèle (`tentatives`), toutes avec un widget interactif
+  custom (voir ci-dessus) — le tableau de bord lit et agrège les deux
+  modèles en parallèle sans conflit, une fiche donnée n'étant jamais câblée
+  que sur l'un des deux.
 
   **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
   branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
