@@ -136,6 +136,12 @@ export async function enregistrerBrouillon(ficheId, exercices, saisies, passe, e
     await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)), donnees);
   } catch (erreur) {
     console.warn('Suivi : enregistrement du brouillon impossible.', erreur);
+    // Chaque fiche affiche explicitement un message de succes/echec a
+    // l'eleve (voir enregistrerBrouillonActuel()) : remonter l'erreur plutot
+    // que l'avaler ici, sinon la fiche affiche "enregistre" a tort alors que
+    // rien n'a ete ecrit (trouve en testant reellement un cas ou setDoc()
+    // rejette les donnees -- tableaux imbriques, non supportes par Firestore).
+    throw erreur;
   }
 }
 

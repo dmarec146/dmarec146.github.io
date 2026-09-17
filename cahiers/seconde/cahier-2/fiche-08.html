@@ -179,6 +179,14 @@ window.MathJax = {
     width: 100%;
     margin-top: 2px;
   }
+  .mode-panneau[hidden] { display: none; }
+  /* Span enveloppant "Valider ma fiche" + l'icone "?" : display:inline-block
+     doit etre porte par une regle de classe (pas un style en ligne) pour que
+     la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
+     l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
+     faible), laissant le bouton visible malgre l'attribut hidden. */
+  .zone-bouton-suivi { position: relative; display: inline-block; }
+  .zone-bouton-suivi[hidden] { display: none; }
 
   .aide {
     font-size: 12.5px;
@@ -609,7 +617,7 @@ window.MathJax = {
 
 <div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
 
-<div class="mode-panneau">
+<div class="mode-panneau" id="mode-panneau">
   <span class="mode-label">Vérifier chaque réponse</span>
   <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
   <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
@@ -658,11 +666,20 @@ window.MathJax = {
 
 </div>
 <div class="barre-controle">
-  <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
+    <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
+    <span title="Sauvegarde ta fiche telle quelle (mêmes valeurs, réponses déjà tapées) pour la reprendre plus tard — sans révéler ton score ni la corriger." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <span id="zone-valider" class="zone-bouton-suivi" hidden>
+    <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
+    <span title="« Voir toutes les réponses » ne s'active qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
 
 <div class="score-panneau" id="score-panneau">
   <span class="score-chiffre" id="score-chiffre">0 / 33</span> bonnes réponses
@@ -849,7 +866,7 @@ function tableauSigneHTML(idx, ex) {
   for (let c = 0; c < nbCols; c++) {
     if (c % 2 === 1) {
       const j = (c - 1) / 2;
-      html += `<td><input type="text" class="cs-seuil" id="cs-seuil-${idx}-${j}" placeholder="seuil" oninput="reinitialiserStatutTableau(${idx});verifierAutoTableauSigne(${idx})"></td>`;
+      html += `<td><input type="text" class="cs-seuil" id="cs-seuil-${idx}-${j}" placeholder="seuil" oninput="reinitialiserStatutTableau(${idx});enregistrerSaisieTableauSigne(${idx})"></td>`;
     } else {
       html += `<td></td>`;
     }
@@ -882,6 +899,7 @@ function cyclerCelluleSigne(idx, ligne, col) {
   btn.textContent = CYCLE_SIGNES[(i + 1) % CYCLE_SIGNES.length];
   btn.classList.remove('correct', 'incorrect');
   reinitialiserStatutTableau(idx);
+  enregistrerSaisieTableauSigne(idx);
 }
 
 function reinitialiserStatutTableau(idx) {
@@ -901,9 +919,13 @@ function verifierTableauSigneRempli(idx, ex) {
     && spec.finale.every((v, c) => rempli(`cs-cell-${idx}-fin-${c}`));
 }
 
-// verifie chaque case du tableau independamment (seuils ET signes), la colore, et renvoie
-// correct=true seulement si TOUTES les cases correspondent a ex.spec
-function verifierTableauSigne(idx, ex) {
+// verifie chaque case du tableau independamment (seuils ET signes), et renvoie correct=true
+// seulement si TOUTES les cases correspondent a ex.spec. "colorier" (true par defaut) commande
+// l'ajout des classes correct/incorrect sur chaque case -- desactive pour un eleve connecte tant
+// que sa fiche n'est pas validee (voir "reveler" dans verifierUne) : le calcul reste silencieux,
+// seul l'affichage est suspendu.
+function verifierTableauSigne(idx, ex, colorier) {
+  if (colorier === undefined) colorier = true;
   const spec = ex.spec;
   const k = spec.k;
   let toutCorrect = true;
@@ -911,26 +933,64 @@ function verifierTableauSigne(idx, ex) {
   for (let j = 0; j < k; j++) {
     const input = document.getElementById(`cs-seuil-${idx}-${j}`);
     const val = input.value.trim();
-    input.classList.remove('correct', 'incorrect');
+    if (colorier) input.classList.remove('correct', 'incorrect');
     if (!val) { toutRempli = false; continue; }
     let ok = false;
     try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - spec.seuils[j].valeur) < 1e-9; } catch(e) { ok = false; }
-    input.classList.add(ok ? 'correct' : 'incorrect');
+    if (colorier) input.classList.add(ok ? 'correct' : 'incorrect');
     if (!ok) toutCorrect = false;
   }
   const verifierCase = (id, attendu) => {
     const btn = document.getElementById(id);
     const val = btn.textContent;
-    btn.classList.remove('correct', 'incorrect');
+    if (colorier) btn.classList.remove('correct', 'incorrect');
     if (!val) { toutRempli = false; return; }
     const ok = (val === attendu);
-    btn.classList.add(ok ? 'correct' : 'incorrect');
+    if (colorier) btn.classList.add(ok ? 'correct' : 'incorrect');
     if (!ok) toutCorrect = false;
   };
   spec.lignes.forEach((ligne, li) => ligne.valeurs.forEach((v, c) => verifierCase(`cs-cell-${idx}-${li}-${c}`, v)));
   spec.finale.forEach((v, c) => verifierCase(`cs-cell-${idx}-fin-${c}`, v));
   if (!toutRempli) return null;
   return toutCorrect;
+}
+
+// Instantane brut (non verifie) de l'etat d'un tableau de signes -- seuils tapes et cases
+// cyclees, quel que soit leur degre de remplissage. Sert a alimenter saisies[idx] a chaque
+// modification du tableau (voir enregistrerSaisieTableauSigne), pour que "Enregistrer mon
+// avancement" capture la progression meme si l'eleve n'a jamais clique sur "Valider ce tableau".
+// "lignes" est un objet indexe par numero de ligne (pas un tableau de tableaux) : Firestore
+// rejette les tableaux imbriques (setDoc() plante avec "invalid-argument") -- trouve en testant
+// reellement l'enregistrement d'un brouillon sur cette fiche, pas a la relecture de code.
+function capturerEtatTableauSigne(idx, ex) {
+  const spec = ex.spec;
+  const seuils = [];
+  for (let j = 0; j < spec.k; j++) seuils.push(document.getElementById(`cs-seuil-${idx}-${j}`).value);
+  const lignes = {};
+  spec.lignes.forEach((ligne, li) => { lignes[li] = ligne.valeurs.map((v, c) => document.getElementById(`cs-cell-${idx}-${li}-${c}`).textContent); });
+  const finale = spec.finale.map((v, c) => document.getElementById(`cs-cell-${idx}-fin-${c}`).textContent);
+  return { seuils, lignes, finale };
+}
+
+// Remet en place un etat de tableau de signes precedemment capture (restauration d'un brouillon) :
+// simple recopie DOM, aucune verification -- verifierUne() s'en charge juste apres (voir
+// initialiserFiche).
+function restaurerEtatTableauSigne(idx, ex, valeur) {
+  const spec = ex.spec;
+  valeur.seuils.forEach((v, j) => { const el = document.getElementById(`cs-seuil-${idx}-${j}`); if (el) el.value = v; });
+  spec.lignes.forEach((ligne, li) => {
+    const vals = valeur.lignes[li];
+    if (!vals) return;
+    vals.forEach((v, c) => { const btn = document.getElementById(`cs-cell-${idx}-${li}-${c}`); if (btn) btn.textContent = v; });
+  });
+  valeur.finale.forEach((v, c) => { const btn = document.getElementById(`cs-cell-${idx}-fin-${c}`); if (btn) btn.textContent = v; });
+}
+
+// Capture l'etat courant d'un tableau (non verifie) dans saisies[idx] -- appelee a chaque
+// modification (seuil tape, case cyclee), avant meme un clic sur "Valider ce tableau".
+function enregistrerSaisieTableauSigne(idx) {
+  const ex = exercices[idx];
+  saisies[idx] = { id: ex.id, valeur: capturerEtatTableauSigne(idx, ex), correct: null };
 }
 
 // remet a zero toutes les cases d'un tableau de signes (bouton "Recommencer")
@@ -1921,36 +1981,124 @@ function genererIdPasse() {
 }
 let PASSE_ACTUELLE = genererIdPasse();
 
+// Reponses de la session en cours, indexe par idx d'exercice -> { id, valeur,
+// correct }. Sert a "Enregistrer" (brouillon) et "Valider" (score) plutot
+// que d'ecrire dans Firestore a chaque question verifiee (voir suivi.js).
+let saisies = {};
+
+// Determines une fois au chargement (voir initialiserFiche) : le site reste
+// utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
+// ni rien laisser croire a un visiteur anonyme.
+let eleveConnecte = false;
+// Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
+// false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
+// faux, un eleve connecte ne peut pas voir la correction (empeche de
+// simplement demander toutes les reponses sans avoir valide sa tentative).
+let ficheValidee = false;
+
+function mettreAJourEtatBoutons() {
+  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
+  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
+  // ce bouton n'apporterait plus rien une fois connecte.
+  const boutonToutes = document.getElementById('btn-toutes-reponses');
+  boutonToutes.disabled = eleveConnecte && !ficheValidee;
+}
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
-  div.classList.remove('correct','incorrect');
+  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
+  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
+  // se font quand meme, silencieusement, a chaque reponse verifiee. Un
+  // visiteur anonyme voit tout normalement, comme avant.
+  const reveler = !eleveConnecte || ficheValidee;
+  if (reveler) div.classList.remove('correct','incorrect');
   if (ex.type === 'tableauSigne') {
-    const ok = verifierTableauSigne(idx, ex);
+    const ok = verifierTableauSigne(idx, ex, reveler);
     // les cases deja remplies sont quand meme coloriees correct/incorrect individuellement par
     // verifierTableauSigne ; seul le statut global de l'exercice reste neutre tant que tout n'est
     // pas rempli — message explicite plutot qu'un silence qui pourrait passer pour "rien ne s'est passe"
-    if (ok === null) { statut.textContent='remplir toutes les cases'; statut.className='q-statut'; return null; }
-    div.classList.add(ok ? 'correct' : 'incorrect');
-    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
-    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    if (ok === null) {
+      if (reveler) { statut.textContent='remplir toutes les cases'; statut.className='q-statut'; }
+      saisies[idx] = { id: ex.id, valeur: capturerEtatTableauSigne(idx, ex), correct: null };
+      return null;
+    }
+    if (reveler) {
+      div.classList.add(ok ? 'correct' : 'incorrect');
+      statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+      statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    }
+    saisies[idx] = { id: ex.id, valeur: capturerEtatTableauSigne(idx, ex), correct: ok };
+    if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
     return ok;
   }
   const input = document.getElementById('input-' + idx);
   const val = valeurDuChamp(input);
-  if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
+  if (!val) {
+    if (reveler) { statut.textContent=''; statut.className='q-statut'; }
+    delete saisies[idx];
+    return null;
+  }
   let ok;
   if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'discussionParametre') ok = checkDiscussionParametre(val, ex);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
-  div.classList.add(ok ? 'correct' : 'incorrect');
-  statut.textContent = ok ? '✓ correct' : '✗ à revoir';
-  statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  if (reveler) {
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  }
+  saisies[idx] = { id: ex.id, valeur: val, correct: ok };
   if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
   return ok;
+}
+
+function afficherEtatSuivi(message) {
+  const zone = document.getElementById('suivi-etat');
+  if (!zone) return;
+  zone.textContent = message;
+  zone.hidden = false;
+}
+
+async function enregistrerBrouillonActuel() {
+  if (!window.enregistrerBrouillon) return;
+  const bouton = document.getElementById('btn-enregistrer');
+  if (bouton) bouton.disabled = true;
+  try {
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
+  } catch (erreur) {
+    afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
+}
+
+async function validerFicheActuelle() {
+  if (!window.validerFiche) return;
+  const bouton = document.getElementById('btn-valider');
+  if (bouton) bouton.disabled = true;
+  try {
+    // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
+    // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
+    // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
+    // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    ficheValidee = true;
+    mettreAJourEtatBoutons();
+    verifierTout();
+
+    const reponses = Object.values(saisies);
+    const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
+    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+  } catch (erreur) {
+    afficherEtatSuivi('Échec de la validation (connexion internet ?).');
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
 }
 
 let modeImmediat = true;
@@ -2170,6 +2318,12 @@ function reinitialiser() {
     const clavier = document.getElementById('clavier-' + idx);
     if (clavier) clavier.classList.remove('ouvert');
   });
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatReinit = document.getElementById('suivi-etat');
+  if (zoneEtatReinit) zoneEtatReinit.hidden = true;
   document.getElementById('score-panneau').classList.remove('visible');
   const panneauToutes = document.getElementById('toutes-reponses-panneau');
   panneauToutes.classList.remove('visible');
@@ -2196,6 +2350,12 @@ function toggleToutesReponses() {
 function genererNouvelleFiche() {
   PASSE_ACTUELLE = genererIdPasse();
   exercices = genererExercices();
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatGnf = document.getElementById('suivi-etat');
+  if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
   attacherEcouteurs();
   document.getElementById('score-panneau').classList.remove('visible');
@@ -2208,10 +2368,75 @@ function genererNouvelleFiche() {
   if (window.MathJax) MathJax.typesetPromise();
 }
 
-construireGrilles();
-attacherEcouteurs();
-definirMode(true);
-if (window.MathJax) MathJax.typesetPromise();
+async function initialiserFiche() {
+  eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  const panneauMode = document.getElementById('mode-panneau');
+  const boutonVerifier = document.getElementById('btn-verifier');
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !eleveConnecte;
+  if (zoneValider) zoneValider.hidden = !eleveConnecte;
+  // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
+  // toute facon jamais affichee avant validation (voir "reveler" dans
+  // verifierUne), ces boutons n'auraient plus de sens.
+  if (panneauMode) panneauMode.hidden = eleveConnecte;
+  // Idem pour "Corrige des erreurs" : "Valider" declenche deja verifierTout(),
+  // ce bouton devient redondant une fois connecte (reste utile pour un
+  // visiteur anonyme, en mode "Tout a la fin").
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
+
+  let brouillon = null;
+  if (eleveConnecte && window.chargerBrouillon) {
+    try {
+      brouillon = await window.chargerBrouillon(FICHE_ID);
+    } catch (erreur) {
+      brouillon = null;
+    }
+  }
+  const brouillonValide = brouillon
+    && Array.isArray(brouillon.exercices)
+    && brouillon.exercices.length === exercices.length;
+  if (brouillonValide) {
+    exercices = brouillon.exercices;
+    if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
+  }
+  construireGrilles();
+  attacherEcouteurs();
+  definirMode(true);
+  mettreAJourEtatBoutons();
+
+  if (brouillonValide && brouillon.saisies) {
+    for (const idx of Object.keys(brouillon.saisies)) {
+      const saisie = brouillon.saisies[idx];
+      const ex = exercices[Number(idx)];
+      if (!ex || !saisie) continue;
+      if (ex.type === 'tableauSigne' && saisie.valeur && typeof saisie.valeur === 'object') {
+        restaurerEtatTableauSigne(Number(idx), ex, saisie.valeur);
+        verifierUne(Number(idx));
+      } else if (typeof saisie.valeur === 'string') {
+        const input = document.getElementById('input-' + idx);
+        if (input) {
+          input.value = saisie.valeur;
+          verifierUne(Number(idx));
+        }
+      }
+    }
+    afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+  }
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// suivi.js est un script "module", differe par nature : il peut ne pas
+// avoir encore attache window.estConnecte/chargerBrouillon/etc. au moment
+// ou ce script classique (non differe) atteint cette ligne. DOMContentLoaded
+// ne se declenche qu'une fois tous les scripts differes/modules executes --
+// attendre cet evenement garantit que ces fonctions existent.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialiserFiche);
+} else {
+  initialiserFiche();
+}
 </script>
 
 <script type="module" src="../../../assets/js/nav-auth.js"></script>
