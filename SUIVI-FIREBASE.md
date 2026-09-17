@@ -154,14 +154,46 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   (enregistrement, reprise à l'identique après rechargement — y compris
   `paramsGraphiques` restauré à l'identique sur la fiche complexe,
   vérifié champ par champ —, validation, révélation couleurs/bilan à la
-  validation, coexistence avec l'ancien modèle, tableau de bord). Les 42
-  autres fiches restent sur l'ancien modèle (`tentatives`) ; le tableau de
-  bord lit et agrège les deux modèles en parallèle sans conflit, une fiche
-  donnée n'étant jamais câblée que sur l'un des deux. **Pas encore étendu
-  aux 42 autres** — prochaine étape : script de câblage mécanique (comme
-  pour le suivi initial), en deux passes (33 fiches simples, puis les 9
-  fiches complexes restantes en adaptant `etatSupplementairePourBrouillon`/
-  `restaurerEtatSupplementaire` au nom de variable propre à chacune).
+  validation, coexistence avec l'ancien modèle, tableau de bord).
+
+  **Étendu ensuite à 29 fiches supplémentaires** (toutes "simples", sans
+  état auxiliaire) par script mécanique avec vérification stricte de
+  chaque ancre avant écriture (même principe que le suivi initial : rien
+  n'est écrit tant qu'une correspondance exacte n'est pas trouvée partout).
+  Le script a révélé **davantage de variantes de mise en forme que prévu**
+  d'une fiche à l'autre (pas seulement 2 familles Seconde/Première) —
+  chacune gérée explicitement plutôt que forcée : ordre des déclarations en
+  tête de `verifierUne()`, ligne vide ou non avant `let modeImmediat`, fin
+  de `reinitialiser()`/`genererNouvelleFiche()` très irrégulière (résolu en
+  regroupant l'insertion juste après le début de fonction, ancre stable,
+  plutôt qu'en fin de fonction), barre de boutons sans "Générer une
+  nouvelle version" sur certaines fiches, attributs HTML inversés sur
+  d'autres, affectation d'`exercices` différée en fin de script sur une
+  fiche (même motif que le pilote Première). **Leçon retenue** : la
+  supposition initiale ("2 familles de template") était fausse — chaque
+  fiche a pu être retouchée indépendamment au fil du temps.
+
+  **Découverte lors de ce lot : 3 fiches ont un type d'exercice à widget
+  interactif custom**, avec un `verifierUne()` entièrement différent (pas
+  de `input`/`val` classique en tête de fonction) — exclues de ce lot,
+  jamais examinées en détail : `cahiers/seconde/cahier-2/fiche-08.html`
+  (`tableauSigne`), `cahier-3/fiche-09.html` (`tableauCroiseRempli`),
+  `cahier-3/fiche-10.html` (`schemaEvolution`).
+
+  **État à date : 31 fiches sur 44 migrées** (2 pilotes + 29). Il reste
+  **13 fiches** sur l'ancien modèle (`tentatives`) — le tableau de bord lit
+  et agrège les deux modèles en parallèle sans conflit, une fiche donnée
+  n'étant jamais câblée que sur l'un des deux :
+  - **10 fiches à état auxiliaire** (QCM/graphique, mécanisme déjà résolu
+    génériquement via `extra`/`etatSupplementairePourBrouillon`/
+    `restaurerEtatSupplementaire` — juste à appliquer individuellement,
+    nom de variable propre à chacune) : `cahiers/premiere/cahier-2/fiche-06.html`,
+    `cahier-3/fiche-10.html`, `cahier-6/fiche-19.html`, `cahier-7/fiche-20.html`,
+    `cahier-7/fiche-21.html`, `cahier-7/fiche-22.html`, `cahier-8/fiche-24.html`,
+    `cahiers/seconde/cahier-5/fiche-14.html`, `fiche-15.html`, `fiche-16.html`.
+  - **3 fiches à widget custom** (voir ci-dessus) — mécanisme pas encore
+    conçu, `verifierUne()` à étudier au cas par cas avant de pouvoir
+    câbler Enregistrer/Valider dessus.
 
   **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
   branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
