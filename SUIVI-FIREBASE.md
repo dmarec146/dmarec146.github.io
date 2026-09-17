@@ -227,7 +227,7 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   modèles en parallèle sans conflit, une fiche donnée n'étant jamais câblée
   que sur l'un des deux.
 
-  **Phase de test systématique en cours** (demandée explicitement par
+  **Phase de test systématique terminée** (demandée explicitement par
   l'utilisateur après l'extension aux 44 fiches : « je ne pourrai pas tester
   autant de fiches avec autant de questions... prendre le temps de simuler
   un grand nombre de fiches ») : chaque fiche migrée est rejouée de bout en
@@ -255,6 +255,20 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   chemin de restauration (brouillon préexistant au chargement, pas juste
   une saisie puis sauvegarde dans la même session) peut donner un faux
   positif.
+
+  **Les 38 fiches migrées ont toutes été testées de bout en bout**
+  (enregistrer → recharger → vérifier la restauration des saisies →
+  valider), pas seulement relues : les 12 déjà couvertes précédemment
+  (2 pilotes, fiche-02 à 05 Première, les 3 fiches à état auxiliaire, le
+  cas limite fiche-06, fiche-27/28 après correction) plus 26 fiches
+  supplémentaires passées en revue dans cette session, toutes propres
+  (aucune erreur console, saisies bien restaurées après rechargement,
+  validation fonctionnelle). Seul bug trouvé sur l'ensemble : celui
+  décrit ci-dessus (`const exercices`), déjà corrigé et revérifié.
+  Compte `l.testeur` : contient maintenant un `resultats` pour chacune
+  des 38 fiches (données de test, réponses volontairement fausses) — à
+  nettoyer avant que le compte serve à autre chose, ou à supprimer avec
+  les autres comptes fictifs le moment venu.
 
   **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
   branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
