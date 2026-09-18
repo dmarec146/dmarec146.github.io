@@ -416,15 +416,12 @@ window.MathJax = {
   .clavier-visuel button:hover { background: #eee; border-color: var(--bleu); }
   .clavier-visuel button.touche-large { min-width: 60px; font-size: 12.5px; font-family: Georgia, serif; padding: 8px 12px; }
   .clavier-visuel button.touche-effacer { color: var(--rouge); border-color: var(--rouge-clair); }
-  /* ---------- Icone clavier + touche "Valider" du clavier maison, tactile uniquement -----------
+  /* ---------- Touche "Valider" du clavier maison, tactile uniquement -----------
      Sur ordinateur, le clavier physique fait deja tout ca (touche Entree) : rien de tout ceci ne
      doit y apparaitre ni s'y comporter differemment. Voir estAppareilTactile() cote JS pour le
      contournement equivalent sur le clavier virtuel de MathLive (touche Entree). */
-  .q-clavier-icone-tactile { display: none; }
   .clavier-groupe-tactile { display: none; }
   @media (hover: none) {
-    .q-clavier-icone-desktop { display: none; }
-    .q-clavier-icone-tactile { display: inline-flex; align-items: center; }
     .clavier-groupe-tactile { display: flex; }
   }
   .clavier-touche-valider {
@@ -1375,23 +1372,6 @@ function attacherEcouteursTactiles() {
   });
 }
 
-// Icone clavier du bouton "Clavier symboles" : caractere Unicode (&#9000;) sur ordinateur (rendu
-// fiable, l'utilisateur le trouve satisfaisant tel quel) -- SVG maison sur tablette/telephone
-// (voir ICONE_CLAVIER_SVG et la regle CSS .q-clavier-icone-tactile/@media(hover:none) qui bascule
-// de l'un a l'autre) : le glyphe Unicode y rend de facon incoherente selon les polices systeme
-// installees, contrairement a un SVG qui reste identique partout. S'inspire du glyphe actuel
-// (rectangle + cases).
-const ICONE_CLAVIER_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-    <rect x="2" y="6" width="20" height="13" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <circle cx="6" cy="10" r="1" fill="currentColor"/><circle cx="10" cy="10" r="1" fill="currentColor"/>
-    <circle cx="14" cy="10" r="1" fill="currentColor"/><circle cx="18" cy="10" r="1" fill="currentColor"/>
-    <circle cx="6" cy="14" r="1" fill="currentColor"/><circle cx="10" cy="14" r="1" fill="currentColor"/>
-    <circle cx="14" cy="14" r="1" fill="currentColor"/><circle cx="18" cy="14" r="1" fill="currentColor"/>
-    <rect x="6" y="16.3" width="12" height="1.8" rx="0.9" fill="currentColor"/>
-  </svg>`;
-function iconeClavierBoutonHTML() {
-  return `<span class="q-clavier-icone-desktop">&#9000;</span><span class="q-clavier-icone-tactile">${ICONE_CLAVIER_SVG}</span>`;
-}
 // Touche "Valider" du clavier maison, tactile uniquement (voir CSS .clavier-groupe-tactile) :
 // equivalent de la touche Entree physique, absente de ce clavier -- sans elle, valider une
 // reponse tapee avec ce clavier est impossible sur un appareil sans clavier physique.
@@ -1404,14 +1384,14 @@ function champReponsePour(idx, ex) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
               smart-fence="off" smart-superscript="on"
               virtual-keyboard-mode="manual"></math-field>
-    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>`;
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
   }
   if (ex.type === 'ouiNon') {
     return `<input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">`;
   }
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
-    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
     <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
 }
 
