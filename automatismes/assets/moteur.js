@@ -348,6 +348,7 @@
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
     ETAT.chrono = { phase: 'intro', index: 0, restant: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    ETAT.serieSignalee = false;
     rendre();
   }
 
@@ -359,6 +360,7 @@
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
     ETAT.chrono = { phase: 'intro', index: 0, restant: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    ETAT.serieSignalee = false;
     rendre();
   }
 
@@ -367,6 +369,7 @@
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
     ETAT.chrono = { phase: 'intro', index: 0, restant: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    ETAT.serieSignalee = false;
     rendre();
   }
 
@@ -555,6 +558,7 @@
   function majBilan() {
     const el = document.getElementById('bilan-fiche');
     if (el) el.innerHTML = bilanFicheHTML();
+    verifierFinSerie();
   }
 
   // ----- vue fiche -----
@@ -579,6 +583,35 @@
     const nouvelle = tmp.firstElementChild;
     ancienne.replaceWith(nouvelle);
     typeset(nouvelle);
+  }
+
+  // Nombre de bonnes reponses dans la serie en cours (reutilise par scoreHTML
+  // et par le point d'accroche de suivi ci-dessous).
+  function compterBonnes() {
+    let bonnes = 0;
+    ETAT.questions.forEach((q, i) => { if (ETAT.reponses[i] === q.bonne) bonnes++; });
+    return bonnes;
+  }
+
+  // Point d'accroche pour le suivi (assets/js/suivi.js) : optionnel, ne sert
+  // qu'aux pages qui fournissent un callback onFinSerie (voir sujet-blanc.html) --
+  // pas fiche.html, qui n'en fournit pas. Se declenche des la fin de la serie,
+  // quel que soit le mode utilise (fiche : toutes les questions repondues, ou
+  // reponses revelees ; chrono : minuteur/questions epuises), une seule fois
+  // par serie (ETAT.serieSignalee, remis a false a chaque nouvelle serie).
+  function verifierFinSerie() {
+    if (ETAT.serieSignalee || typeof ETAT.config.onFinSerie !== 'function') return;
+    const aRepondu = ETAT.reponses.some(r => r !== null);
+    const toutRepondu = ETAT.reponses.every(r => r !== null);
+    const revelees = ETAT.corrigees.every(c => c);
+    const termineeFiche = ETAT.mode === 'fiche' && aRepondu && (toutRepondu || revelees);
+    const termineeChrono = ETAT.mode === 'chrono' && ETAT.chrono.phase === 'fin';
+    if (!termineeFiche && !termineeChrono) return;
+    ETAT.serieSignalee = true;
+    const bonnes = compterBonnes();
+    const total = ETAT.questions.length;
+    const points = ETAT.config.bareme ? arrondir(bonnes * ETAT.config.bareme.parQuestion, 2) : null;
+    ETAT.config.onFinSerie({ bonnes: bonnes, total: total, points: points, niveau: ETAT.niveau, mode: ETAT.mode });
   }
 
   function scoreHTML() {
@@ -610,12 +643,12 @@
     return html;
   }
 
-  // mode fiche : révèle (ou masque) la bonne réponse et l'explication de chaque question,
-  // sans notation — le score reste l'affaire du mode chrono.
+  // mode fiche : révèle (ou masque) la bonne réponse et l'explication de chaque question.
   function basculerReponses() {
     const revelees = ETAT.corrigees.every(c => c);
     ETAT.corrigees = ETAT.questions.map(() => !revelees);
     rendre();
+    verifierFinSerie();
   }
 
   // ----- vue chrono -----
@@ -708,6 +741,7 @@
       c.phase = 'fin';
       ETAT.corrigees = ETAT.questions.map(() => true);
       rendre();
+      verifierFinSerie();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }

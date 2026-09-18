@@ -1,0 +1,98 @@
+// Règles de sécurité Firestore — projet Firebase "cahiers-interactifs".
+//
+// Ce fichier n'est PAS déployé automatiquement : il n'existe pas encore de
+// Firebase CLI configurée sur ce dépôt. Pour l'appliquer, copier-coller son
+// contenu dans Console Firebase → Firestore Database → Règles → Publier.
+//
+// Modèle de données :
+//   eleves/{uid}                    profil d'un élève (pseudo, classe...)
+//   eleves/{uid}/tentatives/{id}     une tentative sur un exercice (journal, non modifiable)
+//                                    -- ancien modèle de suivi des cahiers de calcul,
+//                                       encore utilisé par les fiches pas migrées
+//   eleves/{uid}/connexions/{id}     une connexion reussie (journal, non modifiable)
+//   eleves/{uid}/automatismes/{id}   un sujet blanc termine (journal, non modifiable)
+//   eleves/{uid}/brouillons/{ficheId} état courant d'une fiche de calcul en pause
+//                                    -- nouveau modèle, mutable, écrasé/supprimé par l'élève
+//   eleves/{uid}/resultats/{ficheId}  score cumulé d'une fiche de calcul (nouveau modèle)
+//   devoirs/{id}                    un devoir attribué par l'enseignant
+//
+// Les comptes élèves et le compte enseignant sont créés côté serveur (script
+// outils/creer-comptes, SDK Admin, qui ignore ces règles). L'enseignant est
+// reconnu par un custom claim "admin" posé par ce même script — pas par un
+// UID codé en dur, pour ne pas casser les règles si le compte est recréé.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function estProprietaire(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /eleves/{uid} {
+      // Profil : l'élève lit le sien, l'enseignant lit/écrit tout (création
+      // en masse mise à part, gérée par le SDK Admin qui contourne ces règles).
+      allow read: if estProprietaire(uid) || estAdmin();
+      allow write: if estAdmin();
+
+      match /tentatives/{tentativeId} {
+        // Journal d'usage : l'élève ajoute ses propres tentatives, personne
+        // ne les modifie une fois écrites (y compris l'enseignant) ; seule
+        // une suppression par l'enseignant est permise, pour corriger un cas.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
+        allow delete: if estAdmin();
+      }
+
+      match /connexions/{connexionId} {
+        // Meme principe que tentatives : un journal d'evenements, pas un
+        // etat -- l'eleve ajoute, personne ne modifie, seul l'enseignant
+        // peut supprimer une entree.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
+        allow delete: if estAdmin();
+      }
+
+      match /automatismes/{automatismeId} {
+        // Meme principe que tentatives/connexions : un sujet blanc termine,
+        // journal non modifiable.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
+        allow delete: if estAdmin();
+      }
+
+      match /brouillons/{ficheId} {
+        // Etat courant d'une fiche de calcul en pause (pas un journal) :
+        // l'eleve peut l'ecraser ou le supprimer librement, contrairement
+        // aux collections ci-dessus. Uniquement les cahiers de calcul.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create, update, delete: if estProprietaire(uid);
+      }
+
+      match /resultats/{ficheId} {
+        // Score cumule par fiche de calcul (remplace le journal
+        // "tentatives" pour les fiches migrees vers ce nouveau modele) : mis
+        // a jour (merge) a chaque validation. Pas de suppression par
+        // l'eleve, comme les journaux ci-dessus.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create, update: if estProprietaire(uid);
+        allow delete: if estAdmin();
+      }
+    }
+
+    match /devoirs/{devoirId} {
+      // Tout élève connecté doit pouvoir voir les devoirs qui lui sont
+      // attribués ; seul l'enseignant les crée, modifie ou supprime.
+      allow read: if request.auth != null;
+      allow write: if estAdmin();
+    }
+  }
+}

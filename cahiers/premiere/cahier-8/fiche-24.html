@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Fiche 24 — Fonctions trigonométriques II (Première) — interactif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
@@ -155,6 +156,14 @@ window.MathJax = {
     padding: 10px 12px;
     margin-bottom: 12px;
   }
+  .mode-panneau[hidden] { display: none; }
+  /* Span enveloppant "Valider ma fiche" + l'icone "?" : display:inline-block
+     doit etre porte par une regle de classe (pas un style en ligne) pour que
+     la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
+     l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
+     faible), laissant le bouton visible malgre l'attribut hidden. */
+  .zone-bouton-suivi { position: relative; display: inline-block; }
+  .zone-bouton-suivi[hidden] { display: none; }
   .mode-label {
     font-size: 13px;
     font-weight: bold;
@@ -186,6 +195,74 @@ window.MathJax = {
     font-style: italic;
     width: 100%;
     margin-top: 2px;
+  }
+  svg.svg-agrandissable {
+    cursor: zoom-in;
+  }
+  svg.svg-agrandissable:hover {
+    outline: 2px solid var(--bleu-clair);
+    outline-offset: 2px;
+  }
+  /* ---------- bouton-icone "curseur avec coordonnees" + zoom au clic, portes depuis les fiches
+     14/15 de Seconde (memes fonctions/CSS que sur fiche-06 de Premiere) ---------- */
+  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
+  .btn-curseur {
+    position: absolute; top: 4px; right: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
+    color: var(--bleu); cursor: pointer; line-height: 0;
+  }
+  .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
+  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
+  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
+  .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
+  .curseur-groupe { pointer-events: none; }
+  svg.curseur-actif { cursor: crosshair; }
+  .modal-svg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 25, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .modal-svg-overlay.ouvert {
+    display: flex;
+  }
+  .modal-svg-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 32px 14px 14px;
+    width: min(96vw, 720px);
+    max-height: 94vh;
+    overflow: auto;
+    cursor: default;
+  }
+  .modal-svg-contenu svg {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto;
+  }
+  .modal-svg-fermer {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-svg-fermer:hover {
+    color: var(--rouge);
   }
 
   .aide {
@@ -526,6 +603,26 @@ window.MathJax = {
   .clavier-visuel button:hover { background: #eee; border-color: var(--bleu); }
   .clavier-visuel button.touche-large { min-width: 60px; font-size: 12.5px; font-family: Georgia, serif; padding: 8px 12px; }
   .clavier-visuel button.touche-effacer { color: var(--rouge); border-color: var(--rouge-clair); }
+  /* ---------- Icone clavier + touche "Valider" du clavier maison, tactile uniquement -----------
+     Sur ordinateur, le clavier physique fait deja tout ca (touche Entree) : rien de tout ceci ne
+     doit y apparaitre ni s'y comporter differemment. Voir estAppareilTactile() cote JS pour le
+     contournement equivalent sur le clavier virtuel de MathLive (touche Entree). */
+  .q-clavier-icone-tactile { display: none; }
+  .clavier-groupe-tactile { display: none; }
+  @media (hover: none) {
+    .q-clavier-icone-desktop { display: none; }
+    .q-clavier-icone-tactile { display: inline-flex; align-items: center; }
+    .clavier-groupe-tactile { display: flex; }
+  }
+  .clavier-touche-valider {
+    background: var(--bleu) !important;
+    color: white !important;
+    border-color: var(--bleu) !important;
+    font-weight: bold;
+    width: 100%;
+  }
+  .clavier-touche-valider:hover { background: #3a36a0 !important; }
+
   .clavier-visuel .clavier-apercu {
     font-size: 12px;
     color: var(--gris);
@@ -562,6 +659,12 @@ window.MathJax = {
     border: 1.5px solid var(--bleu);
   }
   .btn-secondaire:hover { background: var(--bleu-clair); }
+  .btn-principal:disabled, .btn-secondaire:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .btn-principal:disabled:hover { background: var(--bleu); }
+  .btn-secondaire:disabled:hover { background: white; }
 
   .score-panneau {
     display: none;
@@ -780,7 +883,7 @@ window.MathJax = {
 
 <div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
 
-<div class="mode-panneau">
+<div class="mode-panneau" id="mode-panneau">
   <span class="mode-label">Vérifier chaque réponse</span>
   <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
   <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
@@ -864,11 +967,20 @@ window.MathJax = {
 </div>
 
 <div class="barre-controle">
-  <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
+    <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
+    <span title="Sauvegarde ta fiche telle quelle (mêmes valeurs, réponses déjà tapées) pour la reprendre plus tard — sans révéler ton score ni la corriger." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <span id="zone-valider" class="zone-bouton-suivi" hidden>
+    <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
+    <span title="« Voir toutes les réponses » ne s'active qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
 
 <div class="score-panneau" id="score-panneau">
   <span class="score-chiffre" id="score-chiffre">0 / N</span> bonnes réponses
@@ -887,13 +999,62 @@ window.MathJax = {
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
+<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
+  <div class="modal-svg-contenu">
+    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
+    <div id="modal-svg-contenu-interieur"></div>
+  </div>
+</div>
+
 <script>
 // MathLive tente de deviner la disposition physique du clavier et se trompe parfois sur
 // clavier AZERTY francais (la touche "^", une touche morte, declenche alors un raccourci
 // errone au lieu d'un exposant) : on force explicitement la disposition francaise.
 if (window.MathLive && window.MathLive.setKeyboardLayoutLocale) MathLive.setKeyboardLayoutLocale('fr');
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function exporterPDF() { window.print(); }
+// Export PDF vierge : les reponses deja tapees ne doivent pas apparaitre sur la fiche imprimee
+// (usage prevu : une fiche a redistribuer ou reimprimer vide), sans pour autant les perdre sur la
+// page elle-meme -- l'eleve continue son travail normalement juste apres. On vide les champs (et
+// masque le panneau de score/correction si deja valide) juste avant l'impression, puis on restaure
+// tout via "afterprint" (se declenche de facon fiable a la fermeture de la boite de dialogue
+// d'impression, qu'elle ait ete confirmee OU annulee).
+let etatAvantImpression = null;
+function preparerPourImpression() {
+  const valeurs = {};
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input) { valeurs[idx] = input.value; input.value = ''; }
+    const div = document.getElementById('q-' + idx);
+    if (div) div.classList.remove('correct', 'incorrect');
+    const statut = document.getElementById('statut-' + idx);
+    if (statut) statut.textContent = '';
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  const scoreVisible = !!(scorePanneau && scorePanneau.classList.contains('visible'));
+  if (scorePanneau) scorePanneau.classList.remove('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  const toutesVisible = !!(toutesPanneau && toutesPanneau.classList.contains('visible'));
+  if (toutesPanneau) toutesPanneau.classList.remove('visible');
+  etatAvantImpression = { valeurs, scoreVisible, toutesVisible };
+}
+function restaurerApresImpression() {
+  if (!etatAvantImpression) return;
+  const { valeurs, scoreVisible, toutesVisible } = etatAvantImpression;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && valeurs[idx]) input.value = valeurs[idx];
+    // recolore/reaffiche le statut en rappelant verifierUne() (deja coherent avec le gating
+    // "reveler") plutot qu'en restaurant les classes CSS a la main.
+    if (valeurs[idx]) verifierUne(idx);
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  if (scorePanneau && scoreVisible) scorePanneau.classList.add('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  if (toutesPanneau && toutesVisible) toutesPanneau.classList.add('visible');
+  etatAvantImpression = null;
+}
+window.addEventListener('afterprint', restaurerApresImpression);
+function exporterPDF() { preparerPourImpression(); window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
 function melanger(tableau) {
@@ -1899,14 +2060,61 @@ function valeurDuChamp(el) {
   return el.value.trim();
 }
 
+// Identifiant stable de la fiche pour le suivi (assets/js/suivi.js) :
+// le chemin de la page lui-meme, donc correct automatiquement si ce
+// fichier est copie sous un autre nom/chemin pour une nouvelle fiche.
+const FICHE_ID = window.location.pathname;
+
+// Identifiant du passage en cours, regenere a chaque nouveau passage
+// (chargement initial ou "Generer une nouvelle fiche") : permet au tableau
+// de bord de compter les passages distincts, pas juste les verifications.
+function genererIdPasse() {
+  return (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+let PASSE_ACTUELLE = genererIdPasse();
+
+// Reponses de la session en cours, indexe par idx d'exercice -> { id, valeur,
+// correct }. Sert a "Enregistrer" (brouillon) et "Valider" (score) plutot
+// que d'ecrire dans Firestore a chaque question verifiee (voir suivi.js).
+let saisies = {};
+
+// Determines une fois au chargement (voir initialiserFiche) : le site reste
+// utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
+// ni rien laisser croire a un visiteur anonyme.
+let eleveConnecte = false;
+// Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
+// false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
+// faux, un eleve connecte ne peut pas voir la correction (empeche de
+// simplement demander toutes les reponses sans avoir valide sa tentative).
+let ficheValidee = false;
+
+function mettreAJourEtatBoutons() {
+  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
+  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
+  // ce bouton n'apporterait plus rien une fois connecte.
+  const boutonToutes = document.getElementById('btn-toutes-reponses');
+  boutonToutes.disabled = eleveConnecte && !ficheValidee;
+}
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
   const val = valeurDuChamp(input);
-  div.classList.remove('correct','incorrect');
-  if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
+  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
+  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
+  // se font quand meme, silencieusement, a chaque reponse tapee. Un
+  // visiteur anonyme voit tout normalement, comme avant.
+  const reveler = !eleveConnecte || ficheValidee;
+  if (reveler) div.classList.remove('correct','incorrect');
+  if (!val) {
+    if (reveler) { statut.textContent=''; statut.className='q-statut'; }
+    delete saisies[idx];
+    return null;
+  }
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
@@ -1922,10 +2130,58 @@ function verifierUne(idx) {
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
-  div.classList.add(ok ? 'correct' : 'incorrect');
-  statut.textContent = ok ? '✓ correct' : '✗ à revoir';
-  statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  if (reveler) {
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  }
+  saisies[idx] = { id: ex.id, valeur: val, correct: ok };
   return ok;
+}
+
+function afficherEtatSuivi(message) {
+  const zone = document.getElementById('suivi-etat');
+  if (!zone) return;
+  zone.textContent = message;
+  zone.hidden = false;
+}
+
+async function enregistrerBrouillonActuel() {
+  if (!window.enregistrerBrouillon) return;
+  const bouton = document.getElementById('btn-enregistrer');
+  if (bouton) bouton.disabled = true;
+  try {
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
+  } catch (erreur) {
+    afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
+}
+
+async function validerFicheActuelle() {
+  if (!window.validerFiche) return;
+  const bouton = document.getElementById('btn-valider');
+  if (bouton) bouton.disabled = true;
+  try {
+    // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
+    // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
+    // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
+    // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    ficheValidee = true;
+    mettreAJourEtatBoutons();
+    verifierTout();
+
+    const reponses = Object.values(saisies);
+    const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
+    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+  } catch (erreur) {
+    afficherEtatSuivi('Échec de la validation (connexion internet ?).');
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
 }
 
 let modeImmediat = true;
@@ -1949,7 +2205,12 @@ function attacherEcouteurs() {
         evenement.preventDefault();
         ignorerProchainInput = true;
         valideeParEntree = true;
-        if (modeImmediat) {
+        if (eleveConnecte) {
+          // Calcule et enregistre silencieusement (voir reveler dans
+          // verifierUne) ; le bilan ne s'affiche que si deja valide.
+          verifierUne(idx);
+          if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+        } else if (modeImmediat) {
           verifierUne(idx);
           if (toutesLesReponsesSontSaisies()) verifierTout();
         }
@@ -1962,7 +2223,10 @@ function attacherEcouteurs() {
     });
     input.addEventListener('blur', () => {
       if (valideeParEntree) { valideeParEntree = false; return; }
-      if (modeImmediat) {
+      if (eleveConnecte) {
+        verifierUne(idx);
+        if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+      } else if (modeImmediat) {
         verifierUne(idx);
         if (toutesLesReponsesSontSaisies()) verifierTout();
       }
@@ -2206,15 +2470,29 @@ function reinitialiser() {
     const clavier = document.getElementById('clavier-' + idx);
     if (clavier) clavier.classList.remove('ouvert');
   });
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatReinit = document.getElementById('suivi-etat');
+  if (zoneEtatReinit) zoneEtatReinit.hidden = true;
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('toutes-reponses-panneau').classList.remove('visible');
   document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
 }
 
 function genererNouvelleFiche() {
+  PASSE_ACTUELLE = genererIdPasse();
   exercices = genererExercices();
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatGnf = document.getElementById('suivi-etat');
+  if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
   attacherEcouteurs();
+  attacherEcouteursTactiles();
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
@@ -2348,25 +2626,91 @@ function utiliseMathfield(ex) {
   return TYPES_MATHFIELD.includes(ex.type);
 }
 
+// Vrai sur un appareil sans survol reel (tactile) : meme heuristique que le CSS "@media
+// (hover: none)" deja utilise pour le bouton curseur des graphiques. Sert a n'activer les
+// contournements tactiles ci-dessous (touche Entree du clavier virtuel, bouton "Valider" du
+// clavier maison) que la ou ils sont necessaires -- le clavier physique fonctionne deja tres
+// bien sur ordinateur, inutile d'y changer quoi que ce soit.
+function estAppareilTactile() {
+  return window.matchMedia && window.matchMedia('(hover: none)').matches;
+}
+
+// Calcule/enregistre silencieusement (voir "reveler" dans verifierUne) puis passe au champ
+// suivant -- reutilise par les contournements tactiles (voir estAppareilTactile) : le clavier
+// virtuel de MathLive et le clavier maison (.clavier-visuel) n'emettent pas de keydown "Enter"
+// quand on tape sur leurs propres touches, seulement des evenements "change"/clic -- une
+// tablette ne peut donc pas declencher le gestionnaire d'Entree habituel, d'ou cette fonction
+// appelable directement.
+function validerEtAvancer(idx) {
+  if (eleveConnecte) {
+    verifierUne(idx);
+    if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+  } else if (modeImmediat) {
+    verifierUne(idx);
+    if (toutesLesReponsesSontSaisies()) verifierTout();
+  }
+  allerChampSuivant(idx);
+}
+
+// Tactile uniquement : la touche "Entree"/coche du clavier virtuel MathLive declenche un
+// "change" (jamais un keydown), donc jamais interceptee par le gestionnaire keydown existant --
+// sans ceci, valider une reponse au clavier virtuel ne fait simplement rien. Inoffensif sur les
+// champs a clavier maison uniquement (virtual-keyboard-mode="off" ou input texte simple) : leur
+// clavier (input.insert(), voir inserer()) n'emet jamais "change" (verifie), seul le bouton
+// "Valider" du clavier maison les declenche pour ceux-la. Appelee juste apres chaque appel
+// existant a attacherEcouteurs() (voir plus bas), pas fusionnee dedans : evite de toucher au
+// corps de cette fonction, deja variable d'une fiche a l'autre.
+function attacherEcouteursTactiles() {
+  if (!estAppareilTactile()) return;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && input.tagName === 'MATH-FIELD') input.addEventListener('change', () => validerEtAvancer(idx));
+  });
+}
+
+// Icone clavier du bouton "Clavier symboles" : caractere Unicode (&#9000;) sur ordinateur (rendu
+// fiable, l'utilisateur le trouve satisfaisant tel quel) -- SVG maison sur tablette/telephone
+// (voir ICONE_CLAVIER_SVG et la regle CSS .q-clavier-icone-tactile/@media(hover:none) qui bascule
+// de l'un a l'autre) : le glyphe Unicode y rend de facon incoherente selon les polices systeme
+// installees, contrairement a un SVG qui reste identique partout. S'inspire du glyphe actuel
+// (rectangle + cases).
+const ICONE_CLAVIER_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <rect x="2" y="6" width="20" height="13" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="6" cy="10" r="1" fill="currentColor"/><circle cx="10" cy="10" r="1" fill="currentColor"/>
+    <circle cx="14" cy="10" r="1" fill="currentColor"/><circle cx="18" cy="10" r="1" fill="currentColor"/>
+    <circle cx="6" cy="14" r="1" fill="currentColor"/><circle cx="10" cy="14" r="1" fill="currentColor"/>
+    <circle cx="14" cy="14" r="1" fill="currentColor"/><circle cx="18" cy="14" r="1" fill="currentColor"/>
+    <rect x="6" y="16.3" width="12" height="1.8" rx="0.9" fill="currentColor"/>
+  </svg>`;
+function iconeClavierBoutonHTML() {
+  return `<span class="q-clavier-icone-desktop">&#9000;</span><span class="q-clavier-icone-tactile">${ICONE_CLAVIER_SVG}</span>`;
+}
+// Touche "Valider" du clavier maison, tactile uniquement (voir CSS .clavier-groupe-tactile) :
+// equivalent de la touche Entree physique, absente de ce clavier -- sans elle, valider une
+// reponse tapee avec ce clavier est impossible sur un appareil sans clavier physique.
+function boutonValiderTactileHTML(idx) {
+  return `<div class="clavier-groupe clavier-groupe-tactile"><button class="touche-large clavier-touche-valider" onclick="validerEtAvancer(${idx})">✓ Valider</button></div>`;
+}
+
 function champReponsePour(idx, ex) {
   if (utiliseMathfield(ex) && estEnsemble(ex)) {
     // ensemble de solutions : vrai champ mathematique (symbole racine avec case a remplir),
     // mais avec notre propre clavier visuel (celui de mathlive ne propose pas ";" ni "∅").
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="\\{a;b\\}"
               smart-fence="off" smart-superscript="on" virtual-keyboard-mode="off"></math-field>
-    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierMathEnsemble(idx)}</div>`;
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierMathEnsemble(idx)}</div>`;
   }
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
               smart-fence="off" smart-superscript="on"
               virtual-keyboard-mode="manual"></math-field>
-    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>`;
   }
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
-    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierPour(idx, ex)}</div>`;
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -2537,11 +2881,21 @@ function genererSVGCourbeTrigo(fonctionJs, largeur, hauteur) {
     graduations += `<line x1="${sx}" y1="0" x2="${sx}" y2="${hauteur}" stroke="#eee" stroke-width="0.6"/>`;
   }
 
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" style="max-width:260px;">
+  // data-* : donnees de conversion pixel<->coordonnees, reutilisees par activerCurseurSvg (voir
+  // plus bas). marge=0 ici : le trace occupe tout le canevas, pas de bande vide autour comme sur
+  // genererSVGCourbe (fiche 6). width/height explicites (en plus du viewBox), meme raison que sur
+  // fiche-06 : necessaire pour que le bouton-icone du curseur ne casse pas le calcul de hauteur.
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg" style="max-width:260px;"
+    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="0">
     <line x1="0" y1="${oy}" x2="${largeur}" y2="${oy}" stroke="#ccc" stroke-width="1"/>
     <line x1="${ox}" y1="0" x2="${ox}" y2="${hauteur}" stroke="#ccc" stroke-width="1"/>
     ${graduations}
     <path d="${path}" fill="none" stroke="#e8820c" stroke-width="2"/>
+    <g class="curseur-groupe" visibility="hidden">
+      <line class="curseur-ligne-v" x1="0" y1="0" x2="0" y2="${hauteur}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <line class="curseur-ligne-h" x1="0" y1="0" x2="${largeur}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <text class="curseur-texte" font-size="9" fill="#666"></text>
+    </g>
   </svg>`;
 }
 
@@ -2554,10 +2908,13 @@ function construireGraphique24_10() {
   ];
   let html = '<p>Pour chacune des fonctions suivantes, reconnaître sa courbe représentative parmi les propositions :</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
   options.forEach(o => {
-    html += `<div><div class="figure-centree">${genererSVGCourbeTrigo(o.func, 240, 170)}</div><p style="text-align:center;">(${o.label})</p></div>`;
+    const svg = genererSVGCourbeTrigo(o.func, 240, 170);
+    html += `<div><div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div><p style="text-align:center;">(${o.label})</p></div>`;
   });
   html += '</div>';
   document.getElementById('graphique-24-10').innerHTML = html;
+  activerZoomSvg(document.getElementById('graphique-24-10'));
+  activerCurseurSvg(document.getElementById('graphique-24-10'));
 }
 
 function construireGraphique24_11() {
@@ -2565,19 +2922,202 @@ function construireGraphique24_11() {
   const courbeB = genererSVGCourbeTrigo(x => -Math.sin(x-Math.PI/4), 260, 190);
   let html = '<p>Pour chacune des courbes suivantes, choisir parmi les propositions la fonction correspondante.</p>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  html += `<div><p>a)</p><div class="figure-centree">${courbeA}</div></div>`;
-  html += `<div><p>b)</p><div class="figure-centree">${courbeB}</div></div>`;
+  html += `<div><p>a)</p><div class="figure-centree"><span class="figure-avec-curseur">${courbeA}${boutonCurseurHTML()}</span></div></div>`;
+  html += `<div><p>b)</p><div class="figure-centree"><span class="figure-avec-curseur">${courbeB}${boutonCurseurHTML()}</span></div></div>`;
   html += '</div>';
   document.getElementById('graphique-24-11').innerHTML = html;
+  activerZoomSvg(document.getElementById('graphique-24-11'));
+  activerCurseurSvg(document.getElementById('graphique-24-11'));
 }
 
+// ---------- curseur avec lecture des coordonnees + agrandissement au clic, portes depuis les
+// fiches 14/15 de Seconde (meme code que sur fiche-06 de Premiere) ----------
+function activerCurseurSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
+}
+// cable le curseur sur UN svg donne (independant de la classe qcm-svg, requise pour re-cabler le
+// clone affiche dans la modale de zoom — voir ouvrirModalSvg — qui retire cette classe).
+function cablerCurseurUnique(svg) {
+  const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
+  const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
+  const marge = parseFloat(svg.dataset.marge);
+  const groupe = svg.querySelector('.curseur-groupe');
+  const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
+  const texte = svg.querySelector('.curseur-texte');
+  const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
+  svg.addEventListener('mousemove', (evt) => {
+    if (!svg.classList.contains('curseur-actif')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (local.x < marge || local.x > largeur - marge || local.y < marge || local.y > hauteur - marge) {
+      groupe.setAttribute('visibility', 'hidden');
+      return;
+    }
+    const x = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
+    const y = ymin + (hauteur - marge - local.y) / (hauteur - 2*marge) * (ymax - ymin);
+    groupe.setAttribute('visibility', 'visible');
+    ligneV.setAttribute('x1', local.x.toFixed(1)); ligneV.setAttribute('x2', local.x.toFixed(1));
+    ligneH.setAttribute('y1', local.y.toFixed(1)); ligneH.setAttribute('y2', local.y.toFixed(1));
+    const texteX = local.x < largeur - 60 ? local.x + 5 : local.x - 5;
+    const ancrage = local.x < largeur - 60 ? 'start' : 'end';
+    const texteY = local.y > marge + 12 ? local.y - 5 : local.y + 12;
+    texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
+    texte.setAttribute('text-anchor', ancrage);
+    texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
+  });
+  svg.addEventListener('mouseleave', () => groupe.setAttribute('visibility', 'hidden'));
+}
+function fmtGraduation(v) {
+  const arrondi = Math.round(v * 1000) / 1000;
+  return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
+}
+// icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js.
+const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+  + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
+  + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function boutonCurseurHTML() {
+  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
+    role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
+}
+function toggleCurseurSvg(btn) {
+  const svg = btn.parentElement.querySelector('svg');
+  if (!svg) return;
+  const actif = svg.classList.toggle('curseur-actif');
+  btn.classList.toggle('actif', actif);
+  if (!actif) svg.querySelector('.curseur-groupe').setAttribute('visibility', 'hidden');
+}
+
+// selecteur "svg.qcm-svg" (pas juste "svg") : necessaire depuis que le bouton-icone du curseur
+// (voir boutonCurseurHTML) contient lui-meme un <svg> -- un selecteur generique l'aurait aussi
+// rendu zoomable, ouvrant a tort la modale sur l'icone au lieu du graphique au clic sur ce bouton.
+function activerZoomSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    svg.classList.add('svg-agrandissable');
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'button');
+    svg.setAttribute('aria-label', 'Agrandir ce graphique');
+    svg.addEventListener('click', () => ouvrirModalSvg(svg));
+    svg.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
+    });
+  });
+}
+
+function ouvrirModalSvg(svg) {
+  const interieur = document.getElementById('modal-svg-contenu-interieur');
+  interieur.innerHTML = '';
+  const clone = svg.cloneNode(true);
+  clone.classList.remove('svg-agrandissable', 'qcm-svg');
+  clone.removeAttribute('style');
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  // le curseur (voir cablerCurseurUnique) doit continuer a fonctionner dans la modale agrandie :
+  // cloneNode() ne copie pas les ecouteurs, il faut recabler explicitement le clone.
+  const aCurseur = svg.dataset.xmin !== undefined;
+  if (aCurseur) {
+    const enveloppe = document.createElement('span');
+    enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
+    enveloppe.appendChild(clone);
+    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
+    interieur.appendChild(enveloppe);
+    cablerCurseurUnique(clone);
+    if (svg.classList.contains('curseur-actif')) {
+      clone.classList.add('curseur-actif');
+      enveloppe.querySelector('.btn-curseur').classList.add('actif');
+    }
+  } else {
+    interieur.appendChild(clone);
+  }
+  document.getElementById('modal-svg-overlay').classList.add('ouvert');
+}
+
+function fermerModalSvg(evt, force) {
+  if (force || evt.target.id === 'modal-svg-overlay') {
+    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
+  }
+}
+
+document.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Escape') fermerModalSvg(null, true);
+});
+
+// Au chargement : si un brouillon existe pour cette fiche (clic precedent
+// sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
+// et les reponses deja saisies plutot que d'en tirer de nouvelles.
+async function initialiserFiche() {
+  eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  const panneauMode = document.getElementById('mode-panneau');
+  const boutonVerifier = document.getElementById('btn-verifier');
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !eleveConnecte;
+  if (zoneValider) zoneValider.hidden = !eleveConnecte;
+  // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
+  // toute facon jamais affichee avant validation (voir "reveler" dans
+  // verifierUne), ces boutons n'auraient plus de sens.
+  if (panneauMode) panneauMode.hidden = eleveConnecte;
+  // Idem pour "Corrige des erreurs" : "Valider" declenche deja verifierTout(),
+  // ce bouton devient redondant une fois connecte (reste utile pour un
+  // visiteur anonyme, en mode "Tout a la fin").
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
+
+  let brouillon = null;
+  if (eleveConnecte && window.chargerBrouillon) {
+    try {
+      brouillon = await window.chargerBrouillon(FICHE_ID);
+    } catch (erreur) {
+      brouillon = null;
+    }
+  }
+  const brouillonValide = brouillon
+    && Array.isArray(brouillon.exercices)
+    && brouillon.exercices.length === exercices.length;
+  if (brouillonValide) {
+    exercices = brouillon.exercices;
+    if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
+  }
 construireGrilles();
 construireGraphique24_10();
 construireGraphique24_11();
 attacherEcouteurs();
+attacherEcouteursTactiles();
 definirMode(true);
-if (window.MathJax) MathJax.typesetPromise();
+  mettreAJourEtatBoutons();
+
+  if (brouillonValide && brouillon.saisies) {
+    for (const idx of Object.keys(brouillon.saisies)) {
+      const saisie = brouillon.saisies[idx];
+      const input = document.getElementById('input-' + idx);
+      if (input && saisie && typeof saisie.valeur === 'string') {
+        input.value = saisie.valeur;
+        verifierUne(Number(idx));
+      }
+    }
+    afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+  }
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// suivi.js est un script "module", differe par nature : il peut ne pas
+// avoir encore attache window.estConnecte/chargerBrouillon/etc. au moment
+// ou ce script classique (non differe) atteint cette ligne. DOMContentLoaded
+// ne se declenche qu'une fois tous les scripts differes/modules executes --
+// attendre cet evenement garantit que ces fonctions existent.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialiserFiche);
+} else {
+  initialiserFiche();
+}
 </script>
 
+<script type="module" src="../../../assets/js/nav-auth.js"></script>
 </body>
 </html>

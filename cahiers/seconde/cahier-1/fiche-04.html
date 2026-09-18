@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Fiche 4 — Développer, réduire, factoriser (interactif)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
 window.MathJax = {
   tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
@@ -155,6 +156,14 @@ window.MathJax = {
     padding: 10px 12px;
     margin-bottom: 12px;
   }
+  .mode-panneau[hidden] { display: none; }
+  /* Span enveloppant "Valider ma fiche" + l'icone "?" : display:inline-block
+     doit etre porte par une regle de classe (pas un style en ligne) pour que
+     la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
+     l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
+     faible), laissant le bouton visible malgre l'attribut hidden. */
+  .zone-bouton-suivi { position: relative; display: inline-block; }
+  .zone-bouton-suivi[hidden] { display: none; }
   .mode-label {
     font-size: 13px;
     font-weight: bold;
@@ -407,6 +416,26 @@ window.MathJax = {
   .clavier-visuel button:hover { background: #eee; border-color: var(--bleu); }
   .clavier-visuel button.touche-large { min-width: 60px; font-size: 12.5px; font-family: Georgia, serif; padding: 8px 12px; }
   .clavier-visuel button.touche-effacer { color: var(--rouge); border-color: var(--rouge-clair); }
+  /* ---------- Icone clavier + touche "Valider" du clavier maison, tactile uniquement -----------
+     Sur ordinateur, le clavier physique fait deja tout ca (touche Entree) : rien de tout ceci ne
+     doit y apparaitre ni s'y comporter differemment. Voir estAppareilTactile() cote JS pour le
+     contournement equivalent sur le clavier virtuel de MathLive (touche Entree). */
+  .q-clavier-icone-tactile { display: none; }
+  .clavier-groupe-tactile { display: none; }
+  @media (hover: none) {
+    .q-clavier-icone-desktop { display: none; }
+    .q-clavier-icone-tactile { display: inline-flex; align-items: center; }
+    .clavier-groupe-tactile { display: flex; }
+  }
+  .clavier-touche-valider {
+    background: var(--bleu) !important;
+    color: white !important;
+    border-color: var(--bleu) !important;
+    font-weight: bold;
+    width: 100%;
+  }
+  .clavier-touche-valider:hover { background: #3a36a0 !important; }
+
   .clavier-visuel .clavier-apercu {
     font-size: 12px;
     color: var(--gris);
@@ -443,6 +472,12 @@ window.MathJax = {
     border: 1.5px solid var(--bleu);
   }
   .btn-secondaire:hover { background: var(--bleu-clair); }
+  .btn-principal:disabled, .btn-secondaire:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .btn-principal:disabled:hover { background: var(--bleu); }
+  .btn-secondaire:disabled:hover { background: white; }
 
   .score-panneau {
     display: none;
@@ -573,7 +608,7 @@ window.MathJax = {
 
 <div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
 
-<div class="mode-panneau">
+<div class="mode-panneau" id="mode-panneau">
   <span class="mode-label">Vérifier chaque réponse</span>
   <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
   <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
@@ -619,11 +654,20 @@ window.MathJax = {
 
 </div>
 <div class="barre-controle">
-  <button class="btn-principal" onclick="verifierTout()">Vérifier mes réponses</button>
   <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
+    <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
+    <span title="Sauvegarde ta fiche telle quelle (mêmes valeurs, réponses déjà tapées) pour la reprendre plus tard — sans révéler ton score ni la corriger." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <span id="zone-valider" class="zone-bouton-suivi" hidden>
+    <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
+    <span title="« Voir toutes les réponses » ne s'active qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
 
 <div class="score-panneau" id="score-panneau">
   <span class="score-chiffre" id="score-chiffre">0 / 34</span> bonnes réponses
@@ -649,7 +693,49 @@ window.MathJax = {
 // errone au lieu d'un exposant) : on force explicitement la disposition francaise.
 if (window.MathLive && window.MathLive.setKeyboardLayoutLocale) MathLive.setKeyboardLayoutLocale('fr');
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function exporterPDF() { window.print(); }
+// Export PDF vierge : les reponses deja tapees ne doivent pas apparaitre sur la fiche imprimee
+// (usage prevu : une fiche a redistribuer ou reimprimer vide), sans pour autant les perdre sur la
+// page elle-meme -- l'eleve continue son travail normalement juste apres. On vide les champs (et
+// masque le panneau de score/correction si deja valide) juste avant l'impression, puis on restaure
+// tout via "afterprint" (se declenche de facon fiable a la fermeture de la boite de dialogue
+// d'impression, qu'elle ait ete confirmee OU annulee).
+let etatAvantImpression = null;
+function preparerPourImpression() {
+  const valeurs = {};
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input) { valeurs[idx] = input.value; input.value = ''; }
+    const div = document.getElementById('q-' + idx);
+    if (div) div.classList.remove('correct', 'incorrect');
+    const statut = document.getElementById('statut-' + idx);
+    if (statut) statut.textContent = '';
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  const scoreVisible = !!(scorePanneau && scorePanneau.classList.contains('visible'));
+  if (scorePanneau) scorePanneau.classList.remove('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  const toutesVisible = !!(toutesPanneau && toutesPanneau.classList.contains('visible'));
+  if (toutesPanneau) toutesPanneau.classList.remove('visible');
+  etatAvantImpression = { valeurs, scoreVisible, toutesVisible };
+}
+function restaurerApresImpression() {
+  if (!etatAvantImpression) return;
+  const { valeurs, scoreVisible, toutesVisible } = etatAvantImpression;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && valeurs[idx]) input.value = valeurs[idx];
+    // recolore/reaffiche le statut en rappelant verifierUne() (deja coherent avec le gating
+    // "reveler") plutot qu'en restaurant les classes CSS a la main.
+    if (valeurs[idx]) verifierUne(idx);
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  if (scorePanneau && scoreVisible) scorePanneau.classList.add('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  if (toutesPanneau && toutesVisible) toutesPanneau.classList.add('visible');
+  etatAvantImpression = null;
+}
+window.addEventListener('afterprint', restaurerApresImpression);
+function exporterPDF() { preparerPourImpression(); window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 function choix(tab) { return tab[alea(0, tab.length - 1)]; }
 function melanger(tab) {
@@ -1034,17 +1120,83 @@ function utiliseMathfield(ex) {
   return true;
 }
 
+// Vrai sur un appareil sans survol reel (tactile) : meme heuristique que le CSS "@media
+// (hover: none)" deja utilise pour le bouton curseur des graphiques. Sert a n'activer les
+// contournements tactiles ci-dessous (touche Entree du clavier virtuel, bouton "Valider" du
+// clavier maison) que la ou ils sont necessaires -- le clavier physique fonctionne deja tres
+// bien sur ordinateur, inutile d'y changer quoi que ce soit.
+function estAppareilTactile() {
+  return window.matchMedia && window.matchMedia('(hover: none)').matches;
+}
+
+// Calcule/enregistre silencieusement (voir "reveler" dans verifierUne) puis passe au champ
+// suivant -- reutilise par les contournements tactiles (voir estAppareilTactile) : le clavier
+// virtuel de MathLive et le clavier maison (.clavier-visuel) n'emettent pas de keydown "Enter"
+// quand on tape sur leurs propres touches, seulement des evenements "change"/clic -- une
+// tablette ne peut donc pas declencher le gestionnaire d'Entree habituel, d'ou cette fonction
+// appelable directement.
+function validerEtAvancer(idx) {
+  if (eleveConnecte) {
+    verifierUne(idx);
+    if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+  } else if (modeImmediat) {
+    verifierUne(idx);
+    if (toutesLesReponsesSontSaisies()) verifierTout();
+  }
+  allerChampSuivant(idx);
+}
+
+// Tactile uniquement : la touche "Entree"/coche du clavier virtuel MathLive declenche un
+// "change" (jamais un keydown), donc jamais interceptee par le gestionnaire keydown existant --
+// sans ceci, valider une reponse au clavier virtuel ne fait simplement rien. Inoffensif sur les
+// champs a clavier maison uniquement (virtual-keyboard-mode="off" ou input texte simple) : leur
+// clavier (input.insert(), voir inserer()) n'emet jamais "change" (verifie), seul le bouton
+// "Valider" du clavier maison les declenche pour ceux-la. Appelee juste apres chaque appel
+// existant a attacherEcouteurs() (voir plus bas), pas fusionnee dedans : evite de toucher au
+// corps de cette fonction, deja variable d'une fiche a l'autre.
+function attacherEcouteursTactiles() {
+  if (!estAppareilTactile()) return;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && input.tagName === 'MATH-FIELD') input.addEventListener('change', () => validerEtAvancer(idx));
+  });
+}
+
+// Icone clavier du bouton "Clavier symboles" : caractere Unicode (&#9000;) sur ordinateur (rendu
+// fiable, l'utilisateur le trouve satisfaisant tel quel) -- SVG maison sur tablette/telephone
+// (voir ICONE_CLAVIER_SVG et la regle CSS .q-clavier-icone-tactile/@media(hover:none) qui bascule
+// de l'un a l'autre) : le glyphe Unicode y rend de facon incoherente selon les polices systeme
+// installees, contrairement a un SVG qui reste identique partout. S'inspire du glyphe actuel
+// (rectangle + cases).
+const ICONE_CLAVIER_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <rect x="2" y="6" width="20" height="13" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="6" cy="10" r="1" fill="currentColor"/><circle cx="10" cy="10" r="1" fill="currentColor"/>
+    <circle cx="14" cy="10" r="1" fill="currentColor"/><circle cx="18" cy="10" r="1" fill="currentColor"/>
+    <circle cx="6" cy="14" r="1" fill="currentColor"/><circle cx="10" cy="14" r="1" fill="currentColor"/>
+    <circle cx="14" cy="14" r="1" fill="currentColor"/><circle cx="18" cy="14" r="1" fill="currentColor"/>
+    <rect x="6" y="16.3" width="12" height="1.8" rx="0.9" fill="currentColor"/>
+  </svg>`;
+function iconeClavierBoutonHTML() {
+  return `<span class="q-clavier-icone-desktop">&#9000;</span><span class="q-clavier-icone-tactile">${ICONE_CLAVIER_SVG}</span>`;
+}
+// Touche "Valider" du clavier maison, tactile uniquement (voir CSS .clavier-groupe-tactile) :
+// equivalent de la touche Entree physique, absente de ce clavier -- sans elle, valider une
+// reponse tapee avec ce clavier est impossible sur un appareil sans clavier physique.
+function boutonValiderTactileHTML(idx) {
+  return `<div class="clavier-groupe clavier-groupe-tactile"><button class="touche-large clavier-touche-valider" onclick="validerEtAvancer(${idx})">✓ Valider</button></div>`;
+}
+
 function champReponsePour(idx, ex) {
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
               smart-fence="off" smart-superscript="on"
               virtual-keyboard-mode="manual"></math-field>
-    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>`;
   }
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="réponse" autocomplete="off">
-    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}
       <div class="clavier-groupe">
         <span class="clavier-label">Chiffres</span>
         <button onclick="inserer(${idx},'7')">7</button>
@@ -1407,14 +1559,61 @@ function valeurDuChamp(el) {
   return el.value.trim();
 }
 
+// Identifiant stable de la fiche pour le suivi (assets/js/suivi.js) :
+// le chemin de la page lui-meme, donc correct automatiquement si ce
+// fichier est copie sous un autre nom/chemin pour une nouvelle fiche.
+const FICHE_ID = window.location.pathname;
+
+// Identifiant du passage en cours, regenere a chaque nouveau passage
+// (chargement initial ou "Generer une nouvelle fiche") : permet au tableau
+// de bord de compter les passages distincts, pas juste les verifications.
+function genererIdPasse() {
+  return (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+let PASSE_ACTUELLE = genererIdPasse();
+
+// Reponses de la session en cours, indexe par idx d'exercice -> { id, valeur,
+// correct }. Sert a "Enregistrer" (brouillon) et "Valider" (score) plutot
+// que d'ecrire dans Firestore a chaque question verifiee (voir suivi.js).
+let saisies = {};
+
+// Determines une fois au chargement (voir initialiserFiche) : le site reste
+// utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
+// ni rien laisser croire a un visiteur anonyme.
+let eleveConnecte = false;
+// Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
+// false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
+// faux, un eleve connecte ne peut pas voir la correction (empeche de
+// simplement demander toutes les reponses sans avoir valide sa tentative).
+let ficheValidee = false;
+
+function mettreAJourEtatBoutons() {
+  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
+  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
+  // ce bouton n'apporterait plus rien une fois connecte.
+  const boutonToutes = document.getElementById('btn-toutes-reponses');
+  boutonToutes.disabled = eleveConnecte && !ficheValidee;
+}
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
   const val = valeurDuChamp(input);
-  div.classList.remove('correct','incorrect');
-  if (!val) { statut.textContent=''; statut.className='q-statut'; return null; }
+  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
+  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
+  // se font quand meme, silencieusement, a chaque reponse tapee. Un
+  // visiteur anonyme voit tout normalement, comme avant.
+  const reveler = !eleveConnecte || ficheValidee;
+  if (reveler) div.classList.remove('correct','incorrect');
+  if (!val) {
+    if (reveler) { statut.textContent=''; statut.className='q-statut'; }
+    delete saisies[idx];
+    return null;
+  }
   let ok;
   if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
@@ -1422,10 +1621,58 @@ function verifierUne(idx) {
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
-  div.classList.add(ok ? 'correct' : 'incorrect');
-  statut.textContent = ok ? '✓ correct' : '✗ à revoir';
-  statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  if (reveler) {
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  }
+  saisies[idx] = { id: ex.id, valeur: val, correct: ok };
   return ok;
+}
+
+function afficherEtatSuivi(message) {
+  const zone = document.getElementById('suivi-etat');
+  if (!zone) return;
+  zone.textContent = message;
+  zone.hidden = false;
+}
+
+async function enregistrerBrouillonActuel() {
+  if (!window.enregistrerBrouillon) return;
+  const bouton = document.getElementById('btn-enregistrer');
+  if (bouton) bouton.disabled = true;
+  try {
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
+  } catch (erreur) {
+    afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
+}
+
+async function validerFicheActuelle() {
+  if (!window.validerFiche) return;
+  const bouton = document.getElementById('btn-valider');
+  if (bouton) bouton.disabled = true;
+  try {
+    // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
+    // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
+    // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
+    // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    ficheValidee = true;
+    mettreAJourEtatBoutons();
+    verifierTout();
+
+    const reponses = Object.values(saisies);
+    const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
+    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+  } catch (erreur) {
+    afficherEtatSuivi('Échec de la validation (connexion internet ?).');
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
 }
 
 let modeImmediat = true;
@@ -1444,7 +1691,12 @@ function attacherEcouteurs() {
         evenement.preventDefault();
         ignorerProchainInput = true;
         valideeParEntree = true;
-        if (modeImmediat) {
+        if (eleveConnecte) {
+          // Calcule et enregistre silencieusement (voir reveler dans
+          // verifierUne) ; le bilan ne s'affiche que si deja valide.
+          verifierUne(idx);
+          if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+        } else if (modeImmediat) {
           verifierUne(idx);
           if (toutesLesReponsesSontSaisies()) verifierTout();
         }
@@ -1457,7 +1709,10 @@ function attacherEcouteurs() {
     });
     input.addEventListener('blur', () => {
       if (valideeParEntree) { valideeParEntree = false; return; }
-      if (modeImmediat) {
+      if (eleveConnecte) {
+        verifierUne(idx);
+        if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+      } else if (modeImmediat) {
         verifierUne(idx);
         if (toutesLesReponsesSontSaisies()) verifierTout();
       }
@@ -1618,6 +1873,12 @@ function reinitialiser() {
     const clavier = document.getElementById('clavier-' + idx);
     if (clavier) clavier.classList.remove('ouvert');
   });
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatReinit = document.getElementById('suivi-etat');
+  if (zoneEtatReinit) zoneEtatReinit.hidden = true;
   document.getElementById('score-panneau').classList.remove('visible');
   const panneauToutes = document.getElementById('toutes-reponses-panneau');
   panneauToutes.classList.remove('visible');
@@ -1641,9 +1902,17 @@ function toggleToutesReponses() {
 }
 
 function genererNouvelleFiche() {
+  PASSE_ACTUELLE = genererIdPasse();
   exercices = genererExercices();
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatGnf = document.getElementById('suivi-etat');
+  if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
   attacherEcouteurs();
+  attacherEcouteursTactiles();
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
@@ -1654,11 +1923,74 @@ function genererNouvelleFiche() {
   if (window.MathJax) MathJax.typesetPromise();
 }
 
+// Au chargement : si un brouillon existe pour cette fiche (clic precedent
+// sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
+// et les reponses deja saisies plutot que d'en tirer de nouvelles.
+async function initialiserFiche() {
+  eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  const panneauMode = document.getElementById('mode-panneau');
+  const boutonVerifier = document.getElementById('btn-verifier');
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !eleveConnecte;
+  if (zoneValider) zoneValider.hidden = !eleveConnecte;
+  // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
+  // toute facon jamais affichee avant validation (voir "reveler" dans
+  // verifierUne), ces boutons n'auraient plus de sens.
+  if (panneauMode) panneauMode.hidden = eleveConnecte;
+  // Idem pour "Corrige des erreurs" : "Valider" declenche deja verifierTout(),
+  // ce bouton devient redondant une fois connecte (reste utile pour un
+  // visiteur anonyme, en mode "Tout a la fin").
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
+
+  let brouillon = null;
+  if (eleveConnecte && window.chargerBrouillon) {
+    try {
+      brouillon = await window.chargerBrouillon(FICHE_ID);
+    } catch (erreur) {
+      brouillon = null;
+    }
+  }
+  const brouillonValide = brouillon
+    && Array.isArray(brouillon.exercices)
+    && brouillon.exercices.length === exercices.length;
+  if (brouillonValide) {
+    exercices = brouillon.exercices;
+    if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
+  }
 construireGrilles();
 attacherEcouteurs();
+attacherEcouteursTactiles();
 definirMode(true);
-if (window.MathJax) MathJax.typesetPromise();
+  mettreAJourEtatBoutons();
+
+  if (brouillonValide && brouillon.saisies) {
+    for (const idx of Object.keys(brouillon.saisies)) {
+      const saisie = brouillon.saisies[idx];
+      const input = document.getElementById('input-' + idx);
+      if (input && saisie && typeof saisie.valeur === 'string') {
+        input.value = saisie.valeur;
+        verifierUne(Number(idx));
+      }
+    }
+    afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+  }
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// suivi.js est un script "module", differe par nature : il peut ne pas
+// avoir encore attache window.estConnecte/chargerBrouillon/etc. au moment
+// ou ce script classique (non differe) atteint cette ligne. DOMContentLoaded
+// ne se declenche qu'une fois tous les scripts differes/modules executes --
+// attendre cet evenement garantit que ces fonctions existent.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialiserFiche);
+} else {
+  initialiserFiche();
+}
 </script>
 
+<script type="module" src="../../../assets/js/nav-auth.js"></script>
 </body>
 </html>
