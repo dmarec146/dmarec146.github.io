@@ -364,11 +364,9 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
 
 - Devoirs (brique à venir, sur demande explicite de l'utilisateur). Le mode
   chrono sera imposé pour les devoirs (décidé, pas encore fait).
-- Fil d'ariane des 44 fiches de calcul : existe seulement sur `master`
-  (commit `02c07b7`, jamais fusionné ici), en 12px. L'utilisateur voulait
-  l'agrandir légèrement (fait pour les automatismes, 14px) — à reproduire
-  sur les fiches de calcul une fois la fusion faite (pas avant, pour ne pas
-  créer un vrai conflit en dupliquant ce bloc ici).
+- ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
+  18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
+  la fusion effectuée).
 - Fusion de `suivi-firebase` vers `master` — décidée : se fera une fois le
   reste du travail sur cette branche terminé (pas seulement le câblage),
   sur demande explicite de l'utilisateur le moment venu. Aucun élève n'a
