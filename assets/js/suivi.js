@@ -272,26 +272,30 @@ export async function enregistrerConnexion(uid) {
 
 // Meme principe que enregistrerTentativeDevoirSiApplicable ci-dessus, pour
 // un sujet blanc d'automatismes : le devoir est identifie par (type
-// 'automatismes', niveau, mode, classe) plutot que par ficheId, mais
-// reutilise le MEME journal eleves/{uid}/devoirsTentatives (memes champs
-// score/totalExercices, ici note/6 plutot que exercices reussis/total --
-// meme forme, la vue resultats de devoirs.js n'a pas besoin de distinguer
-// les deux types pour calculer la meilleure tentative). Ni le niveau ni le
-// mode ne sont imposes a l'eleve (choisis librement sur la page du sujet
-// blanc, voir moteur.js/changerNiveau et changerMode) : une tentative a un
-// autre niveau ou un autre mode que celui du devoir n'est simplement pas
-// comptee, comme une tentative hors delai.
-async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, points, bonnes, total) {
+// 'automatismes', niveau, mode, [duree], classe) plutot que par ficheId,
+// mais reutilise le MEME journal eleves/{uid}/devoirsTentatives (memes
+// champs score/totalExercices, ici note/6 plutot que exercices reussis/
+// total -- meme forme, la vue resultats de devoirs.js n'a pas besoin de
+// distinguer les deux types pour calculer la meilleure tentative). Ni le
+// niveau, ni le mode, ni la duree ne sont imposes a l'eleve (choisis
+// librement sur la page du sujet blanc, voir moteur.js/changerNiveau,
+// changerMode et le select data-action="duree") : une tentative avec un
+// autre niveau, mode ou duree que ceux du devoir n'est simplement pas
+// comptee, comme une tentative hors delai. La duree n'a de sens qu'en mode
+// chrono (voir devoirs.js) : filtre ajoute seulement si mode === 'chrono',
+// sinon le champ n'existe meme pas sur le document devoir.
+async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
-    const instantane = await getDocs(query(
-      collection(db, 'devoirs'),
+    const filtres = [
       where('type', '==', 'automatismes'),
       where('niveau', '==', niveau),
       where('mode', '==', mode),
       where('classe', '==', classe)
-    ));
+    ];
+    if (mode === 'chrono') filtres.push(where('duree', '==', duree));
+    const instantane = await getDocs(query(collection(db, 'devoirs'), ...filtres));
     if (instantane.empty) return;
     await Promise.all(instantane.docs.map((d) => addDoc(
       collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'),
@@ -312,7 +316,7 @@ async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, p
 // sujet-blanc.html et le callback onFinSerie dans assets/moteur.js). Pas de
 // suivi du mode fiche (pratique libre, non notee) ni des themes abordes
 // (tout est melange dans un sujet blanc).
-export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode) {
+export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode, duree) {
   if (!utilisateurCourant) return;
   try {
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'automatismes'), {
@@ -321,13 +325,14 @@ export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode
       points,
       niveau,
       mode,
+      duree,
       horodatage: serverTimestamp(),
     });
   } catch (erreur) {
     console.warn('Suivi : enregistrement du sujet blanc impossible.', erreur);
     return;
   }
-  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, points, bonnes, total);
+  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total);
 }
 
 window.enregistrerTentative = enregistrerTentative;

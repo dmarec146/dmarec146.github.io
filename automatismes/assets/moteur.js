@@ -611,7 +611,7 @@
     const bonnes = compterBonnes();
     const total = ETAT.questions.length;
     const points = ETAT.config.bareme ? arrondir(bonnes * ETAT.config.bareme.parQuestion, 2) : null;
-    ETAT.config.onFinSerie({ bonnes: bonnes, total: total, points: points, niveau: ETAT.niveau, mode: ETAT.mode });
+    ETAT.config.onFinSerie({ bonnes: bonnes, total: total, points: points, niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree });
   }
 
   function scoreHTML() {

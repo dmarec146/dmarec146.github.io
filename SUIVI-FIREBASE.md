@@ -570,10 +570,30 @@ de changer ce réglage sans qu'il en reparle.
   blanc) : une tentative avec un autre niveau OU un autre mode que ceux du
   devoir n'est simplement pas comptée.
 
+  **Temps par question choisi à l'attribution, en mode chrono (18/09/2026)**,
+  sur demande de David. Même principe que niveau/mode : champ `duree` sur
+  le devoir (mêmes 5 valeurs que le select `data-action="duree"` de
+  `moteur.js` — 60/90/120/180/0 "sans limite"), sélecteur "Temps par
+  question" dans le formulaire, visible seulement si type automatismes ET
+  mode chrono (le champ `dev-champ-duree` dépend des DEUX autres champs,
+  géré par `mettreAJourChampDuree()` appelée depuis les deux écouteurs de
+  changement). Absent du document pour un devoir en mode fiche (la durée
+  n'a pas de sens hors chrono, comme sur la page du sujet blanc elle-même).
+  `ETAT.duree` n'était pas transmis au callback `onFinSerie` de
+  `moteur.js` — ajouté (`duree: ETAT.duree`), puis relayé par
+  `sujet-blanc.html` jusqu'à `enregistrerAutomatisme()` (nouveau paramètre)
+  et `enregistrerTentativeDevoirAutomatismeSiApplicable()`, dont la requête
+  ajoute `where('duree','==',duree)` uniquement si `mode === 'chrono'`.
+
+  Testé de bout en bout (jeton n.testeuse) : une tentative avec une durée
+  différente de celle du devoir n'est PAS comptée dans `devoirsTentatives`
+  (vérifié directement — un seul document écrit sur deux tentatives
+  envoyées, la non-conforme correctement ignorée), la conforme si.
+
   **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
-  fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le niveau
-  et le mode d'un sujet blanc ne sont pas non plus imposés/verrouillés côté
-  page (l'élève peut toujours changer librement).
+  fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le niveau,
+  le mode et la durée d'un sujet blanc ne sont pas non plus imposés/
+  verrouillés côté page (l'élève peut toujours changer librement).
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).

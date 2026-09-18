@@ -38,6 +38,8 @@ const champNiveau = document.getElementById('dev-champ-niveau');
 const selectNiveau = document.getElementById('dev-niveau');
 const champMode = document.getElementById('dev-champ-mode');
 const selectMode = document.getElementById('dev-mode');
+const champDuree = document.getElementById('dev-champ-duree');
+const selectDuree = document.getElementById('dev-duree');
 const selectClasse = document.getElementById('dev-classe');
 const champEcheance = document.getElementById('dev-echeance');
 const champEssais = document.getElementById('dev-essais');
@@ -170,14 +172,27 @@ function remplirSelectClasse() {
   if (classes.includes(valeurPrecedente)) selectClasse.value = valeurPrecedente;
 }
 
+// Le champ Duree ne s'affiche qu'en mode chrono (comme le panneau "Temps
+// par question" sur la page du sujet blanc elle-meme -- voir moteur.js,
+// masque en mode fiche) : depend a la fois du type ET du mode, d'ou une
+// fonction a part plutot que de dupliquer la logique dans les deux
+// ecouteurs de changement (type et mode).
+function mettreAJourChampDuree() {
+  const estAutomatismes = selectType.value === 'automatismes';
+  champDuree.hidden = !estAutomatismes || selectMode.value !== 'chrono';
+}
+
 selectType.addEventListener('change', () => {
   const estAutomatismes = selectType.value === 'automatismes';
   champFiche.hidden = estAutomatismes;
   selectFiche.required = !estAutomatismes;
   champNiveau.hidden = !estAutomatismes;
   champMode.hidden = !estAutomatismes;
+  mettreAJourChampDuree();
   remplirSelectClasse();
 });
+
+selectMode.addEventListener('change', mettreAJourChampDuree);
 
 async function initialiser() {
   try {
@@ -228,6 +243,14 @@ formulaire.addEventListener('submit', async (evenement) => {
     const mode = selectMode.value;
     const libelleMode = mode === 'chrono' ? 'chrono' : 'fiche';
     donnees = { type, niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
+    // La duree (temps par question) n'a de sens qu'en mode chrono -- comme
+    // le panneau correspondant sur la page du sujet blanc elle-meme,
+    // absente du document pour un devoir en mode fiche.
+    if (mode === 'chrono') {
+      const duree = parseInt(selectDuree.value, 10);
+      donnees.duree = duree;
+      donnees.titre += ` — ${selectDuree.options[selectDuree.selectedIndex].textContent}/question`;
+    }
     if (!niveau) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir un niveau.'); return; }
   } else {
     const ficheId = selectFiche.value;
