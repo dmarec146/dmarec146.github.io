@@ -72,60 +72,84 @@
     <div id="dev-contenu" hidden>
 
       <div id="dev-vue-liste">
-        <form id="dev-formulaire" class="dev-formulaire">
-          <h2 class="tdb-sous-titre" style="margin-top:0;">Attribuer un nouveau devoir</h2>
+        <div class="dev-actions-principales">
+          <button type="button" id="dev-bouton-attribuer" class="dev-action-bouton dev-action-bouton-attribuer" aria-expanded="false">
+            <span class="dev-action-icone">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/>
+              </svg>
+            </span>
+            <span class="dev-action-libelle">Attribuer un devoir</span>
+            <span class="dev-action-chevron" aria-hidden="true">▾</span>
+          </button>
+          <button type="button" id="dev-bouton-devoirs-faits" class="dev-action-bouton dev-action-bouton-faits" aria-expanded="false">
+            <span class="dev-action-icone">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7.5 12.5l2.8 2.8 6.2-6.2"/>
+              </svg>
+            </span>
+            <span class="dev-action-libelle">Devoirs faits</span>
+            <span class="dev-action-chevron" aria-hidden="true">▾</span>
+          </button>
+        </div>
 
-          <div class="dev-champ">
-            <label for="dev-type">Type de devoir</label>
-            <select id="dev-type">
-              <option value="fiche">Fiche de cahier de calcul</option>
-              <option value="automatismes">Sujet blanc d'automatismes (Première)</option>
-            </select>
-          </div>
-
-          <div class="dev-champ" id="dev-champ-fiche">
-            <label for="dev-fiche">Fiche</label>
-            <select id="dev-fiche" required></select>
-          </div>
-
-          <div class="dev-champ" id="dev-champ-niveau" hidden>
-            <label for="dev-niveau">Niveau de difficulté</label>
-            <select id="dev-niveau">
-              <option value="1">★ Niveau 1 — découverte</option>
-              <option value="2" selected>★★ Niveau 2 — niveau de l'épreuve</option>
-              <option value="3">★★★ Niveau 3 — approfondissement</option>
-            </select>
-          </div>
-
-          <div class="dev-champ">
-            <label for="dev-classe">Classe</label>
-            <select id="dev-classe" required></select>
-          </div>
-
-          <div class="dev-ligne">
+        <div id="dev-panneau-attribuer" class="dev-panneau" hidden>
+          <form id="dev-formulaire" class="dev-formulaire">
             <div class="dev-champ">
-              <label for="dev-echeance">Échéance</label>
-              <input type="datetime-local" id="dev-echeance" required>
+              <label for="dev-type">Type de devoir</label>
+              <select id="dev-type">
+                <option value="fiche">Fiche de cahier de calcul</option>
+                <option value="automatismes">Sujet blanc d'automatismes (Première)</option>
+              </select>
             </div>
+
+            <div class="dev-champ" id="dev-champ-fiche">
+              <label for="dev-fiche">Fiche</label>
+              <select id="dev-fiche" required></select>
+            </div>
+
+            <div class="dev-champ" id="dev-champ-niveau" hidden>
+              <label for="dev-niveau">Niveau de difficulté</label>
+              <select id="dev-niveau">
+                <option value="1">★ Niveau 1 — découverte</option>
+                <option value="2" selected>★★ Niveau 2 — niveau de l'épreuve</option>
+                <option value="3">★★★ Niveau 3 — approfondissement</option>
+              </select>
+            </div>
+
             <div class="dev-champ">
-              <label for="dev-essais">Essais autorisés</label>
-              <input type="number" id="dev-essais" min="1" max="20" value="3" required>
+              <label for="dev-classe">Classe</label>
+              <select id="dev-classe" required></select>
             </div>
-          </div>
 
-          <button type="submit" class="dev-bouton-principal">Attribuer ce devoir</button>
-          <p id="dev-confirmation" class="dev-confirmation" hidden></p>
-          <p id="dev-erreur-formulaire" class="tdb-etat tdb-etat-erreur" hidden></p>
-        </form>
+            <div class="dev-ligne">
+              <div class="dev-champ">
+                <label for="dev-echeance">Échéance</label>
+                <input type="datetime-local" id="dev-echeance" required>
+              </div>
+              <div class="dev-champ">
+                <label for="dev-essais">Essais autorisés</label>
+                <input type="number" id="dev-essais" min="1" max="20" value="3" required>
+              </div>
+            </div>
 
-        <h2 class="tdb-sous-titre">Devoirs attribués</h2>
-        <p id="dev-liste-vide" class="tdb-etat" hidden></p>
-        <table id="dev-tableau" class="tdb-tableau" hidden>
-          <thead>
-            <tr><th>Devoir</th><th>Classe</th><th>Échéance</th><th>Essais</th><th>Statut</th><th></th><th></th></tr>
-          </thead>
-          <tbody id="dev-corps"></tbody>
-        </table>
+            <button type="submit" class="dev-bouton-principal">Attribuer ce devoir</button>
+            <p id="dev-confirmation" class="dev-confirmation" hidden></p>
+            <p id="dev-erreur-formulaire" class="tdb-etat tdb-etat-erreur" hidden></p>
+          </form>
+        </div>
+
+        <div id="dev-panneau-liste" class="dev-panneau" hidden>
+          <h2 class="tdb-sous-titre" style="margin-top:0;">Devoirs attribués</h2>
+          <p id="dev-liste-vide" class="tdb-etat" hidden></p>
+          <table id="dev-tableau" class="tdb-tableau" hidden>
+            <thead>
+              <tr><th>Devoir</th><th>Classe</th><th>Échéance</th><th>Essais</th><th>Statut</th><th></th><th></th></tr>
+            </thead>
+            <tbody id="dev-corps"></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="dev-vue-resultats" hidden>

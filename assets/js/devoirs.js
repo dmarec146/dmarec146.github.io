@@ -47,6 +47,11 @@ const listeVide = document.getElementById('dev-liste-vide');
 const tableau = document.getElementById('dev-tableau');
 const corpsTableau = document.getElementById('dev-corps');
 
+const boutonAttribuer = document.getElementById('dev-bouton-attribuer');
+const boutonDevoirsFaits = document.getElementById('dev-bouton-devoirs-faits');
+const panneauAttribuer = document.getElementById('dev-panneau-attribuer');
+const panneauListe = document.getElementById('dev-panneau-liste');
+
 const vueListe = document.getElementById('dev-vue-liste');
 const vueResultats = document.getElementById('dev-vue-resultats');
 const resultatsTitre = document.getElementById('dev-resultats-titre');
@@ -83,6 +88,23 @@ function afficherEtat(element, texte) {
 }
 
 function masquer(element) { element.hidden = true; }
+
+// Les deux panneaux (formulaire d'attribution / liste "Devoirs faits") sont
+// repliés par defaut et s'ouvrent au clic sur leur bouton -- mutuellement
+// exclusifs (ouvrir l'un referme l'autre) pour eviter une page trop chargee.
+function basculerPanneau(panneau, bouton, autrePanneau, autreBouton) {
+  const ouvrir = panneau.hidden;
+  panneau.hidden = !ouvrir;
+  bouton.setAttribute('aria-expanded', String(ouvrir));
+  bouton.classList.toggle('dev-action-actif', ouvrir);
+  if (ouvrir) {
+    autrePanneau.hidden = true;
+    autreBouton.setAttribute('aria-expanded', 'false');
+    autreBouton.classList.remove('dev-action-actif');
+  }
+}
+boutonAttribuer.addEventListener('click', () => basculerPanneau(panneauAttribuer, boutonAttribuer, panneauListe, boutonDevoirsFaits));
+boutonDevoirsFaits.addEventListener('click', () => basculerPanneau(panneauListe, boutonDevoirsFaits, panneauAttribuer, boutonAttribuer));
 
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) {
@@ -280,7 +302,7 @@ async function chargerListeDevoirs() {
     const celluleResultats = document.createElement('td');
     const boutonResultats = document.createElement('button');
     boutonResultats.type = 'button';
-    boutonResultats.className = 'tdb-bouton-secondaire';
+    boutonResultats.className = 'dev-bouton-resultats';
     boutonResultats.textContent = 'Résultats';
     boutonResultats.addEventListener('click', () => afficherResultats(devoir));
     celluleResultats.appendChild(boutonResultats);
@@ -346,7 +368,7 @@ async function afficherResultats(devoir) {
 
     const celluleRendu = document.createElement('td');
     const badge = document.createElement('span');
-    badge.className = `dev-badge ${ligneDonnees.rendu ? 'dev-badge-encours' : 'dev-badge-termine'}`;
+    badge.className = `dev-badge ${ligneDonnees.rendu ? 'dev-badge-encours' : 'dev-badge-alerte'}`;
     badge.textContent = ligneDonnees.rendu ? 'Rendu' : 'Non rendu';
     celluleRendu.appendChild(badge);
 

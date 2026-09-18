@@ -525,6 +525,21 @@ de changer ce réglage sans qu'il en reparle.
   simple lien texte "Devoirs →"/"← Tableau de bord" d'avant. CSS ajoutee
   dans `tableau-de-bord.css` (`.tdb-nav-*`).
 
+  **Réorganisation de `devoirs.html` (18/09/2026)**, sur demande de David :
+  le formulaire d'attribution et la liste "Devoirs attribués" (avant
+  toujours visibles tous les deux) sont désormais repliés par défaut
+  derrière deux gros boutons pleine couleur, mutuellement exclusifs
+  (`basculerPanneau()` dans `devoirs.js`) — "+ Attribuer un devoir" (violet
+  `--accent`) et "✓ Devoirs faits" (vert `--vert`), avec un chevron qui
+  s'inverse pour indiquer l'état ouvert/fermé. Badge "Non rendu" passé de
+  gris à rouge (`--rouge`/`--rouge-clair`, nouvelle classe `dev-badge-
+  alerte`) pour mieux signaler visuellement qu'une action manque, bouton
+  "Résultats" recoloré en `--accent-clair` (au lieu du gris neutre
+  `tdb-bouton-secondaire`). Au passage : `.tdb-tableau` passé en
+  `display:block; overflow-x:auto` (défilement horizontal plutôt que
+  colonnes coupées sur petit écran) — bénéficie à tout le tableau de bord,
+  pas seulement à cette page.
+
   **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
   fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le mode
   chrono imposé.
