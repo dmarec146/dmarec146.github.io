@@ -42,6 +42,19 @@ mais dans des zones du fichier totalement différentes de celles modifiées
 ici : fil d'ariane en tête de `<body>` et CSS vers la ligne 39, contre le
 script de suivi vers la ligne 1720 et au-delà).
 
+**Fusion effectuée le 18/09/2026** : `suivi-firebase` a été fusionnée dans
+`master` (commit de fusion `514b847`, sur PC pro) puis poussée sur GitHub.
+Aucun conflit (comme anticipé ci-dessus). Un tag `pre-fusion-suivi-firebase`
+a été posé sur `master` juste avant, comme point de retour en arrière si
+besoin. La branche `suivi-firebase` elle-même n'a pas été supprimée (filet
+de sécurité supplémentaire).
+
+**Toute cette page reste valable** pour PC perso ou toute session qui
+reprend le travail — la seule différence est qu'il faut maintenant se
+mettre à jour sur `master` (`git checkout master && git pull`), pas sur
+`suivi-firebase`, cf. « Procédure de reprise » en bas de page. GitHub Pages
+sert désormais cette version : le suivi Firebase est en production.
+
 ## Où en est-on
 
 Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs`) :
