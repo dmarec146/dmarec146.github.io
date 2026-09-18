@@ -697,7 +697,7 @@ window.MathJax = {
     margin-bottom: 8px;
   }
   .qcm-grille-figures > div {
-    flex: 0 1 160px;
+    flex: 0 1 210px;
   }
   .qcm-figure-label {
     text-align: center;
@@ -1131,14 +1131,29 @@ function genererParametresGraphiques() {
   const xmin3 = Math.min(e3.p, e3.q) - 2.4, xmax3 = Math.max(e3.p, e3.q) + 2.4;
   const f3 = x => (1/e3.m)*(x-e3.p)*(x-e3.p)*(x-e3.q)+e3.r;
   const plage3 = calculerPlage(f3, xmin3, xmax3, 1);
-  paramsGraphiques.g6_3 = { a: 1/e3.m, p: e3.p, q: e3.q, r: e3.r, d: e3.q-e3.p, m: e3.m, xmin: xmin3, xmax: xmax3, ymin: plage3.ymin, ymax: plage3.ymax };
+  // le cadre vertical ci-dessus ne vient QUE de la courbe : la tangente T1 en q (seule non
+  // horizontale, tracee sur +/-2.2 autour de q par construireGraphique6_3) peut s'en ecarter bien
+  // davantage qu'elle si sa pente est raide, et se faire rogner par le bord du SVG -- rendant son
+  // coefficient directeur illisible. On etend donc le cadre pour englober aussi les deux extremites
+  // reellement tracees de cette tangente. Bug trouve en lisant plusieurs tirages du panel (pente
+  // jusqu'a +/-2 -> ecart jusqu'a +/-4.4 autour de r, souvent hors du cadre base sur la seule courbe).
+  const penteQ3 = (1/e3.m)*(e3.q-e3.p)*(e3.q-e3.p);
+  const yTangenteBas3 = e3.r - Math.abs(penteQ3)*2.2, yTangenteHaut3 = e3.r + Math.abs(penteQ3)*2.2;
+  const ymin3 = Math.min(plage3.ymin, yTangenteBas3 - 0.4), ymax3 = Math.max(plage3.ymax, yTangenteHaut3 + 0.4);
+  paramsGraphiques.g6_3 = { a: 1/e3.m, p: e3.p, q: e3.q, r: e3.r, d: e3.q-e3.p, m: e3.m, xmin: xmin3, xmax: xmax3, ymin: ymin3, ymax: ymax3 };
 
   const e4 = PANEL_6_4[alea(0, PANEL_6_4.length-1)];
   const slopeNum4 = e4.p2 * (e4.p2 - e4.e);
   const xmin4 = Math.min(0, e4.e, e4.p2) - 2.4, xmax4 = Math.max(0, e4.e, e4.p2) + 2.4;
   const g4 = x => (1/e4.m)*(x**3/3 - e4.e*x**2/2) + e4.C0;
   const plage4 = calculerPlage(g4, xmin4, xmax4, 1);
-  paramsGraphiques.g6_4 = { c: 1/e4.m, e: e4.e, p2: e4.p2, m: e4.m, slopeNum: slopeNum4, C0: e4.C0, xmin: xmin4, xmax: xmax4, ymin: plage4.ymin, ymax: plage4.ymax };
+  // meme correction que pour g6_3 : la tangente T2 en p2 (celle en x=0 est horizontale, jamais un
+  // risque) est tracee sur +/-2.2 autour de p2 et peut deborder du cadre base sur la seule courbe.
+  const penteP2_4 = (1/e4.m)*e4.p2*(e4.p2-e4.e);
+  const yP2_4 = g4(e4.p2);
+  const yTangenteBas4 = yP2_4 - Math.abs(penteP2_4)*2.2, yTangenteHaut4 = yP2_4 + Math.abs(penteP2_4)*2.2;
+  const ymin4 = Math.min(plage4.ymin, yTangenteBas4 - 0.4), ymax4 = Math.max(plage4.ymax, yTangenteHaut4 + 0.4);
+  paramsGraphiques.g6_4 = { c: 1/e4.m, e: e4.e, p2: e4.p2, m: e4.m, slopeNum: slopeNum4, C0: e4.C0, xmin: xmin4, xmax: xmax4, ymin: ymin4, ymax: ymax4 };
 
   const [r15, r25] = PANEL_6_5_RACINES[alea(0, PANEL_6_5_RACINES.length-1)];
   const signe5 = alea(0,1) === 0 ? 1 : -1;
@@ -2528,8 +2543,9 @@ function fmtGraduation(v) {
 // pouvoir suivre visuellement un point de la courbe jusqu'aux graduations, pas juste voir des petits
 // traits sur les axes
 function genererSVGCourbe(fonctionJs, xmin, xmax, ymin, ymax, tangentes, largeur, hauteur) {
-  largeur = largeur || 220; hauteur = hauteur || 170;
-  const marge = 14; // marge interieure pour que les fleches/graduations ne touchent pas le bord
+  largeur = largeur || 340; hauteur = hauteur || 260;
+  // marge proportionnelle a la taille (memes proportions que l'ancien format 220x170, marge 14)
+  const marge = Math.round(largeur * 0.064);
   const toSvgX = x => marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
   const toSvgY = y => hauteur - marge - (y - ymin) / (ymax - ymin) * (hauteur - 2*marge);
   let points = [];
@@ -2545,9 +2561,32 @@ function genererSVGCourbe(fonctionJs, xmin, xmax, ymin, ymax, tangentes, largeur
 
   const pasX = pasGraduation(xmax - xmin);
   const pasY = pasGraduation(ymax - ymin);
+  // sous-graduations (sous-quadrillage), un quart du pas principal : reperes intermediaires pour
+  // une lecture plus fine (coefficient directeur, image/antecedent approches) que les seules
+  // graduations entieres -- repris des fiches 14/15 de Seconde apres validation sur celles-ci.
+  const sousPasX = pasX / 4;
+  const sousPasY = pasY / 4;
 
-  // quadrillage complet (fond, tres discret) + traits de graduation + etiquettes numeriques
-  let quadrillage = '', graduations = '';
+  // quadrillage complet (fond, tres discret) + sous-quadrillage + traits de graduation + etiquettes
+  let quadrillage = '', sousQuadrillage = '', graduations = '';
+  const sousDebutX = Math.ceil(xmin / sousPasX) * sousPasX;
+  for (let i = 0; i <= Math.floor((xmax - sousDebutX) / sousPasX) + 1e-9; i++) {
+    const gx = +(sousDebutX + i * sousPasX).toFixed(6);
+    const rangX = gx / pasX;
+    if (Math.abs(rangX - Math.round(rangX)) < 1e-6) continue; // deja trace par le quadrillage principal
+    const sx = toSvgX(gx).toFixed(1);
+    sousQuadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#ececec" stroke-width="0.5"/>`;
+    sousQuadrillage += `<line x1="${sx}" y1="${(oy-1.8).toFixed(1)}" x2="${sx}" y2="${(oy+1.8).toFixed(1)}" stroke="#999" stroke-width="0.8"/>`;
+  }
+  const sousDebutY = Math.ceil(ymin / sousPasY) * sousPasY;
+  for (let i = 0; i <= Math.floor((ymax - sousDebutY) / sousPasY) + 1e-9; i++) {
+    const gy = +(sousDebutY + i * sousPasY).toFixed(6);
+    const rangY = gy / pasY;
+    if (Math.abs(rangY - Math.round(rangY)) < 1e-6) continue;
+    const sy = toSvgY(gy).toFixed(1);
+    sousQuadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#ececec" stroke-width="0.5"/>`;
+    sousQuadrillage += `<line x1="${(ox-1.8).toFixed(1)}" y1="${sy}" x2="${(ox+1.8).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="0.8"/>`;
+  }
   const debutX = Math.ceil(xmin / pasX) * pasX;
   for (let i = 0; i <= Math.floor((xmax - debutX) / pasX) + 1e-9; i++) {
     const gx = +(debutX + i * pasX).toFixed(6);
@@ -2590,8 +2629,9 @@ function genererSVGCourbe(fonctionJs, xmin, xmax, ymin, ymax, tangentes, largeur
   // .figure-centree svg) n'a rien a partir de quoi calculer une hauteur des qu'il n'est plus un
   // enfant direct du conteneur flex (ce qu'introduit le bouton-icone du curseur). ouvrirModalSvg
   // retire deja ces attributs sur le clone affiche en grand (meme raison que pour style="max-width").
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:260px;"
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:${largeur}px;"
     data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="${marge}">
+    ${sousQuadrillage}
     ${quadrillage}
     ${axes}
     ${graduations}
@@ -2671,9 +2711,12 @@ function toggleCurseurSvg(btn) {
 }
 
 // ---------- Agrandissement des graphiques au clic ----------
+// selecteur "svg.qcm-svg" (pas juste "svg") : necessaire depuis que le bouton-icone du curseur
+// (voir boutonCurseurHTML) contient lui-meme un <svg> -- un selecteur generique l'aurait aussi
+// rendu zoomable, ouvrant a tort la modale sur l'icone au lieu du graphique au clic sur ce bouton.
 function activerZoomSvg(container) {
   if (!container) return;
-  container.querySelectorAll('svg').forEach(svg => {
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
     svg.classList.add('svg-agrandissable');
     svg.setAttribute('tabindex', '0');
     svg.setAttribute('role', 'button');
@@ -2918,7 +2961,7 @@ function genererFigureCercleTangente(largeur, hauteur) {
   const tx1 = mx - dx, ty1 = my - pente * (-dx);
   const tx2 = mx + dx, ty2 = my - pente * (dx);
 
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" style="max-width:220px;display:block;margin:0 auto;">
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg" style="max-width:220px;display:block;margin:0 auto;">
     <circle cx="${cx}" cy="${cy}" r="${rayon}" fill="none" stroke="#4B46C7" stroke-width="1.5"/>
     <line x1="${marge}" y1="${cy}" x2="${largeur-marge+15}" y2="${cy}" stroke="#999" stroke-width="1"/>
     <line x1="${cx}" y1="${hauteur-marge+15}" x2="${cx}" y2="${marge-15}" stroke="#999" stroke-width="1"/>
@@ -2954,11 +2997,13 @@ function construireGraphiqueQCMCourbe(divId, params, texteIntro) {
   <div style="overflow-x:auto;">${tableauHTML}</div>
   <div class="qcm-grille-figures">`;
   ['a','b','c'].forEach((lettre, i) => {
-    html += `<div><div>${genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax)}</div><div class="qcm-figure-label">f_${lettre}</div></div>`;
+    const svg = genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax, undefined, 240, 185);
+    html += `<div><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span><div class="qcm-figure-label">f_${lettre}</div></div>`;
   });
   html += '</div>';
   document.getElementById(divId).innerHTML = html;
   activerZoomSvg(document.getElementById(divId));
+  activerCurseurSvg(document.getElementById(divId));
 }
 
 function construireGraphique6_6() {

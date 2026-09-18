@@ -187,6 +187,74 @@ window.MathJax = {
     width: 100%;
     margin-top: 2px;
   }
+  svg.svg-agrandissable {
+    cursor: zoom-in;
+  }
+  svg.svg-agrandissable:hover {
+    outline: 2px solid var(--bleu-clair);
+    outline-offset: 2px;
+  }
+  /* ---------- bouton-icone "curseur avec coordonnees" + zoom au clic, portes depuis les fiches
+     14/15 de Seconde (memes fonctions/CSS que sur fiche-06 de Premiere) ---------- */
+  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
+  .btn-curseur {
+    position: absolute; top: 4px; right: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
+    color: var(--bleu); cursor: pointer; line-height: 0;
+  }
+  .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
+  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
+  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
+  .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
+  .curseur-groupe { pointer-events: none; }
+  svg.curseur-actif { cursor: crosshair; }
+  .modal-svg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 25, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .modal-svg-overlay.ouvert {
+    display: flex;
+  }
+  .modal-svg-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 32px 14px 14px;
+    width: min(96vw, 720px);
+    max-height: 94vh;
+    overflow: auto;
+    cursor: default;
+  }
+  .modal-svg-contenu svg {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto;
+  }
+  .modal-svg-fermer {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-svg-fermer:hover {
+    color: var(--rouge);
+  }
 
   .aide {
     font-size: 12.5px;
@@ -898,6 +966,13 @@ window.MathJax = {
   <a class="nav-btn" href="fiche-23.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
+</div>
+
+<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
+  <div class="modal-svg-contenu">
+    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
+    <div id="modal-svg-contenu-interieur"></div>
+  </div>
 </div>
 
 <script>
@@ -2666,11 +2741,21 @@ function genererSVGCourbeTrigo(fonctionJs, largeur, hauteur) {
     graduations += `<line x1="${sx}" y1="0" x2="${sx}" y2="${hauteur}" stroke="#eee" stroke-width="0.6"/>`;
   }
 
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" style="max-width:260px;">
+  // data-* : donnees de conversion pixel<->coordonnees, reutilisees par activerCurseurSvg (voir
+  // plus bas). marge=0 ici : le trace occupe tout le canevas, pas de bande vide autour comme sur
+  // genererSVGCourbe (fiche 6). width/height explicites (en plus du viewBox), meme raison que sur
+  // fiche-06 : necessaire pour que le bouton-icone du curseur ne casse pas le calcul de hauteur.
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg" style="max-width:260px;"
+    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="0">
     <line x1="0" y1="${oy}" x2="${largeur}" y2="${oy}" stroke="#ccc" stroke-width="1"/>
     <line x1="${ox}" y1="0" x2="${ox}" y2="${hauteur}" stroke="#ccc" stroke-width="1"/>
     ${graduations}
     <path d="${path}" fill="none" stroke="#e8820c" stroke-width="2"/>
+    <g class="curseur-groupe" visibility="hidden">
+      <line class="curseur-ligne-v" x1="0" y1="0" x2="0" y2="${hauteur}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <line class="curseur-ligne-h" x1="0" y1="0" x2="${largeur}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <text class="curseur-texte" font-size="9" fill="#666"></text>
+    </g>
   </svg>`;
 }
 
@@ -2683,10 +2768,13 @@ function construireGraphique24_10() {
   ];
   let html = '<p>Pour chacune des fonctions suivantes, reconnaître sa courbe représentative parmi les propositions :</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
   options.forEach(o => {
-    html += `<div><div class="figure-centree">${genererSVGCourbeTrigo(o.func, 240, 170)}</div><p style="text-align:center;">(${o.label})</p></div>`;
+    const svg = genererSVGCourbeTrigo(o.func, 240, 170);
+    html += `<div><div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div><p style="text-align:center;">(${o.label})</p></div>`;
   });
   html += '</div>';
   document.getElementById('graphique-24-10').innerHTML = html;
+  activerZoomSvg(document.getElementById('graphique-24-10'));
+  activerCurseurSvg(document.getElementById('graphique-24-10'));
 }
 
 function construireGraphique24_11() {
@@ -2694,11 +2782,131 @@ function construireGraphique24_11() {
   const courbeB = genererSVGCourbeTrigo(x => -Math.sin(x-Math.PI/4), 260, 190);
   let html = '<p>Pour chacune des courbes suivantes, choisir parmi les propositions la fonction correspondante.</p>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  html += `<div><p>a)</p><div class="figure-centree">${courbeA}</div></div>`;
-  html += `<div><p>b)</p><div class="figure-centree">${courbeB}</div></div>`;
+  html += `<div><p>a)</p><div class="figure-centree"><span class="figure-avec-curseur">${courbeA}${boutonCurseurHTML()}</span></div></div>`;
+  html += `<div><p>b)</p><div class="figure-centree"><span class="figure-avec-curseur">${courbeB}${boutonCurseurHTML()}</span></div></div>`;
   html += '</div>';
   document.getElementById('graphique-24-11').innerHTML = html;
+  activerZoomSvg(document.getElementById('graphique-24-11'));
+  activerCurseurSvg(document.getElementById('graphique-24-11'));
 }
+
+// ---------- curseur avec lecture des coordonnees + agrandissement au clic, portes depuis les
+// fiches 14/15 de Seconde (meme code que sur fiche-06 de Premiere) ----------
+function activerCurseurSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
+}
+// cable le curseur sur UN svg donne (independant de la classe qcm-svg, requise pour re-cabler le
+// clone affiche dans la modale de zoom — voir ouvrirModalSvg — qui retire cette classe).
+function cablerCurseurUnique(svg) {
+  const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
+  const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
+  const marge = parseFloat(svg.dataset.marge);
+  const groupe = svg.querySelector('.curseur-groupe');
+  const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
+  const texte = svg.querySelector('.curseur-texte');
+  const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
+  svg.addEventListener('mousemove', (evt) => {
+    if (!svg.classList.contains('curseur-actif')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (local.x < marge || local.x > largeur - marge || local.y < marge || local.y > hauteur - marge) {
+      groupe.setAttribute('visibility', 'hidden');
+      return;
+    }
+    const x = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
+    const y = ymin + (hauteur - marge - local.y) / (hauteur - 2*marge) * (ymax - ymin);
+    groupe.setAttribute('visibility', 'visible');
+    ligneV.setAttribute('x1', local.x.toFixed(1)); ligneV.setAttribute('x2', local.x.toFixed(1));
+    ligneH.setAttribute('y1', local.y.toFixed(1)); ligneH.setAttribute('y2', local.y.toFixed(1));
+    const texteX = local.x < largeur - 60 ? local.x + 5 : local.x - 5;
+    const ancrage = local.x < largeur - 60 ? 'start' : 'end';
+    const texteY = local.y > marge + 12 ? local.y - 5 : local.y + 12;
+    texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
+    texte.setAttribute('text-anchor', ancrage);
+    texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
+  });
+  svg.addEventListener('mouseleave', () => groupe.setAttribute('visibility', 'hidden'));
+}
+function fmtGraduation(v) {
+  const arrondi = Math.round(v * 1000) / 1000;
+  return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
+}
+// icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js.
+const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+  + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
+  + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function boutonCurseurHTML() {
+  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
+    role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
+}
+function toggleCurseurSvg(btn) {
+  const svg = btn.parentElement.querySelector('svg');
+  if (!svg) return;
+  const actif = svg.classList.toggle('curseur-actif');
+  btn.classList.toggle('actif', actif);
+  if (!actif) svg.querySelector('.curseur-groupe').setAttribute('visibility', 'hidden');
+}
+
+// selecteur "svg.qcm-svg" (pas juste "svg") : necessaire depuis que le bouton-icone du curseur
+// (voir boutonCurseurHTML) contient lui-meme un <svg> -- un selecteur generique l'aurait aussi
+// rendu zoomable, ouvrant a tort la modale sur l'icone au lieu du graphique au clic sur ce bouton.
+function activerZoomSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    svg.classList.add('svg-agrandissable');
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'button');
+    svg.setAttribute('aria-label', 'Agrandir ce graphique');
+    svg.addEventListener('click', () => ouvrirModalSvg(svg));
+    svg.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
+    });
+  });
+}
+
+function ouvrirModalSvg(svg) {
+  const interieur = document.getElementById('modal-svg-contenu-interieur');
+  interieur.innerHTML = '';
+  const clone = svg.cloneNode(true);
+  clone.classList.remove('svg-agrandissable', 'qcm-svg');
+  clone.removeAttribute('style');
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  // le curseur (voir cablerCurseurUnique) doit continuer a fonctionner dans la modale agrandie :
+  // cloneNode() ne copie pas les ecouteurs, il faut recabler explicitement le clone.
+  const aCurseur = svg.dataset.xmin !== undefined;
+  if (aCurseur) {
+    const enveloppe = document.createElement('span');
+    enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
+    enveloppe.appendChild(clone);
+    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
+    interieur.appendChild(enveloppe);
+    cablerCurseurUnique(clone);
+    if (svg.classList.contains('curseur-actif')) {
+      clone.classList.add('curseur-actif');
+      enveloppe.querySelector('.btn-curseur').classList.add('actif');
+    }
+  } else {
+    interieur.appendChild(clone);
+  }
+  document.getElementById('modal-svg-overlay').classList.add('ouvert');
+}
+
+function fermerModalSvg(evt, force) {
+  if (force || evt.target.id === 'modal-svg-overlay') {
+    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
+  }
+}
+
+document.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Escape') fermerModalSvg(null, true);
+});
 
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
 // sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
