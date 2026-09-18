@@ -907,17 +907,17 @@ const generateurs = [
   }},
 
   // ---------- 2.4 : une seule puissance, une seule base (les trois regles de base) ----------
-  {id:"2.4 a)", type:"num", gen: () => {
+  {id:"2.4 a)", type:"num", formePuissance:true, gen: () => {
     const a = alea(2,13);
     let m, n;
     do { m = alea(2,5); n = alea(2,5); } while (m + n > 9);
     return { enonce:`${a}^{${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, m+n) };
   }},
-  {id:"2.4 b)", type:"num", gen: () => {
+  {id:"2.4 b)", type:"num", formePuissance:true, gen: () => {
     const a = alea(2,15), n = alea(1,4), m = n + alea(2,5);
     return { enonce:`\\dfrac{${puissanceLatex(a,m)}}{${puissanceLatex(a,n)}}`, reponse: puissanceTexte(a, m-n) };
   }},
-  {id:"2.4 c)", type:"num", gen: () => {
+  {id:"2.4 c)", type:"num", formePuissance:true, gen: () => {
     const a = alea(2,12);
     let m, n;
     do { m = alea(2,4); n = alea(2,3); } while (m * n > 9);
@@ -925,15 +925,15 @@ const generateurs = [
   }},
 
   // ---------- 2.5 : exposants negatifs ----------
-  {id:"2.5 a)", type:"num", gen: () => {
+  {id:"2.5 a)", type:"num", formePuissance:true, gen: () => {
     const a = alea(2,13), n = alea(2,6);
     return { enonce:`${a}^{-${n}}`, reponse:`1/${a}^${n}` };
   }},
-  {id:"2.5 b)", type:"num", gen: () => {
+  {id:"2.5 b)", type:"num", formePuissance:true, gen: () => {
     const a = alea(2,13), n = alea(2,6);
     return { enonce:`\\dfrac{1}{${a}^{-${n}}}`, reponse: puissanceTexte(a, n) };
   }},
-  {id:"2.5 c)", type:"num", gen: () => {
+  {id:"2.5 c)", type:"num", formePuissance:true, gen: () => {
     const a = alea(2,13), m = alea(1,4), n = m + alea(2,5);
     return { enonce:`${a}^{-${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, n-m) };
   }},
@@ -941,7 +941,7 @@ const generateurs = [
   // ---------- 2.6 : simplifier, avec plusieurs bases ----------
   // Ces quatre-la sont le coeur du travail sur les puissances : il faut reconnaitre les bases,
   // decomposer celles qui sont composees (6 = 2x3), et appliquer les regles sur chacune.
-  {id:"2.6 a)", type:"num", gen: () => {
+  {id:"2.6 a)", type:"num", formePuissance:true, gen: () => {
     // quotient a deux bases premieres distinctes
     const [p, q] = melangerDeux(choix([[2,3],[2,5],[2,7],[3,5],[3,7],[5,7]]));
     const dp = alea(1,3), dq = alea(1,3);
@@ -950,7 +950,7 @@ const generateurs = [
     return { enonce:`\\dfrac{${puissanceLatex(p,m1)}\\times ${puissanceLatex(q,n1)}}{${puissanceLatex(p,m2)}\\times ${puissanceLatex(q,n2)}}`,
              reponse:`${puissanceTexte(p, dp)}*${puissanceTexte(q, dq)}` };
   }},
-  {id:"2.6 b)", type:"num", gen: () => {
+  {id:"2.6 b)", type:"num", formePuissance:true, gen: () => {
     // base composee au numerateur : il faut ecrire 6^m = 2^m x 3^m avant de simplifier
     const [p, q] = melangerDeux(choix([[2,3],[2,5],[3,5]]));
     const m = alea(3,5), a = alea(1, m-1), b = alea(1, m-1);
@@ -978,7 +978,7 @@ const generateurs = [
              reponse:`${C}*x^${e}` };
   }},
 
-  {id:"2.6 e)", type:"num", gen: () => {
+  {id:"2.6 e)", type:"num", formePuissance:true, gen: () => {
     // puissance d'un quotient : il faut d'abord simplifier, puis elever le tout a la puissance n.
     // Les deux bases evoluent en sens contraire, si bien que la reponse est une fraction.
     const [p, q] = melangerDeux(choix([[2,3],[2,5],[3,5],[2,7],[3,7]]));
@@ -988,7 +988,7 @@ const generateurs = [
     return { enonce:`\\left(\\dfrac{${puissanceLatex(p, c+dp)}\\times ${puissanceLatex(q, b)}}{${puissanceLatex(p, c)}\\times ${puissanceLatex(q, b+dq)}}\\right)^{${n}}`,
              reponse:`${puissanceTexte(p, dp*n)}/${puissanceTexte(q, dq*n)}` };
   }},
-  {id:"2.6 f)", type:"num", gen: () => {
+  {id:"2.6 f)", type:"num", formePuissance:true, gen: () => {
     // exposants negatifs sur deux bases : les exposants s'ajoutent au lieu de se retrancher
     const [p, q] = melangerDeux(choix([[2,3],[2,5],[3,5],[2,7],[5,7]]));
     let a, c, b, d;
@@ -996,7 +996,7 @@ const generateurs = [
     return { enonce:`\\dfrac{${p}^{-${a}}\\times ${puissanceLatex(q, b)}}{${puissanceLatex(p, c)}\\times ${q}^{-${d}}}`,
              reponse:`${puissanceTexte(q, b+d)}/${puissanceTexte(p, a+c)}` };
   }},
-  {id:"2.6 g)", type:"num", gen: () => {
+  {id:"2.6 g)", type:"num", formePuissance:true, gen: () => {
     // base composee dont la decomposition n'est pas immediate : 12 = 2^2 x 3, 45 = 3^2 x 5...
     const [N, p, alpha, q, beta] = choix([
       [12, 2, 2, 3, 1], [18, 2, 1, 3, 2], [20, 2, 2, 5, 1],
@@ -1427,6 +1427,22 @@ function estFormeFinaleNumerique(n) {
   return false;
 }
 
+// Les exercices "une seule puissance" / "plusieurs bases" attendent une reponse
+// deja simplifiee mais qui reste une EXPRESSION (ex: "2^6", "1/3^4", "2^3*5^2"),
+// pas un nombre calcule - contrairement au reste de checkEqualNumeric, qui exige
+// desormais une forme finale numerique (voir estFormeFinaleNumerique). Ces
+// exercices restent donc sur la seule egalite de valeur, comme avant ce controle.
+function checkPuissanceEquivalente(userInput, correctExpr) {
+  try {
+    const uVal = math.parse(normaliserSaisie(userInput)).evaluate();
+    const cVal = math.parse(correctExpr).evaluate();
+    if (typeof uVal !== 'number' || typeof cVal !== 'number') return false;
+    return Math.abs(uVal - cVal) < 1e-9 * (1 + Math.abs(cVal));
+  } catch (e) {
+    return false;
+  }
+}
+
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','p','q'];
@@ -1591,6 +1607,7 @@ function verifierUne(idx) {
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.formePuissance) ok = checkPuissanceEquivalente(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
     div.classList.add(ok ? 'correct' : 'incorrect');
