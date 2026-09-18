@@ -327,21 +327,50 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   (`resultats`/`brouillons` supprimés) — laissé vide à la fin de cette
   série de migrations.
 
-  **Bug de correction signalé le 18/09/2026, corrigé le même jour (commit
-  `b761b90`, sur `master` directement, hors de cette branche)** : le
-  vérificateur (`checkEqualNumeric`) évaluait mathématiquement la réponse
-  tapée plutôt que d'exiger un nombre déjà calculé — "144-72" était accepté
-  comme correct pour "12²-8×9" puisque l'expression s'évalue à la bonne
-  valeur. Nouvelle fonction `estFormeFinaleNumerique()` : une réponse
-  numérique (sans variable) doit être une forme finale — entier, décimal,
-  ou fraction simple `a/b` (signes compris) — pas un calcul encore à faire.
-  La branche algébrique (réponses avec `x`, `t`, etc.) n'est pas concernée,
-  y accepter une forme équivalente non simplifiée reste voulu (`2*(x+2)`
-  pour `2x+4`). 5 variantes du code recensées au préalable sur les 44
-  fiches (mêmes différences que d'habitude : liste de variables, boucle
-  d'essais aléatoires, tolérance) ; seule la portion commune (identique
-  partout) a été modifiée. Vérifié par 14 cas directs plus un passage
-  réel au clavier sur une fiche live.
+  **Bug de correction signalé le 18/09/2026, corrigé le même jour en deux
+  temps (commits `b761b90` puis `76851db`, sur `master` directement, hors
+  de cette branche)** : le vérificateur (`checkEqualNumeric`) évaluait
+  mathématiquement la réponse tapée plutôt que d'exiger un nombre déjà
+  calculé — "144-72" était accepté comme correct pour "12²-8×9" puisque
+  l'expression s'évalue à la bonne valeur.
+
+  Premier correctif (`b761b90`) : nouvelle fonction `estFormeFinaleNumerique()`
+  exigeant, côté élève, une forme finale (entier, décimal, fraction simple
+  `a/b`) dès qu'aucune variable n'est utilisée. **A cassé, sans le savoir sur
+  le moment, tout exercice dont la réponse EST intentionnellement une
+  expression non réduite** : "écrire comme une seule puissance" (`2^6`),
+  simplifier une racine (`3*sqrt(31)`), valeurs exactes avec exponentielle
+  (`exp(-6)`) — David a signalé le cas des puissances peu après coup ; un
+  audit dynamique complet (regénérer chaque fiche des dizaines de fois et
+  tester si la réponse attendue valide contre elle-même, hors types à
+  vérificateur dédié) en a trouvé une trentaine d'autres, dans au moins 6
+  fiches en plus de celles déjà repérées par recherche de texte — **la
+  recherche de texte s'est révélée insuffisante à elle seule** (des
+  helpers différemment nommés, ex. `surdTerm`, passaient au travers).
+
+  Second correctif (`76851db`, remplace le premier) : plutôt que de
+  marquer chaque exercice concerné au cas par cas (ce qui avait été
+  commencé pour les puissances via un flag `formePuissance`, laissé tel
+  quel dans le code, maintenant redondant mais inoffensif), la règle
+  devient auto-adaptative — la forme finale n'est exigée côté élève QUE
+  si la réponse correcte elle-même en est déjà une. Si la réponse est une
+  expression (`2^6`, `3*sqrt(31)`, `exp(-6)`), aucune contrainte
+  supplémentaire n'est imposée, comportement identique à avant le tout
+  premier correctif pour ces cas précis — tout en gardant l'exigence pour
+  les vrais calculs (`144-72` reste refusé pour `72`). Corrige tout d'un
+  coup, sans avoir à retrouver chaque cas. La branche algébrique (réponses
+  avec `x`, `t`, etc.) n'a jamais été concernée, y accepter une forme
+  équivalente non simplifiée reste voulu (`2*(x+2)` pour `2x+4`).
+
+  Vérifié par audit exhaustif sur les 44 fiches après le second correctif :
+  plus aucun cas en échec. **Leçon retenue sur l'audit lui-même** : la
+  première version du script d'audit (mettre la réponse dans le vrai champ
+  `<math-field>` puis appeler `verifierUne()`) donnait énormément de faux
+  positifs — MathLive interprète une valeur assignée en JS comme du LaTeX,
+  donc `sqrt(6)` devient les quatre lettres séparées "s q r t(6)". Contourné
+  en testant directement `checkEqualNumeric(reponse, reponse)` (et les
+  variantes `estFactorise`/`estFractionIrreductible` avec leurs bons
+  arguments), sans passer par le DOM.
 - Suivi des **automatismes de Première** : uniquement les sujets blancs
   (`automatismes/premiere/sujet-blanc.html`), pas les fiches thématiques
   libres (`fiche.html`, jamais suivies, même en mode chrono — non notées
