@@ -480,13 +480,54 @@ de changer ce réglage sans qu'il en reparle.
   activité visible. **Piège découvert pendant ce test** : les onglets du
   navigateur integre partagent la meme session Firebase Auth (stockage par
   origine) -- se connecter sous un autre compte sur un onglet deconnecte
-  tous les autres onglets ouverts sur le meme navigateur. Comptes de test
-  temporaires nettoyés apres coup (admin supprime ; devoirs de test et
-  historique n.testeuse laisses en l'etat le temps que David regarde avec
-  son vrai compte, a nettoyer ensuite -- voir "Comptes existants").
+  tous les autres onglets ouverts sur le meme navigateur.
+
+  **Devoirs sur les sujets blancs d'automatismes (18/09/2026)**, sur
+  demande de David. Meme collection `devoirs/{id}`, distinguee par un
+  champ `type` (`'fiche'` ou `'automatismes'`) : un devoir automatismes
+  porte `niveau` (1/2/3, choisi par l'enseignant a l'attribution) au lieu
+  de `ficheId`. Champ d'affichage renomme `ficheTitre` -> `titre`
+  (generique aux deux types). `enregistrerAutomatisme()` (`assets/js/
+  suivi.js`) suit exactement le meme principe que `validerFiche()` :
+  verifie si un devoir `type=='automatismes'` existe pour (niveau, classe
+  de l'eleve) et ecrit si oui dans le MEME journal `devoirsTentatives`
+  (score = points sur 6, totalExercices = 6) -- la vue resultats de
+  devoirs.js n'a pas eu besoin de distinguer les deux types. Le niveau
+  n'est PAS impose a l'eleve (bouton "Niveau 1/2/3" choisi librement sur
+  la page du sujet blanc, voir moteur.js/changerNiveau) : une tentative a
+  un autre niveau que celui du devoir n'est simplement pas comptee, comme
+  une tentative hors delai -- coherent avec l'etape 2 (limite/chrono
+  imposes) pas encore faite. Formulaire d'attribution : select "Type de
+  devoir" qui bascule fiche/niveau, et filtre la liste des classes sur la
+  Premiere seule quand "automatismes" est choisi (seul niveau concerne par
+  le suivi des automatismes). Aucune regle Firestore supplementaire
+  necessaire (memes collections que les devoirs de fiches). Teste de bout
+  en bout comme les devoirs de fiches (jeton n.testeuse, echeance proche,
+  deux tentatives niveau 2, verification "Rendu" + meilleure note 4.2/6 +
+  essais).
+
+  **Erreur commise pendant le nettoyage de ce test** : en supprimant les
+  tentatives de test de n.testeuse, la requete a vide TOUTE sa
+  sous-collection `automatismes` (`getDocs` sans filtre) plutot que les
+  seules entrees ajoutees pendant ce test -- a aussi supprime les deux
+  sujets blancs de reference documentes ci-dessous ("un par mode fiche/
+  chrono"), prevus pour tester l'onglet Automatismes du tableau de bord.
+  Sans consequence reelle (compte de test jetable, dont l'historique est
+  de toute facon "vidé après chaque test" par convention), mais **a
+  re-semer avant de retester l'onglet Automatismes du tableau de bord**.
+
+  Nouvelle navigation en haut des deux pages du tableau de bord (`index.html`
+  et `devoirs.html`) : deux cartes cote a cote "Fiches"/"Devoirs" (icones
+  SVG maison, meme forme que `.cahier-nav-btn` de style.css -- carte
+  arrondie, bordure/texte `--accent`, remplissage `--accent-clair` au
+  survol -- pour rester coherent avec le reste du site), celle de la page
+  courante mise en evidence (fond plein, icone inversee). Remplace le
+  simple lien texte "Devoirs →"/"← Tableau de bord" d'avant. CSS ajoutee
+  dans `tableau-de-bord.css` (`.tdb-nav-*`).
 
   **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
-  fiche (un devoir créé ici n'empêche encore rien), le mode chrono imposé.
+  fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le mode
+  chrono imposé.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).

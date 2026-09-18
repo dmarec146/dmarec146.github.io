@@ -270,6 +270,42 @@ export async function enregistrerConnexion(uid) {
   }
 }
 
+// Meme principe que enregistrerTentativeDevoirSiApplicable ci-dessus, pour
+// un sujet blanc d'automatismes : le devoir est identifie par (type
+// 'automatismes', niveau, classe) plutot que par ficheId, mais reutilise le
+// MEME journal eleves/{uid}/devoirsTentatives (memes champs score/
+// totalExercices, ici note/6 plutot que exercices reussis/total -- meme
+// forme, la vue resultats de devoirs.js n'a pas besoin de distinguer les
+// deux types pour calculer la meilleure tentative). Le niveau n'est PAS
+// impose au eleve (choisi librement sur la page du sujet blanc, voir
+// moteur.js/changerNiveau) : une tentative a un autre niveau que celui du
+// devoir n'est simplement pas comptee, comme une tentative hors delai.
+async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, points, bonnes, total) {
+  try {
+    const classe = await classeEleve();
+    if (!classe) return;
+    const instantane = await getDocs(query(
+      collection(db, 'devoirs'),
+      where('type', '==', 'automatismes'),
+      where('niveau', '==', niveau),
+      where('classe', '==', classe)
+    ));
+    if (instantane.empty) return;
+    await Promise.all(instantane.docs.map((d) => addDoc(
+      collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'),
+      {
+        devoirId: d.id,
+        score: points,
+        totalExercices: 6,
+        nbRepondues: total,
+        horodatage: serverTimestamp(),
+      }
+    )));
+  } catch (erreur) {
+    console.warn('Suivi : enregistrement de la tentative de devoir (automatismes) impossible.', erreur);
+  }
+}
+
 // Un sujet blanc termine (mode chrono uniquement, voir automatismes/premiere/
 // sujet-blanc.html et le callback onFinSerie dans assets/moteur.js). Pas de
 // suivi du mode fiche (pratique libre, non notee) ni des themes abordes
@@ -287,7 +323,9 @@ export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode
     });
   } catch (erreur) {
     console.warn('Suivi : enregistrement du sujet blanc impossible.', erreur);
+    return;
   }
+  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, points, bonnes, total);
 }
 
 window.enregistrerTentative = enregistrerTentative;
