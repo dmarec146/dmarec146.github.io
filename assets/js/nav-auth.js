@@ -13,6 +13,18 @@
 //   utilisee par "Sommaire"/"Fiche suivante"/etc.) pour rester coherents
 //   sans dupliquer de CSS. `.barre-navigation` existe deux fois par fiche
 //   (haut et bas) ; querySelector prend la premiere (en haut), par choix.
+// Le style visuel (bouton bordure/coin arrondi, pas un simple cercle) est
+// harmonise entre les deux cibles : nav-icone-profil (site.css) reprend
+// exactement les memes teintes que .nav-btn des fiches (--accent = meme
+// bleu que --bleu des fiches).
+//
+// Le bouton est cree tout de suite (desactive), avant meme de savoir si
+// quelqu'un est connecte : onAuthStateChanged est asynchrone (verifie la
+// session enregistree), le creer seulement a la reponse provoquait un
+// decalage visible (le bouton apparaissait après coup, apres les autres
+// boutons de la barre). Ainsi l'espace est reserve des le depart, seul son
+// comportement (lien connexion / deconnexion) se met a jour une fois l'etat
+// de connexion connu.
 
 import { auth } from './firebase-config.js';
 import {
@@ -37,50 +49,59 @@ function styliserCommeIconeCompacte(el) {
   el.style.width = '40px';
 }
 
-onAuthStateChanged(auth, async (utilisateur) => {
-  const nav = document.querySelector('.site-nav');
-  const barreNav = nav ? null : document.querySelector('.barre-navigation');
-  const cible = nav || barreNav;
-  if (!cible) return;
+// Le pseudo est stocke cote Firestore, pas dans le compte Firebase Auth
+// lui-meme (seul un email synthetique pseudo@cahiers-interactifs.local y
+// existe pour les eleves) : on affiche la partie utile de cet email plutot
+// que de faire une lecture Firestore supplementaire juste pour une infobulle.
+function identifiantAffichable(utilisateur) {
+  const email = utilisateur.email || '';
+  return email.endsWith('@cahiers-interactifs.local') ? email.split('@')[0] : email;
+}
 
-  // Retire ce que ce script a pu ajouter lors d'un etat precedent (evite
-  // les doublons si l'etat de connexion change sans recharger la page).
-  cible.querySelectorAll('[data-nav-auth]').forEach((el) => el.remove());
+const nav = document.querySelector('.site-nav');
+const barreNav = nav ? null : document.querySelector('.barre-navigation');
+const cible = nav || barreNav;
 
-  if (!utilisateur) {
-    const lien = document.createElement('a');
-    lien.href = '/connexion/';
-    lien.setAttribute('aria-label', 'Connexion');
-    lien.title = 'Connexion';
-    lien.innerHTML = ICONE_PROFIL;
-    lien.dataset.navAuth = 'true';
-    if (nav) lien.className = 'nav-icone-profil';
-    else styliserCommeIconeCompacte(lien);
-    cible.appendChild(lien);
-    return;
-  }
+if (cible) {
+  const bouton = document.createElement('button');
+  bouton.type = 'button';
+  bouton.disabled = true;
+  bouton.dataset.navAuth = 'true';
+  bouton.innerHTML = ICONE_PROFIL;
+  if (nav) bouton.className = 'nav-icone-profil';
+  else styliserCommeIconeCompacte(bouton);
+  cible.appendChild(bouton);
 
-  const resultatToken = await utilisateur.getIdTokenResult();
-  if (resultatToken.claims.admin === true) {
-    const lienTableau = document.createElement('a');
-    lienTableau.href = '/tableau-de-bord/';
-    lienTableau.textContent = 'Tableau de bord';
-    lienTableau.dataset.navAuth = 'true';
-    if (barreNav) lienTableau.classList.add('nav-btn');
-    cible.appendChild(lienTableau);
-  }
+  let lienTableau = null;
 
-  const boutonDeconnexion = document.createElement('button');
-  boutonDeconnexion.type = 'button';
-  boutonDeconnexion.setAttribute('aria-label', 'Se déconnecter');
-  boutonDeconnexion.title = 'Se déconnecter';
-  boutonDeconnexion.innerHTML = ICONE_PROFIL;
-  boutonDeconnexion.dataset.navAuth = 'true';
-  if (nav) boutonDeconnexion.className = 'nav-icone-profil';
-  else styliserCommeIconeCompacte(boutonDeconnexion);
-  boutonDeconnexion.addEventListener('click', async () => {
-    await signOut(auth);
-    window.location.href = '/index.html';
+  onAuthStateChanged(auth, async (utilisateur) => {
+    bouton.disabled = false;
+    bouton.onclick = null;
+    if (lienTableau) { lienTableau.remove(); lienTableau = null; }
+
+    if (!utilisateur) {
+      bouton.title = 'Connexion';
+      bouton.setAttribute('aria-label', 'Connexion');
+      bouton.onclick = () => { window.location.href = '/connexion/'; };
+      return;
+    }
+
+    const resultatToken = await utilisateur.getIdTokenResult();
+    if (resultatToken.claims.admin === true) {
+      lienTableau = document.createElement('a');
+      lienTableau.href = '/tableau-de-bord/';
+      lienTableau.textContent = 'Tableau de bord';
+      lienTableau.dataset.navAuth = 'true';
+      if (barreNav) lienTableau.classList.add('nav-btn');
+      cible.insertBefore(lienTableau, bouton);
+    }
+
+    const identifiant = identifiantAffichable(utilisateur);
+    bouton.title = identifiant ? `Se déconnecter (${identifiant})` : 'Se déconnecter';
+    bouton.setAttribute('aria-label', bouton.title);
+    bouton.onclick = async () => {
+      await signOut(auth);
+      window.location.href = '/index.html';
+    };
   });
-  cible.appendChild(boutonDeconnexion);
-});
+}
