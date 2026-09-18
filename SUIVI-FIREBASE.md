@@ -82,7 +82,7 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   `.tdb-onglets { display: flex; }` prend le dessus sur l'attribut `hidden`
   par spécificité égale et les boutons restent visibles même pour les élèves
   hors Première.
-- Menu du site : icône connexion/déconnexion + lien tableau de bord (admin
+- Menu du site : icône connexion/déconnexion + icône tableau de bord (admin
   seulement) — chargée désormais sur **toutes les pages** (`assets/js/nav-auth.js`) :
   `.site-nav` sur l'accueil/sommaires/automatismes/tableau de bord (style
   `nav-icone-profil`, voir `style.css`), et `.barre-navigation` sur les 44
@@ -90,6 +90,24 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   fiche, pas de `style.css` chargé) — l'icône y reprend la classe `.nav-btn`
   déjà définie dans le `<style>` de chaque fiche, ajoutée uniquement sur la
   barre du haut (il y en a une identique en bas, volontairement pas touchée).
+  **Lien "Tableau de bord" remplacé par une icône (18/09/2026)**, sur
+  demande de David qui avait repéré le même décalage visible à l'affichage
+  que le bouton profil avant son propre correctif (voir plus haut) : le
+  lien texte n'était inséré qu'à l'intérieur du callback `onAuthStateChanged`,
+  après un second aller-retour asynchrone (`getIdTokenResult` pour lire le
+  droit admin) — apparaissait donc tard, décalant toute la barre. Corrigé en
+  appliquant EXACTEMENT le même principe que le bouton profil : l'icône
+  (`ICONE_TABLEAU_DE_BORD`, grille à 4 cases, même gabarit que l'icône
+  profil) est créée et insérée tout de suite, masquée, puis seulement rendue
+  visible une fois le droit admin confirmé — plus jamais de nœud inséré
+  tardivement. **Piège rencontré en l'implémentant** : masquer via
+  l'attribut `hidden` ne suffisait pas, `.nav-icone-profil { display:
+  inline-flex }` (et, pire, le style **inline** posé par
+  `styliserCommeIconeCompacte` pour la variante `.barre-navigation`)
+  l'emportent tous les deux sur `[hidden] { display:none }` — même famille
+  de piège que `.tdb-onglets[hidden]` déjà noté plus bas. Résolu en pilotant
+  `style.display` directement (`'none'`/`'inline-flex'`) plutôt que
+  l'attribut `hidden`, qui évite toute ambiguïté de cascade.
 - Suivi câblé sur **les 44 fiches de calcul** (Première + Seconde) — le
   pilote (`cahiers/premiere/cahier-1/fiche-01.html`) puis les 43 autres,
   même schéma partout (voir `assets/js/suivi.js`). Score = questions
