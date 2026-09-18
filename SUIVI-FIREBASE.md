@@ -327,13 +327,21 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   (`resultats`/`brouillons` supprimés) — laissé vide à la fin de cette
   série de migrations.
 
-  **Bug de correction signalé, pas encore corrigé, hors périmètre de cette
-  branche** : le vérificateur (`checkEqualNumeric`) évalue mathématiquement
-  la réponse tapée plutôt que d'exiger un nombre déjà calculé — "144-72"
-  est accepté comme correct pour "12²-8×9" puisque l'expression s'évalue à
-  la bonne valeur. Concerne potentiellement les 44 fiches et `master` (pas
-  seulement cette branche) ; l'utilisateur a choisi de le traiter séparément
-  plus tard, pas maintenant.
+  **Bug de correction signalé le 18/09/2026, corrigé le même jour (commit
+  `b761b90`, sur `master` directement, hors de cette branche)** : le
+  vérificateur (`checkEqualNumeric`) évaluait mathématiquement la réponse
+  tapée plutôt que d'exiger un nombre déjà calculé — "144-72" était accepté
+  comme correct pour "12²-8×9" puisque l'expression s'évalue à la bonne
+  valeur. Nouvelle fonction `estFormeFinaleNumerique()` : une réponse
+  numérique (sans variable) doit être une forme finale — entier, décimal,
+  ou fraction simple `a/b` (signes compris) — pas un calcul encore à faire.
+  La branche algébrique (réponses avec `x`, `t`, etc.) n'est pas concernée,
+  y accepter une forme équivalente non simplifiée reste voulu (`2*(x+2)`
+  pour `2x+4`). 5 variantes du code recensées au préalable sur les 44
+  fiches (mêmes différences que d'habitude : liste de variables, boucle
+  d'essais aléatoires, tolérance) ; seule la portion commune (identique
+  partout) a été modifiée. Vérifié par 14 cas directs plus un passage
+  réel au clavier sur une fiche live.
 - Suivi des **automatismes de Première** : uniquement les sujets blancs
   (`automatismes/premiere/sujet-blanc.html`), pas les fiches thématiques
   libres (`fiche.html`, jamais suivies, même en mode chrono — non notées
