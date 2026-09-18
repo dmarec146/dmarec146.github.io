@@ -1440,6 +1440,24 @@ function estFractionIrreductible(userInput) {
   }
 }
 
+// Un calcul numerique (sans variable) doit etre une forme finale deja evaluee - pas un
+// calcul encore a faire. Sans ce controle, taper "144-72" validait "12^2-8*9" puisque
+// l'expression s'evalue a la bonne valeur, sans que l'eleve ait vraiment calcule.
+function estFormeFinaleNumerique(n) {
+  const sansParentheses = (m) => { while (m.type === 'ParenthesisNode') m = m.content; return m; };
+  n = sansParentheses(n);
+  if (n.type === 'ConstantNode') return true;
+  if (n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1) return estFormeFinaleNumerique(n.args[0]);
+  if (n.type === 'OperatorNode' && n.op === '/') {
+    const estEntierSigne = (m) => {
+      m = sansParentheses(m);
+      return m.type === 'ConstantNode' || (m.type === 'OperatorNode' && m.op === '-' && m.args.length === 1 && sansParentheses(m.args[0]).type === 'ConstantNode');
+    };
+    return estEntierSigne(n.args[0]) && estEntierSigne(n.args[1]);
+  }
+  return false;
+}
+
 function checkEqualNumeric(userInput, correctExpr) {
   userInput = normaliserSaisie(userInput);
   const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','p','q'];
@@ -1451,6 +1469,7 @@ function checkEqualNumeric(userInput, correctExpr) {
       node.traverse(n => { if (n.isSymbolNode && vars.includes(n.name)) usedVars.add(n.name); });
     });
     if (usedVars.size === 0) {
+      if (!estFormeFinaleNumerique(userNode)) return false;
       const uVal = userNode.evaluate();
       const cVal = correctNode.evaluate();
       if (typeof uVal !== 'number' || typeof cVal !== 'number') return false;
