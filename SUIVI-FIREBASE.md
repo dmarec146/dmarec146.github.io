@@ -674,6 +674,40 @@ de changer ce réglage sans qu'il en reparle.
   (`.claude/static-server.ps1`, chemin relatif dans `launch.json`, racine
   résolue dynamiquement via `$PSScriptRoot`) — fonctionne tel quel sur
   n'importe quel clone sans retouche.
+- **Bug réel en production, signalé par David le 19/09/2026** : un élève
+  tapant une réponse avec racine carrée ou fraction dans un `<math-field>`,
+  qui l'enregistrait (brouillon) puis rechargeait la page, voyait le texte
+  brut `sqrt(...)` au lieu du symbole √ (idem fractions : `a/b` en texte
+  plutôt qu'une vraie fraction). Cause : `valeurDuChamp()` lit un math-field
+  en ASCII-math (`el.getValue('ascii-math')`, ex. `"sqrt(6)"`), stocké tel
+  quel dans `saisies[idx].valeur` — mais la restauration du brouillon
+  réinjectait cette chaîne via l'assignation brute `input.value = ...`, qui
+  interprète le texte comme du **LaTeX**, pas de l'ASCII-math : `"sqrt(6)"`
+  devient donc littéralement les caractères `s q r t ( 6 )` affichés côte à
+  côte. Même famille que le piège déjà noté plus haut (audit
+  `checkEqualNumeric`, `"sqrt(6)"` → `"s q r t(6)"`) — pensé à l'époque
+  limité à un script de test, en réalité un vrai bug de production resté
+  invisible jusqu'à ce qu'un élève réel enregistre puis reprenne une fiche
+  avec ce type de réponse.
+
+  Corrigé sur **les 44 fiches** (motif mécanique identique partout, vérifié
+  avant d'écrire le script) : `input.value = saisie.valeur` remplacé par
+  `if (input.tagName === 'MATH-FIELD') input.setValue(saisie.valeur, {
+  format: 'ascii-math' }); else input.value = saisie.valeur;` — symétrique
+  de la lecture (`getValue('ascii-math')` en écriture ↔ `setValue(...,
+  {format:'ascii-math'})`), sans toucher au format déjà stocké partout
+  ailleurs. `preparerPourImpression()`/`restaurerApresImpression()` (export
+  PDF) n'ont PAS ce bug : ils lisent/écrivent `input.value` brut de façon
+  symétrique (LaTeX↔LaTeX), sans passer par `valeurDuChamp()`.
+
+  Vérifié en conditions réelles (jeton n.testeuse, pas de compte jetable) :
+  racine carrée ET fraction, chacune enregistrée puis la page rechargée
+  DEUX fois de suite — round-trip LaTeX confirmé (`\sqrt6`, `\frac34`) et
+  rendu visuel capturé (vrai symbole √, vraie fraction empilée). Aucune
+  fiche testée manuellement au-delà du pilote (fiche-03 Seconde) : le
+  correctif est mécanique et identique sur les 44, mais seul un test réel
+  généralisé (comme celui qui a révélé ce bug) confirmerait l'absence de
+  cas particulier.
 
 ## Procédure de reprise sur une autre machine
 
