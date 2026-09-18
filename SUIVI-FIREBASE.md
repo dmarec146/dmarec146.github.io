@@ -28,6 +28,13 @@ même des objets/index/refs Git, ou sur les fichiers de travail, et corrompre
 silencieusement le dépôt. D'où le passage à un clone local par machine,
 synchronisé uniquement via GitHub.
 
+**Emplacement du clone sur PC perso** : `C:\Users\david\Documents\siteCahierCalcul`
+(créé le 18/09/2026, cloné à jour sur `master`). `outils/creer-comptes/service-account.json`
+et les CSV/PDF générés n'ont PAS pu être recopiés automatiquement depuis
+l'ancien dossier Drive (bloqué par une classification de sécurité de l'outil
+sur les fichiers d'identifiants) — à recopier manuellement par l'utilisateur
+depuis `Mon Drive\Cours\siteCahierCalcul\outils\` vers ce nouveau clone.
+
 **Emplacement du clone sur PC pro** : `C:\Users\David\Documents\siteCahierCalcul`
 (hors "Mon Drive"). Les anciens dossiers `Mon Drive\siteCahierCalcul` et
 `Mon Drive\siteCahierTemp` (ce dernier ayant servi à isoler le développement
