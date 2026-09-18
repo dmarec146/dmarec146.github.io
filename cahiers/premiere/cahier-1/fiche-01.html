@@ -2816,15 +2816,22 @@ function genererSVGParabole(a, alpha, beta, xmin, xmax, ymin, ymax, largeur, hau
 // une seule API) sur les SVG generes par genererSVGParabole, convertit la position du pointeur en
 // coordonnees (x;y) via les data-* du <svg> lui-meme, et affiche un reticule pointille jusqu'aux
 // deux axes plus un texte des coordonnees pres du point.
-// - Souris : comportement inchange depuis la version d'origine (survol libre, actif seulement si
-//   l'utilisateur a clique sur le bouton-icone dedie — voir boutonCurseurHTML et la classe
-//   curseur-actif) ; un pointermove de type "mouse" se comporte exactement comme l'ancien mousemove.
-// - Tactile/stylet : un pointermove de ce type ne se produit QUE pendant un contact (pas de survol
-//   ambiant a proteger comme a la souris), donc glisser le doigt active directement le curseur sans
-//   bouton (masque sur tactile, voir @media (hover:none) plus haut). Le point est en plus aimante
-//   au pas de la grille (data-pas) — viser le pixel exact au doigt est illusoire — et le texte des
-//   coordonnees est decale nettement au-dessus du point vise pour ne pas etre cache par le doigt.
-// Porte depuis la fiche 15 de Seconde ; l'adaptation tactile ci-dessus est nouvelle (18/09/2026).
+// - Souris : comportement inchange depuis la version d'origine (survol libre dans tout le
+//   graphique, actif seulement si l'utilisateur a clique sur le bouton-icone dedie — voir
+//   boutonCurseurHTML et la classe curseur-actif) ; un pointermove de type "mouse" se comporte
+//   exactement comme l'ancien mousemove.
+// - Tactile/stylet : premiere version (glisser librement dans tout le graphique) jugee peu
+//   pratique par David apres test reel sur tablette. Reprise sur un principe different : le
+//   curseur reste ANCRE SUR LA COURBE elle-meme (pas libre dans tout le plan) — seule
+//   l'abscisse suit le doigt, l'ordonnee est recalculee sur la courbe via
+//   path.getPointAtLength()/getTotalLength() (API SVG native, marche pour n'importe quelle forme
+//   de courbe, pas seulement une parabole — dichotomie car le trace va toujours de gauche a
+//   droite, x croissant, voir la boucle de points dans genererSVGParabole). L'abscisse est en
+//   plus aimantee au pas de la grille (data-pas) : viser le pixel exact au doigt est illusoire,
+//   et ca donne des valeurs lisibles. Au relachement, le repere RESTE affiche a sa derniere
+//   position (pas de disparition) — demande explicite, pour laisser le temps de lire.
+// Porte depuis la fiche 15 de Seconde ; l'adaptation tactile ci-dessus est nouvelle (18/09/2026,
+// revisee le meme jour apres un premier essai qui ne convenait pas).
 function activerCurseurSvg(container) {
   if (!container) return;
   container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
@@ -2839,30 +2846,27 @@ function cablerCurseurUnique(svg) {
   const groupe = svg.querySelector('.curseur-groupe');
   const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
   const texte = svg.querySelector('.curseur-texte');
+  const chemin = svg.querySelector('path');
   const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
   const auPas = (v) => pas > 0 ? Math.round(v / pas) * pas : v;
-  svg.addEventListener('pointermove', (evt) => {
-    const tactile = evt.pointerType !== 'mouse';
-    if (!tactile && !svg.classList.contains('curseur-actif')) return;
-    const pt = svg.createSVGPoint();
-    pt.x = evt.clientX; pt.y = evt.clientY;
-    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
-    if (local.x < marge || local.x > largeur - marge || local.y < marge || local.y > hauteur - marge) {
-      groupe.setAttribute('visibility', 'hidden');
-      return;
+
+  // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
+  function pointCourbeA(pxCible) {
+    if (!chemin) return null;
+    let bas = 0, haut = chemin.getTotalLength();
+    for (let i = 0; i < 24; i++) {
+      const milieu = (bas + haut) / 2;
+      if (chemin.getPointAtLength(milieu).x < pxCible) bas = milieu; else haut = milieu;
     }
-    let x = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
-    let y = ymin + (hauteur - marge - local.y) / (hauteur - 2*marge) * (ymax - ymin);
-    // point affiche (reticule + texte) : aimante a la grille au doigt, exact a la souris
-    let px = local.x, py = local.y;
-    if (tactile && pas > 0) {
-      x = auPas(x); y = auPas(y);
-      px = marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
-      py = hauteur - marge - (y - ymin) / (ymax - ymin) * (hauteur - 2*marge);
-    }
+    return chemin.getPointAtLength((bas + haut) / 2);
+  }
+
+  function afficherRepere(px, py, tactile) {
     groupe.setAttribute('visibility', 'visible');
     ligneV.setAttribute('x1', px.toFixed(1)); ligneV.setAttribute('x2', px.toFixed(1));
     ligneH.setAttribute('y1', py.toFixed(1)); ligneH.setAttribute('y2', py.toFixed(1));
+    const x = xmin + (px - marge) / (largeur - 2*marge) * (xmax - xmin);
+    const y = ymin + (hauteur - marge - py) / (hauteur - 2*marge) * (ymax - ymin);
     const texteX = px < largeur - 60 ? px + 5 : px - 5;
     const ancrage = px < largeur - 60 ? 'start' : 'end';
     // au doigt, le texte doit degager la pointe du doigt (pas juste le trait) : decalage bien plus large.
@@ -2871,11 +2875,35 @@ function cablerCurseurUnique(svg) {
     texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
     texte.setAttribute('text-anchor', ancrage);
     texte.textContent = `(${fmtGrad(Math.round(x*100)/100)} ; ${fmtGrad(Math.round(y*100)/100)})`;
+  }
+
+  svg.addEventListener('pointermove', (evt) => {
+    const tactile = evt.pointerType !== 'mouse';
+    if (!tactile && !svg.classList.contains('curseur-actif')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
+    if (tactile) {
+      let pxCible = local.x;
+      if (pas > 0) {
+        const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
+        const xAimante = auPas(xBrut);
+        pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
+      }
+      const ptCourbe = pointCourbeA(pxCible);
+      if (ptCourbe) afficherRepere(ptCourbe.x, ptCourbe.y, true);
+    } else {
+      if (local.y < marge || local.y > hauteur - marge) { groupe.setAttribute('visibility', 'hidden'); return; }
+      afficherRepere(local.x, local.y, false);
+    }
   });
-  const cacher = () => groupe.setAttribute('visibility', 'hidden');
-  svg.addEventListener('pointerup', cacher);
-  svg.addEventListener('pointercancel', cacher);
-  svg.addEventListener('pointerleave', cacher);
+  // seule la souris masque le repere en quittant le graphique/relachant — au doigt, il reste
+  // affiche a sa derniere position (voir le commentaire en tete de fichier).
+  const cacherSiSouris = (evt) => { if (evt.pointerType === 'mouse') groupe.setAttribute('visibility', 'hidden'); };
+  svg.addEventListener('pointerup', cacherSiSouris);
+  svg.addEventListener('pointercancel', cacherSiSouris);
+  svg.addEventListener('pointerleave', cacherSiSouris);
 }
 // icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js
 // (seul precedent d'icone en coin de figure trouve sur le site), pour rester visuellement coherent.
