@@ -540,9 +540,22 @@ de changer ce réglage sans qu'il en reparle.
   colonnes coupées sur petit écran) — bénéficie à tout le tableau de bord,
   pas seulement à cette page.
 
+  **Mode (fiche/chrono) choisi à l'attribution pour un sujet blanc
+  (18/09/2026)**, sur demande de David. Même principe que le niveau : champ
+  `mode` sur le devoir, sélecteur "Mode fiche"/"Mode chrono ⏱" dans le
+  formulaire (visible seulement pour le type automatismes, chrono
+  sélectionné par défaut comme `modeDefaut` de `sujet-blanc.html`).
+  `enregistrerTentativeDevoirAutomatismeSiApplicable()` (`suivi.js`) filtre
+  maintenant sur (type, niveau, mode, classe) — requête à 4 égalités,
+  vérifiée sans avoir besoin d'index composite. Ni le niveau ni le mode ne
+  sont imposés à l'élève (toujours choisis librement sur la page du sujet
+  blanc) : une tentative avec un autre niveau OU un autre mode que ceux du
+  devoir n'est simplement pas comptée.
+
   **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
-  fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le mode
-  chrono imposé.
+  fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le niveau
+  et le mode d'un sujet blanc ne sont pas non plus imposés/verrouillés côté
+  page (l'élève peut toujours changer librement).
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).

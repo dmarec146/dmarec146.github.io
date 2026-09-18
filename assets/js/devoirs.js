@@ -36,6 +36,8 @@ const champFiche = document.getElementById('dev-champ-fiche');
 const selectFiche = document.getElementById('dev-fiche');
 const champNiveau = document.getElementById('dev-champ-niveau');
 const selectNiveau = document.getElementById('dev-niveau');
+const champMode = document.getElementById('dev-champ-mode');
+const selectMode = document.getElementById('dev-mode');
 const selectClasse = document.getElementById('dev-classe');
 const champEcheance = document.getElementById('dev-echeance');
 const champEssais = document.getElementById('dev-essais');
@@ -173,6 +175,7 @@ selectType.addEventListener('change', () => {
   champFiche.hidden = estAutomatismes;
   selectFiche.required = !estAutomatismes;
   champNiveau.hidden = !estAutomatismes;
+  champMode.hidden = !estAutomatismes;
   remplirSelectClasse();
 });
 
@@ -222,7 +225,9 @@ formulaire.addEventListener('submit', async (evenement) => {
   let donnees;
   if (type === 'automatismes') {
     const niveau = parseInt(selectNiveau.value, 10);
-    donnees = { type, niveau, titre: `Sujet blanc — Niveau ${niveau}` };
+    const mode = selectMode.value;
+    const libelleMode = mode === 'chrono' ? 'chrono' : 'fiche';
+    donnees = { type, niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
     if (!niveau) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir un niveau.'); return; }
   } else {
     const ficheId = selectFiche.value;

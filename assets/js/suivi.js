@@ -272,15 +272,16 @@ export async function enregistrerConnexion(uid) {
 
 // Meme principe que enregistrerTentativeDevoirSiApplicable ci-dessus, pour
 // un sujet blanc d'automatismes : le devoir est identifie par (type
-// 'automatismes', niveau, classe) plutot que par ficheId, mais reutilise le
-// MEME journal eleves/{uid}/devoirsTentatives (memes champs score/
-// totalExercices, ici note/6 plutot que exercices reussis/total -- meme
-// forme, la vue resultats de devoirs.js n'a pas besoin de distinguer les
-// deux types pour calculer la meilleure tentative). Le niveau n'est PAS
-// impose au eleve (choisi librement sur la page du sujet blanc, voir
-// moteur.js/changerNiveau) : une tentative a un autre niveau que celui du
-// devoir n'est simplement pas comptee, comme une tentative hors delai.
-async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, points, bonnes, total) {
+// 'automatismes', niveau, mode, classe) plutot que par ficheId, mais
+// reutilise le MEME journal eleves/{uid}/devoirsTentatives (memes champs
+// score/totalExercices, ici note/6 plutot que exercices reussis/total --
+// meme forme, la vue resultats de devoirs.js n'a pas besoin de distinguer
+// les deux types pour calculer la meilleure tentative). Ni le niveau ni le
+// mode ne sont imposes a l'eleve (choisis librement sur la page du sujet
+// blanc, voir moteur.js/changerNiveau et changerMode) : une tentative a un
+// autre niveau ou un autre mode que celui du devoir n'est simplement pas
+// comptee, comme une tentative hors delai.
+async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, points, bonnes, total) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
@@ -288,6 +289,7 @@ async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, points,
       collection(db, 'devoirs'),
       where('type', '==', 'automatismes'),
       where('niveau', '==', niveau),
+      where('mode', '==', mode),
       where('classe', '==', classe)
     ));
     if (instantane.empty) return;
@@ -325,7 +327,7 @@ export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode
     console.warn('Suivi : enregistrement du sujet blanc impossible.', erreur);
     return;
   }
-  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, points, bonnes, total);
+  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, points, bonnes, total);
 }
 
 window.enregistrerTentative = enregistrerTentative;
