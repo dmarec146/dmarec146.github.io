@@ -13,10 +13,28 @@ demande. Un petit ajout suffit ; pas besoin de tout réécrire.
 
 ## Avant toute chose : vérifier l'état du dépôt
 
-`siteCahierCalcul` (dossier de travail habituel) et `siteCahierTemp` (créé
-pour isoler ce travail Firebase le temps du pilote) partagent le même dépôt
-GitHub, mais **`siteCahierCalcul` est littéralement le même `.git`,
-synchronisé via Google Drive** — pas une copie séparée. Donc, avant d'agir :
+Chaque machine (PC pro, PC perso) a désormais son **propre clone Git local,
+indépendant, hors de tout dossier synchronisé par Google Drive**. La seule
+synchronisation entre les deux se fait via GitHub (`git push` / `git pull`)
+— jamais via Drive.
+
+Ça n'a pas toujours été le cas : jusqu'au 18/09/2026, `siteCahierCalcul`
+était littéralement le même `.git`, synchronisé au niveau fichier par Google
+Drive entre les deux machines. Ce montage a été abandonné car risqué : Drive
+synchronise fichier par fichier, pas de façon atomique — deux machines
+actives en même temps (ou une synchro pas terminée avant de rouvrir le
+dossier sur l'autre PC) pouvaient créer des copies "en conflit" à l'intérieur
+même des objets/index/refs Git, ou sur les fichiers de travail, et corrompre
+silencieusement le dépôt. D'où le passage à un clone local par machine,
+synchronisé uniquement via GitHub.
+
+**Emplacement du clone sur PC pro** : `C:\Users\David\Documents\siteCahierCalcul`
+(hors "Mon Drive"). Les anciens dossiers `Mon Drive\siteCahierCalcul` et
+`Mon Drive\siteCahierTemp` (ce dernier ayant servi à isoler le développement
+du suivi Firebase avant sa fusion) ne servent plus pour ce projet — laissés
+en place mais à ne plus modifier ni utiliser comme base de travail.
+
+Avant d'agir :
 
 ```bash
 git status
@@ -28,32 +46,12 @@ Ne rien écraser (`checkout --`, `reset --hard`, etc.) sans comprendre ce qui
 est déjà là. S'il y a un commit local non poussé ou des branches inhabituelles,
 demander à l'utilisateur avant de les toucher.
 
-**État vérifié le 16/09/2026** : `siteCahierCalcul` est propre — `master`
-à jour avec `origin/master` (un commit local en attente, "fil d'ariane sur
-les fiches", a été vérifié sans chevauchement avec ce travail puis poussé),
-rien en suspens. Les branches locales `claude/adoring-engelbart-62b11c` et
-`worktree-agent-a776ebf0c56aba0bc` sont des résidus d'une session/worktree
-précédente, pas touchées.
-
-Important : `master` a donc avancé d'un commit depuis la création de
-`suivi-firebase`. La fusion ne sera plus un fast-forward mais une vraie
-fusion à 3 — sans conflit attendu (le commit poussé touche `fiche-01.html`
-mais dans des zones du fichier totalement différentes de celles modifiées
-ici : fil d'ariane en tête de `<body>` et CSS vers la ligne 39, contre le
-script de suivi vers la ligne 1720 et au-delà).
-
-**Fusion effectuée le 18/09/2026** : `suivi-firebase` a été fusionnée dans
-`master` (commit de fusion `514b847`, sur PC pro) puis poussée sur GitHub.
-Aucun conflit (comme anticipé ci-dessus). Un tag `pre-fusion-suivi-firebase`
-a été posé sur `master` juste avant, comme point de retour en arrière si
-besoin. La branche `suivi-firebase` elle-même n'a pas été supprimée (filet
-de sécurité supplémentaire).
-
-**Toute cette page reste valable** pour PC perso ou toute session qui
-reprend le travail — la seule différence est qu'il faut maintenant se
-mettre à jour sur `master` (`git checkout master && git pull`), pas sur
-`suivi-firebase`, cf. « Procédure de reprise » en bas de page. GitHub Pages
-sert désormais cette version : le suivi Firebase est en production.
+**Fusion `suivi-firebase` → `master` effectuée le 18/09/2026** (commit de
+fusion `514b847`, sur PC pro), sans conflit, poussée sur GitHub. Un tag
+`pre-fusion-suivi-firebase` a été posé sur `master` juste avant, comme point
+de retour en arrière si besoin. La branche `suivi-firebase` n'a pas été
+supprimée (filet de sécurité supplémentaire). GitHub Pages sert cette
+version : le suivi Firebase est en production.
 
 ## Où en est-on
 
@@ -403,26 +401,40 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   style en ligne aussi. Definir le `display` par une regle de CLASSE (avec
   son `[hidden]` explicite a cote) plutot qu'en ligne des qu'un element
   doit pouvoir etre masque via `.hidden`.
+- `.claude/launch.json` pointait vers un script de serveur de dev stocké
+  dans le scratchpad *de session* (chemin absolu, propre à une seule
+  machine/session) : cassait à chaque changement de machine ou de session.
+  Corrigé le 18/09/2026 en versionnant le script dans le dépôt
+  (`.claude/static-server.ps1`, chemin relatif dans `launch.json`, racine
+  résolue dynamiquement via `$PSScriptRoot`) — fonctionne tel quel sur
+  n'importe quel clone sans retouche.
 
 ## Procédure de reprise sur une autre machine
 
-1. Vérifier l'état du dépôt (section ci-dessus).
-2. `git fetch origin`
-3. Si `suivi-firebase` a été fusionnée dans `master` entre-temps (vérifier
-   sur GitHub) : `git checkout master && git pull`.
-   Sinon, pour continuer directement sur la branche de travail :
-   `git checkout suivi-firebase && git pull`.
-4. Lire l'artifact **"Cahier de suivi"** (action `list` des artifacts) pour
+Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
+(voir "Avant toute chose" en tête de page) — plus de montage Drive-synced
+à vérifier, juste un `git pull` classique.
+
+1. Vérifier si un clone local existe déjà pour ce projet sur cette machine
+   (PC pro : `C:\Users\David\Documents\siteCahierCalcul`. PC perso : chemin
+   à choisir hors Drive lors de la première reprise là-bas, puis à noter ici).
+   - S'il existe : `cd` dedans, `git status` (rien ne doit traîner), puis
+     `git checkout master && git pull`.
+   - S'il n'existe pas encore sur cette machine :
+     `git clone https://github.com/dmarec146/dmarec146.github.io.git <chemin-hors-drive>`
+     (déjà sur `master` par défaut après clonage).
+2. Lire l'artifact **"Cahier de suivi"** (action `list` des artifacts) pour
    le contexte et les choix de conception du projet.
-5. Pour utiliser `outils/creer-comptes` ou `outils/etiquettes` : `npm install`
+3. Serveur de dev local : `.claude/launch.json` référence
+   `.claude/static-server.ps1` en chemin relatif — les deux sont suivis par
+   git, donc ça fonctionne tel quel sur n'importe quel clone, plus besoin de
+   corriger un chemin en dur par machine (piège rencontré le 17/09/2026,
+   éliminé le 18/09/2026 en sortant le script du scratchpad de session pour
+   le verser dans le dépôt).
+4. Pour utiliser `outils/creer-comptes` ou `outils/etiquettes` : `npm install`
    dans chaque dossier, et vérifier que `outils/creer-comptes/service-account.json`
    est présent (sinon le retélécharger depuis Console Firebase → Paramètres
-   du projet → Comptes de service).
-
-   **Déjà fait** : `service-account.json`, le CSV de comptes de la 207
-   (`comptes-crees-2026-09-15T14-06-47-054Z.csv`) et le PDF d'étiquettes
-   correspondant ont été copiés à l'avance dans
-   `siteCahierCalcul/outils/creer-comptes/` et `.../outils/etiquettes/` —
-   ils se synchroniseront via Drive même si `suivi-firebase` n'est pas encore
-   fusionnée (ces fichiers ne sont de toute façon jamais suivis par git).
-   Il ne restera que `npm install` à lancer dans chaque dossier.
+   du projet → Comptes de service). Ce fichier (et les CSV/PDF générés) ne
+   sont jamais suivis par git, et depuis l'abandon du montage Drive ne
+   voyagent plus automatiquement d'une machine à l'autre : à recopier
+   manuellement sur chaque nouveau clone, ou à régénérer/retélécharger.
