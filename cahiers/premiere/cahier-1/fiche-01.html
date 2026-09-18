@@ -1269,15 +1269,25 @@ function genGroupe1_15() {
   return [itemEntier('a'), itemEntier('b'), item3];
 }
 
-const generateurs = [
+const generateursAvantQCM = [
   genGroupe1_1, genGroupe1_2, genGroupe1_3, genGroupe1_4, genGroupe1_5,
-  genGroupe1_6, genGroupe1_7, genGroupe1_8, genGroupe1_9, genGroupe1_14, genGroupe1_15
+  genGroupe1_6, genGroupe1_7, genGroupe1_8, genGroupe1_9
 ];
+const generateursApresQCM = [genGroupe1_14, genGroupe1_15];
 
+// Les QCM 1.10-1.13 (genererParametresGraphiques) doivent rester intercales ICI dans le
+// tableau exercices, pas juste concatenes a la fin : la page les affiche visuellement entre
+// 1.9 et 1.14 (voir les <div id="zone-qcm-1-1X"> dans le HTML, positionnes la), et
+// allerChampSuivant() navigue par index (idx+1) en supposant que l'ordre du tableau suit
+// l'ordre visuel. Un tableau juste concatene a la fin decalait tout : Entree sur le dernier
+// 1.9 sautait le QCM pourtant juste apres a l'ecran, Entree sur le dernier QCM ne menait nulle
+// part (fin du tableau), et Entree sur la vraie derniere question (1.15 c) repartait sur le
+// premier QCM.
 function genererExercices() {
-  const algebre = generateurs.flatMap(g => g());
+  const debut = generateursAvantQCM.flatMap(g => g());
   const graphiques = genererParametresGraphiques();
-  return [...algebre, ...graphiques];
+  const fin = generateursApresQCM.flatMap(g => g());
+  return [...debut, ...graphiques, ...fin];
 }
 
 // Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
@@ -1308,8 +1318,8 @@ const groupes = {
   "grille-1-7": [30,31,32,33,34,35],
   "grille-1-8": [36,37,38],
   "grille-1-9": [39,40,41],
-  "grille-1-14": [42,43,44,45],
-  "grille-1-15": [46,47,48]
+  "grille-1-14": [46,47,48,49],
+  "grille-1-15": [50,51,52]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
