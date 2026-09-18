@@ -440,12 +440,53 @@ de changer ce réglage sans qu'il en reparle.
   cas de réaffichage). Corrigé en vidant `corpsTableau` aussi dans cette
   branche.
 
-  **Pas encore fait** : la limite d'essais n'a aucun effet côté fiche (un
-  devoir créé ici n'empêche encore rien), le mode chrono imposé, le calcul
-  de note, et la vue devoirs dans le tableau de bord élève-par-élève.
   Node.js a dû être installé sur ce PC perso (absent jusqu'ici,
   contrairement au PC pro) pour lancer `outils/creer-comptes` — désormais
   disponible sur cette machine pour la suite.
+
+  **Étape 3 faite (18/09/2026) : note + vue résultats par devoir**, faite
+  avant l'étape 2 (limite bloquante/chrono) à la demande de David, pour
+  voir un vrai rendu avant de continuer. Le modèle `resultats/{ficheId}`
+  (voir plus haut) FUSIONNE les passages -- inadapté à un devoir, qui a
+  besoin de la meilleure tentative INDIVIDUELLE. Nouveau journal séparé
+  `eleves/{uid}/devoirsTentatives/{id}` (append-only, comme tentatives/
+  connexions/automatismes) : `validerFiche()` (`assets/js/suivi.js`), en
+  plus de l'écriture `resultats` existante inchangée, vérifie maintenant
+  si un devoir existe pour cette fiche + la classe de l'élève (requête sur
+  `devoirs`, classe lue une fois depuis `eleves/{uid}` puis mise en cache
+  en mémoire) et si oui enregistre cette tentative précise (score,
+  horodatage serveur) séparément. Coût Firestore maîtrisé : rien n'est
+  écrit en dehors d'un devoir actif, l'immense majorité des validations
+  n'en déclenchent aucune écriture supplémentaire.
+
+  Règles Firestore mises à jour en conséquence (`devoirsTentatives`, même
+  principe que tentatives/connexions/automatismes) et **republiées par
+  David en Console Firebase le 18/09/2026** (nécessaire avant tout test,
+  sinon échec silencieux des écritures).
+
+  Vue résultats : sur `tableau-de-bord/devoirs.html`, bouton "Résultats"
+  par devoir → tableau par élève de la classe visée (rendu/non rendu,
+  meilleure note parmi les tentatives horodatées AVANT l'échéance --
+  horodatage serveur, pas une valeur cliente falsifiable --, essais
+  utilisés/max, dernière activité même hors délai).
+
+  Testé de bout en bout avec deux comptes temporaires (enseignant admin +
+  jeton personnalisé pour n.testeuse, sans toucher son mot de passe réel) :
+  un devoir avec échéance très proche, deux tentatives avant l'échéance,
+  attente que l'échéance passe reellement, verification "Rendu" + meilleure
+  note (14/19 sur deux tentatives 8/19 et 14/19) + "2/3" essais -- et sur le
+  premier devoir de David (échéance 22h00), tentatives faites après coup
+  correctement affichées "Non rendu" avec quand même la date de dernière
+  activité visible. **Piège découvert pendant ce test** : les onglets du
+  navigateur integre partagent la meme session Firebase Auth (stockage par
+  origine) -- se connecter sous un autre compte sur un onglet deconnecte
+  tous les autres onglets ouverts sur le meme navigateur. Comptes de test
+  temporaires nettoyés apres coup (admin supprime ; devoirs de test et
+  historique n.testeuse laisses en l'etat le temps que David regarde avec
+  son vrai compte, a nettoyer ensuite -- voir "Comptes existants").
+
+  **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
+  fiche (un devoir créé ici n'empêche encore rien), le mode chrono imposé.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).

@@ -31,7 +31,10 @@ import {
   deleteDoc,
   serverTimestamp,
   increment,
-  arrayUnion
+  arrayUnion,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 let utilisateurCourant = null;
@@ -173,6 +176,60 @@ export async function supprimerBrouillon(ficheId) {
   }
 }
 
+// Classe de l'eleve connecte (profil eleves/{uid}) : lue une seule fois par
+// session (mise en cache), pour enregistrerTentativeDevoirSiApplicable()
+// ci-dessous -- evite une lecture Firestore supplementaire a CHAQUE
+// validation de fiche alors que la classe ne change jamais en session.
+let classeEleveCourant;
+async function classeEleve() {
+  if (classeEleveCourant !== undefined) return classeEleveCourant;
+  await authPrete;
+  if (!utilisateurCourant) { classeEleveCourant = null; return null; }
+  try {
+    const profil = await getDoc(doc(db, 'eleves', utilisateurCourant.uid));
+    classeEleveCourant = profil.exists() ? (profil.data().classe || null) : null;
+  } catch (erreur) {
+    console.warn('Suivi : lecture du profil eleve impossible.', erreur);
+    classeEleveCourant = null;
+  }
+  return classeEleveCourant;
+}
+
+// Le modele "resultats" ci-dessus FUSIONNE les passages (score cumule, un
+// exercice reussi une fois reste acquis) -- adapte a l'entrainement libre,
+// mais un devoir a besoin au contraire de la MEILLEURE TENTATIVE COMPLETE
+// individuelle (decide avec David le 18/09/2026), donc d'un historique
+// SEPARE ou chaque validation garde son propre score. Cout Firestore
+// maitrise : rien n'est ecrit tant qu'aucun devoir n'existe pour cette
+// fiche+classe (la tres grande majorite des validations, hors devoir, n'en
+// ecrivent jamais). Ne bloque jamais la validation normale (voir
+// validerFiche) : toute erreur ici reste silencieuse.
+async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues) {
+  try {
+    const classe = await classeEleve();
+    if (!classe) return;
+    const instantane = await getDocs(query(
+      collection(db, 'devoirs'),
+      where('ficheId', '==', ficheId),
+      where('classe', '==', classe)
+    ));
+    if (instantane.empty) return;
+    await Promise.all(instantane.docs.map((d) => addDoc(
+      collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'),
+      {
+        devoirId: d.id,
+        ficheId,
+        score: exercicesReussisIds.length,
+        totalExercices,
+        nbRepondues,
+        horodatage: serverTimestamp(),
+      }
+    )));
+  } catch (erreur) {
+    console.warn('Suivi : enregistrement de la tentative de devoir impossible.', erreur);
+  }
+}
+
 // Cliquer sur "Valider" (fiche complete ou non) fusionne les reponses
 // correctes de ce passage dans le score cumule de la fiche, tous passages
 // confondus -- un exercice reussi une fois reste acquis, meme reussi a un
@@ -195,6 +252,7 @@ export async function validerFiche(ficheId, exercicesReussisIds, totalExercices,
     console.warn('Suivi : validation de la fiche impossible.', erreur);
     return;
   }
+  await enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues);
   await supprimerBrouillon(ficheId);
 }
 

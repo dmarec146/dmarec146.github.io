@@ -1,13 +1,12 @@
 // Outil d'attribution des devoirs (tableau-de-bord/devoirs.html), réservé à
-// l'enseignant. Étape 1 de la brique "devoirs" (voir SUIVI-FIREBASE.md et
-// l'artifact "Cahier de suivi") : choisir une fiche, une classe, une
-// échéance et un nombre d'essais, et garder la liste de ce qui a déjà été
-// attribué. La limite d'essais réellement bloquante côté fiche (étape 2)
-// et le calcul de note (étape 3) ne sont PAS encore branchés ici — un
-// devoir créé ici n'a, pour l'instant, aucun effet sur la fiche elle-même.
+// l'enseignant. Voir SUIVI-FIREBASE.md et l'artifact "Cahier de suivi" pour
+// le contexte complet : choisir une fiche, une classe, une échéance et un
+// nombre d'essais ; voir la liste des devoirs attribués et, pour chacun, les
+// résultats par élève (meilleure tentative complète avant l'échéance,
+// enregistrée séparément par suivi.js -- voir enregistrerTentativeDevoirSiApplicable).
 //
-// Un devoir = la meilleure TENTATIVE COMPLÈTE de la fiche avant l'échéance
-// (décidé avec David le 18/09/2026, pas par exercice).
+// Pas encore fait : la limite d'essais n'est pas réellement bloquante côté
+// fiche, le mode chrono n'est pas imposé pour les devoirs.
 
 import { auth, db } from './firebase-config.js';
 import {
@@ -19,6 +18,8 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  query,
+  where,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { FICHES_PLATES } from './manifeste-fiches.js';
@@ -40,12 +41,27 @@ const listeVide = document.getElementById('dev-liste-vide');
 const tableau = document.getElementById('dev-tableau');
 const corpsTableau = document.getElementById('dev-corps');
 
+const vueListe = document.getElementById('dev-vue-liste');
+const vueResultats = document.getElementById('dev-vue-resultats');
+const resultatsTitre = document.getElementById('dev-resultats-titre');
+const resultatsSousTitre = document.getElementById('dev-resultats-sous-titre');
+const resultatsCorps = document.getElementById('dev-resultats-corps');
+const boutonRetourResultats = document.getElementById('dev-resultats-retour');
+
 // "2nde-207" -> "207" : même raccourci que formaterClasseAffichee dans
 // tableau-de-bord.js (dupliqué ici plutôt qu'importé : fonction triviale,
 // pas de raison de coupler les deux pages pour ça).
 function formaterClasseAffichee(classe) {
   const i = classe.lastIndexOf('-');
   return i === -1 ? classe : classe.slice(i + 1);
+}
+
+// Même raccourci que nomAffiche dans tableau-de-bord.js (dupliqué, voir
+// formaterClasseAffichee ci-dessus).
+function nomAffiche(eleve) {
+  return (eleve.nom || eleve.prenom)
+    ? `${eleve.nom || ''} ${eleve.prenom || ''}`.trim()
+    : (eleve.pseudo || '—');
 }
 
 function afficherEtat(element, texte) {
@@ -216,6 +232,14 @@ async function chargerListeDevoirs() {
     badge.textContent = enCours ? 'En cours' : 'Terminé';
     celluleStatut.appendChild(badge);
 
+    const celluleResultats = document.createElement('td');
+    const boutonResultats = document.createElement('button');
+    boutonResultats.type = 'button';
+    boutonResultats.className = 'tdb-bouton-secondaire';
+    boutonResultats.textContent = 'Résultats';
+    boutonResultats.addEventListener('click', () => afficherResultats(devoir));
+    celluleResultats.appendChild(boutonResultats);
+
     const celluleAction = document.createElement('td');
     const boutonSupprimer = document.createElement('button');
     boutonSupprimer.type = 'button';
@@ -224,11 +248,85 @@ async function chargerListeDevoirs() {
     boutonSupprimer.addEventListener('click', () => supprimerDevoir(devoir.id, boutonSupprimer));
     celluleAction.appendChild(boutonSupprimer);
 
-    ligne.append(celluleFiche, celluleClasse, celluleEcheance, celluleEssais, celluleStatut, celluleAction);
+    ligne.append(celluleFiche, celluleClasse, celluleEcheance, celluleEssais, celluleStatut, celluleResultats, celluleAction);
     corpsTableau.appendChild(ligne);
   }
   tableau.hidden = false;
 }
+
+// Pour chaque élève de la classe visée par ce devoir : va chercher son
+// historique de tentatives sur CE devoir précis (eleves/{uid}/devoirsTentatives,
+// écrit par enregistrerTentativeDevoirSiApplicable dans suivi.js), ne garde
+// que celles horodatées avant l'échéance (horodatage serveur, pas une valeur
+// que l'élève pourrait falsifier) et affiche la meilleure d'entre elles.
+async function afficherResultats(devoir) {
+  vueListe.hidden = true;
+  vueResultats.hidden = false;
+  resultatsTitre.textContent = devoir.ficheTitre || devoir.ficheId;
+  resultatsSousTitre.textContent = 'Chargement…';
+  resultatsCorps.innerHTML = '';
+
+  const echeanceMillis = devoir.echeance?.toMillis ? devoir.echeance.toMillis() : 0;
+
+  const instantaneEleves = await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)));
+  const eleves = instantaneEleves.docs
+    .map((d) => ({ uid: d.id, ...d.data() }))
+    .sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b)));
+
+  resultatsSousTitre.textContent = `Classe ${formaterClasseAffichee(devoir.classe)} — échéance le ${echeanceMillis ? new Date(echeanceMillis).toLocaleString('fr-FR') : '—'}`;
+
+  const lignes = await Promise.all(eleves.map(async (eleve) => {
+    const instantaneTentatives = await getDocs(query(
+      collection(db, 'eleves', eleve.uid, 'devoirsTentatives'),
+      where('devoirId', '==', devoir.id)
+    ));
+    const tentatives = instantaneTentatives.docs.map((d) => d.data());
+    const avecMillis = tentatives.map((t) => ({ ...t, millis: t.horodatage?.toMillis ? t.horodatage.toMillis() : 0 }));
+    const avantEcheance = avecMillis.filter((t) => t.millis > 0 && t.millis <= echeanceMillis);
+
+    let meilleure = null;
+    for (const t of avantEcheance) {
+      if (!meilleure || t.score > meilleure.score) meilleure = t;
+    }
+    const derniereActivite = avecMillis.reduce((max, t) => Math.max(max, t.millis), 0);
+
+    return { eleve, rendu: avantEcheance.length > 0, meilleure, nbEssais: avantEcheance.length, derniereActivite };
+  }));
+
+  for (const ligneDonnees of lignes) {
+    const ligne = document.createElement('tr');
+
+    const celluleNom = document.createElement('td');
+    celluleNom.textContent = nomAffiche(ligneDonnees.eleve);
+
+    const celluleRendu = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `dev-badge ${ligneDonnees.rendu ? 'dev-badge-encours' : 'dev-badge-termine'}`;
+    badge.textContent = ligneDonnees.rendu ? 'Rendu' : 'Non rendu';
+    celluleRendu.appendChild(badge);
+
+    const celluleNote = document.createElement('td');
+    celluleNote.textContent = ligneDonnees.meilleure
+      ? `${ligneDonnees.meilleure.score} / ${ligneDonnees.meilleure.totalExercices}`
+      : '—';
+
+    const celluleEssais = document.createElement('td');
+    celluleEssais.textContent = `${ligneDonnees.nbEssais} / ${devoir.nbEssaisMax}`;
+
+    const celluleDate = document.createElement('td');
+    celluleDate.textContent = ligneDonnees.derniereActivite
+      ? new Date(ligneDonnees.derniereActivite).toLocaleString('fr-FR')
+      : '—';
+
+    ligne.append(celluleNom, celluleRendu, celluleNote, celluleEssais, celluleDate);
+    resultatsCorps.appendChild(ligne);
+  }
+}
+
+boutonRetourResultats.addEventListener('click', () => {
+  vueResultats.hidden = true;
+  vueListe.hidden = false;
+});
 
 async function supprimerDevoir(devoirId, bouton) {
   if (!confirm('Supprimer ce devoir ? Cette action est définitive.')) return;

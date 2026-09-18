@@ -14,6 +14,11 @@
 //   eleves/{uid}/brouillons/{ficheId} état courant d'une fiche de calcul en pause
 //                                    -- nouveau modèle, mutable, écrasé/supprimé par l'élève
 //   eleves/{uid}/resultats/{ficheId}  score cumulé d'une fiche de calcul (nouveau modèle)
+//   eleves/{uid}/devoirsTentatives/{id} une tentative sur un devoir précis (journal, non
+//                                    modifiable) -- score individuel de CETTE validation,
+//                                    séparé de resultats/{ficheId} qui fusionne tous les
+//                                    passages ; nécessaire pour retrouver la meilleure
+//                                    tentative complète d'un devoir
 //   devoirs/{id}                    un devoir attribué par l'enseignant
 //
 // Les comptes élèves et le compte enseignant sont créés côté serveur (script
@@ -84,6 +89,17 @@ service cloud.firestore {
         // l'eleve, comme les journaux ci-dessus.
         allow read: if estProprietaire(uid) || estAdmin();
         allow create, update: if estProprietaire(uid);
+        allow delete: if estAdmin();
+      }
+
+      match /devoirsTentatives/{tentativeId} {
+        // Meme principe que tentatives/connexions/automatismes : un
+        // journal d'evenements (une tentative sur un devoir precis), pas un
+        // etat -- l'eleve ajoute, personne ne modifie, seul l'enseignant
+        // peut supprimer une entree.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid);
+        allow update: if false;
         allow delete: if estAdmin();
       }
     }
