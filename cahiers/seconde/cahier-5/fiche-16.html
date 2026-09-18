@@ -554,6 +554,11 @@ window.MathJax = {
   .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
   .curseur-groupe { pointer-events: none; }
   svg.qcm-svg.curseur-actif { cursor: crosshair; }
+  /* empeche le glissement tactile sur la figure d'etre intercepte comme un scroll de page : sans
+     ca, un geste au doigt sur une figure scrolle au lieu d'activer le curseur (voir cablerCurseurUnique).
+     Le clone agrandi de la modale (#modal-svg-contenu-interieur) perd la classe qcm-svg (voir
+     ouvrirModalSvg), d'ou le second selecteur. */
+  svg.qcm-svg, #modal-svg-contenu-interieur svg { touch-action: none; }
   .modal-svg-overlay {
     display: none;
     position: fixed;
@@ -1125,7 +1130,7 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
   // .figure-avec-curseur). ouvrirModalSvg retire ces attributs sur le clone affiche en grand,
   // qui a sa propre regle "width:100%" independante.
   return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-grande-figure svg-police-manuel"
-    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="${marge}">
+    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="${marge}" data-pas="${sousPasX}">
     ${sousQuadrillage}
     ${quadrillage}
     ${axes}
@@ -1140,11 +1145,23 @@ function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hau
     </g>
   </svg>`;
 }
-// ---------- curseur avec lecture des coordonnees (desktop uniquement, voir CSS @media (hover:
-// hover)) : ecoute mousemove sur les SVG generes par genererSVGCourbeGrande, convertit la position
-// du pointeur en coordonnees (x;y) via les data-* du <svg> lui-meme (marge/xmin/xmax/ymin/ymax),
-// et affiche un reticule pointille jusqu'aux deux axes plus un texte des coordonnees pres du point.
-// Actif seulement si l'utilisateur a clique sur le bouton-icone dedie (voir boutonCurseurHTML) ----------
+// ---------- curseur avec lecture des coordonnees : ecoute les Pointer Events (souris ET tactile,
+// une seule API) sur les SVG generes par genererSVGCourbeGrande, convertit la position du pointeur
+// en coordonnees (x;y) via les data-* du <svg> lui-meme (marge/xmin/xmax/ymin/ymax), et affiche un
+// reticule pointille jusqu'aux deux axes plus un texte des coordonnees pres du point.
+// - Souris : comportement inchange depuis la version d'origine (survol libre dans tout le
+//   graphique, actif seulement si l'utilisateur a clique sur le bouton-icone dedie — voir
+//   boutonCurseurHTML et la classe curseur-actif) ; un pointermove de type "mouse" se comporte
+//   exactement comme l'ancien mousemove.
+// - Tactile/stylet : le curseur reste ANCRE SUR LA COURBE (principale — voir chemin ci-dessous)
+//   — seule l'abscisse suit le doigt, l'ordonnee est recalculee sur la courbe via
+//   path.getPointAtLength()/getTotalLength() (API SVG native, dichotomie car le trace va toujours
+//   de gauche a droite, x croissant). L'abscisse est en plus aimantee au pas du sous-quadrillage
+//   (data-pas, deja le SOUS-pas — cf. sousPasX/sousPasXForce dans genererSVGCourbeGrande) : viser
+//   le pixel exact au doigt est illusoire, et ca donne des valeurs lisibles alignees sur les
+//   reperes visibles. Au relachement, le repere RESTE affiche a sa derniere position (pas de
+//   disparition) — laisse le temps de lire.
+// Adaptation tactile portee depuis la fiche 1 de Premiere apres validation sur celle-ci (18/09/2026).
 function activerCurseurSvg(container) {
   if (!container) return;
   container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
@@ -1155,32 +1172,69 @@ function cablerCurseurUnique(svg) {
   const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
   const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
   const marge = parseFloat(svg.dataset.marge);
+  const pasFin = parseFloat(svg.dataset.pas) || 0;
   const groupe = svg.querySelector('.curseur-groupe');
   const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
   const texte = svg.querySelector('.curseur-texte');
+  // querySelector('path') prend le premier <path> du markup = la courbe principale (voir
+  // genererSVGCourbeGrande : le trace principal precede toujours courbeSecondaireSvg).
+  const chemin = svg.querySelector('path');
   const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
-  svg.addEventListener('mousemove', (evt) => {
-    if (!svg.classList.contains('curseur-actif')) return;
-    const pt = svg.createSVGPoint();
-    pt.x = evt.clientX; pt.y = evt.clientY;
-    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
-    if (local.x < marge || local.x > largeur - marge || local.y < marge || local.y > hauteur - marge) {
-      groupe.setAttribute('visibility', 'hidden');
-      return;
+  const auPasFin = (v) => pasFin > 0 ? Math.round(v / pasFin) * pasFin : v;
+
+  // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
+  function pointCourbeA(pxCible) {
+    if (!chemin) return null;
+    let bas = 0, haut = chemin.getTotalLength();
+    for (let i = 0; i < 24; i++) {
+      const milieu = (bas + haut) / 2;
+      if (chemin.getPointAtLength(milieu).x < pxCible) bas = milieu; else haut = milieu;
     }
-    const x = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
-    const y = ymin + (hauteur - marge - local.y) / (hauteur - 2*marge) * (ymax - ymin);
+    return chemin.getPointAtLength((bas + haut) / 2);
+  }
+
+  function afficherRepere(px, py, tactile) {
     groupe.setAttribute('visibility', 'visible');
-    ligneV.setAttribute('x1', local.x.toFixed(1)); ligneV.setAttribute('x2', local.x.toFixed(1));
-    ligneH.setAttribute('y1', local.y.toFixed(1)); ligneH.setAttribute('y2', local.y.toFixed(1));
-    const texteX = local.x < largeur - 90 ? local.x + 8 : local.x - 8;
-    const ancrage = local.x < largeur - 90 ? 'start' : 'end';
-    const texteY = local.y > marge + 16 ? local.y - 8 : local.y + 16;
+    ligneV.setAttribute('x1', px.toFixed(1)); ligneV.setAttribute('x2', px.toFixed(1));
+    ligneH.setAttribute('y1', py.toFixed(1)); ligneH.setAttribute('y2', py.toFixed(1));
+    const x = xmin + (px - marge) / (largeur - 2*marge) * (xmax - xmin);
+    const y = ymin + (hauteur - marge - py) / (hauteur - 2*marge) * (ymax - ymin);
+    const texteX = px < largeur - 90 ? px + 8 : px - 8;
+    const ancrage = px < largeur - 90 ? 'start' : 'end';
+    const decalage = tactile ? 34 : 8;
+    const texteY = py > marge + decalage ? py - decalage : py + (tactile ? 38 : 16);
     texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
     texte.setAttribute('text-anchor', ancrage);
     texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
+  }
+
+  svg.addEventListener('pointermove', (evt) => {
+    const tactile = evt.pointerType !== 'mouse';
+    if (!tactile && !svg.classList.contains('curseur-actif')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
+    if (tactile) {
+      let pxCible = local.x;
+      if (pasFin > 0) {
+        const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
+        const xAimante = auPasFin(xBrut);
+        pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
+      }
+      const ptCourbe = pointCourbeA(pxCible);
+      if (ptCourbe) afficherRepere(ptCourbe.x, ptCourbe.y, true);
+    } else {
+      if (local.y < marge || local.y > hauteur - marge) { groupe.setAttribute('visibility', 'hidden'); return; }
+      afficherRepere(local.x, local.y, false);
+    }
   });
-  svg.addEventListener('mouseleave', () => groupe.setAttribute('visibility', 'hidden'));
+  // seule la souris masque le repere en quittant le graphique/relachant — au doigt, il reste
+  // affiche a sa derniere position (voir le commentaire en tete de fichier).
+  const cacherSiSouris = (evt) => { if (evt.pointerType === 'mouse') groupe.setAttribute('visibility', 'hidden'); };
+  svg.addEventListener('pointerup', cacherSiSouris);
+  svg.addEventListener('pointercancel', cacherSiSouris);
+  svg.addEventListener('pointerleave', cacherSiSouris);
 }
 // bouton-icone (coin superieur droit de la figure) pour activer/desactiver le curseur — meme
 // convention visuelle que le reste du site (bouton rond, bordure bleue), mais MASQUE sur les
