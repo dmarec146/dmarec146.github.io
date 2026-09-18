@@ -410,8 +410,42 @@ de changer ce réglage sans qu'il en reparle.
 
 ## Pas encore fait
 
-- Devoirs (brique à venir, sur demande explicite de l'utilisateur). Le mode
-  chrono sera imposé pour les devoirs (décidé, pas encore fait).
+- Devoirs (brique en cours, sur demande explicite de l'utilisateur). Décidé
+  le 18/09/2026 : la note retenue est la meilleure **tentative complète**
+  de la fiche avant l'échéance (pas par exercice). Le mode chrono sera
+  imposé pour les devoirs (décidé, pas encore fait).
+
+  **Étape 1 faite (18/09/2026) : outil d'attribution.**
+  `tableau-de-bord/devoirs.html` + `assets/js/devoirs.js`, réservé à
+  l'enseignant (même garde admin que le reste du tableau de bord).
+  Formulaire (fiche, classe, échéance, nombre d'essais) → crée un document
+  `devoirs/{id}` ; liste des devoirs attribués avec statut (En cours/
+  Terminé, calculé sur l'échéance) et suppression. `assets/js/
+  manifeste-fiches.js` : liste statique des 44 fiches (extraite des 15
+  sommaires de cahier) pour peupler le sélecteur — à tenir à jour à la main
+  si une fiche est ajoutée/renommée. Règles Firestore déjà en place au
+  moment d'écrire cette brique (`devoirs/{id}` : lecture par tout élève
+  connecté, écriture par l'enseignant seul) — rien à republier en Console
+  Firebase pour cette étape.
+
+  Testé de bout en bout avec un compte enseignant temporaire (créé via
+  `outils/creer-comptes --admin`, supprimé après coup — même principe que
+  les comptes élèves fictifs) : création d'un devoir, persistance réelle
+  (rechargement de page), suppression, re-vérification que Firestore est
+  bien vide ensuite. Bug trouvé et corrigé pendant ce test (pas par
+  relecture) : après suppression du dernier devoir de la liste,
+  `chargerListeDevoirs()` sortait tôt (liste vide) sans vider
+  `corpsTableau.innerHTML` — la ligne `<tr>` restait dans le DOM (juste
+  masquée par `tableau.hidden`, donc invisible, mais un état incohérent en
+  cas de réaffichage). Corrigé en vidant `corpsTableau` aussi dans cette
+  branche.
+
+  **Pas encore fait** : la limite d'essais n'a aucun effet côté fiche (un
+  devoir créé ici n'empêche encore rien), le mode chrono imposé, le calcul
+  de note, et la vue devoirs dans le tableau de bord élève-par-élève.
+  Node.js a dû être installé sur ce PC perso (absent jusqu'ici,
+  contrairement au PC pro) pour lancer `outils/creer-comptes` — désormais
+  disponible sur cette machine pour la suite.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).
