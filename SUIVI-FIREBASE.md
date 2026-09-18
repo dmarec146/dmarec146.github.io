@@ -590,10 +590,41 @@ de changer ce réglage sans qu'il en reparle.
   (vérifié directement — un seul document écrit sur deux tentatives
   envoyées, la non-conforme correctement ignorée), la conforme si.
 
+  **Bandeau "devoir à faire" côté élève (18/09/2026)**, sur demande de
+  David pour le test réel du 19/09/2026 avec `demo-eleve` : jusqu'ici rien
+  ne prévenait l'élève qu'un devoir existait, même si l'attribution/le
+  suivi fonctionnaient déjà. Nouveau `assets/js/devoirs-notification.js`,
+  chargé sur les pages d'entrée du site (`index.html`, `cahiers/index.html`,
+  `automatismes/index.html`, `automatismes/premiere/index.html` — pas les
+  44 fiches individuelles, pour rester au niveau "dès la connexion" plutôt
+  que harceler sur chaque page). Pour un élève connecté (rien pour
+  l'enseignant, qui n'a pas de doc `eleves/{uid}` donc `classe` reste
+  `null` — le bandeau ne peut jamais s'afficher pour un compte admin) :
+  lit sa `classe`, cherche les `devoirs` de cette classe dont l'échéance
+  n'est pas encore passée (filtré CÔTÉ CLIENT sur `echeance.toMillis() >
+  Date.now()`, pas via une clause Firestore `>` — évite d'avoir besoin d'un
+  index composite, aucun outillage CLI Firebase sur ce dépôt pour en
+  déployer un), affiche un bandeau juste sous le header (`.devoir-bandeau`,
+  style.css) listant chacun avec son échéance et un lien direct (`ficheId`
+  pour un devoir fiche ; seule page existante `/automatismes/premiere/
+  sujet-blanc.html` pour un sujet blanc, l'élève doit y resélectionner
+  lui-même niveau/mode/durée). Statut "Pas encore fait"/"Déjà fait" par
+  devoir (lecture de `devoirsTentatives`, purement informatif, n'empêche
+  rien).
+
+  Testé de bout en bout avec le VRAI compte `demo-eleve` (identifiants
+  documentés ci-dessus, pas de compte jetable nécessaire ici) : devoir de
+  test créé sur `1ere-demo`, bandeau vérifié sur `index.html` ET
+  `cahiers/index.html` ("Pas encore fait"), tentative simulée puis
+  rechargement ("Déjà fait — tentatives encore possibles" en vert).
+  Devoir de test et tentative supprimés après coup.
+
   **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
   fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le niveau,
   le mode et la durée d'un sujet blanc ne sont pas non plus imposés/
-  verrouillés côté page (l'élève peut toujours changer librement).
+  verrouillés côté page (l'élève peut toujours changer librement), le
+  bandeau n'est pas encore chargé sur les 44 fiches individuelles ni sur
+  `automatismes/premiere/fiche.html`.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).
