@@ -2848,7 +2848,11 @@ function cablerCurseurUnique(svg) {
   const texte = svg.querySelector('.curseur-texte');
   const chemin = svg.querySelector('path');
   const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
-  const auPas = (v) => pas > 0 ? Math.round(v / pas) * pas : v;
+  // aimantation au doigt : au 1/10e du pas de la grille (donc 0,1 si le pas est 1), pas au pas
+  // entier lui-meme - trop grossier pour les questions qui demandent un antecedent decimal.
+  // Reste raisonnable (une decimale), pas une precision illusoire au pixel pres.
+  const pasFin = pas > 0 ? pas / 10 : 0;
+  const auPasFin = (v) => pasFin > 0 ? Math.round(v / pasFin) * pasFin : v;
 
   // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
   function pointCourbeA(pxCible) {
@@ -2886,9 +2890,9 @@ function cablerCurseurUnique(svg) {
     if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
     if (tactile) {
       let pxCible = local.x;
-      if (pas > 0) {
+      if (pasFin > 0) {
         const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
-        const xAimante = auPas(xBrut);
+        const xAimante = auPasFin(xBrut);
         pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
       }
       const ptCourbe = pointCourbeA(pxCible);
