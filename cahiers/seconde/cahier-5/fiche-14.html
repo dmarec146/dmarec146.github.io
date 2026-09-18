@@ -813,7 +813,14 @@ function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + m
 let etatAvantImpression = null;
 function preparerPourImpression() {
   const valeurs = {};
+  const valeursWidget = {};
   exercices.forEach((ex, idx) => {
+    // widget tableau de programme : pas de input-${idx} standard, capture/vide ses propres cases
+    // (memes fonctions que la reprise de brouillon, voir capturerEtatTableauProgramme plus haut).
+    if (ex.type === 'tableauProgramme') {
+      valeursWidget[idx] = capturerEtatTableauProgramme(idx);
+      reinitialiserTableauProgramme(idx);
+    }
     const input = document.getElementById('input-' + idx);
     if (input) { valeurs[idx] = input.value; input.value = ''; }
     const div = document.getElementById('q-' + idx);
@@ -827,12 +834,16 @@ function preparerPourImpression() {
   const toutesPanneau = document.getElementById('toutes-reponses-panneau');
   const toutesVisible = !!(toutesPanneau && toutesPanneau.classList.contains('visible'));
   if (toutesPanneau) toutesPanneau.classList.remove('visible');
-  etatAvantImpression = { valeurs, scoreVisible, toutesVisible };
+  etatAvantImpression = { valeurs, valeursWidget, scoreVisible, toutesVisible };
 }
 function restaurerApresImpression() {
   if (!etatAvantImpression) return;
-  const { valeurs, scoreVisible, toutesVisible } = etatAvantImpression;
+  const { valeurs, valeursWidget, scoreVisible, toutesVisible } = etatAvantImpression;
   exercices.forEach((ex, idx) => {
+    if (ex.type === 'tableauProgramme' && valeursWidget[idx]) {
+      restaurerEtatTableauProgramme(idx, valeursWidget[idx]);
+      verifierUne(idx);
+    }
     const input = document.getElementById('input-' + idx);
     if (input && valeurs[idx]) input.value = valeurs[idx];
     // recolore/reaffiche le statut en rappelant verifierUne() (deja coherent avec le gating
