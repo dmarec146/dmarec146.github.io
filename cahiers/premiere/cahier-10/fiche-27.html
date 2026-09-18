@@ -525,6 +525,26 @@ window.MathJax = {
   .clavier-visuel button:hover { background: #eee; border-color: var(--bleu); }
   .clavier-visuel button.touche-large { min-width: 60px; font-size: 12.5px; font-family: Georgia, serif; padding: 8px 12px; }
   .clavier-visuel button.touche-effacer { color: var(--rouge); border-color: var(--rouge-clair); }
+  /* ---------- Icone clavier + touche "Valider" du clavier maison, tactile uniquement -----------
+     Sur ordinateur, le clavier physique fait deja tout ca (touche Entree) : rien de tout ceci ne
+     doit y apparaitre ni s'y comporter differemment. Voir estAppareilTactile() cote JS pour le
+     contournement equivalent sur le clavier virtuel de MathLive (touche Entree). */
+  .q-clavier-icone-tactile { display: none; }
+  .clavier-groupe-tactile { display: none; }
+  @media (hover: none) {
+    .q-clavier-icone-desktop { display: none; }
+    .q-clavier-icone-tactile { display: inline-flex; align-items: center; }
+    .clavier-groupe-tactile { display: flex; }
+  }
+  .clavier-touche-valider {
+    background: var(--bleu) !important;
+    color: white !important;
+    border-color: var(--bleu) !important;
+    font-weight: bold;
+    width: 100%;
+  }
+  .clavier-touche-valider:hover { background: #3a36a0 !important; }
+
   .clavier-visuel .clavier-apercu {
     font-size: 12px;
     color: var(--gris);
@@ -896,7 +916,49 @@ window.MathJax = {
 // errone au lieu d'un exposant) : on force explicitement la disposition francaise.
 if (window.MathLive && window.MathLive.setKeyboardLayoutLocale) MathLive.setKeyboardLayoutLocale('fr');
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function exporterPDF() { window.print(); }
+// Export PDF vierge : les reponses deja tapees ne doivent pas apparaitre sur la fiche imprimee
+// (usage prevu : une fiche a redistribuer ou reimprimer vide), sans pour autant les perdre sur la
+// page elle-meme -- l'eleve continue son travail normalement juste apres. On vide les champs (et
+// masque le panneau de score/correction si deja valide) juste avant l'impression, puis on restaure
+// tout via "afterprint" (se declenche de facon fiable a la fermeture de la boite de dialogue
+// d'impression, qu'elle ait ete confirmee OU annulee).
+let etatAvantImpression = null;
+function preparerPourImpression() {
+  const valeurs = {};
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input) { valeurs[idx] = input.value; input.value = ''; }
+    const div = document.getElementById('q-' + idx);
+    if (div) div.classList.remove('correct', 'incorrect');
+    const statut = document.getElementById('statut-' + idx);
+    if (statut) statut.textContent = '';
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  const scoreVisible = !!(scorePanneau && scorePanneau.classList.contains('visible'));
+  if (scorePanneau) scorePanneau.classList.remove('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  const toutesVisible = !!(toutesPanneau && toutesPanneau.classList.contains('visible'));
+  if (toutesPanneau) toutesPanneau.classList.remove('visible');
+  etatAvantImpression = { valeurs, scoreVisible, toutesVisible };
+}
+function restaurerApresImpression() {
+  if (!etatAvantImpression) return;
+  const { valeurs, scoreVisible, toutesVisible } = etatAvantImpression;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && valeurs[idx]) input.value = valeurs[idx];
+    // recolore/reaffiche le statut en rappelant verifierUne() (deja coherent avec le gating
+    // "reveler") plutot qu'en restaurant les classes CSS a la main.
+    if (valeurs[idx]) verifierUne(idx);
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  if (scorePanneau && scoreVisible) scorePanneau.classList.add('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  if (toutesPanneau && toutesVisible) toutesPanneau.classList.add('visible');
+  etatAvantImpression = null;
+}
+window.addEventListener('afterprint', restaurerApresImpression);
+function exporterPDF() { preparerPourImpression(); window.print(); }
 
 let exercices = [
   // Calcul 27.1 - developpements (6 items)
@@ -1961,6 +2023,7 @@ function genererNouvelleFiche() {
   if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
   attacherEcouteurs();
+  attacherEcouteursTactiles();
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
@@ -2142,17 +2205,83 @@ function utiliseMathfield(ex) {
   return true;
 }
 
+// Vrai sur un appareil sans survol reel (tactile) : meme heuristique que le CSS "@media
+// (hover: none)" deja utilise pour le bouton curseur des graphiques. Sert a n'activer les
+// contournements tactiles ci-dessous (touche Entree du clavier virtuel, bouton "Valider" du
+// clavier maison) que la ou ils sont necessaires -- le clavier physique fonctionne deja tres
+// bien sur ordinateur, inutile d'y changer quoi que ce soit.
+function estAppareilTactile() {
+  return window.matchMedia && window.matchMedia('(hover: none)').matches;
+}
+
+// Calcule/enregistre silencieusement (voir "reveler" dans verifierUne) puis passe au champ
+// suivant -- reutilise par les contournements tactiles (voir estAppareilTactile) : le clavier
+// virtuel de MathLive et le clavier maison (.clavier-visuel) n'emettent pas de keydown "Enter"
+// quand on tape sur leurs propres touches, seulement des evenements "change"/clic -- une
+// tablette ne peut donc pas declencher le gestionnaire d'Entree habituel, d'ou cette fonction
+// appelable directement.
+function validerEtAvancer(idx) {
+  if (eleveConnecte) {
+    verifierUne(idx);
+    if (ficheValidee && toutesLesReponsesSontSaisies()) verifierTout();
+  } else if (modeImmediat) {
+    verifierUne(idx);
+    if (toutesLesReponsesSontSaisies()) verifierTout();
+  }
+  allerChampSuivant(idx);
+}
+
+// Tactile uniquement : la touche "Entree"/coche du clavier virtuel MathLive declenche un
+// "change" (jamais un keydown), donc jamais interceptee par le gestionnaire keydown existant --
+// sans ceci, valider une reponse au clavier virtuel ne fait simplement rien. Inoffensif sur les
+// champs a clavier maison uniquement (virtual-keyboard-mode="off" ou input texte simple) : leur
+// clavier (input.insert(), voir inserer()) n'emet jamais "change" (verifie), seul le bouton
+// "Valider" du clavier maison les declenche pour ceux-la. Appelee juste apres chaque appel
+// existant a attacherEcouteurs() (voir plus bas), pas fusionnee dedans : evite de toucher au
+// corps de cette fonction, deja variable d'une fiche a l'autre.
+function attacherEcouteursTactiles() {
+  if (!estAppareilTactile()) return;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && input.tagName === 'MATH-FIELD') input.addEventListener('change', () => validerEtAvancer(idx));
+  });
+}
+
+// Icone clavier du bouton "Clavier symboles" : caractere Unicode (&#9000;) sur ordinateur (rendu
+// fiable, l'utilisateur le trouve satisfaisant tel quel) -- SVG maison sur tablette/telephone
+// (voir ICONE_CLAVIER_SVG et la regle CSS .q-clavier-icone-tactile/@media(hover:none) qui bascule
+// de l'un a l'autre) : le glyphe Unicode y rend de facon incoherente selon les polices systeme
+// installees, contrairement a un SVG qui reste identique partout. S'inspire du glyphe actuel
+// (rectangle + cases).
+const ICONE_CLAVIER_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <rect x="2" y="6" width="20" height="13" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="6" cy="10" r="1" fill="currentColor"/><circle cx="10" cy="10" r="1" fill="currentColor"/>
+    <circle cx="14" cy="10" r="1" fill="currentColor"/><circle cx="18" cy="10" r="1" fill="currentColor"/>
+    <circle cx="6" cy="14" r="1" fill="currentColor"/><circle cx="10" cy="14" r="1" fill="currentColor"/>
+    <circle cx="14" cy="14" r="1" fill="currentColor"/><circle cx="18" cy="14" r="1" fill="currentColor"/>
+    <rect x="6" y="16.3" width="12" height="1.8" rx="0.9" fill="currentColor"/>
+  </svg>`;
+function iconeClavierBoutonHTML() {
+  return `<span class="q-clavier-icone-desktop">&#9000;</span><span class="q-clavier-icone-tactile">${ICONE_CLAVIER_SVG}</span>`;
+}
+// Touche "Valider" du clavier maison, tactile uniquement (voir CSS .clavier-groupe-tactile) :
+// equivalent de la touche Entree physique, absente de ce clavier -- sans elle, valider une
+// reponse tapee avec ce clavier est impossible sur un appareil sans clavier physique.
+function boutonValiderTactileHTML(idx) {
+  return `<div class="clavier-groupe clavier-groupe-tactile"><button class="touche-large clavier-touche-valider" onclick="validerEtAvancer(${idx})">✓ Valider</button></div>`;
+}
+
 function champReponsePour(idx, ex) {
   if (utiliseMathfield(ex)) {
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
               smart-fence="off" smart-superscript="on"
               virtual-keyboard-mode="manual"></math-field>
-    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>`;
   }
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
-    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${genererClavierPour(idx, ex)}</div>`;
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">${iconeClavierBoutonHTML()}</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -2323,6 +2452,7 @@ async function initialiserFiche() {
   }
 construireGrilles();
 attacherEcouteurs();
+attacherEcouteursTactiles();
 definirMode(true);
   mettreAJourEtatBoutons();
 

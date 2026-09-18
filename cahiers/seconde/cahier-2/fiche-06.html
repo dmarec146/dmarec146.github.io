@@ -684,7 +684,49 @@ window.MathJax = {
 // errone au lieu d'un exposant) : on force explicitement la disposition francaise.
 if (window.MathLive && window.MathLive.setKeyboardLayoutLocale) MathLive.setKeyboardLayoutLocale('fr');
 function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function exporterPDF() { window.print(); }
+// Export PDF vierge : les reponses deja tapees ne doivent pas apparaitre sur la fiche imprimee
+// (usage prevu : une fiche a redistribuer ou reimprimer vide), sans pour autant les perdre sur la
+// page elle-meme -- l'eleve continue son travail normalement juste apres. On vide les champs (et
+// masque le panneau de score/correction si deja valide) juste avant l'impression, puis on restaure
+// tout via "afterprint" (se declenche de facon fiable a la fermeture de la boite de dialogue
+// d'impression, qu'elle ait ete confirmee OU annulee).
+let etatAvantImpression = null;
+function preparerPourImpression() {
+  const valeurs = {};
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input) { valeurs[idx] = input.value; input.value = ''; }
+    const div = document.getElementById('q-' + idx);
+    if (div) div.classList.remove('correct', 'incorrect');
+    const statut = document.getElementById('statut-' + idx);
+    if (statut) statut.textContent = '';
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  const scoreVisible = !!(scorePanneau && scorePanneau.classList.contains('visible'));
+  if (scorePanneau) scorePanneau.classList.remove('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  const toutesVisible = !!(toutesPanneau && toutesPanneau.classList.contains('visible'));
+  if (toutesPanneau) toutesPanneau.classList.remove('visible');
+  etatAvantImpression = { valeurs, scoreVisible, toutesVisible };
+}
+function restaurerApresImpression() {
+  if (!etatAvantImpression) return;
+  const { valeurs, scoreVisible, toutesVisible } = etatAvantImpression;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && valeurs[idx]) input.value = valeurs[idx];
+    // recolore/reaffiche le statut en rappelant verifierUne() (deja coherent avec le gating
+    // "reveler") plutot qu'en restaurant les classes CSS a la main.
+    if (valeurs[idx]) verifierUne(idx);
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  if (scorePanneau && scoreVisible) scorePanneau.classList.add('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  if (toutesPanneau && toutesVisible) toutesPanneau.classList.add('visible');
+  etatAvantImpression = null;
+}
+window.addEventListener('afterprint', restaurerApresImpression);
+function exporterPDF() { preparerPourImpression(); window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 function choix(tab) { return tab[alea(0, tab.length - 1)]; }
 function melanger(tab) {
