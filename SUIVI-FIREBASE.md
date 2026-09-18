@@ -382,6 +382,17 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   (déterminé par le préfixe de `classe`, ex. "1ere-3" — aucune saisie
   supplémentaire nécessaire à la création des comptes).
 
+## Décision : persistance de la session (2026-09-18)
+
+La session Firebase reste ouverte indéfiniment après fermeture de l'onglet/du
+navigateur (comportement par défaut, aucun réglage particulier dans le code) —
+tant que l'élève ne clique pas sur "Se déconnecter". Risque identifié sur
+poste partagé (salle informatique) : l'élève suivant resterait connecté à la
+place du précédent. **David a choisi de garder ce fonctionnement** plutôt que
+de forcer une déconnexion à la fermeture de l'onglet, et de simplement
+rappeler aux élèves de se déconnecter en fin de séance — ne pas re-proposer
+de changer ce réglage sans qu'il en reparle.
+
 ## Comptes existants dans Firebase
 
 - Compte enseignant (email réel, droit `admin`).
