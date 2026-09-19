@@ -172,6 +172,13 @@ function genererPdf(eleves, cheminSortie, classe) {
   });
 }
 
+// Rend la classe/le groupe utilisable dans un nom de fichier (espaces ->
+// tirets, caracteres interdits sous Windows retires) : demande de David,
+// pour reperer un PDF d'etiquettes sans avoir a l'ouvrir.
+function glisseFichier(classe) {
+  return classe.trim().replace(/\s+/g, '-').replace(/[\\/:*?"<>|]/g, '');
+}
+
 async function main() {
   const [, , cheminCsv, classe] = process.argv;
   if (!cheminCsv) {
@@ -185,7 +192,11 @@ async function main() {
 
   const eleves = lireCsvComptes(cheminCsv);
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
-  const cheminSortie = path.join(__dirname, `etiquettes-${horodatage}.pdf`);
+  // Prefixe par la classe quand elle est fournie : etiquettes-1ere-Gr-3-<date>.pdf
+  // plutot que juste etiquettes-<date>.pdf, pour reperer le bon fichier
+  // sans l'ouvrir (surtout avec plusieurs classes/groupes generes le meme jour).
+  const prefixe = classe ? `${glisseFichier(classe)}-` : '';
+  const cheminSortie = path.join(__dirname, `etiquettes-${prefixe}${horodatage}.pdf`);
   await genererPdf(eleves, cheminSortie, classe);
 
   const parPage = COLONNES * LIGNES;
