@@ -366,7 +366,17 @@ async function devoirsPourAutomatisme(niveau, mode, duree, classe) {
 // seulement PENDANT la fenetre active du devoir. Cote UI, le blocage passe
 // par verifierEtatDevoirAutomatisme() (voir automatismes/premiere/
 // sujet-blanc.html) ; ce filtre ici est la seconde ligne de defense.
-async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total) {
+//
+// `repondues` et `baremeTotal` (19/09/2026, retour de David apres son test
+// reel) : jusque-la, `nbRepondues` recevait `total` (nombre de QUESTIONS de
+// la serie, toujours 10) et `totalExercices` valait 6 en dur -- une reponse
+// sciemment laissee vide n'apparaissait donc jamais dans le tableau de bord
+// (colonne "Non-reponses" forcee a "—" pour un devoir d'automatismes, voir
+// devoirs.js). `repondues` (nombre REEL de questions ayant une reponse,
+// calcule par moteur.js) et `baremeTotal` (points max du bareme choisi pour
+// CETTE serie, voir enregistrerAutomatisme) rendent ces deux champs a
+// nouveau justes.
+async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
@@ -378,8 +388,9 @@ async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, d
       await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
         devoirId: devoir.id,
         score: points,
-        totalExercices: 6,
-        nbRepondues: total,
+        totalExercices: baremeTotal,
+        nbQuestions: total,
+        nbRepondues: repondues,
         horodatage: serverTimestamp(),
       });
     }
@@ -463,12 +474,17 @@ export async function devoirAutomatismeActif() {
 // sujet-blanc.html et le callback onFinSerie dans assets/moteur.js). Pas de
 // suivi du mode fiche (pratique libre, non notee) ni des themes abordes
 // (tout est melange dans un sujet blanc).
-export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode, duree) {
+//
+// `repondues` (nombre reel de questions ayant une reponse) et `baremeTotal`
+// (points max du bareme de CETTE page, voir sujet-blanc.html) : voir le
+// commentaire devant enregistrerTentativeDevoirAutomatismeSiApplicable.
+export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode, duree, repondues, baremeTotal) {
   if (!utilisateurCourant) return;
   try {
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'automatismes'), {
       bonnes,
       total,
+      repondues,
       points,
       niveau,
       mode,
@@ -479,7 +495,7 @@ export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode
     console.warn('Suivi : enregistrement du sujet blanc impossible.', erreur);
     return;
   }
-  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total);
+  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal);
 }
 
 window.enregistrerTentative = enregistrerTentative;

@@ -776,6 +776,85 @@ de changer ce réglage sans qu'il en reparle.
   (jamais de `config.verrouille` fourni). Toutes les données de test
   supprimées après coup.
 
+  **Retours de David après son PREMIER vrai test d'un devoir de sujet blanc
+  (19/09/2026, devoir réel `1ere-demo`, niveau 2/chrono/3 min, 2 tentatives
+  avec des questions volontairement passées)** :
+
+  1. **Bug confirmé et corrigé** — une question passée sans réponse
+     n'apparaissait nulle part dans le tableau de bord. Cause : `nbRepondues`
+     recevait `total` (nombre de questions de la série, toujours 10, pas
+     "combien de réponses"), et `totalExercices` valait 6 en dur —
+     `devoirs.js` affichait donc "—" plutôt qu'un chiffre trompeur (déjà
+     documenté au moment du "Lot de 8 retours" ci-dessous, jamais corrigé
+     depuis). `moteur.js` (`verifierFinSerie`) calcule maintenant le nombre
+     RÉEL de réponses données (`ETAT.reponses.filter(r => r !== null).length`)
+     et le fait remonter dans le payload d'`onFinSerie` (`resultat.repondues`).
+     Côté `suivi.js`, `enregistrerAutomatisme`/
+     `enregistrerTentativeDevoirAutomatismeSiApplicable` reçoivent deux
+     nouveaux paramètres (`repondues`, `baremeTotal`) et écrivent
+     `nbQuestions` (nombre de questions, 10) SÉPARÉMENT de `totalExercices`
+     (points du barème, 5 depuis le point 4) — les deux sens qui se
+     partageaient auparavant le même champ ont chacun le leur.
+     `devoirs.js` : colonne "Non-réponses" calcule maintenant
+     `nbQuestions - nbRepondues` pour un devoir d'automatismes (comme
+     `totalExercices - nbRepondues` pour une fiche), avec repli sur "—" si
+     `nbQuestions` est absent (tentatives enregistrées avant ce correctif —
+     les deux tentatives réelles de David sur son devoir de test restent à
+     "—", sans conséquence, cette échéance-là est déjà passée).
+
+  2. **Chrono : possibilité de revenir sur une question passée, sans
+     dépasser le temps total** — refonte de `automatismes/assets/moteur.js`.
+     Le chrono ne suit plus une simple séquence 0→9 mais une FILE
+     (`ETAT.chrono.file`/`filePos`) : toutes les questions au premier
+     passage, puis seulement les questions sans réponse lors d'une reprise.
+     Un nouveau budget de temps GLOBAL (`tempsGlobalRestant()` = durée ×
+     nombre de questions − temps déjà écoulé) plafonne chaque minuteur
+     individuel (`lancerMinuteur` : `dureeEffective = min(duree,
+     tempsGlobalRestant())`) — jamais dépassé, y compris en reprise en fin
+     de temps. Une fois toutes les questions vues une première fois : écran
+     "récap" (nouvelle phase `ETAT.chrono.phase === 'recap'`, pas de
+     correction affichée, l'épreuve n'est pas finie) avec le nombre de
+     questions sans réponse et deux boutons — "Reprendre les questions sans
+     réponse" (masqué si plus de budget global ou rien à reprendre) et
+     "Terminer le sujet" (toujours disponible, bouton EXPLICITE : plus de
+     fin automatique sur la dernière question, le bouton "Valider et
+     terminer" disparaît au profit d'un simple "Valider →" partout, comme
+     demandé par David). Une question déjà répondue reste verrouillée
+     (jamais proposée à nouveau, confirmé avec David) : `reponses[i] ===
+     null` sert à la fois de "jamais vue" et de "passée", suffisant puisque
+     la file de reprise ne contient jamais que des index encore `null`.
+     Barre de progression recalculée par question D'ORIGINE (répondue ou
+     non) plutôt que par position dans la file en cours, pour rester lisible
+     pendant une reprise où l'ordre n'est plus 0→9.
+
+     Testé en conditions réelles (jeton `n.testeuse`, clics simulés via
+     `document.querySelector('[data-action=...]').click()` pour aller vite) :
+     série avec 2 questions passées → écran récap exact (numéros corrects,
+     temps restant correct) → reprise → minuteur individuel frais → série
+     terminée normalement une fois tout répondu. Série avec 6 questions
+     passées → "Terminer le sujet" cliqué directement (sans reprendre) →
+     tentative enregistrée avec `nbQuestions: 10, nbRepondues: 4` (vérifié en
+     base). Plafond du budget global vérifié en manipulant directement
+     `ETAT.chrono.tempsTotal`/`debut` (sans attendre en réel) : minuteur
+     individuel bien capé à ce qu'il reste du budget (`dureeEffective`
+     correct), et budget épuisé en cours de reprise → fin forcée directement
+     (pas de nouvel écran récap en boucle) même avec des questions encore
+     sans réponse. Revérifié aussi sur `automatismes/premiere/fiche.html`
+     (moteur partagé, pas de régression : récap atteint normalement, aucune
+     erreur console). Données de test supprimées après coup.
+
+  3. **Barème changé de 0,6 à 0,5 point par question (note sur 5, pas 6)** —
+     décidé par David, avec l'idée d'un barème réglable devoir par devoir
+     plus tard (pas fait, pas demandé pour l'instant). `sujet-blanc.html` :
+     `bareme` extrait dans une variable partagée entre la config
+     `Automatismes.demarrer()` et l'appel à `enregistrerAutomatisme` (évite
+     tout risque de désynchronisation entre le barème affiché et celui
+     enregistré) ; textes de la page (sous-titre, consigne officielle) et
+     `totalExercices` stocké en base mis à jour en conséquence. Un point 3 du
+     retour initial de David (texte de la page d'accueil après échéance) a
+     été abandonné après clarification — fausse alerte, à revoir plus tard
+     avec une autre idée de sa part.
+
   **Lot de 8 retours de David après son test réel du 19/09/2026** :
   1. Tooltip explicite sur le bouton "Valider" bloqué ("Tu as atteint le
      nombre maximal de tentatives pour ce devoir.") — le curseur

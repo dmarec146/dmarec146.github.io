@@ -33,7 +33,7 @@ window.MathJax = {
   <div class="badge" title="Sujet blanc">&#9733;</div>
   <div>
     <h1>Sujet blanc</h1>
-    <p class="sous-titre">Épreuve anticipée de Première — 10 questions sur tout le programme, notées sur 6 points</p>
+    <p class="sous-titre">Épreuve anticipée de Première — 10 questions sur tout le programme, notées sur 5 points</p>
   </div>
 </div>
 <div class="filet"></div>
@@ -42,7 +42,7 @@ window.MathJax = {
 
 <div class="consigne-epreuve">
   <b>Rappel de la consigne officielle.</b> Pour chaque question, une seule réponse est possible. Aucune justification n'est demandée. Une réponse fausse ou l'absence de réponse n'enlève aucun point.
-  <br><b>Barème.</b> 0,6 point par bonne réponse, soit 6 points au total — le poids de la première partie de l'épreuve.
+  <br><b>Barème.</b> 0,5 point par bonne réponse, soit 5 points au total — le poids de la première partie de l'épreuve.
   <br>Les thèmes sont tirés au sort dans les proportions relevées sur les sujets de l'année, et l'ordre des questions est mêlé, comme dans un vrai sujet. Le thème de chaque question n'est révélé qu'à la correction.
 </div>
 
@@ -109,6 +109,13 @@ window.MathJax = {
       }
     }
 
+    // 0,5 point par question (note sur 5) depuis le 19/09/2026, sur demande
+    // de David -- barème encore fixe ici, réglable devoir par devoir prévu
+    // plus tard (pas fait). Variable partagée avec l'appel à
+    // enregistrerAutomatisme plus bas (onFinSerie), pour ne jamais risquer
+    // de désynchroniser le "total" enregistré du barème réellement affiché.
+    const bareme = { parQuestion: 0.5, total: 5 };
+
     Automatismes.demarrer({
       domaines: [
         { nom: 'Pourcentages et proportions', poids: 26, banques: { 'pourcentages': 7, 'proportions': 3 } },
@@ -124,7 +131,7 @@ window.MathJax = {
       maxParBanque: 3,
       modeDefaut: 'chrono',
       duree: 120,
-      bareme: { parQuestion: 0.6, total: 6 },
+      bareme: bareme,
       detailParTheme: false,   // un sujet blanc donne la note, pas un bilan par thème
       masquerEtiquette: true,
       cible: '#app',
@@ -149,7 +156,7 @@ window.MathJax = {
             etatAvant = null;
           }
         }
-        if (window.enregistrerAutomatisme) window.enregistrerAutomatisme(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree);
+        if (window.enregistrerAutomatisme) window.enregistrerAutomatisme(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree, resultat.repondues, bareme.total);
         const zoneEtat = document.getElementById('suivi-etat');
         if (zoneEtat && etatAvant && etatAvant.bloque) {
           zoneEtat.textContent = `Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`;

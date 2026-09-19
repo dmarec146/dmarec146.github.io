@@ -496,24 +496,32 @@ async function afficherResultats(devoir) {
     badge.textContent = ligneDonnees.rendu ? 'Rendu' : 'Non rendu';
     celluleRendu.appendChild(badge);
 
-    // Math.round(...*10)/10 : les notes d'automatismes (points, bareme 0,6 par
-    // question) peuvent porter des artefacts de virgule flottante (0.6*7 =
-    // 4.199999999996) -- sans effet sur les scores entiers des fiches de calcul.
+    // Math.round(...*10)/10 : les notes d'automatismes (points, bareme 0,5 par
+    // question) peuvent porter des artefacts de virgule flottante (0.5*7 =
+    // 3.499999999996) -- sans effet sur les scores entiers des fiches de calcul.
     const celluleNote = document.createElement('td');
     celluleNote.textContent = ligneDonnees.meilleure
       ? `${Math.round(ligneDonnees.meilleure.score * 10) / 10} / ${ligneDonnees.meilleure.totalExercices}`
       : '—';
 
-    // Non-reponses = cases laissees vides par l'eleve sur SA meilleure
-    // tentative -- n'a de sens que pour un devoir de type fiche (nbRepondues
-    // y compte les champs remplis, voir validerFicheActuelle) ; pour un
-    // sujet blanc d'automatismes, nbRepondues porte un tout autre sens
-    // (nombre total de questions de la serie, pas "combien de reponses"),
-    // affiche "—" plutot qu'un chiffre trompeur.
+    // Non-reponses = cases/questions laissees vides par l'eleve sur SA
+    // meilleure tentative. Fiche : totalExercices - nbRepondues (nbRepondues
+    // compte les champs remplis, voir validerFicheActuelle). Automatismes
+    // (depuis le 19/09/2026) : nbQuestions - nbRepondues -- deux champs
+    // distincts, voir enregistrerTentativeDevoirAutomatismeSiApplicable
+    // (suivi.js) : totalExercices y porte le bareme (points), pas le nombre
+    // de questions. Les tentatives enregistrees AVANT ce correctif n'ont pas
+    // nbQuestions : affiche "—" plutot qu'un chiffre faux pour elles.
     const celluleNonReponses = document.createElement('td');
-    celluleNonReponses.textContent = (ligneDonnees.meilleure && devoir.type === 'fiche')
-      ? String(ligneDonnees.meilleure.totalExercices - ligneDonnees.meilleure.nbRepondues)
-      : '—';
+    if (!ligneDonnees.meilleure) {
+      celluleNonReponses.textContent = '—';
+    } else if (devoir.type === 'fiche') {
+      celluleNonReponses.textContent = String(ligneDonnees.meilleure.totalExercices - ligneDonnees.meilleure.nbRepondues);
+    } else if (typeof ligneDonnees.meilleure.nbQuestions === 'number') {
+      celluleNonReponses.textContent = String(ligneDonnees.meilleure.nbQuestions - ligneDonnees.meilleure.nbRepondues);
+    } else {
+      celluleNonReponses.textContent = '—';
+    }
 
     const celluleEssais = document.createElement('td');
     celluleEssais.textContent = `${ligneDonnees.nbEssais} / ${devoir.nbEssaisMax}`;

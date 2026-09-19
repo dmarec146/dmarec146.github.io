@@ -353,12 +353,20 @@
     nouvelleSerie();
   }
 
+  // état initial du chrono, partagé par les 3 points de départ d'une série
+  // ci-dessous. `file`/`filePos` : ordre des questions pour la PASSE en
+  // cours (toutes au premier passage, voir demarrerChrono ; seulement les
+  // sans-réponse lors d'une reprise, voir reprendreQuestionsPassees).
+  function nouvelEtatChrono() {
+    return { phase: 'intro', file: [], filePos: 0, enReprise: false, restant: ETAT.duree, dureeEffective: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+  }
+
   function nouvelleSerie() {
     arreterChrono();
     ETAT.questions = tirerSerie(ETAT.config, ETAT.niveau);
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
-    ETAT.chrono = { phase: 'intro', index: 0, restant: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    ETAT.chrono = nouvelEtatChrono();
     ETAT.serieSignalee = false;
     rendre();
   }
@@ -370,7 +378,7 @@
     ETAT.questions = (ids && ids.length) ? construireSeriePourBanques(ETAT.config, ETAT.niveau, ids) : tirerSerie(ETAT.config, ETAT.niveau);
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
-    ETAT.chrono = { phase: 'intro', index: 0, restant: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    ETAT.chrono = nouvelEtatChrono();
     ETAT.serieSignalee = false;
     rendre();
   }
@@ -379,7 +387,7 @@
     arreterChrono();
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
-    ETAT.chrono = { phase: 'intro', index: 0, restant: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    ETAT.chrono = nouvelEtatChrono();
     ETAT.serieSignalee = false;
     rendre();
   }
@@ -641,8 +649,9 @@
     ETAT.serieSignalee = true;
     const bonnes = compterBonnes();
     const total = ETAT.questions.length;
+    const repondues = ETAT.reponses.filter(r => r !== null).length;
     const points = ETAT.config.bareme ? arrondir(bonnes * ETAT.config.bareme.parQuestion, 2) : null;
-    ETAT.config.onFinSerie({ bonnes: bonnes, total: total, points: points, niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree });
+    ETAT.config.onFinSerie({ bonnes: bonnes, total: total, repondues: repondues, points: points, niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree });
   }
 
   function scoreHTML() {
@@ -683,6 +692,18 @@
   }
 
   // ----- vue chrono -----
+  // Budget de temps GLOBAL (19/09/2026, sur demande de David) : une question
+  // passée ou dont le temps individuel s'écoule est proposée à nouveau en fin
+  // de passe (voir recapHTML/reprendreQuestionsPassees), tant que ce budget
+  // global n'est pas épuisé -- jamais dépassé, chaque minuteur individuel
+  // (lancerMinuteur) se cale dessus. `duree === 0` (sans limite) : pas de
+  // budget à surveiller, la reprise reste offerte tant qu'il reste des
+  // questions sans réponse.
+  function tempsGlobalRestant() {
+    if (ETAT.duree === 0) return Infinity;
+    return Math.max(0, ETAT.duree * ETAT.questions.length - ETAT.chrono.tempsTotal);
+  }
+
   function vueChronoHTML() {
     const c = ETAT.chrono;
     const n = ETAT.questions.length;
@@ -692,11 +713,12 @@
       const total = d === 0 ? '' : ` (${Math.round(n * d / 60)} min au total au maximum)`;
       return `<div class="chrono-intro">
         <h2>${n} questions · ${dureeTxt}${total}</h2>
-        <p>Une seule question à l'écran. Cliquez sur une réponse puis sur « Valider » ; sans réponse à la fin du temps, on passe à la suivante.</p>
-        <p>Impossible de revenir en arrière. La correction complète s'affiche à la fin.</p>
+        <p>Une seule question à l'écran. Cliquez sur une réponse puis sur « Valider ». Une question passée ou dont le temps s'écoule pourra être reprise à la fin, tant que le temps total n'est pas dépassé.</p>
+        <p>Une fois validée, une réponse ne peut plus être changée. La correction complète s'affiche à la fin.</p>
         <button class="btn-principal" data-action="demarrer-chrono">Démarrer</button>
       </div>`;
     }
+    if (c.phase === 'recap') return recapHTML();
     if (c.phase === 'fin') {
       const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: true, cliquable: false })).join('');
       return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}
@@ -709,21 +731,48 @@
         <div class="liste-questions" id="revue" style="display:none">${cartes}</div>`;
     }
     // phase 'question'
-    const i = c.index;
+    const i = c.file[c.filePos];
     const q = ETAT.questions[i];
-    const prog = ETAT.questions.map((_, k) => `<span class="${k < i ? 'faite' : (k === i ? 'courante' : '')}"></span>`).join('');
+    // progression par question D'ORIGINE (pas par position dans la file en
+    // cours) : reste lisible pendant une reprise, où la file ne contient
+    // qu'un sous-ensemble des questions dans un ordre différent du départ.
+    const prog = ETAT.questions.map((_, k) => `<span class="${k === i ? 'courante' : (ETAT.reponses[k] !== null ? 'faite' : '')}"></span>`).join('');
     const tempsHTML = ETAT.duree === 0
       ? `<span class="chrono-infini">sans limite</span>`
       : `<span class="chrono-temps" id="chrono-temps">${formatTemps(c.restant)}</span>`;
-    const barre = ETAT.duree === 0 ? '' : `<div class="chrono-barre"><div class="chrono-remplissage" id="chrono-remplissage" style="width:${100 * c.restant / ETAT.duree}%"></div></div>`;
+    const barre = ETAT.duree === 0 ? '' : `<div class="chrono-barre"><div class="chrono-remplissage" id="chrono-remplissage" style="width:${c.dureeEffective > 0 ? 100 * c.restant / c.dureeEffective : 0}%"></div></div>`;
     return `<div class="progression">${prog}</div>
-      <div class="chrono-entete"><span class="position">Question ${i + 1} / ${n}</span>${tempsHTML}</div>
+      <div class="chrono-entete"><span class="position">Question ${i + 1} / ${n}${c.enReprise ? ' · reprise' : ''}</span>${tempsHTML}</div>
       ${barre}
       <div id="carte-courante">${carteHTML(q, i, { choix: c.choix, corrigee: false, cliquable: true })}</div>
       <div class="barre-controle">
-        <button class="btn-principal" data-action="valider" id="btn-valider" ${c.choix === null ? 'disabled' : ''}>${i === n - 1 ? 'Valider et terminer' : 'Valider →'}</button>
+        <button class="btn-principal" data-action="valider" id="btn-valider" ${c.choix === null ? 'disabled' : ''}>Valider →</button>
         <button class="btn-secondaire" data-action="passer">Passer sans répondre</button>
       </div>`;
+  }
+
+  // écran intermédiaire entre deux passes (voir tempsGlobalRestant ci-dessus) :
+  // pas de correction affichée ici (l'épreuve n'est pas terminée), juste un
+  // état des lieux et le choix de reprendre les questions sans réponse ou de
+  // clore volontairement le sujet.
+  function recapHTML() {
+    const c = ETAT.chrono;
+    const n = ETAT.questions.length;
+    const repondues = ETAT.reponses.filter(r => r !== null).length;
+    const aRevoir = ETAT.questions.map((_, k) => k).filter(k => ETAT.reponses[k] === null);
+    const globalRestant = tempsGlobalRestant();
+    const dispoReprise = aRevoir.length > 0 && globalRestant > 0;
+    return `<div class="chrono-intro">
+      <h2>${repondues} / ${n} questions répondues</h2>
+      <p>${aRevoir.length > 0
+        ? `${aRevoir.length} question${aRevoir.length > 1 ? 's' : ''} sans réponse : n°${aRevoir.map(k => k + 1).join(', n°')}.`
+        : 'Toutes les questions ont une réponse.'}</p>
+      ${ETAT.duree > 0 ? `<p>Temps restant : ${formatTemps(globalRestant)}.</p>` : ''}
+      <div class="barre-controle">
+        ${dispoReprise ? `<button class="btn-principal" data-action="reprendre">Reprendre les questions sans réponse</button>` : ''}
+        <button class="${dispoReprise ? 'btn-secondaire' : 'btn-principal'}" data-action="terminer-serie">Terminer le sujet</button>
+      </div>
+    </div>`;
   }
 
   function formatTemps(s) {
@@ -733,26 +782,63 @@
 
   function demarrerChrono() {
     ETAT.chrono.phase = 'question';
-    ETAT.chrono.index = 0;
+    ETAT.chrono.file = ETAT.questions.map((_, i) => i);
+    ETAT.chrono.filePos = 0;
+    ETAT.chrono.enReprise = false;
     ETAT.chrono.choix = null;
     ETAT.chrono.tempsTotal = 0;
     lancerMinuteur();
     rendre();
   }
 
+  function reprendreQuestionsPassees() {
+    const c = ETAT.chrono;
+    c.file = ETAT.questions.map((_, i) => i).filter(i => ETAT.reponses[i] === null);
+    c.filePos = 0;
+    c.enReprise = true;
+    c.phase = 'question';
+    c.choix = null;
+    lancerMinuteur();
+    rendre();
+  }
+
+  function terminerSerie() {
+    arreterChrono();
+    const c = ETAT.chrono;
+    c.phase = 'fin';
+    ETAT.corrigees = ETAT.questions.map(() => true);
+    rendre();
+    verifierFinSerie();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // fin de la passe en cours (tous les éléments de ETAT.chrono.file ont été
+  // vus) : termine directement s'il ne reste rien à revoir ou plus de temps
+  // global, sinon propose une reprise (voir recapHTML).
+  function finDeFile() {
+    const aRevoir = ETAT.questions.some((_, k) => ETAT.reponses[k] === null);
+    if (!aRevoir || tempsGlobalRestant() <= 0) { terminerSerie(); return; }
+    ETAT.chrono.phase = 'recap';
+    rendre();
+  }
+
   function lancerMinuteur() {
     arreterChrono();
     const c = ETAT.chrono;
-    c.restant = ETAT.duree;
     c.debut = Date.now();
-    if (ETAT.duree === 0) return;
+    if (ETAT.duree === 0) { c.restant = 0; c.dureeEffective = 0; return; }
+    // cale le minuteur individuel sur ce qu'il reste du budget global : ne
+    // permet jamais de le dépasser, y compris en reprise en fin de temps.
+    c.dureeEffective = Math.min(ETAT.duree, tempsGlobalRestant());
+    c.restant = c.dureeEffective;
+    if (c.dureeEffective <= 0) { avancer(true); return; } // budget global deja epuise
     c.timer = setInterval(() => {
-      c.restant = ETAT.duree - (Date.now() - c.debut) / 1000;
+      c.restant = c.dureeEffective - (Date.now() - c.debut) / 1000;
       const t = document.getElementById('chrono-temps');
       const b = document.getElementById('chrono-remplissage');
       const alerte = c.restant <= 10;
       if (t) { t.textContent = formatTemps(c.restant); t.classList.toggle('alerte', alerte); }
-      if (b) { b.style.width = Math.max(0, 100 * c.restant / ETAT.duree) + '%'; b.classList.toggle('alerte', alerte); }
+      if (b) { b.style.width = Math.max(0, 100 * c.restant / c.dureeEffective) + '%'; b.classList.toggle('alerte', alerte); }
       if (c.restant <= 0) avancer(true);
     }, 200);
   }
@@ -766,17 +852,14 @@
     if (c.phase !== 'question') return;
     c.tempsTotal += (Date.now() - c.debut) / 1000;
     arreterChrono();
-    ETAT.reponses[c.index] = c.choix; // en cas de temps écoulé, on garde la réponse cliquée mais non validée
+    ETAT.reponses[c.file[c.filePos]] = c.choix; // en cas de temps écoulé, on garde la réponse cliquée mais non validée
     c.choix = null;
-    if (c.index >= ETAT.questions.length - 1) {
-      c.phase = 'fin';
-      ETAT.corrigees = ETAT.questions.map(() => true);
-      rendre();
-      verifierFinSerie();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    c.filePos++;
+    if (c.filePos >= c.file.length) {
+      finDeFile();
+      if (tempsEcoule) window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    c.index++;
     lancerMinuteur();
     rendre();
     if (tempsEcoule) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -803,6 +886,8 @@
       else if (action === 'demarrer-chrono') demarrerChrono();
       else if (action === 'valider') avancer(false);
       else if (action === 'passer') { ETAT.chrono.choix = null; avancer(false); }
+      else if (action === 'reprendre') reprendreQuestionsPassees();
+      else if (action === 'terminer-serie') terminerSerie();
       else if (action === 'basculer-revue') {
         const rev = document.getElementById('revue');
         const visible = rev.style.display !== 'none';
@@ -826,7 +911,7 @@
       majBilan();
     } else {
       const c = ETAT.chrono;
-      if (c.phase !== 'question' || i !== c.index) return;
+      if (c.phase !== 'question' || i !== c.file[c.filePos]) return;
       c.choix = (c.choix === k) ? null : k;
       const carte = document.getElementById('carte-courante');
       carte.querySelectorAll('.opt').forEach((b, idx) => b.classList.toggle('choisie', idx === c.choix));
