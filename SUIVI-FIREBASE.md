@@ -108,6 +108,25 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
   de piège que `.tdb-onglets[hidden]` déjà noté plus bas. Résolu en pilotant
   `style.display` directement (`'none'`/`'inline-flex'`) plutôt que
   l'attribut `hidden`, qui évite toute ambiguïté de cascade.
+
+  **Décalage encore signalé par David le 19/09/2026 sur certaines pages** :
+  le correctif `display:none`/`'inline-flex'` ci-dessus évite bien
+  l'insertion tardive d'un nœud, mais PAS le décalage lui-même —
+  `display:none` retire l'icône du flux, donc la barre se redistribue
+  quand même au moment où `getIdTokenResult` confirme le droit admin et
+  bascule l'icône en `inline-flex`, un instant après le premier rendu.
+  Invisible sur une barre large avec de la marge, mais visible dès que la
+  barre est déjà proche de son point de repli. Corrigé en réservant
+  l'espace avec **`visibility`** plutôt que `display` : `visibility:
+  hidden` dès la création (l'icône occupe déjà sa place, juste invisible),
+  puis seulement `visibility:visible` une fois admin confirmé — aucune
+  redistribution possible puisque l'espace était déjà compté au premier
+  rendu. `display:none` n'intervient plus que pour l'état NON-admin
+  (déconnecté ou élève), où récupérer l'espace ne gêne personne : cette
+  icône n'a jamais été visible pour ces visiteurs. Vérifié avec un compte
+  admin temporaire sur les deux variantes (`.site-nav` et
+  `.barre-navigation`), et l'état non-admin/déconnecté (espace bien
+  récupéré, `display:none`, largeur 0).
 - Suivi câblé sur **les 44 fiches de calcul** (Première + Seconde) — le
   pilote (`cahiers/premiere/cahier-1/fiche-01.html`) puis les 43 autres,
   même schéma partout (voir `assets/js/suivi.js`). Score = questions

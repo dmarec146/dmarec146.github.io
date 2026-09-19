@@ -73,22 +73,25 @@ const cible = nav || barreNav;
 
 if (cible) {
   // Icone Tableau de bord : creee et inseree tout de suite (comme le bouton
-  // profil ci-dessous) mais masquee -- reste admin uniquement, n'apparait
-  // donc jamais pour la tres grande majorite des visiteurs. La rendre
-  // visible plus tard (une fois le droit admin confirme) ne fait que
-  // modifier un noeud DEJA present dans le DOM, plutot que d'en inserer un
-  // nouveau apres coup (voir commentaire en tete de fichier) -- evite le
-  // decalage de toute la barre de navigation.
+  // profil ci-dessous) -- reste admin uniquement, n'apparait donc jamais
+  // pour la tres grande majorite des visiteurs. La rendre visible plus tard
+  // (une fois le droit admin confirme) ne fait que modifier un noeud DEJA
+  // present dans le DOM, plutot que d'en inserer un nouveau apres coup
+  // (voir commentaire en tete de fichier).
   //
-  // Masquage via style.display (pas l'attribut "hidden" standard) : la
-  // regle .nav-icone-profil (display:inline-flex, voir style.css) et
-  // styliserCommeIconeCompacte (display inline-flex pose EN LIGNE) gagnent
-  // toutes les deux contre "[hidden] { display:none }" -- meme piege deja
-  // rencontre sur .tdb-onglets[hidden] (voir SUIVI-FIREBASE.md), pire ici
-  // pour la variante barre-navigation ou le display est carrement pose en
-  // style inline. Fixer directement style.display evite toute ambiguite de
-  // cascade : c'est la meme propriete, ecrite au meme endroit, la derniere
-  // valeur ecrite l'emporte toujours.
+  // Masquage initial via VISIBILITY (pas display, pas l'attribut "hidden")
+  // : visibility:hidden reserve quand meme sa place dans la ligne, alors
+  // que display:none (essaye d'abord, 19/09/2026) retire l'element du flux
+  // -- le faire apparaitre ensuite (une fois le droit admin confirme, apres
+  // l'aller-retour async getIdTokenResult) redistribue alors les autres
+  // boutons de la barre, un decalage encore visible sur les pages ou la
+  // barre est deja proche de son point de repli en plusieurs lignes. Avec
+  // visibility, l'espace est deja compte des le premier rendu : plus aucun
+  // decalage possible en devenant visible. Seul cas ou l'espace est
+  // effectivement rendu (display:none) : une fois l'etat NON-admin confirme
+  // (deconnecte ou eleve) -- change a un moment ou personne ne regarde
+  // precisement cette icone puisqu'elle n'a jamais ete visible pour ce
+  // visiteur, donc sans decalage genant en pratique.
   const lienTableau = document.createElement('a');
   lienTableau.href = '/tableau-de-bord/';
   lienTableau.title = 'Tableau de bord';
@@ -97,7 +100,7 @@ if (cible) {
   lienTableau.dataset.navAuth = 'true';
   if (nav) lienTableau.className = 'nav-icone-profil';
   else styliserCommeIconeCompacte(lienTableau);
-  lienTableau.style.display = 'none';
+  lienTableau.style.visibility = 'hidden';
   cible.appendChild(lienTableau);
 
   const bouton = document.createElement('button');
@@ -122,7 +125,15 @@ if (cible) {
     }
 
     const resultatToken = await utilisateur.getIdTokenResult();
-    if (resultatToken.claims.admin === true) lienTableau.style.display = 'inline-flex';
+    if (resultatToken.claims.admin === true) {
+      // 'inline-flex' explicite (pas '' pour retomber sur la regle CSS) :
+      // pour la variante barre-navigation, le display vient d'un style EN
+      // LIGNE pose par styliserCommeIconeCompacte, pas d'une classe -- vider
+      // style.display retomberait sur le display par defaut d'un <a>
+      // (inline), sans les proprietes flex de centrage.
+      lienTableau.style.display = 'inline-flex';
+      lienTableau.style.visibility = 'visible';
+    }
 
     const identifiant = identifiantAffichable(utilisateur);
     bouton.title = identifiant ? `Se déconnecter (${identifiant})` : 'Se déconnecter';
