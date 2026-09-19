@@ -497,44 +497,67 @@ body.mode-export-cahier > .site-pied {
 }
 .menu-rapide a:hover { background: var(--accent); color: white; }
 
-/* ---------- Bandeau "devoir a faire" (assets/js/devoirs-notification.js) :
-   injecte juste apres le header pour un eleve connecte avec au moins un
-   devoir dont l'echeance n'est pas encore passee. Bordure epaisse en bas
-   (meme principe que .site-entete) plutot qu'un encadre isole, pour rester
-   bien visible sans etre alarmant (pas rouge, l'echeance n'est pas depassee
-   -- voir .devoir-bandeau-statut-rendu/-attente pour la nuance par devoir). ---------- */
-.devoir-bandeau {
+/* ---------- Bloc "Devoirs" (assets/js/devoirs-notification.js) : injecte
+   juste apres le header pour un eleve connecte ayant une classe avec au
+   moins un devoir deja attribue. Remplace le 19/09/2026 l'ancien bandeau
+   pleine largeur qui listait chaque devoir ici meme -- desormais un simple
+   lien permanent vers /mes-devoirs/, avec une pastille (nombre de devoirs
+   A FAIRE) affichee seulement si elle est non nulle. ---------- */
+.devoir-bloc-enveloppe { padding: 14px 0; }
+.devoir-bloc {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 999px;
   background: var(--accent-clair);
-  border-bottom: 3px solid var(--accent);
-  padding: 16px 0;
-}
-.devoir-bandeau-interieur {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-.devoir-bandeau-icone { flex: 0 0 auto; color: var(--accent); }
-.devoir-bandeau-titre {
-  margin: 0 0 8px;
-  font-weight: bold;
+  border: 1.5px solid var(--accent);
   color: var(--encre);
-}
-.devoir-bandeau-liste {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.92rem;
-}
-.devoir-bandeau-item { margin-bottom: 8px; }
-.devoir-bandeau-item:last-child { margin-bottom: 0; }
-.devoir-bandeau-lien {
+  text-decoration: none;
   font-weight: 600;
-  color: var(--accent);
 }
-.devoir-bandeau-lien:hover { text-decoration: underline; }
-.devoir-bandeau-statut-attente { color: var(--rouge); font-weight: 600; }
-.devoir-bandeau-statut-rendu { color: var(--vert); font-weight: 600; }
-.devoir-bandeau-statut-epuise { color: var(--gris-600); font-weight: 600; }
+.devoir-bloc:hover { background: var(--accent); color: white; }
+.devoir-bloc-icone { flex: 0 0 auto; color: var(--accent); display: inline-flex; }
+.devoir-bloc:hover .devoir-bloc-icone { color: white; }
+.devoir-bloc-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--rouge);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 2px solid var(--papier);
+}
+
+/* ---------- Page /mes-devoirs/ (assets/js/mes-devoirs.js) : listes "A
+   faire"/"Faits", meme palette de statut que l'ancien bandeau ci-dessus
+   (rouge = a faire, vert = deja rendu, gris = tentatives epuisees). ------- */
+.md-liste { list-style: none; margin: 0 0 24px; padding: 0; }
+.md-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: var(--rayon-sm);
+  border: 1.5px solid var(--gris-200);
+  background: var(--papier);
+}
+a.md-item-lien { text-decoration: none; color: inherit; }
+a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-clair); }
+.md-item-titre { font-weight: bold; color: var(--encre); }
+.md-item-meta { font-size: 0.88rem; color: var(--gris-600); }
+.md-item-fait { border-color: var(--gris-200); }
 
 /* ---------- Pied de page ---------- */
 .site-pied {

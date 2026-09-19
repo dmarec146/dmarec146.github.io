@@ -40,8 +40,8 @@ function afficherEtat(element, texte) {
   element.hidden = false;
 }
 
-// "2nde-207" -> "207" : le niveau (2nde/1ere/term) n'apporte rien ici,
-// seul le numero de classe distingue tes groupes au meme niveau.
+// "2nde-207" -> "207" (le niveau n'apporte rien pour une classe normale) ;
+// "1ere-Gr 1" -> "1ere - Gr 1" (voir commentaire plus bas).
 function formaterClasseAffichee(classe) {
   if (!classe) return '—';
   const i = classe.lastIndexOf('-');

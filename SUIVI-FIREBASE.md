@@ -937,6 +937,42 @@ de changer ce réglage sans qu'il en reparle.
   cette même session (jamais nettoyée à l'époque) — document `resultats`
   de ce couple (n.testeuse, fiche-01) supprimé entièrement plutôt que
   reconstruit à la main (compte de test jetable, pas de perte réelle).
+
+  **Tableau de bord élève : `/mes-devoirs/` (19/09/2026, demande de
+  David)** : jusque-là, le seul point d'entrée élève était le bandeau
+  pleine largeur listant chaque devoir en détail. Remplacé par un bloc
+  compact "Devoirs" (pilule, icône cloche) avec une pastille de
+  notification — le nombre de devoirs **à faire**, affichée seulement si
+  non nulle — sur les 4 mêmes pages d'entrée qu'avant
+  (`assets/js/devoirs-notification.js`, entièrement réécrit). Le clic mène
+  à une nouvelle page `/mes-devoirs/` (`assets/js/mes-devoirs.js`) avec
+  deux listes : "À faire" (triée par échéance la plus proche, tentatives
+  restantes affichées, chaque ligne est un lien direct vers la fiche ou le
+  sujet blanc) et "Faits" (triée par dernière activité la plus récente,
+  meilleure tentative avant l'échéance affichée — "Non rendu" si aucune —
+  lignes non cliquables).
+
+  Critère à faire/fait décidé avec David : un devoir dont les tentatives
+  sont épuisées bascule "fait" **dès l'épuisement**, même si l'échéance
+  court encore — "à faire" ne contient que ce qui reste réellement
+  actionnable (la pastille de notification suit ce même critère). Page
+  réservée à un compte élève connecté (redirige vers `/connexion/` sinon,
+  même garde que `tableau-de-bord.js` côté enseignant) ; si le compte n'a
+  pas de `classe` (cas d'un compte admin par erreur), message dédié plutôt
+  qu'une page vide silencieuse.
+
+  Duplication assumée avec `devoirs.js` (vue "Résultats" enseignant) pour
+  le calcul de la meilleure tentative avant échéance — même logique, même
+  raison de ne pas coupler (fonction triviale, voir pièges plus bas) que
+  pour `formaterClasseAffichee`/`lienPour`.
+
+  Testé en conditions réelles (jeton `n.testeuse`) avec 4 devoirs de test
+  couvrant les 4 cas : à faire (actif, essais restants), épuisé mais actif
+  (bascule "fait" comme prévu), passé avec note, passé jamais rendu — les
+  quatre affichés correctement dans la bonne section avec le bon texte.
+  Pastille confirmée (1, le seul "à faire"), absente pour un visiteur
+  anonyme, page `/mes-devoirs/` confirmée redirigeant vers `/connexion/`
+  sans session. Données de test supprimées après coup.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).
