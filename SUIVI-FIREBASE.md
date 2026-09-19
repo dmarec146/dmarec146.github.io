@@ -724,6 +724,58 @@ de changer ce réglage sans qu'il en reparle.
   4 pages d'entrée du site (pas les 44 fiches individuelles ni
   `automatismes/premiere/fiche.html`) — inchangé par ce chantier.
 
+  **Verrouillage niveau/mode/durée pendant un devoir d'automatismes
+  (19/09/2026, sur demande de David juste après ce qui précède)** : David a
+  fait remarquer que c'est LUI qui choisit niveau/mode/durée à
+  l'attribution — l'approche passive ci-dessus (l'élève choisit librement,
+  seule une tentative correspondant au devoir est comptée) pouvait laisser
+  un élève jouer "à côté" sans le savoir. `sujet-blanc.html` verrouille
+  maintenant la page sur les valeurs du devoir tant que l'échéance n'est
+  pas passée.
+
+  Nouvelle fonction exportée `devoirAutomatismeActif()` (`suivi.js`) :
+  contrairement à `verifierEtatDevoirAutomatisme(niveau, mode, duree)`
+  (qui vérifie un COMBO précis, appelée après une série), celle-ci cherche
+  le devoir actif d'automatismes de la classe de l'élève SANS connaître
+  niveau/mode/durée à l'avance (seul `type`+`classe` en filtre Firestore,
+  échéance filtrée côté client comme `verifierEtatDevoir`) — nécessaire ici
+  puisqu'on veut justement CE devoir pour savoir sur quoi verrouiller,
+  avant qu'aucune série n'ait été jouée. Renvoie aussi `niveau`/`mode`/
+  `duree` (pas seulement le statut essais/blocage).
+
+  `automatismes/assets/moteur.js` accepte un nouveau `config.verrouille =
+  {niveau, mode, duree, titre, echeanceTexte}` optionnel (rétrocompatible :
+  absent pour `fiche.html`, qui n'est pas concernée) : `demarrer()` applique
+  ces valeurs à `ETAT` au lieu des défauts, `changerMode`/`changerNiveau`/le
+  `<select>` de durée deviennent des no-op tant qu'il est présent, et
+  `panneauModesHTML()` affiche un résumé non cliquable (pastille bleue,
+  nouvelles classes CSS `.mode-panneau-verrouille`/`.mode-verrouille-resume`
+  dans `automatismes.css`) à la place des boutons de choix habituels.
+  `sujet-blanc.html` attend `DOMContentLoaded` avant d'appeler
+  `Automatismes.demarrer()` (piège déjà documenté plus bas : `suivi.js` est
+  un `<script type="module">`, différé, un script classique plus bas dans
+  la page peut s'exécuter avant que `window.devoirAutomatismeActif` existe)
+  et construit `verrouille` à partir du devoir trouvé, sinon `null` (page
+  normale). `assets/js/devoirs-notification.js` : commentaire obsolète
+  corrigé (disait que l'élève devait choisir lui-même en arrivant sur la
+  page, plus vrai depuis ce verrouillage).
+
+  Testé en conditions réelles (jeton `n.testeuse`, devoir de test niveau 3/
+  chrono/60 s délibérément différent des défauts de la page pour bien
+  distinguer un verrouillage réel d'une coïncidence, 2 essais max) :
+  panneau verrouillé affiché au lieu des boutons, série lancée directement
+  au niveau/mode/durée du devoir (vérifié via `Automatismes.etat`, exposé
+  sur `window` par le moteur), deux séries menées à terme (minuteur
+  accéléré artificiellement via `ETAT.chrono.debut`, plutôt que d'attendre
+  60 s × 10 questions en réel) confirmant `essaisUtilises` à 1 puis 2,
+  troisième série déclenchant bien le message "tentative qui ne compte
+  plus", `essaisUtilises` resté bloqué à 2. Après passage de l'échéance
+  dans le passé (modifiée directement en base) : page revenue au panneau
+  normal, boutons cliquables, comme prévu. `automatismes/premiere/
+  fiche.html` revérifiée séparément : aucun changement de comportement
+  (jamais de `config.verrouille` fourni). Toutes les données de test
+  supprimées après coup.
+
   **Lot de 8 retours de David après son test réel du 19/09/2026** :
   1. Tooltip explicite sur le bouton "Valider" bloqué ("Tu as atteint le
      nombre maximal de tentatives pour ce devoir.") — le curseur

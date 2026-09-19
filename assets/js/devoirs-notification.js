@@ -35,9 +35,10 @@ function formaterEcheance(millis) {
 // Pour un devoir de type fiche, lien direct vers la fiche (ficheId est deja
 // un chemin absolu depuis la racine, voir FICHE_ID = window.location.pathname
 // dans chaque fiche). Pour un sujet blanc d'automatismes, une seule page
-// existe quel que soit le niveau/mode/duree choisis a l'attribution --
-// l'eleve doit les selectionner lui-meme en y arrivant (precise dans le texte
-// du bandeau, voir afficherBandeau ci-dessous).
+// existe quel que soit le niveau/mode/duree choisis a l'attribution -- la
+// page se verrouille elle-meme dessus tant que l'echeance n'est pas passee
+// (devoirAutomatismeActif dans suivi.js + config.verrouille dans
+// sujet-blanc.html), rien a preciser ici a ce sujet.
 function lienPour(devoir) {
   return devoir.type === 'fiche' ? devoir.ficheId : '/automatismes/premiere/sujet-blanc.html';
 }

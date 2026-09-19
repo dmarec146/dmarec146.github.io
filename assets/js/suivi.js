@@ -418,6 +418,47 @@ export async function verifierEtatDevoirAutomatisme(niveau, mode, duree) {
   }
 }
 
+// Devoir d'automatismes actif (echeance pas encore passee) pour la classe de
+// l'eleve connecte, tous niveau/mode/duree confondus -- appelee AVANT de
+// lancer une serie (voir sujet-blanc.html), pour verrouiller la page sur le
+// niveau/mode/duree choisis par l'enseignant a l'attribution plutot que de
+// laisser l'eleve les choisir librement pendant la fenetre active du devoir.
+// S'il existe plusieurs devoirs actifs pour la meme classe, seul le premier
+// trouve sert au verrouillage (cas non prevu en pratique : un seul devoir
+// d'automatismes actif a la fois par classe).
+export async function devoirAutomatismeActif() {
+  await authPrete;
+  if (!utilisateurCourant) return null;
+  try {
+    const classe = await classeEleve();
+    if (!classe) return null;
+    const instantane = await getDocs(query(
+      collection(db, 'devoirs'),
+      where('type', '==', 'automatismes'),
+      where('classe', '==', classe)
+    ));
+    const maintenant = Date.now();
+    const devoir = instantane.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
+    if (!devoir) return null;
+    const essaisUtilises = await nbEssaisUtilises(devoir.id);
+    return {
+      titre: devoir.titre,
+      niveau: devoir.niveau,
+      mode: devoir.mode,
+      duree: devoir.duree,
+      nbEssaisMax: devoir.nbEssaisMax,
+      essaisUtilises,
+      echeance: devoir.echeance.toMillis(),
+      bloque: essaisUtilises >= devoir.nbEssaisMax,
+    };
+  } catch (erreur) {
+    console.warn('Suivi : recherche du devoir actif (automatismes) impossible.', erreur);
+    return null;
+  }
+}
+
 // Un sujet blanc termine (mode chrono uniquement, voir automatismes/premiere/
 // sujet-blanc.html et le callback onFinSerie dans assets/moteur.js). Pas de
 // suivi du mode fiche (pratique libre, non notee) ni des themes abordes
@@ -450,3 +491,4 @@ window.validerFiche = validerFiche;
 window.estConnecte = estConnecte;
 window.verifierEtatDevoir = verifierEtatDevoir;
 window.verifierEtatDevoirAutomatisme = verifierEtatDevoirAutomatisme;
+window.devoirAutomatismeActif = devoirAutomatismeActif;

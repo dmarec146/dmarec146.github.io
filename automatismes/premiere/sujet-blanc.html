@@ -46,7 +46,7 @@ window.MathJax = {
   <br>Les thèmes sont tirés au sort dans les proportions relevées sur les sujets de l'année, et l'ordre des questions est mêlé, comme dans un vrai sujet. Le thème de chaque question n'est révélé qu'à la correction.
 </div>
 
-<div id="app"></div>
+<div id="app">Chargement…</div>
 <p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;text-align:center;" hidden></p>
 
 <div class="barre-navigation">
@@ -77,62 +77,96 @@ window.MathJax = {
      Les deux derniers domaines partagent la banque 08, d'où ses 15 %.
      À l'intérieur d'un domaine, les poids répartissent les places entre les
      banques qui le composent. */
-  Automatismes.demarrer({
-    domaines: [
-      { nom: 'Pourcentages et proportions', poids: 26, banques: { 'pourcentages': 7, 'proportions': 3 } },
-      { nom: 'Calcul littéral et équations', poids: 25, banques: { 'developper-factoriser': 4, 'equations': 6 } },
-      { nom: 'Fonctions et lectures graphiques', poids: 23, banques: { 'droites': 5, 'lectures-graphiques': 5 } },
-      { nom: 'Calcul numérique', poids: 11, banques: { 'calcul-numerique': 1 } },
-      { nom: 'Probabilités et statistiques', poids: 15, banques: { 'probabilites': 1 } }
-    ],
-    nb: 10,
-    // Plafond à 3 et non à 2 : avec 2, dès qu'un domaine reçoit 3 places la
-    // troisième tombe forcément dans sa banque minoritaire, ce qui déforme la
-    // répartition interne (pourcentages tombait à 16 % au lieu de 18).
-    maxParBanque: 3,
-    modeDefaut: 'chrono',
-    duree: 120,
-    bareme: { parQuestion: 0.6, total: 6 },
-    detailParTheme: false,   // un sujet blanc donne la note, pas un bilan par thème
-    masquerEtiquette: true,
-    cible: '#app',
-    labelNouvelle: 'Nouveau sujet blanc',
-    // Limite d'essais d'un devoir (19/09/2026) : contrairement aux fiches de
-    // cahier, le niveau/mode/duree ne sont connus qu'une fois la serie
-    // lancee (choisis librement par l'eleve via moteur.js) -- pas de bouton
-    // "Valider" unique a desactiver au chargement de la page. Approche
-    // passive ici : l'etat du devoir est verifie APRES coup, une fois la
-    // serie terminee, avec le niveau/mode/duree effectivement joues. La
-    // limite reelle (ce qui compte ou non pour la note) reste appliquee cote
-    // suivi.js (enregistrerTentativeDevoirAutomatismeSiApplicable) ; ce
-    // controle-ci ne fait qu'informer l'eleve quand sa tentative ne compte
-    // plus.
-    onFinSerie: async function (resultat) {
-      let etatAvant = null;
-      if (window.verifierEtatDevoirAutomatisme) {
-        try {
-          etatAvant = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree);
-        } catch (erreur) {
-          etatAvant = null;
+  function formaterEcheance(millis) {
+    return new Date(millis).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Attend DOMContentLoaded : assets/js/suivi.js est charge en <script
+  // type="module">, donc differe par nature (comme defer) -- un script
+  // classique place plus bas dans la page (comme celui-ci) peut s'executer
+  // AVANT que ce module ait fini de tourner et attache window.
+  // devoirAutomatismeActif (piege deja rencontre sur ce projet, voir
+  // SUIVI-FIREBASE.md). DOMContentLoaded garantit que tous les scripts
+  // differes (modules compris) ont fini de s'executer.
+  document.addEventListener('DOMContentLoaded', async function () {
+    // Devoir en cours (19/09/2026) : si l'enseignant a attribue un sujet
+    // blanc a la classe de l'eleve avec une echeance pas encore passee, la
+    // page se verrouille sur le niveau/mode/duree choisis a l'attribution
+    // (config.verrouille, voir assets/moteur.js) plutot que de le laisser
+    // choisir librement et risquer une tentative "hors cible" jamais
+    // comptee. Passe l'echeance, `devoirAutomatismeActif` ne renvoie plus
+    // rien : la page redevient un entrainement libre normal des le
+    // prochain chargement, sans rien a faire de plus ici.
+    let verrouille = null;
+    if (window.devoirAutomatismeActif) {
+      try {
+        const devoir = await window.devoirAutomatismeActif();
+        if (devoir) {
+          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance) };
+        }
+      } catch (erreur) {
+        verrouille = null;
+      }
+    }
+
+    Automatismes.demarrer({
+      domaines: [
+        { nom: 'Pourcentages et proportions', poids: 26, banques: { 'pourcentages': 7, 'proportions': 3 } },
+        { nom: 'Calcul littéral et équations', poids: 25, banques: { 'developper-factoriser': 4, 'equations': 6 } },
+        { nom: 'Fonctions et lectures graphiques', poids: 23, banques: { 'droites': 5, 'lectures-graphiques': 5 } },
+        { nom: 'Calcul numérique', poids: 11, banques: { 'calcul-numerique': 1 } },
+        { nom: 'Probabilités et statistiques', poids: 15, banques: { 'probabilites': 1 } }
+      ],
+      nb: 10,
+      // Plafond à 3 et non à 2 : avec 2, dès qu'un domaine reçoit 3 places la
+      // troisième tombe forcément dans sa banque minoritaire, ce qui déforme la
+      // répartition interne (pourcentages tombait à 16 % au lieu de 18).
+      maxParBanque: 3,
+      modeDefaut: 'chrono',
+      duree: 120,
+      bareme: { parQuestion: 0.6, total: 6 },
+      detailParTheme: false,   // un sujet blanc donne la note, pas un bilan par thème
+      masquerEtiquette: true,
+      cible: '#app',
+      labelNouvelle: 'Nouveau sujet blanc',
+      verrouille: verrouille,
+      // Limite d'essais d'un devoir (19/09/2026, verrouillage ajoute le
+      // meme jour) : l'etat du devoir est en plus reverifie APRES coup, une
+      // fois chaque serie terminee, avec le niveau/mode/duree effectivement
+      // joues -- deuxieme ligne de defense (comme sur les fiches de
+      // cahier) si le verrouillage est contourne, ex. appel direct depuis
+      // la console. La limite reelle (ce qui compte ou non pour la note)
+      // reste appliquee cote suivi.js
+      // (enregistrerTentativeDevoirAutomatismeSiApplicable) ; ce
+      // controle-ci ne fait qu'informer l'eleve quand sa tentative ne
+      // compte plus.
+      onFinSerie: async function (resultat) {
+        let etatAvant = null;
+        if (window.verifierEtatDevoirAutomatisme) {
+          try {
+            etatAvant = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree);
+          } catch (erreur) {
+            etatAvant = null;
+          }
+        }
+        if (window.enregistrerAutomatisme) window.enregistrerAutomatisme(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree);
+        const zoneEtat = document.getElementById('suivi-etat');
+        if (zoneEtat && etatAvant && etatAvant.bloque) {
+          zoneEtat.textContent = `Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`;
+          zoneEtat.hidden = false;
         }
       }
-      if (window.enregistrerAutomatisme) window.enregistrerAutomatisme(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree);
-      const zoneEtat = document.getElementById('suivi-etat');
-      if (zoneEtat && etatAvant && etatAvant.bloque) {
-        zoneEtat.textContent = `Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`;
-        zoneEtat.hidden = false;
-      }
-    }
-  });
+    });
 
-  // Masque le message de blocage (s'il est affiche) des qu'une nouvelle
-  // serie demarre : sinon il resterait visible, potentiellement perime
-  // (autre niveau/mode non bloque), jusqu'a la fin de cette nouvelle serie.
-  document.getElementById('app').addEventListener('click', function (e) {
-    if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) {
-      const zoneEtat = document.getElementById('suivi-etat');
-      if (zoneEtat) zoneEtat.hidden = true;
-    }
+    // Masque le message de blocage (s'il est affiche) des qu'une nouvelle
+    // serie demarre : sinon il resterait visible, potentiellement perime,
+    // jusqu'a la fin de cette nouvelle serie.
+    document.getElementById('app').addEventListener('click', function (e) {
+      if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) {
+        const zoneEtat = document.getElementById('suivi-etat');
+        if (zoneEtat) zoneEtat.hidden = true;
+      }
+    });
   });
 </script>
 <script type="module" src="../../assets/js/nav-auth.js"></script>

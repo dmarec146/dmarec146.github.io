@@ -328,6 +328,17 @@
     ETAT.mode = ETAT.config.modeDefaut;
     ETAT.duree = ETAT.config.duree;
     ETAT.niveau = ETAT.config.niveauDefaut;
+    // Devoir en cours (config.verrouille, voir sujet-blanc.html) : niveau/
+    // mode/duree imposes par l'enseignant a l'attribution, pas de choix
+    // libre tant que l'echeance n'est pas passee -- verrouille est deja
+    // filtre cote page (devoir actif ou non), ne contient donc que les
+    // valeurs a appliquer quand il est present.
+    if (ETAT.config.verrouille) {
+      const v = ETAT.config.verrouille;
+      ETAT.mode = v.mode;
+      ETAT.niveau = v.niveau;
+      if (v.mode === 'chrono' && v.duree !== undefined && v.duree !== null) ETAT.duree = v.duree;
+    }
     // un thème unique peut être imposé par l'adresse : fiche.html?theme=droites
     const voulu = (new URLSearchParams(window.location.search).get('theme') || '').trim();
     if (voulu && banques[voulu] && (ETAT.config.banques || []).indexOf(voulu) !== -1) {
@@ -374,12 +385,14 @@
   }
 
   function changerMode(mode) {
+    if (ETAT.config.verrouille) return; // devoir en cours : mode impose, voir demarrer()
     if (mode === ETAT.mode) return;
     ETAT.mode = mode;
     nouvelleSerie();
   }
 
   function changerNiveau(niveau) {
+    if (ETAT.config.verrouille) return; // devoir en cours : niveau impose, voir demarrer()
     if (niveau === ETAT.niveau) return;
     ETAT.niveau = niveau;
     nouvelleSerie();
@@ -408,7 +421,25 @@
   }
 
   // ----- panneau de mode -----
+  // En cas de devoir en cours (ETAT.config.verrouille, voir demarrer()) :
+  // resume non cliquable a la place des boutons de choix habituels --
+  // niveau/mode/duree sont imposes par l'enseignant, pas a selectionner.
+  function panneauVerrouilleHTML() {
+    const v = ETAT.config.verrouille;
+    const modeTxt = ETAT.mode === 'fiche' ? 'Mode fiche' : 'Mode chrono ⏱';
+    const dureeTxt = ETAT.mode === 'chrono'
+      ? ' · ' + (ETAT.duree === 0 ? 'sans limite de temps'
+        : `${ETAT.duree >= 60 ? Math.floor(ETAT.duree / 60) + ' min' : ''}${ETAT.duree % 60 ? ' ' + (ETAT.duree % 60) + ' s' : ''} par question`)
+      : '';
+    const echeanceTxt = v.echeanceTexte ? `, jusqu'au ${v.echeanceTexte}` : '';
+    return `<div class="mode-panneau mode-panneau-verrouille">
+      <span class="mode-label">Devoir en cours — niveau et mode imposés</span>
+      <span class="mode-verrouille-resume">${'★'.repeat(ETAT.niveau)} Niveau ${ETAT.niveau} · ${modeTxt}${dureeTxt}</span>
+      <span class="mode-explication">${v.titre ? `« ${echapper(v.titre)} »` : 'Ce devoir'}${echeanceTxt} : niveau et mode fixés par ton professeur, entraînement libre à nouveau après cette date.</span>
+    </div>`;
+  }
   function panneauModesHTML() {
+    if (ETAT.config.verrouille) return panneauVerrouilleHTML();
     const fiche = ETAT.mode === 'fiche';
     const expl = fiche
       ? 'Toutes les questions sont affichées. Répondez à votre rythme, puis cliquez sur « Voir toutes les réponses » en bas de la page.'
@@ -781,6 +812,7 @@
       }
     };
     r.onchange = function (ev) {
+      if (ETAT.config.verrouille) return; // devoir en cours : duree imposee, voir demarrer()
       const cible = ev.target.closest('[data-action="duree"]');
       if (cible) { ETAT.duree = Number(cible.value); ETAT.chrono.restant = ETAT.duree; rendre(); }
     };
