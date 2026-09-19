@@ -47,6 +47,7 @@ window.MathJax = {
 </div>
 
 <div id="app"></div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;text-align:center;" hidden></p>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
@@ -96,8 +97,41 @@ window.MathJax = {
     masquerEtiquette: true,
     cible: '#app',
     labelNouvelle: 'Nouveau sujet blanc',
-    onFinSerie: function (resultat) {
+    // Limite d'essais d'un devoir (19/09/2026) : contrairement aux fiches de
+    // cahier, le niveau/mode/duree ne sont connus qu'une fois la serie
+    // lancee (choisis librement par l'eleve via moteur.js) -- pas de bouton
+    // "Valider" unique a desactiver au chargement de la page. Approche
+    // passive ici : l'etat du devoir est verifie APRES coup, une fois la
+    // serie terminee, avec le niveau/mode/duree effectivement joues. La
+    // limite reelle (ce qui compte ou non pour la note) reste appliquee cote
+    // suivi.js (enregistrerTentativeDevoirAutomatismeSiApplicable) ; ce
+    // controle-ci ne fait qu'informer l'eleve quand sa tentative ne compte
+    // plus.
+    onFinSerie: async function (resultat) {
+      let etatAvant = null;
+      if (window.verifierEtatDevoirAutomatisme) {
+        try {
+          etatAvant = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree);
+        } catch (erreur) {
+          etatAvant = null;
+        }
+      }
       if (window.enregistrerAutomatisme) window.enregistrerAutomatisme(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree);
+      const zoneEtat = document.getElementById('suivi-etat');
+      if (zoneEtat && etatAvant && etatAvant.bloque) {
+        zoneEtat.textContent = `Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`;
+        zoneEtat.hidden = false;
+      }
+    }
+  });
+
+  // Masque le message de blocage (s'il est affiche) des qu'une nouvelle
+  // serie demarre : sinon il resterait visible, potentiellement perime
+  // (autre niveau/mode non bloque), jusqu'a la fin de cette nouvelle serie.
+  document.getElementById('app').addEventListener('click', function (e) {
+    if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) {
+      const zoneEtat = document.getElementById('suivi-etat');
+      if (zoneEtat) zoneEtat.hidden = true;
     }
   });
 </script>

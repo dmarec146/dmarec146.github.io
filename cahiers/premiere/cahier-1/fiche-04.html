@@ -837,7 +837,7 @@ window.MathJax = {
 </div>
 
 <div class="barre-controle">
-  <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" id="btn-recommencer" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
   <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
     <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
@@ -2057,6 +2057,11 @@ let saisies = {};
 // utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
 // ni rien laisser croire a un visiteur anonyme.
 let eleveConnecte = false;
+// Etat du devoir en cours pour cette fiche (voir verifierEtatDevoir dans
+// suivi.js), determine une fois au chargement -- null si aucun devoir actif
+// pour la classe de l'eleve. { bloque: true } desactive "Valider ma fiche"
+// (voir initialiserFiche et validerFicheActuelle).
+let etatDevoir = null;
 // Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
 // false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
 // faux, un eleve connecte ne peut pas voir la correction (empeche de
@@ -2069,6 +2074,19 @@ function mettreAJourEtatBoutons() {
   // ce bouton n'apporterait plus rien une fois connecte.
   const boutonToutes = document.getElementById('btn-toutes-reponses');
   boutonToutes.disabled = eleveConnecte && !ficheValidee;
+
+  // En mode devoir (etatDevoir non nul, voir initialiserFiche), une fois la
+  // fiche validee (donc les corrections reveelees) : "Recommencer" masque
+  // (pas de redite de la MEME fiche avec les reponses deja vues) et
+  // "Enregistrer mon avancement" masque (plus d'avancement en cours a
+  // sauvegarder). Les deux se reaffichent normalement a la prochaine
+  // validation d'etat (rafraichissement de page ou "Generer une nouvelle
+  // version", qui remettent ficheValidee a false) -- comportement voulu.
+  const enModeDevoirValide = !!etatDevoir && ficheValidee;
+  const boutonRecommencer = document.getElementById('btn-recommencer');
+  if (boutonRecommencer) boutonRecommencer.hidden = enModeDevoirValide;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = enModeDevoirValide;
 }
 
 function verifierUne(idx) {
@@ -2125,6 +2143,12 @@ async function enregistrerBrouillonActuel() {
 
 async function validerFicheActuelle() {
   if (!window.validerFiche) return;
+  // Seconde ligne de defense : le bouton est deja desactive dans ce cas
+  // (voir initialiserFiche), ceci couvre un appel direct (ex. console).
+  if (etatDevoir && etatDevoir.bloque) {
+    afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir — ta meilleure note a été retenue.`);
+    return;
+  }
   const bouton = document.getElementById('btn-valider');
   if (bouton) bouton.disabled = true;
   try {
@@ -2416,6 +2440,26 @@ async function initialiserFiche() {
   // visiteur anonyme, en mode "Tout a la fin").
   if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
 
+  // Limite d'essais d'un devoir (19/09/2026) : verifiee ici, pas seulement au
+  // clic sur "Valider" (voir validerFicheActuelle), pour que le bouton
+  // affiche son etat reel des l'arrivee sur la fiche plutot que de laisser
+  // l'eleve decouvrir le blocage seulement en cliquant.
+  if (eleveConnecte && window.verifierEtatDevoir) {
+    try {
+      etatDevoir = await window.verifierEtatDevoir(FICHE_ID);
+    } catch (erreur) {
+      etatDevoir = null;
+    }
+    if (etatDevoir && etatDevoir.bloque) {
+      const boutonValider = document.getElementById('btn-valider');
+      if (boutonValider) {
+        boutonValider.disabled = true;
+        boutonValider.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
+      }
+      afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`);
+    }
+  }
+
   exercices = genererExercices();
 
   let brouillon = null;
@@ -2449,7 +2493,9 @@ definirMode(true);
         verifierUne(Number(idx));
       }
     }
-    afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+    // Ne pas ecraser le message de blocage (plus important, voir plus haut)
+    // s'il est deja affiche.
+    if (!(etatDevoir && etatDevoir.bloque)) afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
   }
 
   if (window.MathJax) MathJax.typesetPromise();

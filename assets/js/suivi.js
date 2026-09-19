@@ -330,45 +330,91 @@ export async function enregistrerConnexion(uid) {
   }
 }
 
+// Requete brute (sans filtre d'echeance) pour un devoir d'automatismes,
+// identifie par (type 'automatismes', niveau, mode, [duree], classe) plutot
+// que par ficheId -- partagee entre enregistrerTentativeDevoirAutomatisme-
+// SiApplicable et verifierEtatDevoirAutomatisme ci-dessous (meme principe que
+// devoirsPour plus haut, pour les fiches). Ni le niveau, ni le mode, ni la
+// duree ne sont imposes a l'eleve (choisis librement sur la page du sujet
+// blanc, voir moteur.js/changerNiveau, changerMode et le select
+// data-action="duree") : une tentative avec un autre niveau, mode ou duree
+// que ceux du devoir n'est simplement pas comptee, comme une tentative hors
+// delai. La duree n'a de sens qu'en mode chrono (voir devoirs.js) : filtre
+// ajoute seulement si mode === 'chrono', sinon le champ n'existe meme pas
+// sur le document devoir.
+async function devoirsPourAutomatisme(niveau, mode, duree, classe) {
+  const filtres = [
+    where('type', '==', 'automatismes'),
+    where('niveau', '==', niveau),
+    where('mode', '==', mode),
+    where('classe', '==', classe)
+  ];
+  if (mode === 'chrono') filtres.push(where('duree', '==', duree));
+  const instantane = await getDocs(query(collection(db, 'devoirs'), ...filtres));
+  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 // Meme principe que enregistrerTentativeDevoirSiApplicable ci-dessus, pour
-// un sujet blanc d'automatismes : le devoir est identifie par (type
-// 'automatismes', niveau, mode, [duree], classe) plutot que par ficheId,
-// mais reutilise le MEME journal eleves/{uid}/devoirsTentatives (memes
-// champs score/totalExercices, ici note/6 plutot que exercices reussis/
-// total -- meme forme, la vue resultats de devoirs.js n'a pas besoin de
-// distinguer les deux types pour calculer la meilleure tentative). Ni le
-// niveau, ni le mode, ni la duree ne sont imposes a l'eleve (choisis
-// librement sur la page du sujet blanc, voir moteur.js/changerNiveau,
-// changerMode et le select data-action="duree") : une tentative avec un
-// autre niveau, mode ou duree que ceux du devoir n'est simplement pas
-// comptee, comme une tentative hors delai. La duree n'a de sens qu'en mode
-// chrono (voir devoirs.js) : filtre ajoute seulement si mode === 'chrono',
-// sinon le champ n'existe meme pas sur le document devoir.
+// un sujet blanc d'automatismes : reutilise le MEME journal eleves/{uid}/
+// devoirsTentatives (memes champs score/totalExercices, ici note/6 plutot
+// que exercices reussis/total -- meme forme, la vue resultats de devoirs.js
+// n'a pas besoin de distinguer les deux types pour calculer la meilleure
+// tentative).
+//
+// Limite d'essais (19/09/2026, meme principe et memes raisons que pour les
+// fiches, voir enregistrerTentativeDevoirSiApplicable) : verifiee ici
+// seulement PENDANT la fenetre active du devoir. Cote UI, le blocage passe
+// par verifierEtatDevoirAutomatisme() (voir automatismes/premiere/
+// sujet-blanc.html) ; ce filtre ici est la seconde ligne de defense.
 async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
-    const filtres = [
-      where('type', '==', 'automatismes'),
-      where('niveau', '==', niveau),
-      where('mode', '==', mode),
-      where('classe', '==', classe)
-    ];
-    if (mode === 'chrono') filtres.push(where('duree', '==', duree));
-    const instantane = await getDocs(query(collection(db, 'devoirs'), ...filtres));
-    if (instantane.empty) return;
-    await Promise.all(instantane.docs.map((d) => addDoc(
-      collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'),
-      {
-        devoirId: d.id,
+    const devoirs = await devoirsPourAutomatisme(niveau, mode, duree, classe);
+    const maintenant = Date.now();
+    for (const devoir of devoirs) {
+      const actif = devoir.echeance?.toMillis && devoir.echeance.toMillis() > maintenant;
+      if (actif && (await nbEssaisUtilises(devoir.id)) >= devoir.nbEssaisMax) continue;
+      await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
+        devoirId: devoir.id,
         score: points,
         totalExercices: 6,
         nbRepondues: total,
         horodatage: serverTimestamp(),
-      }
-    )));
+      });
+    }
   } catch (erreur) {
     console.warn('Suivi : enregistrement de la tentative de devoir (automatismes) impossible.', erreur);
+  }
+}
+
+// Meme principe que verifierEtatDevoir ci-dessus, pour un sujet blanc
+// d'automatismes. Appelee depuis onFinSerie (voir sujet-blanc.html) avec le
+// niveau/mode/duree de la serie qui vient de se terminer -- pas d'equivalent
+// du controle "au chargement de la fiche" ici, puisque le niveau/mode/duree
+// ne sont connus qu'une fois la serie lancee par l'eleve (choisis via
+// moteur.js, pas figes comme un ficheId).
+export async function verifierEtatDevoirAutomatisme(niveau, mode, duree) {
+  await authPrete;
+  if (!utilisateurCourant) return null;
+  try {
+    const classe = await classeEleve();
+    if (!classe) return null;
+    const maintenant = Date.now();
+    const devoir = (await devoirsPourAutomatisme(niveau, mode, duree, classe))
+      .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
+    if (!devoir) return null;
+    const essaisUtilises = await nbEssaisUtilises(devoir.id);
+    return {
+      titre: devoir.titre,
+      nbEssaisMax: devoir.nbEssaisMax,
+      essaisUtilises,
+      echeance: devoir.echeance.toMillis(),
+      bloque: essaisUtilises >= devoir.nbEssaisMax,
+    };
+  } catch (erreur) {
+    console.warn('Suivi : verification du devoir (automatismes) impossible.', erreur);
+    return null;
   }
 }
 
@@ -403,3 +449,4 @@ window.supprimerBrouillon = supprimerBrouillon;
 window.validerFiche = validerFiche;
 window.estConnecte = estConnecte;
 window.verifierEtatDevoir = verifierEtatDevoir;
+window.verifierEtatDevoirAutomatisme = verifierEtatDevoirAutomatisme;

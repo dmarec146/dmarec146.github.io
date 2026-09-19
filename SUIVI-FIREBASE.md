@@ -666,12 +666,63 @@ de changer ce réglage sans qu'il en reparle.
   `sommeQuestionsRepondues` corrigés après coup pour retrouver l'état
   exact d'avant le test.
 
-  **Pas encore fait** : pilote sur fiche-01.html Première SEULEMENT, pas
-  encore étendu aux 43 autres fiches ni aux sujets blancs d'automatismes
-  (niveau/mode/durée toujours pas imposés/verrouillés côté page). Le
-  bandeau "devoir à faire" n'est toujours chargé que sur les 4 pages
-  d'entrée du site, pas les 44 fiches individuelles ni
-  `automatismes/premiere/fiche.html`.
+  **Étendu aux 43 autres fiches et aux sujets blancs d'automatismes
+  (19/09/2026, sur demande de David)**, sur le même principe que le pilote
+  fiche-01.html ci-dessus.
+
+  Côté fiches : les 5 mêmes modifications (déclaration `etatDevoir`,
+  vérification dans `initialiserFiche()`, corps de `mettreAJourEtatBoutons()`
+  et garde en tête de `validerFicheActuelle()`, id `btn-recommencer` +
+  message de brouillon qui n'écrase plus le message de blocage) appliquées
+  aux 43 fiches restantes par script PowerShell, texte de remplacement
+  extrait **directement** de fiche-01.html/fiche-02.html (référence
+  déjà testée) plutôt que retapé à la main — évite tout risque de
+  divergence ou de mojibake (voir piège plus bas sur l'encodage des
+  scripts PowerShell). Vérification d'uniformité préalable (comptage +
+  hash MD5 des 2 fonctions) sur les 43 fichiers avant d'écrire le script :
+  aucune divergence trouvée, bascule mécanique sans cas particulier. Script
+  buggé une première fois (bloc de vérification du devoir inséré au
+  mauvais endroit dans `initialiserFiche()`, juste après `zoneValider`
+  au lieu d'après `boutonVerifier` — recopie imparfaite de la structure
+  réelle de fiche-01.html) : détecté immédiatement (diff anormalement
+  petit sur ce bloc), corrigé par un second script ciblé sur la bonne
+  ancre. Syntaxe JS des 44 fiches revérifiée après coup (`vm.Script` sur
+  les blocs `<script>` non-module extraits de chaque fichier).
+
+  Côté automatismes : `enregistrerTentativeDevoirAutomatismeSiApplicable`
+  (`suivi.js`) a maintenant le même plafond que la version fiche (skip
+  silencieux si un devoir est actif et `essaisUtilises >= nbEssaisMax`) ;
+  nouvelle fonction exportée `verifierEtatDevoirAutomatisme(niveau, mode,
+  duree)`, même principe que `verifierEtatDevoir` mais identifie le devoir
+  par (type, niveau, mode, [durée], classe) au lieu d'un `ficheId`. Filtre
+  commun factorisé dans `devoirsPourAutomatisme()`, partagé entre les deux.
+  Pas de bouton unique à désactiver ici (niveau/mode/durée choisis
+  librement par l'élève APRÈS le chargement, via moteur.js, pas figés comme
+  un `ficheId`) : approche volontairement passive plutôt que de coupler
+  `moteur.js` au suivi — `sujet-blanc.html` vérifie l'état du devoir dans
+  son `onFinSerie` (avec le niveau/mode/durée effectivement joués), APRÈS
+  la série mais AVANT l'enregistrement, et affiche un message dédié
+  (`#suivi-etat`, nouveau) si la tentative qui vient de se terminer ne
+  comptera pas pour le devoir. Message masqué automatiquement au démarrage
+  d'une nouvelle série (délégation d'événement sur `#app`,
+  `[data-action="nouvelle"]`/`"nouvelle-memes-themes"`), pour ne pas rester
+  affiché — potentiellement périmé — pendant que l'élève rejoue à un autre
+  niveau/mode non bloqué.
+
+  Testé en conditions réelles (jeton `n.testeuse`, devoirs de test à 1
+  essai sur `1ere-test`, comptes admin via script direct Firestore plutôt
+  que l'UI) sur 3 cas : une fiche "normale" (fiche-06 Première), une fiche
+  du groupe "widget-custom" (fiche-08 Seconde, structure différente déjà
+  repérée pour le correctif MathLive) et un sujet blanc d'automatismes en
+  mode fiche niveau 2. Les trois : bouton/API bloqués après la limite
+  atteinte, message correct, `essaisUtilises` qui ne dépasse jamais
+  `nbEssaisMax` même en insistant. Toutes les données de test (devoirs,
+  `devoirsTentatives`, entrées `automatismes`, `resultats` pollués par les
+  clics de validation de test) supprimées après coup.
+
+  Le bandeau "devoir à faire" reste, comme avant, chargé uniquement sur les
+  4 pages d'entrée du site (pas les 44 fiches individuelles ni
+  `automatismes/premiere/fiche.html`) — inchangé par ce chantier.
 
   **Lot de 8 retours de David après son test réel du 19/09/2026** :
   1. Tooltip explicite sur le bouton "Valider" bloqué ("Tu as atteint le
@@ -802,6 +853,34 @@ de changer ce réglage sans qu'il en reparle.
   correctif est mécanique et identique sur les 44, mais seul un test réel
   généralisé (comme celui qui a révélé ce bug) confirmerait l'absence de
   cas particulier.
+- **Écrire un texte de remplacement accentué directement dans un script
+  PowerShell (.ps1) le corrompt silencieusement** (mojibake type `Â«`,
+  `â€”`) : Windows PowerShell 5.1 lit un fichier `.ps1` sans BOM UTF-8 avec
+  l'encodage ANSI du système, pas UTF-8, même si le script lui-même
+  écrit ensuite ses fichiers cibles avec `UTF8Encoding($false)` (ça ne
+  concerne que l'écriture, pas la lecture du script source). Rencontré en
+  écrivant le script d'extension du blocage aux 43 fiches (19/09/2026) :
+  guillemets français et tiret cadratin tapés en dur dans le `.ps1`
+  cassaient le *parsing* PowerShell lui-même (jetons inattendus). Corrigé
+  en ne tapant plus AUCUN caractère accentué dans le script : tout texte
+  de remplacement contenant des accents/guillemets est extrait
+  dynamiquement (`.IndexOf`/`.Substring`) depuis un fichier de référence
+  déjà correctement encodé (ici fiche-01.html/fiche-02.html, lus via
+  `[System.IO.File]::ReadAllText($chemin, $utf8)`), en bornant l'extraction
+  par des ancres ASCII uniquement.
+- Un `ficheId` de devoir doit avoir le **même format que
+  `window.location.pathname`**, donc avec la barre oblique initiale
+  (`/cahiers/premiere/...`, pas `cahiers/premiere/...`) — c'est ce que
+  produit `ficheIdDepuis()` dans `manifeste-fiches.js`, utilisé par le vrai
+  outil d'attribution. Un devoir de test créé à la main (script Firestore
+  direct plutôt que l'UI) avec un `ficheId` sans la barre initiale ne sera
+  simplement jamais trouvé par `devoirsPour()` côté fiche — aucune erreur,
+  le devoir est juste invisible. Piège symétrique côté automatismes : le
+  champ `niveau` d'un devoir doit être un **nombre**, pas une chaîne
+  (`parseInt(selectNiveau.value, 10)` côté `devoirs.js`, et
+  `ETAT.niveau` côté `moteur.js` est également numérique) — une requête
+  Firestore `where('niveau', '==', ...)` est stricte sur le type, `2` et
+  `"2"` ne matchent jamais le même document.
 
 ## Procédure de reprise sur une autre machine
 
