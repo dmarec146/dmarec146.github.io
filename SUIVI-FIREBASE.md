@@ -973,6 +973,18 @@ de changer ce réglage sans qu'il en reparle.
   Pastille confirmée (1, le seul "à faire"), absente pour un visiteur
   anonyme, page `/mes-devoirs/` confirmée redirigeant vers `/connexion/`
   sans session. Données de test supprimées après coup.
+
+  **Mise en page à deux colonnes (19/09/2026, même jour, retour de
+  David après un premier test réel)** : "À faire"/"Faits" passent de deux
+  sections empilées à deux colonnes côte à côte à partir de 720px (même
+  seuil que `.bento` sur l'accueil), empilées en dessous (mobile) --
+  `.md-colonnes` en `flex-direction: column` par défaut, `row` au-dessus du
+  seuil. Chaque colonne est une carte (fond `--gris-50`) avec un titre
+  souligné dans sa couleur (accent pour "À faire", vert pour "Faits") et le
+  nombre de devoirs entre parenthèses. Vérifié aux deux largeurs
+  (`resize_window`, 1000px et le préréglage mobile) avec 2 devoirs à faire
+  + 1 fait : colonnes côte à côte en large, empilées avec "À faire" en
+  premier en étroit.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).

@@ -26,8 +26,10 @@ const zoneErreur = document.getElementById('md-erreur');
 const zoneContenu = document.getElementById('md-contenu');
 const listeAFaire = document.getElementById('md-a-faire-liste');
 const videAFaire = document.getElementById('md-a-faire-vide');
+const nbAFaire = document.getElementById('md-a-faire-nb');
 const listeFaits = document.getElementById('md-faits-liste');
 const videFaits = document.getElementById('md-faits-vide');
+const nbFaits = document.getElementById('md-faits-nb');
 
 function echapper(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
@@ -51,6 +53,7 @@ function titreDevoir(devoir) {
 function rendreAFaire(liste) {
   listeAFaire.innerHTML = '';
   videAFaire.hidden = liste.length > 0;
+  nbAFaire.textContent = liste.length ? `(${liste.length})` : '';
   for (const d of liste) {
     const restantes = d.nbEssaisMax - d.essaisUtilises;
     const li = document.createElement('li');
@@ -65,6 +68,7 @@ function rendreAFaire(liste) {
 function rendreFaits(liste) {
   listeFaits.innerHTML = '';
   videFaits.hidden = liste.length > 0;
+  nbFaits.textContent = liste.length ? `(${liste.length})` : '';
   for (const d of liste) {
     const noteTxt = d.meilleure
       ? `${Math.round(d.meilleure.score * 10) / 10} / ${d.meilleure.totalExercices}`

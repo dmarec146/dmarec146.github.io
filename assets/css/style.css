@@ -539,10 +539,35 @@ body.mode-export-cahier > .site-pied {
   border: 2px solid var(--papier);
 }
 
-/* ---------- Page /mes-devoirs/ (assets/js/mes-devoirs.js) : listes "A
-   faire"/"Faits", meme palette de statut que l'ancien bandeau ci-dessus
-   (rouge = a faire, vert = deja rendu, gris = tentatives epuisees). ------- */
-.md-liste { list-style: none; margin: 0 0 24px; padding: 0; }
+/* ---------- Page /mes-devoirs/ (assets/js/mes-devoirs.js) : deux colonnes
+   "A faire"/"Faits" cote a cote a partir de 720px (meme seuil que .bento
+   plus haut) -- empilees en une seule colonne en dessous, "A faire" en
+   premier (deja son ordre naturel dans le HTML). ---------- */
+.md-colonnes { display: flex; flex-direction: column; gap: 28px; }
+@media (min-width: 720px) {
+  .md-colonnes { flex-direction: row; align-items: flex-start; gap: 22px; }
+}
+.md-colonne {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--gris-50);
+  border: 1.5px solid var(--gris-200);
+  border-radius: var(--rayon);
+  padding: 18px;
+}
+.md-colonne-titre {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2.5px solid var(--gris-200);
+  font-size: 1.05rem;
+}
+.md-colonne-titre--afaire { color: var(--accent); border-bottom-color: var(--accent); }
+.md-colonne-titre--faits { color: var(--vert); border-bottom-color: var(--vert); }
+.md-colonne-nb { font-size: 0.85rem; font-weight: normal; color: var(--gris-600); }
+.md-liste { list-style: none; margin: 0; padding: 0; }
 .md-item {
   display: flex;
   flex-direction: column;
