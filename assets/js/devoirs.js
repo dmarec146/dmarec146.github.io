@@ -66,12 +66,17 @@ const resultatsSousTitre = document.getElementById('dev-resultats-sous-titre');
 const resultatsCorps = document.getElementById('dev-resultats-corps');
 const boutonRetourResultats = document.getElementById('dev-resultats-retour');
 
-// "2nde-207" -> "207" : même raccourci que formaterClasseAffichee dans
-// tableau-de-bord.js (dupliqué ici plutôt qu'importé : fonction triviale,
-// pas de raison de coupler les deux pages pour ça).
+// "2nde-207" -> "207", mais "1ere-Gr 1" -> "1ere - Gr 1" (groupe de
+// specialite prefixe par le niveau, plusieurs niveaux auront chacun leurs
+// groupes numerotes -- voir tableau-de-bord.js) : même raccourci que
+// formaterClasseAffichee dans tableau-de-bord.js (dupliqué ici plutôt
+// qu'importé : fonction triviale, pas de raison de coupler les deux pages
+// pour ça).
 function formaterClasseAffichee(classe) {
   const i = classe.lastIndexOf('-');
-  return i === -1 ? classe : classe.slice(i + 1);
+  if (i === -1) return classe;
+  const suffixe = classe.slice(i + 1);
+  return suffixe.startsWith('Gr') ? `${classe.slice(0, i)} - ${suffixe}` : suffixe;
 }
 
 // Même raccourci que nomAffiche dans tableau-de-bord.js (dupliqué, voir

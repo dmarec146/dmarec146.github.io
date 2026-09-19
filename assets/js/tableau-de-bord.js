@@ -45,7 +45,13 @@ function afficherEtat(element, texte) {
 function formaterClasseAffichee(classe) {
   if (!classe) return '—';
   const i = classe.lastIndexOf('-');
-  return i === -1 ? classe : classe.slice(i + 1);
+  if (i === -1) return classe;
+  const suffixe = classe.slice(i + 1);
+  // Groupe de specialite (ex. "1ere-Gr 1") : prefixe par le niveau, car
+  // plusieurs niveaux (Premiere, Terminale...) auront chacun leurs propres
+  // groupes numerotes -- "Gr 1" seul serait ambigu entre eux (19/09/2026,
+  // demande de David en prevision des groupes de Terminale a venir).
+  return suffixe.startsWith('Gr') ? `${classe.slice(0, i)} - ${suffixe}` : suffixe;
 }
 
 // "/cahiers/premiere/cahier-1/fiche-01.html" -> "Première · Cahier 1 · Fiche 1"

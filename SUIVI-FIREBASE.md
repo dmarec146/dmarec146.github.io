@@ -444,6 +444,16 @@ de changer ce réglage sans qu'il en reparle.
   deux sujets blancs, un par mode fiche/chrono). Identifiants dans
   `outils/creer-comptes/comptes-crees-2026-09-16T09-33-55-634Z.csv`
   (jamais commité). À supprimer si plus utiles.
+- **Groupes de spécialité de Première (19/09/2026)** : David envoie, PDF par
+  PDF (export Index Education "Liste des élèves par groupe"), les groupes
+  de sa classe de spécialité maths — les élèves viennent de classes
+  physiques différentes, seul le groupe compte. Convention `classe` :
+  `1ere-Gr <N>` (pas d'accent sur "1ere", un seul tiret avant "Gr" —
+  contrainte technique, voir `estPremiere()`/`formaterClasseAffichee()`
+  plus bas). `1ere-Gr 1` (27 élèves, groupe 1MATHS1) et `1ere-Gr 3` (26
+  élèves, groupe 1MATHS3) créés et vérifiés dans Firestore. D'autres
+  groupes suivront, et des groupes de Terminale sont prévus — d'où le
+  préfixe de niveau dans l'affichage (voir piège plus bas).
 
 ## Pas encore fait
 
@@ -1038,6 +1048,14 @@ de changer ce réglage sans qu'il en reparle.
   `ETAT.niveau` côté `moteur.js` est également numérique) — une requête
   Firestore `where('niveau', '==', ...)` est stricte sur le type, `2` et
   `"2"` ne matchent jamais le même document.
+- `formaterClasseAffichee(classe)` (dupliquée dans `devoirs.js` et
+  `tableau-de-bord.js`, jamais importée — voir piège d'origine) affichait
+  seulement ce qui suit le DERNIER `-` d'une classe (`2nde-207` -> `207`).
+  Pour un groupe de spécialité (`1ere-Gr 1`), ça donnait juste "Gr 1" —
+  ambigu dès que des groupes de Terminale existeront aussi (leur "Gr 1" à
+  eux serait indiscernable). Corrigé le 19/09/2026 : si le suffixe commence
+  par `Gr`, le niveau est préfixé devant (`1ere - Gr 1`) ; sinon
+  comportement inchangé (`207`, `demo`, `test`...).
 
 ## Procédure de reprise sur une autre machine
 
