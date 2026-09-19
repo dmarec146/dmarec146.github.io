@@ -87,11 +87,19 @@ if (cible) {
   // boutons de la barre, un decalage encore visible sur les pages ou la
   // barre est deja proche de son point de repli en plusieurs lignes. Avec
   // visibility, l'espace est deja compte des le premier rendu : plus aucun
-  // decalage possible en devenant visible. Seul cas ou l'espace est
-  // effectivement rendu (display:none) : une fois l'etat NON-admin confirme
-  // (deconnecte ou eleve) -- change a un moment ou personne ne regarde
-  // precisement cette icone puisqu'elle n'a jamais ete visible pour ce
-  // visiteur, donc sans decalage genant en pratique.
+  // decalage possible en devenant visible.
+  //
+  // CORRECTIF (19/09/2026, deuxieme fois, remarque par David en cliquant
+  // sur "Connexion") : la version precedente repassait cette icone en
+  // display:none des que l'etat NON-admin etait confirme (visiteur anonyme
+  // OU eleve connecte -- la tres grande majorite des cas), en pariant que
+  // "personne ne regarde cette icone precise". Faux : ca retire quand meme
+  // son espace reserve de la ligne, ce qui DEPLACE le bouton profil juste
+  // apres -- justement celui sur lequel on clique pour se connecter. Le
+  // masquage reste desormais permanent via visibility (jamais de retour a
+  // display:none) pour un non-admin : l'espace reserve au chargement ne
+  // bouge plus jamais, au prix d'un petit vide invisible et permanent dans
+  // la barre pour la tres grande majorite des visiteurs.
   const lienTableau = document.createElement('a');
   lienTableau.href = '/tableau-de-bord/';
   lienTableau.title = 'Tableau de bord';
@@ -115,7 +123,6 @@ if (cible) {
   onAuthStateChanged(auth, async (utilisateur) => {
     bouton.disabled = false;
     bouton.onclick = null;
-    lienTableau.style.display = 'none';
 
     if (!utilisateur) {
       bouton.title = 'Connexion';

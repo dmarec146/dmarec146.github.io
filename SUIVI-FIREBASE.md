@@ -855,6 +855,32 @@ de changer ce réglage sans qu'il en reparle.
      été abandonné après clarification — fausse alerte, à revoir plus tard
      avec une autre idée de sa part.
 
+  **Deux corrections rapides après que David a testé ce qui précède
+  (19/09/2026, même jour)** :
+  - Boutons "Reprendre les questions sans réponse"/"Terminer le sujet"
+    désalignés : la carte `.chrono-intro` applique `.chrono-intro
+    .btn-principal { width: auto; min-width: 220px; margin-top: 12px; }`,
+    pensé pour le bouton unique "Démarrer" de l'écran d'introduction —
+    `recapHTML()` les plaçait par erreur À L'INTÉRIEUR de cette carte, donc
+    seul le bouton "Reprendre" (btn-principal) héritait de ces styles, pas
+    "Terminer" (btn-secondaire). Corrigé en sortant `.barre-controle` de
+    `.chrono-intro`, même structure que l'écran de fin (`score-panneau` +
+    `.barre-controle` À CÔTÉ, pas dedans).
+  - Décalage récurrent du bouton connexion/profil (déjà "corrigé" deux fois
+    avant, dernière fois commit `d122140`) : `nav-auth.js` repassait
+    l'icône Tableau de bord en `display:none` dès que l'état non-admin
+    était confirmé (visiteur anonyme OU élève connecté — la quasi-totalité
+    des cas), en pariant qu'"on ne regarde pas cette icône précise". Faux :
+    ça retire son espace réservé de la ligne, ce qui DÉPLACE le bouton
+    juste après — celui utilisé pour se connecter, donc un décalage
+    remarqué justement en cliquant dessus. Corrigé en ne repassant plus
+    JAMAIS par `display:none` pour un non-admin : l'espace réservé au
+    chargement (`visibility:hidden`) ne bouge plus une fois posé, au prix
+    d'un petit vide invisible permanent dans la barre pour la grande
+    majorité des visiteurs. Vérifié sur les deux variantes (`.site-nav` et
+    `.barre-navigation`, voir commentaire en tête de fichier) : aucune ne
+    touche plus à `display` pour un compte non-admin.
+
   **Lot de 8 retours de David après son test réel du 19/09/2026** :
   1. Tooltip explicite sur le bouton "Valider" bloqué ("Tu as atteint le
      nombre maximal de tentatives pour ce devoir.") — le curseur

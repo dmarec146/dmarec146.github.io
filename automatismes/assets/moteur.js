@@ -762,16 +762,23 @@
     const aRevoir = ETAT.questions.map((_, k) => k).filter(k => ETAT.reponses[k] === null);
     const globalRestant = tempsGlobalRestant();
     const dispoReprise = aRevoir.length > 0 && globalRestant > 0;
+    // Boutons DELIBEREMENT hors de .chrono-intro (contrairement au texte
+    // ci-dessus) : la regle CSS ".chrono-intro .btn-principal" (pensee pour
+    // le bouton unique "Demarrer" de l'ecran d'introduction) leur ajoutait
+    // une largeur et une marge propres a un bouton isole, desalignant les
+    // deux boutons l'un par rapport a l'autre (trouve par David en test
+    // reel). Meme structure que l'ecran de fin (score-panneau + .barre-
+    // controle a cote, pas dedans).
     return `<div class="chrono-intro">
       <h2>${repondues} / ${n} questions répondues</h2>
       <p>${aRevoir.length > 0
         ? `${aRevoir.length} question${aRevoir.length > 1 ? 's' : ''} sans réponse : n°${aRevoir.map(k => k + 1).join(', n°')}.`
         : 'Toutes les questions ont une réponse.'}</p>
       ${ETAT.duree > 0 ? `<p>Temps restant : ${formatTemps(globalRestant)}.</p>` : ''}
-      <div class="barre-controle">
-        ${dispoReprise ? `<button class="btn-principal" data-action="reprendre">Reprendre les questions sans réponse</button>` : ''}
-        <button class="${dispoReprise ? 'btn-secondaire' : 'btn-principal'}" data-action="terminer-serie">Terminer le sujet</button>
-      </div>
+    </div>
+    <div class="barre-controle">
+      ${dispoReprise ? `<button class="btn-principal" data-action="reprendre">Reprendre les questions sans réponse</button>` : ''}
+      <button class="${dispoReprise ? 'btn-secondaire' : 'btn-principal'}" data-action="terminer-serie">Terminer le sujet</button>
     </div>`;
   }
 
