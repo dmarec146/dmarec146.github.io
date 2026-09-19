@@ -17,6 +17,7 @@ import {
 import {
   collection,
   addDoc,
+  updateDoc,
   deleteDoc,
   doc,
   getDocs,
@@ -43,7 +44,9 @@ const selectDuree = document.getElementById('dev-duree');
 const selectClasse = document.getElementById('dev-classe');
 const champEcheance = document.getElementById('dev-echeance');
 const champEssais = document.getElementById('dev-essais');
-const boutonSoumettre = formulaire.querySelector('button[type="submit"]');
+const boutonSoumettre = document.getElementById('dev-bouton-soumettre');
+const boutonAnnulerEdition = document.getElementById('dev-bouton-annuler-edition');
+const titreFormulaire = document.getElementById('dev-formulaire-titre');
 const zoneConfirmation = document.getElementById('dev-confirmation');
 const zoneErreurFormulaire = document.getElementById('dev-erreur-formulaire');
 
@@ -107,8 +110,19 @@ function basculerPanneau(panneau, bouton, autrePanneau, autreBouton) {
     autreBouton.classList.remove('dev-action-actif');
   }
 }
-boutonAttribuer.addEventListener('click', () => basculerPanneau(panneauAttribuer, boutonAttribuer, panneauListe, boutonDevoirsFaits));
-boutonDevoirsFaits.addEventListener('click', () => basculerPanneau(panneauListe, boutonDevoirsFaits, panneauAttribuer, boutonAttribuer));
+// Fermer le panneau d'attribution (par l'un ou l'autre bouton) alors qu'une
+// edition est en cours l'abandonne -- annulerEdition() est definie plus bas
+// mais deja hissee (declaration de fonction) au moment ou ce clic peut se
+// produire.
+boutonAttribuer.addEventListener('click', () => {
+  const allaitFermer = !panneauAttribuer.hidden;
+  basculerPanneau(panneauAttribuer, boutonAttribuer, panneauListe, boutonDevoirsFaits);
+  if (allaitFermer && devoirEnEdition) annulerEdition();
+});
+boutonDevoirsFaits.addEventListener('click', () => {
+  if (devoirEnEdition) annulerEdition();
+  basculerPanneau(panneauListe, boutonDevoirsFaits, panneauAttribuer, boutonAttribuer);
+});
 
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) {
@@ -144,6 +158,12 @@ function remplirSelectFiche() {
 }
 
 let toutesLesClasses = [];
+
+// Devoir en cours de modification (voir modifierDevoir ci-dessous) -- null
+// en mode creation normale. Le formulaire est le MEME dans les deux cas
+// (pre-rempli le temps de l'edition), seul ce qui se passe a la soumission
+// change (addDoc vs updateDoc, voir l'ecouteur "submit").
+let devoirEnEdition = null;
 
 async function classesConnues() {
   const instantane = await getDocs(collection(db, 'eleves'));
@@ -227,6 +247,66 @@ function ficheTitreDepuisId(ficheId) {
   return fiche ? fiche.titre : ficheId;
 }
 
+// "YYYY-MM-DDTHH:MM" en heure locale, format attendu par un <input
+// type="datetime-local"> -- meme calcul que pour champEcheance.min plus
+// haut (initialiser()), reutilise ici pour pre-remplir une echeance
+// existante en mode edition.
+function dateLocalePourChamp(millis) {
+  const d = new Date(millis - new Date().getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
+}
+
+// Ouvre le panneau d'attribution pre-rempli avec les valeurs d'un devoir
+// existant (voir le bouton "Modifier" dans chargerListeDevoirs) : le
+// formulaire est le MEME qu'a la creation, seule la soumission change
+// (voir l'ecouteur "submit" plus bas, qui teste devoirEnEdition).
+function modifierDevoir(devoir) {
+  devoirEnEdition = devoir;
+  masquer(zoneConfirmation);
+  masquer(zoneErreurFormulaire);
+
+  selectType.value = devoir.type;
+  selectType.dispatchEvent(new Event('change'));
+  if (devoir.type === 'automatismes') {
+    selectNiveau.value = String(devoir.niveau);
+    selectMode.value = devoir.mode;
+    selectMode.dispatchEvent(new Event('change'));
+    if (devoir.mode === 'chrono') selectDuree.value = String(devoir.duree);
+  } else {
+    selectFiche.value = devoir.ficheId;
+  }
+  // Apres le "change" sur selectType (qui repeuple selectClasse, voir
+  // remplirSelectClasse) : la classe du devoir doit rester dans la liste
+  // puisque c'est forcement une classe deja utilisee par ce devoir.
+  selectClasse.value = devoir.classe;
+  if (devoir.echeance?.toMillis) champEcheance.value = dateLocalePourChamp(devoir.echeance.toMillis());
+  champEssais.value = String(devoir.nbEssaisMax);
+
+  titreFormulaire.textContent = 'Modifier ce devoir';
+  boutonSoumettre.textContent = 'Enregistrer les modifications';
+  boutonAnnulerEdition.hidden = false;
+
+  panneauListe.hidden = true;
+  panneauAttribuer.hidden = false;
+  boutonAttribuer.setAttribute('aria-expanded', 'true');
+  boutonAttribuer.classList.add('dev-action-actif');
+  boutonDevoirsFaits.setAttribute('aria-expanded', 'false');
+  boutonDevoirsFaits.classList.remove('dev-action-actif');
+  panneauAttribuer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function annulerEdition() {
+  devoirEnEdition = null;
+  formulaire.reset();
+  selectType.dispatchEvent(new Event('change'));
+  titreFormulaire.textContent = 'Attribuer un nouveau devoir';
+  boutonSoumettre.textContent = 'Attribuer ce devoir';
+  boutonAnnulerEdition.hidden = true;
+  masquer(zoneConfirmation);
+  masquer(zoneErreurFormulaire);
+}
+boutonAnnulerEdition.addEventListener('click', annulerEdition);
+
 formulaire.addEventListener('submit', async (evenement) => {
   evenement.preventDefault();
   masquer(zoneConfirmation);
@@ -269,21 +349,29 @@ formulaire.addEventListener('submit', async (evenement) => {
 
   boutonSoumettre.disabled = true;
   try {
-    await addDoc(collection(db, 'devoirs'), {
-      ...donnees,
-      classe,
-      echeance,
-      nbEssaisMax,
-      creeLe: serverTimestamp(),
-      creePar: auth.currentUser.email || null,
-    });
-    formulaire.reset();
-    selectType.dispatchEvent(new Event('change'));
-    afficherEtat(zoneConfirmation, 'Devoir attribué.');
+    if (devoirEnEdition) {
+      // Pas de creeLe/creePar ici : on ne touche pas aux metadonnees de
+      // creation d'origine, seulement aux parametres modifies.
+      await updateDoc(doc(db, 'devoirs', devoirEnEdition.id), { ...donnees, classe, echeance, nbEssaisMax });
+      annulerEdition();
+      afficherEtat(zoneConfirmation, 'Devoir modifié.');
+    } else {
+      await addDoc(collection(db, 'devoirs'), {
+        ...donnees,
+        classe,
+        echeance,
+        nbEssaisMax,
+        creeLe: serverTimestamp(),
+        creePar: auth.currentUser.email || null,
+      });
+      formulaire.reset();
+      selectType.dispatchEvent(new Event('change'));
+      afficherEtat(zoneConfirmation, 'Devoir attribué.');
+    }
     await chargerListeDevoirs();
   } catch (erreur) {
     console.error(erreur);
-    afficherEtat(zoneErreurFormulaire, "Échec de l'attribution — réessayer.");
+    afficherEtat(zoneErreurFormulaire, `Échec de l'${devoirEnEdition ? 'enregistrement' : 'attribution'} — réessayer.`);
   } finally {
     boutonSoumettre.disabled = false;
   }
@@ -335,6 +423,14 @@ async function chargerListeDevoirs() {
     boutonResultats.addEventListener('click', () => afficherResultats(devoir));
     celluleResultats.appendChild(boutonResultats);
 
+    const celluleModifier = document.createElement('td');
+    const boutonModifier = document.createElement('button');
+    boutonModifier.type = 'button';
+    boutonModifier.className = 'tdb-bouton-secondaire';
+    boutonModifier.textContent = 'Modifier';
+    boutonModifier.addEventListener('click', () => modifierDevoir(devoir));
+    celluleModifier.appendChild(boutonModifier);
+
     const celluleAction = document.createElement('td');
     const boutonSupprimer = document.createElement('button');
     boutonSupprimer.type = 'button';
@@ -343,7 +439,7 @@ async function chargerListeDevoirs() {
     boutonSupprimer.addEventListener('click', () => supprimerDevoir(devoir.id, boutonSupprimer));
     celluleAction.appendChild(boutonSupprimer);
 
-    ligne.append(celluleFiche, celluleClasse, celluleEcheance, celluleEssais, celluleStatut, celluleResultats, celluleAction);
+    ligne.append(celluleFiche, celluleClasse, celluleEcheance, celluleEssais, celluleStatut, celluleResultats, celluleModifier, celluleAction);
     corpsTableau.appendChild(ligne);
   }
   tableau.hidden = false;
@@ -408,6 +504,17 @@ async function afficherResultats(devoir) {
       ? `${Math.round(ligneDonnees.meilleure.score * 10) / 10} / ${ligneDonnees.meilleure.totalExercices}`
       : '—';
 
+    // Non-reponses = cases laissees vides par l'eleve sur SA meilleure
+    // tentative -- n'a de sens que pour un devoir de type fiche (nbRepondues
+    // y compte les champs remplis, voir validerFicheActuelle) ; pour un
+    // sujet blanc d'automatismes, nbRepondues porte un tout autre sens
+    // (nombre total de questions de la serie, pas "combien de reponses"),
+    // affiche "—" plutot qu'un chiffre trompeur.
+    const celluleNonReponses = document.createElement('td');
+    celluleNonReponses.textContent = (ligneDonnees.meilleure && devoir.type === 'fiche')
+      ? String(ligneDonnees.meilleure.totalExercices - ligneDonnees.meilleure.nbRepondues)
+      : '—';
+
     const celluleEssais = document.createElement('td');
     celluleEssais.textContent = `${ligneDonnees.nbEssais} / ${devoir.nbEssaisMax}`;
 
@@ -416,7 +523,7 @@ async function afficherResultats(devoir) {
       ? new Date(ligneDonnees.derniereActivite).toLocaleString('fr-FR')
       : '—';
 
-    ligne.append(celluleNom, celluleRendu, celluleNote, celluleEssais, celluleDate);
+    ligne.append(celluleNom, celluleRendu, celluleNote, celluleNonReponses, celluleEssais, celluleDate);
     resultatsCorps.appendChild(ligne);
   }
 }

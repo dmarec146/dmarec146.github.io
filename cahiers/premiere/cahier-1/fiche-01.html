@@ -895,7 +895,7 @@ window.MathJax = {
 </div>
 
 <div class="barre-controle">
-  <button class="btn-secondaire" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" id="btn-recommencer" onclick="reinitialiser()">Recommencer</button>
   <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
   <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
     <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
@@ -1882,6 +1882,19 @@ function mettreAJourEtatBoutons() {
   // ce bouton n'apporterait plus rien une fois connecte.
   const boutonToutes = document.getElementById('btn-toutes-reponses');
   boutonToutes.disabled = eleveConnecte && !ficheValidee;
+
+  // En mode devoir (etatDevoir non nul, voir initialiserFiche), une fois la
+  // fiche validee (donc les corrections reveelees) : "Recommencer" masque
+  // (pas de redite de la MEME fiche avec les reponses deja vues) et
+  // "Enregistrer mon avancement" masque (plus d'avancement en cours a
+  // sauvegarder). Les deux se reaffichent normalement a la prochaine
+  // validation d'etat (rafraichissement de page ou "Generer une nouvelle
+  // version", qui remettent ficheValidee a false) -- comportement voulu.
+  const enModeDevoirValide = !!etatDevoir && ficheValidee;
+  const boutonRecommencer = document.getElementById('btn-recommencer');
+  if (boutonRecommencer) boutonRecommencer.hidden = enModeDevoirValide;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = enModeDevoirValide;
 }
 
 function verifierUne(idx) {
@@ -3197,7 +3210,10 @@ async function initialiserFiche() {
     }
     if (etatDevoir && etatDevoir.bloque) {
       const boutonValider = document.getElementById('btn-valider');
-      if (boutonValider) boutonValider.disabled = true;
+      if (boutonValider) {
+        boutonValider.disabled = true;
+        boutonValider.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
+      }
       afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`);
     }
   }

@@ -653,6 +653,53 @@ de changer ce réglage sans qu'il en reparle.
   bandeau "devoir à faire" n'est toujours chargé que sur les 4 pages
   d'entrée du site, pas les 44 fiches individuelles ni
   `automatismes/premiere/fiche.html`.
+
+  **Lot de 8 retours de David après son test réel du 19/09/2026** :
+  1. Tooltip explicite sur le bouton "Valider" bloqué ("Tu as atteint le
+     nombre maximal de tentatives pour ce devoir.") — le curseur
+     `not-allowed` existait déjà via la règle CSS générale `:disabled`.
+  2-3. Bandeau élève (`devoirs-notification.js`) : le texte "Déjà fait —
+     tentatives encore possibles" restait affiché même une fois la limite
+     atteinte (faux depuis que la limite est bloquante) et ne distinguait
+     pas "1 essai fait" de "tous les essais faits". Remplacé par 3 états
+     sur `essaisUtilises` réel (pas juste un booléen) : 0 → "Pas encore
+     fait" (rouge) ; 1..max-1 → "X/Y tentatives" (vert) ; max atteint →
+     "Tentatives épuisées (X/Y) — meilleure note retenue" (gris neutre,
+     nouvelle classe `devoir-bandeau-statut-epuise`).
+  4-5. En mode devoir (fiche-01.html), une fois la fiche validée dans la
+     session : "Recommencer" et "Enregistrer mon avancement" se masquent
+     (`mettreAJourEtatBoutons()`, condition `etatDevoir && ficheValidee`)
+     — empêche de redemander la même fiche après avoir vu les corrections.
+     Se réaffichent normalement au rechargement de la page ou après
+     "Générer une nouvelle version" (`ficheValidee` repasse à `false`),
+     comportement voulu explicitement par David, pas un oubli à corriger.
+  6. Colonne "Non-réponses" dans la vue résultats de `devoirs.js` — calcul
+     direct (`totalExercices - nbRepondues` de la meilleure tentative,
+     déjà stockés), "—" pour un devoir automatismes (`nbRepondues` y porte
+     un tout autre sens, nombre total de questions de la série, pas
+     "combien de réponses" — afficher un chiffre aurait été trompeur).
+  7. **Modification d'un devoir existant** depuis `devoirs.html` : bouton
+     "Modifier" par ligne, réutilise le MÊME formulaire que la création
+     (pré-rempli, titre et bouton changent en "Modifier ce devoir"/
+     "Enregistrer les modifications", bouton "Annuler la modification").
+     `updateDoc()` sur l'id existant (pas de nouveau document), sans
+     toucher `creeLe`/`creePar`. Fermer le panneau par n'importe quel
+     bouton pendant une édition l'annule proprement (`annulerEdition()`).
+  8. `scrollbar-gutter: stable` ajouté sur `html` (style.css, global) :
+     évite le décalage horizontal remarqué en ouvrant "Devoirs faits"
+     quand le contenu passe de "pas de scroll" à "scroll".
+
+  Testé en conditions réelles pour 1, 4, 5 (jeton n.testeuse, devoir de
+  test à 1 essai sur `1ere-test`, fiche-01 : validée une fois, boutons
+  masqués confirmés, tooltip confirmé après rechargement) et pour 6, 7
+  (compte admin temporaire, devoir de test créé/modifié/vérifié en base —
+  même id après modification, devoir réel de David sur `1ere-demo` jamais
+  touché). Nettoyage : une pollution de tentatives factices
+  (`"ex0".."ex34"`) trouvée dans `resultats/{ficheId}` de `n.testeuse`
+  pour fiche-01 pendant ce nettoyage, restée d'un test antérieur dans
+  cette même session (jamais nettoyée à l'époque) — document `resultats`
+  de ce couple (n.testeuse, fiche-01) supprimé entièrement plutôt que
+  reconstruit à la main (compte de test jetable, pas de perte réelle).
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).

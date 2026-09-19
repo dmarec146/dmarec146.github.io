@@ -42,17 +42,31 @@ function lienPour(devoir) {
   return devoir.type === 'fiche' ? devoir.ficheId : '/automatismes/premiere/sujet-blanc.html';
 }
 
+// Trois etats, sur le nombre d'essais reellement utilises (pas juste "au
+// moins une tentative") : aucun essai -> pas encore fait (rouge) ; au moins
+// un essai mais en dessous du max -> "X/Y tentatives" (vert, il en reste) ;
+// max atteint -> tentatives epuisees (gris neutre, plus alarmant que "encore
+// possibles" -- corrige le 19/09/2026, c'etait faux des que le max est
+// atteint puisque la limite est maintenant reellement bloquante cote fiche).
+function statutDevoir(d) {
+  if (d.essaisUtilises === 0) {
+    return { texte: 'Pas encore fait', classe: 'devoir-bandeau-statut-attente' };
+  }
+  if (d.essaisUtilises >= d.nbEssaisMax) {
+    return { texte: `Tentatives épuisées (${d.essaisUtilises}/${d.nbEssaisMax}) — meilleure note retenue`, classe: 'devoir-bandeau-statut-epuise' };
+  }
+  return { texte: `${d.essaisUtilises}/${d.nbEssaisMax} tentatives`, classe: 'devoir-bandeau-statut-rendu' };
+}
+
 function afficherBandeau(devoirs) {
   const bandeau = document.createElement('div');
   bandeau.className = 'devoir-bandeau';
 
   const items = devoirs.map((d) => {
-    const statut = d.rendu
-      ? '<span class="devoir-bandeau-statut-rendu">Déjà fait — tentatives encore possibles</span>'
-      : '<span class="devoir-bandeau-statut-attente">Pas encore fait</span>';
+    const { texte, classe } = statutDevoir(d);
     return `<li class="devoir-bandeau-item">
       <a class="devoir-bandeau-lien" href="${lienPour(d)}">${d.titre || d.ficheId}</a>
-      — à rendre avant le ${formaterEcheance(d.echeance.toMillis())} — ${statut}
+      — à rendre avant le ${formaterEcheance(d.echeance.toMillis())} — <span class="${classe}">${texte}</span>
     </li>`;
   }).join('');
 
@@ -84,17 +98,15 @@ onAuthStateChanged(auth, async (utilisateur) => {
       .filter((dv) => dv.echeance?.toMillis && dv.echeance.toMillis() > maintenant);
     if (actifs.length === 0) return;
 
-    // Statut "deja fait" purement informatif (n'empeche rien, les essais ne
-    // sont pas encore bloquants) : une tentative deja enregistree sur ce
-    // devoir precis suffit, peu importe si elle-meme compterait pour la
-    // note (avant/apres echeance -- ici forcement avant, vu le filtre
-    // ci-dessus, mais peu importe : juste indiquer "deja tente").
+    // Nombre d'essais reellement utilises (pas juste un booleen "deja fait") :
+    // affiche "X/Y tentatives" pour que l'eleve sache concretement ou il en
+    // est, cf. statutDevoir ci-dessus.
     const avecStatut = await Promise.all(actifs.map(async (dv) => {
       const instantaneTentatives = await getDocs(query(
         collection(db, 'eleves', utilisateur.uid, 'devoirsTentatives'),
         where('devoirId', '==', dv.id)
       ));
-      return { ...dv, rendu: instantaneTentatives.size > 0 };
+      return { ...dv, essaisUtilises: instantaneTentatives.size };
     }));
 
     afficherBandeau(avecStatut);
