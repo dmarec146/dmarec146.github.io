@@ -1865,6 +1865,11 @@ let saisies = {};
 // utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
 // ni rien laisser croire a un visiteur anonyme.
 let eleveConnecte = false;
+// Etat du devoir en cours pour cette fiche (voir verifierEtatDevoir dans
+// suivi.js), determine une fois au chargement -- null si aucun devoir actif
+// pour la classe de l'eleve. { bloque: true } desactive "Valider ma fiche"
+// (voir initialiserFiche et validerFicheActuelle).
+let etatDevoir = null;
 // Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
 // false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
 // faux, un eleve connecte ne peut pas voir la correction (empeche de
@@ -1957,6 +1962,12 @@ async function enregistrerBrouillonActuel() {
 
 async function validerFicheActuelle() {
   if (!window.validerFiche) return;
+  // Seconde ligne de defense : le bouton est deja desactive dans ce cas
+  // (voir initialiserFiche), ceci couvre un appel direct (ex. console).
+  if (etatDevoir && etatDevoir.bloque) {
+    afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir — ta meilleure note a été retenue.`);
+    return;
+  }
   const bouton = document.getElementById('btn-valider');
   if (bouton) bouton.disabled = true;
   try {
@@ -3174,6 +3185,23 @@ async function initialiserFiche() {
   if (panneauMode) panneauMode.hidden = eleveConnecte;
   if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
 
+  // Limite d'essais d'un devoir (19/09/2026) : verifiee ici, pas seulement au
+  // clic sur "Valider" (voir validerFicheActuelle), pour que le bouton
+  // affiche son etat reel des l'arrivee sur la fiche plutot que de laisser
+  // l'eleve decouvrir le blocage seulement en cliquant.
+  if (eleveConnecte && window.verifierEtatDevoir) {
+    try {
+      etatDevoir = await window.verifierEtatDevoir(FICHE_ID);
+    } catch (erreur) {
+      etatDevoir = null;
+    }
+    if (etatDevoir && etatDevoir.bloque) {
+      const boutonValider = document.getElementById('btn-valider');
+      if (boutonValider) boutonValider.disabled = true;
+      afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`);
+    }
+  }
+
   exercices = marquerFormesFactorisees(genererExercices());
 
   let brouillon = null;
@@ -3213,7 +3241,9 @@ async function initialiserFiche() {
         verifierUne(Number(idx));
       }
     }
-    afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+    // Ne pas ecraser le message de blocage (plus important, voir plus haut)
+    // s'il est deja affiche.
+    if (!(etatDevoir && etatDevoir.bloque)) afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
   }
 
   if (window.MathJax) MathJax.typesetPromise();

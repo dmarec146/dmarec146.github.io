@@ -195,6 +195,27 @@ async function classeEleve() {
   return classeEleveCourant;
 }
 
+// Requete brute (sans filtre d'echeance) : partagee entre
+// enregistrerTentativeDevoirSiApplicable et verifierEtatDevoir ci-dessous.
+async function devoirsPour(ficheId, classe) {
+  const instantane = await getDocs(query(
+    collection(db, 'devoirs'),
+    where('ficheId', '==', ficheId),
+    where('classe', '==', classe)
+  ));
+  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// Nombre de tentatives DEJA enregistrees par l'eleve courant pour ce devoir
+// precis (eleves/{uid}/devoirsTentatives, voir plus bas).
+async function nbEssaisUtilises(devoirId) {
+  const instantane = await getDocs(query(
+    collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'),
+    where('devoirId', '==', devoirId)
+  ));
+  return instantane.size;
+}
+
 // Le modele "resultats" ci-dessus FUSIONNE les passages (score cumule, un
 // exercice reussi une fois reste acquis) -- adapte a l'entrainement libre,
 // mais un devoir a besoin au contraire de la MEILLEURE TENTATIVE COMPLETE
@@ -204,29 +225,68 @@ async function classeEleve() {
 // fiche+classe (la tres grande majorite des validations, hors devoir, n'en
 // ecrivent jamais). Ne bloque jamais la validation normale (voir
 // validerFiche) : toute erreur ici reste silencieuse.
+//
+// Limite d'essais (19/09/2026, decide avec David) : verifiee ici seulement
+// PENDANT la fenetre active du devoir (echeance pas encore passee) -- une
+// fois l'echeance passee, la fiche redevient un entrainement libre illimite
+// (decide des la conception de la brique devoirs) donc plus aucune raison
+// de compter/plafonner ces tentatives-la, meme si elles n'ont plus d'effet
+// sur la note (deja exclues par le filtre d'echeance de la vue resultats).
+// Le VRAI blocage cote UI vit dans verifierEtatDevoir() (appelee au
+// chargement de la fiche, desactive "Valider ma fiche") ; ce filtre ici est
+// une seconde ligne de defense si ce blocage est contourne (ex. appel
+// direct de window.validerFiche() depuis la console).
 async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
-    const instantane = await getDocs(query(
-      collection(db, 'devoirs'),
-      where('ficheId', '==', ficheId),
-      where('classe', '==', classe)
-    ));
-    if (instantane.empty) return;
-    await Promise.all(instantane.docs.map((d) => addDoc(
-      collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'),
-      {
-        devoirId: d.id,
+    const devoirs = await devoirsPour(ficheId, classe);
+    const maintenant = Date.now();
+    for (const devoir of devoirs) {
+      const actif = devoir.echeance?.toMillis && devoir.echeance.toMillis() > maintenant;
+      if (actif && (await nbEssaisUtilises(devoir.id)) >= devoir.nbEssaisMax) continue;
+      await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
+        devoirId: devoir.id,
         ficheId,
         score: exercicesReussisIds.length,
         totalExercices,
         nbRepondues,
         horodatage: serverTimestamp(),
-      }
-    )));
+      });
+    }
   } catch (erreur) {
     console.warn('Suivi : enregistrement de la tentative de devoir impossible.', erreur);
+  }
+}
+
+// Appelee au chargement d'une fiche (voir initialiserFiche() cote fiche)
+// pour savoir s'il faut desactiver "Valider ma fiche" : renvoie null si
+// aucun devoir actif pour cette fiche+classe (comportement normal), sinon
+// {titre, nbEssaisMax, essaisUtilises, echeance (ms), bloque}. "bloque" ne
+// devient vrai que PENDANT la fenetre active (memes raisons que le filtre
+// dans enregistrerTentativeDevoirSiApplicable ci-dessus) -- passee
+// l'echeance, plus aucun blocage, entrainement libre.
+export async function verifierEtatDevoir(ficheId) {
+  await authPrete;
+  if (!utilisateurCourant) return null;
+  try {
+    const classe = await classeEleve();
+    if (!classe) return null;
+    const maintenant = Date.now();
+    const devoir = (await devoirsPour(ficheId, classe))
+      .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
+    if (!devoir) return null;
+    const essaisUtilises = await nbEssaisUtilises(devoir.id);
+    return {
+      titre: devoir.titre,
+      nbEssaisMax: devoir.nbEssaisMax,
+      essaisUtilises,
+      echeance: devoir.echeance.toMillis(),
+      bloque: essaisUtilises >= devoir.nbEssaisMax,
+    };
+  } catch (erreur) {
+    console.warn('Suivi : verification du devoir impossible.', erreur);
+    return null;
   }
 }
 
@@ -342,3 +402,4 @@ window.chargerBrouillon = chargerBrouillon;
 window.supprimerBrouillon = supprimerBrouillon;
 window.validerFiche = validerFiche;
 window.estConnecte = estConnecte;
+window.verifierEtatDevoir = verifierEtatDevoir;

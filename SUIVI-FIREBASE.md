@@ -619,11 +619,39 @@ de changer ce réglage sans qu'il en reparle.
   rechargement ("Déjà fait — tentatives encore possibles" en vert).
   Devoir de test et tentative supprimés après coup.
 
-  **Pas encore fait** : la limite d'essais n'a aucun effet bloquant côté
-  fiche/sujet blanc (un devoir créé ici n'empêche encore rien), le niveau,
-  le mode et la durée d'un sujet blanc ne sont pas non plus imposés/
-  verrouillés côté page (l'élève peut toujours changer librement), le
-  bandeau n'est pas encore chargé sur les 44 fiches individuelles ni sur
+  **Limite d'essais réellement bloquante — pilotée sur fiche-01.html
+  Première (19/09/2026)**, sur demande de David pendant son test réel avec
+  `demo-eleve` (devoir sur cette fiche, échéance le 19/09 10h00, 3 essais
+  max — déjà 3 tentatives réelles enregistrées au moment de la demande).
+  Nouvelle fonction `verifierEtatDevoir(ficheId)` (`suivi.js`), appelée
+  dans `initialiserFiche()` : si un devoir est actif (échéance pas encore
+  passée) pour la fiche+classe et que `essaisUtilises >= nbEssaisMax`,
+  désactive le bouton "Valider ma fiche" dès le chargement et affiche un
+  message explicite (garde-fou dans `validerFicheActuelle()` aussi, si le
+  bouton est contourné). Double filtre par échéance (comme la vue
+  résultats) : le blocage ET le plafonnement des écritures dans
+  `enregistrerTentativeDevoirSiApplicable()` ne s'appliquent que PENDANT la
+  fenêtre active — passée l'échéance, entraînement libre illimité comme
+  prévu dès la conception (aucun changement de comportement post-échéance).
+
+  Testé en conditions réelles, DIRECTEMENT avec les 3 vraies tentatives de
+  `demo-eleve` (pas de tentative supplémentaire nécessaire, sur demande de
+  David pour éviter de refaire tout le devoir) : bouton bien désactivé au
+  chargement avec le message correct, `validerFicheActuelle()` bloqué même
+  appelée directement (aucune 4ᵉ tentative écrite), `window.validerFiche()`
+  bloqué même en contournant tout le code de la fiche (2ᵉ ligne de
+  défense dans `suivi.js` elle-même). Un appel de test à `window.
+  validerFiche()` a quand même modifié le score cumulé normal
+  (`resultats/{ficheId}`, comportement voulu — cette limite ne concerne
+  QUE le compteur du devoir) : `exercicesReussis`/`nbValidations`/
+  `sommeQuestionsRepondues` corrigés après coup pour retrouver l'état
+  exact d'avant le test.
+
+  **Pas encore fait** : pilote sur fiche-01.html Première SEULEMENT, pas
+  encore étendu aux 43 autres fiches ni aux sujets blancs d'automatismes
+  (niveau/mode/durée toujours pas imposés/verrouillés côté page). Le
+  bandeau "devoir à faire" n'est toujours chargé que sur les 4 pages
+  d'entrée du site, pas les 44 fiches individuelles ni
   `automatismes/premiere/fiche.html`.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
