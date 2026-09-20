@@ -1882,8 +1882,13 @@ const generateurs = [
     const sgn = v => v >= 0 ? `+${v}` : `-${Math.abs(v)}`;
     let d1 = alea(1,6), d2 = alea(1,6);
     while (d2 === d1) d2 = alea(1,6);
+    // encadrements plutot que valeurs absolues (demande de David du 2026-09-20, meme motif que
+    // 16.5 a) : x1/x2 places du MEME cote du sommet -c, pas de |...| a manier.
+    const droite = alea(0,1) === 1;
+    const bas1 = droite ? -c+d1 : -c-d1-1, haut1 = bas1+1;
+    const bas2 = droite ? -c+d2 : -c-d2-1, haut2 = bas2+1;
     const symbole = d1<d2 ? '<' : '>';
-    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=(x${sgn(c)})^2${sgn(d)}\\). On sait que \\(|x_1${sgn(c)}|=${d1}\\) et \\(|x_2${sgn(c)}|=${d2}\\). Comparer \\(f(x_1)\\) et \\(f(x_2)\\) sans les calculer.`, reponse: `f(x1)${symbole}f(x2)` };
+    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=(x${sgn(c)})^2${sgn(d)}\\). On sait que \\(${bas1}\\lt x_1\\lt ${haut1}\\) et \\(${bas2}\\lt x_2\\lt ${haut2}\\). Comparer \\(f(x_1)\\) et \\(f(x_2)\\) sans les calculer.`, reponse: `f(x1)${symbole}f(x2)` };
   }},
   {id:"16.6 b)", type:"texte", comparaison:true, nomFonction:"g", texteLibre:true, gen: () => {
     const c = entierSigne(1,9), d = entierSigne(1,15);
