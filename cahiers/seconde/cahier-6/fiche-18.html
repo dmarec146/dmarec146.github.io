@@ -347,6 +347,25 @@ window.MathJax = {
   .tableau-donnees { border-collapse: collapse; font-family: Georgia, serif; font-size: 14px; }
   .tableau-donnees td { border: 1px solid #999; padding: 5px 12px; text-align: center; white-space: nowrap; }
   .tableau-donnees td.tableau-donnees-label { text-align: left; font-weight: bold; background: var(--gris-clair); }
+  /* ---------- tableau croise a completer (repris tel quel de la fiche 9, 9.8 e) : cases de
+     saisie integrees directement dans le tableau plutot qu'un champ separe en dessous ---------- */
+  .tc-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .tc-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .tc-cellule {
+    width: 56px; padding: 5px 4px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    text-align: center; font-family: 'Courier New', monospace; font-size: 14px;
+    background: white;
+  }
+  .tc-cellule:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .tc-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tc-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tc-btn-valider {
+    margin-top: 8px; padding: 8px 14px; font-size: 13px; font-family: Georgia, serif;
+    background: white; color: var(--bleu); border: 1.5px solid var(--bleu); border-radius: 8px;
+    cursor: pointer;
+  }
+  .tc-btn-valider:hover { background: var(--bleu-clair); }
   .tv-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .tv-table { border-collapse: collapse; table-layout: fixed; font-family: Georgia, serif; font-size: 14px; margin: 6px 0; }
   .tv-table td { padding: 5px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
@@ -892,6 +911,10 @@ function preparerPourImpression() {
       valeursWidget[idx] = capturerEtatTableauVariations(idx, ex);
       reinitialiserTableauVariations(idx, ex);
     }
+    if (ex.type === 'tableauCroiseRempli') {
+      valeursWidget[idx] = capturerEtatTableauCroise(idx, ex);
+      reinitialiserTableauCroiseRempli(idx, ex);
+    }
     const input = document.getElementById('input-' + idx);
     if (input) { valeurs[idx] = input.value; input.value = ''; }
     const div = document.getElementById('q-' + idx);
@@ -913,6 +936,10 @@ function restaurerApresImpression() {
   exercices.forEach((ex, idx) => {
     if (ex.type === 'tableauVariations' && valeursWidget[idx]) {
       restaurerEtatTableauVariations(idx, ex, valeursWidget[idx]);
+      verifierUne(idx);
+    }
+    if (ex.type === 'tableauCroiseRempli' && valeursWidget[idx]) {
+      restaurerEtatTableauCroise(idx, ex, valeursWidget[idx]);
       verifierUne(idx);
     }
     const input = document.getElementById('input-' + idx);
@@ -1718,6 +1745,94 @@ function tableCorrigeVariationsHTML(ex) {
   return html;
 }
 
+// ---------- tableau croise a completer, cases de saisie integrees DIRECTEMENT dans le tableau --
+// repris tel quel de la fiche 9 (9.8 e), meme classes CSS (.tc-cellule/.tc-scroll/.tc-conteneur/
+// .tc-btn-valider), meme principe (saisie directe dans la case, bouton "Valider ce tableau" dedie,
+// jamais de validation prematuree au fil de la frappe) -- generalise ici a un nombre variable de
+// lignes/colonnes et a une liste quelconque de cases a completer, au lieu du format fixe a/b/c/d
+// en 2x2 de fiche 9 (David, 2026-09-21 : reprendre l'outil existant, ne pas en inventer un nouveau).
+// ex.tcr = { nomsLignes, nomsColonnes, cellules (valeurs REELLES, y compris les cases a completer),
+// aCompleter: [{i,j}], colonneTotalMasquee (optionnel, index de colonne dont le total de la
+// derniere ligne est affiche comme "?" plutot que lu directement -- 18.9). */
+function tableauCroiseRempliHTML(idx, ex) {
+  const { nomsLignes, nomsColonnes, cellules, aCompleter, colonneTotalMasquee } = ex.tcr;
+  const estACompleter = (i, j) => aCompleter.some(c => c.i === i && c.j === j);
+  const totLigne = i => cellules[i].reduce((s, v) => s + v, 0);
+  const totColonne = j => cellules.reduce((s, row) => s + row[j], 0);
+  const total = cellules.reduce((s, row) => s + row.reduce((a, b) => a + b, 0), 0);
+  const std = 'border:1px solid #999;padding:6px 8px;text-align:center;font-family:Georgia,serif;font-size:14px;';
+  const ent = std + 'font-weight:bold;background:#f1efe8;';
+  const cellule = id => `<input type="text" class="tc-cellule" id="${id}" oninput="reinitialiserStatut(${idx});enregistrerSaisieTableauCroise(${idx})">`;
+  let table = `<table style="border-collapse:collapse;margin:10px auto;"><tr><td style="${ent}"></td>`;
+  nomsColonnes.forEach(nom => { table += `<td style="${ent}">${nom}</td>`; });
+  table += `<td style="${ent}">Total</td></tr>`;
+  nomsLignes.forEach((nomL, i) => {
+    table += `<tr><td style="${ent}">${nomL}</td>`;
+    nomsColonnes.forEach((_, j) => {
+      table += `<td style="${std}">${estACompleter(i, j) ? cellule(`tc-${idx}-${i}-${j}`) : `\\(${cellules[i][j]}\\)`}</td>`;
+    });
+    table += `<td style="${std}">\\(${totLigne(i)}\\)</td></tr>`;
+  });
+  table += `<tr><td style="${ent}">Total</td>`;
+  nomsColonnes.forEach((_, j) => {
+    table += `<td style="${std}">${j === colonneTotalMasquee ? '\\(?\\)' : `\\(${totColonne(j)}\\)`}</td>`;
+  });
+  table += `<td style="${std}">\\(${total}\\)</td></tr></table>`;
+  const bouton = `<button type="button" class="tc-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
+  return `<div class="tc-conteneur"><div class="tc-scroll">${table}</div>${bouton}</div>`;
+}
+// "colorier" (true par defaut) commande l'ajout des classes correct/incorrect sur chaque case --
+// desactive pour un eleve connecte tant que sa fiche n'est pas validee (meme "reveler" que
+// verifierUne). Retourne null (incomplet), true (tout correct) ou false (au moins une erreur).
+function verifierTableauCroiseRempli(idx, ex, colorier) {
+  if (colorier === undefined) colorier = true;
+  const { cellules, aCompleter } = ex.tcr;
+  let toutRempli = true, toutCorrect = true;
+  aCompleter.forEach(({ i, j }) => {
+    const input = document.getElementById(`tc-${idx}-${i}-${j}`);
+    const val = input.value.trim();
+    if (colorier) input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; return; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - cellules[i][j]) < 1e-9; } catch (e) { ok = false; }
+    if (colorier) input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  });
+  if (!toutRempli) return null;
+  return toutCorrect;
+}
+function tableauCroiseRempliEstComplet(idx, ex) {
+  return ex.tcr.aCompleter.every(({ i, j }) => document.getElementById(`tc-${idx}-${i}-${j}`).value.trim() !== '');
+}
+function reinitialiserTableauCroiseRempli(idx, ex) {
+  ex.tcr.aCompleter.forEach(({ i, j }) => {
+    const el = document.getElementById(`tc-${idx}-${i}-${j}`);
+    el.value = ''; el.classList.remove('correct', 'incorrect');
+  });
+}
+// instantane brut (non verifie) de l'etat d'un tableau croise, quel que soit son degre de
+// remplissage -- alimente saisies[idx] a chaque case modifiee (voir enregistrerSaisieTableauCroise),
+// pour que "Enregistrer mon avancement" capture la progression meme sans clic sur "Valider".
+function capturerEtatTableauCroise(idx, ex) {
+  const valeur = {};
+  ex.tcr.aCompleter.forEach(({ i, j }) => { valeur[`${i}-${j}`] = document.getElementById(`tc-${idx}-${i}-${j}`).value; });
+  return valeur;
+}
+function restaurerEtatTableauCroise(idx, ex, valeur) {
+  ex.tcr.aCompleter.forEach(({ i, j }) => { document.getElementById(`tc-${idx}-${i}-${j}`).value = valeur[`${i}-${j}`] || ''; });
+}
+function enregistrerSaisieTableauCroise(idx) {
+  const ex = exercices[idx];
+  saisies[idx] = { id: ex.id, valeur: capturerEtatTableauCroise(idx, ex), correct: null };
+}
+// tableau croise ENTIEREMENT REMPLI, en lecture seule : utilise dans le panneau "Voir toutes les
+// reponses" -- reutilise tableauCroiseHTML (deja utilise pour 18.6, tableaux non a completer) sans
+// aucune case masquee.
+function tableCorrigeCroiseHTML(ex) {
+  const { nomsLignes, nomsColonnes, cellules } = ex.tcr;
+  return tableauCroiseHTML(nomsLignes, nomsColonnes, cellules);
+}
+
 // ---------- vivier de revisions melangees (groupe 18.2) : developpement, racines
 // carrees, evolutions successives — sujets deja rencontres dans les fiches precedentes,
 // melanges maintenant que la fiche est avancee dans le cahier ----------
@@ -1770,6 +1885,37 @@ const MODELES_REVISION = [
     const numR = num/g, denR = den/g;
     const reponse = denR === 1 ? `${numR}` : `${numR}/${denR}`;
     return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\) (donner le résultat sous forme de fraction irréductible).`, reponse, fractionIrreductible:true };
+  },
+  // ---------- ajouts David 2026-09-21 : davantage varier les themes couverts par les automatismes,
+  // pas seulement developpement/racines/evolutions -- puissances (fiche 1), produit de fractions
+  // (fiche 2), equation du 1er degre (fiche 6), valeur absolue (fiche 13), image par une fonction
+  // affine (fiche 14) et par la fonction inverse (fiche 16) ----------
+  () => {
+    const a = choix([2,3,5]), n1 = alea(2,4), n2 = alea(2,4);
+    return { enonce:`Calculer \\(${a}^{${n1}}\\times ${a}^{${n2}}\\).`, reponse:`${Math.pow(a,n1+n2)}` };
+  },
+  () => {
+    const a=alea(1,6), b=alea(2,9), c=alea(1,6), d=alea(2,9);
+    const num = a*c, den = b*d, g = pgcd(num, den);
+    const numR = num/g, denR = den/g;
+    const reponse = denR === 1 ? `${numR}` : `${numR}/${denR}`;
+    return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}\\times\\dfrac{${c}}{${d}}\\) (fraction irréductible).`, reponse, fractionIrreductible:true };
+  },
+  () => {
+    const a=choix([2,3,4,5,-2,-3,-4,-5]), x0=alea(-6,6), b=-a*x0;
+    return { enonce:`Résoudre \\(${affineTexte(a,b)}=0\\).`, reponse:`${x0}` };
+  },
+  () => {
+    const p=alea(-10,10), q=alea(-10,10);
+    return { enonce:`Calculer \\(|${p}-(${q})|\\).`, reponse:`${Math.abs(p-q)}` };
+  },
+  () => {
+    const a=choix([-3,-2,2,3]), b=entierSigne(1,8), x0=alea(-5,5);
+    return { enonce:`On considère \\(f(x)=${affineTexte(a,b)}\\). Calculer \\(f(${x0})\\).`, reponse:`${a*x0+b}` };
+  },
+  () => {
+    const n = alea(2,9);
+    return { enonce:`On considère la fonction inverse \\(f(x)=\\dfrac{1}{x}\\). Calculer \\(f\\left(\\dfrac{1}{${n}}\\right)\\).`, reponse:`${n}` };
   }
 ];
 let tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
@@ -2042,31 +2188,30 @@ const generateurs = [
   }},
 
   // ---------- 18.7 : completer un tableau croise par raisonnement sur les effectifs (a partir des
-  // totaux). Deux cases masquees, une par ligne (colonnes differentes) : chacune se retrouve en
-  // une seule soustraction, a partir du total de sa ligne ----------
-  {id:"18.7 a)", type:"num", texteLibre:true, gen: () => {
+  // totaux). Deux cases a completer, une par ligne (colonnes differentes) : chacune se retrouve en
+  // une seule soustraction, a partir du total de sa ligne. Saisie directement dans les cases du
+  // tableau (widget tableauCroiseRempli, repris de la fiche 9 -- David, 2026-09-21) ----------
+  {id:"18.7 a)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const N = choix([20,24,30]);
     const [totA, totB] = repartirEffectifs(2, N, 6);
     const cellulesA = repartirEffectifs(3, totA, 1);
     const cellulesB = repartirEffectifs(3, totB, 1);
     const cellules = [cellulesA, cellulesB];
     const [jA, jB] = melanger([0,1,2]).slice(0,2);
-    const masquer = [{i:0,j:jA,lettre:'a'},{i:1,j:jB,lettre:'b'}];
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
-    const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules, masquer);
-    return { enonce: table + `Le tableau ci-dessus est incomplet. À l'aide des totaux, donner les effectifs manquants notés a) et b).`, reponse:`{${cellulesA[jA]};${cellulesB[jB]}}` };
+    return { enonce:`Le tableau ci-dessous est incomplet. À l'aide des totaux, compléter les effectifs manquants.`,
+      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:jA},{i:1,j:jB}] } };
   }},
-  {id:"18.7 b)", type:"num", texteLibre:true, gen: () => {
+  {id:"18.7 b)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const N = choix([18,25,28]);
     const [totA, totB] = repartirEffectifs(2, N, 6);
     const cellulesA = repartirEffectifs(3, totA, 1);
     const cellulesB = repartirEffectifs(3, totB, 1);
     const cellules = [cellulesA, cellulesB];
     const [jA, jB] = melanger([0,1,2]).slice(0,2);
-    const masquer = [{i:0,j:jA,lettre:'a'},{i:1,j:jB,lettre:'b'}];
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
-    const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules, masquer);
-    return { enonce: table + `Le tableau ci-dessus est incomplet. À l'aide des totaux, donner les effectifs manquants notés a) et b).`, reponse:`{${cellulesA[jA]};${cellulesB[jB]}}` };
+    return { enonce:`Le tableau ci-dessous est incomplet. À l'aide des totaux, compléter les effectifs manquants.`,
+      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:jA},{i:1,j:jB}] } };
   }},
 
   // ---------- 18.8 (avance) : estimation de la mediane par repartition uniforme dans la classe
@@ -2126,7 +2271,7 @@ const generateurs = [
   // convertir la frequence conditionnelle donnee en effectif, puis en deduire le second par
   // difference. D = denominateur de la frequence (diviseur de la colonne), M = multiplicateur
   // choisi dans un petit jeu de valeurs a la main -- effectif = numerateur * M, toujours exact ----------
-  {id:"18.9 a)", type:"num", texteLibre:true, gen: () => {
+  {id:"18.9 a)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const D = choix([5,10]);
     const p = alea(1, D-1);
     const M = choix([2,3,4,5]);
@@ -2138,11 +2283,10 @@ const generateurs = [
     const freqA1 = fracSimplifiee(p, D);
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const cellules = [[cellA1,cellA2,cellA3],[cellB1,cellB2,cellB3]];
-    const masquer = [{i:0,j:0,lettre:'a'},{i:1,j:0,lettre:'b'}];
-    const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules, masquer, {colonnesSansTotal:[0]});
-    return { enonce: table + `Le tableau ci-dessus est incomplet. Sachant que, parmi les individus du « Groupe 1 », la fréquence de la catégorie A vaut \\(${freqA1}\\), retrouver les effectifs manquants notés a) et b).`, reponse:`{${cellA1};${cellB1}}` };
+    return { enonce:`Le tableau ci-dessous est incomplet. Sachant que, parmi les individus du « Groupe 1 », la fréquence de la catégorie A vaut \\(${freqA1}\\), compléter les effectifs manquants.`,
+      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:0},{i:1,j:0}], colonneTotalMasquee: 0 } };
   }},
-  {id:"18.9 b)", type:"num", texteLibre:true, gen: () => {
+  {id:"18.9 b)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const D = choix([4,5,10]);
     const p = alea(1, D-1);
     const M = choix([2,3,4,5]);
@@ -2154,9 +2298,8 @@ const generateurs = [
     const freqA2 = fracSimplifiee(p, D);
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const cellules = [[cellA1,cellA2,cellA3],[cellB1,cellB2,cellB3]];
-    const masquer = [{i:0,j:1,lettre:'a'},{i:1,j:1,lettre:'b'}];
-    const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules, masquer, {colonnesSansTotal:[1]});
-    return { enonce: table + `Le tableau ci-dessus est incomplet. Sachant que, parmi les individus du « Groupe 2 », la fréquence de la catégorie A vaut \\(${freqA2}\\), retrouver les effectifs manquants notés a) et b).`, reponse:`{${cellA2};${cellB2}}` };
+    return { enonce:`Le tableau ci-dessous est incomplet. Sachant que, parmi les individus du « Groupe 2 », la fréquence de la catégorie A vaut \\(${freqA2}\\), compléter les effectifs manquants.`,
+      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:1},{i:1,j:1}], colonneTotalMasquee: 1 } };
   }}
 ];
 
@@ -2179,7 +2322,7 @@ const MODELES_AUTOMATISME = [
     const spec = auDessus
       ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
       : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
-    return { enonce:`Résoudre l'inéquation \\(${affineTexte(a,b)}${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+    return { enonce:`Résoudre \\(${affineTexte(a,b)}${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
   },
   // meme famille, presentee sans regrouper a 0 : ax op b (division directe, attention au signe de a).
   () => {
@@ -2194,7 +2337,7 @@ const MODELES_AUTOMATISME = [
     const spec = auDessus
       ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
       : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
-    return { enonce:`Résoudre l'inéquation \\(${coefXTexte(a)}${opSymb}${bDroite}\\).`, type:'intervalle', intervalleSpec: spec };
+    return { enonce:`Résoudre \\(${coefXTexte(a)}${opSymb}${bDroite}\\).`, type:'intervalle', intervalleSpec: spec };
   },
   // inequation produit deja factorisee (degre 2) : (x-a)(x-b) op 0, signe direct par la regle du
   // signe d'un produit — pas besoin de developper ni de graphique.
@@ -2206,7 +2349,7 @@ const MODELES_AUTOMATISME = [
       ? { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] }
       : { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] };
     const opSymb = veutPositif ? '\\gt' : '\\lt';
-    return { enonce:`Résoudre l'inéquation \\((${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+    return { enonce:`Résoudre \\((${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
   },
   // meme famille avec un coefficient negatif devant le produit (le signe global s'inverse).
   () => {
@@ -2217,7 +2360,7 @@ const MODELES_AUTOMATISME = [
       ? { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] }
       : { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] };
     const opSymb = veutPositif ? '\\gt' : '\\lt';
-    return { enonce:`Résoudre l'inéquation \\(-(${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+    return { enonce:`Résoudre \\(-(${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
   },
   // calcul litteral : developper un carre
   () => {
@@ -2264,6 +2407,7 @@ function necessiteAide(ex) {
   if (ex.type === 'approx') return true;
   if (ex.type === 'intervalle') return true;
   if (ex.type === 'tableauVariations') return true;
+  if (ex.type === 'tableauCroiseRempli') return true;
   if (ex.fractionIrreductible) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
@@ -2286,6 +2430,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'tableauVariations') {
     return "Compléter les abscisses manquantes et les valeurs de \\(g\\), puis cliquer sur les cases vides de la ligne « Variations » pour faire apparaître la flèche (↗ ou ↘). Cliquer enfin sur « Valider ce tableau ».";
+  }
+  if (ex.type === 'tableauCroiseRempli') {
+    return "Écrire directement l'effectif dans chaque case à compléter, puis cliquer sur « Valider ce tableau ».";
   }
   if (ex.fractionIrreductible) {
     return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
@@ -2504,7 +2651,9 @@ function construireGrilles() {
       // du texte mais des donnees tirees au hasard, il tiendrait donc parfois a cote de la lettre
       // et parfois pas d'un tirage a l'autre.
       const classeEnonce = /^\s*<(div|table)/.test(enonceHtml) ? 'q-enonce q-enonce-bloc' : 'q-enonce';
-      const champ = ex.type === 'tableauVariations' ? tableauVariationsHTML(idx, ex) : champReponsePour(idx, ex);
+      const champ = ex.type === 'tableauVariations' ? tableauVariationsHTML(idx, ex)
+        : ex.type === 'tableauCroiseRempli' ? tableauCroiseRempliHTML(idx, ex)
+        : champReponsePour(idx, ex);
       div.innerHTML = `
         <span class="q-lettre">${lettres[pos] || ''})</span>
         <span class="${classeEnonce}">${enonceHtml}</span>
@@ -2929,6 +3078,22 @@ function verifierUne(idx) {
     if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
     return ok;
   }
+  if (ex.type === 'tableauCroiseRempli') {
+    const ok = verifierTableauCroiseRempli(idx, ex, reveler);
+    if (ok === null) {
+      if (reveler) { statut.textContent = 'remplir toutes les cases'; statut.className = 'q-statut'; }
+      saisies[idx] = { id: ex.id, valeur: capturerEtatTableauCroise(idx, ex), correct: null };
+      return null;
+    }
+    if (reveler) {
+      div.classList.add(ok ? 'correct' : 'incorrect');
+      statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+      statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    }
+    saisies[idx] = { id: ex.id, valeur: capturerEtatTableauCroise(idx, ex), correct: ok };
+    if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
+    return ok;
+  }
   const input = document.getElementById('input-' + idx);
   const val = valeurDuChamp(input);
   if (!val) {
@@ -3017,13 +3182,16 @@ function toutesLesReponsesSontSaisies() {
     if (ex.type === 'tableauVariations') {
       return verifierTableauVariationsRempli(idx, ex);
     }
+    if (ex.type === 'tableauCroiseRempli') {
+      return tableauCroiseRempliEstComplet(idx, ex);
+    }
     return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
   });
 }
 
 function attacherEcouteurs() {
   exercices.forEach((ex, idx) => {
-    if (ex.type === 'tableauVariations') return; // deja cable via oninput/onclick au moment du rendu
+    if (ex.type === 'tableauVariations' || ex.type === 'tableauCroiseRempli') return; // deja cable via oninput/onclick au moment du rendu
     const input = document.getElementById('input-' + idx);
     let ignorerProchainInput = false;
     let valideeParEntree = false;
@@ -3194,6 +3362,9 @@ function verifierTout() {
       if (ex.type === 'tableauVariations') {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
       }
+      if (ex.type === 'tableauCroiseRempli') {
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
+      }
       const reponseFormatee = formaterReponse(ex);
       return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
     }).join('');
@@ -3215,6 +3386,7 @@ function reinitialiser() {
     document.getElementById('q-' + idx).classList.remove('correct','incorrect');
     document.getElementById('statut-' + idx).textContent = '';
     if (ex.type === 'tableauVariations') { reinitialiserTableauVariations(idx, ex); return; }
+    if (ex.type === 'tableauCroiseRempli') { reinitialiserTableauCroiseRempli(idx, ex); return; }
     document.getElementById('input-' + idx).value = '';
     boiteRacineOuverte[idx] = false;
     const clavier = document.getElementById('clavier-' + idx);
@@ -3236,10 +3408,11 @@ function toggleToutesReponses() {
   const panneau = document.getElementById('toutes-reponses-panneau');
   const btn = document.getElementById('btn-toutes-reponses');
   if (!panneau.classList.contains('visible')) {
-    panneau.innerHTML = exercices.map(ex => ex.type === 'tableauVariations'
-      ? `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeVariationsHTML(ex)}`
-      : `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`
-    ).join('');
+    panneau.innerHTML = exercices.map(ex => {
+      if (ex.type === 'tableauVariations') return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeVariationsHTML(ex)}`;
+      if (ex.type === 'tableauCroiseRempli') return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeCroiseHTML(ex)}`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`;
+    }).join('');
     if (window.MathJax) MathJax.typesetPromise([panneau]);
     panneau.classList.add('visible');
     btn.textContent = 'Masquer toutes les réponses';
@@ -3337,6 +3510,9 @@ async function initialiserFiche() {
       if (!ex || !saisie) continue;
       if (ex.type === 'tableauVariations' && saisie.valeur && typeof saisie.valeur === 'object') {
         restaurerEtatTableauVariations(Number(idx), ex, saisie.valeur);
+        verifierUne(Number(idx));
+      } else if (ex.type === 'tableauCroiseRempli' && saisie.valeur && typeof saisie.valeur === 'object') {
+        restaurerEtatTableauCroise(Number(idx), ex, saisie.valeur);
         verifierUne(Number(idx));
       } else if (typeof saisie.valeur === 'string') {
         const input = document.getElementById('input-' + idx);
