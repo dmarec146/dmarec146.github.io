@@ -329,6 +329,12 @@ window.MathJax = {
     cursor: pointer;
   }
   .tv-btn-valider:hover { background: var(--bleu-clair); }
+  /* ---------- tableau de donnees (valeurs/effectifs ou frequences, fiche 17) : simple tableau a
+     deux lignes, borde, distinct du tableau de variations ci-dessus ---------- */
+  .tableau-donnees-scroll { width: 100%; overflow-x: auto; margin: 8px 0; }
+  .tableau-donnees { border-collapse: collapse; font-family: Georgia, serif; font-size: 14px; }
+  .tableau-donnees td { border: 1px solid #999; padding: 5px 12px; text-align: center; white-space: nowrap; }
+  .tableau-donnees td.tableau-donnees-label { text-align: left; font-weight: bold; background: var(--gris-clair); }
   .tv-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .tv-table { border-collapse: collapse; table-layout: fixed; font-family: Georgia, serif; font-size: 14px; margin: 6px 0; }
   .tv-table td { padding: 5px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
@@ -1750,6 +1756,17 @@ const MODELES_REVISION = [
 let tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
 
 // ---------- helpers statistiques (fiche 17) ----------
+// vrai tableau HTML a deux lignes (valeurs / effectifs ou frequences) — David a fait remarquer
+// que les enonces parlaient d'un "tableau" sans jamais en afficher un, seulement une liste en
+// prose ; ligne2 peut deja contenir du LaTeX (ex. "12\\,\\%") ou un nombre simple.
+function tableauDonnees(labelLigne1, ligne1, labelLigne2, ligne2) {
+  let html = `<div class="tableau-donnees-scroll"><table class="tableau-donnees"><tr><td class="tableau-donnees-label">${labelLigne1}</td>`;
+  ligne1.forEach(v => { html += `<td>\\(${v}\\)</td>`; });
+  html += `</tr><tr><td class="tableau-donnees-label">${labelLigne2}</td>`;
+  ligne2.forEach(v => { html += `<td>\\(${v}\\)</td>`; });
+  html += `</tr></table></div>`;
+  return html;
+}
 // fraction reduite n/d (den toujours positif) ; retourne un entier simple si d2=1.
 function fracSimplifiee(num, den) {
   if (den < 0) { num = -num; den = -den; }
@@ -1865,8 +1882,7 @@ const generateurs = [
     const N = effectifs.reduce((s, e) => s + e, 0);
     const somme = valeurs.reduce((s, v, i) => s + v * effectifs[i], 0);
     const moyenne = fracSimplifiee(somme, N);
-    const lignes = valeurs.map((v, i) => `\\(${v}\\) (effectif \\(${effectifs[i]}\\))`).join(', ');
-    return { enonce: lignes, reponse: moyenne };
+    return { enonce: tableauDonnees('Valeur', valeurs, 'Effectif', effectifs), reponse: moyenne };
   }},
   {id:"17.5 b)", type:"num", texteLibre:true, gen: () => {
     const valeurs = tirerDistincts(5, 0, 20);
@@ -1874,8 +1890,7 @@ const generateurs = [
     const N = effectifs.reduce((s, e) => s + e, 0);
     const somme = valeurs.reduce((s, v, i) => s + v * effectifs[i], 0);
     const moyenne = fracSimplifiee(somme, N);
-    const lignes = valeurs.map((v, i) => `\\(${v}\\) (effectif \\(${effectifs[i]}\\))`).join(', ');
-    return { enonce: lignes, reponse: moyenne };
+    return { enonce: tableauDonnees('Valeur', valeurs, 'Effectif', effectifs), reponse: moyenne };
   }},
   {id:"17.5 c)", type:"num", texteLibre:true, gen: () => {
     const valeurs = tirerDistincts(4, 0, 20);
@@ -1887,8 +1902,8 @@ const generateurs = [
     const freqs = [f1, f2, f3, f4];
     const somme = valeurs.reduce((s, v, i) => s + v * freqs[i], 0);
     const moyenne = fracSimplifiee(somme, 100);
-    const lignes = valeurs.map((v, i) => `\\(${v}\\) (fréquence \\(${freqs[i]}\\,\\%\\))`).join(', ');
-    return { enonce: `Série donnée par ses fréquences : ${lignes}`, reponse: moyenne };
+    const ligneFreq = freqs.map(f => `${f}\\,\\%`);
+    return { enonce: tableauDonnees('Valeur', valeurs, 'Fréquence', ligneFreq), reponse: moyenne };
   }},
   {id:"17.5 d)", type:"num", texteLibre:true, gen: () => {
     const valeurs = tirerDistincts(4, 0, 20);
@@ -1896,7 +1911,8 @@ const generateurs = [
     const N = e1 + e2 + e3 + e4;
     const somme = valeurs[0]*e1 + valeurs[1]*e2 + valeurs[2]*e3 + valeurs[3]*e4;
     const moyenne = fracSimplifiee(somme, N);
-    return { enonce:`Une série statistique est donnée par le tableau d'effectifs suivant : \\(${valeurs[0]}\\) (effectif \\(${e1}\\)), \\(${valeurs[1]}\\) (effectif \\(${e2}\\)), \\(${valeurs[2]}\\) (effectif \\(${e3}\\)), \\(${valeurs[3]}\\) (effectif inconnu). Sachant que la moyenne de cette série vaut \\(${moyenne}\\), calculer l'effectif de la valeur \\(${valeurs[3]}\\).`, reponse:`${e4}` };
+    const tableau = tableauDonnees('Valeur', valeurs, 'Effectif', [e1, e2, e3, '?']);
+    return { enonce:`${tableau}Sachant que la moyenne de cette série vaut \\(${moyenne}\\), calculer l'effectif de la valeur \\(${valeurs[3]}\\) (indiqué par un « ? » dans le tableau).`, reponse:`${e4}` };
   }},
 
   // ---------- 17.6 : calculs avances. a) linearite de la moyenne (reunion de deux series de
