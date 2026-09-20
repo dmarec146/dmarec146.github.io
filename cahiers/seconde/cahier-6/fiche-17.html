@@ -269,7 +269,7 @@ window.MathJax = {
   }
   .question {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
     gap: 6px 8px;
     background: white;
@@ -281,12 +281,14 @@ window.MathJax = {
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
-  /* flex-basis:100% force la lettre (a), b)...) sur sa propre ligne dans TOUS les cas : sans ca,
-     elle se retrouvait cote a cote avec l'enonce quand celui-ci etait assez etroit pour tenir a
-     cote d'elle (ex. 17.5 a/b) mais seule au-dessus dans le cas contraire (17.5 c/d) -- meme
-     contenu, meme structure, mais un tableau/champ de reponse decale de 24px sur les uns et pas
-     les autres. Comportement desormais identique partout (David, 2026-09-21). */
-  .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; flex: 0 0 100%; }
+  .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
+  /* .q-enonce-bloc : force sur sa propre ligne, jamais a cote de la lettre -- reserve au contenu
+     "bloc" (tableau, figure SVG) qui, contrairement a une phrase, tiendrait parfois a cote de la
+     lettre (largeur etroite) et parfois pas (largeur variable d'un tirage a l'autre), ce qui
+     decalait alors le tableau/champ de reponse de 24px de facon incoherente d'un item a l'autre.
+     Les enonces de simple texte/formule (17.1-17.4, 17.6) gardent le flex naturel de fiche 15 :
+     a cote de la lettre quand ca tient, en dessous sinon (David, 2026-09-21). */
+  .q-enonce-bloc { flex: 0 0 100%; }
   .q-enonce { font-size: 15px; }
   .q-enonce table { border-collapse: collapse; margin: 6px 0; font-size: 14px; }
   .q-enonce table th, .q-enonce table td { border: 1px solid #999; padding: 4px 10px; text-align: center; }
@@ -2585,10 +2587,15 @@ function construireGrilles() {
       div.className = 'question';
       div.id = 'q-' + idx;
       const enonceHtml = ex.texteLibre ? ex.enonce : `\\(${ex.enonce}\\)`;
+      // un enonce qui DEBUTE par un bloc (tableau de donnees, figure SVG) est toujours mis sur sa
+      // propre ligne (voir .q-enonce-bloc) : contrairement a une phrase, sa largeur ne depend pas
+      // du texte mais des donnees tirees au hasard, il tiendrait donc parfois a cote de la lettre
+      // et parfois pas d'un tirage a l'autre.
+      const classeEnonce = /^\s*<(div|table)/.test(enonceHtml) ? 'q-enonce q-enonce-bloc' : 'q-enonce';
       const champ = ex.type === 'tableauVariations' ? tableauVariationsHTML(idx, ex) : champReponsePour(idx, ex);
       div.innerHTML = `
         <span class="q-lettre">${lettres[pos] || ''})</span>
-        <span class="q-enonce">${enonceHtml}</span>
+        <span class="${classeEnonce}">${enonceHtml}</span>
         ${champ}
         <span class="q-statut" id="statut-${idx}"></span>
       `;
