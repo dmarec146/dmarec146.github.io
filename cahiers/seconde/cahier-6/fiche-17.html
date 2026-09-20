@@ -281,7 +281,12 @@ window.MathJax = {
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
-  .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
+  /* flex-basis:100% force la lettre (a), b)...) sur sa propre ligne dans TOUS les cas : sans ca,
+     elle se retrouvait cote a cote avec l'enonce quand celui-ci etait assez etroit pour tenir a
+     cote d'elle (ex. 17.5 a/b) mais seule au-dessus dans le cas contraire (17.5 c/d) -- meme
+     contenu, meme structure, mais un tableau/champ de reponse decale de 24px sur les uns et pas
+     les autres. Comportement desormais identique partout (David, 2026-09-21). */
+  .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; flex: 0 0 100%; }
   .q-enonce { font-size: 15px; }
   .q-enonce table { border-collapse: collapse; margin: 6px 0; font-size: 14px; }
   .q-enonce table th, .q-enonce table td { border: 1px solid #999; padding: 4px 10px; text-align: center; }
@@ -2052,21 +2057,21 @@ const generateurs = [
     const brut = tirerDistincts(n, 0, 25);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`Série de ${n} valeurs : \\(${brut.join('\\,;\\,')}\\)`, reponse:`{${q1};${q3}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${q1};${q3}}` };
   }},
   {id:"17.4 b)", type:"num", texteLibre:true, gen: () => {
     const n = 9;
     const brut = tirerDistincts(n, 0, 30);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`Série de ${n} valeurs : \\(${brut.join('\\,;\\,')}\\)`, reponse:`{${q1};${q3}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${q1};${q3}}` };
   }},
   {id:"17.4 c)", type:"num", texteLibre:true, gen: () => {
     const n = 12;
     const brut = tirerDistincts(n, 0, 40);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`Voici une série statistique de ${n} valeurs : \\(${brut.join('\\,;\\,')}\\). Calculer son écart interquartile \\(Q_3-Q_1\\).`, reponse:`${q3 - q1}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\). Calculer son écart interquartile \\(Q_3-Q_1\\).`, reponse:`${q3 - q1}` };
   }},
   {id:"17.4 d)", type:"num", texteLibre:true, gen: () => {
     const n = 11;
@@ -2074,7 +2079,7 @@ const generateurs = [
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
     const etendue = tri[n - 1] - tri[0];
-    return { enonce:`Voici une série statistique de ${n} valeurs : \\(${brut.join('\\,;\\,')}\\). Calculer son étendue et son écart interquartile.`, reponse:`{${etendue};${q3 - q1}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\). Calculer son étendue et son écart interquartile.`, reponse:`{${etendue};${q3 - q1}}` };
   }},
 
   // ---------- 17.5 : moyenne ponderee a partir d'un tableau d'effectifs (a/b) ou de frequences
