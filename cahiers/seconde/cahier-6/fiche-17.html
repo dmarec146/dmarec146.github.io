@@ -2177,48 +2177,26 @@ const generateurs = [
     return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`{${moyenne};${etendue};${mediane}}` };
   }},
 
-  // ---------- 17.8 : diagramme circulaire, pourcentage affiche sur chaque secteur (regle de David,
-  // 2026-09-20 : donnee en pourcentage, comme la plupart des diagrammes circulaires rencontres
-  // ailleurs). D = nombre de "parts" (diviseur de 100, donc pourcentage unitaire entier), M =
-  // multiplicateur choisi dans un petit jeu de valeurs a la main -- effectif = part * M,
-  // pourcentage = part * (100/D), tous deux exacts par construction.
+  // ---------- 17.8 : diagramme circulaire, pourcentage affiche sur chaque secteur. Comme pour
+  // 17.7 (David, 2026-09-20), UN SEUL diagramme sert a poser plusieurs questions a la fois --
+  // deux effectifs a lire directement (sens direct : pourcentage -> effectif) et un pourcentage a
+  // retrouver (sens inverse : effectif donne, pourcentage masque par un « ? ») -- deux diagrammes
+  // differents au total. D = nombre de "parts" (diviseur de 100), M = multiplicateur choisi dans
+  // un petit jeu de valeurs a la main -- effectif = part * M, pourcentage = part * (100/D), tous
+  // deux exacts par construction.
   {id:"17.8 a)", type:"num", texteLibre:true, gen: () => {
-    const D = choix([4,5,10]);
-    const k = D === 4 ? 3 : choix([3,4]);
+    const D = choix([5,10]);
+    const k = choix([3,4]);
     const valeurs = tirerDistincts(k, 0, 25);
     const parts = repartirEffectifs(k, D, 1);
     const M = choix([2,3,4,5]);
     const N = D * M;
     const pourcentages = parts.map(p => p * (100 / D));
     const effectifs = parts.map(p => p * M);
-    const iCible = alea(0, k - 1);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N)}Le diagramme circulaire ci-dessus représente une série statistique : le pourcentage indiqué sur chaque secteur correspond à la proportion de l'effectif total, pour la valeur donnée par la légende. Calculer l'effectif associé à la valeur \\(${valeurs[iCible]}\\).`, reponse:`${effectifs[iCible]}` };
+    const [i1, i2, iCache] = melanger([...Array(k).keys()]).slice(0, 3);
+    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Le diagramme circulaire ci-dessus représente une série statistique : le pourcentage indiqué sur chaque secteur correspond à la proportion de l'effectif total, pour la valeur donnée par la légende. Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`{${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]}}` };
   }},
   {id:"17.8 b)", type:"num", texteLibre:true, gen: () => {
-    const D = choix([5,10]);
-    const k = 4;
-    const valeurs = tirerDistincts(k, 0, 25);
-    const parts = repartirEffectifs(k, D, 1);
-    const M = choix([2,3,4,5]);
-    const N = D * M;
-    const pourcentages = parts.map(p => p * (100 / D));
-    const effectifs = parts.map(p => p * M);
-    const iCible = alea(0, k - 1);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N)}Le diagramme circulaire ci-dessus représente une série statistique. Calculer l'effectif associé à la valeur \\(${valeurs[iCible]}\\).`, reponse:`${effectifs[iCible]}` };
-  }},
-  {id:"17.8 c)", type:"num", texteLibre:true, gen: () => {
-    const D = choix([5,10]);
-    const k = 4;
-    const valeurs = tirerDistincts(k, 0, 25);
-    const parts = repartirEffectifs(k, D, 1);
-    const M = choix([2,3,4,5]);
-    const N = D * M;
-    const pourcentages = parts.map(p => p * (100 / D));
-    const effectifs = parts.map(p => p * M);
-    const [i1, i2] = melanger([...Array(k).keys()]).slice(0, 2).sort((a,b) => a-b);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N)}Le diagramme circulaire ci-dessus représente une série statistique. Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\).`, reponse:`{${effectifs[i1]};${effectifs[i2]}}` };
-  }},
-  {id:"17.8 d)", type:"num", texteLibre:true, gen: () => {
     const D = choix([4,5,10]);
     const k = D === 4 ? 3 : choix([3,4]);
     const valeurs = tirerDistincts(k, 0, 25);
@@ -2227,34 +2205,30 @@ const generateurs = [
     const N = D * M;
     const pourcentages = parts.map(p => p * (100 / D));
     const effectifs = parts.map(p => p * M);
-    const iCible = alea(0, k - 1);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCible)}Le diagramme circulaire ci-dessus représente une série statistique. Sachant que l'effectif associé à la valeur \\(${valeurs[iCible]}\\) vaut \\(${effectifs[iCible]}\\) (son pourcentage est masqué par un « ? »), calculer ce pourcentage.`, reponse:`${pourcentages[iCible]}` };
+    const [i1, i2, iCache] = melanger([...Array(k).keys()]).slice(0, 3);
+    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Le diagramme circulaire ci-dessus représente une série statistique. Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`{${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]}}` };
   }},
 
-  // ---------- 17.9 (avance) : diagramme en boite -- une lecture graphique plus elaboree, sans
-  // aucune liste brute fournie ; toutes les valeurs (min, Q1, mediane, Q3, max) sont des multiples
-  // de 5 par construction (voir genererBoite), donc alignees exactement sur une graduation.
+  // ---------- 17.9 : diagramme en boite -- meme principe qu'en 17.7/17.8 (David, 2026-09-20) : UN
+  // SEUL diagramme par question, plusieurs indicateurs demandes dessus, deux diagrammes generes au
+  // total. a) une seule serie, les trois indicateurs habituels. b) deux series A et B sur un meme
+  // axe, medianes ET ecarts interquartiles des deux demandes ensemble. Toutes les valeurs (min, Q1,
+  // mediane, Q3, max) sont des multiples de 5 par construction (voir genererBoite), donc alignees
+  // exactement sur une graduation.
   {id:"17.9 a)", type:"num", texteLibre:true, gen: () => {
     const pas = 5, nbCrans = choix([7,8,9]);
     const s = genererBoite('', 0, nbCrans, pas);
     const etendue = s.max - s.min, ecart = s.q3 - s.q1;
     const xmax = nbCrans * pas;
-    return { enonce:`${svgDiagrammeBoite([s], -pas, xmax, pas)}Le diagramme en boîte ci-dessus représente une série statistique. Donner l'étendue de cette série, puis son écart interquartile \\(Q_3-Q_1\\).`, reponse:`{${etendue};${ecart}}` };
+    return { enonce:`${svgDiagrammeBoite([s], -pas, xmax, pas)}Le diagramme en boîte ci-dessus représente une série statistique. Donner l'étendue de cette série, son écart interquartile \\(Q_3-Q_1\\), puis sa médiane.`, reponse:`{${etendue};${ecart};${s.mediane}}` };
   }},
   {id:"17.9 b)", type:"num", texteLibre:true, gen: () => {
     const pas = 5, nbCrans = choix([8,9,10]);
     const sA = genererBoite('Série A', 0, nbCrans, pas);
     const sB = genererBoite('Série B', 0, nbCrans, pas);
     const xmax = nbCrans * pas;
-    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner la médiane de la série A, puis celle de la série B.`, reponse:`{${sA.mediane};${sB.mediane}}` };
-  }},
-  {id:"17.9 c)", type:"num", texteLibre:true, gen: () => {
-    const pas = 5, nbCrans = choix([8,9,10]);
-    const sA = genererBoite('Série A', 0, nbCrans, pas);
-    const sB = genererBoite('Série B', 0, nbCrans, pas);
-    const xmax = nbCrans * pas;
     const ecartA = sA.q3 - sA.q1, ecartB = sB.q3 - sB.q1;
-    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner l'écart interquartile de la série A, puis celui de la série B.`, reponse:`{${ecartA};${ecartB}}` };
+    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner la médiane et l'écart interquartile de la série A, puis la médiane et l'écart interquartile de la série B.`, reponse:`{${sA.mediane};${ecartA};${sB.mediane};${ecartB}}` };
   }}
 ];
 
@@ -2351,8 +2325,8 @@ const groupes = {
   "grille-17-5": [16,17,18,19],
   "grille-17-6": [20,21,22,23,24],
   "grille-17-7": [25,26],
-  "grille-17-8": [27,28,29,30],
-  "grille-17-9": [31,32,33]
+  "grille-17-8": [27,28],
+  "grille-17-9": [29,30]
 };
 const lettres = ["a","b","c","d","e","f"];
 
