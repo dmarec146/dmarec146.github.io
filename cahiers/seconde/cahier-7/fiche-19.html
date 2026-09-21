@@ -2064,7 +2064,7 @@ function svgArbrePondere(niveau1, niveau2) {
     let s = `<text x="${x.toFixed(1)}" y="${base.toFixed(1)}" font-size="15" fill="${encre}">${nom}</text>`;
     if (barre) {
       const w = 8 * nom.length;
-      const barY = base - 12.5;
+      const barY = base - 14.5;
       s += `<line x1="${x.toFixed(1)}" y1="${barY.toFixed(1)}" x2="${(x + w).toFixed(1)}" y2="${barY.toFixed(1)}" stroke="${encre}" stroke-width="1"/>`;
     }
     return s;
@@ -2072,17 +2072,24 @@ function svgArbrePondere(niveau1, niveau2) {
   const texteProba = (xm, ym, p, haut) => `<text x="${xm.toFixed(1)}" y="${(ym + (haut ? -6 : 15)).toFixed(1)}" font-size="13" text-anchor="middle" fill="${encre}">${p}</text>`;
   // fleche (ligne raccourcie + pointe triangulaire) : convention reprise des arbres TikZ de David
   // (style "fleche=[->,>=latex,thick]"), orientee le long du segment car les branches n'ont pas
-  // toutes la meme pente.
-  const ligneAvecFleche = (xa, ya, xb, yb) => {
+  // toutes la meme pente. reculDepart (optionnel) : recule le DEBUT du trait le long du segment --
+  // necessaire pour les deux branches qui repartent d'un noeud de niveau 1, sinon elles passent
+  // (au moins l'une des deux) exactement A TRAVERS la lettre de ce noeud, encore proche de leur
+  // origine commune avant de diverger (David, 2026-09-21 : "les lettres des premiers evenements ne
+  // sont pas correctement affichees" -- confirme en isolant le SVG genere : la ligne vers l'une des
+  // deux feuilles traverse bien le glyphe).
+  const ligneAvecFleche = (xa, ya, xb, yb, reculDepart) => {
+    reculDepart = reculDepart || 0;
     const dx = xb - xa, dy = yb - ya;
     const long = Math.hypot(dx, dy);
     const ux = dx / long, uy = dy / long;
+    const debutX = xa + ux * reculDepart, debutY = ya + uy * reculDepart;
     const taille = 7, demiLargeur = 3;
     const finLigneX = xb - ux * taille, finLigneY = yb - uy * taille;
     const perpX = -uy, perpY = ux;
     const p1x = finLigneX + perpX * demiLargeur, p1y = finLigneY + perpY * demiLargeur;
     const p2x = finLigneX - perpX * demiLargeur, p2y = finLigneY - perpY * demiLargeur;
-    return `<line x1="${xa.toFixed(1)}" y1="${ya.toFixed(1)}" x2="${finLigneX.toFixed(1)}" y2="${finLigneY.toFixed(1)}" stroke="${encre}" stroke-width="1.3"/>`
+    return `<line x1="${debutX.toFixed(1)}" y1="${debutY.toFixed(1)}" x2="${finLigneX.toFixed(1)}" y2="${finLigneY.toFixed(1)}" stroke="${encre}" stroke-width="1.3"/>`
       + `<polygon points="${xb.toFixed(1)},${yb.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="${encre}"/>`;
   };
   let svg = '';
@@ -2094,7 +2101,7 @@ function svgArbrePondere(niveau1, niveau2) {
   [0, 1].forEach(i => {
     [0, 1].forEach(j => {
       const yy = y2[i][j];
-      svg += ligneAvecFleche(x1, y1[i], x2, yy);
+      svg += ligneAvecFleche(x1, y1[i], x2, yy, 24);
       svg += texteProba((x1 + x2) / 2, (y1[i] + yy) / 2, niveau2[i][j].p, j === 0);
       svg += texteEvt(x2 + 8, yy, niveau2[i][j].nom, niveau2[i][j].barre);
     });
