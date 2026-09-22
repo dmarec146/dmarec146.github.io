@@ -2315,6 +2315,28 @@ const generateurs = [
     const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
     return { enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
   }},
+  // 20.5 c) : memes coordonnees deja rationnelles (pas seulement un milieu qui tombe sur une
+  // fraction) -- force a additionner deux fractions avant de diviser par 2 (David, 2026-09-22).
+  {id:"20.5 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+    const d = choix([2,3,4]);
+    const Ax = entierSigne(1,3*d), Ay = entierSigne(1,3*d);
+    const Bx = entierSigne(1,3*d), By = entierSigne(1,3*d);
+    const texA = `A\\left(${fracLatexAffichage(Ax,d)}\\,;\\,${fracLatexAffichage(Ay,d)}\\right)`;
+    const texB = `B\\left(${fracLatexAffichage(Bx,d)}\\,;\\,${fracLatexAffichage(By,d)}\\right)`;
+    return { enonce: `\\(${texA}\\) et \\(${texB}\\).`, pa: fracSimplifiee(Ax+Bx, 2*d), pb: fracSimplifiee(Ay+By, 2*d), vars: [] };
+  }},
+  // 20.5 d) : une coordonnee parametree par m -- le milieu s'exprime alors en fonction de m
+  // (David, 2026-09-22 : "une avec coordonnées rationnelles, l'autre avec paramètre").
+  {id:"20.5 d)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+    const coins = ['Ax','Ay','Bx','By'];
+    const withM = choix(coins);
+    const val = (cle) => cle === withM ? 'm' : String(entierSigne(1,6));
+    const Ax = val('Ax'), Ay = val('Ay'), Bx = val('Bx'), By = val('By');
+    return {
+      enonce: `\\(A(${Ax}\\,;\\,${Ay})\\) et \\(B(${Bx}\\,;\\,${By})\\), où \\(m\\) désigne un nombre réel (exprimer le résultat en fonction de \\(m\\)).`,
+      pa: `(${Ax}+${Bx})/2`, pb: `(${Ay}+${By})/2`, vars: ['m']
+    };
+  }},
 
   // ---------- 20.6 : nature d'un triangle (rectangle / isocele) -- coordonnees donnees en TEXTE
   // (pas seulement sur la figure) sur le reseau des demi-entiers, avec des "pieges visuels" presque
@@ -2401,8 +2423,22 @@ const generateurs = [
     const x0 = a + dx;
     ptA20_8 = { a, b };
     const reponse = fracSimplifiee(dx*dx + b*b, 2*b);
+    // figure (David, 2026-09-22 : "faire une figure !") : point A, axe des abscisses (deja trace
+    // par le repere) et l'ensemble (E) lui-meme, esquisse par une ligne brisee reliant de nombreux
+    // points calcules -- juste un appui visuel pour comprendre la forme de (E) (une parabole,
+    // jamais nommee ainsi), aucune coordonnee n'y est lisible precisement.
+    const N = 24, xMin = a - 4, xMax = a + 4;
+    const yParabole = (x) => ((x - a) * (x - a) + b * b) / (2 * b);
+    const elements = [];
+    for (let i = 0; i < N; i++) {
+      const x1 = xMin + i * (xMax - xMin) / N, x2 = xMin + (i + 1) * (xMax - xMin) / N;
+      elements.push({ type: 'segment', x1, y1: yParabole(x1), x2, y2: yParabole(x2) });
+    }
+    elements.push({ type: 'point', x: a, y: b, nom: 'A', position: positionEloignee({ x: a, y: b }, { x: 0, y: 0 }) });
+    const figure = genererSVGRepere(elements);
     return {
-      contexteTexte: `On considère le point \\(A(${a}\\,;\\,${b})\\) et l'ensemble \\((E)\\) des points \\(M(x\\,;\\,y)\\) du plan équidistants de \\(A\\) et de l'axe des abscisses (c'est-à-dire tels que \\(AM\\) soit égal à la distance de \\(M\\) à l'axe des abscisses, distance qui vaut \\(|y|\\)).`,
+      contexteTexte: `On considère le point \\(A(${a}\\,;\\,${b})\\) et l'ensemble \\((E)\\) des points \\(M(x\\,;\\,y)\\) du plan équidistants de \\(A\\) et de l'axe des abscisses (c'est-à-dire tels que \\(AM\\) soit égal à la distance de \\(M\\) à l'axe des abscisses, distance qui vaut \\(|y|\\)) : \\((E)\\) est tracé ci-dessus à titre indicatif, seul le calcul permet d'en retrouver un point précisément.`,
+      contexteFigure: figure,
       enonce: `Déterminer l'ordonnée du point de \\((E)\\) d'abscisse \\(x=${x0}\\).`,
       reponse
     };
@@ -2545,11 +2581,11 @@ const groupes = {
   "grille-20-2": [4,5,6,7],
   "grille-20-3": [8,9,10],
   "grille-20-4": [11,12],
-  "grille-20-5": [13,14],
-  "grille-20-6": [15,16],
-  "grille-20-7": [17,18],
-  "grille-20-8": [19,20],
-  "grille-20-9": [21,22]
+  "grille-20-5": [13,14,15,16],
+  "grille-20-6": [17,18],
+  "grille-20-7": [19,20],
+  "grille-20-8": [21,22],
+  "grille-20-9": [23,24]
 };
 // groupes dont le contexte (figure/notations) est presente une seule fois, avant les questions
 // (voir remplirIntrosGroupes) -- chaque premier item du groupe pose contexteTexte/contexteFigure sur
