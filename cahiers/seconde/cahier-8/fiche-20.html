@@ -2209,23 +2209,43 @@ function checkPointCoordonnees(userInput, correctA, correctB, vars) {
 // evite de retirer une nouvelle figure a chaque question (meme principe que la fiche 19).
 let ptsRepere20_3, triangle20_6, quad20_7, ptA20_8;
 
-// ---------- 20.9 (avance) : A et B ont une coordonnee qui depend d'un parametre reel m, le milieu
-// I est connu numeriquement -- determiner m (David, 2026-09-22, remplace l'ancien exercice sur les
-// parties du plan). Une seule des 4 coordonnees porte m (comme pour 20.5 d), les 3 autres et le
-// point I sont des nombres connus ; resoudre revient a isoler m dans une seule equation lineaire. ----------
+// ---------- 20.9 (avance) : A et B ont chacun une coordonnee qui depend du meme parametre reel m,
+// le milieu I est connu numeriquement -- la question devient "est-il possible que I soit le milieu
+// de [AB] ?" (David, 2026-09-22 : "m intervienne dans les deux coordonnées des points" + question
+// oui/non plutot que "determiner m", avec une reponse parfois oui parfois non).
+//
+// axeA/axeB : quel axe (x ou y) de A, resp. de B, porte m. Deux cas :
+//  - MEME axe (ex. Ax et Bx) : cet axe donne alors TOUJOURS une equation resoluble en m (m=I de cet
+//    axe, quelle que soit sa valeur) -- seul l'AUTRE axe (sans m, verification purement numerique)
+//    decide si c'est possible.
+//  - axes DIFFERENTS (ex. Ax et By) : chaque axe fournit sa propre valeur candidate de m ; c'est
+//    possible seulement si les deux coincident.
+// Dans les deux cas, on construit d'abord la version "vraie" de I (coherente avec une meme valeur
+// mCible aux deux endroits ou m apparait, donc toujours possible), puis, une fois sur deux, on
+// decale legerement la coordonnee de I qui sert de verification pour rendre l'ensemble impossible --
+// jamais l'autre, qui n'aurait aucun effet (voir le premier cas ci-dessus).
 function genererMilieuParametre20_9() {
-  const coins = ['Ax','Ay','Bx','By'];
-  const withM = choix(coins);
+  const axeA = choix(['x','y']), axeB = choix(['x','y']);
   const mCible = entierSigne(1,6);
   const brut = { Ax: entierSigne(1,6), Ay: entierSigne(1,6), Bx: entierSigne(1,6), By: entierSigne(1,6) };
-  brut[withM] = mCible;
-  const texteCoord = (cle) => cle === withM ? 'm' : String(brut[cle]);
-  const texteA = `A(${texteCoord('Ax')}\\,;\\,${texteCoord('Ay')})`;
-  const texteB = `B(${texteCoord('Bx')}\\,;\\,${texteCoord('By')})`;
-  const texteI = `I\\left(${fracLatexAffichage(brut.Ax+brut.Bx,2)}\\,;\\,${fracLatexAffichage(brut.Ay+brut.By,2)}\\right)`;
+  if (axeA === 'x') brut.Ax = mCible; else brut.Ay = mCible;
+  if (axeB === 'x') brut.Bx = mCible; else brut.By = mCible;
+  let numIx = brut.Ax + brut.Bx, numIy = brut.Ay + brut.By;
+  const possible = alea(0,1) === 1;
+  if (!possible) {
+    const axeSansEffet = (axeA === axeB) ? axeA : choix(['x','y']);
+    const axePerturbe = axeSansEffet === 'x' ? 'y' : 'x';
+    const decalage = choix([2,-2,4,-4]);
+    if (axePerturbe === 'x') numIx += decalage; else numIy += decalage;
+  }
+  const texteCoordA = (axe) => axe === axeA ? 'm' : String(axe === 'x' ? brut.Ax : brut.Ay);
+  const texteCoordB = (axe) => axe === axeB ? 'm' : String(axe === 'x' ? brut.Bx : brut.By);
+  const texteA = `A(${texteCoordA('x')}\\,;\\,${texteCoordA('y')})`;
+  const texteB = `B(${texteCoordB('x')}\\,;\\,${texteCoordB('y')})`;
+  const texteI = `I\\left(${fracLatexAffichage(numIx,2)}\\,;\\,${fracLatexAffichage(numIy,2)}\\right)`;
   return {
-    enonce: `On donne \\(${texteA}\\) et \\(${texteB}\\). On sait que \\(${texteI}\\) est le milieu du segment \\([AB]\\). Déterminer la valeur de \\(m\\).`,
-    reponse: String(mCible)
+    enonce: `On donne \\(${texteA}\\) et \\(${texteB}\\), ainsi que \\(${texteI}\\). Est-il possible que \\(I\\) soit le milieu du segment \\([AB]\\) ?`,
+    reponseOuiNon: possible
   };
 }
 
@@ -2499,12 +2519,12 @@ const generateurs = [
     return { enonce: `Soit \\(M\\) un point de l'ensemble \\((E)\\). Si son abscisse est \\(x=${x0}\\), déterminer son ordonnée.`, reponse };
   }},
 
-  // ---------- 20.9 (avance) : A et B dependent d'un parametre m, milieu I connu -- determiner m
-  // (David, 2026-09-22, remplace l'ancien exercice sur les parties du plan). Un seul exemple
-  // (David, 2026-09-22 : "un exemple suffit") ----------
-  {id:"20.9 a)", type:"num", texteLibre:true, gen: () => {
+  // ---------- 20.9 (avance) : A et B dependent d'un parametre m (present dans une coordonnee de
+  // chacun), milieu I connu -- est-il possible que I soit le milieu de [AB] ? (David, 2026-09-22).
+  // Un seul exemple (David, 2026-09-22 : "un exemple suffit") ----------
+  {id:"20.9 a)", type:"ouiNon", texteLibre:true, gen: () => {
     const r = genererMilieuParametre20_9();
-    return { contexteTexte: `Les coordonnées des points \\(A\\) et \\(B\\) dépendent d'un paramètre réel \\(m\\).`, enonce: r.enonce, reponse: r.reponse };
+    return { contexteTexte: `Les coordonnées des points \\(A\\) et \\(B\\) dépendent d'un paramètre réel \\(m\\).`, enonce: r.enonce, reponseOuiNon: r.reponseOuiNon };
   }}
 ];
 
