@@ -840,6 +840,7 @@ window.MathJax = {
   <div class="question-grille" id="grille-20-3"></div>
 
   <p class="calcul-titre"><span>Calcul 20.4 — Distance entre deux points.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-4"></div>
   <div class="question-grille" id="grille-20-4"></div>
 
   <p class="calcul-titre"><span>Calcul 20.5 — Coordonnées du milieu.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
@@ -2198,6 +2199,39 @@ function tirerPointBalance20_9(xg,xd,yg,yd,ixg,ixd,iyg,iyd, dedansSouhaite) {
 // evite de retirer une nouvelle figure a chaque question (meme principe que la fiche 19).
 let ptsRepere20_3, triangle20_6, quad20_7, ptA20_8, pointM120_9, systeme20_9;
 
+// choisit le vecteur BC (20.6) selon 5 modes a peu pres equiprobables : deux "pieges visuels"
+// (presque perpendiculaire / presque de meme norme que BA, donc NON rectangle/isocele en verite
+// mais visuellement tres proche), deux versions EXACTES des memes constructions (donc OUI), et un
+// vecteur libre. Le repli sur les coordonnees ENTIERES aurait rendu la figure lisible directement
+// au quadrillage (David, 2026-09-22 : "les eleves ne vont faire aucun calcul, ils vont juste
+// regarder le graphique") -- toutes les coordonnees ici vivent sur le reseau des DEMI-entiers
+// (composantes entieres "x2" representant x2/2), qui ne coincide pas avec le quadrillage entier du
+// repere, et le calcul exact reste donc necessaire malgre la figure.
+function triangle20_6Vecteurs(max) {
+  let vA; do { vA = [entierSigne(1,max), entierSigne(1,max)]; } while (vA[0]===0 && vA[1]===0);
+  const mode = choix(['droit_exact','droit_proche','egal_exact','egal_proche','libre']);
+  let vC;
+  if (mode === 'droit_exact' || mode === 'droit_proche') {
+    const sens = choix([1,-1]);
+    const t = choix([1,1,2,3]);
+    vC = [-vA[1]*sens*t, vA[0]*sens*t];
+    if (mode === 'droit_proche') { const axe = alea(0,1); vC[axe] += choix([1,-1]); }
+  } else if (mode === 'egal_exact' || mode === 'egal_proche') {
+    const normeCible = vA[0]*vA[0] + vA[1]*vA[1];
+    const candidats = vecteursDeNorme(normeCible, Math.max(max, 8)).filter(v => v[0]*vA[1]-v[1]*vA[0] !== 0);
+    vC = candidats.length ? choix(candidats) : [vA[1], -vA[0]];
+    if (mode === 'egal_proche') { const axe = alea(0,1); vC[axe] += choix([1,-1]); }
+  } else {
+    do { vC = [entierSigne(1,max), entierSigne(1,max)]; } while ((vC[0]===0 && vC[1]===0) || (vC[0]*vA[1]-vC[1]*vA[0] === 0));
+  }
+  return [vA, vC];
+}
+// coordonnees d'un point du reseau des demi-entiers (composantes entieres x2=2x, y2=2y), affichees
+// en LaTeX sous forme de fraction simplifiee (entiere si x2 est pair).
+function texteCoordDemi(nom, P2) {
+  return `\\(${nom}\\left(${fracLatexAffichage(P2.x,2)}\\,;\\,${fracLatexAffichage(P2.y,2)}\\right)\\)`;
+}
+
 const generateurs = [
   // ---------- 20.1 : automatismes de calcul litteral et d'inequations de degre 1/2 (vivier
   // partage, voir memoire feedback-automatismes-calcul-litteral) ----------
@@ -2213,25 +2247,29 @@ const generateurs = [
   {id:"20.2 d)", type:"num", texteLibre:true, gen: () => tirageRevision[3]()},
 
   // ---------- 20.3 : lecture de coordonnees dans un repere orthonorme -- trois points places sur
-  // une seule figure partagee (contexteFigure), une question par point ----------
+  // une seule figure partagee (contexteFigure) ; consigne commune factorisee dans le contexte
+  // (David, 2026-09-22 : "l'enonce est identique, tu peux agencer la question pour ne pas la
+  // repeter trois fois"), chaque item reduit au seul nom du point ----------
   {id:"20.3 a)", type:"paire", texteLibre:true, gen: () => {
     const pts = tirerPointsDistincts(3, 5);
     ptsRepere20_3 = pts;
     const noms = ['A','B','C'];
     const elements = pts.map((p,i) => ({ type:'point', x:p.x, y:p.y, nom:noms[i], position: positionEloignee(p, {x:0,y:0}) }));
     const figure = genererSVGRepere(elements);
-    return { contexteTexte: "Le repère ci-dessus est orthonormé.", contexteFigure: figure, enonce: `Donner les coordonnées du point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [] };
+    return { contexteTexte: "Le repère ci-dessus est orthonormé. Donner les coordonnées de chacun des points suivants.", contexteFigure: figure, enonce: `Point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [] };
   }},
   {id:"20.3 b)", type:"paire", texteLibre:true, gen: () => {
     const p = ptsRepere20_3[1];
-    return { enonce: `Donner les coordonnées du point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
+    return { enonce: `Point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
   }},
   {id:"20.3 c)", type:"paire", texteLibre:true, gen: () => {
     const p = ptsRepere20_3[2];
-    return { enonce: `Donner les coordonnées du point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
+    return { enonce: `Point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
   }},
 
-  // ---------- 20.4 : distance entre deux points (forme exacte, racine carree eventuelle) ----------
+  // ---------- 20.4 : distance entre deux points (forme exacte, racine carree eventuelle) --
+  // consigne commune factorisee dans le contexte, chaque item ne donne plus que les deux points
+  // (David, 2026-09-22) ----------
   {id:"20.4 a)", type:"num", texteLibre:true, gen: () => {
     let A, B, dx, dy;
     do {
@@ -2239,7 +2277,7 @@ const generateurs = [
       B = { x: entierSigne(1,5), y: entierSigne(1,5) };
       dx = B.x-A.x; dy = B.y-A.y;
     } while (dx === 0 && dy === 0);
-    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\) dans un repère orthonormé. Calculer la distance \\(AB\\) (forme exacte).`, reponse: `sqrt(${dx*dx+dy*dy})` };
+    return { contexteTexte: "Dans un repère orthonormé, calculer la valeur exacte de la distance \\(AB\\) dans chaque cas.", enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: `sqrt(${dx*dx+dy*dy})` };
   }},
   {id:"20.4 b)", type:"num", texteLibre:true, gen: () => {
     let A, B, dx, dy;
@@ -2248,7 +2286,7 @@ const generateurs = [
       B = { x: entierSigne(1,5), y: entierSigne(1,5) };
       dx = B.x-A.x; dy = B.y-A.y;
     } while (dx === 0 && dy === 0);
-    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\) dans un repère orthonormé. Calculer la distance \\(AB\\) (forme exacte).`, reponse: `sqrt(${dx*dx+dy*dy})` };
+    return { enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: `sqrt(${dx*dx+dy*dy})` };
   }},
 
   // ---------- 20.5 : coordonnees du milieu d'un segment ----------
@@ -2263,27 +2301,18 @@ const generateurs = [
     return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\). Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
   }},
 
-  // ---------- 20.6 : nature d'un triangle (rectangle / isocele) a partir des coordonnees -- une
-  // seule figure partagee, deux questions oui/non sur le meme triangle ----------
+  // ---------- 20.6 : nature d'un triangle (rectangle / isocele) -- coordonnees donnees en TEXTE
+  // (pas seulement sur la figure) sur le reseau des demi-entiers, avec des "pieges visuels" presque
+  // rectangle/isocele mais faux (David, 2026-09-22, voir triangle20_6Vecteurs plus haut) ----------
   {id:"20.6 a)", type:"ouiNon", texteLibre:true, gen: () => {
-    const max = 3;
-    const B = { x: entierSigne(1,max), y: entierSigne(1,max) };
-    const mode = choix(['rectangle','isocele','libre']);
-    let vA, vC;
-    if (mode === 'rectangle') {
-      let p,q; do { p=entierSigne(1,max); q=entierSigne(1,max); } while (p===0 && q===0);
-      const sens = choix([1,-1]);
-      const t = choix([1,1,1,2]);
-      vA = [p,q]; vC = [-q*sens*t, p*sens*t];
-    } else if (mode === 'isocele') {
-      [vA, vC] = paireVecteursIsoceles(max);
-    } else {
-      do { vA = [entierSigne(1,max), entierSigne(1,max)]; } while (vA[0]===0 && vA[1]===0);
-      do { vC = [entierSigne(1,max), entierSigne(1,max)]; } while ((vC[0]===0 && vC[1]===0) || (vC[0]*vA[1]-vC[1]*vA[0] === 0));
-    }
-    const A = { x: B.x+vA[0], y: B.y+vA[1] };
-    const C = { x: B.x+vC[0], y: B.y+vC[1] };
-    triangle20_6 = { A, B, C };
+    const max = 5;
+    const B2 = { x: entierSigne(1,6), y: entierSigne(1,6) };
+    const [vA, vC] = triangle20_6Vecteurs(max);
+    const A2 = { x: B2.x+vA[0], y: B2.y+vA[1] };
+    const C2 = { x: B2.x+vC[0], y: B2.y+vC[1] };
+    triangle20_6 = { A2, B2, C2 };
+    const reel = (P2) => ({ x: P2.x/2, y: P2.y/2 });
+    const A = reel(A2), B = reel(B2), C = reel(C2);
     const elements = [
       { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y }, { type:'segment', x1:C.x,y1:C.y, x2:A.x,y2:A.y },
       { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, B) },
@@ -2291,37 +2320,42 @@ const generateurs = [
       { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C, B) }
     ];
     const figure = genererSVGRepere(elements);
-    const rectangleEnB = d2(A,B) + d2(B,C) === d2(C,A);
-    return { contexteTexte: "Le repère ci-dessus est orthonormé.", contexteFigure: figure, enonce: `Le triangle \\(ABC\\) est-il rectangle en \\(B\\) ?`, reponseOuiNon: rectangleEnB };
+    const rectangleEnB = d2(A2,B2) + d2(B2,C2) === d2(C2,A2);
+    const contexteTexte = `On donne ${texteCoordDemi('A',A2)}, ${texteCoordDemi('B',B2)} et ${texteCoordDemi('C',C2)} dans un repère orthonormé (la figure ci-dessus n'est qu'un appui : elle n'est pas nécessairement exacte, seules les coordonnées données font foi).`;
+    return { contexteTexte, contexteFigure: figure, enonce: `Le triangle \\(ABC\\) est-il rectangle en \\(B\\) ?`, reponseOuiNon: rectangleEnB };
   }},
   {id:"20.6 b)", type:"ouiNon", texteLibre:true, gen: () => {
-    const { A, B, C } = triangle20_6;
-    const isocele = d2(A,B) === d2(B,C) || d2(B,C) === d2(C,A) || d2(C,A) === d2(A,B);
+    const { A2, B2, C2 } = triangle20_6;
+    const isocele = d2(A2,B2) === d2(B2,C2) || d2(B2,C2) === d2(C2,A2) || d2(C2,A2) === d2(A2,B2);
     return { enonce: `Le triangle \\(ABC\\) est-il isocèle ?`, reponseOuiNon: isocele };
   }},
 
-  // ---------- 20.7 : nature d'un quadrilatere (parallelogramme / cotes egaux) a partir des
-  // coordonnees -- une seule figure partagee, deux questions oui/non sur le meme quadrilatere ----------
+  // ---------- 20.7 : nature d'un quadrilatere (parallelogramme / cotes egaux) -- meme principe que
+  // 20.6 : coordonnees donnees en texte sur le reseau des demi-entiers, figure a titre indicatif
+  // seulement, "presque parallelogramme" possible (David, 2026-09-22) ----------
   {id:"20.7 a)", type:"ouiNon", texteLibre:true, gen: () => {
-    const max = 3;
-    const A = { x: entierSigne(1,max), y: entierSigne(1,max) };
-    const estParallelogramme = alea(0,1) === 1;
+    const max = 5;
+    const A2 = { x: entierSigne(1,6), y: entierSigne(1,6) };
+    const mode = choix(['parallelo_exact','parallelo_proche','libre']);
     let vAB, vBC;
-    if (estParallelogramme && alea(0,1) === 1) {
+    if (alea(0,1) === 1) {
       [vAB, vBC] = paireVecteursIsoceles(max);
     } else {
       do { vAB = [entierSigne(1,max), entierSigne(1,max)]; } while (vAB[0]===0 && vAB[1]===0);
       do { vBC = [entierSigne(1,max), entierSigne(1,max)]; } while ((vBC[0]===0 && vBC[1]===0) || (vBC[0]*vAB[1]-vBC[1]*vAB[0] === 0));
     }
-    const B = { x: A.x+vAB[0], y: A.y+vAB[1] };
-    const C = { x: B.x+vBC[0], y: B.y+vBC[1] };
-    let D;
-    if (estParallelogramme) {
-      D = { x: A.x + C.x - B.x, y: A.y + C.y - B.y };
+    const B2 = { x: A2.x+vAB[0], y: A2.y+vAB[1] };
+    const C2 = { x: B2.x+vBC[0], y: B2.y+vBC[1] };
+    let D2;
+    if (mode === 'parallelo_exact' || mode === 'parallelo_proche') {
+      D2 = { x: A2.x + C2.x - B2.x, y: A2.y + C2.y - B2.y };
+      if (mode === 'parallelo_proche') { if (alea(0,1) === 0) D2.x += choix([1,-1]); else D2.y += choix([1,-1]); }
     } else {
-      do { D = { x: entierSigne(1,max), y: entierSigne(1,max) }; } while (Math.abs(D.x-A.x)<1 && Math.abs(D.y-A.y)<1);
+      do { D2 = { x: entierSigne(1,max*2), y: entierSigne(1,max*2) }; } while (Math.abs(D2.x-A2.x)<2 && Math.abs(D2.y-A2.y)<2);
     }
-    quad20_7 = { A, B, C, D };
+    quad20_7 = { A2, B2, C2, D2 };
+    const reel = (P2) => ({ x: P2.x/2, y: P2.y/2 });
+    const A = reel(A2), B = reel(B2), C = reel(C2), D = reel(D2);
     const centre = { x:(A.x+B.x+C.x+D.x)/4, y:(A.y+B.y+C.y+D.y)/4 };
     const elements = [
       { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y },
@@ -2332,13 +2366,14 @@ const generateurs = [
       { type:'point', x:D.x, y:D.y, nom:'D', position: positionEloignee(D, centre) }
     ];
     const figure = genererSVGRepere(elements);
-    const mACx = A.x+C.x, mACy = A.y+C.y, mBDx = B.x+D.x, mBDy = B.y+D.y;
+    const mACx = A2.x+C2.x, mACy = A2.y+C2.y, mBDx = B2.x+D2.x, mBDy = B2.y+D2.y;
     const parallelogrammeReel = (mACx === mBDx) && (mACy === mBDy);
-    return { contexteTexte: "Le repère ci-dessus est orthonormé.", contexteFigure: figure, enonce: `Le quadrilatère \\(ABCD\\) est-il un parallélogramme ?`, reponseOuiNon: parallelogrammeReel };
+    const contexteTexte = `On donne ${texteCoordDemi('A',A2)}, ${texteCoordDemi('B',B2)}, ${texteCoordDemi('C',C2)} et ${texteCoordDemi('D',D2)} dans un repère orthonormé (la figure ci-dessus n'est qu'un appui : elle n'est pas nécessairement exacte, seules les coordonnées données font foi).`;
+    return { contexteTexte, contexteFigure: figure, enonce: `Le quadrilatère \\(ABCD\\) est-il un parallélogramme ?`, reponseOuiNon: parallelogrammeReel };
   }},
   {id:"20.7 b)", type:"ouiNon", texteLibre:true, gen: () => {
-    const { A, B, C, D } = quad20_7;
-    const cotesEgaux = (d2(A,B) === d2(B,C)) && (d2(B,C) === d2(C,D)) && (d2(C,D) === d2(D,A));
+    const { A2, B2, C2, D2 } = quad20_7;
+    const cotesEgaux = (d2(A2,B2) === d2(B2,C2)) && (d2(B2,C2) === d2(C2,D2)) && (d2(C2,D2) === d2(D2,A2));
     return { enonce: `Les côtés \\(AB\\), \\(BC\\), \\(CD\\) et \\(DA\\) ont-ils tous la même longueur ?`, reponseOuiNon: cotesEgaux };
   }},
 
@@ -2504,7 +2539,7 @@ const groupes = {
 // groupes dont le contexte (figure/notations) est presente une seule fois, avant les questions
 // (voir remplirIntrosGroupes) -- chaque premier item du groupe pose contexteTexte/contexteFigure sur
 // l'objet qu'il retourne, les items suivants du meme groupe les relisent.
-const GROUPES_AVEC_INTRO = ["grille-20-3","grille-20-6","grille-20-7","grille-20-8","grille-20-9"];
+const GROUPES_AVEC_INTRO = ["grille-20-3","grille-20-4","grille-20-6","grille-20-7","grille-20-8","grille-20-9"];
 function remplirIntrosGroupes() {
   GROUPES_AVEC_INTRO.forEach(gridId => {
     const introDiv = document.getElementById('intro-' + gridId.slice('grille-'.length));
