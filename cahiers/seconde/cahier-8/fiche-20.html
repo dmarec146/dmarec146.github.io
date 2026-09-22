@@ -1,0 +1,3685 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Fiche 20 — Repérage, distances et milieux (interactif)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<script type="module" src="../../../assets/js/suivi.js"></script>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<script src="https://unpkg.com/mathlive"></script>
+<style>
+  :root {
+    --bleu: #4B46C7;
+    --bleu-clair: #D9D9FF;
+    --vert: #1D9E75;
+    --vert-clair: #E1F5EE;
+    --rouge: #E24B4A;
+    --rouge-clair: #FCEBEB;
+    --gris: #5F5E5A;
+    --gris-clair: #F1EFE8;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 16px 12px 60px;
+    color: #1a1a1a;
+    background: #fff;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Navigation ---------- */
+    .fil-ariane {
+    font-size: 14px;
+    color: var(--gris);
+    margin: 0 0 10px;
+  }
+  .fil-ariane a { color: var(--gris); text-decoration: none; }
+  .fil-ariane a:hover { color: var(--bleu); text-decoration: underline; }
+  .fil-ariane .separateur { margin: 0 5px; color: #ccc; }
+
+  .barre-navigation {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .nav-btn {
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 12.5px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--bleu-clair);
+    background: white;
+    color: var(--bleu);
+    text-decoration: none;
+    font-family: Georgia, serif;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-btn:hover { background: var(--bleu-clair); }
+  .nav-btn-sommaire {
+    background: var(--bleu);
+    color: white;
+    border-color: var(--bleu);
+    flex: 0 0 auto;
+    padding: 9px 16px;
+  }
+  .nav-btn-sommaire:hover { background: #3a36a0; }
+  .nav-btn-disabled {
+    color: #ccc;
+    border-color: #eee;
+    cursor: default;
+  }
+
+  /* ---------- En-tête ---------- */
+  .entete {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .badge {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 50%;
+    background: var(--bleu);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: Georgia, serif;
+  }
+  .entete-texte {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .cahier-repere {
+    margin: 0;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--gris);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  h1 {
+    font-size: 19px;
+    margin: 0;
+    line-height: 1.25;
+  }
+  .filet {
+    height: 3px;
+    background: var(--bleu);
+    width: 60%;
+    max-width: 220px;
+    margin: 6px 0 18px 54px;
+  }
+  .bandeau-calculatrice {
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--rouge);
+    background: var(--rouge-clair);
+    border-radius: 8px;
+    padding: 9px 14px;
+    margin: 0 0 14px;
+  }
+
+  /* ---------- Panneau de mode ---------- */
+  .mode-panneau {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: white;
+    border: 1.5px solid var(--bleu-clair);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .mode-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--gris);
+    width: 100%;
+  }
+  .mode-btn {
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 20px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-family: Georgia, serif;
+    cursor: pointer;
+    color: var(--gris);
+    min-height: 40px;
+    flex: 1 1 auto;
+  }
+  .mode-btn:hover { border-color: var(--bleu); }
+  .mode-btn.mode-actif {
+    background: var(--bleu);
+    border-color: var(--bleu);
+    color: white;
+    font-weight: bold;
+  }
+  .mode-explication {
+    font-size: 12px;
+    color: var(--gris);
+    font-style: italic;
+    width: 100%;
+    margin-top: 2px;
+  }
+  .mode-panneau[hidden] { display: none; }
+  /* Span enveloppant "Valider ma fiche" + l'icone "?" : display:inline-block
+     doit etre porte par une regle de classe (pas un style en ligne) pour que
+     la regle [hidden] ci-dessous puisse le neutraliser -- un style en ligne
+     l'aurait emporte sur [hidden] (regle du navigateur, priorite plus
+     faible), laissant le bouton visible malgre l'attribut hidden. */
+  .zone-bouton-suivi { position: relative; display: inline-block; }
+  .zone-bouton-suivi[hidden] { display: none; }
+
+  .aide {
+    font-size: 12.5px;
+    color: var(--gris);
+    background: var(--gris-clair);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .aide code {
+    background: white;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  /* ---------- Sections ---------- */
+  .bloc-general {
+    background: var(--bleu-clair);
+    border-radius: 8px;
+    padding: 14px 12px;
+    margin-bottom: 22px;
+  }
+  .bloc-avance {
+    background: #e4e4e4;
+    border-radius: 10px;
+    padding: 16px 14px;
+    margin-top: 30px;
+  }
+  .bloc-avance .section-titre { margin-top: 0; }
+  .section-titre {
+    font-size: 17px;
+    font-weight: bold;
+    margin: 0 0 6px;
+    line-height: 1.3;
+  }
+  .section-barre {
+    height: 2.5px;
+    background: var(--bleu);
+    margin-bottom: 14px;
+  }
+  .bloc-general .section-barre { background: var(--bleu); }
+  .bloc-avance .section-barre { background: #1a1a1a; height: 4px; }
+  .calcul-titre {
+    color: #990000;
+    font-weight: bold;
+    margin: 16px 0 8px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+  .picto-niveau {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-left: auto;
+    text-decoration: none;
+  }
+  .calcul-titre:first-child { margin-top: 0; }
+
+  /* ---------- Questions : une seule colonne empilée par défaut (mobile-first) ---------- */
+  .question-grille {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .question {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1.5px solid #e2e2e2;
+    transition: border-color 0.15s, background-color 0.15s;
+    min-width: 0;
+  }
+  .question.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
+  /* .q-enonce-bloc : force sur sa propre ligne, jamais a cote de la lettre -- reserve au contenu
+     "bloc" (tableau, figure SVG) qui, contrairement a une phrase, tiendrait parfois a cote de la
+     lettre (largeur etroite) et parfois pas (largeur variable d'un tirage a l'autre), ce qui
+     decalait alors le tableau/champ de reponse de 24px de facon incoherente d'un item a l'autre.
+     Les enonces de simple texte/formule (17.1-17.4, 17.6) gardent le flex naturel de fiche 15 :
+     a cote de la lettre quand ca tient, en dessous sinon (David, 2026-09-21). */
+  /* min-width:0 : sans ca, un tableau/figure plus large que la carte (ex. 18.3, classes en
+     "[20;30[" plus larges qu'un simple nombre) fait grandir cet item flex au-dela de la largeur
+     disponible au lieu de laisser le scroll horizontal interne (.tableau-donnees-scroll) prendre
+     le relais -- meme mecanisme que la regle 63 de la methodologie (min-width:auto par defaut sur
+     un flex item = pas de retrecissement sous la taille du contenu). */
+  .q-enonce-bloc { flex: 0 0 100%; min-width: 0; }
+  .q-enonce { font-size: 15px; }
+  .q-enonce table { border-collapse: collapse; margin: 6px 0; font-size: 14px; }
+  .q-enonce table th, .q-enonce table td { border: 1px solid #999; padding: 4px 10px; text-align: center; }
+  /* ---------- intro de groupe (19.3, 19.5-19.7, 19.10, 19.11) : contexte/notations presentes une
+     seule fois avant les questions plutot que repetes dans chaque carte (David, 2026-09-20). ---------- */
+  .groupe-intro-texte { font-size: 15px; margin: 0 0 14px; color: #1a1a1a; }
+  .q-input {
+    font-family: 'Courier New', monospace;
+    font-size: 16px; /* >=16px : évite le zoom auto iOS au focus */
+    padding: 9px 8px;
+    border: 1.5px solid #bbb;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 120px;
+    min-width: 0;
+    background: white;
+    min-height: 40px;
+  }
+  .q-input:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .q-mathfield {
+    --selection-background-color: rgba(75, 70, 199, 0.18);
+    --selection-color: #1a1a1a;
+    --contains-highlight-background-color: transparent;
+    font-size: 17px;
+    padding: 6px 8px;
+    border: 1.5px solid #bbb;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 140px;
+    min-width: 0;
+    background: white;
+    min-height: 40px;
+  }
+  .q-mathfield::part(menu-toggle) { display: none; }
+  .q-mathfield::part(virtual-keyboard-toggle) { display: none; }
+  .q-mathfield:focus-within { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+
+  /* ---------- Tableau de variations a completer directement dedans — motif repris du tableau
+     de signes de la fiche 8, cahier 2 de Seconde (seuils a saisir + case cyclable), 2 lignes
+     SEULEMENT (x / g(x), fleches intercalees dans la ligne g(x)) et 2k-1 colonnes (pas de bornes
+     -infini/+infini ici : le domaine est borne, les 2 bornes SONT les seuils extremes) ---------- */
+  .tv-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .tv-btn-valider {
+    margin-top: 8px; padding: 8px 14px; font-size: 13px; font-family: Georgia, serif;
+    background: white; color: var(--bleu); border: 1.5px solid var(--bleu); border-radius: 8px;
+    cursor: pointer;
+  }
+  .tv-btn-valider:hover { background: var(--bleu-clair); }
+  /* ---------- tableau de donnees (valeurs/effectifs ou frequences, fiche 17/18) : simple tableau a
+     deux lignes, borde, distinct du tableau de variations ci-dessus ---------- */
+  .tableau-donnees-scroll { width: 100%; overflow-x: auto; margin: 8px 0; }
+  .tableau-donnees { border-collapse: collapse; font-family: Georgia, serif; font-size: 14px; margin: 0 auto; }
+  .tableau-donnees td { border: 1px solid #999; padding: 5px 12px; text-align: center; white-space: nowrap; }
+  .tableau-donnees td.tableau-donnees-label { text-align: left; font-weight: bold; background: var(--gris-clair); }
+  /* ---------- tableau croise a completer (repris tel quel de la fiche 9, 9.8 e) : cases de
+     saisie integrees directement dans le tableau plutot qu'un champ separe en dessous ---------- */
+  .tc-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
+  .tc-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .tc-cellule {
+    width: 56px; padding: 5px 4px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    text-align: center; font-family: 'Courier New', monospace; font-size: 14px;
+    background: white;
+  }
+  .tc-cellule:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .tc-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tc-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tc-btn-valider {
+    margin-top: 8px; padding: 8px 14px; font-size: 13px; font-family: Georgia, serif;
+    background: white; color: var(--bleu); border: 1.5px solid var(--bleu); border-radius: 8px;
+    cursor: pointer;
+  }
+  .tc-btn-valider:hover { background: var(--bleu-clair); }
+  .tv-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .tv-table { border-collapse: collapse; table-layout: fixed; font-family: Georgia, serif; font-size: 14px; margin: 6px 0; }
+  .tv-table td { padding: 5px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
+  .tv-table .tv-label { text-align: left; font-weight: bold; padding-left: 4px; }
+  .tv-table tr.tv-ligne-x td { border-bottom: 1px solid #1a1a1a; padding-bottom: 8px; }
+  /* effet "escalier" : une valeur haute (maximum) remonte en haut de la ligne, une valeur basse
+     (minimum) descend en bas — la fleche, restee au milieu (voir .tv-cellule), relie alors
+     visuellement les deux, comme un vrai tableau de variations trace a la main. */
+  .tv-table tr.tv-ligne-gx td.tv-haut { vertical-align: top; padding-top: 4px; padding-bottom: 42px; }
+  .tv-table tr.tv-ligne-gx td.tv-bas { vertical-align: bottom; padding-bottom: 4px; padding-top: 42px; }
+  .tv-cellule {
+    width: 34px; height: 34px;
+    border: 1.5px solid #ccc; border-radius: 5px;
+    background: white; font-size: 17px; font-family: Georgia, serif;
+    cursor: pointer; color: #1a1a1a;
+  }
+  .tv-cellule:hover { border-color: var(--bleu); }
+  .tv-cellule.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tv-cellule.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tv-champ {
+    width: 44px; padding: 5px 2px;
+    border: 1.5px solid #bbb; border-radius: 5px;
+    text-align: center; font-family: 'Courier New', monospace; font-size: 13px;
+    background: white;
+  }
+  .tv-champ:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+  .tv-champ.correct { border-color: var(--vert); background: var(--vert-clair); }
+  .tv-champ.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .tv-corrige { border-collapse: collapse; font-family: Georgia, serif; font-size: 13px; margin: 4px 0; }
+  .tv-corrige td { padding: 3px 8px; text-align: center; white-space: nowrap; border-left: 1px solid #ccc; }
+  .tv-corrige td:first-child { border-left: none; }
+  .tv-corrige .tv-label { text-align: left; font-weight: bold; padding-right: 10px; }
+  .tv-corrige tr.tv-ligne-gx td.tv-haut { vertical-align: top; padding-top: 2px; padding-bottom: 22px; }
+  .tv-corrige tr.tv-ligne-gx td.tv-bas { vertical-align: bottom; padding-bottom: 2px; padding-top: 22px; }
+  .q-clavier-btn {
+    background: none;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    cursor: pointer;
+    font-size: 17px;
+    color: var(--gris);
+    flex: 0 0 auto;
+  }
+  .q-clavier-btn:hover { background: var(--gris-clair); }
+  .q-aide-btn {
+    background: var(--bleu-clair);
+    border: 1.5px solid var(--bleu);
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--bleu);
+    flex: 0 0 auto;
+    line-height: 1;
+    padding: 0;
+  }
+  .q-aide-btn:hover { background: var(--bleu); color: white; }
+  .q-aide-bulle {
+    display: none;
+    width: 100%;
+    background: var(--bleu-clair);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: #1a1a1a;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+  .q-aide-bulle.ouverte { display: block; }
+  .q-aide-bulle code {
+    background: white;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .q-statut {
+    font-size: 12.5px;
+    font-weight: bold;
+    min-width: 68px;
+    text-align: center;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: Georgia, serif;
+    flex: 0 0 auto;
+  }
+  .q-statut.ok { color: var(--vert); background: var(--vert-clair); }
+  .q-statut.ko { color: var(--rouge); background: var(--rouge-clair); }
+
+  /* ---------- Clavier virtuel ---------- */
+  .clavier-visuel {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--gris-clair);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 4px;
+    width: 100%;
+  }
+  .clavier-visuel.ouvert { display: flex; }
+  .clavier-groupe {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .clavier-groupe .clavier-label {
+    font-size: 10.5px;
+    color: var(--gris);
+    width: 100%;
+    font-family: Georgia, serif;
+    margin-bottom: 2px;
+  }
+  .clavier-visuel button {
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+    line-height: 1;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 8px 10px;
+    flex: 0 0 auto;
+  }
+  .clavier-visuel button:hover { background: #eee; border-color: var(--bleu); }
+  .clavier-visuel button.touche-large { min-width: 60px; font-size: 12.5px; font-family: Georgia, serif; padding: 8px 12px; }
+  .clavier-visuel button.touche-effacer { color: var(--rouge); border-color: var(--rouge-clair); }
+  /* ---------- Touche "Valider" du clavier maison, tactile uniquement -----------
+     Sur ordinateur, le clavier physique fait deja tout ca (touche Entree) : rien de tout ceci ne
+     doit y apparaitre ni s'y comporter differemment. Voir estAppareilTactile() cote JS pour le
+     contournement equivalent sur le clavier virtuel de MathLive (touche Entree). */
+  .clavier-groupe-tactile { display: none; }
+  @media (hover: none) {
+    .clavier-groupe-tactile { display: flex; }
+  }
+  .clavier-touche-valider {
+    background: var(--bleu) !important;
+    color: white !important;
+    border-color: var(--bleu) !important;
+    font-weight: bold;
+    width: 100%;
+  }
+  .clavier-touche-valider:hover { background: #3a36a0 !important; }
+
+  .clavier-visuel .clavier-apercu {
+    font-size: 12px;
+    color: var(--gris);
+    font-family: Georgia, serif;
+    padding-top: 4px;
+    border-top: 1px solid #ddd;
+  }
+
+  /* ---------- Graphiques ---------- */
+  .qcm-svg {
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    display: block;
+    margin: 0 auto 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+  .svg-police-manuel {
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+  }
+  .svg-grande-figure {
+    max-width: 100% !important;
+  }
+  .figure-centree {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  .figure-centree svg {
+    max-width: 100%;
+    height: auto;
+  }
+  svg.svg-agrandissable {
+    cursor: zoom-in;
+  }
+  svg.svg-agrandissable:hover {
+    outline: 2px solid var(--bleu-clair);
+    outline-offset: 2px;
+  }
+  /* ---------- bouton-icone "curseur avec coordonnees", sur tous les graphiques generes par
+     genererSVGCourbeGrande : meme gabarit que le bouton loupe d'automatismes/assets/automatismes.css
+     (.zoom-btn), seul precedent d'icone en coin de figure trouve sur le site — bouton rond-carre
+     semi-transparent, hover en bleu plein. Place LEGEREMENT EN DEHORS du cadre du graphique, A
+     DROITE (pas au-dessus) via un padding-right dedie sur le conteneur, meme technique que
+     .figure-zoom-dense dans automatismes/assets/automatismes.css pour les figures sans marge
+     interieure. Masque sur les appareils sans survol reel (tablette/telephone, media (hover:none)) :
+     un curseur "au doigt" cacherait en permanence le point vise, ce n'est pas une bonne experience
+     tactile (desktop uniquement, voir echange avec David). ---------- */
+  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
+  .btn-curseur {
+    position: absolute; top: 4px; right: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
+    color: var(--bleu); cursor: pointer; line-height: 0;
+  }
+  .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
+  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
+  /* variante dans la modale de zoom (voir ouvrirModalSvg) : le svg y est en "width:100%" (pas
+     inline-block, sinon la largeur en pourcentage n'a plus de base de calcul et le graphique
+     s'ecrase de nouveau) ; le bouton reste par-dessus le graphique agrandi (moins genant qu'en
+     petit format) plutot que d'ajouter une marge qui reduirait sa taille, et passe a gauche pour
+     ne pas se superposer au bouton fermer de la modale (en haut a droite). */
+  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
+  .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
+  .curseur-groupe { pointer-events: none; }
+  svg.qcm-svg.curseur-actif { cursor: crosshair; }
+  /* empeche le glissement tactile sur la figure d'etre intercepte comme un scroll de page : sans
+     ca, un geste au doigt sur une figure scrolle au lieu d'activer le curseur (voir cablerCurseurUnique).
+     Le clone agrandi de la modale (#modal-svg-contenu-interieur) perd la classe qcm-svg (voir
+     ouvrirModalSvg), d'ou le second selecteur. */
+  svg.qcm-svg, #modal-svg-contenu-interieur svg { touch-action: none; }
+  .modal-svg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 25, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .modal-svg-overlay.ouvert { display: flex; }
+  .modal-svg-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 32px 14px 14px;
+    width: min(96vw, 800px);
+    max-height: 94vh;
+    overflow: auto;
+    cursor: default;
+  }
+  .modal-svg-contenu svg {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto;
+  }
+  .modal-svg-fermer {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-svg-fermer:hover { color: var(--rouge); }
+
+  /* ---------- Barre de contrôle et boutons ---------- */
+  .barre-controle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 26px 0 10px;
+  }
+  .btn-principal, .btn-secondaire {
+    font-size: 15px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    border-radius: 8px;
+    padding: 12px 18px;
+    min-height: 46px;
+    width: 100%;
+  }
+  .btn-principal {
+    background: var(--bleu);
+    color: white;
+    border: none;
+  }
+  .btn-principal:hover { background: #3a36a0; }
+  .btn-secondaire {
+    background: white;
+    color: var(--bleu);
+    border: 1.5px solid var(--bleu);
+  }
+  .btn-secondaire:hover { background: var(--bleu-clair); }
+
+  .score-panneau {
+    display: none;
+    background: var(--gris-clair);
+    border-radius: 8px;
+    padding: 16px 14px;
+    margin: 20px 0;
+    font-size: 16px;
+  }
+  .score-panneau.visible { display: block; }
+  .score-chiffre { font-size: 24px; font-weight: bold; color: var(--bleu); }
+  .score-panneau .btn-secondaire { width: auto; margin-top: 4px; }
+
+  .correction-panneau {
+    display: none;
+    margin-top: 14px;
+    border-top: 1px solid #ddd;
+    padding-top: 12px;
+  }
+  .correction-panneau.visible { display: block; }
+  .correction-ligne {
+    padding: 7px 0;
+    font-size: 13.5px;
+    border-bottom: 1px solid #eee;
+  }
+  .correction-ligne .id { font-weight: bold; color: var(--gris); }
+
+  /* ---------- À partir des tablettes (>=600px) ---------- */
+  @media (min-width: 600px) {
+    body { padding: 24px 24px 60px; }
+    h1 { font-size: 24px; }
+    .badge { width: 52px; height: 52px; min-width: 52px; font-size: 22px; }
+    .filet { margin-left: 68px; }
+    .cahier-repere { font-size: 12.5px; }
+    .section-titre { font-size: 20px; }
+    .calcul-titre { font-size: 16px; }
+    .question-grille {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 20px;
+      /* align-items:start (plutot que le "stretch" par defaut d'une grille) : sans ca, une carte
+         courte (ex. une inequation sans graphique) est etiree pour egaler la hauteur de sa voisine
+         de ligne des qu'elle contient un grand graphique (ex. 15.8 a) a cote de 15.8 b), qui n'a
+         pas de graphique propre), avec son contenu centre verticalement dans tout cet espace vide —
+         signale par David sur 15.8 b). Chaque carte garde desormais sa propre hauteur naturelle. */
+      align-items: start;
+    }
+    /* section a une seule question (ex. 19.7, 19.8, 19.10 apres suppression des autres items) :
+       inutile de reserver une colonne vide a cote -- la carte prend toute la largeur (David,
+       2026-09-22). */
+    .question-pleine-largeur { grid-column: 1 / -1; }
+    .q-input { width: 150px; flex: 0 0 150px; }
+    .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .btn-principal, .btn-secondaire { width: auto; }
+    .mode-label { width: auto; margin-right: 4px; }
+    .mode-btn { flex: 0 0 auto; }
+  }
+
+  /* ---------- Grand écran (>=900px) : un peu plus d'air ---------- */
+  @media (min-width: 900px) {
+    .q-enonce { min-width: 90px; }
+  }
+
+  /* ---------- Bouton export PDF ---------- */
+  .nav-btn-pdf {
+    border-color: var(--rouge-clair);
+    color: var(--rouge);
+  }
+  .nav-btn-pdf:hover { background: var(--rouge-clair); }
+  .nav-btn-pdf:disabled { opacity: 0.6; cursor: wait; }
+  .icone-pdf { margin-right: 5px; vertical-align: -3px; }
+
+  /* ---------- Impression / export PDF ---------- */
+  .question, .qcm-bloc { break-inside: avoid; }
+  .calcul-titre, .section-titre { break-after: avoid; }
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 1.4cm; }
+    body { padding: 0; max-width: 100%; }
+    .barre-navigation,
+    .mode-panneau,
+    .bandeau-calculatrice,
+    .q-clavier-btn,
+    .clavier-visuel,
+    .q-aide-btn,
+    .barre-controle,
+    .modal-svg-overlay,
+    #score-panneau .btn-secondaire {
+      display: none !important;
+    }
+    .bloc-general, .bloc-avance { background: none; border: 1px solid #ccc; }
+    a[href]::after { content: ""; }
+    .q-lettre, .calcul-titre, .section-titre, h1 { font-weight: 600; }
+  }
+
+  /* ---------- Clavier MathLive : téléphone en mode paysage ----------
+     Par défaut le clavier occupe ~62 % de la hauteur en paysage et masque le
+     champ de saisie ; on réduit les touches pour le ramener à ~48 %.
+     Cible volontairement étroite — écran tactile ET moins de 500 px de haut :
+     les tablettes en paysage dépassent 700 px, le bureau n'est pas concerné. */
+  @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+    .ML__keyboard {
+      --keycap-height: 32px;
+      --keycap-gap: 4px;
+      --keycap-font-size: 15px;
+      --keycap-small-font-size: 12px;
+      --keycap-extra-small-font-size: 10px;
+      --keycap-shift-font-size: 10px;
+      --keycap-glyph-size: 16px;
+      --keycap-glyph-size-lg: 18px;
+      --keycap-glyph-size-xl: 20px;
+      --keyboard-toolbar-font-size: 100%;
+      --keyboard-padding-top: 2px;
+      --keyboard-padding-bottom: 2px;
+    }
+  }
+</style>
+
+<body>
+
+<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
+  <div class="modal-svg-contenu">
+    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
+    <div id="modal-svg-contenu-interieur"></div>
+  </div>
+</div>
+
+<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Seconde — Cahier 8</a></p>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <span class="nav-btn nav-btn-disabled">Fiche précédente</span>
+  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
+</div>
+
+<div class="entete">
+  <div class="badge">20</div>
+  <div class="entete-texte">
+    <h1>Repérage, distances et milieux</h1>
+    <p class="cahier-repere">Seconde — Cahier 8</p>
+  </div>
+</div>
+<div class="filet"></div>
+
+<div class="bandeau-calculatrice">Calculatrice interdite — tous les calculs sont à effectuer à la main</div>
+
+<div class="mode-panneau" id="mode-panneau">
+  <span class="mode-label">Vérifier chaque réponse</span>
+  <button class="mode-btn" id="mode-immediat-btn" onclick="definirMode(true)">Au fur et à mesure</button>
+  <button class="mode-btn" id="mode-fin-btn" onclick="definirMode(false)">Tout à la fin</button>
+  <span class="mode-explication" id="mode-explication"></span>
+</div>
+
+<div class="bloc-general">
+  <p class="section-titre">Quelques automatismes</p>
+  <div class="section-barre"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.1 — Calcul littéral et inéquations.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <div class="question-grille" id="grille-20-1"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.2.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <div class="question-grille" id="grille-20-2"></div>
+
+</div>
+
+<p class="section-titre">Géométrie repérée</p>
+<div class="section-barre"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.3 — Lecture de coordonnées.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-3"></div>
+  <div class="question-grille" id="grille-20-3"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.4 — Distance entre deux points.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="question-grille" id="grille-20-4"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.5 — Coordonnées du milieu.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="question-grille" id="grille-20-5"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.6 — Nature d'un triangle.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-6"></div>
+  <div class="question-grille" id="grille-20-6"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.7 — Nature d'un quadrilatère.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-7"></div>
+  <div class="question-grille" id="grille-20-7"></div>
+
+<div class="bloc-avance">
+  <p class="section-titre">Calculs plus avancés</p>
+  <div class="section-barre"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.8 — Ensemble équidistant d'un point et d'un axe.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-8"></div>
+  <div class="question-grille" id="grille-20-8"></div>
+
+  <p class="calcul-titre"><span>Calcul 20.9 — Parties du plan et inégalités.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-9"></div>
+  <div class="question-grille" id="grille-20-9"></div>
+
+</div>
+<div class="barre-controle">
+  <button class="btn-secondaire" id="btn-recommencer" onclick="reinitialiser()">Recommencer</button>
+  <button class="btn-secondaire" onclick="genererNouvelleFiche()">Générer une nouvelle version</button>
+  <span id="zone-enregistrer" class="zone-bouton-suivi" hidden>
+    <button class="btn-secondaire" id="btn-enregistrer" onclick="enregistrerBrouillonActuel()">Enregistrer mon avancement</button>
+    <span title="Sauvegarde ta fiche telle quelle (mêmes valeurs, réponses déjà tapées) pour la reprendre plus tard — sans révéler ton score ni la corriger." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <span id="zone-valider" class="zone-bouton-suivi" hidden>
+    <button class="btn-principal" id="btn-valider" onclick="validerFicheActuelle()">Valider ma fiche</button>
+    <span title="« Voir toutes les réponses » ne s'active qu'une fois ta fiche validée." style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#B23A2E;color:#fff;font-size:12px;line-height:18px;text-align:center;cursor:help;">?</span>
+  </span>
+  <button class="btn-principal" id="btn-verifier" onclick="verifierTout()">Corrigé des erreurs</button>
+  <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
+</div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
+
+<div class="score-panneau" id="score-panneau">
+  <span class="score-chiffre" id="score-chiffre">0 / 35</span> bonnes réponses
+  <div style="margin-top:10px;">
+    <button class="btn-secondaire" id="btn-correction" onclick="toggleCorrection()">Voir la correction des erreurs</button>
+  </div>
+  <div class="correction-panneau" id="correction-panneau"></div>
+</div>
+
+<div class="correction-panneau" id="toutes-reponses-panneau"></div>
+
+<div class="barre-navigation">
+  <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
+  <span class="nav-btn nav-btn-disabled">Fiche précédente</span>
+  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
+</div>
+
+
+<script>
+// MathLive tente de deviner la disposition physique du clavier et se trompe parfois sur
+// clavier AZERTY francais (la touche "^", une touche morte, declenche alors un raccourci
+// errone au lieu d'un exposant) : on force explicitement la disposition francaise.
+if (window.MathLive && window.MathLive.setKeyboardLayoutLocale) MathLive.setKeyboardLayoutLocale('fr');
+function alea(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+// Export PDF vierge : les reponses deja tapees ne doivent pas apparaitre sur la fiche imprimee
+// (usage prevu : une fiche a redistribuer ou reimprimer vide), sans pour autant les perdre sur la
+// page elle-meme -- l'eleve continue son travail normalement juste apres. On vide les champs (et
+// masque le panneau de score/correction si deja valide) juste avant l'impression, puis on restaure
+// tout via "afterprint" (se declenche de facon fiable a la fermeture de la boite de dialogue
+// d'impression, qu'elle ait ete confirmee OU annulee).
+let etatAvantImpression = null;
+function preparerPourImpression() {
+  const valeurs = {};
+  const valeursWidget = {};
+  exercices.forEach((ex, idx) => {
+    // widget tableau de variations : pas de input-${idx} standard, capture/vide ses propres cases
+    // (memes fonctions que la reprise de brouillon, voir capturerEtatTableauVariations plus haut).
+    if (ex.type === 'tableauVariations') {
+      valeursWidget[idx] = capturerEtatTableauVariations(idx, ex);
+      reinitialiserTableauVariations(idx, ex);
+    }
+    if (ex.type === 'tableauCroiseRempli') {
+      valeursWidget[idx] = capturerEtatTableauCroise(idx, ex);
+      reinitialiserTableauCroiseRempli(idx, ex);
+    }
+    const input = document.getElementById('input-' + idx);
+    if (input) { valeurs[idx] = input.value; input.value = ''; }
+    const div = document.getElementById('q-' + idx);
+    if (div) div.classList.remove('correct', 'incorrect');
+    const statut = document.getElementById('statut-' + idx);
+    if (statut) statut.textContent = '';
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  const scoreVisible = !!(scorePanneau && scorePanneau.classList.contains('visible'));
+  if (scorePanneau) scorePanneau.classList.remove('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  const toutesVisible = !!(toutesPanneau && toutesPanneau.classList.contains('visible'));
+  if (toutesPanneau) toutesPanneau.classList.remove('visible');
+  etatAvantImpression = { valeurs, valeursWidget, scoreVisible, toutesVisible };
+}
+function restaurerApresImpression() {
+  if (!etatAvantImpression) return;
+  const { valeurs, valeursWidget, scoreVisible, toutesVisible } = etatAvantImpression;
+  exercices.forEach((ex, idx) => {
+    if (ex.type === 'tableauVariations' && valeursWidget[idx]) {
+      restaurerEtatTableauVariations(idx, ex, valeursWidget[idx]);
+      verifierUne(idx);
+    }
+    if (ex.type === 'tableauCroiseRempli' && valeursWidget[idx]) {
+      restaurerEtatTableauCroise(idx, ex, valeursWidget[idx]);
+      verifierUne(idx);
+    }
+    const input = document.getElementById('input-' + idx);
+    if (input && valeurs[idx]) input.value = valeurs[idx];
+    // recolore/reaffiche le statut en rappelant verifierUne() (deja coherent avec le gating
+    // "reveler") plutot qu'en restaurant les classes CSS a la main.
+    if (valeurs[idx]) verifierUne(idx);
+  });
+  const scorePanneau = document.getElementById('score-panneau');
+  if (scorePanneau && scoreVisible) scorePanneau.classList.add('visible');
+  const toutesPanneau = document.getElementById('toutes-reponses-panneau');
+  if (toutesPanneau && toutesVisible) toutesPanneau.classList.add('visible');
+  etatAvantImpression = null;
+}
+window.addEventListener('afterprint', restaurerApresImpression);
+function exporterPDF() { preparerPourImpression(); window.print(); }
+function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
+function choix(liste) { return liste[alea(0, liste.length - 1)]; }
+function melanger(tab) {
+  const a = tab.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = alea(0, i); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pgcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { [a, b] = [b, a % b]; }
+  return a;
+}
+function formatDecimalFr(v) { return String(v).replace('.', '{,}'); }
+// entier non nul de magnitude [min,max], signe tire au hasard
+function entierSigne(min, max) {
+  const v = alea(min, max);
+  return alea(0,1) === 0 ? v : -v;
+}
+// magnitude (positive), multiple de 0.25, dans [0.5 ; maxAbs] — utilisee pour lire graphiquement
+// une equation/inequation SANS forcer l'abscisse solution a etre entiere (une resolution graphique
+// n'a aucune raison de tomber systematiquement sur un entier : voir la regle "elargir le champ de
+// l'aleatoire"). maxAbs est calcule a partir du domaine reel (voir appelants) pour ne jamais
+// s'approcher a moins de 0.5 du bord.
+function quartEntierMagnitude(maxAbs) {
+  const nbQuarts = Math.max(0, Math.floor((maxAbs - 0.5) * 4));
+  return 0.5 + alea(0, nbQuarts) / 4;
+}
+// meme chose, mais signee (utile quand le decalage n'est pas utilise de facon symetrique, ex.
+// f(p+decalage) sur une cubique, qui n'est pas paire autour de p).
+function decalageQuartEntier(maxAbs) {
+  return choix([1, -1]) * quartEntierMagnitude(maxAbs);
+}
+// meme chose, mais au demi-entier pres : utilisee specifiquement quand la magnitude est ensuite
+// ELEVEE AU CARRE (parabole, k=r+decalage^2) — un decalage au quart d'entier donnerait alors un k
+// a 4 decimales (n^2/16, ex. 1.25^2=1.5625), affiche arrondi au millieme par fmtGraduation : bien
+// trop precis pour une lecture graphique. Un decalage au demi-entier donne un decalage^2 TOUJOURS
+// multiple exact de 0.25 (n^2/4), donc jamais plus de 2 decimales — corrige suite a la remarque de
+// David du 2026-09-11 ("il ne faut pas aller jusqu'au millieme").
+function demiEntierMagnitude(maxAbs) {
+  const nbDemis = Math.max(0, Math.floor((maxAbs - 0.5) * 2));
+  return 0.5 + alea(0, nbDemis) / 2;
+}
+// valeur au quart d'entier pres, tiree DIRECTEMENT dans [bas;haut] (pas une magnitude autour de 0) :
+// utilisee pour choisir k directement sur la cubique (voir 15.4/15.5) plutot que de le deriver
+// d'un decalage puis l'evaluer via f — evaluer une cubique en un point au quart d'entier pres
+// produit un resultat a 6 decimales (n^3/64), le meme probleme de precision que ci-dessus mais en
+// pire (impossible a nettoyer en changeant juste le pas du decalage, car degre 3).
+function quartEntierDansIntervalle(bas, haut) {
+  const nbQuarts = Math.max(0, Math.floor((haut - bas) * 4));
+  return bas + alea(0, nbQuarts) / 4;
+}
+// ecrit "ax" en gerant les coefficients +-1 (repris tel quel de la fiche 8 de Seconde)
+function coefXTexte(coefX) {
+  if (coefX === 1) return 'x';
+  if (coefX === -1) return '-x';
+  return `${coefX}x`;
+}
+// ecrit "ax+b" en gerant le signe de a (via coefXTexte) et le signe de b
+function affineTexte(a, b) {
+  const partieX = coefXTexte(a);
+  if (b === 0) return partieX;
+  return b > 0 ? `${partieX}+${b}` : `${partieX}-${Math.abs(b)}`;
+}
+// ecrit "x-v" en gerant le signe de v ("x-3" si v>0, "x+3" si v<0, "x" si v=0) : jamais de double
+// signe colle ("x--3") comme le donnerait un template brut `x-${v}` avec v negatif.
+function xMoinsTexte(v) {
+  if (v === 0) return 'x';
+  return v > 0 ? `x-${v}` : `x+${-v}`;
+}
+// meme chose mais avec un x indice (x_1, x_2...), pour les enonces de comparaison a deux points
+function xIndiceMoinsTexte(indice, v) {
+  if (v === 0) return `x_${indice}`;
+  return v > 0 ? `x_${indice}-${v}` : `x_${indice}+${-v}`;
+}
+// ecrit un polynome deja developpe (jamais sous forme d'identite remarquable) a partir de ses
+// coefficients, du degre le plus haut au plus bas ; ex. [1,3,-1] -> "x^2+3x-1", [2,-1,0,5] -> "2x^3-x^2+5"
+function polyTexte(coeffs) {
+  const degre = coeffs.length - 1;
+  let out = '';
+  coeffs.forEach((c, i) => {
+    if (c === 0) return;
+    const puissance = degre - i;
+    let terme;
+    if (puissance === 0) terme = `${Math.abs(c)}`;
+    else if (puissance === 1) terme = (Math.abs(c) === 1 ? '' : Math.abs(c)) + 'x';
+    else terme = (Math.abs(c) === 1 ? '' : Math.abs(c)) + `x^${puissance}`;
+    out += (out === '' ? (c < 0 ? '-' : '') : (c < 0 ? '-' : '+')) + terme;
+  });
+  return out || '0';
+}
+// evalue le meme polynome en x (methode de Horner)
+function polyEval(coeffs, x) {
+  return coeffs.reduce((acc, c) => acc * x + c, 0);
+}
+
+// ---------- graphique en grand format, reutilise par plusieurs questions de lecture graphique
+// (images et antecedents) : graduations et police agrandies par rapport au format compact
+// habituel des fiches de Premiere (~220px de large) pour rester lisible en pleine largeur ----------
+function pasGraduation(etendue) {
+  if (!(etendue > 0)) return 1;
+  const brut = etendue / 6;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(brut)));
+  const normalise = brut / magnitude;
+  const pas = normalise <= 1 ? 1 : normalise <= 2 ? 2 : normalise <= 5 ? 5 : 10;
+  return pas * magnitude;
+}
+function fmtGraduation(v) {
+  const arrondi = Math.round(v * 1000) / 1000;
+  return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
+}
+function genererSVGCourbeGrande(fonctionJs, xmin, xmax, ymin, ymax, largeur, hauteur, courbeSecondaire, sousPasXForce) {
+  largeur = largeur || 720; hauteur = hauteur || 380;
+  const marge = 36;
+  const toSvgX = x => marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
+  const toSvgY = y => hauteur - marge - (y - ymin) / (ymax - ymin) * (hauteur - 2*marge);
+  let points = [];
+  for (let i = 0; i <= 200; i++) {
+    const x = xmin + (xmax-xmin)*i/200;
+    const y = fonctionJs(x);
+    if (y >= ymin - 1 && y <= ymax + 1) {
+      points.push(toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1));
+    }
+  }
+  const path = 'M ' + points.join(' L ');
+  const ox = toSvgX(0), oy = toSvgY(0);
+
+  const pasX = pasGraduation(xmax - xmin);
+  const pasY = pasGraduation(ymax - ymin);
+  // graduations intermediaires (sous-quadrillage), un quart du pas principal : la lecture
+  // graphique de 14.7 se fait a une tolerance de 0.5, donc il faut des reperes plus rapproches
+  // que les seules graduations entieres pour rester lisible sans trop d'approximation. Certains
+  // graphiques (15.6, racines a un quart d'entier pres, tolerance 0.2) imposent un pas de
+  // sous-graduation explicite plutot que le quart du pas principal, pour passer exactement par
+  // chaque quart d'entier.
+  const sousPasX = sousPasXForce || pasX / 4;
+  const sousPasY = pasY / 4;
+
+  let quadrillage = '', sousQuadrillage = '', graduations = '';
+  const sousDebutX = Math.ceil(xmin / sousPasX) * sousPasX;
+  for (let i = 0; i <= Math.floor((xmax - sousDebutX) / sousPasX) + 1e-9; i++) {
+    const gx = +(sousDebutX + i * sousPasX).toFixed(6);
+    const rangX = gx / pasX;
+    if (Math.abs(rangX - Math.round(rangX)) < 1e-6) continue; // deja trace par le quadrillage principal
+    const sx = toSvgX(gx).toFixed(1);
+    sousQuadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#ececec" stroke-width="0.6"/>`;
+    sousQuadrillage += `<line x1="${sx}" y1="${(oy-2.5).toFixed(1)}" x2="${sx}" y2="${(oy+2.5).toFixed(1)}" stroke="#999" stroke-width="1"/>`;
+  }
+  const sousDebutY = Math.ceil(ymin / sousPasY) * sousPasY;
+  for (let i = 0; i <= Math.floor((ymax - sousDebutY) / sousPasY) + 1e-9; i++) {
+    const gy = +(sousDebutY + i * sousPasY).toFixed(6);
+    const rangY = gy / pasY;
+    if (Math.abs(rangY - Math.round(rangY)) < 1e-6) continue;
+    const sy = toSvgY(gy).toFixed(1);
+    sousQuadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#ececec" stroke-width="0.6"/>`;
+    sousQuadrillage += `<line x1="${(ox-2.5).toFixed(1)}" y1="${sy}" x2="${(ox+2.5).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="1"/>`;
+  }
+  const debutX = Math.ceil(xmin / pasX) * pasX;
+  for (let i = 0; i <= Math.floor((xmax - debutX) / pasX) + 1e-9; i++) {
+    const gx = +(debutX + i * pasX).toFixed(6);
+    const sx = toSvgX(gx).toFixed(1);
+    quadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#dcdcdc" stroke-width="0.8"/>`;
+    if (Math.abs(gx) < pasX * 1e-6) continue;
+    graduations += `<line x1="${sx}" y1="${(oy-4).toFixed(1)}" x2="${sx}" y2="${(oy+4).toFixed(1)}" stroke="#555" stroke-width="1.3"/><text x="${sx}" y="${(oy+18).toFixed(1)}" font-size="13" text-anchor="middle" fill="#333">${fmtGraduation(gx)}</text>`;
+  }
+  const debutY = Math.ceil(ymin / pasY) * pasY;
+  for (let i = 0; i <= Math.floor((ymax - debutY) / pasY) + 1e-9; i++) {
+    const gy = +(debutY + i * pasY).toFixed(6);
+    const sy = toSvgY(gy).toFixed(1);
+    quadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#dcdcdc" stroke-width="0.8"/>`;
+    if (Math.abs(gy) < pasY * 1e-6) continue;
+    graduations += `<line x1="${(ox-4).toFixed(1)}" y1="${sy}" x2="${(ox+4).toFixed(1)}" y2="${sy}" stroke="#555" stroke-width="1.3"/><text x="${(ox-12).toFixed(1)}" y="${(parseFloat(sy)+4.5).toFixed(1)}" font-size="13" text-anchor="middle" fill="#333">${fmtGraduation(gy)}</text>`;
+  }
+
+  const axeXFin = largeur - marge + 14, axeYFin = marge - 14;
+  let axes = `<line x1="${marge-14}" y1="${oy.toFixed(1)}" x2="${axeXFin.toFixed(1)}" y2="${oy.toFixed(1)}" stroke="#1a1a1a" stroke-width="1.3"/>`;
+  axes += `<polygon points="${axeXFin.toFixed(1)},${oy.toFixed(1)} ${(axeXFin-9).toFixed(1)},${(oy-4.5).toFixed(1)} ${(axeXFin-9).toFixed(1)},${(oy+4.5).toFixed(1)}" fill="#1a1a1a"/>`;
+  axes += `<line x1="${ox.toFixed(1)}" y1="${(hauteur-marge+14).toFixed(1)}" x2="${ox.toFixed(1)}" y2="${axeYFin.toFixed(1)}" stroke="#1a1a1a" stroke-width="1.3"/>`;
+  axes += `<polygon points="${ox.toFixed(1)},${axeYFin.toFixed(1)} ${(ox-4.5).toFixed(1)},${(axeYFin+9).toFixed(1)} ${(ox+4.5).toFixed(1)},${(axeYFin+9).toFixed(1)}" fill="#1a1a1a"/>`;
+  axes += `<text x="${(ox-14).toFixed(1)}" y="${(oy+18).toFixed(1)}" font-size="13" fill="#333">O</text>`;
+
+  // courbe secondaire optionnelle (position relative de deux courbes, calcul 15.7) : meme
+  // quadrillage/axes, un second trace de couleur differente avec une etiquette Cf/Cg pres de
+  // son extremite la plus a droite qui reste dans le cadre.
+  let courbeSecondaireSvg = '';
+  if (courbeSecondaire) {
+    let points2 = [];
+    for (let i = 0; i <= 200; i++) {
+      const x = xmin + (xmax-xmin)*i/200;
+      const y = courbeSecondaire.fonctionJs(x);
+      if (y >= ymin - 1 && y <= ymax + 1) points2.push({x, y, sx: toSvgX(x), sy: toSvgY(y)});
+    }
+    const path2 = 'M ' + points2.map(pt => pt.sx.toFixed(1) + ',' + pt.sy.toFixed(1)).join(' L ');
+    courbeSecondaireSvg = `<path d="${path2}" fill="none" stroke="${courbeSecondaire.couleur}" stroke-width="2.8"/>`;
+    if (points2.length > 0) {
+      const dernier = points2[points2.length - 1];
+      const decalageY = dernier.sy < marge + 20 ? 16 : -8;
+      courbeSecondaireSvg += `<text x="${(dernier.sx-6).toFixed(1)}" y="${(dernier.sy+decalageY).toFixed(1)}" font-size="15" font-style="italic" fill="${courbeSecondaire.couleur}" text-anchor="end">${courbeSecondaire.label}</text>`;
+    }
+  }
+  let etiquettePrincipale = '';
+  if (courbeSecondaire && points.length > 0) {
+    const [sxStr, syStr] = points[points.length - 1].split(',');
+    const sx = parseFloat(sxStr), sy = parseFloat(syStr);
+    const decalageY = sy < marge + 20 ? 16 : -8;
+    etiquettePrincipale = `<text x="${(sx-6).toFixed(1)}" y="${(sy+decalageY).toFixed(1)}" font-size="15" font-style="italic" fill="#4B46C7" text-anchor="end">${courbeSecondaire.labelPrincipale || 'Cf'}</text>`;
+  }
+  // data-* : donnees de conversion pixel<->coordonnees, reutilisees par activerCurseurSvg (voir
+  // plus bas) pour retrouver (x;y) sous la souris sans dupliquer xmin/xmax/ymin/ymax/marge ailleurs.
+  // width/height explicites (en plus du viewBox) : sans eux, un <svg> n'a pas de taille intrinseque
+  // et "max-width:100%;height:auto" (voir CSS .figure-centree svg) n'a rien a partir de quoi
+  // calculer une hauteur — le graphique s'affichait alors minuscule des qu'il n'etait plus un
+  // enfant direct du conteneur flex (ce qu'a change l'ajout du bouton-icone du curseur, voir
+  // .figure-avec-curseur). ouvrirModalSvg retire ces attributs sur le clone affiche en grand,
+  // qui a sa propre regle "width:100%" independante.
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-grande-figure svg-police-manuel"
+    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="${marge}" data-pas="${sousPasX}">
+    ${sousQuadrillage}
+    ${quadrillage}
+    ${axes}
+    ${graduations}
+    <path d="${path}" fill="none" stroke="#4B46C7" stroke-width="2.8"/>
+    ${etiquettePrincipale}
+    ${courbeSecondaireSvg}
+    <g class="curseur-groupe" visibility="hidden">
+      <line class="curseur-ligne-v" x1="0" y1="${marge}" x2="0" y2="${(hauteur-marge).toFixed(1)}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <line class="curseur-ligne-h" x1="${marge}" y1="0" x2="${(largeur-marge).toFixed(1)}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <text class="curseur-texte" font-size="13" fill="#666" font-family="Georgia, serif"></text>
+    </g>
+  </svg>`;
+}
+// ---------- curseur avec lecture des coordonnees : ecoute les Pointer Events (souris ET tactile,
+// une seule API) sur les SVG generes par genererSVGCourbeGrande, convertit la position du pointeur
+// en coordonnees (x;y) via les data-* du <svg> lui-meme (marge/xmin/xmax/ymin/ymax), et affiche un
+// reticule pointille jusqu'aux deux axes plus un texte des coordonnees pres du point.
+// - Souris : comportement inchange depuis la version d'origine (survol libre dans tout le
+//   graphique, actif seulement si l'utilisateur a clique sur le bouton-icone dedie — voir
+//   boutonCurseurHTML et la classe curseur-actif) ; un pointermove de type "mouse" se comporte
+//   exactement comme l'ancien mousemove.
+// - Tactile/stylet : le curseur reste ANCRE SUR LA COURBE (principale — voir chemin ci-dessous)
+//   — seule l'abscisse suit le doigt, l'ordonnee est recalculee sur la courbe via
+//   path.getPointAtLength()/getTotalLength() (API SVG native, dichotomie car le trace va toujours
+//   de gauche a droite, x croissant). L'abscisse est en plus aimantee au pas du sous-quadrillage
+//   (data-pas, deja le SOUS-pas — cf. sousPasX/sousPasXForce dans genererSVGCourbeGrande) : viser
+//   le pixel exact au doigt est illusoire, et ca donne des valeurs lisibles alignees sur les
+//   reperes visibles. Au relachement, le repere RESTE affiche a sa derniere position (pas de
+//   disparition) — laisse le temps de lire.
+// Adaptation tactile portee depuis la fiche 1 de Premiere apres validation sur celle-ci (18/09/2026).
+function activerCurseurSvg(container) {
+  if (!container) return;
+  // seuls les graphiques issus de genererSVGCourbeGrande portent les data-xmin/.../.curseur-groupe
+  // necessaires ; les figures d'arbre pondere (fiche 19) partagent juste la classe qcm-svg pour le
+  // zoom au clic, sans porter cette infrastructure -- cablerCurseurUnique plante sinon en cherchant
+  // un .curseur-groupe absent.
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    if (svg.dataset.xmin !== undefined) cablerCurseurUnique(svg);
+  });
+}
+// cable le curseur sur UN svg donne (independant de la classe qcm-svg, requise pour re-cabler le
+// clone affiche dans la modale de zoom — voir ouvrirModalSvg — qui retire cette classe).
+function cablerCurseurUnique(svg) {
+  const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
+  const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
+  const marge = parseFloat(svg.dataset.marge);
+  const pasFin = parseFloat(svg.dataset.pas) || 0;
+  const groupe = svg.querySelector('.curseur-groupe');
+  const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
+  const texte = svg.querySelector('.curseur-texte');
+  // querySelector('path') prend le premier <path> du markup = la courbe principale (voir
+  // genererSVGCourbeGrande : le trace principal precede toujours courbeSecondaireSvg).
+  const chemin = svg.querySelector('path');
+  const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
+  const auPasFin = (v) => pasFin > 0 ? Math.round(v / pasFin) * pasFin : v;
+
+  // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
+  function pointCourbeA(pxCible) {
+    if (!chemin) return null;
+    let bas = 0, haut = chemin.getTotalLength();
+    for (let i = 0; i < 24; i++) {
+      const milieu = (bas + haut) / 2;
+      if (chemin.getPointAtLength(milieu).x < pxCible) bas = milieu; else haut = milieu;
+    }
+    return chemin.getPointAtLength((bas + haut) / 2);
+  }
+
+  function afficherRepere(px, py, tactile) {
+    groupe.setAttribute('visibility', 'visible');
+    ligneV.setAttribute('x1', px.toFixed(1)); ligneV.setAttribute('x2', px.toFixed(1));
+    ligneH.setAttribute('y1', py.toFixed(1)); ligneH.setAttribute('y2', py.toFixed(1));
+    const x = xmin + (px - marge) / (largeur - 2*marge) * (xmax - xmin);
+    const y = ymin + (hauteur - marge - py) / (hauteur - 2*marge) * (ymax - ymin);
+    const texteX = px < largeur - 90 ? px + 8 : px - 8;
+    const ancrage = px < largeur - 90 ? 'start' : 'end';
+    const decalage = tactile ? 34 : 8;
+    const texteY = py > marge + decalage ? py - decalage : py + (tactile ? 38 : 16);
+    texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
+    texte.setAttribute('text-anchor', ancrage);
+    texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
+  }
+
+  svg.addEventListener('pointermove', (evt) => {
+    const tactile = evt.pointerType !== 'mouse';
+    if (!tactile && !svg.classList.contains('curseur-actif')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
+    if (tactile) {
+      let pxCible = local.x;
+      if (pasFin > 0) {
+        const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
+        const xAimante = auPasFin(xBrut);
+        pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
+      }
+      const ptCourbe = pointCourbeA(pxCible);
+      if (ptCourbe) afficherRepere(ptCourbe.x, ptCourbe.y, true);
+    } else {
+      if (local.y < marge || local.y > hauteur - marge) { groupe.setAttribute('visibility', 'hidden'); return; }
+      afficherRepere(local.x, local.y, false);
+    }
+  });
+  // seule la souris masque le repere en quittant le graphique/relachant — au doigt, il reste
+  // affiche a sa derniere position (voir le commentaire en tete de fichier).
+  const cacherSiSouris = (evt) => { if (evt.pointerType === 'mouse') groupe.setAttribute('visibility', 'hidden'); };
+  svg.addEventListener('pointerup', cacherSiSouris);
+  svg.addEventListener('pointercancel', cacherSiSouris);
+  svg.addEventListener('pointerleave', cacherSiSouris);
+}
+// bouton-icone (coin superieur droit de la figure) pour activer/desactiver le curseur — meme
+// convention visuelle que le reste du site (bouton rond, bordure bleue), mais MASQUE sur les
+// appareils sans survol reel (tablette/telephone, voir CSS) : un curseur "au doigt" cacherait le
+// point vise en permanence, ce n'est pas une bonne experience tactile — voir echange avec David.
+// icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js
+// (seul precedent d'icone en coin de figure trouve sur le site), pour rester visuellement coherent.
+const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+  + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
+  + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+// pas d'id a fournir : le bouton retrouve son svg via son propre parent (toujours le meme span
+// .figure-avec-curseur, voir chaque appelant) — marche donc aussi bien pour les figures dans un
+// conteneur nomme (#graphique-eq...) que pour celles generees en masse dans une carte d'exercice
+// (id dynamique "q-IDX") ou clonees dans la modale de zoom, sans avoir a threader un identifiant.
+function boutonCurseurHTML() {
+  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
+    role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
+}
+function toggleCurseurSvg(btn) {
+  const svg = btn.parentElement.querySelector('svg');
+  if (!svg) return;
+  const actif = svg.classList.toggle('curseur-actif');
+  btn.classList.toggle('actif', actif);
+  if (!actif) svg.querySelector('.curseur-groupe').setAttribute('visibility', 'hidden');
+}
+
+// ---------- Agrandissement des graphiques au clic ----------
+function activerZoomSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    svg.classList.add('svg-agrandissable');
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'button');
+    svg.setAttribute('aria-label', 'Agrandir ce graphique');
+    svg.addEventListener('click', () => ouvrirModalSvg(svg));
+    svg.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
+    });
+  });
+}
+function ouvrirModalSvg(svg) {
+  const interieur = document.getElementById('modal-svg-contenu-interieur');
+  interieur.innerHTML = '';
+  const clone = svg.cloneNode(true);
+  clone.classList.remove('svg-agrandissable', 'qcm-svg', 'svg-grande-figure');
+  clone.removeAttribute('style');
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  // le curseur (voir cablerCurseurUnique) doit continuer a fonctionner dans la modale agrandie :
+  // cloneNode() ne copie pas les ecouteurs, il faut recabler explicitement le clone. On propose
+  // le meme bouton-icone que sur la petite figure, et on reprend l'etat actif/inactif d'origine.
+  const aCurseur = svg.dataset.xmin !== undefined;
+  if (aCurseur) {
+    const enveloppe = document.createElement('span');
+    enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
+    enveloppe.appendChild(clone);
+    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
+    interieur.appendChild(enveloppe);
+    cablerCurseurUnique(clone);
+    if (svg.classList.contains('curseur-actif')) {
+      clone.classList.add('curseur-actif');
+      enveloppe.querySelector('.btn-curseur').classList.add('actif');
+    }
+  } else {
+    interieur.appendChild(clone);
+  }
+  document.getElementById('modal-svg-overlay').classList.add('ouvert');
+}
+function fermerModalSvg(evt, force) {
+  if (force || evt.target.id === 'modal-svg-overlay') {
+    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
+  }
+}
+document.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Escape') fermerModalSvg(null, true);
+});
+
+// ---------- recherche numerique de racines de f(x)=cible sur [xmin;xmax] (balayage fin +
+// bissection), necessaire pour la courbe de degre 3 dont les antecedents n'ont generalement
+// pas de forme exacte simple ----------
+function racinesApprochees(f, xmin, xmax, cible, pas) {
+  pas = pas || (xmax - xmin) / 400;
+  const racines = [];
+  // teste explicitement les deux bords du domaine : une racine peut y tomber exactement (touche
+  // sans traversee visible dans le balayage, ex. x0=xmax), le seul cas qu'un simple changement
+  // de signe entre echantillons consecutifs ne peut jamais detecter.
+  if (Math.abs(f(xmin) - cible) < 1e-9) racines.push(xmin);
+  if (Math.abs(f(xmax) - cible) < 1e-9) racines.push(xmax);
+  let xPrec = xmin, yPrec = f(xmin) - cible;
+  for (let x = xmin + pas; x <= xmax + 1e-9; x += pas) {
+    const y = f(x) - cible;
+    if ((yPrec <= 0 && y >= 0) || (yPrec >= 0 && y <= 0)) {
+      // bissection standard, en gerant explicitement le cas fm===0 (racine exacte tombee pile sur
+      // un milieu d'intervalle — plus frequent depuis que les cibles sont choisies a un quart
+      // d'entier pres, voir decalageQuartEntier : ces valeurs "rondes" sont atteintes par la
+      // bissection elle-meme, qui ne produit QUE des milieux dyadiques). Bug trouve et corrige le
+      // 2026-09-11 : l'ancien test `fa === 0 || (fm>0)===(fa>0)` devenait VRAI en permanence des
+      // que fa passait a 0 une seule fois (meme suite a une mise a jour a=m;fa=fm), quel que soit
+      // le signe reel de fm ensuite — l'intervalle [a,b] derivait alors vers le mauvais bord au
+      // lieu de converger vers la racine, et le garde-fou ci-dessous rejetait le faux candidat :
+      // la racine etait silencieusement perdue.
+      let a = xPrec, b = x, fa = yPrec;
+      if (fa !== 0) {
+        for (let i = 0; i < 40; i++) {
+          const m = (a + b) / 2, fm = f(m) - cible;
+          if (fm === 0) { a = m; b = m; break; }
+          if ((fm > 0) === (fa > 0)) { a = m; fa = fm; } else { b = m; }
+        }
+      }
+      const candidat = (a + b) / 2;
+      // garde-fou : pres d'une tangente (extremum local tres proche de la cible), la classification
+      // de signe entre deux echantillons peut se tromper par bruit flottant et la bissection converge
+      // alors vers un point qui n'est PAS reellement une racine — on ne l'accepte que si f(candidat)
+      // est effectivement tres proche de la cible.
+      if (Math.abs(f(candidat) - cible) < 1e-4) racines.push(candidat);
+    }
+    xPrec = x; yPrec = y;
+  }
+  return racines;
+}
+
+// ---------- intervalles : repris tel quel du systeme deja etabli en Premiere puis dans les
+// fiches 7/8/12/13 de Seconde, necessaire ici pour la reponse de 14.7 e) (inequation f(x) op 0) ----------
+function parseUnIntervalle(str) {
+  const m = str.match(/^([\]\[])(-?inf(?:ini)?|[^;]+);([^;\]\[]+)([\]\[])$/);
+  if (!m) return null;
+  const [_, cg, a, b, cd] = m;
+  try {
+    const va = (a.includes('inf') || a.includes('∞')) ? -Infinity : math.evaluate(a);
+    const vb = (b.includes('inf') || b.includes('∞')) ? Infinity : math.evaluate(b);
+    return { bas: va, haut: vb, inclusBas: cg === '[', inclusHaut: cd === ']' };
+  } catch(e) { return null; }
+}
+function parseReponseIntervalle(str) {
+  str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g, '');
+  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels' || str === 'ℝ') return { type: 'tout' };
+  if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return { type: 'vide' };
+  const parties = str.split(/ou|∪|u(?![a-z])/);
+  const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
+  if (intervalles.length === 0) return null;
+  return { type: 'intervalles', liste: intervalles };
+}
+// tolerance optionnelle (par defaut quasi-exacte) : les bornes issues d'une lecture graphique
+// approchee (14.7 e), cubique ou parabole aux racines non entieres) passent une tolerance reelle.
+function egaliteBorneIntervalle(a, b, tolerance) {
+  if (tolerance === undefined) tolerance = 1e-9;
+  if (a === b) return true;
+  if (!isFinite(a) || !isFinite(b)) return false;
+  return Math.abs(a - b) <= tolerance;
+}
+function checkIntervalle(userInput, correctSpec, tolerance) {
+  const userParsed = parseReponseIntervalle(userInput);
+  if (!userParsed) return false;
+  if (userParsed.type !== correctSpec.type) return false;
+  if (correctSpec.type === 'tout' || correctSpec.type === 'vide') return true;
+  if (userParsed.liste.length !== correctSpec.liste.length) return false;
+  for (const iv of correctSpec.liste) {
+    const matchBorne = userParsed.liste.some(uiv =>
+      egaliteBorneIntervalle(uiv.bas, iv.bas, tolerance) && egaliteBorneIntervalle(uiv.haut, iv.haut, tolerance) &&
+      uiv.inclusBas === iv.inclusBas && uiv.inclusHaut === iv.inclusHaut
+    );
+    if (!matchBorne) return false;
+  }
+  return true;
+}
+function formaterUneBorne(v) {
+  if (v === Infinity) return '+\\infty';
+  if (v === -Infinity) return '-\\infty';
+  // arrondit un entier bruite par le flottant (ex. 1.9999999999999987 issu d'un Math.sqrt) avant
+  // le test d'entier : sinon la borne tombe dans la branche fraction ci-dessous et s'affiche en
+  // "2/1" au lieu de "2" — remarque en construisant 15.5/15.5, qui calculent plus de racines
+  // carrees que la fiche 14 d'origine et rencontrent le bruit plus souvent.
+  if (Math.abs(v - Math.round(v)) < 1e-6) v = Math.round(v);
+  if (Number.isInteger(v)) return String(v);
+  try {
+    const frac = math.fraction(v);
+    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
+  } catch(e) {}
+  return v.toFixed(3);
+}
+function formaterIntervalleSpec(spec) {
+  if (!spec) return '';
+  if (spec.type === 'tout') return '\\mathbb{R}';
+  if (spec.type === 'vide') return '\\emptyset';
+  if (spec.type === 'intervalles') {
+    return spec.liste.map(iv => {
+      const cg = iv.inclusBas ? '[' : ']';
+      const cd = iv.inclusHaut ? ']' : '[';
+      return `${cg}${formaterUneBorne(iv.bas)}\\,;\\,${formaterUneBorne(iv.haut)}${cd}`;
+    }).join('\\ \\cup\\ ');
+  }
+  return '';
+}
+
+// ---------- DEVENU MORT (David a retire cet exercice le 2026-09-19, voir 16.5/16.6 ci-dessous
+// pour la nouvelle numerotation) : widget de lecture d'un tableau de variations sur une courbe de
+// fonction de reference translatee — carre et valeur absolue (extremum interieur unique), racine
+// carree et cube (monotones, pas d'extremum, domaine restreint pour la racine). Laisse en place
+// (aucun exercice ne l'appelle plus) plutot que retire, le retrait touchant une dizaine de points
+// disperses dans le code de correction/reinitialisation partage avec les autres fiches ----------
+function genererParametresGraphiqueVar() {
+  const forme = choix(['carre', 'abs', 'racine', 'cube']);
+  const p = alea(-2, 2);
+  const versLeHaut = alea(0,1) === 1;
+  if (forme === 'carre' || forme === 'abs') {
+    const r = entierSigne(1, 5);
+    const D = alea(3, 4);
+    return { forme, p, r, versLeHaut, xmin: p - D, xmax: p + D };
+  }
+  if (forme === 'racine') {
+    // D carre parfait (1, 4 ou 9) : sqrt(D) reste exact, jamais irrationnel, au bord du domaine.
+    const D = choix([1, 4, 9]);
+    const r = entierSigne(0, 3);
+    return { forme, p, D, r, xmin: p, xmax: p + D };
+  }
+  // cube : toujours croissante sur R, aucun signe a inverser (ce ne serait plus "la" fonction cube).
+  const D = alea(1, 2);
+  const r = entierSigne(0, 3);
+  return { forme, p, D, r, xmin: p - D, xmax: p + D };
+}
+function fonctionGraphiqueVar(params) {
+  const { forme, p, r } = params;
+  if (forme === 'carre') { const signe = params.versLeHaut ? 1 : -1; return x => signe * (x - p) * (x - p) + r; }
+  if (forme === 'abs') { const signe = params.versLeHaut ? 1 : -1; return x => signe * Math.abs(x - p) + r; }
+  if (forme === 'racine') return x => Math.sqrt(x - p) + r;
+  return x => (x - p) * (x - p) * (x - p) + r;
+}
+// seuils du tableau : les deux bornes du domaine, plus l'extremum interieur pour carre/abs (racine
+// et cube sont monotones sur tout leur domaine affiche, sans extremum interieur).
+function seuilsGraphiqueVar(params) {
+  const { forme, p, xmin, xmax } = params;
+  const f = fonctionGraphiqueVar(params);
+  const xs = (forme === 'carre' || forme === 'abs') ? [xmin, p, xmax] : [xmin, xmax];
+  return xs.map((x, i) => ({ x, y: f(x), extremum: i > 0 && i < xs.length - 1 }));
+}
+// genere le SVG d'un tableau-de-variations donne (utilise dans le rendu de la question elle-meme,
+// pas dans un conteneur partage — voir remarque ci-dessus).
+function svgGraphiqueVar(params) {
+  const { xmin, xmax } = params;
+  const f = fonctionGraphiqueVar(params);
+  const ys = seuilsGraphiqueVar(params).map(s => s.y);
+  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const marge = Math.max(1, Math.round((ymax - ymin) * 0.2)) || 1;
+  return genererSVGCourbeGrande(f, xmin, xmax, ymin - marge, ymax + marge, 480, 300);
+}
+
+// ---------- DEVENU MORT (fiche 18 n'a aucun graphique de courbe) : conserve genererSVGCourbeGrande et son
+// infrastructure curseur/zoom, communes a plusieurs fiches, sans les appeler ----------
+function construireGraphiqueXCarre_INUTILISE() {
+  const xmax = 2.5;
+  const f = x => x, g = x => x * x;
+  const svg = genererSVGCourbeGrande(g, 0, xmax, 0, xmax, 480, 320, { fonctionJs: f, couleur: '#1D9E75', label: 'y=x', labelPrincipale: 'y=x^2' });
+  document.getElementById('graphique-xcarre').innerHTML = `
+    <p>Les courbes ci-dessous représentent \\(y=x\\) et \\(y=x^2\\) sur \\([0\\,;\\,${fmtGraduation(xmax)}]\\).</p>
+    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
+  activerZoomSvg(document.getElementById('graphique-xcarre'));
+  activerCurseurSvg(document.getElementById('graphique-xcarre'));
+}
+
+// ---------- tableau de variations a completer : structure analogue au tableau de signes de la
+// fiche 8, cahier 2 de Seconde (seuils a saisir + case cyclable), 2 lignes SEULEMENT (x / g(x)),
+// sur 2k-1 colonnes — pas de colonnes -infini/+infini ici : le domaine est borne et les 2 bornes
+// SONT les seuils extremes. Les fleches de variation sont intercalees DANS la ligne g(x) (colonnes
+// impaires, entre deux valeurs), pas sur une ligne separee : convention habituelle d'un vrai
+// tableau de variations, ou la fleche "amene" a la valeur qui la suit immediatement ----------
+const CYCLE_FLECHES = ['', '↗', '↘'];
+const TV_LARGEUR_LABEL = 78;
+const TV_LARGEUR_COL = 56;
+
+function celluleVideFleche(id, onclick) {
+  return `<button type="button" class="tv-cellule" id="${id}" onclick="${onclick}"></button>`;
+}
+// role visuel d'un seuil (extremum "haut" ou "bas") pour le decalage en escalier de la ligne g(x) :
+// un maximum (local ou une borne de domaine atteinte "par le haut") se place en haut de la ligne,
+// un minimum en bas — la fleche entre deux valeurs consecutives relie alors visuellement le bas au
+// haut (ou l'inverse), comme un vrai tableau de variations trace a la main.
+function roleSeuil(seuils, j) {
+  const k = seuils.length;
+  if (j === 0) return seuils[1].y > seuils[0].y ? 'bas' : 'haut';
+  if (j === k - 1) return seuils[k - 1].y > seuils[k - 2].y ? 'haut' : 'bas';
+  return seuils[j].y > seuils[j - 1].y ? 'haut' : 'bas';
+}
+
+function tableauVariationsHTML(idx, ex) {
+  const seuils = ex.seuils;
+  const k = seuils.length;
+  const nbCols = 2 * k - 1;
+  const largeurTotale = TV_LARGEUR_LABEL + nbCols * TV_LARGEUR_COL;
+  const svg = svgGraphiqueVar(ex.paramsVar);
+  let html = `<div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div><table class="tv-table"><colgroup><col style="width:${TV_LARGEUR_LABEL}px">`;
+  for (let c = 0; c < nbCols; c++) html += `<col style="width:${TV_LARGEUR_COL}px">`;
+  html += `</colgroup><tbody>`;
+  html += `<tr class="tv-ligne-x"><td class="tv-label">\\(x\\)</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 0) {
+      const j = c / 2;
+      if (j === 0 || j === k - 1) html += `<td>\\(${fmtGraduation(seuils[j].x)}\\)</td>`;
+      else html += `<td><input type="text" class="tv-champ" id="tv-x-${idx}-${j}" placeholder="?" oninput="reinitialiserStatutTableau(${idx});enregistrerSaisieTableauVariations(${idx})"></td>`;
+    } else html += `<td></td>`;
+  }
+  html += `</tr>`;
+  // ligne unique g(x) : valeurs ET fleches entrelacees (la fleche occupe la colonne intermediaire
+  // entre deux valeurs consecutives, valeur d'arrivee immediatement a sa suite — convention
+  // habituelle d'un tableau de variations, pas de ligne "Variations" separee).
+  html += `<tr class="tv-ligne-gx"><td class="tv-label">\\(g(x)\\)</td>`;
+  for (let c = 0; c < nbCols; c++) {
+    if (c % 2 === 0) {
+      const j = c / 2;
+      const role = roleSeuil(seuils, j);
+      html += `<td class="tv-${role}"><input type="text" class="tv-champ" id="tv-y-${idx}-${j}" placeholder="?" oninput="reinitialiserStatutTableau(${idx});enregistrerSaisieTableauVariations(${idx})"></td>`;
+    } else {
+      const j = (c - 1) / 2;
+      html += `<td>${celluleVideFleche(`tv-fleche-${idx}-${j}`, `cyclerFlecheVariation(${idx},${j})`)}</td>`;
+    }
+  }
+  html += `</tr></tbody></table>`;
+  const boutonValider = `<button type="button" class="tv-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
+  return `<div class="tv-conteneur"><div class="tv-scroll"><div style="width:${largeurTotale}px">${html}</div></div>${boutonValider}</div>`;
+}
+function cyclerFlecheVariation(idx, j) {
+  const btn = document.getElementById(`tv-fleche-${idx}-${j}`);
+  const i = CYCLE_FLECHES.indexOf(btn.textContent);
+  btn.textContent = CYCLE_FLECHES[(i + 1) % CYCLE_FLECHES.length];
+  btn.classList.remove('correct', 'incorrect');
+  reinitialiserStatutTableau(idx);
+  enregistrerSaisieTableauVariations(idx);
+}
+function reinitialiserStatutTableau(idx) {
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  if (div) div.classList.remove('correct', 'incorrect');
+  if (statut) { statut.textContent = ''; statut.className = 'q-statut'; }
+}
+function verifierTableauVariationsRempli(idx, ex) {
+  const k = ex.seuils.length;
+  for (let j = 1; j < k - 1; j++) {
+    if (document.getElementById(`tv-x-${idx}-${j}`).value.trim() === '') return false;
+  }
+  for (let j = 0; j < k - 1; j++) {
+    if (document.getElementById(`tv-fleche-${idx}-${j}`).textContent === '') return false;
+  }
+  for (let j = 0; j < k; j++) {
+    if (document.getElementById(`tv-y-${idx}-${j}`).value.trim() === '') return false;
+  }
+  return true;
+}
+// "colorier" (true par defaut) commande l'ajout des classes correct/incorrect sur chaque case --
+// desactive pour un eleve connecte tant que sa fiche n'est pas validee (voir "reveler" dans
+// verifierUne) : le calcul reste silencieux, seul l'affichage est suspendu.
+function verifierTableauVariations(idx, ex, colorier) {
+  if (colorier === undefined) colorier = true;
+  const seuils = ex.seuils;
+  const k = seuils.length;
+  let toutCorrect = true, toutRempli = true;
+  for (let j = 1; j < k - 1; j++) {
+    const input = document.getElementById(`tv-x-${idx}-${j}`);
+    const val = input.value.trim();
+    if (colorier) input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - seuils[j].x) < 1e-9; } catch(e) { ok = false; }
+    if (colorier) input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
+  for (let j = 0; j < k - 1; j++) {
+    const btn = document.getElementById(`tv-fleche-${idx}-${j}`);
+    const val = btn.textContent;
+    if (colorier) btn.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
+    const attendu = seuils[j + 1].y > seuils[j].y ? '↗' : '↘';
+    const ok = val === attendu;
+    if (colorier) btn.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
+  for (let j = 0; j < k; j++) {
+    const input = document.getElementById(`tv-y-${idx}-${j}`);
+    const val = input.value.trim();
+    if (colorier) input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; continue; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - seuils[j].y) < 1e-9; } catch(e) { ok = false; }
+    if (colorier) input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  }
+  if (!toutRempli) return null;
+  return toutCorrect;
+}
+
+// Instantane brut (non verifie) de l'etat d'un tableau de variations -- quel que soit son degre de
+// remplissage. Objets indexes par j (pas des tableaux) : Firestore rejette les tableaux imbriques
+// (voir fiche-08, meme piege potentiel avec un nombre de colonnes variable ici). Sert a alimenter
+// saisies[idx] a chaque case modifiee, pour que "Enregistrer mon avancement" capture la progression
+// meme si l'eleve n'a jamais clique sur "Valider ce tableau".
+function capturerEtatTableauVariations(idx, ex) {
+  const k = ex.seuils.length;
+  const xVals = {}, fleches = {}, yVals = {};
+  for (let j = 1; j < k - 1; j++) xVals[j] = document.getElementById(`tv-x-${idx}-${j}`).value;
+  for (let j = 0; j < k - 1; j++) fleches[j] = document.getElementById(`tv-fleche-${idx}-${j}`).textContent;
+  for (let j = 0; j < k; j++) yVals[j] = document.getElementById(`tv-y-${idx}-${j}`).value;
+  return { xVals, fleches, yVals };
+}
+
+// Remet en place un etat de tableau de variations precedemment capture (restauration d'un
+// brouillon) : simple recopie DOM, aucune verification -- verifierUne() s'en charge juste apres
+// (voir initialiserFiche).
+function restaurerEtatTableauVariations(idx, ex, valeur) {
+  const k = ex.seuils.length;
+  for (let j = 1; j < k - 1; j++) {
+    const v = valeur.xVals[j];
+    if (v !== undefined) document.getElementById(`tv-x-${idx}-${j}`).value = v;
+  }
+  for (let j = 0; j < k - 1; j++) {
+    const v = valeur.fleches[j];
+    if (v !== undefined) document.getElementById(`tv-fleche-${idx}-${j}`).textContent = v;
+  }
+  for (let j = 0; j < k; j++) {
+    const v = valeur.yVals[j];
+    if (v !== undefined) document.getElementById(`tv-y-${idx}-${j}`).value = v;
+  }
+}
+
+// Capture l'etat courant d'un tableau de variations (non verifie) dans saisies[idx] -- appelee a
+// chaque case modifiee, avant meme un clic sur "Valider ce tableau".
+function enregistrerSaisieTableauVariations(idx) {
+  const ex = exercices[idx];
+  saisies[idx] = { id: ex.id, valeur: capturerEtatTableauVariations(idx, ex), correct: null };
+}
+function reinitialiserTableauVariations(idx, ex) {
+  const k = ex.seuils.length;
+  for (let j = 1; j < k - 1; j++) {
+    const input = document.getElementById(`tv-x-${idx}-${j}`);
+    input.value = ''; input.classList.remove('correct', 'incorrect');
+  }
+  for (let j = 0; j < k - 1; j++) {
+    const btn = document.getElementById(`tv-fleche-${idx}-${j}`);
+    btn.textContent = ''; btn.classList.remove('correct', 'incorrect');
+  }
+  for (let j = 0; j < k; j++) {
+    const input = document.getElementById(`tv-y-${idx}-${j}`);
+    input.value = ''; input.classList.remove('correct', 'incorrect');
+  }
+}
+function tableCorrigeVariationsHTML(ex) {
+  const seuils = ex.seuils;
+  const k = seuils.length;
+  const sens = [];
+  for (let j = 0; j < k - 1; j++) sens.push(seuils[j+1].y > seuils[j].y ? 'croissante' : 'décroissante');
+  // colonnes entrelacees (valeur, fleche, valeur, fleche, ...), memes positions dans les 2
+  // lignes (cellule vide sous chaque fleche pour la ligne x) pour que tout reste bien aligne.
+  let html = `<table class="tv-corrige"><tr><td class="tv-label">\\(x\\)</td>`;
+  seuils.forEach((s, j) => {
+    html += `<td>\\(${fmtGraduation(s.x)}\\)</td>`;
+    if (j < k - 1) html += `<td></td>`;
+  });
+  html += `</tr><tr class="tv-ligne-gx">`;
+  html += `<td class="tv-label">\\(g(x)\\)</td>`;
+  seuils.forEach((s, j) => {
+    html += `<td class="tv-${roleSeuil(seuils, j)}">\\(${fmtGraduation(s.y)}\\)</td>`;
+    if (j < k - 1) html += `<td>${sens[j] === 'croissante' ? '↗' : '↘'}</td>`;
+  });
+  html += `</tr></table>`;
+  html += `<p style="font-size:13px;margin:4px 0 0;">Sens de variation : ${sens.map((s,j) => `${s} sur \\([${fmtGraduation(seuils[j].x)}\\,;\\,${fmtGraduation(seuils[j+1].x)}]\\)`).join(', puis ')}.</p>`;
+  return html;
+}
+
+// ---------- tableau croise a completer, cases de saisie integrees DIRECTEMENT dans le tableau --
+// repris tel quel de la fiche 9 (9.8 e), meme classes CSS (.tc-cellule/.tc-scroll/.tc-conteneur/
+// .tc-btn-valider), meme principe (saisie directe dans la case, bouton "Valider ce tableau" dedie,
+// jamais de validation prematuree au fil de la frappe) -- generalise ici a un nombre variable de
+// lignes/colonnes et a une liste quelconque de cases a completer, au lieu du format fixe a/b/c/d
+// en 2x2 de fiche 9 (David, 2026-09-21 : reprendre l'outil existant, ne pas en inventer un nouveau).
+// ex.tcr = { nomsLignes, nomsColonnes, cellules (valeurs REELLES, y compris les cases a completer),
+// aCompleter: [{i,j}], colonneTotalMasquee (optionnel, index de colonne dont le total de la
+// derniere ligne est affiche comme "?" plutot que lu directement -- 18.9). */
+function tableauCroiseRempliHTML(idx, ex) {
+  const { nomsLignes, nomsColonnes, cellules, aCompleter, colonneTotalMasquee, masquerTotaux } = ex.tcr;
+  const estACompleter = (i, j) => aCompleter.some(c => c.i === i && c.j === j);
+  const totLigne = i => cellules[i].reduce((s, v) => s + v, 0);
+  const totColonne = j => cellules.reduce((s, row) => s + row[j], 0);
+  const total = cellules.reduce((s, row) => s + row.reduce((a, b) => a + b, 0), 0);
+  const std = 'border:1px solid #999;padding:6px 8px;text-align:center;font-family:Georgia,serif;font-size:14px;';
+  const ent = std + 'font-weight:bold;background:#f1efe8;';
+  const cellule = id => `<input type="text" class="tc-cellule" id="${id}" oninput="reinitialiserStatut(${idx});enregistrerSaisieTableauCroise(${idx})">`;
+  let table = `<table style="border-collapse:collapse;margin:10px auto;"><tr><td style="${ent}"></td>`;
+  nomsColonnes.forEach(nom => { table += `<td style="${ent}">${nom}</td>`; });
+  table += `<td style="${ent}">Total</td></tr>`;
+  nomsLignes.forEach((nomL, i) => {
+    table += `<tr><td style="${ent}">${nomL}</td>`;
+    nomsColonnes.forEach((_, j) => {
+      table += `<td style="${std}">${estACompleter(i, j) ? cellule(`tc-${idx}-${i}-${j}`) : `\\(${cellules[i][j]}\\)`}</td>`;
+    });
+    table += `<td style="${std}">${masquerTotaux ? cellule(`tc-${idx}-totL-${i}`) : `\\(${totLigne(i)}\\)`}</td></tr>`;
+  });
+  table += `<tr><td style="${ent}">Total</td>`;
+  nomsColonnes.forEach((_, j) => {
+    table += `<td style="${std}">${masquerTotaux ? cellule(`tc-${idx}-totC-${j}`) : (j === colonneTotalMasquee ? '\\(?\\)' : `\\(${totColonne(j)}\\)`)}</td>`;
+  });
+  table += `<td style="${std}">${masquerTotaux ? cellule(`tc-${idx}-totT`) : `\\(${total}\\)`}</td></tr></table>`;
+  const bouton = `<button type="button" class="tc-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
+  return `<div class="tc-conteneur"><div class="tc-scroll">${table}</div>${bouton}</div>`;
+}
+// cases de totaux (marges + total general) d'un tableau croise -- non vides seulement quand
+// ex.tcr.masquerTotaux est pose (19.7 a) : "laisser le tableau completement vide", pas seulement les
+// 4 cases interieures). Chaque case a un id suffixe stable (totL-i / totC-j / totT) reutilise par le
+// rendu (tableauCroiseRempliHTML) et par la verification/capture/restauration ci-dessous.
+function casesTotalesTableauCroise(ex) {
+  if (!ex.tcr.masquerTotaux) return [];
+  const { nomsLignes, nomsColonnes, cellules } = ex.tcr;
+  const totLigne = i => cellules[i].reduce((s, v) => s + v, 0);
+  const totColonne = j => cellules.reduce((s, row) => s + row[j], 0);
+  const total = cellules.reduce((s, row) => s + row.reduce((a, b) => a + b, 0), 0);
+  const cases = [];
+  nomsLignes.forEach((_, i) => cases.push({ id: `totL-${i}`, valeur: totLigne(i) }));
+  nomsColonnes.forEach((_, j) => cases.push({ id: `totC-${j}`, valeur: totColonne(j) }));
+  cases.push({ id: 'totT', valeur: total });
+  return cases;
+}
+// "colorier" (true par defaut) commande l'ajout des classes correct/incorrect sur chaque case --
+// desactive pour un eleve connecte tant que sa fiche n'est pas validee (meme "reveler" que
+// verifierUne). Retourne null (incomplet), true (tout correct) ou false (au moins une erreur).
+function verifierTableauCroiseRempli(idx, ex, colorier) {
+  if (colorier === undefined) colorier = true;
+  const { cellules, aCompleter } = ex.tcr;
+  let toutRempli = true, toutCorrect = true;
+  const verifierCase = (id, attendu) => {
+    const input = document.getElementById(`tc-${idx}-${id}`);
+    const val = input.value.trim();
+    if (colorier) input.classList.remove('correct', 'incorrect');
+    if (!val) { toutRempli = false; return; }
+    let ok = false;
+    try { ok = Math.abs(math.evaluate(normaliserSaisie(val)) - attendu) < 1e-9; } catch (e) { ok = false; }
+    if (colorier) input.classList.add(ok ? 'correct' : 'incorrect');
+    if (!ok) toutCorrect = false;
+  };
+  aCompleter.forEach(({ i, j }) => verifierCase(`${i}-${j}`, cellules[i][j]));
+  casesTotalesTableauCroise(ex).forEach(({ id, valeur }) => verifierCase(id, valeur));
+  if (!toutRempli) return null;
+  return toutCorrect;
+}
+function tableauCroiseRempliEstComplet(idx, ex) {
+  const rempli = id => document.getElementById(`tc-${idx}-${id}`).value.trim() !== '';
+  return ex.tcr.aCompleter.every(({ i, j }) => rempli(`${i}-${j}`)) && casesTotalesTableauCroise(ex).every(({ id }) => rempli(id));
+}
+function reinitialiserTableauCroiseRempli(idx, ex) {
+  const vider = id => {
+    const el = document.getElementById(`tc-${idx}-${id}`);
+    el.value = ''; el.classList.remove('correct', 'incorrect');
+  };
+  ex.tcr.aCompleter.forEach(({ i, j }) => vider(`${i}-${j}`));
+  casesTotalesTableauCroise(ex).forEach(({ id }) => vider(id));
+}
+// instantane brut (non verifie) de l'etat d'un tableau croise, quel que soit son degre de
+// remplissage -- alimente saisies[idx] a chaque case modifiee (voir enregistrerSaisieTableauCroise),
+// pour que "Enregistrer mon avancement" capture la progression meme sans clic sur "Valider".
+function capturerEtatTableauCroise(idx, ex) {
+  const valeur = {};
+  ex.tcr.aCompleter.forEach(({ i, j }) => { valeur[`${i}-${j}`] = document.getElementById(`tc-${idx}-${i}-${j}`).value; });
+  casesTotalesTableauCroise(ex).forEach(({ id }) => { valeur[id] = document.getElementById(`tc-${idx}-${id}`).value; });
+  return valeur;
+}
+function restaurerEtatTableauCroise(idx, ex, valeur) {
+  ex.tcr.aCompleter.forEach(({ i, j }) => { document.getElementById(`tc-${idx}-${i}-${j}`).value = valeur[`${i}-${j}`] || ''; });
+  casesTotalesTableauCroise(ex).forEach(({ id }) => { document.getElementById(`tc-${idx}-${id}`).value = valeur[id] || ''; });
+}
+function enregistrerSaisieTableauCroise(idx) {
+  const ex = exercices[idx];
+  saisies[idx] = { id: ex.id, valeur: capturerEtatTableauCroise(idx, ex), correct: null };
+}
+// tableau croise ENTIEREMENT REMPLI, en lecture seule : utilise dans le panneau "Voir toutes les
+// reponses" -- reutilise tableauCroiseHTML (deja utilise pour 18.6, tableaux non a completer) sans
+// aucune case masquee.
+function tableCorrigeCroiseHTML(ex) {
+  const { nomsLignes, nomsColonnes, cellules } = ex.tcr;
+  return tableauCroiseHTML(nomsLignes, nomsColonnes, cellules);
+}
+
+// ---------- vivier de revisions melangees (groupe 18.2) : developpement, racines
+// carrees, evolutions successives — sujets deja rencontres dans les fiches precedentes,
+// melanges maintenant que la fiche est avancee dans le cahier ----------
+const MODELES_REVISION = [
+  () => {
+    let a, b; do { a = entierSigne(1,9); b = entierSigne(1,9); } while (a + b === 0);
+    const somme = a+b, produit = a*b;
+    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})\\).`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}` };
+  },
+  () => {
+    const k=alea(2,9), a=alea(2,6), b=entierSigne(1,12);
+    const constante = k*b;
+    return { enonce:`Développer et réduire \\(${k}(${a}x${b>=0?'+':''}${b})\\).`, reponse:`${k*a}*x${constante>=0?'+':''}${constante}` };
+  },
+  () => {
+    const k=alea(2,7), a=alea(2,8), b=aleaNonNul(1,9);
+    return { enonce:`Factoriser \\(${k*a}x${(k*b)>=0?'+':''}${k*b}\\).`, reponse:`${k}*(${a}*x+${b})` };
+  },
+  () => {
+    const k=alea(2,6), n=choix([2,3,5,6,7]);
+    return { enonce:`Simplifier \\(\\sqrt{${k*k*n}}\\).`, reponse:`${k}*sqrt(${n})` };
+  },
+  () => {
+    const d=choix([2,3,5,6,7]), e=alea(1,3), f=alea(1,3);
+    const a=d*e*e, b=d*f*f;
+    return { enonce:`Calculer \\(\\sqrt{${a}}\\times\\sqrt{${b}}\\).`, reponse:`${d*e*f}` };
+  },
+  () => {
+    const p=alea(2,40), hausse=alea(0,1)===1;
+    const coef = Math.round((hausse ? (1+p/100) : (1-p/100)) * 100) / 100;
+    return { enonce:`Une grandeur ${hausse?'augmente':'diminue'} de \\(${p}\\,\\%\\). Donner le coefficient multiplicateur associé.`, reponse:`${coef}` };
+  },
+  () => {
+    const p1=alea(5,30), p2=alea(5,30), s1=alea(0,1)===1, s2=alea(0,1)===1;
+    const c1=s1?(1+p1/100):(1-p1/100), c2=s2?(1+p2/100):(1-p2/100);
+    const global = Math.round(c1*c2*10000)/10000;
+    return { enonce:`Une grandeur ${s1?'augmente':'diminue'} de \\(${p1}\\,\\%\\) puis ${s2?'augmente':'diminue'} de \\(${p2}\\,\\%\\). Donner le coefficient multiplicateur global.`, reponse:`${global}` };
+  },
+  () => {
+    const a=alea(2,9);
+    return { enonce:`Développer \\((x-${a})^2\\).`, reponse:`x^2-${2*a}*x+${a*a}` };
+  },
+  () => {
+    const a=alea(2,9);
+    return { enonce:`Développer \\((x+${a})(x-${a})\\).`, reponse:`x^2-${a*a}` };
+  },
+  () => {
+    const a=alea(1,6), b=alea(2,9), c=alea(1,6), d=alea(2,9);
+    const num = a*d + c*b, den = b*d, g = pgcd(num, den);
+    const numR = num/g, denR = den/g;
+    const reponse = denR === 1 ? `${numR}` : `${numR}/${denR}`;
+    return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\) (donner le résultat sous forme de fraction irréductible).`, reponse, fractionIrreductible:true };
+  },
+  // ---------- ajouts David 2026-09-21 : davantage varier les themes couverts par les automatismes,
+  // pas seulement developpement/racines/evolutions -- puissances (fiche 1), produit de fractions
+  // (fiche 2), equation du 1er degre (fiche 6), valeur absolue (fiche 13), image par une fonction
+  // affine (fiche 14) et par la fonction inverse (fiche 16) ----------
+  () => {
+    const a = choix([2,3,5]), n1 = alea(2,4), n2 = alea(2,4);
+    return { enonce:`Calculer \\(${a}^{${n1}}\\times ${a}^{${n2}}\\).`, reponse:`${Math.pow(a,n1+n2)}` };
+  },
+  () => {
+    const a=alea(1,6), b=alea(2,9), c=alea(1,6), d=alea(2,9);
+    const num = a*c, den = b*d, g = pgcd(num, den);
+    const numR = num/g, denR = den/g;
+    const reponse = denR === 1 ? `${numR}` : `${numR}/${denR}`;
+    return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}\\times\\dfrac{${c}}{${d}}\\) (fraction irréductible).`, reponse, fractionIrreductible:true };
+  },
+  () => {
+    const a=choix([2,3,4,5,-2,-3,-4,-5]), x0=alea(-6,6), b=-a*x0;
+    return { enonce:`Résoudre \\(${affineTexte(a,b)}=0\\).`, reponse:`${x0}` };
+  },
+  () => {
+    const p=alea(-10,10), q=alea(-10,10);
+    return { enonce:`Calculer \\(|${p}-(${q})|\\).`, reponse:`${Math.abs(p-q)}` };
+  },
+  () => {
+    const a=choix([-3,-2,2,3]), b=entierSigne(1,8), x0=alea(-5,5);
+    return { enonce:`On considère \\(f(x)=${affineTexte(a,b)}\\). Calculer \\(f(${x0})\\).`, reponse:`${a*x0+b}` };
+  },
+  () => {
+    const n = alea(2,9);
+    return { enonce:`On considère la fonction inverse \\(f(x)=\\dfrac{1}{x}\\). Calculer \\(f\\left(\\dfrac{1}{${n}}\\right)\\).`, reponse:`${n}` };
+  }
+];
+let tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
+
+// ---------- helpers statistiques (partages depuis fiche 17) ----------
+// vrai tableau HTML a deux lignes (valeurs / effectifs ou frequences) — David a fait remarquer
+// que les enonces parlaient d'un "tableau" sans jamais en afficher un, seulement une liste en
+// prose ; ligne2 peut deja contenir du LaTeX (ex. "12\\,\\%") ou un nombre simple.
+function tableauDonnees(labelLigne1, ligne1, labelLigne2, ligne2) {
+  let html = `<div class="tableau-donnees-scroll"><table class="tableau-donnees"><tr><td class="tableau-donnees-label">${labelLigne1}</td>`;
+  ligne1.forEach(v => { html += `<td>\\(${v}\\)</td>`; });
+  html += `</tr><tr><td class="tableau-donnees-label">${labelLigne2}</td>`;
+  ligne2.forEach(v => { html += `<td>\\(${v}\\)</td>`; });
+  html += `</tr></table></div>`;
+  return html;
+}
+// fraction reduite n/d (den toujours positif) ; retourne un entier simple si d2=1.
+function fracSimplifiee(num, den) {
+  if (den < 0) { num = -num; den = -den; }
+  const g = pgcd(Math.abs(num), den) || 1;
+  const n2 = num / g, d2 = den / g;
+  return d2 === 1 ? `${n2}` : `${n2}/${d2}`;
+}
+// n valeurs entieres distinctes dans [lo;hi], ordre de tirage (non trie : presentation "brute").
+function tirerDistincts(n, lo, hi) {
+  const s = new Set();
+  while (s.size < n) s.add(alea(lo, hi));
+  return [...s];
+}
+// repartit un total fixe en nbParts entiers >= minPart chacun (somme exacte = total) — utilise
+// pour garder un effectif total "raisonnable a la main" (David, 2026-09-21 : pas de calculatrice,
+// donc pas d'effectif total tire independamment au hasard, qui peut tomber sur un nombre premier
+// ou un total a deux chiffres peu commode) plutot que de tirer chaque effectif independamment.
+function repartirEffectifs(nbParts, total, minPart) {
+  minPart = minPart || 1;
+  let parts;
+  do {
+    parts = [];
+    let reste = total;
+    for (let i = 0; i < nbParts - 1; i++) {
+      const maxIci = reste - minPart * (nbParts - 1 - i);
+      const e = alea(minPart, Math.max(minPart, maxIci));
+      parts.push(e);
+      reste -= e;
+    }
+    parts.push(reste);
+  } while (parts[nbParts - 1] < minPart);
+  return parts;
+}
+
+// ---------- helpers propres a la fiche 20 (geometrie reperee) ----------
+
+// place l'etiquette d'un point a l'oppose du "centre" de la figure (origine pour un nuage de
+// points isole, centre de gravite pour un triangle/quadrilatere) : evite que le texte ne passe
+// par-dessus le trace lui-meme, sans avoir a traiter les cas un par un.
+function positionEloignee(p, centre) {
+  const dx = p.x - centre.x, dy = p.y - centre.y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'droite' : 'gauche';
+  return dy >= 0 ? 'haut' : 'bas';
+}
+
+// repere orthonorme generique : points, segments et rectangles hachures (parties du plan). Reprend
+// la structure quadrillage/axes/graduations de genererSVGCourbeGrande, adaptee a des elements
+// discrets plutot qu'une courbe -- pas fixe a 1 (coordonnees entieres a lire/placer directement)
+// tant que l'etendue reste raisonnable, et bornes calculees automatiquement a partir des elements a
+// afficher (origine toujours incluse) plutot que fournies par l'appelant : aucun risque de point
+// hors cadre ou d'etendue mal choisie. echelle IDENTIQUE en x et en y (repere orthonorme) : calculee
+// comme le minimum des deux rapports pixels/unite, jamais deux echelles independantes.
+function genererSVGRepere(elements, options) {
+  options = options || {};
+  const marge = options.marge != null ? options.marge : 1.5;
+  const largeur = options.largeur || 300, hauteur = options.hauteur || 300;
+  const xs = [0], ys = [0];
+  elements.forEach(el => {
+    if (el.type === 'point') { xs.push(el.x); ys.push(el.y); }
+    if (el.type === 'segment') { xs.push(el.x1, el.x2); ys.push(el.y1, el.y2); }
+    if (el.type === 'rectangle') { xs.push(el.x1, el.x2); ys.push(el.y1, el.y2); }
+  });
+  const xmin = Math.floor(Math.min(...xs) - marge), xmax = Math.ceil(Math.max(...xs) + marge);
+  const ymin = Math.floor(Math.min(...ys) - marge), ymax = Math.ceil(Math.max(...ys) + marge);
+  const cadre = 24;
+  const echelle = Math.min((largeur - 2 * cadre) / (xmax - xmin), (hauteur - 2 * cadre) / (ymax - ymin));
+  const centreXVal = (xmin + xmax) / 2, centreYVal = (ymin + ymax) / 2;
+  const toSvgX = x => largeur / 2 + (x - centreXVal) * echelle;
+  const toSvgY = y => hauteur / 2 - (y - centreYVal) * echelle;
+  const gxMin = toSvgX(xmin), gxMax = toSvgX(xmax);
+  const gyHaut = toSvgY(ymax), gyBas = toSvgY(ymin);
+  const ox = toSvgX(0), oy = toSvgY(0);
+
+  const pas = (xmax - xmin <= 10 && ymax - ymin <= 10) ? 1 : (pasGraduation(Math.max(xmax - xmin, ymax - ymin)) || 1);
+  let quadrillage = '', graduations = '';
+  const debutX = Math.ceil(xmin / pas) * pas;
+  for (let i = 0; i <= Math.floor((xmax - debutX) / pas) + 1e-9; i++) {
+    const gx = +(debutX + i * pas).toFixed(6);
+    const sx = toSvgX(gx).toFixed(1);
+    quadrillage += `<line x1="${sx}" y1="${gyHaut.toFixed(1)}" x2="${sx}" y2="${gyBas.toFixed(1)}" stroke="#dcdcdc" stroke-width="0.8"/>`;
+    if (Math.abs(gx) > pas * 1e-6) graduations += `<line x1="${sx}" y1="${(oy - 4).toFixed(1)}" x2="${sx}" y2="${(oy + 4).toFixed(1)}" stroke="#555" stroke-width="1.3"/><text x="${sx}" y="${(oy + 17).toFixed(1)}" font-size="11.5" text-anchor="middle" fill="#333">${fmtGraduation(gx)}</text>`;
+  }
+  const debutY = Math.ceil(ymin / pas) * pas;
+  for (let i = 0; i <= Math.floor((ymax - debutY) / pas) + 1e-9; i++) {
+    const gy = +(debutY + i * pas).toFixed(6);
+    const sy = toSvgY(gy).toFixed(1);
+    quadrillage += `<line x1="${gxMin.toFixed(1)}" y1="${sy}" x2="${gxMax.toFixed(1)}" y2="${sy}" stroke="#dcdcdc" stroke-width="0.8"/>`;
+    if (Math.abs(gy) > pas * 1e-6) graduations += `<line x1="${(ox - 4).toFixed(1)}" y1="${sy}" x2="${(ox + 4).toFixed(1)}" y2="${sy}" stroke="#555" stroke-width="1.3"/><text x="${(ox - 9).toFixed(1)}" y="${(parseFloat(sy) + 4).toFixed(1)}" font-size="11.5" text-anchor="end" fill="#333">${fmtGraduation(gy)}</text>`;
+  }
+  let axes = `<line x1="${(gxMin - 10).toFixed(1)}" y1="${oy.toFixed(1)}" x2="${(gxMax + 10).toFixed(1)}" y2="${oy.toFixed(1)}" stroke="#1a1a1a" stroke-width="1.3"/>`;
+  axes += `<polygon points="${(gxMax + 10).toFixed(1)},${oy.toFixed(1)} ${(gxMax + 1).toFixed(1)},${(oy - 4.5).toFixed(1)} ${(gxMax + 1).toFixed(1)},${(oy + 4.5).toFixed(1)}" fill="#1a1a1a"/>`;
+  axes += `<line x1="${ox.toFixed(1)}" y1="${(gyBas + 10).toFixed(1)}" x2="${ox.toFixed(1)}" y2="${(gyHaut - 10).toFixed(1)}" stroke="#1a1a1a" stroke-width="1.3"/>`;
+  axes += `<polygon points="${ox.toFixed(1)},${(gyHaut - 10).toFixed(1)} ${(ox - 4.5).toFixed(1)},${(gyHaut - 1).toFixed(1)} ${(ox + 4.5).toFixed(1)},${(gyHaut - 1).toFixed(1)}" fill="#1a1a1a"/>`;
+  axes += `<text x="${(ox - 13).toFixed(1)}" y="${(oy + 16).toFixed(1)}" font-size="11.5" fill="#333">O</text>`;
+
+  let rectangles = '', segments = '', points = '';
+  elements.forEach(el => {
+    if (el.type !== 'rectangle') return;
+    const sx1 = toSvgX(el.x1), sx2 = toSvgX(el.x2), syHaut = toSvgY(el.y2), syBas = toSvgY(el.y1);
+    rectangles += `<rect x="${Math.min(sx1, sx2).toFixed(1)}" y="${syHaut.toFixed(1)}" width="${Math.abs(sx2 - sx1).toFixed(1)}" height="${Math.abs(syBas - syHaut).toFixed(1)}" fill="#4B46C7" fill-opacity="0.12"/>`;
+    const bord = (xa, ya, xb, yb, inclus) => `<line x1="${toSvgX(xa).toFixed(1)}" y1="${toSvgY(ya).toFixed(1)}" x2="${toSvgX(xb).toFixed(1)}" y2="${toSvgY(yb).toFixed(1)}" stroke="#4B46C7" stroke-width="1.4" ${inclus ? '' : 'stroke-dasharray="4,3"'}/>`;
+    rectangles += bord(el.x1, el.y1, el.x1, el.y2, el.inclusX1);
+    rectangles += bord(el.x2, el.y1, el.x2, el.y2, el.inclusX2);
+    rectangles += bord(el.x1, el.y1, el.x2, el.y1, el.inclusY1);
+    rectangles += bord(el.x1, el.y2, el.x2, el.y2, el.inclusY2);
+  });
+  elements.forEach(el => {
+    if (el.type !== 'segment') return;
+    segments += `<line x1="${toSvgX(el.x1).toFixed(1)}" y1="${toSvgY(el.y1).toFixed(1)}" x2="${toSvgX(el.x2).toFixed(1)}" y2="${toSvgY(el.y2).toFixed(1)}" stroke="#4B46C7" stroke-width="1.6"/>`;
+  });
+  const decalages = { haut: [0, -10], bas: [0, 18], gauche: [-9, 4], droite: [9, 4] };
+  elements.forEach(el => {
+    if (el.type !== 'point') return;
+    const sx = toSvgX(el.x), sy = toSvgY(el.y);
+    const pos = el.position || 'haut';
+    const [dx, dy] = decalages[pos];
+    const ancre = pos === 'gauche' ? 'end' : pos === 'droite' ? 'start' : 'middle';
+    points += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="3" fill="#1a1a1a"/>`;
+    points += `<text x="${(sx + dx).toFixed(1)}" y="${(sy + dy).toFixed(1)}" font-size="14" font-style="italic" fill="#1a1a1a" text-anchor="${ancre}">${el.nom}</text>`;
+  });
+
+  return `<div class="figure-centree"><svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:300px;">
+    ${quadrillage}${axes}${graduations}${rectangles}${segments}${points}
+  </svg></div>`;
+}
+
+// ---------- tirage de points/vecteurs a coordonnees entieres ----------
+function tirerPointsDistincts(n, maxAbs) {
+  const pts = [];
+  let tentatives = 0;
+  while (pts.length < n && tentatives < 300) {
+    tentatives++;
+    const x = entierSigne(1, maxAbs), y = entierSigne(1, maxAbs);
+    if (pts.some(p => Math.abs(p.x - x) < 2 && Math.abs(p.y - y) < 2)) continue;
+    pts.push({ x, y });
+  }
+  return pts;
+}
+// paire de vecteurs entiers non colineaires de MEME norme (construit un triangle/quadrilatere
+// isocele "a la main", sans recourir a une rotation non entiere) : cherche une norme au carre
+// admettant au moins deux vecteurs entiers distincts et non colineaires dans [-max;max].
+function vecteursDeNorme(normeCarree, max) {
+  const res = [];
+  for (let dx = -max; dx <= max; dx++) for (let dy = -max; dy <= max; dy++) {
+    if (dx === 0 && dy === 0) continue;
+    if (dx * dx + dy * dy === normeCarree) res.push([dx, dy]);
+  }
+  return res;
+}
+function paireVecteursIsoceles(max) {
+  const normesPossibles = [5, 8, 10, 13, 17, 20, 25];
+  for (let essai = 0; essai < 30; essai++) {
+    const normeCarree = choix(normesPossibles);
+    const vecteurs = vecteursDeNorme(normeCarree, max);
+    if (vecteurs.length < 2) continue;
+    const [v1, v2] = melanger(vecteurs).slice(0, 2);
+    if (v1[0] * v2[1] - v1[1] * v2[0] !== 0) return [v1, v2];
+  }
+  return [[1, 2], [2, -1]];
+}
+function d2(P, Q) { return (P.x - Q.x) * (P.x - Q.x) + (P.y - Q.y) * (P.y - Q.y); }
+// fraction n/d simplifiee, affichee en LaTeX (\dfrac si non entiere) -- pour du texte d'enonce, pas
+// une reponse (voir fracSimplifiee, deja fourni par le moteur, pour la reponse elle-meme).
+function fracLatexAffichage(num, den) {
+  if (den < 0) { num = -num; den = -den; }
+  const g = pgcd(Math.abs(num), den) || 1;
+  const n2 = num / g, d2v = den / g;
+  if (d2v === 1) return `${n2}`;
+  return `${n2 < 0 ? '-' : ''}\\dfrac{${Math.abs(n2)}}{${d2v}}`;
+}
+
+// ---------- checkPaire : reponse "x;y" (coordonnees d'un point, ou d'un milieu), portee telle
+// quelle depuis fiche-21 de Premiere -- comparaison numerique a scope aleatoire (6 essais valides
+// sur 40 tentatives), tolerance relative 1e-6 ----------
+function checkPaire(userInput, correctA, correctB, vars) {
+  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g, '');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) nettoye = nettoye.slice(1, -1);
+  const parties = nettoye.split(';');
+  if (parties.length !== 2) return false;
+  try {
+    let essaisValides = 0, tentatives = 0;
+    while (essaisValides < 6 && tentatives < 40) {
+      tentatives++;
+      const scope = {}; (vars || []).forEach(v => { scope[v] = Math.random() * 8 - 1; });
+      let ca, cb;
+      try { ca = math.evaluate(correctA, scope); cb = math.evaluate(correctB, scope); } catch (e) { continue; }
+      if (typeof ca !== 'number' || typeof cb !== 'number' || !isFinite(ca) || !isFinite(cb)) continue;
+      let ua, ub;
+      try { ua = math.evaluate(parties[0], scope); ub = math.evaluate(parties[1], scope); } catch (e) { return false; }
+      if (typeof ua !== 'number' || typeof ub !== 'number' || !isFinite(ua) || !isFinite(ub)) return false;
+      if (Math.abs(ua - ca) > 1e-6 * (1 + Math.abs(ca))) return false;
+      if (Math.abs(ub - cb) > 1e-6 * (1 + Math.abs(cb))) return false;
+      essaisValides++;
+    }
+    return essaisValides >= 6;
+  } catch (e) { return false; }
+}
+
+// tire un point M soit GENUINEMENT dedans, soit GENUINEMENT dehors (dedansSouhaite) par rapport au
+// systeme de deux double-inegalites -- sans cela un point uniforme dans une boite legerement plus
+// grande que le rectangle tombe presque toujours en dehors (le rectangle occupe une petite partie de
+// la boite), ce qui desequilibre trop la question vers "non". La reponse est toujours recalculee
+// EXACTEMENT a partir de M (jamais deduite de dedansSouhaite), donc reste correcte meme dans les cas
+// limites ou aucun point interieur strict n'existe (bord de largeur 1).
+function tirerPointBalance20_9(xg,xd,yg,yd,ixg,ixd,iyg,iyd, dedansSouhaite) {
+  const coordDansAxe = (bas,haut,inclusBas,inclusHaut) => {
+    if (haut - bas >= 2) return alea(bas+1, haut-1);
+    if (inclusBas) return bas;
+    if (inclusHaut) return haut;
+    return bas; // aucun entier strictement dedans ni bord inclus : repli, restera hors ensemble sur cet axe
+  };
+  const coordHorsAxe = (bas,haut) => choix([bas - 1 - alea(0,1), haut + 1 + alea(0,1)]);
+  if (dedansSouhaite) {
+    return { x: coordDansAxe(xg,xd,ixg,ixd), y: coordDansAxe(yg,yd,iyg,iyd) };
+  }
+  // dehors : rate au moins un des deux axes, au hasard
+  if (alea(0,1) === 1) return { x: coordHorsAxe(xg,xd), y: alea(yg-2,yd+2) };
+  return { x: alea(xg-2,xd+2), y: coordHorsAxe(yg,yd) };
+}
+
+// variables partagees a l'interieur d'UNE generation (voir genererExercices) : le premier item d'un
+// groupe a plusieurs questions y ecrit la figure/les points tires, les items suivants les relisent --
+// evite de retirer une nouvelle figure a chaque question (meme principe que la fiche 19).
+let ptsRepere20_3, triangle20_6, quad20_7, ptA20_8, pointM120_9, systeme20_9;
+
+const generateurs = [
+  // ---------- 20.1 : automatismes de calcul litteral et d'inequations de degre 1/2 (vivier
+  // partage, voir memoire feedback-automatismes-calcul-litteral) ----------
+  {id:"20.1 a)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[0]()},
+  {id:"20.1 b)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[1]()},
+  {id:"20.1 c)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[2]()},
+  {id:"20.1 d)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[3]()},
+
+  // ---------- 20.2 : revisions melangees (fiches precedentes) ----------
+  {id:"20.2 a)", type:"num", texteLibre:true, gen: () => tirageRevision[0]()},
+  {id:"20.2 b)", type:"num", texteLibre:true, gen: () => tirageRevision[1]()},
+  {id:"20.2 c)", type:"num", texteLibre:true, gen: () => tirageRevision[2]()},
+  {id:"20.2 d)", type:"num", texteLibre:true, gen: () => tirageRevision[3]()},
+
+  // ---------- 20.3 : lecture de coordonnees dans un repere orthonorme -- trois points places sur
+  // une seule figure partagee (contexteFigure), une question par point ----------
+  {id:"20.3 a)", type:"paire", texteLibre:true, gen: () => {
+    const pts = tirerPointsDistincts(3, 5);
+    ptsRepere20_3 = pts;
+    const noms = ['A','B','C'];
+    const elements = pts.map((p,i) => ({ type:'point', x:p.x, y:p.y, nom:noms[i], position: positionEloignee(p, {x:0,y:0}) }));
+    const figure = genererSVGRepere(elements);
+    return { contexteTexte: "Le repère ci-dessus est orthonormé.", contexteFigure: figure, enonce: `Donner les coordonnées du point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [] };
+  }},
+  {id:"20.3 b)", type:"paire", texteLibre:true, gen: () => {
+    const p = ptsRepere20_3[1];
+    return { enonce: `Donner les coordonnées du point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
+  }},
+  {id:"20.3 c)", type:"paire", texteLibre:true, gen: () => {
+    const p = ptsRepere20_3[2];
+    return { enonce: `Donner les coordonnées du point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
+  }},
+
+  // ---------- 20.4 : distance entre deux points (forme exacte, racine carree eventuelle) ----------
+  {id:"20.4 a)", type:"num", texteLibre:true, gen: () => {
+    let A, B, dx, dy;
+    do {
+      A = { x: entierSigne(1,5), y: entierSigne(1,5) };
+      B = { x: entierSigne(1,5), y: entierSigne(1,5) };
+      dx = B.x-A.x; dy = B.y-A.y;
+    } while (dx === 0 && dy === 0);
+    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\) dans un repère orthonormé. Calculer la distance \\(AB\\) (forme exacte).`, reponse: `sqrt(${dx*dx+dy*dy})` };
+  }},
+  {id:"20.4 b)", type:"num", texteLibre:true, gen: () => {
+    let A, B, dx, dy;
+    do {
+      A = { x: entierSigne(1,5), y: entierSigne(1,5) };
+      B = { x: entierSigne(1,5), y: entierSigne(1,5) };
+      dx = B.x-A.x; dy = B.y-A.y;
+    } while (dx === 0 && dy === 0);
+    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\) dans un repère orthonormé. Calculer la distance \\(AB\\) (forme exacte).`, reponse: `sqrt(${dx*dx+dy*dy})` };
+  }},
+
+  // ---------- 20.5 : coordonnees du milieu d'un segment ----------
+  {id:"20.5 a)", type:"paire", texteLibre:true, gen: () => {
+    const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
+    const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
+    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\). Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
+  }},
+  {id:"20.5 b)", type:"paire", texteLibre:true, gen: () => {
+    const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
+    const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
+    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\). Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
+  }},
+
+  // ---------- 20.6 : nature d'un triangle (rectangle / isocele) a partir des coordonnees -- une
+  // seule figure partagee, deux questions oui/non sur le meme triangle ----------
+  {id:"20.6 a)", type:"ouiNon", texteLibre:true, gen: () => {
+    const max = 3;
+    const B = { x: entierSigne(1,max), y: entierSigne(1,max) };
+    const mode = choix(['rectangle','isocele','libre']);
+    let vA, vC;
+    if (mode === 'rectangle') {
+      let p,q; do { p=entierSigne(1,max); q=entierSigne(1,max); } while (p===0 && q===0);
+      const sens = choix([1,-1]);
+      const t = choix([1,1,1,2]);
+      vA = [p,q]; vC = [-q*sens*t, p*sens*t];
+    } else if (mode === 'isocele') {
+      [vA, vC] = paireVecteursIsoceles(max);
+    } else {
+      do { vA = [entierSigne(1,max), entierSigne(1,max)]; } while (vA[0]===0 && vA[1]===0);
+      do { vC = [entierSigne(1,max), entierSigne(1,max)]; } while ((vC[0]===0 && vC[1]===0) || (vC[0]*vA[1]-vC[1]*vA[0] === 0));
+    }
+    const A = { x: B.x+vA[0], y: B.y+vA[1] };
+    const C = { x: B.x+vC[0], y: B.y+vC[1] };
+    triangle20_6 = { A, B, C };
+    const elements = [
+      { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y }, { type:'segment', x1:C.x,y1:C.y, x2:A.x,y2:A.y },
+      { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, B) },
+      { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B, {x:(A.x+C.x)/2, y:(A.y+C.y)/2}) },
+      { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C, B) }
+    ];
+    const figure = genererSVGRepere(elements);
+    const rectangleEnB = d2(A,B) + d2(B,C) === d2(C,A);
+    return { contexteTexte: "Le repère ci-dessus est orthonormé.", contexteFigure: figure, enonce: `Le triangle \\(ABC\\) est-il rectangle en \\(B\\) ?`, reponseOuiNon: rectangleEnB };
+  }},
+  {id:"20.6 b)", type:"ouiNon", texteLibre:true, gen: () => {
+    const { A, B, C } = triangle20_6;
+    const isocele = d2(A,B) === d2(B,C) || d2(B,C) === d2(C,A) || d2(C,A) === d2(A,B);
+    return { enonce: `Le triangle \\(ABC\\) est-il isocèle ?`, reponseOuiNon: isocele };
+  }},
+
+  // ---------- 20.7 : nature d'un quadrilatere (parallelogramme / cotes egaux) a partir des
+  // coordonnees -- une seule figure partagee, deux questions oui/non sur le meme quadrilatere ----------
+  {id:"20.7 a)", type:"ouiNon", texteLibre:true, gen: () => {
+    const max = 3;
+    const A = { x: entierSigne(1,max), y: entierSigne(1,max) };
+    const estParallelogramme = alea(0,1) === 1;
+    let vAB, vBC;
+    if (estParallelogramme && alea(0,1) === 1) {
+      [vAB, vBC] = paireVecteursIsoceles(max);
+    } else {
+      do { vAB = [entierSigne(1,max), entierSigne(1,max)]; } while (vAB[0]===0 && vAB[1]===0);
+      do { vBC = [entierSigne(1,max), entierSigne(1,max)]; } while ((vBC[0]===0 && vBC[1]===0) || (vBC[0]*vAB[1]-vBC[1]*vAB[0] === 0));
+    }
+    const B = { x: A.x+vAB[0], y: A.y+vAB[1] };
+    const C = { x: B.x+vBC[0], y: B.y+vBC[1] };
+    let D;
+    if (estParallelogramme) {
+      D = { x: A.x + C.x - B.x, y: A.y + C.y - B.y };
+    } else {
+      do { D = { x: entierSigne(1,max), y: entierSigne(1,max) }; } while (Math.abs(D.x-A.x)<1 && Math.abs(D.y-A.y)<1);
+    }
+    quad20_7 = { A, B, C, D };
+    const centre = { x:(A.x+B.x+C.x+D.x)/4, y:(A.y+B.y+C.y+D.y)/4 };
+    const elements = [
+      { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y },
+      { type:'segment', x1:C.x,y1:C.y, x2:D.x,y2:D.y }, { type:'segment', x1:D.x,y1:D.y, x2:A.x,y2:A.y },
+      { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, centre) },
+      { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B, centre) },
+      { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C, centre) },
+      { type:'point', x:D.x, y:D.y, nom:'D', position: positionEloignee(D, centre) }
+    ];
+    const figure = genererSVGRepere(elements);
+    const mACx = A.x+C.x, mACy = A.y+C.y, mBDx = B.x+D.x, mBDy = B.y+D.y;
+    const parallelogrammeReel = (mACx === mBDx) && (mACy === mBDy);
+    return { contexteTexte: "Le repère ci-dessus est orthonormé.", contexteFigure: figure, enonce: `Le quadrilatère \\(ABCD\\) est-il un parallélogramme ?`, reponseOuiNon: parallelogrammeReel };
+  }},
+  {id:"20.7 b)", type:"ouiNon", texteLibre:true, gen: () => {
+    const { A, B, C, D } = quad20_7;
+    const cotesEgaux = (d2(A,B) === d2(B,C)) && (d2(B,C) === d2(C,D)) && (d2(C,D) === d2(D,A));
+    return { enonce: `Les côtés \\(AB\\), \\(BC\\), \\(CD\\) et \\(DA\\) ont-ils tous la même longueur ?`, reponseOuiNon: cotesEgaux };
+  }},
+
+  // ---------- 20.8 (avance) : ensemble des points equidistants d'un point A et de l'axe des
+  // abscisses (approfondissement du programme -- definition par foyer/directrice d'une parabole,
+  // jamais nommee ainsi ici) ----------
+  {id:"20.8 a)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
+    const a = entierSigne(1,3), b = alea(1,4);
+    const dx = entierSigne(1,4);
+    const x0 = a + dx;
+    ptA20_8 = { a, b };
+    const reponse = fracSimplifiee(dx*dx + b*b, 2*b);
+    return {
+      contexteTexte: `On considère le point \\(A(${a}\\,;\\,${b})\\) et l'ensemble \\((E)\\) des points \\(M(x\\,;\\,y)\\) du plan équidistants de \\(A\\) et de l'axe des abscisses (c'est-à-dire tels que \\(AM\\) soit égal à la distance de \\(M\\) à l'axe des abscisses, distance qui vaut \\(|y|\\)).`,
+      enonce: `Déterminer l'ordonnée du point de \\((E)\\) d'abscisse \\(x=${x0}\\).`,
+      reponse
+    };
+  }},
+  {id:"20.8 b)", type:"ouiNon", texteLibre:true, gen: () => {
+    const { a, b } = ptA20_8;
+    const dx = entierSigne(1,4);
+    const x1 = a + dx;
+    const yReel = (dx*dx + b*b) / (2*b);
+    const surE = alea(0,1) === 1;
+    const y1 = surE ? yReel : yReel + choix([1,-1,2,-2]);
+    const M1Latex = Number.isInteger(y1) ? `${y1}` : fracLatexAffichage(y1*(2*b), 2*b);
+    return { enonce: `Le point \\(M(${x1}\\,;\\,${M1Latex})\\) appartient-il à \\((E)\\) ?`, reponseOuiNon: surE };
+  }},
+
+  // ---------- 20.9 (avance) : partie du plan decrite par un systeme de deux double-inegalites sur
+  // les coordonnees (deuxieme approfondissement du programme) ----------
+  {id:"20.9 a)", type:"ouiNon", texteLibre:true, gen: () => {
+    let xg,xd,yg,yd;
+    do { xg = entierSigne(1,4); xd = entierSigne(1,4); } while (xg === xd);
+    if (xg > xd) { const t=xg; xg=xd; xd=t; }
+    do { yg = entierSigne(1,4); yd = entierSigne(1,4); } while (yg === yd);
+    if (yg > yd) { const t=yg; yg=yd; yd=t; }
+    const ixg = alea(0,1)===1, ixd = alea(0,1)===1, iyg = alea(0,1)===1, iyd = alea(0,1)===1;
+    systeme20_9 = { xg,xd,yg,yd,ixg,ixd,iyg,iyd };
+    const opG = (incl) => incl ? '\\leqslant' : '\\lt';
+    const texteSysteme = `${xg} ${opG(ixg)} x ${opG(ixd)} ${xd} \\text{ et } ${yg} ${opG(iyg)} y ${opG(iyd)} ${yd}`;
+    const rect = { type:'rectangle', x1:xg,y1:yg,x2:xd,y2:yd, inclusX1:ixg, inclusX2:ixd, inclusY1:iyg, inclusY2:iyd };
+    const M = tirerPointBalance20_9(xg,xd,yg,yd,ixg,ixd,iyg,iyd, alea(0,1)===1);
+    pointM120_9 = M;
+    // etiquette SVG "M" sans indice : un <text> SVG n'est pas passe a MathJax, "M_1" s'y afficherait
+    // tel quel (underscore litteral) au lieu d'un indice -- seul ce point figure sur le dessin, "M"
+    // seul reste sans ambiguite (le nom complet M_1 n'apparait que dans l'enonce, en LaTeX).
+    const elements = [rect, { type:'point', x:M.x, y:M.y, nom:'M', position: positionEloignee(M, {x:(xg+xd)/2,y:(yg+yd)/2}) }];
+    const figure = genererSVGRepere(elements);
+    const okX = (ixg ? M.x>=xg : M.x>xg) && (ixd ? M.x<=xd : M.x<xd);
+    const okY = (iyg ? M.y>=yg : M.y>yg) && (iyd ? M.y<=yd : M.y<yd);
+    return {
+      contexteTexte: `On considère l'ensemble des points \\(M(x\\,;\\,y)\\) du plan tels que \\(${texteSysteme}\\) (partie grisée du repère ci-dessus).`,
+      contexteFigure: figure,
+      enonce: `Le point \\(M_1(${M.x}\\,;\\,${M.y})\\) appartient-il à cet ensemble ?`,
+      reponseOuiNon: okX && okY
+    };
+  }},
+  {id:"20.9 b)", type:"ouiNon", texteLibre:true, gen: () => {
+    const { xg,xd,yg,yd,ixg,ixd,iyg,iyd } = systeme20_9;
+    let M, tentatives = 0;
+    do {
+      M = tirerPointBalance20_9(xg,xd,yg,yd,ixg,ixd,iyg,iyd, alea(0,1)===1);
+      tentatives++;
+    } while (M.x === pointM120_9.x && M.y === pointM120_9.y && tentatives < 20);
+    const okX = (ixg ? M.x>=xg : M.x>xg) && (ixd ? M.x<=xd : M.x<xd);
+    const okY = (iyg ? M.y>=yg : M.y>yg) && (iyd ? M.y<=yd : M.y<yd);
+    return { enonce: `Le point \\(M_2(${M.x}\\,;\\,${M.y})\\) appartient-il à ce même ensemble ?`, reponseOuiNon: okX && okY };
+  }}
+];
+
+const MODELES_AUTOMATISME = [
+  // inequation degre 1, regroupee a 0 : ax+b op 0
+  () => {
+    const a = choix([-4,-3,-2,2,3,4]);
+    const x0 = alea(-6,6);
+    const b = -a*x0;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const veutPositif = (op === '>' || op === '>=');
+    const inclus = (op === '>=' || op === '<=');
+    const auDessus = a > 0 ? veutPositif : !veutPositif; // sens de x par rapport a x0
+    const spec = auDessus
+      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
+      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
+    return { enonce:`Résoudre \\(${affineTexte(a,b)}${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // meme famille, presentee sans regrouper a 0 : ax op b (division directe, attention au signe de a).
+  () => {
+    const a = choix([-5,-4,-3,-2,2,3,4,5]);
+    const x0 = alea(-6,6);
+    const bDroite = a*x0;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const veutPositif = (op === '>' || op === '>=');
+    const inclus = (op === '>=' || op === '<=');
+    const auDessus = a > 0 ? veutPositif : !veutPositif;
+    const spec = auDessus
+      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
+      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
+    return { enonce:`Résoudre \\(${coefXTexte(a)}${opSymb}${bDroite}\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // inequation produit deja factorisee (degre 2) : (x-a)(x-b) op 0, signe direct par la regle du
+  // signe d'un produit — pas besoin de developper ni de graphique.
+  () => {
+    let a, b; do { a = alea(-5,5); b = alea(-5,5); } while (a === b);
+    if (a > b) { const t = a; a = b; b = t; }
+    const veutPositif = alea(0,1) === 1;
+    const spec = veutPositif
+      ? { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] }
+      : { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] };
+    const opSymb = veutPositif ? '\\gt' : '\\lt';
+    return { enonce:`Résoudre \\((${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // meme famille avec un coefficient negatif devant le produit (le signe global s'inverse).
+  () => {
+    let a, b; do { a = alea(-5,5); b = alea(-5,5); } while (a === b);
+    if (a > b) { const t = a; a = b; b = t; }
+    const veutPositif = alea(0,1) === 1;
+    const spec = veutPositif
+      ? { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] }
+      : { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] };
+    const opSymb = veutPositif ? '\\gt' : '\\lt';
+    return { enonce:`Résoudre \\(-(${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
+  },
+  // calcul litteral : developper un carre
+  () => {
+    const a = entierSigne(1,9);
+    const double = 2*a, carre = a*a;
+    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})^2\\).`, reponse:`x^2${double>=0?'+':''}${double}*x+${carre}` };
+  },
+  // calcul litteral : developper (x+a)(x-b), signes melanges
+  () => {
+    const a = entierSigne(1,9), b = entierSigne(1,9);
+    const diff = a - b, produit = -a*b;
+    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(${xMoinsTexte(b)})\\).`, reponse:`x^2${diff>=0?'+':''}${diff}*x${produit>=0?'+':''}${produit}` };
+  }
+];
+let tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
+
+function genererExercices() {
+  tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
+  tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
+  return generateurs.map(g => {
+    const { gen, ...modele } = g;
+    return { ...modele, ...gen() };
+  });
+}
+
+let exercices = genererExercices();
+
+const groupes = {
+  "grille-20-1": [0,1,2,3],
+  "grille-20-2": [4,5,6,7],
+  "grille-20-3": [8,9,10],
+  "grille-20-4": [11,12],
+  "grille-20-5": [13,14],
+  "grille-20-6": [15,16],
+  "grille-20-7": [17,18],
+  "grille-20-8": [19,20],
+  "grille-20-9": [21,22]
+};
+// groupes dont le contexte (figure/notations) est presente une seule fois, avant les questions
+// (voir remplirIntrosGroupes) -- chaque premier item du groupe pose contexteTexte/contexteFigure sur
+// l'objet qu'il retourne, les items suivants du meme groupe les relisent.
+const GROUPES_AVEC_INTRO = ["grille-20-3","grille-20-6","grille-20-7","grille-20-8","grille-20-9"];
+function remplirIntrosGroupes() {
+  GROUPES_AVEC_INTRO.forEach(gridId => {
+    const introDiv = document.getElementById('intro-' + gridId.slice('grille-'.length));
+    if (!introDiv) return;
+    const premier = exercices[groupes[gridId][0]];
+    if (!premier) { introDiv.innerHTML = ''; return; }
+    const texte = premier.contexteTexte ? `<p class="groupe-intro-texte">${premier.contexteTexte}</p>` : '';
+    const figure = premier.contexteFigure || '';
+    introDiv.innerHTML = texte + figure;
+    // les figures de l'intro (arbres de 19.3/19.5/19.6, hors de la grille de questions) n'etaient
+    // pas couvertes par l'appel a activerZoomSvg(grille) fait dans construireGrilles() -- zoom au
+    // clic reste muet sur ces arbres-la sans cet appel dedie (bug trouve le 2026-09-22, jamais
+    // fonctionnel depuis le passage des arbres en figure d'intro partagee).
+    activerZoomSvg(introDiv);
+  });
+}
+const lettres = ["a","b","c","d","e","f"];
+
+function necessiteAide(ex) {
+  if (ex.type === 'ouiNon') return true;
+  if (ex.type === 'paire') return true;
+  if (ex.comparaison) return true;
+  if (ex.type === 'approx') return true;
+  if (ex.type === 'intervalle') return true;
+  if (ex.type === 'tableauVariations') return true;
+  if (ex.type === 'tableauCroiseRempli') return true;
+  if (ex.fractionIrreductible) return true;
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
+  return false;
+}
+
+function aideContextuellePour(ex) {
+  if (ex.type === 'ouiNon') {
+    return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
+  }
+  if (ex.type === 'paire') {
+    return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé : par exemple <code>3;-2</code>, ou <code>5/2;-1</code> si l'une des valeurs est une fraction.";
+  }
+  if (ex.comparaison) {
+    const [v1, v2] = ex.varsComparaison || ['x1','x2'];
+    return `Écrire la comparaison complète, avec les deux images, pas seulement le symbole seul : par exemple <code>${ex.nomFonction}(${v1})&gt;${ex.nomFonction}(${v2})</code> ou <code>${ex.nomFonction}(${v1})&lt;${ex.nomFonction}(${v2})</code> selon le sens de l'inégalité.`;
+  }
+  if (ex.type === 'approx') {
+    return `Donner une valeur approchée décimale (par exemple <code>2,5</code> ou <code>-1,5</code>) : une tolérance de <code>${ex.tolerance}</code> autour de la valeur exacte est acceptée.`;
+  }
+  if (ex.type === 'intervalle') {
+    const base = "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
+    return ex.tolerance ? base + ` Les bornes lues sur le graphique peuvent être approchées (tolérance de <code>${ex.tolerance}</code>).` : base;
+  }
+  if (ex.type === 'tableauVariations') {
+    return "Compléter les abscisses manquantes et les valeurs de \\(g\\), puis cliquer sur les cases vides de la ligne « Variations » pour faire apparaître la flèche (↗ ou ↘). Cliquer enfin sur « Valider ce tableau ».";
+  }
+  if (ex.type === 'tableauCroiseRempli') {
+    return "Écrire directement l'effectif dans chaque case à compléter, puis cliquer sur « Valider ce tableau ».";
+  }
+  if (ex.fractionIrreductible) {
+    return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
+  }
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) {
+    const exemples = nbElementsEnsemble(ex) > 2
+      ? { simple: '{-2;2;5}', fraction: '{7/2;-3;1/4}' }
+      : { simple: '{-2;2}', fraction: '{7/2;-3}' };
+    return `Écrire les valeurs demandées entre accolades, séparées par un point-virgule, dans l'ordre où elles sont demandées : par exemple <code>${exemples.simple}</code>. Une valeur peut être une fraction, par exemple <code>${exemples.fraction}</code>.`;
+  }
+  return "";
+}
+
+const TYPES_MATHFIELD = ['num'];
+
+function estEnsemble(ex) {
+  return !!(ex.reponse && ex.reponse.trim().startsWith('{'));
+}
+// nombre de valeurs attendues dans une reponse "{a;b}" / "{a;b;c}" (certains items combinent desormais 3
+// indicateurs en une seule reponse -- le placeholder/l'aide doivent suivre, pas rester figes a 2).
+function nbElementsEnsemble(ex) {
+  return ex.reponse.trim().replace(/^\{|\}$/g, '').split(';').length;
+}
+
+function utiliseMathfield(ex) {
+  return TYPES_MATHFIELD.includes(ex.type);
+}
+
+function placeholderPour(ex) {
+  if (ex.type === 'ouiNon') return 'oui / non';
+  if (ex.type === 'paire') return 'x;y';
+  if (ex.comparaison) {
+    const [v1, v2] = ex.varsComparaison || ['x1','x2'];
+    return `${ex.nomFonction}(${v1}) > ${ex.nomFonction}(${v2})`;
+  }
+  if (ex.type === 'approx') return 'valeur approchée';
+  if (ex.type === 'intervalle') return ']a;b[';
+  // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
+  // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
+  // il faut les echapper pour obtenir de vraies accolades visibles.
+  if (ex.reponse && ex.reponse.trim().startsWith('{')) {
+    const lettres = ['a','b','c','d','e'].slice(0, nbElementsEnsemble(ex)).join(';');
+    return `\\{${lettres}\\}`;
+  }
+  return 'réponse';
+}
+
+const GROUPE_CHIFFRES = (idx) => `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Chiffres</span>
+        <button onclick="inserer(${idx},'7')">7</button>
+        <button onclick="inserer(${idx},'8')">8</button>
+        <button onclick="inserer(${idx},'9')">9</button>
+        <button onclick="inserer(${idx},'4')">4</button>
+        <button onclick="inserer(${idx},'5')">5</button>
+        <button onclick="inserer(${idx},'6')">6</button>
+        <button onclick="inserer(${idx},'1')">1</button>
+        <button onclick="inserer(${idx},'2')">2</button>
+        <button onclick="inserer(${idx},'3')">3</button>
+        <button onclick="inserer(${idx},'0')">0</button>
+        <button onclick="inserer(${idx},',')">,</button>
+      </div>`;
+
+function genererClavierIntervalle(idx) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Intervalle</span>
+        <button onclick="inserer(${idx},']')">]</button>
+        <button onclick="inserer(${idx},'[')">[</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Autre</span>
+        <button class="touche-large" onclick="inserer(${idx},'∪')">∪</button>
+        <button class="touche-large" onclick="inserer(${idx},'ℝ')">ℝ</button>
+        <button class="touche-large" onclick="inserer(${idx},'∅')">∅</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « ]-2;5[ » (bornes exclues), « ∪ » pour une réunion de deux intervalles.</div>`;
+}
+
+// clavier de 14.8 d/e : la reponse attendue est l'inegalite complete (ex. "f(x1)<f(x2)"), donc
+// il faut pouvoir ecrire le nom de la fonction, les parentheses et le "x" sans clavier physique.
+function genererClavierComparaison(idx, ex) {
+  const [v1, v2] = ex.varsComparaison || ['x1','x2'];
+  // par defaut (x1/x2) : une seule touche "x", le chiffre s'ajoute via le pave numerique ; sinon
+  // (ex. a/b) une touche directe par variable, plus rapide et sans ambiguite.
+  const touchesVariables = (v1 === 'x1' && v2 === 'x2')
+    ? `<button onclick="inserer(${idx},'x')">x</button>`
+    : `<button onclick="inserer(${idx},'${v1}')">${v1}</button><button onclick="inserer(${idx},'${v2}')">${v2}</button>`;
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Écriture</span>
+        <button class="touche-large" onclick="inserer(${idx},'${ex.nomFonction}')">${ex.nomFonction}</button>
+        <button onclick="inserer(${idx},'(')">(</button>
+        <button onclick="inserer(${idx},')')">)</button>
+        ${touchesVariables}
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Comparaison</span>
+        <button onclick="inserer(${idx},'<')">&lt;</button>
+        <button onclick="inserer(${idx},'>')">&gt;</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire la comparaison complète, par exemple « ${ex.nomFonction}(${v1})&gt;${ex.nomFonction}(${v2}) ».</div>`;
+}
+
+function genererClavierPour(idx, ex) {
+  if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
+  if (ex.comparaison) return genererClavierComparaison(idx, ex);
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="inserer(${idx},'∅')">∅</button>
+        <button onclick="inserer(${idx},'√')">√</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Comparaison</span>
+        <button onclick="inserer(${idx},'<')">&lt;</button>
+        <button onclick="inserer(${idx},'>')">&gt;</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « {-2;2} » pour deux antécédents, « {} » ou « ∅ » s'il n'y en a aucun, « √5 » pour une racine carrée.</div>`;
+}
+
+// Vrai sur un appareil sans survol reel (tactile) : meme heuristique que le CSS "@media
+// (hover: none)" deja utilise pour le bouton curseur des graphiques. Sert a n'activer les
+// contournements tactiles ci-dessous (touche Entree du clavier virtuel, bouton "Valider" du
+// clavier maison) que la ou ils sont necessaires -- le clavier physique fonctionne deja tres
+// bien sur ordinateur, inutile d'y changer quoi que ce soit.
+function estAppareilTactile() {
+  return window.matchMedia && window.matchMedia('(hover: none)').matches;
+}
+
+// Calcule/enregistre silencieusement (voir "reveler" dans verifierUne) puis passe au champ
+// suivant -- reutilise par les contournements tactiles (voir estAppareilTactile) : le clavier
+// virtuel de MathLive et le clavier maison (.clavier-visuel) n'emettent pas de keydown "Enter"
+// quand on tape sur leurs propres touches, seulement des evenements "change"/clic -- une
+// tablette ne peut donc pas declencher le gestionnaire d'Entree habituel, d'ou cette fonction
+// appelable directement.
+function validerEtAvancer(idx) {
+  if (modeImmediat) {
+    verifierUne(idx);
+    if (toutesLesReponsesSontSaisies()) verifierTout();
+  }
+  allerChampSuivant(idx);
+}
+
+// Tactile uniquement : la touche "Entree"/coche du clavier virtuel MathLive declenche un
+// "change" (jamais un keydown), donc jamais interceptee par le gestionnaire keydown existant --
+// sans ceci, valider une reponse au clavier virtuel ne fait simplement rien. Inoffensif sur les
+// champs a clavier maison uniquement (virtual-keyboard-mode="off" ou input texte simple) : leur
+// clavier (input.insert(), voir inserer()) n'emet jamais "change" (verifie), seul le bouton
+// "Valider" du clavier maison les declenche pour ceux-la. Appelee juste apres chaque appel
+// existant a attacherEcouteurs() (voir plus bas), pas fusionnee dedans : evite de toucher au
+// corps de cette fonction, deja variable d'une fiche a l'autre.
+function attacherEcouteursTactiles() {
+  if (!estAppareilTactile()) return;
+  exercices.forEach((ex, idx) => {
+    const input = document.getElementById('input-' + idx);
+    if (input && input.tagName === 'MATH-FIELD') input.addEventListener('change', () => validerEtAvancer(idx));
+  });
+}
+
+// Touche "Valider" du clavier maison, tactile uniquement (voir CSS .clavier-groupe-tactile) :
+// equivalent de la touche Entree physique, absente de ce clavier -- sans elle, valider une
+// reponse tapee avec ce clavier est impossible sur un appareil sans clavier physique.
+function boutonValiderTactileHTML(idx) {
+  return `<div class="clavier-groupe clavier-groupe-tactile"><button class="touche-large clavier-touche-valider" onclick="validerEtAvancer(${idx})">✓ Valider</button></div>`;
+}
+
+function champReponsePour(idx, ex) {
+  if (utiliseMathfield(ex) && estEnsemble(ex)) {
+    // ensemble d'antecedents : vrai champ mathematique (symbole racine avec case a remplir),
+    // mais avec notre propre clavier visuel (celui de mathlive ne propose ni ";" ni "∅").
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
+              smart-fence="off" smart-superscript="on" virtual-keyboard-mode="off"></math-field>
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+  }
+  if (utiliseMathfield(ex)) {
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
+              smart-fence="off" smart-superscript="on"
+              virtual-keyboard-mode="manual"></math-field>
+    <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
+  }
+  return `
+    <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
+    <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+}
+
+function construireGrilles() {
+  for (const [gridId, indices] of Object.entries(groupes)) {
+    const grille = document.getElementById(gridId);
+    grille.innerHTML = '';
+    // une seule question dans la section : pas de lettre (rien a distinguer) et la carte prend
+    // toute la largeur plutot que de laisser une colonne vide a cote (David, 2026-09-22).
+    const seul = indices.length === 1;
+    indices.forEach((idx, pos) => {
+      const ex = exercices[idx];
+      const div = document.createElement('div');
+      div.className = seul ? 'question question-pleine-largeur' : 'question';
+      div.id = 'q-' + idx;
+      const enonceHtml = ex.texteLibre ? ex.enonce : `\\(${ex.enonce}\\)`;
+      // un enonce qui DEBUTE par un bloc (tableau de donnees, figure SVG) est toujours mis sur sa
+      // propre ligne (voir .q-enonce-bloc) : contrairement a une phrase, sa largeur ne depend pas
+      // du texte mais des donnees tirees au hasard, il tiendrait donc parfois a cote de la lettre
+      // et parfois pas d'un tirage a l'autre.
+      const classeEnonce = /^\s*<(div|table)/.test(enonceHtml) ? 'q-enonce q-enonce-bloc' : 'q-enonce';
+      const champ = ex.type === 'tableauVariations' ? tableauVariationsHTML(idx, ex)
+        : ex.type === 'tableauCroiseRempli' ? tableauCroiseRempliHTML(idx, ex)
+        : champReponsePour(idx, ex);
+      const lettreHtml = seul ? '' : `<span class="q-lettre">${lettres[pos] || ''})</span>`;
+      div.innerHTML = `
+        ${lettreHtml}
+        <span class="${classeEnonce}">${enonceHtml}</span>
+        ${champ}
+        <span class="q-statut" id="statut-${idx}"></span>
+      `;
+      grille.appendChild(div);
+    });
+    injecterAideGroupe(gridId, indices);
+    activerZoomSvg(grille);
+    activerCurseurSvg(grille);
+  }
+}
+
+// --- aide au niveau du groupe : un seul bouton « ? » par titre de calcul ---
+function texteAideGroupe(indices) {
+  const blocs = [];
+  for (const idx of indices) {
+    const ex = exercices[idx];
+    if (!necessiteAide(ex)) continue;
+    const texte = aideContextuellePour(ex);
+    if (!texte) continue;
+    const lettre = (ex.id.match(/([a-zA-Z])\)\s*$/) || [])[1];
+    let g = blocs.find(b => b.texte === texte);
+    if (!g) { g = { texte, lettres: [] }; blocs.push(g); }
+    if (lettre) g.lettres.push(lettre);
+  }
+  if (blocs.length === 0) return null;
+  if (blocs.length === 1) return blocs[0].texte;
+  return blocs.map(b => (b.lettres.length ? `<strong>${b.lettres.join(', ')})</strong> ` : '') + b.texte).join('<br><br>');
+}
+function injecterAideGroupe(gridId, indices) {
+  const grille = document.getElementById(gridId);
+  let titre = grille.previousElementSibling;
+  while (titre && !titre.classList.contains('calcul-titre')) titre = titre.previousElementSibling;
+  if (!titre) return;
+  if (titre.querySelector('.q-aide-btn')) return;
+  const texte = texteAideGroupe(indices);
+  if (!texte) return;
+  const picto = titre.querySelector('.picto-niveau');
+  const conteneur = picto || titre.querySelector('span:not(.picto-niveau)') || titre;
+  const btn = document.createElement('button');
+  btn.className = 'q-aide-btn';
+  btn.title = 'Comment répondre ?';
+  btn.textContent = '?';
+  btn.onclick = () => toggleAideGroupe(gridId);
+  if (picto) conteneur.prepend(btn); else conteneur.appendChild(btn);
+  const ancienneBulle = document.getElementById('aide-groupe-' + gridId);
+  if (ancienneBulle) ancienneBulle.remove();
+  const bulle = document.createElement('div');
+  bulle.className = 'q-aide-bulle';
+  bulle.id = 'aide-groupe-' + gridId;
+  bulle.innerHTML = texte;
+  titre.after(bulle);
+}
+function toggleAideGroupe(gridId) {
+  const aide = document.getElementById('aide-groupe-' + gridId);
+  if (!aide) return;
+  const etaitOuverte = aide.classList.contains('ouverte');
+  document.querySelectorAll('.q-aide-bulle').forEach(b => b.classList.remove('ouverte'));
+  aide.classList.toggle('ouverte', !etaitOuverte);
+}
+
+function toggleClavier(idx) {
+  const clavier = document.getElementById('clavier-' + idx);
+  const etaitOuvert = clavier.classList.contains('ouvert');
+  fermerAutresClaviers(idx);
+  fermerToutesLesAides();
+  clavier.classList.toggle('ouvert', !etaitOuvert);
+}
+
+function fermerToutesLesAides() {
+  document.querySelectorAll('.q-aide-bulle').forEach(b => b.classList.remove('ouverte'));
+}
+
+function placerCurseur(input, pos) {
+  input.focus();
+  input.setSelectionRange(pos, pos);
+}
+
+function reinitialiserStatut(idx) {
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  div.classList.remove('correct','incorrect');
+  statut.textContent = '';
+  statut.className = 'q-statut';
+}
+
+// pour un champ mathematique (math-field), suit si le curseur est encore dans la case
+// d'une racine carree en cours de saisie (\sqrt{...}), pour savoir si un chiffre suivant
+// doit rester dans la case ou si il faut d'abord en sortir (voir inserer ci-dessous).
+const boiteRacineOuverte = {};
+
+function inserer(idx, symbole) {
+  const input = document.getElementById('input-' + idx);
+  if (input.tagName === 'MATH-FIELD') {
+    if (symbole === '√') {
+      if (boiteRacineOuverte[idx]) input.executeCommand('moveToNextChar');
+      input.insert('\\sqrt{}');
+      input.executeCommand('moveToPreviousChar');
+      boiteRacineOuverte[idx] = true;
+    } else if (/^[0-9]$/.test(symbole) && boiteRacineOuverte[idx]) {
+      input.insert(symbole);
+    } else {
+      if (boiteRacineOuverte[idx]) { input.executeCommand('moveToNextChar'); boiteRacineOuverte[idx] = false; }
+      input.insert(symbole);
+    }
+    reinitialiserStatut(idx);
+    return;
+  }
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
+  placerCurseur(input, start + symbole.length);
+  reinitialiserStatut(idx);
+}
+
+function insererFonction(idx, symbole) {
+  inserer(idx, symbole);
+}
+
+function effacer(idx) {
+  const input = document.getElementById('input-' + idx);
+  if (input.tagName === 'MATH-FIELD') {
+    input.value = '';
+    boiteRacineOuverte[idx] = false;
+    reinitialiserStatut(idx);
+    return;
+  }
+  input.value = '';
+  placerCurseur(input, 0);
+  reinitialiserStatut(idx);
+}
+
+function reculer(idx) {
+  const input = document.getElementById('input-' + idx);
+  if (input.tagName === 'MATH-FIELD') {
+    input.executeCommand('deleteBackward');
+    boiteRacineOuverte[idx] = false;
+    reinitialiserStatut(idx);
+    return;
+  }
+  const start = input.selectionStart ?? input.value.length;
+  if (start > 0) {
+    input.value = input.value.slice(0, start - 1) + input.value.slice(start);
+    placerCurseur(input, start - 1);
+  }
+  reinitialiserStatut(idx);
+}
+
+const FONCTIONS_CONNUES = new Set(['exp','sqrt','sin','cos','tan','log','ln','abs']);
+
+// convertit le symbole unicode "√" en fonction "sqrt(...)" : "√5" -> "sqrt(5)" (parenthese
+// implicite ajoutee), "√(5+2)" -> "sqrt(5+2)" (parenthese deja presente, simple renommage).
+// Un remplacement naif /√/g -> 'sqrt' donnerait "sqrt5", que math.js ne sait pas interpreter.
+function convertirRacineUnicode(s) {
+  return s.replace(/√(\d+(?:[.,]\d+)?)/g, 'sqrt($1)').replace(/√/g, 'sqrt');
+}
+
+function normaliserSaisie(str) {
+  let s = String(str).trim();
+  const accolades = s.match(/^\{(.*)\}$/);
+  if (accolades) s = accolades[1].trim();
+  s = convertirRacineUnicode(s).replace(/[∗×·]/g, '*');
+  s = s.replace(/(\d),(\d)/g, '$1.$2');
+  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\(/g, (m, ident) => FONCTIONS_CONNUES.has(ident) ? m : ident + '*(');
+  s = s.replace(/\)([a-zA-Z])/g, ')*$1');
+  return s;
+}
+
+// controle de FORME (pas seulement de valeur) : la saisie doit etre un entier ou une fraction
+// d'entiers a/b avec pgcd(a,b)=1 — repris tel quel de la fiche 11 de Seconde (cahier 4).
+function estFractionIrreductible(userInput) {
+  try {
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
+    const entier = (n) => n.type === 'ConstantNode' && Number.isInteger(n.value);
+    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
+    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
+    if (entier(noeud)) return true;
+    if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
+    let num = sansParentheses(noeud.args[0]);
+    let den = sansParentheses(noeud.args[1]);
+    if (moinsUnaire(num)) num = sansParentheses(num.args[0]);
+    if (moinsUnaire(den)) den = sansParentheses(den.args[0]);
+    if (!entier(num) || !entier(den) || den.value === 0) return false;
+    return pgcd(num.value, den.value) === 1;
+  } catch(e) {
+    return false;
+  }
+}
+
+// Un calcul numerique (sans variable) doit etre une forme finale deja evaluee - pas un
+// calcul encore a faire. Sans ce controle, taper "144-72" validait "12^2-8*9" puisque
+// l'expression s'evalue a la bonne valeur, sans que l'eleve ait vraiment calcule.
+function estFormeFinaleNumerique(n) {
+  const sansParentheses = (m) => { while (m.type === 'ParenthesisNode') m = m.content; return m; };
+  n = sansParentheses(n);
+  if (n.type === 'ConstantNode') return true;
+  if (n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1) return estFormeFinaleNumerique(n.args[0]);
+  if (n.type === 'OperatorNode' && n.op === '/') {
+    const estEntierSigne = (m) => {
+      m = sansParentheses(m);
+      return m.type === 'ConstantNode' || (m.type === 'OperatorNode' && m.op === '-' && m.args.length === 1 && sansParentheses(m.args[0]).type === 'ConstantNode');
+    };
+    return estEntierSigne(n.args[0]) && estEntierSigne(n.args[1]);
+  }
+  return false;
+}
+
+function checkEqualNumeric(userInput, correctExpr) {
+  userInput = normaliserSaisie(userInput);
+  const vars = ['x','t','u','v','a','b','c','m','k','y','z','n','p','q'];
+  try {
+    const userNode = math.parse(userInput);
+    const correctNode = math.parse(correctExpr);
+    const usedVars = new Set();
+    [userNode, correctNode].forEach(node => {
+      node.traverse(n => { if (n.isSymbolNode && vars.includes(n.name)) usedVars.add(n.name); });
+    });
+    if (usedVars.size === 0) {
+      if (estFormeFinaleNumerique(correctNode) && !estFormeFinaleNumerique(userNode)) return false;
+      const uVal = userNode.evaluate();
+      const cVal = correctNode.evaluate();
+      if (typeof uVal !== 'number' || typeof cVal !== 'number') return false;
+      return Math.abs(uVal - cVal) < 1e-9 * (1 + Math.abs(cVal));
+    }
+    for (let trial = 0; trial < 6; trial++) {
+      const scope = {};
+      usedVars.forEach(v => { scope[v] = Math.random()*6 + 1; });
+      const uVal = userNode.evaluate(scope);
+      const cVal = correctNode.evaluate(scope);
+      if (typeof uVal !== 'number' || typeof cVal !== 'number') return false;
+      if (Math.abs(uVal - cVal) > 1e-6 * (1 + Math.abs(cVal))) return false;
+    }
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ---------- ensemble de solutions {a;b} : accepte aussi "∅"/"vide"/"aucune" comme reponse vide
+// (extension par rapport a la version d'origine de la fiche 6 de Seconde, necessaire ici puisque
+// cette fiche est la premiere ou un ensemble d'antecedents peut legitimement etre vide), et
+// convertit "√" en "sqrt" avant evaluation (necessaire pour les antecedents non entiers) ----------
+function checkEnsemble(userInput, correctSet) {
+  const nettoyerValeur = (s) => convertirRacineUnicode(s).replace(/[∗×·]/g, '*');
+  const nettoyerEtSplit = (s) => nettoyerValeur(s).trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
+  const estVide = (s) => {
+    const n = s.trim().toLowerCase().replace(/\s/g,'');
+    // "o/" : export ascii-math d'un champ mathlive quand l'eleve clique sur le symbole ∅
+    return n === '' || n === '{}' || n === '∅' || n === 'o/' || n === 'vide' || n === 'aucune' || n === 'aucunesolution' || n === 'aucunantecedent';
+  };
+  const correctVals = nettoyerEtSplit(correctSet);
+  if (estVide(userInput)) return correctVals.length === 0;
+  const userVals = nettoyerEtSplit(userInput.replace(/(\d),(\d)/g, '$1.$2'));
+  if (userVals.length !== correctVals.length) return false;
+  try {
+    const uNums = userVals.map(s => math.evaluate(s)).sort((a,b)=>a-b);
+    const cNums = correctVals.map(s => math.evaluate(s)).sort((a,b)=>a-b);
+    return uNums.every((v,i) => Math.abs(v-cNums[i]) < 1e-9);
+  } catch(e) { return false; }
+}
+
+// ---------- reponses en toutes lettres (comparaison, oui/non textuel) : repris tel quel de la
+// fiche 7 de Seconde ----------
+function checkTexte(userInput, correctText) {
+  const nettoyer = (s) => String(s).trim().toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[éè]/g, 'e')
+    .replace(/⩽|≤/g, '<=').replace(/⩾|≥/g, '>=');
+  const saisi = nettoyer(userInput), attendu = nettoyer(correctText);
+  if (saisi === attendu) return true;
+  const familles = {
+    '<': ['<', 'inferieur', 'plusPetit'], '>': ['>', 'superieur', 'plusGrand'],
+    'oui': ['oui', 'o', 'vrai'], 'non': ['non', 'n', 'faux']
+  };
+  const f = familles[attendu];
+  return !!f && f.map(nettoyer).includes(saisi);
+}
+
+// ---------- comparaison de deux images (14.8 d/e) : la reponse attendue est l'inegalite
+// complete ("f(x1)<f(x2)"), pas seulement le symbole seul — on tolere les variantes de notation
+// courantes (espaces, "x_1" au lieu de "x1", indices unicode) mais pas l'omission des f(...) ----------
+function checkComparaisonFonctions(userInput, correctText) {
+  const nettoyer = (s) => String(s).trim().toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/_/g, '')
+    .replace(/₁/g, '1').replace(/₂/g, '2')
+    .replace(/⩽|≤/g, '<=').replace(/⩾|≥/g, '>=');
+  return nettoyer(userInput) === nettoyer(correctText);
+}
+
+const SYNONYMES_OUI = ['oui','o','vrai','v'];
+const SYNONYMES_NON = ['non','n','faux','f'];
+function normaliserTexte(s) {
+  return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+}
+function checkOuiNon(userInput, attendu) {
+  const norm = normaliserTexte(userInput);
+  return attendu ? SYNONYMES_OUI.includes(norm) : SYNONYMES_NON.includes(norm);
+}
+
+// ---------- lecture approchee (graphique degre 3) : valeur decimale a une tolerance pres ----------
+function checkApprox(userInput, valeurExacte, tolerance) {
+  const s = normaliserSaisie(userInput);
+  try {
+    const v = math.evaluate(s);
+    if (typeof v !== 'number' || !Number.isFinite(v)) return false;
+    return Math.abs(v - valeurExacte) <= tolerance;
+  } catch(e) { return false; }
+}
+function checkApproxParmiRacines(userInput, racines, tolerance) {
+  const s = normaliserSaisie(userInput);
+  try {
+    const v = math.evaluate(s);
+    if (typeof v !== 'number' || !Number.isFinite(v)) return false;
+    return racines.some(r => Math.abs(v - r) <= tolerance);
+  } catch(e) { return false; }
+}
+
+function valeurDuChamp(el) {
+  if (!el) return '';
+  if (el.tagName === 'MATH-FIELD') {
+    let v = el.getValue('ascii-math').trim();
+    v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
+    v = v.replace(/[∗×·]/g, '*');
+    ['sqrt','exp','sin','cos','tan','log','ln','abs'].forEach(fn => {
+      const motif = fn.split('').join('\\s+');
+      v = v.replace(new RegExp('(?<![a-zA-Z])' + motif + '\\s*\\(', 'g'), fn + '(');
+    });
+    return v;
+  }
+  return el.value.trim();
+}
+
+// Identifiant stable de la fiche pour le suivi (assets/js/suivi.js) :
+// le chemin de la page lui-meme, donc correct automatiquement si ce
+// fichier est copie sous un autre nom/chemin pour une nouvelle fiche.
+const FICHE_ID = window.location.pathname;
+
+// Identifiant du passage en cours, regenere a chaque nouveau passage
+// (chargement initial ou "Generer une nouvelle fiche") : permet au tableau
+// de bord de compter les passages distincts, pas juste les verifications.
+function genererIdPasse() {
+  return (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+let PASSE_ACTUELLE = genererIdPasse();
+
+// Reponses de la session en cours, indexe par idx d'exercice -> { id, valeur,
+// correct }. Sert a "Enregistrer" (brouillon) et "Valider" (score) plutot
+// que d'ecrire dans Firestore a chaque question verifiee (voir suivi.js).
+let saisies = {};
+
+// Determines une fois au chargement (voir initialiserFiche) : le site reste
+// utilisable sans compte, donc Enregistrer/Valider ne doivent ni s'afficher
+// ni rien laisser croire a un visiteur anonyme.
+let eleveConnecte = false;
+// Etat du devoir en cours pour cette fiche (voir verifierEtatDevoir dans
+// suivi.js), determine une fois au chargement -- null si aucun devoir actif
+// pour la classe de l'eleve. { bloque: true } desactive "Valider ma fiche"
+// (voir initialiserFiche et validerFicheActuelle).
+let etatDevoir = null;
+// Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
+// false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
+// faux, un eleve connecte ne peut pas voir la correction (empeche de
+// simplement demander toutes les reponses sans avoir valide sa tentative).
+let ficheValidee = false;
+
+function mettreAJourEtatBoutons() {
+  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
+  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
+  // ce bouton n'apporterait plus rien une fois connecte.
+  const boutonToutes = document.getElementById('btn-toutes-reponses');
+  boutonToutes.disabled = eleveConnecte && !ficheValidee;
+
+  // En mode devoir (etatDevoir non nul, voir initialiserFiche), une fois la
+  // fiche validee (donc les corrections reveelees) : "Recommencer" masque
+  // (pas de redite de la MEME fiche avec les reponses deja vues) et
+  // "Enregistrer mon avancement" masque (plus d'avancement en cours a
+  // sauvegarder). Les deux se reaffichent normalement a la prochaine
+  // validation d'etat (rafraichissement de page ou "Generer une nouvelle
+  // version", qui remettent ficheValidee a false) -- comportement voulu.
+  const enModeDevoirValide = !!etatDevoir && ficheValidee;
+  const boutonRecommencer = document.getElementById('btn-recommencer');
+  if (boutonRecommencer) boutonRecommencer.hidden = enModeDevoirValide;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = enModeDevoirValide;
+}
+
+// Aucun etat auxiliaire a restaurer sur cette fiche (pas de graphique partage).
+function etatSupplementairePourBrouillon() {
+  return {};
+}
+function restaurerEtatSupplementaire(extra) {}
+
+function verifierUne(idx) {
+  const ex = exercices[idx];
+  const div = document.getElementById('q-' + idx);
+  const statut = document.getElementById('statut-' + idx);
+  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
+  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
+  // se font quand meme, silencieusement, a chaque reponse verifiee. Un
+  // visiteur anonyme voit tout normalement, comme avant.
+  const reveler = !eleveConnecte || ficheValidee;
+  if (reveler) div.classList.remove('correct','incorrect');
+  if (ex.type === 'tableauVariations') {
+    const ok = verifierTableauVariations(idx, ex, reveler);
+    if (ok === null) {
+      if (reveler) { statut.textContent = 'remplir toutes les cases'; statut.className = 'q-statut'; }
+      saisies[idx] = { id: ex.id, valeur: capturerEtatTableauVariations(idx, ex), correct: null };
+      return null;
+    }
+    if (reveler) {
+      div.classList.add(ok ? 'correct' : 'incorrect');
+      statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+      statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    }
+    saisies[idx] = { id: ex.id, valeur: capturerEtatTableauVariations(idx, ex), correct: ok };
+    if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
+    return ok;
+  }
+  if (ex.type === 'tableauCroiseRempli') {
+    const ok = verifierTableauCroiseRempli(idx, ex, reveler);
+    if (ok === null) {
+      if (reveler) { statut.textContent = 'remplir toutes les cases'; statut.className = 'q-statut'; }
+      saisies[idx] = { id: ex.id, valeur: capturerEtatTableauCroise(idx, ex), correct: null };
+      return null;
+    }
+    if (reveler) {
+      div.classList.add(ok ? 'correct' : 'incorrect');
+      statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+      statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+    }
+    saisies[idx] = { id: ex.id, valeur: capturerEtatTableauCroise(idx, ex), correct: ok };
+    if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
+    return ok;
+  }
+  const input = document.getElementById('input-' + idx);
+  const val = valeurDuChamp(input);
+  if (!val) {
+    if (reveler) { statut.textContent=''; statut.className='q-statut'; }
+    delete saisies[idx];
+    return null;
+  }
+  let ok;
+  if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
+  else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
+  else if (ex.comparaison) ok = checkComparaisonFonctions(val, ex.reponse);
+  else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
+  else if (ex.type === 'approx') {
+    ok = ex.typeApprox === 'racine'
+      ? checkApproxParmiRacines(val, ex.valeurApprox, ex.tolerance)
+      : checkApprox(val, ex.valeurApprox, ex.tolerance);
+  }
+  else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec, ex.tolerance);
+  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else ok = checkEqualNumeric(val, ex.reponse);
+  if (reveler) {
+    div.classList.add(ok ? 'correct' : 'incorrect');
+    statut.textContent = ok ? '✓ correct' : '✗ à revoir';
+    statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
+  }
+  saisies[idx] = { id: ex.id, valeur: val, correct: ok };
+  if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
+  return ok;
+}
+
+function afficherEtatSuivi(message) {
+  const zone = document.getElementById('suivi-etat');
+  if (!zone) return;
+  zone.textContent = message;
+  zone.hidden = false;
+}
+
+async function enregistrerBrouillonActuel() {
+  if (!window.enregistrerBrouillon) return;
+  const bouton = document.getElementById('btn-enregistrer');
+  if (bouton) bouton.disabled = true;
+  try {
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE, etatSupplementairePourBrouillon());
+    afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
+  } catch (erreur) {
+    afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
+}
+
+async function validerFicheActuelle() {
+  if (!window.validerFiche) return;
+  // Seconde ligne de defense : le bouton est deja desactive dans ce cas
+  // (voir initialiserFiche), ceci couvre un appel direct (ex. console).
+  if (etatDevoir && etatDevoir.bloque) {
+    afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir — ta meilleure note a été retenue.`);
+    return;
+  }
+  const bouton = document.getElementById('btn-valider');
+  if (bouton) bouton.disabled = true;
+  try {
+    // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
+    // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
+    // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
+    // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    ficheValidee = true;
+    mettreAJourEtatBoutons();
+    verifierTout();
+
+    const reponses = Object.values(saisies);
+    const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
+    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+  } catch (erreur) {
+    afficherEtatSuivi('Échec de la validation (connexion internet ?).');
+  } finally {
+    if (bouton) bouton.disabled = false;
+  }
+}
+
+let modeImmediat = true;
+
+function toutesLesReponsesSontSaisies() {
+  return exercices.every((ex, idx) => {
+    if (ex.type === 'tableauVariations') {
+      return verifierTableauVariationsRempli(idx, ex);
+    }
+    if (ex.type === 'tableauCroiseRempli') {
+      return tableauCroiseRempliEstComplet(idx, ex);
+    }
+    return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
+  });
+}
+
+function attacherEcouteurs() {
+  exercices.forEach((ex, idx) => {
+    if (ex.type === 'tableauVariations' || ex.type === 'tableauCroiseRempli') return; // deja cable via oninput/onclick au moment du rendu
+    const input = document.getElementById('input-' + idx);
+    let ignorerProchainInput = false;
+    let valideeParEntree = false;
+    input.addEventListener('keydown', (evenement) => {
+      if (evenement.key === 'Enter') {
+        evenement.preventDefault();
+        ignorerProchainInput = true;
+        valideeParEntree = true;
+        if (modeImmediat) {
+          verifierUne(idx);
+          if (toutesLesReponsesSontSaisies()) verifierTout();
+        }
+        allerChampSuivant(idx);
+      }
+    });
+    input.addEventListener('input', () => {
+      if (ignorerProchainInput) { ignorerProchainInput = false; return; }
+      reinitialiserStatut(idx);
+    });
+    input.addEventListener('blur', () => {
+      if (valideeParEntree) { valideeParEntree = false; return; }
+      if (modeImmediat) {
+        verifierUne(idx);
+        if (toutesLesReponsesSontSaisies()) verifierTout();
+      }
+    });
+    input.addEventListener('focus', () => {
+      fermerAutresClaviers(idx);
+      // si l'eleve reprend la main dans le champ (clic, fleches...), on ne sait plus si le
+      // curseur est dans une case de racine : on repart d'un etat "ferme" par securite.
+      if (input.tagName === 'MATH-FIELD') boiteRacineOuverte[idx] = false;
+    });
+  });
+}
+
+function allerChampSuivant(idxActuel) {
+  const idxSuivant = idxActuel + 1;
+  if (idxSuivant < exercices.length) {
+    const champSuivant = document.getElementById('input-' + idxSuivant);
+    champSuivant.focus();
+    if (champSuivant.tagName !== 'MATH-FIELD' && champSuivant.setSelectionRange) {
+      champSuivant.setSelectionRange(champSuivant.value.length, champSuivant.value.length);
+    }
+  }
+}
+
+function fermerAutresClaviers(idxActuel) {
+  exercices.forEach((ex, idx) => {
+    if (idx !== idxActuel) {
+      const clavier = document.getElementById('clavier-' + idx);
+      if (clavier) clavier.classList.remove('ouvert');
+    }
+  });
+}
+
+function definirMode(immediat) {
+  modeImmediat = immediat;
+  document.getElementById('mode-immediat-btn').classList.toggle('mode-actif', immediat);
+  document.getElementById('mode-fin-btn').classList.toggle('mode-actif', !immediat);
+  document.getElementById('mode-explication').textContent = immediat
+    ? 'Appuyer sur Entrée après chaque réponse pour la faire vérifier et passer à la suivante.'
+    : 'Entrée passe à la question suivante sans corriger. Cliquer sur « Vérifier mes réponses », en bas de la fiche, pour tout corriger d\'un coup.';
+  if (!immediat) {
+    exercices.forEach((ex, idx) => reinitialiserStatut(idx));
+  }
+}
+
+// --- affichage des reponses en vraie ecriture mathematique -----------------------------------
+const VARS_A_PROTEGER = ['x','t','u','v','a','b','c','m','k','y','z'];
+function protegerVariables(s) {
+  const mapping = [];
+  let out = s;
+  VARS_A_PROTEGER.forEach((v, i) => {
+    const placeholder = `qvarplaceholder${String(i).padStart(2,'0')}`;
+    const re = new RegExp('\\b' + v + '\\b', 'g');
+    if (re.test(out)) { out = out.replace(re, placeholder); mapping.push([placeholder, v]); }
+  });
+  return { out, mapping };
+}
+function restaurerVariables(tex, mapping) {
+  let out = tex;
+  mapping.forEach(([placeholder, v]) => { out = out.split(placeholder).join(v); });
+  return out;
+}
+function collerCoefficientLettre(tex) {
+  let out = tex;
+  out = out.replace(/(^|[^0-9])1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '$1$2');
+  out = out.replace(/-1\\cdot\s*(\{?\s*(?:\\[a-zA-Z]+(?:\{[^{}]*\})*|[a-zA-Z]+)\s*\}?)/g, '-$1');
+  out = out.replace(/(?<!\})(\d)\\cdot\s*(\\[a-zA-Z]+(?:\{[^{}]*\})*|\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, '$1$2');
+  out = out.replace(/(?<!\})(\d)\\cdot\s*\\left\(/g, '$1\\left(');
+  out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
+  out = out.replace(/([a-zA-Z])\}?\s*\\cdot\s*(\{?\s*[a-zA-Z]\s*\}?)(?![a-zA-Z])/g, (m) => m.replace(/\\cdot\s*/, ''));
+  out = out.replace(/([a-zA-Z])\}?\s*\\cdot\s*\\left\(/g, (m) => m.replace(/\\cdot\s*/, ''));
+  return out;
+}
+function jsVersLatex(expr) {
+  const s = String(expr);
+  try {
+    const { out: sProtege, mapping } = protegerVariables(s);
+    const node = math.parse(sProtege);
+    let tex = node.toTex({parenthesis: 'auto', implicit: 'hide'});
+    tex = restaurerVariables(tex, mapping);
+    tex = collerCoefficientLettre(tex);
+    tex = tex.replace(/\\cdot/g, '\\times ');
+    tex = tex.replace(/\\frac\{/g, '\\dfrac{');
+    return tex;
+  } catch(e) {
+    let out = s;
+    out = out.replace(/(^|[^0-9])1\*([a-zA-Z\\])/g, '$1$2');
+    out = out.replace(/-1\*([a-zA-Z\\])/g, '-$1');
+    out = out.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
+    out = out.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
+    out = out.replace(/\*/g, '\\times ');
+    return out;
+  }
+}
+
+function formaterReponse(ex) {
+  try {
+    if (ex.type === 'ouiNon') {
+      return ex.reponseOuiNon ? '\\text{Oui}' : '\\text{Non}';
+    }
+    if (ex.type === 'paire') {
+      return `\\left(${jsVersLatex(ex.pa)}\\,;\\,${jsVersLatex(ex.pb)}\\right)`;
+    }
+    if (ex.comparaison) {
+      return ex.reponse.replace(/x1/g, 'x_1').replace(/x2/g, 'x_2');
+    }
+    if (ex.type === 'texte') {
+      return `\\text{${ex.reponse}}`;
+    }
+    if (ex.type === 'approx') {
+      if (ex.typeApprox === 'racine') {
+        const vals = ex.valeurApprox.map(v => Math.round(v*100)/100).join('\\text{ ou }');
+        return `\\approx ${vals}`;
+      }
+      return `\\approx ${Math.round(ex.valeurApprox*100)/100}`;
+    }
+    if (ex.type === 'intervalle') {
+      const texte = formaterIntervalleSpec(ex.intervalleSpec);
+      return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
+    }
+    if (ex.reponse && ex.reponse.trim().startsWith('{')) {
+      if (ex.reponse.trim() === '{}') return '\\emptyset';
+      return ex.reponse.replace(/\*/g, '\\times ').replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
+    }
+    return jsVersLatex(ex.reponse);
+  } catch(e) {
+    return ex.reponse || '';
+  }
+}
+
+function verifierTout() {
+  let score = 0;
+  let repondues = 0;
+  const erreurs = [];
+  exercices.forEach((ex, idx) => {
+    const ok = verifierUne(idx);
+    if (ok !== null) repondues++;
+    if (ok) score++;
+    else if (ok === false) erreurs.push(idx);
+  });
+  document.getElementById('score-panneau').classList.add('visible');
+  document.getElementById('score-chiffre').textContent = score + ' / ' + exercices.length;
+  const correctionDiv = document.getElementById('correction-panneau');
+  if (erreurs.length === 0) {
+    correctionDiv.innerHTML = '<p style="color:var(--vert);font-weight:bold;">Toutes les réponses saisies sont correctes.</p>';
+  } else {
+    correctionDiv.innerHTML = erreurs.map(idx => {
+      const ex = exercices[idx];
+      if (ex.type === 'tableauVariations') {
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
+      }
+      if (ex.type === 'tableauCroiseRempli') {
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
+      }
+      const reponseFormatee = formaterReponse(ex);
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+    }).join('');
+  }
+  if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
+  correctionDiv.classList.remove('visible');
+  document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+}
+
+function toggleCorrection() {
+  const panel = document.getElementById('correction-panneau');
+  panel.classList.toggle('visible');
+  document.getElementById('btn-correction').textContent =
+    panel.classList.contains('visible') ? 'Masquer la correction' : 'Voir la correction des erreurs';
+}
+
+function reinitialiser() {
+  exercices.forEach((ex, idx) => {
+    document.getElementById('q-' + idx).classList.remove('correct','incorrect');
+    document.getElementById('statut-' + idx).textContent = '';
+    if (ex.type === 'tableauVariations') { reinitialiserTableauVariations(idx, ex); return; }
+    if (ex.type === 'tableauCroiseRempli') { reinitialiserTableauCroiseRempli(idx, ex); return; }
+    document.getElementById('input-' + idx).value = '';
+    boiteRacineOuverte[idx] = false;
+    const clavier = document.getElementById('clavier-' + idx);
+    if (clavier) clavier.classList.remove('ouvert');
+  });
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatReinit = document.getElementById('suivi-etat');
+  if (zoneEtatReinit) zoneEtatReinit.hidden = true;
+  document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
+}
+
+function toggleToutesReponses() {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex => {
+      if (ex.type === 'tableauVariations') return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeVariationsHTML(ex)}`;
+      if (ex.type === 'tableauCroiseRempli') return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau :</div>${tableCorrigeCroiseHTML(ex)}`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${formaterReponse(ex)}\\)</div>`;
+    }).join('');
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
+  }
+}
+
+function genererNouvelleFiche() {
+  PASSE_ACTUELLE = genererIdPasse();
+  exercices = genererExercices();
+  saisies = {};
+  ficheValidee = false;
+  mettreAJourEtatBoutons();
+  if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
+  const zoneEtatGnf = document.getElementById('suivi-etat');
+  if (zoneEtatGnf) zoneEtatGnf.hidden = true;
+  construireGrilles();
+  remplirIntrosGroupes();
+  attacherEcouteurs();
+  attacherEcouteursTactiles();
+  document.getElementById('score-panneau').classList.remove('visible');
+  document.getElementById('correction-panneau').classList.remove('visible');
+  document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+  const panneauToutes2 = document.getElementById('toutes-reponses-panneau');
+  panneauToutes2.classList.remove('visible');
+  panneauToutes2.innerHTML = '';
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+async function initialiserFiche() {
+  eleveConnecte = window.estConnecte ? await window.estConnecte() : false;
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  const panneauMode = document.getElementById('mode-panneau');
+  const boutonVerifier = document.getElementById('btn-verifier');
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !eleveConnecte;
+  if (zoneValider) zoneValider.hidden = !eleveConnecte;
+  // Pour un eleve connecte : pas de choix de mode -- la correction n'est de
+  // toute facon jamais affichee avant validation (voir "reveler" dans
+  // verifierUne), ces boutons n'auraient plus de sens.
+  if (panneauMode) panneauMode.hidden = eleveConnecte;
+  // Idem pour "Corrige des erreurs" : "Valider" declenche deja verifierTout(),
+  // ce bouton devient redondant une fois connecte (reste utile pour un
+  // visiteur anonyme, en mode "Tout a la fin").
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte;
+
+  // Limite d'essais d'un devoir (19/09/2026) : verifiee ici, pas seulement au
+  // clic sur "Valider" (voir validerFicheActuelle), pour que le bouton
+  // affiche son etat reel des l'arrivee sur la fiche plutot que de laisser
+  // l'eleve decouvrir le blocage seulement en cliquant.
+  if (eleveConnecte && window.verifierEtatDevoir) {
+    try {
+      etatDevoir = await window.verifierEtatDevoir(FICHE_ID);
+    } catch (erreur) {
+      etatDevoir = null;
+    }
+    if (etatDevoir && etatDevoir.bloque) {
+      const boutonValider = document.getElementById('btn-valider');
+      if (boutonValider) {
+        boutonValider.disabled = true;
+        boutonValider.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
+      }
+      afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`);
+    }
+  }
+
+  let brouillon = null;
+  if (eleveConnecte && window.chargerBrouillon) {
+    try {
+      brouillon = await window.chargerBrouillon(FICHE_ID);
+    } catch (erreur) {
+      brouillon = null;
+    }
+  }
+  const brouillonValide = brouillon
+    && Array.isArray(brouillon.exercices)
+    && brouillon.exercices.length === exercices.length;
+  if (brouillonValide) {
+    exercices = brouillon.exercices;
+    if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
+    restaurerEtatSupplementaire(brouillon.extra);
+  }
+  construireGrilles();
+  remplirIntrosGroupes();
+  attacherEcouteurs();
+  attacherEcouteursTactiles();
+  definirMode(true);
+  mettreAJourEtatBoutons();
+
+  if (brouillonValide && brouillon.saisies) {
+    for (const idx of Object.keys(brouillon.saisies)) {
+      const saisie = brouillon.saisies[idx];
+      const ex = exercices[Number(idx)];
+      if (!ex || !saisie) continue;
+      if (ex.type === 'tableauVariations' && saisie.valeur && typeof saisie.valeur === 'object') {
+        restaurerEtatTableauVariations(Number(idx), ex, saisie.valeur);
+        verifierUne(Number(idx));
+      } else if (ex.type === 'tableauCroiseRempli' && saisie.valeur && typeof saisie.valeur === 'object') {
+        restaurerEtatTableauCroise(Number(idx), ex, saisie.valeur);
+        verifierUne(Number(idx));
+      } else if (typeof saisie.valeur === 'string') {
+        const input = document.getElementById('input-' + idx);
+        if (input) {
+          if (input.tagName === 'MATH-FIELD') input.setValue(saisie.valeur, { format: 'ascii-math' });
+          else input.value = saisie.valeur;
+          verifierUne(Number(idx));
+        }
+      }
+    }
+    // Ne pas ecraser le message de blocage (plus important, voir plus haut)
+    // s'il est deja affiche.
+    if (!(etatDevoir && etatDevoir.bloque)) afficherEtatSuivi('Brouillon repris depuis ta dernière sauvegarde.');
+  }
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// suivi.js est un script "module", differe par nature : il peut ne pas
+// avoir encore attache window.estConnecte/chargerBrouillon/etc. au moment
+// ou ce script classique (non differe) atteint cette ligne. DOMContentLoaded
+// ne se declenche qu'une fois tous les scripts differes/modules executes --
+// attendre cet evenement garantit que ces fonctions existent.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialiserFiche);
+} else {
+  initialiserFiche();
+}
+</script>
+
+<script type="module" src="../../../assets/js/nav-auth.js"></script>
+</body>
+</html>
