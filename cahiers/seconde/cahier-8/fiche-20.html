@@ -844,6 +844,7 @@ window.MathJax = {
   <div class="question-grille" id="grille-20-4"></div>
 
   <p class="calcul-titre"><span>Calcul 20.5 — Coordonnées du milieu.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+  <div class="groupe-intro" id="intro-20-5"></div>
   <div class="question-grille" id="grille-20-5"></div>
 
   <p class="calcul-titre"><span>Calcul 20.6 — Nature d'un triangle.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
@@ -2172,6 +2173,18 @@ function checkPaire(userInput, correctA, correctB, vars) {
   } catch (e) { return false; }
 }
 
+// ---------- checkPointCoordonnees : comme checkPaire, mais EXIGE la notation mathematique
+// "(x;y)" avec parentheses (David, 2026-09-22 : "des coordonnées se notent entre parenthèses, il
+// faut exiger cette écriture") -- portee telle quelle depuis fiche-20 de Premiere. Utilisee des
+// que ex.formePoint est vrai (coordonnees d'un point ou d'un milieu, jamais une simple paire de
+// valeurs sans signification geometrique) ----------
+function checkPointCoordonnees(userInput, correctA, correctB, vars) {
+  const nettoye = String(userInput).trim();
+  const m = nettoye.match(/^\((.*)\)$/);
+  if (!m) return false;
+  return checkPaire(m[1], correctA, correctB, vars);
+}
+
 // tire un point M soit GENUINEMENT dedans, soit GENUINEMENT dehors (dedansSouhaite) par rapport au
 // systeme de deux double-inegalites -- sans cela un point uniforme dans une boite legerement plus
 // grande que le rectangle tombe presque toujours en dehors (le rectangle occupe une petite partie de
@@ -2250,7 +2263,7 @@ const generateurs = [
   // une seule figure partagee (contexteFigure) ; consigne commune factorisee dans le contexte
   // (David, 2026-09-22 : "l'enonce est identique, tu peux agencer la question pour ne pas la
   // repeter trois fois"), chaque item reduit au seul nom du point ----------
-  {id:"20.3 a)", type:"paire", texteLibre:true, gen: () => {
+  {id:"20.3 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const pts = tirerPointsDistincts(3, 5);
     ptsRepere20_3 = pts;
     const noms = ['A','B','C'];
@@ -2258,11 +2271,11 @@ const generateurs = [
     const figure = genererSVGRepere(elements);
     return { contexteTexte: "Le repère ci-dessus est orthonormé. Donner les coordonnées de chacun des points suivants.", contexteFigure: figure, enonce: `Point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [] };
   }},
-  {id:"20.3 b)", type:"paire", texteLibre:true, gen: () => {
+  {id:"20.3 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const p = ptsRepere20_3[1];
     return { enonce: `Point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
   }},
-  {id:"20.3 c)", type:"paire", texteLibre:true, gen: () => {
+  {id:"20.3 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const p = ptsRepere20_3[2];
     return { enonce: `Point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
   }},
@@ -2289,16 +2302,18 @@ const generateurs = [
     return { enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: `sqrt(${dx*dx+dy*dy})` };
   }},
 
-  // ---------- 20.5 : coordonnees du milieu d'un segment ----------
-  {id:"20.5 a)", type:"paire", texteLibre:true, gen: () => {
+  // ---------- 20.5 : coordonnees du milieu d'un segment -- consigne commune factorisee dans le
+  // contexte, chaque item ne donne plus que les deux points (David, 2026-09-22, meme remarque
+  // que 20.4 : "pourquoi je suis encore obligé de te dire de ne pas réécrire l'énoncé") ----------
+  {id:"20.5 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
     const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
-    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\). Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
+    return { contexteTexte: "Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\) dans chaque cas.", enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
   }},
-  {id:"20.5 b)", type:"paire", texteLibre:true, gen: () => {
+  {id:"20.5 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
     const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
-    return { enonce: `On donne les points \\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\). Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
+    return { enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
   }},
 
   // ---------- 20.6 : nature d'un triangle (rectangle / isocele) -- coordonnees donnees en TEXTE
@@ -2539,7 +2554,7 @@ const groupes = {
 // groupes dont le contexte (figure/notations) est presente une seule fois, avant les questions
 // (voir remplirIntrosGroupes) -- chaque premier item du groupe pose contexteTexte/contexteFigure sur
 // l'objet qu'il retourne, les items suivants du meme groupe les relisent.
-const GROUPES_AVEC_INTRO = ["grille-20-3","grille-20-4","grille-20-6","grille-20-7","grille-20-8","grille-20-9"];
+const GROUPES_AVEC_INTRO = ["grille-20-3","grille-20-4","grille-20-5","grille-20-6","grille-20-7","grille-20-8","grille-20-9"];
 function remplirIntrosGroupes() {
   GROUPES_AVEC_INTRO.forEach(gridId => {
     const introDiv = document.getElementById('intro-' + gridId.slice('grille-'.length));
@@ -2574,6 +2589,9 @@ function necessiteAide(ex) {
 function aideContextuellePour(ex) {
   if (ex.type === 'ouiNon') {
     return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
+  }
+  if (ex.formePoint) {
+    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code> ou <code>(5/2;-1)</code> si l'une des valeurs est une fraction.";
   }
   if (ex.type === 'paire') {
     return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé : par exemple <code>3;-2</code>, ou <code>5/2;-1</code> si l'une des valeurs est une fraction.";
@@ -2624,6 +2642,7 @@ function utiliseMathfield(ex) {
 
 function placeholderPour(ex) {
   if (ex.type === 'ouiNon') return 'oui / non';
+  if (ex.formePoint) return '(x;y)';
   if (ex.type === 'paire') return 'x;y';
   if (ex.comparaison) {
     const [v1, v2] = ex.varsComparaison || ['x1','x2'];
@@ -3269,6 +3288,7 @@ function verifierUne(idx) {
   }
   let ok;
   if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
+  else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.comparaison) ok = checkComparaisonFonctions(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
