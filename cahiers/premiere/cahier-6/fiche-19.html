@@ -635,6 +635,10 @@ window.MathJax = {
       grid-template-columns: 1fr 1fr;
       gap: 14px 20px;
     }
+    /* section a une seule question (ex. 19.20, 19.23) : inutile de reserver une colonne vide a
+       cote -- la carte prend toute la largeur (David, 2026-09-22, porte depuis la fiche 19 de
+       Seconde). */
+    .question-pleine-largeur { grid-column: 1 / -1; }
     .q-input { width: 150px; flex: 0 0 150px; }
     .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
     .btn-principal, .btn-secondaire { width: auto; }
@@ -677,6 +681,47 @@ window.MathJax = {
   .figure-centree svg.qcm-svg {
     max-width: 220px;
   }
+  /* ---------- Arbres en grand + zoom au clic -- porte depuis la fiche 19 de Seconde (David,
+     2026-09-22 : "les arbres exactement comme en Seconde, avec zoom"). ---------- */
+  .svg-police-manuel { font-family: 'Cambria Math', Cambria, Georgia, serif; }
+  svg.svg-agrandissable { cursor: zoom-in; }
+  svg.svg-agrandissable:hover { outline: 2px solid var(--bleu-clair); outline-offset: 2px; }
+  .modal-svg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 25, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .modal-svg-overlay.ouvert { display: flex; }
+  .modal-svg-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 32px 14px 14px;
+    width: min(96vw, 800px);
+    max-height: 94vh;
+    overflow: auto;
+    cursor: default;
+  }
+  .modal-svg-contenu svg { display: block; margin: 0 auto; width: 100%; height: auto; }
+  .modal-svg-fermer {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-svg-fermer:hover { color: var(--rouge); }
   .qcm-options {
     display: flex;
     flex-direction: column;
@@ -795,6 +840,13 @@ window.MathJax = {
 
 <body>
 
+<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
+  <div class="modal-svg-contenu">
+    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
+    <div id="modal-svg-contenu-interieur"></div>
+  </div>
+</div>
+
 <p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 6</a></p>
 
 <div class="barre-navigation">
@@ -840,12 +892,12 @@ window.MathJax = {
 <div class="section-barre"></div>
 
 <p class="calcul-titre"><span>Calcul 19.4 — Avec un tableau de probabilités.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p>On donne le tableau de probabilités suivant :</p><table id="table-19-4" style="border-collapse:collapse;margin:12px 0;font-size:14px;"></table>
+<p>On donne le tableau de probabilités suivant :</p><table id="table-19-4" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
 <p>Calculer les probabilités suivantes. On donnera les résultats sous forme décimale.</p>
 <div class="question-grille" id="grille-19-4"></div>
 
 <p class="calcul-titre"><span>Calcul 19.5 — Avec un tableau d'effectifs.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p>On donne le tableau d'effectifs suivant :</p><table id="table-19-5" style="border-collapse:collapse;margin:12px 0;font-size:14px;"></table>
+<p>On donne le tableau d'effectifs suivant :</p><table id="table-19-5" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
 <p>Calculer les probabilités suivantes. On donnera les résultats sous forme de fraction irréductible.</p>
 <div class="question-grille" id="grille-19-5"></div>
 
@@ -860,7 +912,7 @@ window.MathJax = {
 <p>On note <em>R</em> : « la personne fait de la randonnée » et <em>S</em> : « la personne fait du ski ». Calculer les probabilités suivantes. On donnera les résultats sous forme de fraction irréductible.</p>
 <div class="question-grille" id="grille-19-7"></div>
 
-<p class="calcul-titre"><span>Calcul 19.8 — Soit n∈ℕ*. On donne le tableau d'effectifs suivant :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table style="border-collapse:collapse;margin:12px 0;font-size:14px;">
+<p class="calcul-titre"><span>Calcul 19.8 — Soit n∈ℕ*. On donne le tableau d'effectifs suivant :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table style="border-collapse:collapse;margin:12px auto;font-size:16px;">
 <tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>A</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>\(\overline{A}\)</em></td></tr>
 <tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>B</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n^2\)</td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(2n+2n^2\)</td></tr>
 <tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>\(\overline{B}\)</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n\)</td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n+n^2\)</td></tr>
@@ -904,19 +956,19 @@ window.MathJax = {
 <div class="section-barre"></div>
 
 <p class="calcul-titre"><span>Calcul 19.17 — Une loi de probabilité incomplète.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p>On donne la loi de probabilité d'une variable aléatoire X :</p><table id="table-19-17" style="border-collapse:collapse;margin:12px 0;font-size:14px;"></table>
+<p>On donne la loi de probabilité d'une variable aléatoire X :</p><table id="table-19-17" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
 <p>Calculer :</p>
 <div class="question-grille" id="grille-19-17"></div>
 
-<p class="calcul-titre"><span>Calcul 19.18 — On donne la loi de probabilité d'une variable aléatoire X :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-19-18" style="border-collapse:collapse;margin:12px 0;font-size:14px;"></table>
+<p class="calcul-titre"><span>Calcul 19.18 — On donne la loi de probabilité d'une variable aléatoire X :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-19-18" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
 <p>Calculer :</p>
 <div class="question-grille" id="grille-19-18"></div>
 
-<p class="calcul-titre"><span>Calcul 19.19 — On donne la loi de probabilité d'une variable aléatoire X :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-19-19" style="border-collapse:collapse;margin:12px 0;font-size:14px;"></table>
+<p class="calcul-titre"><span>Calcul 19.19 — On donne la loi de probabilité d'une variable aléatoire X :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-19-19" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
 <p>Calculer, sous forme de fraction irréductible :</p>
 <div class="question-grille" id="grille-19-19"></div>
 
-<p class="calcul-titre"><span>Calcul 19.20 — On donne la loi de probabilité d'une variable aléatoire X :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-19-20" style="border-collapse:collapse;margin:12px 0;font-size:14px;"></table>
+<p class="calcul-titre"><span>Calcul 19.20 — On donne la loi de probabilité d'une variable aléatoire X :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-19-20" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
 <div class="question-grille" id="grille-19-20"></div>
 
 <div class="bloc-avance">
@@ -2384,6 +2436,7 @@ function genererNouvelleFiche() {
   construireArbre19_9();
   construireArbre19_14();
   construireArbre19_16();
+  activerZoomSvg(document.body);
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
@@ -2521,10 +2574,14 @@ function construireGrilles() {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
     injecterAideGroupe(gridId, indices);
+    // une seule question dans la section : pas de lettre (rien a distinguer) et la carte prend
+    // toute la largeur plutot que de laisser une colonne vide a cote (David, 2026-09-22, porte
+    // depuis la fiche 19 de Seconde).
+    const seul = indices.length === 1;
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
-      div.className = 'question';
+      div.className = seul ? 'question question-pleine-largeur' : 'question';
       div.id = 'q-' + idx;
       const lettre = lettresEtendues[pos] || '';
       const suffixe = ex.avecEgal ? ' =' : '';
@@ -2533,8 +2590,9 @@ function construireGrilles() {
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
           ).join('')}</div></div>`
         : '';
+      const lettreHtml = seul ? '' : `<span class="q-lettre">${lettre})</span>`;
       div.innerHTML = `
-        <span class="q-lettre">${lettre})</span>
+        ${lettreHtml}
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
@@ -2755,67 +2813,139 @@ function texteEvenementSVG(x, y, label) {
   return `<text x="${x}" y="${y}">${lettre}</text><line x1="${x-1.5}" y1="${y-11}" x2="${x+10.5}" y2="${y-11}" stroke="#1a1a1a" stroke-width="1.1"/>`;
 }
 
-function probaLabelSVG(cx, edgeY, proba, fontSize, dir) {
+// etiquette de probabilite (decimale ou fraction n/d), decalee PERPENDICULAIREMENT a la branche
+// (xa,ya)->(xb,yb) plutot que verticalement -- un decalage seulement vertical ne degageait pas
+// assez la ligne sur les branches pentues (arbre a 3 branches initiales, 19.14), la ligne finissait
+// par traverser le denominateur (bug signale le 2026-09-22, David : "les ponderations ne sont pas
+// du tout correctement affichees"). dir<0 : etiquette du cote "au-dessus" (svg y plus petit).
+function probaLabelSVG(xa, ya, xb, yb, proba, fontSize, dir) {
   if (!proba) return '';
-  const gap = fontSize * 0.4;
+  const cx = (xa + xb) / 2, cy = (ya + yb) / 2;
+  const dx = xb - xa, dy = yb - ya;
+  const long = Math.hypot(dx, dy) || 1;
+  let perpX = -dy / long, perpY = dx / long;
+  if ((dir < 0 && perpY > 0) || (dir >= 0 && perpY < 0)) { perpX = -perpX; perpY = -perpY; }
   const m = /^(-?)([^/]+)\/(.+)$/.exec(proba);
   if (m) {
     let den = m[3];
     if (den.startsWith('(') && den.endsWith(')')) den = den.slice(1, -1);
     const num = m[1] + m[2];
-    const fs = fontSize * 0.82;
-    const lineH = fontSize * 0.92;
-    let numY, denY, barY;
-    if (dir < 0) {
-      denY = edgeY - gap;
-      numY = denY - lineH;
-      barY = denY - lineH * 0.44;
-    } else {
-      numY = edgeY + gap + fontSize * 0.72;
-      denY = numY + lineH;
-      barY = numY + lineH * 0.44;
-    }
-    const halfBar = Math.max(String(num).length, String(den).length) * fontSize * 0.30 + 2;
-    return `<text x="${cx}" y="${numY}" text-anchor="middle" font-style="italic" font-size="${fs}">${num}</text>` +
-           `<line x1="${cx-halfBar}" y1="${barY}" x2="${cx+halfBar}" y2="${barY}" stroke="#333" stroke-width="0.8"/>` +
-           `<text x="${cx}" y="${denY}" text-anchor="middle" font-style="italic" font-size="${fs}">${den}</text>`;
+    // rendu en vrai LaTeX (MathJax, via foreignObject) plutot qu'un num/barre/denominateur dessine
+    // a la main en <text> SVG -- illisible, surtout une fois zoome (bug signale le 2026-09-22,
+    // David : "les fractions pas du tout... ce n'est pas affiche en LaTeX"). Le foreignObject vit
+    // dans les memes coordonnees que le reste du SVG, donc suit le redimensionnement responsive
+    // (max-width + viewBox) sans calcul separe. Typeset differe : voir MathJax.typesetPromise()
+    // appele juste apres l'insertion dans le DOM (construireArbre19_X).
+    const recul = fontSize * 1.35;
+    const centreX = cx + perpX * recul, centreY = cy + perpY * recul;
+    const w = fontSize * 3.6, h = fontSize * 2.6;
+    const fsLatex = Math.round(fontSize * 1.25);
+    return `<foreignObject x="${(centreX - w / 2).toFixed(1)}" y="${(centreY - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}">`
+      + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fsLatex}px;color:#333;">\\(\\dfrac{${num}}{${den}}\\)</div>`
+      + `</foreignObject>`;
   }
-  const y = dir < 0 ? (edgeY - gap - fontSize*0.15) : (edgeY + gap + fontSize*0.72);
-  return `<text x="${cx}" y="${y}" text-anchor="middle" font-style="italic" font-size="${fontSize}">${proba}</text>`;
+  const recul = fontSize * 0.95;
+  const x = cx + perpX * recul, y = cy + perpY * recul + fontSize * 0.3;
+  return `<text x="${x}" y="${y}" text-anchor="middle" font-style="italic" font-size="${fontSize}">${proba}</text>`;
+}
+
+// fleche (ligne raccourcie + pointe triangulaire) -- repris tel quel de la fiche 19 de Seconde
+// (David, 2026-09-22 : "les arbres exactement comme en Seconde"). reculDepart (optionnel) : recule
+// le DEBUT du trait le long du segment, pour les branches qui repartent d'un noeud de niveau 1 sans
+// traverser sa lettre.
+function ligneAvecFleche(xa, ya, xb, yb, reculDepart) {
+  reculDepart = reculDepart || 0;
+  const dx = xb - xa, dy = yb - ya;
+  const long = Math.hypot(dx, dy);
+  const ux = dx / long, uy = dy / long;
+  const debutX = xa + ux * reculDepart, debutY = ya + uy * reculDepart;
+  const taille = 7, demiLargeur = 3;
+  const finLigneX = xb - ux * taille, finLigneY = yb - uy * taille;
+  const perpX = -uy, perpY = ux;
+  const p1x = finLigneX + perpX * demiLargeur, p1y = finLigneY + perpY * demiLargeur;
+  const p2x = finLigneX - perpX * demiLargeur, p2y = finLigneY - perpY * demiLargeur;
+  return `<line x1="${debutX.toFixed(1)}" y1="${debutY.toFixed(1)}" x2="${finLigneX.toFixed(1)}" y2="${finLigneY.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`
+    + `<polygon points="${xb.toFixed(1)},${yb.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
 }
 
 function genererSVGArbre(niveau1, niveau2, largeur, hauteur) {
-  largeur = largeur || 300; hauteur = hauteur || 240;
+  // agrandi et fleches ajoutees le 2026-09-22 (porte depuis la fiche 19 de Seconde) : l'arbre
+  // n'est dessine qu'une seule fois par groupe, autant en profiter pour la lisibilite plutot que
+  // garder la taille/le style penses a l'origine pour une carte de question etroite. class
+  // "qcm-svg svg-grande-figure svg-police-manuel" + activerZoomSvg (voir plus bas) : zoom au clic.
+  largeur = largeur || 380; hauteur = hauteur || 300;
   const n1 = niveau1.length;
   const x0 = 20, xm = largeur*0.44, xf = largeur-70;
+  // marge de 25% en haut/bas, branches reparties uniformement entre les deux -- se reduit a la
+  // repartition 0,25/0,75 de la fiche de Seconde quand n1=2.
+  const marge = 0.25;
   const yPositions1 = [];
-  for (let i=0;i<n1;i++) yPositions1.push(hauteur*(i+1)/(n1+1));
-  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}" font-family="Georgia, serif" font-size="13">`;
+  for (let i=0;i<n1;i++) yPositions1.push(n1 === 1 ? hauteur/2 : hauteur*(marge + i*(1-2*marge)/(n1-1)));
+  const ecartBase = n1 === 1 ? hauteur*0.18 : (hauteur*(1-2*marge)/(n1-1)) * 0.36;
+  // max-width en style inline (pas la classe svg-grande-figure, pensee pour un autre type de
+  // figure et qui, combinee au "width:100%" de .qcm-svg, etirait l'arbre a la largeur entiere de
+  // la carte -- 804px de large a l'ecran au lieu d'une taille raisonnable) : c'est exactement le
+  // mecanisme utilise par les arbres de la fiche 19 de Seconde (voir svgArbrePondere, meme largeur
+  // de 380px). Bug signale le 2026-09-22 (David : "les arbres sont enormes").
+  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}" font-family="Georgia, serif" font-size="13" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:380px;">`;
   svg += `<circle cx="${x0}" cy="${hauteur/2}" r="2" fill="#333"/>`;
   niveau1.forEach((br1, i) => {
     const y1 = yPositions1[i];
-    svg += `<line x1="${x0}" y1="${hauteur/2}" x2="${xm}" y2="${y1}" stroke="#333" stroke-width="1"/>`;
-    const mx = (x0+xm)/2, myEdge = (hauteur/2+y1)/2;
+    svg += ligneAvecFleche(x0, hauteur/2, xm, y1);
     const dir1 = y1 > hauteur/2 ? 1 : -1;
-    svg += probaLabelSVG(mx, myEdge, br1.proba, 13, dir1);
+    svg += probaLabelSVG(x0, hauteur/2, xm, y1, br1.proba, 13, dir1);
     svg += texteEvenementSVG(xm+8, y1+5, br1.label);
     const br2list = niveau2[i];
     const n2 = br2list.length;
-    const ecart = 46;
+    const ecart = ecartBase;
     const yPositions2 = [];
     for (let j=0;j<n2;j++) yPositions2.push(y1 - ecart*(n2-1)/2 + ecart*j);
     br2list.forEach((br2, j) => {
       const y2 = yPositions2[j];
-      svg += `<line x1="${xm+22}" y1="${y1}" x2="${xf}" y2="${y2}" stroke="#333" stroke-width="1"/>`;
-      const mx2 = (xm+22+xf)/2, my2Edge = (y1+y2)/2;
+      svg += ligneAvecFleche(xm+22, y1, xf, y2);
       const dir2 = y2 > y1 ? 1 : -1;
-      svg += probaLabelSVG(mx2, my2Edge, br2.proba, 11, dir2);
+      svg += probaLabelSVG(xm+22, y1, xf, y2, br2.proba, 11, dir2);
       svg += texteEvenementSVG(xf+8, y2+5, br2.label);
     });
   });
   svg += '</svg>';
   return `<div class="figure-centree">${svg}</div>`;
 }
+
+// ---------- Agrandissement des graphiques au clic -- repris tel quel de la fiche 19 de Seconde
+// (David, 2026-09-22), sans la partie "curseur" (fonctionnalite absente de cette fiche). ----------
+function activerZoomSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    svg.classList.add('svg-agrandissable');
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'button');
+    svg.setAttribute('aria-label', 'Agrandir ce graphique');
+    svg.addEventListener('click', () => ouvrirModalSvg(svg));
+    svg.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
+    });
+  });
+}
+function ouvrirModalSvg(svg) {
+  const interieur = document.getElementById('modal-svg-contenu-interieur');
+  interieur.innerHTML = '';
+  const clone = svg.cloneNode(true);
+  clone.classList.remove('svg-agrandissable', 'qcm-svg');
+  clone.removeAttribute('style');
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  interieur.appendChild(clone);
+  document.getElementById('modal-svg-overlay').classList.add('ouvert');
+}
+function fermerModalSvg(evt, force) {
+  if (force || evt.target.id === 'modal-svg-overlay') {
+    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
+  }
+}
+document.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Escape') fermerModalSvg(null, true);
+});
 
 function decPlainFromFrac(num, den) {
   const decimals = Math.round(Math.log10(den));
@@ -2825,7 +2955,11 @@ function decPlainFromFrac(num, den) {
 }
 
 const MOT_FRACTION = {3:'tiers', 4:'quart', 5:'cinquième', 6:'sixième'};
-const styleTd = 'border:1px solid #999;padding:5px 10px;text-align:center;';
+// cases agrandies le 2026-09-22 (David : "les tableaux restent relativement petits" a cote des
+// arbres, desormais bien dimensionnes) -- police et marges augmentees, plus le meme changement de
+// taille de police sur l'element <table> lui-meme (voir le style inline "font-size:16px" ajoute a
+// chaque <table id="table-19-X">).
+const styleTd = 'border:1px solid #999;padding:8px 16px;text-align:center;';
 
 function mettreAJourTextesAvances() {
   const g4 = paramsAvances.g4;
@@ -2895,6 +3029,7 @@ function construireArbre19_9() {
     [{label:'D', proba:fracToStr(g.q2)}, {label:'D&#772;', proba:fracToStr(g.q2bar)}],
   ];
   document.getElementById('arbre-19-9').innerHTML = `<p>On donne l'arbre pondéré :</p>${genererSVGArbre(niveau1, niveau2)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-19-9')]);
 }
 
 function construireArbre19_14() {
@@ -2905,7 +3040,8 @@ function construireArbre19_14() {
     [{label:'D', proba:decPlainFromFrac(g.q2,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q2,100)}],
     [{label:'D', proba:decPlainFromFrac(g.q3,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q3,100)}],
   ];
-  document.getElementById('arbre-19-14').innerHTML = `${genererSVGArbre(niveau1, niveau2, 300, 280)}`;
+  document.getElementById('arbre-19-14').innerHTML = `${genererSVGArbre(niveau1, niveau2, 380, 340)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-19-14')]);
 }
 
 function construireArbre19_16() {
@@ -2916,6 +3052,7 @@ function construireArbre19_16() {
     [{label:'B', proba:fracStr(g.Gp,g.Gq)}, {label:'B&#772;', proba:fracStr(g.Gq-g.Gp,g.Gq)}],
   ];
   document.getElementById('arbre-19-16').innerHTML = `${genererSVGArbre(niveau1, niveau2)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-19-16')]);
 }
 
 function construireArbre19_21() {
@@ -2925,6 +3062,7 @@ function construireArbre19_21() {
     [{label:'B', proba:'a'}, {label:'B&#772;', proba:'1-a'}],
   ];
   document.getElementById('arbre-19-21').innerHTML = `<p>Soit \\(a\\in\\,]0,1[\\). On donne l'arbre pondéré ci-dessous :</p>${genererSVGArbre(niveau1, niveau2)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-19-21')]);
 }
 
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
@@ -2989,6 +3127,7 @@ construireArbre19_9();
 construireArbre19_14();
 construireArbre19_16();
 construireArbre19_21();
+activerZoomSvg(document.body);
 attacherEcouteurs();
 attacherEcouteursTactiles();
 definirMode(true);
