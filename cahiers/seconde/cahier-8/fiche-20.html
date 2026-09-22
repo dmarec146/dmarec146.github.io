@@ -2083,7 +2083,8 @@ function genererSVGRepere(elements, options) {
   });
   elements.forEach(el => {
     if (el.type !== 'segment') return;
-    segments += `<line x1="${toSvgX(el.x1).toFixed(1)}" y1="${toSvgY(el.y1).toFixed(1)}" x2="${toSvgX(el.x2).toFixed(1)}" y2="${toSvgY(el.y2).toFixed(1)}" stroke="#4B46C7" stroke-width="1.6"/>`;
+    const couleur = el.pointille ? '#666' : '#4B46C7';
+    segments += `<line x1="${toSvgX(el.x1).toFixed(1)}" y1="${toSvgY(el.y1).toFixed(1)}" x2="${toSvgX(el.x2).toFixed(1)}" y2="${toSvgY(el.y2).toFixed(1)}" stroke="${couleur}" stroke-width="1.6" ${el.pointille ? 'stroke-dasharray="5,4"' : ''}/>`;
   });
   const decalages = { haut: [0, -10], bas: [0, 18], gauche: [-9, 4], droite: [9, 4] };
   elements.forEach(el => {
@@ -2416,42 +2417,48 @@ const generateurs = [
 
   // ---------- 20.8 (avance) : ensemble des points equidistants d'un point A et de l'axe des
   // abscisses (approfondissement du programme -- definition par foyer/directrice d'une parabole,
-  // jamais nommee ainsi ici) ----------
-  {id:"20.8 a)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
+  // jamais nommee ainsi ici). Figure refaite (David, 2026-09-22) : plus de parabole tracee -- un
+  // point M illustratif place EXACTEMENT sur (E), son projete orthogonal H sur (Ox), et les deux
+  // segments en pointilles AM/MH (visuellement de meme longueur, puisque M est reellement sur (E)).
+  // Questions a) et b) inversees par rapport a la version precedente : a) est maintenant la
+  // question d'appartenance (oui/non), b) le calcul d'ordonnee -- a) porte donc la mise en place
+  // partagee (point A, figure). ----------
+  {id:"20.8 a)", type:"ouiNon", texteLibre:true, gen: () => {
     const a = entierSigne(1,3), b = alea(1,4);
-    const dx = entierSigne(1,4);
-    const x0 = a + dx;
     ptA20_8 = { a, b };
-    const reponse = fracSimplifiee(dx*dx + b*b, 2*b);
-    // figure (David, 2026-09-22 : "faire une figure !") : point A, axe des abscisses (deja trace
-    // par le repere) et l'ensemble (E) lui-meme, esquisse par une ligne brisee reliant de nombreux
-    // points calcules -- juste un appui visuel pour comprendre la forme de (E) (une parabole,
-    // jamais nommee ainsi), aucune coordonnee n'y est lisible precisement.
-    const N = 24, xMin = a - 4, xMax = a + 4;
-    const yParabole = (x) => ((x - a) * (x - a) + b * b) / (2 * b);
-    const elements = [];
-    for (let i = 0; i < N; i++) {
-      const x1 = xMin + i * (xMax - xMin) / N, x2 = xMin + (i + 1) * (xMax - xMin) / N;
-      elements.push({ type: 'segment', x1, y1: yParabole(x1), x2, y2: yParabole(x2) });
-    }
-    elements.push({ type: 'point', x: a, y: b, nom: 'A', position: positionEloignee({ x: a, y: b }, { x: 0, y: 0 }) });
+    const dxFig = choix([-3,-2,2,3]);
+    const xFig = a + dxFig;
+    const yFig = (dxFig*dxFig + b*b) / (2*b);
+    const elements = [
+      { type:'segment', x1:a, y1:b, x2:xFig, y2:yFig, pointille:true },
+      { type:'segment', x1:xFig, y1:yFig, x2:xFig, y2:0, pointille:true },
+      { type:'point', x:a, y:b, nom:'A', position: positionEloignee({x:a,y:b}, {x:xFig,y:0}) },
+      { type:'point', x:xFig, y:yFig, nom:'M', position: positionEloignee({x:xFig,y:yFig}, {x:a,y:b}) },
+      { type:'point', x:xFig, y:0, nom:'H', position:'bas' }
+    ];
     const figure = genererSVGRepere(elements);
-    return {
-      contexteTexte: `On considère le point \\(A(${a}\\,;\\,${b})\\) et l'ensemble \\((E)\\) des points \\(M(x\\,;\\,y)\\) du plan équidistants de \\(A\\) et de l'axe des abscisses (c'est-à-dire tels que \\(AM\\) soit égal à la distance de \\(M\\) à l'axe des abscisses, distance qui vaut \\(|y|\\)) : \\((E)\\) est tracé ci-dessus à titre indicatif, seul le calcul permet d'en retrouver un point précisément.`,
-      contexteFigure: figure,
-      enonce: `Déterminer l'ordonnée du point de \\((E)\\) d'abscisse \\(x=${x0}\\).`,
-      reponse
-    };
-  }},
-  {id:"20.8 b)", type:"ouiNon", texteLibre:true, gen: () => {
-    const { a, b } = ptA20_8;
     const dx = entierSigne(1,4);
     const x1 = a + dx;
-    const yReel = (dx*dx + b*b) / (2*b);
     const surE = alea(0,1) === 1;
-    const y1 = surE ? yReel : yReel + choix([1,-1,2,-2]);
-    const M1Latex = Number.isInteger(y1) ? `${y1}` : fracLatexAffichage(y1*(2*b), 2*b);
-    return { enonce: `Le point \\(M(${x1}\\,;\\,${M1Latex})\\) appartient-il à \\((E)\\) ?`, reponseOuiNon: surE };
+    // arithmetique entiere exacte (numerateur/2b) de bout en bout -- un calcul en flottant
+    // (yReel puis y1*2*b pour re-fabriquer le numerateur) perdait parfois un chouia de precision
+    // et produisait une fraction absurde du genre 2345624805922133/562949953421312 apres pgcd sur
+    // un numerateur non entier (bug trouve le 2026-09-22 en testant ce tirage precis).
+    const numerateurY1 = dx*dx + b*b + (surE ? 0 : choix([1,-1,2,-2]) * 2 * b);
+    const M1Latex = fracLatexAffichage(numerateurY1, 2*b);
+    return {
+      contexteTexte: `On considère le point \\(A(${a}\\,;\\,${b})\\) et l'ensemble \\((E)\\) des points \\(M\\) du plan équidistants de \\(A\\) et de l'axe des abscisses (en notant \\(H\\) le projeté orthogonal de \\(M\\) sur \\((Ox)\\), tel que \\(AM=MH\\)).`,
+      contexteFigure: figure,
+      enonce: `Le point \\(M(${x1}\\,;\\,${M1Latex})\\) appartient-il à \\((E)\\) ?`,
+      reponseOuiNon: surE
+    };
+  }},
+  {id:"20.8 b)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
+    const { a, b } = ptA20_8;
+    const dx = entierSigne(1,4);
+    const x0 = a + dx;
+    const reponse = fracSimplifiee(dx*dx + b*b, 2*b);
+    return { enonce: `Soit \\(M\\) un point de l'ensemble \\((E)\\). Si son abscisse est \\(x=${x0}\\), déterminer son ordonnée.`, reponse };
   }},
 
   // ---------- 20.9 (avance) : partie du plan decrite par un systeme de deux double-inegalites sur
