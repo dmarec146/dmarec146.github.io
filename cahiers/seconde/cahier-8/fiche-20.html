@@ -2137,6 +2137,24 @@ function paireVecteursIsoceles(max) {
   return [[1, 2], [2, -1]];
 }
 function d2(P, Q) { return (P.x - Q.x) * (P.x - Q.x) + (P.y - Q.y) * (P.y - Q.y); }
+// vrai si le quadrilatere P0-P1-P2-P3 (dans cet ordre) est convexe : a chaque sommet, le produit
+// vectoriel des deux cotes consecutifs doit avoir TOUJOURS le meme signe (on tourne toujours du
+// meme cote) -- un signe qui change quelque part, ou un produit nul (sommets alignes), signale un
+// quadrilatere non convexe, y compris "etoile"/croise (David, 2026-09-22 : "il faut s'assurer de
+// la convexite", un quadrilatere etoile n'est pas au programme).
+function estConvexe(P0, P1, P2, P3) {
+  const pts = [P0, P1, P2, P3];
+  let sens = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i], b = pts[(i + 1) % 4], c = pts[(i + 2) % 4];
+    const produit = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+    if (produit === 0) return false;
+    const s = produit > 0 ? 1 : -1;
+    if (sens === 0) sens = s;
+    else if (s !== sens) return false;
+  }
+  return true;
+}
 // fraction n/d simplifiee, affichee en LaTeX (\dfrac si non entiere) -- pour du texte d'enonce, pas
 // une reponse (voir fracSimplifiee, deja fourni par le moteur, pour la reponse elle-meme).
 function fracLatexAffichage(num, den) {
@@ -2392,11 +2410,21 @@ const generateurs = [
     const B2 = { x: A2.x+vAB[0], y: A2.y+vAB[1] };
     const C2 = { x: B2.x+vBC[0], y: B2.y+vBC[1] };
     let D2;
-    if (mode === 'parallelo_exact' || mode === 'parallelo_proche') {
+    if (mode === 'parallelo_exact') {
+      // parallelogramme exact : toujours convexe (AB et DC sont alors le meme vecteur), aucune
+      // verification necessaire.
       D2 = { x: A2.x + C2.x - B2.x, y: A2.y + C2.y - B2.y };
-      if (mode === 'parallelo_proche') { if (alea(0,1) === 0) D2.x += choix([1,-1]); else D2.y += choix([1,-1]); }
+    } else if (mode === 'parallelo_proche') {
+      const base = { x: A2.x + C2.x - B2.x, y: A2.y + C2.y - B2.y };
+      const essais = melanger([[1,0],[-1,0],[0,1],[0,-1]]);
+      D2 = essais.map(([dx,dy]) => ({ x: base.x+dx, y: base.y+dy })).find(c => estConvexe(A2,B2,C2,c));
+      if (!D2) D2 = base; // repli tres improbable : parallelogramme exact (convexe), sans le "presque"
     } else {
-      do { D2 = { x: entierSigne(1,max*2), y: entierSigne(1,max*2) }; } while (Math.abs(D2.x-A2.x)<2 && Math.abs(D2.y-A2.y)<2);
+      let tentatives = 0;
+      do {
+        D2 = { x: entierSigne(1,max*2), y: entierSigne(1,max*2) };
+        tentatives++;
+      } while (!estConvexe(A2,B2,C2,D2) && tentatives < 60);
     }
     quad20_7 = { A2, B2, C2, D2 };
     const reel = (P2) => ({ x: P2.x/2, y: P2.y/2 });
@@ -2472,14 +2500,11 @@ const generateurs = [
   }},
 
   // ---------- 20.9 (avance) : A et B dependent d'un parametre m, milieu I connu -- determiner m
-  // (David, 2026-09-22, remplace l'ancien exercice sur les parties du plan) ----------
+  // (David, 2026-09-22, remplace l'ancien exercice sur les parties du plan). Un seul exemple
+  // (David, 2026-09-22 : "un exemple suffit") ----------
   {id:"20.9 a)", type:"num", texteLibre:true, gen: () => {
     const r = genererMilieuParametre20_9();
     return { contexteTexte: `Les coordonnées des points \\(A\\) et \\(B\\) dépendent d'un paramètre réel \\(m\\).`, enonce: r.enonce, reponse: r.reponse };
-  }},
-  {id:"20.9 b)", type:"num", texteLibre:true, gen: () => {
-    const r = genererMilieuParametre20_9();
-    return { enonce: r.enonce, reponse: r.reponse };
   }}
 ];
 
@@ -2572,7 +2597,7 @@ const groupes = {
   "grille-20-6": [18,19],
   "grille-20-7": [20,21],
   "grille-20-8": [22,23],
-  "grille-20-9": [24,25]
+  "grille-20-9": [24]
 };
 // groupes dont le contexte (figure/notations) est presente une seule fois, avant les questions
 // (voir remplirIntrosGroupes) -- chaque premier item du groupe pose contexteTexte/contexteFigure sur
