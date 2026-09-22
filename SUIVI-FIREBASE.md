@@ -1104,6 +1104,38 @@ de changer ce réglage sans qu'il en reparle.
   eux serait indiscernable). Corrigé le 19/09/2026 : si le suffixe commence
   par `Gr`, le niveau est préfixé devant (`1ere - Gr 1`) ; sinon
   comportement inchangé (`207`, `demo`, `test`...).
+- **Pièges rencontrés le 22/09/2026 en retravaillant les arbres pondérés SVG
+  des fiches 19 (Seconde `cahiers/seconde/cahier-7/`, Première
+  `cahiers/premiere/cahier-6/`)**, hors suivi Firebase à proprement parler
+  mais utiles à toute fiche avec figure SVG maison :
+  - Une figure partagée par tout un groupe de questions (affichée une seule
+    fois via un champ `contexteFigure`, plutôt que redessinée dans chaque
+    carte — voir `remplirIntrosGroupes()` côté Seconde) n'est PAS couverte
+    par l'appel à `activerZoomSvg(grille)` fait pour la grille de questions
+    elle-même : le zoom au clic restait silencieusement inactif sur ces
+    figures-là. Il faut un appel dédié `activerZoomSvg(introDiv)` sur le
+    conteneur de la figure partagée.
+  - Agrandir une figure SVG en la marquant `svg-grande-figure` (classe
+    pensée pour les graphiques de courbes, `max-width:100% !important`)
+    l'étire à TOUTE la largeur de sa carte si l'élément a par ailleurs
+    `.qcm-svg { width:100% }` (cas général) — un arbre pensé pour ~380px de
+    large se retrouvait à 800px. Les arbres pondérés utilisent un mécanisme
+    différent et plus simple : un style inline `max-width:380px` directement
+    sur le `<svg>` (voir `svgArbrePondere`/`genererSVGArbre`), qui n'a pas
+    ce problème car un style inline a la priorité sur `width:100%`.
+  - Une fraction affichée sur une branche d'arbre ne doit pas être dessinée
+    "à la main" en SVG (`<text>` empilés + `<line>` pour la barre) : illisible,
+    surtout une fois zoomée. Utiliser un `<foreignObject>` contenant un `<div>`
+    avec du LaTeX (`\(\dfrac{a}{b}\)`), puis appeler
+    `MathJax.typesetPromise([...])` juste après avoir inséré le HTML dans le
+    DOM — le foreignObject vit dans les mêmes coordonnées que le reste du
+    SVG, donc suit son redimensionnement responsive sans calcul séparé.
+  - Une étiquette de probabilité décalée seulement VERTICALEMENT par rapport
+    au milieu de sa branche (au lieu d'un décalage perpendiculaire à la
+    branche) ne dégage pas assez une branche pentue : la ligne finit par
+    traverser le texte (repéré sur un arbre à 3 branches initiales, plus
+    pentues qu'à 2). Calculer le décalage perpendiculairement à la direction
+    réelle de la ligne réglait le problème quelle que soit la pente.
 
 ## Procédure de reprise sur une autre machine
 
