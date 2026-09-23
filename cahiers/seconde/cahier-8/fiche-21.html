@@ -2247,12 +2247,15 @@ function nonColineaires(v1, v2) { return v1[0] * v2[1] - v1[1] * v2[0] !== 0; }
 function vecteursEgaux(v1, v2) { return v1[0] === v2[0] && v1[1] === v2[1]; }
 function vecteursOpposes(v1, v2) { return v1[0] === -v2[0] && v1[1] === -v2[1]; }
 
-// configuration pour 21.6 c) : triangle ABC, I milieu de [AB], J milieu de [AC] -- theoreme de la
-// droite des milieux (IJ parallele a BC et BC=2*IJ) : moins immediat que "I milieu de [AD], donc
-// AD=2AI", puisqu'il relie deux segments DIFFERENTS via un theoreme plutot qu'une simple relecture
-// de la construction. Preuve : I=(A+B)/2, J=(A+C)/2, donc IJ=J-I=(C-B)/2=(1/2)*BC, exact quelles que
-// soient les coordonnees tirees.
-function construireDroiteDesMilieux21_6() {
+// configuration pour 21.6 c) : triangle ABC, I milieu de [AB], J tel que CJ=k*CB (k fraction non
+// triviale tiree au hasard) -- decomposition de IJ dans la base (AB;AC), demande d'ecrire le couple
+// (m;n) comme en 21.7 mais a partir d'une construction geometrique (pas de vecteur cible donne
+// directement) : il faut d'abord traduire "I milieu de [AB]" et "CJ=k*CB" en relations vectorielles
+// (relation de Chasles) avant de pouvoir decomposer, nettement moins immediat que a)/b) (David,
+// 2026-09-23, s'inspirant d'un exercice de Premiere). Preuve avec A origine, AB=u, AC=v : I=u/2,
+// C=v, B=u, donc CB=u-v, CJ=k(u-v), J=v+k(u-v)=k*u+(1-k)*v, d'ou IJ=J-I=(k-1/2)*u+(1-k)*v -- calcule
+// en fractions exactes (jamais de division flottante), voir la lecon du bug de 20.8.
+function construireDecompositionTriangle21_6() {
   let A, B, C;
   do {
     A = { x: entierSigne(1,3), y: entierSigne(1,3) };
@@ -2260,20 +2263,27 @@ function construireDroiteDesMilieux21_6() {
     C = { x: entierSigne(1,3), y: entierSigne(1,3) };
   } while (!nonColineaires([B.x-A.x,B.y-A.y], [C.x-A.x,C.y-A.y]));
   const I = { x:(A.x+B.x)/2, y:(A.y+B.y)/2 };
-  const J = { x:(A.x+C.x)/2, y:(A.y+C.y)/2 };
-  return { A, B, C, I, J };
+  // k = kn/kd, evite 1/2 et 1 (donneraient un coefficient nul dans la decomposition finale).
+  const [kn, kd] = choix([[1,3],[2,3],[-1,3],[1,4],[3,4],[-1,4],[-1,2]]);
+  const J = { x: C.x + (kn/kd)*(B.x-C.x), y: C.y + (kn/kd)*(B.y-C.y) };
+  const m = fracSimplifiee(2*kn - kd, 2*kd);
+  const n = fracSimplifiee(kd - kn, kd);
+  return { A, B, C, I, J, kn, kd, m, n };
 }
-function figureDroiteDesMilieux21_6(cfg) {
+function figureDecompositionTriangle21_6(cfg) {
   const { A, B, C, I, J } = cfg;
+  const centre = { x:(A.x+B.x+C.x)/3, y:(A.y+B.y+C.y)/3 };
   const elements = [
     { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:A.x,y1:A.y, x2:C.x,y2:C.y },
-    { type:'vecteur', x1:B.x,y1:B.y, x2:C.x,y2:C.y, nom:'', couleur:'#4B46C7' },
+    { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y },
+    { type:'vecteur', x1:A.x,y1:A.y, x2:B.x,y2:B.y, nom:'', couleur:'#4B46C7' },
+    { type:'vecteur', x1:A.x,y1:A.y, x2:C.x,y2:C.y, nom:'', couleur:'#2E7D54' },
     { type:'vecteur', x1:I.x,y1:I.y, x2:J.x,y2:J.y, nom:'', couleur:'#B23A2E' },
-    { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, {x:(B.x+C.x)/2,y:(B.y+C.y)/2}) },
-    { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B,C) },
-    { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C,B) },
-    { type:'point', x:I.x, y:I.y, nom:'I', position: positionEloignee(I,A) },
-    { type:'point', x:J.x, y:J.y, nom:'J', position: positionEloignee(J,A) }
+    { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, centre) },
+    { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B, centre) },
+    { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C, centre) },
+    { type:'point', x:I.x, y:I.y, nom:'I', position: positionEloignee(I, A) },
+    { type:'point', x:J.x, y:J.y, nom:'J', position: positionEloignee(J, C) }
   ];
   return genererSVGVecteurs(elements);
 }
@@ -2464,10 +2474,10 @@ const generateurs = [
   // quadrillage (comptage de pas, jamais une coordonnee) ; b) meme principe a l'envers, point F sur
   // la droite (AB) dont on exprime le vecteur AF en fonction de AB (le mot "colineaire" n'est pas
   // utilise dans cette fiche : la notion sera formalisee dans une fiche dediee, apres les coordonnees
-  // de vecteurs) ; c) et d) exploitent chacune une configuration geometrique differente et plus
-  // riche que a)/b) (deux segments distincts a relier, pas une simple relecture de construction) :
-  // c) theoreme de la droite des milieux dans un triangle (IJ=(1/2)*BC), d) parallelogramme avec les
-  // milieux de deux cotes opposes (IJ=AD). ----------
+  // de vecteurs) ; c) et d) sont nettement plus delicates que a)/b) : c) decomposition dans la base
+  // (AB;AC) d'un vecteur IJ defini geometriquement (pas donne directement comme en 21.7), il faut
+  // d'abord traduire la construction en relations vectorielles ; d) parallelogramme avec les milieux
+  // de deux cotes opposes (IJ=AD). ----------
   {id:"21.6 a)", type:"num", texteLibre:true, gen: () => {
     const A = { x: entierSigne(1,3), y: entierSigne(1,3) };
     const vAB = tirerVecteurNonNul(3);
@@ -2499,10 +2509,11 @@ const generateurs = [
     const figure = genererSVGVecteurs(elements);
     return { enonce: figure + `Le point \\(F\\) appartient à la droite \\((AB)\\). Exprimer \\(\\overrightarrow{AF}\\) en fonction de \\(\\overrightarrow{AB}\\).`, coef:k, from:'A', to:'B' };
   }},
-  {id:"21.6 c)", type:"vecteur", texteLibre:true, gen: () => {
-    const cfg = construireDroiteDesMilieux21_6();
-    const figure = figureDroiteDesMilieux21_6(cfg);
-    return { enonce: figure + `Soit \\(ABC\\) un triangle, \\(I\\) le milieu de \\([AB]\\) et \\(J\\) le milieu de \\([AC]\\). Exprimer \\(\\overrightarrow{IJ}\\) en fonction de \\(\\overrightarrow{BC}\\).`, coef:0.5, from:'B', to:'C' };
+  {id:"21.6 c)", type:"paire", texteLibre:true, gen: () => {
+    const cfg = construireDecompositionTriangle21_6();
+    const figure = figureDecompositionTriangle21_6(cfg);
+    const kTexte = fracLatexAffichage(cfg.kn, cfg.kd);
+    return { enonce: figure + `Soit \\(ABC\\) un triangle. On définit les points \\(I\\) et \\(J\\) par : \\(I\\) est le milieu du segment \\([AB]\\) ; \\(J\\) est le point tel que \\(\\overrightarrow{CJ}=${kTexte}\\overrightarrow{CB}\\). On cherche à exprimer \\(\\overrightarrow{IJ}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\), sous la forme \\(\\overrightarrow{IJ}=m\\overrightarrow{AB}+n\\overrightarrow{AC}\\). Donner le couple \\((m\\,;\\,n)\\).`, pa: cfg.m, pb: cfg.n, vars:[] };
   }},
   {id:"21.6 d)", type:"vecteur", texteLibre:true, gen: () => {
     const cfg = construireParallelogrammeMilieux21_6();
