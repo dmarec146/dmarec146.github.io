@@ -43,6 +43,12 @@ si le compte existe déjà, la commande se contente de lui (re)donner ce droit.
 
    Variante : un CSV avec `classe,pseudo` (pseudo déjà choisi à la main)
    fonctionne aussi, le pseudo est alors utilisé tel quel.
+
+   **Élève hors classe** : laisser la valeur de `classe` vide (la colonne
+   doit rester présente, par exemple la ligne `;Ewenn;Marec`). Aucune classe
+   n'est alors enregistrée : l'élève n'est rattaché à aucun niveau, n'a pas
+   de devoirs, et le tableau de bord le range sous « Hors classe » avec le
+   suivi des cahiers ET des automatismes (tous les niveaux).
 2. Lancer :
    ```bash
    node creer-comptes.js mes-eleves.csv

@@ -107,7 +107,10 @@ function lireCsvEleves(cheminCsv) {
   const iPrenom = colonnes.indexOf('prenom');
   const iNom = colonnes.indexOf('nom');
 
-  if (iClasse === -1) throw new Error("Le CSV doit avoir une colonne 'classe'.");
+  // Colonne 'classe' obligatoire, mais sa valeur peut etre vide : eleve hors classe (rattache a
+  // aucun niveau, donc suivi sur tous les niveaux dans le tableau de bord -- voir estHorsClasse
+  // dans assets/js/tableau-de-bord.js). Aucun champ 'classe' n'est alors ecrit dans Firestore.
+  if (iClasse === -1) throw new Error("Le CSV doit avoir une colonne 'classe' (valeur vide autorisee pour un eleve hors classe).");
 
   if (iPseudo !== -1) {
     // Pseudo deja choisi par l'enseignant : utilise tel quel.
@@ -115,7 +118,7 @@ function lireCsvEleves(cheminCsv) {
       const champs = ligne.split(sep).map(c => c.trim());
       const classe = champs[iClasse];
       const pseudo = champs[iPseudo];
-      if (!classe || !pseudo) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
+      if (!pseudo) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
       return { classe, pseudo };
     });
   }
@@ -128,7 +131,7 @@ function lireCsvEleves(cheminCsv) {
     const classe = champs[iClasse];
     const prenom = champs[iPrenom];
     const nom = champs[iNom];
-    if (!classe || !prenom || !nom) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
+    if (!prenom || !nom) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
     return { classe, prenom, nom };
   });
   return genererPseudosUniques(eleves);
@@ -157,14 +160,14 @@ async function creerComptesEleves(cheminCsv) {
     // de vraie identite dans ce cas-la, uniquement le pseudo choisi a la main).
     await db.collection('eleves').doc(utilisateur.uid).set({
       pseudo,
-      classe,
+      ...(classe && { classe }),
       ...(nom && { nom }),
       ...(prenom && { prenom }),
       creeLe: FieldValue.serverTimestamp(),
     });
 
     resultats.push({ classe, pseudo, motDePasse, prenom, nom });
-    console.log(`Cree : ${pseudo} (${classe})`);
+    console.log(`Cree : ${pseudo} (${classe || 'hors classe'})`);
   }
 
   if (resultats.length === 0) {

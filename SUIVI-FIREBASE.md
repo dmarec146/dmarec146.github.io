@@ -444,6 +444,13 @@ de changer ce réglage sans qu'il en reparle.
   deux sujets blancs, un par mode fiche/chrono). Identifiants dans
   `outils/creer-comptes/comptes-crees-2026-09-16T09-33-55-634Z.csv`
   (jamais commité). À supprimer si plus utiles.
+- Élève hors classe (23/09/2026) : `e.marec` (Ewenn Marec), compte réel
+  (pas un compte de démonstration), sans champ `classe` dans Firestore :
+  rattaché à aucun niveau, travaille sur tous. Tableau de bord : groupe
+  « Hors classe », onglets cahiers ET automatismes (`estHorsClasse` dans
+  `tableau-de-bord.js`). Aucun devoir ne peut lui être attribué (les devoirs
+  visent une classe). Créé avec `creer-comptes.js`, qui accepte désormais une
+  valeur de classe vide.
 - **Groupes de spécialité de Première (19/09/2026)** : David envoie, PDF par
   PDF (export Index Education "Liste des élèves par groupe"), les groupes
   de sa classe de spécialité maths — les élèves viennent de classes

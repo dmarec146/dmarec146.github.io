@@ -77,6 +77,12 @@ function horodatageEnMillis(horodatage) {
 function estPremiere(classe) {
   return !!classe && classe.toLowerCase().startsWith('1ere');
 }
+// Eleve cree sans classe (voir outils/creer-comptes) : rattache a aucun niveau, il travaille sur
+// tous -- son suivi affiche donc aussi les automatismes, comme pour la Premiere.
+function estHorsClasse(eleve) {
+  return !eleve.classe;
+}
+const LIBELLE_HORS_CLASSE = 'Hors classe';
 
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) {
@@ -252,7 +258,7 @@ async function chargerTout() {
 
     elevesParClasse = new Map();
     for (const eleve of eleves) {
-      const classe = eleve.classe || '—';
+      const classe = eleve.classe || LIBELLE_HORS_CLASSE;
       if (!elevesParClasse.has(classe)) elevesParClasse.set(classe, []);
       elevesParClasse.get(classe).push(eleve);
     }
@@ -376,7 +382,7 @@ function afficherDetail(index) {
     detailTableau.hidden = false;
   }
 
-  if (estPremiere(eleve.classe)) {
+  if (estPremiere(eleve.classe) || estHorsClasse(eleve)) {
     automatismesContenu.innerHTML = '';
     for (const ligneNiveau of donnees.automatismesParNiveau) {
       const li = document.createElement('li');
