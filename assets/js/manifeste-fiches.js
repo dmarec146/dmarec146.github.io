@@ -1,4 +1,4 @@
-// Liste statique des 44 fiches de cahiers de calcul (Première + Seconde), regroupées par
+// Liste statique des 45 fiches de cahiers de calcul (Première + Seconde), regroupées par
 // cahier — sert au sélecteur de fiche de l'outil d'attribution des devoirs
 // (tableau-de-bord/devoirs.html). Extraite une fois des 15 sommaires de cahier
 // (cahiers/<niveau>/cahier-N/index.html) ; à tenir à jour à la main si une fiche est
@@ -77,7 +77,8 @@ export const MANIFESTE_CAHIERS = [
   { niveau: 'seconde', cahier: 'cahier-5', titreCahier: 'Cahier 5 — Fonctions', fiches: [
     { href: 'fiche-14.html', numero: 14, nom: 'Images et antécédents' },
     { href: 'fiche-15.html', numero: 15, nom: 'Résolution graphique' },
-    { href: 'fiche-16.html', numero: 16, nom: 'Fonctions de référence' },
+    { href: 'fiche-16.html', numero: 16, nom: 'Fonctions affines' },
+    { href: 'fiche-17.html', numero: 17, nom: 'Fonctions de référence' },
   ]},
 ];
 
@@ -92,7 +93,7 @@ export function ficheIdDepuis(niveau, cahier, href) {
   return `/cahiers/${niveau}/${cahier}/${href}`;
 }
 
-// Liste à plat des 44 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
+// Liste à plat des 45 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
 export const FICHES_PLATES = MANIFESTE_CAHIERS.flatMap((c) =>
   c.fiches.map((f) => ({
     ficheId: ficheIdDepuis(c.niveau, c.cahier, f.href),
