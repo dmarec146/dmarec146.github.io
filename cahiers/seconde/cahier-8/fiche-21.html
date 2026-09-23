@@ -2287,7 +2287,31 @@ function tirerVecteurNonNul(max) {
   let v; do { v = [entierSigne(1, max), entierSigne(1, max)]; } while (v[0] === 0 && v[1] === 0);
   return v;
 }
-function nonColineaires(v1, v2) { return v1[0] * v2[1] - v1[1] * v2[0] !== 0; }
+// vrai si l'angle entre les deux vecteurs n'est ni trop resserre ni trop proche de 180 degres
+// (sinus de l'angle > 0.5, donc angle entre 30 et 150 degres) -- regle generale de cette fiche pour
+// toute figure construite a partir de deux vecteurs libres (parallelogramme, base d'une
+// decomposition...) : nonColineaires seul ne rejette que l'alignement EXACT, pas une figure
+// "aplatie" (quasi alignee) qui reste techniquement valide mais illisible (David, 2026-09-24 :
+// "idem pour toutes les questions du meme type" -- voir aussi triangleBienForme, meme principe pour
+// un triangle de points).
+function vecteursAssezEcartes(v1, v2) {
+  const n1 = Math.hypot(v1[0], v1[1]), n2 = Math.hypot(v2[0], v2[1]);
+  if (n1 < 1e-9 || n2 < 1e-9) return false;
+  const aire2 = Math.abs(v1[0] * v2[1] - v1[1] * v2[0]);
+  return (aire2 / (n1 * n2)) > 0.5;
+}
+// tire deux vecteurs non nuls assez ecartes (voir vecteursAssezEcartes) : a utiliser a la place
+// d'un simple do/while sur nonColineaires des qu'une figure dessine deux vecteurs issus d'un meme
+// point (parallelogramme, base de decomposition...).
+function tirerDeuxVecteursEcartes(max) {
+  let v1, v2, tentatives = 0;
+  do {
+    v1 = tirerVecteurNonNul(max);
+    v2 = tirerVecteurNonNul(max);
+    tentatives++;
+  } while (!vecteursAssezEcartes(v1, v2) && tentatives < 100);
+  return [v1, v2];
+}
 function vecteursEgaux(v1, v2) { return v1[0] === v2[0] && v1[1] === v2[1]; }
 function vecteursOpposes(v1, v2) { return v1[0] === -v2[0] && v1[1] === -v2[1]; }
 
@@ -2361,8 +2385,7 @@ function figureDecompositionTriangle21_6(cfg) {
 function construireParallelogrammeMilieux21_6() {
   const max = 3;
   const A = { x: entierSigne(1,3), y: entierSigne(1,3) };
-  let vAB, vAD;
-  do { vAB = tirerVecteurNonNul(max); vAD = tirerVecteurNonNul(max); } while (!nonColineaires(vAB, vAD));
+  const [vAB, vAD] = tirerDeuxVecteursEcartes(max);
   const B = { x:A.x+vAB[0], y:A.y+vAB[1] };
   const D = { x:A.x+vAD[0], y:A.y+vAD[1] };
   const C = { x:A.x+vAB[0]+vAD[0], y:A.y+vAB[1]+vAD[1] };
@@ -2528,8 +2551,7 @@ const generateurs = [
   {id:"21.5 a)", type:"vecteur", texteLibre:true, gen: () => {
     const max = 3;
     const A = { x: entierSigne(1,3), y: entierSigne(1,3) };
-    let vAB, vAD;
-    do { vAB = tirerVecteurNonNul(max); vAD = tirerVecteurNonNul(max); } while (!nonColineaires(vAB, vAD));
+    const [vAB, vAD] = tirerDeuxVecteursEcartes(max);
     const B = { x:A.x+vAB[0], y:A.y+vAB[1] };
     const D = { x:A.x+vAD[0], y:A.y+vAD[1] };
     const C = { x:A.x+vAB[0]+vAD[0], y:A.y+vAB[1]+vAD[1] };
@@ -2617,8 +2639,7 @@ const generateurs = [
   {id:"21.7 a)", type:"paire", texteLibre:true, gen: () => {
     const max = 3;
     const A = { x: entierSigne(1,2), y: entierSigne(1,2) };
-    let vAB, vAC;
-    do { vAB = tirerVecteurNonNul(max); vAC = tirerVecteurNonNul(max); } while (!nonColineaires(vAB, vAC));
+    const [vAB, vAC] = tirerDeuxVecteursEcartes(max);
     base21_7 = { A, vAB, vAC };
     const B = { x:A.x+vAB[0], y:A.y+vAB[1] };
     const C = { x:A.x+vAC[0], y:A.y+vAC[1] };
