@@ -2006,7 +2006,8 @@ function repartirEffectifs(nbParts, total, minPart) {
 }
 
 // ---------- helpers propres a la fiche 21 (calcul vectoriel, SANS coordonnees -- toute lecture
-// se fait sur un quadrillage neutre, sans axes ni graduations chiffrees) ----------
+// se fait sur un quadrillage sans axes ni graduations chiffrees, seule la position relative des
+// points compte) ----------
 
 // place l'etiquette d'un point a l'oppose du "centre" de la figure (repris de la fiche 20) : evite
 // que le texte ne passe par-dessus le trace lui-meme.
@@ -2073,18 +2074,21 @@ function chaslesEnonceLatex(terms) {
 }
 
 // tire une somme de vecteurs qui telescope soit vers 0 (boucle fermee P1->P2->...->Pn->P1), soit
-// vers un vecteur unique (chaine ouverte P1->P2->...->Pn, qui se reduit a P1->Pn) -- certains
-// termes sont reecrits a l'envers avec un coefficient -1 (ecriture equivalente) pour varier
-// l'ecriture, puis l'ordre des termes est melange.
-function tirerSommeChasles(nPoints, boucleFermee) {
+// vers un vecteur unique (chaine ouverte P1->P2->...->Pn, qui se reduit a P1->Pn). Si difficile est
+// vrai, certains termes sont reecrits a l'envers avec un coefficient -1 (ecriture equivalente) pour
+// varier l'ecriture, puis l'ordre des termes est melange ; sinon les termes restent dans l'ordre de
+// la boucle/chaine, ecriture la plus lisible possible (version "tres accessible").
+function tirerSommeChasles(nPoints, boucleFermee, difficile) {
   const lettres = tirerLettresDistinctes(nPoints);
   let terms = [];
   const n = boucleFermee ? nPoints : nPoints - 1;
   for (let i = 0; i < n; i++) {
     terms.push({ coef: 1, from: lettres[i], to: lettres[(i + 1) % nPoints] });
   }
-  terms = terms.map(t => (alea(0, 1) === 1 ? { coef: -t.coef, from: t.to, to: t.from } : t));
-  terms = melanger(terms);
+  if (difficile) {
+    terms = terms.map(t => (alea(0, 1) === 1 ? { coef: -t.coef, from: t.to, to: t.from } : t));
+    terms = melanger(terms);
+  }
   return { terms, lettres };
 }
 
@@ -2123,8 +2127,8 @@ function checkVecteurNomme(userInput, coefAttendu, from, to) {
   return false;
 }
 
-// ---------- repere SANS coordonnees pour le calcul vectoriel : quadrillage neutre (pas d'axes, pas
-// de graduations chiffrees, aucune lecture numerique attendue), points nommes, vecteurs en fleches
+// ---------- repere SANS coordonnees pour le calcul vectoriel : quadrillage sans axes ni graduations
+// chiffrees (aucune lecture numerique attendue), points nommes, vecteurs en fleches
 // colorees. Bornes calculees automatiquement a partir des elements a afficher, meme principe
 // d'echelle unique en x/y que genererSVGRepere (fiche 20) mais sans l'origine/les graduations,
 // puisqu'aucune coordonnee n'est en jeu ici -- seule la position relative des points compte. ----------
@@ -2194,6 +2198,42 @@ function tirerVecteurNonNul(max) {
   return v;
 }
 function nonColineaires(v1, v2) { return v1[0] * v2[1] - v1[1] * v2[0] !== 0; }
+function vecteursEgaux(v1, v2) { return v1[0] === v2[0] && v1[1] === v2[1]; }
+function vecteursOpposes(v1, v2) { return v1[0] === -v2[0] && v1[1] === -v2[1]; }
+
+// configuration usuelle pour 21.6 c)/d) : triangle ABC, I milieu de [BC], D symetrique de A par
+// rapport a I (donc ABDC est un parallelogramme) -- construction purement definitionnelle, si bien
+// que AD=2AI et CD=AB exactement, quelles que soient les coordonnees tirees.
+function construireTriangleSymetrique21_6() {
+  let A, B, C;
+  do {
+    A = { x: entierSigne(1,3), y: entierSigne(1,3) };
+    B = { x: entierSigne(1,3), y: entierSigne(1,3) };
+    C = { x: entierSigne(1,3), y: entierSigne(1,3) };
+  } while (!nonColineaires([B.x-A.x,B.y-A.y], [C.x-A.x,C.y-A.y]));
+  const I = { x:(B.x+C.x)/2, y:(B.y+C.y)/2 };
+  const D = { x:B.x+C.x-A.x, y:B.y+C.y-A.y };
+  return { A, B, C, I, D };
+}
+function figureSymetrique21_6(cfg, mettreEnValeur) {
+  const { A, B, C, I, D } = cfg;
+  const elements = [
+    { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:A.x,y1:A.y, x2:C.x,y2:C.y },
+    { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y }, { type:'segment', x1:A.x,y1:A.y, x2:D.x,y2:D.y }
+  ];
+  if (mettreEnValeur === 'AD') {
+    elements.push({ type:'vecteur', x1:A.x,y1:A.y, x2:D.x,y2:D.y, nom:'', couleur:'#4B46C7' });
+  } else {
+    elements.push({ type:'vecteur', x1:A.x,y1:A.y, x2:B.x,y2:B.y, nom:'', couleur:'#4B46C7' });
+    elements.push({ type:'vecteur', x1:C.x,y1:C.y, x2:D.x,y2:D.y, nom:'', couleur:'#B23A2E' });
+  }
+  elements.push({ type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A,I) });
+  elements.push({ type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B,C) });
+  elements.push({ type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C,B) });
+  elements.push({ type:'point', x:I.x, y:I.y, nom:'I', position: positionEloignee(I,A) });
+  elements.push({ type:'point', x:D.x, y:D.y, nom:'D', position: positionEloignee(D,A) });
+  return genererSVGVecteurs(elements);
+}
 
 // variables partagees a l'interieur d'UNE generation : le premier item d'un groupe a plusieurs
 // questions y ecrit la figure/les points tires, les items suivants les relisent (meme principe que
@@ -2214,59 +2254,102 @@ const generateurs = [
   {id:"21.2 c)", type:"num", texteLibre:true, gen: () => tirageRevision[2]()},
   {id:"21.2 d)", type:"num", texteLibre:true, gen: () => tirageRevision[3]()},
 
-  // ---------- 21.3 : vecteurs egaux / vecteurs opposes -- deux vecteurs AB et CD traces sur un
-  // quadrillage neutre (sans coordonnees), parfois vraiment egaux, parfois opposes (meme longueur,
-  // sens contraire -- le piege classique), parfois quelconques. ----------
+  // ---------- 21.3 : vecteurs egaux / vecteurs opposes -- cinq vecteurs traces sur le quadrillage
+  // (places sur cinq zones bien separees pour rester lisibles), certains vraiment egaux, d'autres
+  // opposes (meme longueur, sens contraire -- le piege classique), d'autres quelconques. Quatre
+  // questions comparent quatre paires differentes parmi ces cinq vecteurs. ----------
   {id:"21.3 a)", type:"ouiNon", texteLibre:true, gen: () => {
     const max = 3;
-    const A = { x: entierSigne(1,4), y: entierSigne(1,4) };
+    const noms = [['A','B'], ['C','D'], ['E','F'], ['G','H'], ['I','J']];
     const vAB = tirerVecteurNonNul(max);
-    const B = { x: A.x+vAB[0], y: A.y+vAB[1] };
-    const mode = choix(['egal','oppose','libre','libre']);
-    let C, vCD;
-    let tentatives = 0;
-    do {
-      C = { x: entierSigne(1,4), y: entierSigne(1,4) };
-      tentatives++;
-    } while (Math.abs(C.x-A.x)<2 && Math.abs(C.y-A.y)<2 && tentatives < 30);
-    if (mode === 'egal') vCD = vAB.slice();
-    else if (mode === 'oppose') vCD = [-vAB[0], -vAB[1]];
-    else { do { vCD = tirerVecteurNonNul(max); } while (vCD[0]===vAB[0] && vCD[1]===vAB[1]); }
-    const D = { x: C.x+vCD[0], y: C.y+vCD[1] };
-    quad21_3 = { A, B, C, D, vAB, vCD };
-    const elements = [
-      { type:'vecteur', x1:A.x,y1:A.y, x2:B.x,y2:B.y, nom:'', position: positionEloignee(A, {x:C.x,y:C.y}) },
-      { type:'vecteur', x1:C.x,y1:C.y, x2:D.x,y2:D.y, nom:'', couleur:'#B23A2E' },
-      { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, B) },
-      { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B, A) },
-      { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C, D) },
-      { type:'point', x:D.x, y:D.y, nom:'D', position: positionEloignee(D, C) }
-    ];
-    const figure = genererSVGVecteurs(elements);
-    const egal = (vAB[0]===vCD[0] && vAB[1]===vCD[1]);
-    return { contexteTexte: "Le quadrillage ci-dessus est neutre : aucune coordonnée n'est à lire, seule la position relative des points compte.", contexteFigure: figure, enonce: `Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?`, reponseOuiNon: egal };
+    const modes = [choix(['egal','oppose','libre']), choix(['egal','oppose','libre']), choix(['egal','oppose','libre']), choix(['egal','oppose','libre'])];
+    // on garantit au moins un vecteur egal et un vecteur oppose parmi les quatre suivants, pour que
+    // les quatre questions ne tombent pas systematiquement sur "quelconques".
+    if (!modes.includes('egal')) modes[0] = 'egal';
+    if (!modes.includes('oppose')) modes[1] = 'oppose';
+    const vecteurs = [{ v: vAB }];
+    modes.forEach(mode => {
+      let v;
+      if (mode === 'egal') v = vAB.slice();
+      else if (mode === 'oppose') v = [-vAB[0], -vAB[1]];
+      else { do { v = tirerVecteurNonNul(max); } while (vecteursEgaux(v, vAB) || vecteursOpposes(v, vAB)); }
+      vecteurs.push({ v });
+    });
+    // cinq zones bien separees (coins + centre) pour eviter que les vecteurs ne se chevauchent ;
+    // l'ordre des zones est melange pour varier la disposition d'un tirage a l'autre.
+    const zones = melanger([{x:-4,y:-4}, {x:4,y:-4}, {x:-4,y:4}, {x:4,y:4}, {x:0,y:0}]);
+    vecteurs.forEach((vec, i) => {
+      vec.nom = noms[i];
+      vec.P1 = zones[i];
+      vec.P2 = { x: zones[i].x + vec.v[0], y: zones[i].y + vec.v[1] };
+    });
+    quad21_3 = { vecteurs };
+    const couleurs = ['#4B46C7', '#B23A2E', '#2E7D54', '#B8860B', '#7B3FA0'];
+    const elements = [];
+    vecteurs.forEach((vec, i) => {
+      elements.push({ type:'vecteur', x1:vec.P1.x,y1:vec.P1.y, x2:vec.P2.x,y2:vec.P2.y, couleur:couleurs[i] });
+      elements.push({ type:'point', x:vec.P1.x, y:vec.P1.y, nom:vec.nom[0], position: positionEloignee(vec.P1, vec.P2) });
+      elements.push({ type:'point', x:vec.P2.x, y:vec.P2.y, nom:vec.nom[1], position: positionEloignee(vec.P2, vec.P1) });
+    });
+    const figure = genererSVGVecteurs(elements, { largeur:340, hauteur:340, marge:1.3 });
+    // quatre paires distinctes parmi les cinq vecteurs, chacune interrogee sur "egaux" ou "opposes".
+    const toutesPaires = [];
+    for (let i = 0; i < 5; i++) for (let j = i+1; j < 5; j++) toutesPaires.push([i,j]);
+    quad21_3.paires = melanger(toutesPaires).slice(0, 4);
+    const [i0,j0] = quad21_3.paires[0];
+    const typeQ0 = choix(['egaux','opposes']);
+    const reponse0 = typeQ0 === 'egaux' ? vecteursEgaux(vecteurs[i0].v, vecteurs[j0].v) : vecteursOpposes(vecteurs[i0].v, vecteurs[j0].v);
+    return { contexteTexte: "Utiliser le quadrillage ci-dessous pour comparer les vecteurs représentés (direction, sens, longueur).", contexteFigure: figure, enonce: `Les vecteurs \\(\\overrightarrow{${vecteurs[i0].nom.join('')}}\\) et \\(\\overrightarrow{${vecteurs[j0].nom.join('')}}\\) sont-ils ${typeQ0 === 'egaux' ? 'égaux' : 'opposés'} ?`, reponseOuiNon: reponse0 };
   }},
   {id:"21.3 b)", type:"ouiNon", texteLibre:true, gen: () => {
-    const { vAB, vCD } = quad21_3;
-    const oppose = (vAB[0]===-vCD[0] && vAB[1]===-vCD[1]);
-    return { enonce: `Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?`, reponseOuiNon: oppose };
+    const { vecteurs, paires } = quad21_3;
+    const [i,j] = paires[1];
+    const typeQ = choix(['egaux','opposes']);
+    const reponse = typeQ === 'egaux' ? vecteursEgaux(vecteurs[i].v, vecteurs[j].v) : vecteursOpposes(vecteurs[i].v, vecteurs[j].v);
+    return { enonce: `Les vecteurs \\(\\overrightarrow{${vecteurs[i].nom.join('')}}\\) et \\(\\overrightarrow{${vecteurs[j].nom.join('')}}\\) sont-ils ${typeQ === 'egaux' ? 'égaux' : 'opposés'} ?`, reponseOuiNon: reponse };
+  }},
+  {id:"21.3 c)", type:"ouiNon", texteLibre:true, gen: () => {
+    const { vecteurs, paires } = quad21_3;
+    const [i,j] = paires[2];
+    const typeQ = choix(['egaux','opposes']);
+    const reponse = typeQ === 'egaux' ? vecteursEgaux(vecteurs[i].v, vecteurs[j].v) : vecteursOpposes(vecteurs[i].v, vecteurs[j].v);
+    return { enonce: `Les vecteurs \\(\\overrightarrow{${vecteurs[i].nom.join('')}}\\) et \\(\\overrightarrow{${vecteurs[j].nom.join('')}}\\) sont-ils ${typeQ === 'egaux' ? 'égaux' : 'opposés'} ?`, reponseOuiNon: reponse };
+  }},
+  {id:"21.3 d)", type:"ouiNon", texteLibre:true, gen: () => {
+    const { vecteurs, paires } = quad21_3;
+    const [i,j] = paires[3];
+    const typeQ = choix(['egaux','opposes']);
+    const reponse = typeQ === 'egaux' ? vecteursEgaux(vecteurs[i].v, vecteurs[j].v) : vecteursOpposes(vecteurs[i].v, vecteurs[j].v);
+    return { enonce: `Les vecteurs \\(\\overrightarrow{${vecteurs[i].nom.join('')}}\\) et \\(\\overrightarrow{${vecteurs[j].nom.join('')}}\\) sont-ils ${typeQ === 'egaux' ? 'égaux' : 'opposés'} ?`, reponseOuiNon: reponse };
   }},
 
   // ---------- 21.4 : relation de Chasles -- simplifier une somme de vecteurs, qui telescope soit
-  // vers le vecteur nul (boucle fermee), soit vers un vecteur unique (chaine ouverte). Consigne
-  // commune factorisee dans le contexte (voir feedback-consigne-generale-factorisee). ----------
+  // vers le vecteur nul (boucle fermee), soit vers un vecteur unique (chaine ouverte). a) et b) sont
+  // tres accessibles (3 points, termes ecrits dans l'ordre) ; c) et d) sont plus delicates (5 points,
+  // certains termes reecrits a l'envers puis l'ordre des termes melange). Consigne commune factorisee
+  // dans le contexte (voir feedback-consigne-generale-factorisee). ----------
   {id:"21.4 a)", type:"num", texteLibre:true, gen: () => {
-    const { terms } = tirerSommeChasles(4, true);
+    const { terms } = tirerSommeChasles(3, true, false);
     return { contexteTexte: "Simplifier les sommes de vecteurs suivantes.", enonce: `\\(${chaslesEnonceLatex(terms)}\\)`, reponse: "0" };
   }},
   {id:"21.4 b)", type:"vecteur", texteLibre:true, gen: () => {
-    const { terms, lettres } = tirerSommeChasles(4, false);
-    return { enonce: `\\(${chaslesEnonceLatex(terms)}\\)`, coef: 1, from: lettres[0], to: lettres[3] };
+    const { terms, lettres } = tirerSommeChasles(3, false, false);
+    return { enonce: `\\(${chaslesEnonceLatex(terms)}\\)`, coef: 1, from: lettres[0], to: lettres[2] };
+  }},
+  {id:"21.4 c)", type:"num", texteLibre:true, gen: () => {
+    const { terms } = tirerSommeChasles(5, true, true);
+    return { enonce: `\\(${chaslesEnonceLatex(terms)}\\)`, reponse: "0" };
+  }},
+  {id:"21.4 d)", type:"vecteur", texteLibre:true, gen: () => {
+    const { terms, lettres } = tirerSommeChasles(5, false, true);
+    return { enonce: `\\(${chaslesEnonceLatex(terms)}\\)`, coef: 1, from: lettres[0], to: lettres[4] };
   }},
 
   // ---------- 21.5 : somme de deux vecteurs par la regle du parallelogramme -- ABCD parallelogramme
   // (C = A + AB + AD), les deux diagonales AC et BD s'expriment alors comme la somme des cotes
-  // adjacents issus d'un meme sommet. ----------
+  // adjacents issus d'un meme sommet. I, point de rencontre des diagonales, est aussi le milieu de
+  // chacune d'elles : c) et d) exploitent cette propriete (IA+IC et IB+ID valent toujours le vecteur
+  // nul, quels que soient les points). ----------
   {id:"21.5 a)", type:"vecteur", texteLibre:true, gen: () => {
     const max = 3;
     const A = { x: entierSigne(1,3), y: entierSigne(1,3) };
@@ -2275,7 +2358,8 @@ const generateurs = [
     const B = { x:A.x+vAB[0], y:A.y+vAB[1] };
     const D = { x:A.x+vAD[0], y:A.y+vAD[1] };
     const C = { x:A.x+vAB[0]+vAD[0], y:A.y+vAB[1]+vAD[1] };
-    quad21_5 = { A, B, C, D };
+    const I = { x:(A.x+C.x)/2, y:(A.y+C.y)/2 };
+    quad21_5 = { A, B, C, D, I };
     const elements = [
       { type:'segment', x1:A.x,y1:A.y, x2:B.x,y2:B.y }, { type:'segment', x1:B.x,y1:B.y, x2:C.x,y2:C.y },
       { type:'segment', x1:C.x,y1:C.y, x2:D.x,y2:D.y }, { type:'segment', x1:D.x,y1:D.y, x2:A.x,y2:A.y },
@@ -2283,18 +2367,28 @@ const generateurs = [
       { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A, C) },
       { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B, D) },
       { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C, A) },
-      { type:'point', x:D.x, y:D.y, nom:'D', position: positionEloignee(D, B) }
+      { type:'point', x:D.x, y:D.y, nom:'D', position: positionEloignee(D, B) },
+      { type:'point', x:I.x, y:I.y, nom:'I', position: positionEloignee(I, A) }
     ];
     const figure = genererSVGVecteurs(elements);
-    return { contexteTexte: "ABCD est un parallélogramme (le quadrillage ci-dessus est neutre, sans coordonnées à lire).", contexteFigure: figure, enonce: `Que vaut \\(\\overrightarrow{AB}+\\overrightarrow{AD}\\) ?`, coef:1, from:'A', to:'C' };
+    return { contexteTexte: "ABCD est un parallélogramme ; le quadrillage sert uniquement à se repérer. On note \\(I\\) le point de rencontre des diagonales \\([AC]\\) et \\([BD]\\), qui est le milieu de chacune d'elles.", contexteFigure: figure, enonce: `Que vaut \\(\\overrightarrow{AB}+\\overrightarrow{AD}\\) ?`, coef:1, from:'A', to:'C' };
   }},
   {id:"21.5 b)", type:"vecteur", texteLibre:true, gen: () => {
     return { enonce: `Que vaut \\(\\overrightarrow{BA}+\\overrightarrow{BC}\\) ?`, coef:1, from:'B', to:'D' };
   }},
+  {id:"21.5 c)", type:"num", texteLibre:true, gen: () => {
+    return { enonce: `Simplifier \\(\\overrightarrow{IA}+\\overrightarrow{IC}\\).`, reponse: "0" };
+  }},
+  {id:"21.5 d)", type:"num", texteLibre:true, gen: () => {
+    return { enonce: `Simplifier \\(\\overrightarrow{IB}+\\overrightarrow{ID}\\).`, reponse: "0" };
+  }},
 
-  // ---------- 21.6 : produit d'un vecteur par un reel -- point E tel que AE = k*AB, lire k sur le
-  // quadrillage (comptage de pas, jamais une coordonnee), puis tester une colinearite avec un point
-  // libre. ----------
+  // ---------- 21.6 : produit d'un vecteur par un reel -- a) point E tel que AE = k*AB, lire k sur le
+  // quadrillage (comptage de pas, jamais une coordonnee) ; b) meme principe a l'envers, point F sur
+  // la droite (AB) dont on exprime le vecteur AF en fonction de AB (le mot "colineaire" n'est pas
+  // utilise dans cette fiche : la notion sera formalisee dans une fiche dediee, apres les coordonnees
+  // de vecteurs) ; c) et d) reprennent la meme idee dans une configuration geometrique usuelle
+  // (triangle + symetrique d'un sommet par rapport au milieu d'un cote), moins immediate que a)/b). ----------
   {id:"21.6 a)", type:"num", texteLibre:true, gen: () => {
     const A = { x: entierSigne(1,3), y: entierSigne(1,3) };
     const vAB = tirerVecteurNonNul(3);
@@ -2310,26 +2404,31 @@ const generateurs = [
     ];
     const figure = genererSVGVecteurs(elements);
     const reponse = Number.isInteger(k) ? String(k) : fracSimplifiee(Math.round(k*2), 2);
-    return { contexteTexte: "Le quadrillage ci-dessous est neutre : aucune coordonnée n'est à lire, seule la position relative des points compte.", enonce: figure + `Le point \\(E\\) est tel que \\(\\overrightarrow{AE}=k\\overrightarrow{AB}\\). Déterminer la valeur de \\(k\\).`, reponse };
+    return { contexteTexte: "Utiliser le quadrillage pour se repérer (aucune coordonnée n'est à lire).", enonce: figure + `Le point \\(E\\) est tel que \\(\\overrightarrow{AE}=k\\overrightarrow{AB}\\). Déterminer la valeur de \\(k\\).`, reponse };
   }},
-  {id:"21.6 b)", type:"ouiNon", texteLibre:true, gen: () => {
+  {id:"21.6 b)", type:"vecteur", texteLibre:true, gen: () => {
     const { A, vAB } = fig21_6;
     const B = { x:A.x+vAB[0], y:A.y+vAB[1] };
-    const colineaire = alea(0,1) === 1;
-    let vAF;
-    if (colineaire) { const k2 = choix([-2,-1,2,3]); vAF = [k2*vAB[0], k2*vAB[1]]; }
-    else { do { vAF = tirerVecteurNonNul(3); } while (!nonColineaires(vAF, vAB)); }
-    const F = { x:A.x+vAF[0], y:A.y+vAF[1] };
-    const centre = { x:(B.x+F.x)/2, y:(B.y+F.y)/2 };
+    const k = choix([-3,-2,-1,0.5,2,2.5]);
+    const F = { x:A.x+k*vAB[0], y:A.y+k*vAB[1] };
     const elements = [
-      { type:'vecteur', x1:A.x,y1:A.y, x2:B.x,y2:B.y, nom:'', position: positionEloignee(A,centre) },
-      { type:'vecteur', x1:A.x,y1:A.y, x2:F.x,y2:F.y, nom:'', couleur:'#B23A2E', position: positionEloignee(F,A) },
-      { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A,centre) },
+      { type:'vecteur', x1:A.x,y1:A.y, x2:B.x,y2:B.y, nom:'', position: positionEloignee(A,F) },
+      { type:'point', x:A.x, y:A.y, nom:'A', position: positionEloignee(A,B) },
       { type:'point', x:B.x, y:B.y, nom:'B', position: positionEloignee(B,A) },
       { type:'point', x:F.x, y:F.y, nom:'F', position: positionEloignee(F,A) }
     ];
     const figure = genererSVGVecteurs(elements);
-    return { enonce: figure + `Les vecteurs \\(\\overrightarrow{AF}\\) et \\(\\overrightarrow{AB}\\) sont-ils colinéaires ?`, reponseOuiNon: colineaire };
+    return { enonce: figure + `Le point \\(F\\) appartient à la droite \\((AB)\\). Exprimer \\(\\overrightarrow{AF}\\) en fonction de \\(\\overrightarrow{AB}\\).`, coef:k, from:'A', to:'B' };
+  }},
+  {id:"21.6 c)", type:"vecteur", texteLibre:true, gen: () => {
+    const cfg = construireTriangleSymetrique21_6();
+    const figure = figureSymetrique21_6(cfg, 'AD');
+    return { enonce: figure + `Soit \\(ABC\\) un triangle, \\(I\\) le milieu de \\([BC]\\) et \\(D\\) le symétrique de \\(A\\) par rapport à \\(I\\). Exprimer \\(\\overrightarrow{AD}\\) en fonction de \\(\\overrightarrow{AI}\\).`, coef:2, from:'A', to:'I' };
+  }},
+  {id:"21.6 d)", type:"vecteur", texteLibre:true, gen: () => {
+    const cfg = construireTriangleSymetrique21_6();
+    const figure = figureSymetrique21_6(cfg, 'CD');
+    return { enonce: figure + `Soit \\(ABC\\) un triangle, \\(I\\) le milieu de \\([BC]\\) et \\(D\\) le symétrique de \\(A\\) par rapport à \\(I\\). Exprimer \\(\\overrightarrow{CD}\\) en fonction de \\(\\overrightarrow{AB}\\).`, coef:1, from:'A', to:'B' };
   }},
 
   // ---------- 21.7 (avance) : decomposer un vecteur comme combinaison de deux vecteurs non
@@ -2356,7 +2455,7 @@ const generateurs = [
       { type:'point', x:C.x, y:C.y, nom:'C', position: positionEloignee(C,A) }
     ];
     const figure = genererSVGVecteurs(elements);
-    return { contexteTexte: "Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\) ne sont pas colinéaires : tout vecteur du plan s'exprime de façon unique comme combinaison de ces deux vecteurs (quadrillage neutre, sans coordonnées à lire).", enonce: figure + `Exprimer \\(\\vec{u}\\) sous la forme \\(m\\overrightarrow{AB}+n\\overrightarrow{AC}\\). Donner le couple \\((m\\,;\\,n)\\).`, pa:String(m), pb:String(n), vars:[] };
+    return { contexteTexte: "Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\) ne sont pas parallèles : tout vecteur du plan s'exprime de façon unique comme combinaison de ces deux vecteurs (utiliser le quadrillage pour se repérer, aucune coordonnée n'est à lire).", enonce: figure + `Exprimer \\(\\vec{u}\\) sous la forme \\(m\\overrightarrow{AB}+n\\overrightarrow{AC}\\). Donner le couple \\((m\\,;\\,n)\\).`, pa:String(m), pb:String(n), vars:[] };
   }},
   {id:"21.7 b)", type:"paire", texteLibre:true, gen: () => {
     const { A, vAB, vAC } = base21_7;
@@ -2472,12 +2571,12 @@ let exercices = genererExercices();
 const groupes = {
   "grille-21-1": [0,1,2,3],
   "grille-21-2": [4,5,6,7],
-  "grille-21-3": [8,9],
-  "grille-21-4": [10,11],
-  "grille-21-5": [12,13],
-  "grille-21-6": [14,15],
-  "grille-21-7": [16,17],
-  "grille-21-8": [18,19]
+  "grille-21-3": [8,9,10,11],
+  "grille-21-4": [12,13,14,15],
+  "grille-21-5": [16,17,18,19],
+  "grille-21-6": [20,21,22,23],
+  "grille-21-7": [24,25],
+  "grille-21-8": [26,27]
 };
 // groupes dont le contexte (figure/notations) est presente une seule fois, avant les questions
 // (voir remplirIntrosGroupes) -- chaque premier item du groupe pose contexteTexte/contexteFigure sur
