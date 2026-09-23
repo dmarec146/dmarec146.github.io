@@ -2105,33 +2105,77 @@ function texteVecteurLatex(coef, from, to) {
   return `${neg ? '-' : ''}${coefTxt}\\overrightarrow{${from}${to}}`;
 }
 
-// ---------- checkVecteurNomme : reponse "coef*XY" (ou "0") -- pas de coordonnees ici, comparaison
-// purement symbolique sur le couple de points et le coefficient attendus ; tolere l'ordre inverse
-// des points (coef change alors de signe : -vec(X,Y) = vec(Y,X)) et les variantes d'ecriture
-// (avec/sans *, espaces, coefficient implicite 1). Lit aussi bien du texte brut ("2AB") que du LaTeX
-// tape via le bouton "inserer un vecteur" du champ MathLive (voir insererVecteur/champReponsePour) :
-// "\overrightarrow{AB}"/"\vec{AB}" sont depouilles de leur habillage, et "\frac{1}{2}" (bouton
-// fraction du clavier virtuel MathLive) est reecrit "1/2" avant l'analyse habituelle. ----------
-function checkVecteurNomme(userInput, coefAttendu, from, to) {
+// nettoyage commun du LaTeX d'un champ MathLive contenant une notation vectorielle : depouille
+// \overrightarrow{}/\vec{} de leur habillage (garde juste les deux lettres), les \left/\right,
+// \cdot/\times, et les fractions \frac{a}{b}/\dfrac{a}{b} a numerateur/denominateur entiers
+// (bouton fraction du clavier virtuel MathLive) avant l'analyse habituelle -- partage par
+// checkVecteurNomme et checkCombinaisonVecteurs.
+function nettoyerLatexVecteur(userInput) {
   let s = normaliserSaisie(userInput).trim();
   s = s.replace(/\\overrightarrow\{([A-Za-z]{2})\}/g, '$1').replace(/\\vec\{([A-Za-z]{2})\}/g, '$1');
   s = s.replace(/\\left|\\right/g, '').replace(/\\cdot|\\times/g, '*');
   s = s.replace(/\\[dt]?frac\{(\d+)\}\{(\d+)\}/g, '$1/$2');
   s = s.replace(/\s/g, '');
+  return s;
+}
+// analyse un seul terme "coef*XY" deja nettoye -- renvoie {coef, from, to} ou null si la forme ne
+// correspond pas (coefficient entier/fraction optionnel, deux lettres obligatoires).
+function analyserTermeVecteur(morceau) {
+  const m = morceau.match(/^([+-]?(?:\d+(?:\/\d+)?)?\*?)([A-Za-z])([A-Za-z])$/);
+  if (!m) return null;
+  const coefTxt = m[1].replace(/\*$/, '');
+  let coef;
+  if (coefTxt === '' || coefTxt === '+') coef = 1;
+  else if (coefTxt === '-') coef = -1;
+  else { try { coef = math.evaluate(coefTxt); } catch (e) { return null; } }
+  if (typeof coef !== 'number' || !isFinite(coef)) return null;
+  return { coef, from: m[2].toUpperCase(), to: m[3].toUpperCase() };
+}
+
+// ---------- checkVecteurNomme : reponse "coef*XY" (ou "0") -- pas de coordonnees ici, comparaison
+// purement symbolique sur le couple de points et le coefficient attendus ; tolere l'ordre inverse
+// des points (coef change alors de signe : -vec(X,Y) = vec(Y,X)) et les variantes d'ecriture
+// (avec/sans *, espaces, coefficient implicite 1). Lit aussi bien du texte brut ("2AB") que du LaTeX
+// tape via le bouton "inserer un vecteur" du champ MathLive (voir insererVecteur/champReponsePour). ----------
+function checkVecteurNomme(userInput, coefAttendu, from, to) {
+  const s = nettoyerLatexVecteur(userInput);
   if (s === '0') return Math.abs(coefAttendu) < 1e-9;
   if (Math.abs(coefAttendu) < 1e-9) return false;
-  const m = s.match(/^([+-]?(?:\d+(?:\/\d+)?)?\*?)([A-Za-z])([A-Za-z])$/);
-  if (!m) return false;
-  const coefTxt = m[1].replace(/\*$/, '');
-  let coefUser;
-  if (coefTxt === '' || coefTxt === '+') coefUser = 1;
-  else if (coefTxt === '-') coefUser = -1;
-  else { try { coefUser = math.evaluate(coefTxt); } catch (e) { return false; } }
-  if (typeof coefUser !== 'number' || !isFinite(coefUser)) return false;
-  const p1 = m[2].toUpperCase(), p2 = m[3].toUpperCase();
-  if (p1 === from.toUpperCase() && p2 === to.toUpperCase()) return Math.abs(coefUser - coefAttendu) < 1e-9;
-  if (p1 === to.toUpperCase() && p2 === from.toUpperCase()) return Math.abs(coefUser + coefAttendu) < 1e-9;
+  const terme = analyserTermeVecteur(s);
+  if (!terme) return false;
+  if (terme.from === from.toUpperCase() && terme.to === to.toUpperCase()) return Math.abs(terme.coef - coefAttendu) < 1e-9;
+  if (terme.from === to.toUpperCase() && terme.to === from.toUpperCase()) return Math.abs(terme.coef + coefAttendu) < 1e-9;
   return false;
+}
+
+// ---------- checkCombinaisonVecteurs : reponse "coef1*XY+coef2*ZW" (la vraie combinaison lineaire,
+// pas un couple (m;n)) -- termes.length===2 attendus (voir 21.8), ordre des deux termes libre,
+// chaque terme tolere l'ordre inverse des points comme checkVecteurNomme. ----------
+function checkCombinaisonVecteurs(userInput, termes) {
+  const s = nettoyerLatexVecteur(userInput);
+  if (s === '0') return termes.every(t => Math.abs(t.coef) < 1e-9);
+  const morceaux = s.match(/[+-]?[^+-]+/g);
+  if (!morceaux || morceaux.length !== termes.length) return false;
+  const saisis = morceaux.map(analyserTermeVecteur);
+  if (saisis.some(t => t === null)) return false;
+  // chaque terme attendu doit etre associe a exactement un terme saisi (ordre libre).
+  const restants = saisis.slice();
+  for (const attendu of termes) {
+    const idx = restants.findIndex(t => {
+      if (t.from === attendu.from.toUpperCase() && t.to === attendu.to.toUpperCase()) return Math.abs(t.coef - attendu.coef) < 1e-9;
+      if (t.from === attendu.to.toUpperCase() && t.to === attendu.from.toUpperCase()) return Math.abs(t.coef + attendu.coef) < 1e-9;
+      return false;
+    });
+    if (idx === -1) return false;
+    restants.splice(idx, 1);
+  }
+  return restants.length === 0;
+}
+// affichage LaTeX d'une combinaison de plusieurs termes vectoriels (voir formaterReponse).
+function texteCombinaisonLatex(termes) {
+  const parts = termes.map(t => texteVecteurLatex(t.coef, t.from, t.to)).filter(s => s !== '\\vec{0}');
+  if (parts.length === 0) return '\\vec{0}';
+  return parts.map((p, i) => (i > 0 && p[0] !== '-') ? '+' + p : p).join('');
 }
 
 // ---------- checkPaire : reponse "x;y" (utilisee par 21.7, forme (m;n)) -- comparaison numerique
@@ -2247,6 +2291,33 @@ function nonColineaires(v1, v2) { return v1[0] * v2[1] - v1[1] * v2[0] !== 0; }
 function vecteursEgaux(v1, v2) { return v1[0] === v2[0] && v1[1] === v2[1]; }
 function vecteursOpposes(v1, v2) { return v1[0] === -v2[0] && v1[1] === -v2[1]; }
 
+// vrai si le triangle ABC n'est pas "aplati" : nonColineaires ne rejette que l'alignement EXACT,
+// pas un triangle presque aligne (un cote tres court ou un angle tres proche de 0/180 degres), qui
+// reste techniquement valide mais illisible sur la figure (David, 2026-09-24 : "pas de triangle
+// proche d'un triangle aplati"). On impose que le sinus de chacun des trois angles reste superieur
+// a 0.5 (donc un angle entre 30 et 150 degres) : sin(angle en A) = aire2/(|AB|*|AC|), ou aire2 est
+// le double de l'aire du triangle (valeur absolue du produit vectoriel AB^AC).
+function triangleBienForme(A, B, C) {
+  const ab = [B.x-A.x, B.y-A.y], ac = [C.x-A.x, C.y-A.y], bc = [C.x-B.x, C.y-B.y];
+  const normeAB = Math.hypot(ab[0], ab[1]), normeAC = Math.hypot(ac[0], ac[1]), normeBC = Math.hypot(bc[0], bc[1]);
+  if (normeAB < 1e-9 || normeAC < 1e-9 || normeBC < 1e-9) return false;
+  const aire2 = Math.abs(ab[0]*ac[1] - ab[1]*ac[0]);
+  return (aire2/(normeAB*normeAC)) > 0.5 && (aire2/(normeAB*normeBC)) > 0.5 && (aire2/(normeAC*normeBC)) > 0.5;
+}
+// tire un triangle ABC "bien forme" (voir triangleBienForme) sur une grille d'entiers signes dans
+// [-rayon;rayon] (jamais 0). tentatives<100 : evite une boucle infinie si rayon est trop petit pour
+// qu'un tel triangle existe, tres improbable ici (rayon=3 laisse largement assez de configurations).
+function tirerTriangleBienForme(rayon) {
+  let A, B, C, tentatives = 0;
+  do {
+    A = { x: entierSigne(1,rayon), y: entierSigne(1,rayon) };
+    B = { x: entierSigne(1,rayon), y: entierSigne(1,rayon) };
+    C = { x: entierSigne(1,rayon), y: entierSigne(1,rayon) };
+    tentatives++;
+  } while (!triangleBienForme(A,B,C) && tentatives < 100);
+  return { A, B, C };
+}
+
 // configuration pour 21.6 c) : triangle ABC, I milieu de [AB], J tel que CJ=k*CB (k fraction non
 // triviale tiree au hasard) -- decomposition de IJ dans la base (AB;AC), demande d'ecrire le couple
 // (m;n) comme en 21.7 mais a partir d'une construction geometrique (pas de vecteur cible donne
@@ -2256,12 +2327,7 @@ function vecteursOpposes(v1, v2) { return v1[0] === -v2[0] && v1[1] === -v2[1]; 
 // C=v, B=u, donc CB=u-v, CJ=k(u-v), J=v+k(u-v)=k*u+(1-k)*v, d'ou IJ=J-I=(k-1/2)*u+(1-k)*v -- calcule
 // en fractions exactes (jamais de division flottante), voir la lecon du bug de 20.8.
 function construireDecompositionTriangle21_6() {
-  let A, B, C;
-  do {
-    A = { x: entierSigne(1,3), y: entierSigne(1,3) };
-    B = { x: entierSigne(1,3), y: entierSigne(1,3) };
-    C = { x: entierSigne(1,3), y: entierSigne(1,3) };
-  } while (!nonColineaires([B.x-A.x,B.y-A.y], [C.x-A.x,C.y-A.y]));
+  const { A, B, C } = tirerTriangleBienForme(3);
   const I = { x:(A.x+B.x)/2, y:(A.y+B.y)/2 };
   // k = kn/kd, evite 1/2 et 1 (donneraient un coefficient nul dans la decomposition finale).
   const [kn, kd] = choix([[1,3],[2,3],[-1,3],[1,4],[3,4],[-1,4],[-1,2]]);
@@ -2324,12 +2390,7 @@ function figureParallelogrammeMilieux21_6(cfg) {
 
 // configuration pour 21.8 : triangle ABC et G son centre de gravite (G=(A+B+C)/3).
 function construireCentreGravite21_8() {
-  let A, B, C;
-  do {
-    A = { x: entierSigne(1,3), y: entierSigne(1,3) };
-    B = { x: entierSigne(1,3), y: entierSigne(1,3) };
-    C = { x: entierSigne(1,3), y: entierSigne(1,3) };
-  } while (!nonColineaires([B.x-A.x,B.y-A.y], [C.x-A.x,C.y-A.y]));
+  const { A, B, C } = tirerTriangleBienForme(3);
   const G = { x:(A.x+B.x+C.x)/3, y:(A.y+B.y+C.y)/3 };
   return { A, B, C, G };
 }
@@ -2597,10 +2658,11 @@ const generateurs = [
   // l'etait en 21.5) ; exprimer AG en fonction de AB et AC. Preuve : G=(A+B+C)/3, donc
   // AG=G-A=((B-A)+(C-A))/3=(AB+AC)/3=(1/3)AB+(1/3)AC, exact quelles que soient les coordonnees
   // tirees. ----------
-  {id:"21.8 a)", type:"paire", texteLibre:true, gen: () => {
+  {id:"21.8 a)", type:"combinaison", texteLibre:true, gen: () => {
     const cfg = construireCentreGravite21_8();
     const figure = figureCentreGravite21_8(cfg);
-    return { enonce: figure + `\\(G\\) est le centre de gravité du triangle \\(ABC\\) : il vérifie \\(\\overrightarrow{GA}+\\overrightarrow{GB}+\\overrightarrow{GC}=\\vec{0}\\). Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\).`, pa:"1/3", pb:"1/3", vars:[] };
+    const termes = [{ coef:1/3, from:'A', to:'B' }, { coef:1/3, from:'A', to:'C' }];
+    return { enonce: figure + `\\(G\\) est le centre de gravité du triangle \\(ABC\\) : il vérifie \\(\\overrightarrow{GA}+\\overrightarrow{GB}+\\overrightarrow{GC}=\\vec{0}\\). Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\).`, termes };
   }}
 ];
 
@@ -2720,6 +2782,7 @@ function necessiteAide(ex) {
   if (ex.type === 'ouiNon') return true;
   if (ex.type === 'paire') return true;
   if (ex.type === 'vecteur') return true;
+  if (ex.type === 'combinaison') return true;
   if (ex.comparaison) return true;
   if (ex.type === 'approx') return true;
   if (ex.type === 'intervalle') return true;
@@ -2736,6 +2799,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'vecteur') {
     return "Écrire le coefficient si besoin, cliquer sur le bouton <strong>&#8594;</strong> du clavier, puis écrire les deux points : par exemple <code>2</code> puis <strong>&#8594;</strong> puis <code>AB</code> pour \\(2\\overrightarrow{AB}\\), ou directement <strong>&#8594;</strong> puis <code>AC</code> pour \\(\\overrightarrow{AC}\\). Un coefficient peut être une fraction, par exemple <code>1/2</code>. Si le résultat est le vecteur nul, écrire <code>0</code>.";
+  }
+  if (ex.type === 'combinaison') {
+    return "Écrire chaque terme avec le bouton <strong>&#8594;</strong> du clavier (une fois par vecteur), séparés par <code>+</code> ou <code>-</code> : par exemple <code>1/3</code> puis <strong>&#8594;</strong> puis <code>AB</code>, puis <code>+</code>, puis <code>1/3</code> puis <strong>&#8594;</strong> puis <code>AC</code>, pour \\(\\dfrac{1}{3}\\overrightarrow{AB}+\\dfrac{1}{3}\\overrightarrow{AC}\\).";
   }
   if (ex.formePoint) {
     return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code> ou <code>(5/2;-1)</code> si l'une des valeurs est une fraction.";
@@ -2775,7 +2841,7 @@ function aideContextuellePour(ex) {
 // meme clavier MathLive pour toute la fiche (pas de clavier maison different par type de question) :
 // num, ouiNon, vecteur et paire y passent tous. Les autres fiches gardent leur propre liste, celle-ci
 // est locale a fiche-21 (David, 2026-09-23 : "utiliser MathLive et ne pas faire au cas par cas").
-const TYPES_MATHFIELD = ['num', 'ouiNon', 'vecteur', 'paire'];
+const TYPES_MATHFIELD = ['num', 'ouiNon', 'vecteur', 'paire', 'combinaison'];
 
 function estEnsemble(ex) {
   return !!(ex.reponse && ex.reponse.trim().startsWith('{'));
@@ -2804,6 +2870,7 @@ function placeholderPour(ex) {
   if (ex.formePoint) return '(x;y)';
   if (ex.type === 'paire') return 'x;y';
   if (ex.type === 'vecteur') return 'AB';
+  if (ex.type === 'combinaison') return 'AB+AC';
   if (ex.comparaison) {
     const [v1, v2] = ex.varsComparaison || ['x1','x2'];
     return `${ex.nomFonction}(${v1}) > ${ex.nomFonction}(${v2})`;
@@ -2966,12 +3033,12 @@ function champReponsePour(idx, ex) {
     <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
   }
   if (utiliseMathfield(ex)) {
-    // bouton dedie "inserer un vecteur" (type 'vecteur' uniquement) : insere le symbole fleche
-    // \overrightarrow{} avec une case a remplir, plutot que de demander a l'eleve de taper les
-    // deux lettres sans notation -- meme principe que le bouton equivalent de la fiche 21 de
+    // bouton dedie "inserer un vecteur" (types 'vecteur' et 'combinaison') : insere le symbole
+    // fleche \overrightarrow{} avec une case a remplir, plutot que de demander a l'eleve de taper
+    // les deux lettres sans notation -- meme principe que le bouton equivalent de la fiche 21 de
     // Premiere. Un seul type de clavier (MathLive) pour toute la fiche, pas de clavier maison
     // different par type de question (David, 2026-09-23).
-    const boutonVecteur = ex.type === 'vecteur'
+    const boutonVecteur = (ex.type === 'vecteur' || ex.type === 'combinaison')
       ? `<button class="q-clavier-btn" onclick="insererVecteur(${idx})" title="Insérer un vecteur">&#8594;</button>`
       : '';
     return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
@@ -3461,8 +3528,8 @@ function verifierUne(idx) {
     return ok;
   }
   const input = document.getElementById('input-' + idx);
-  // ouiNon/vecteur/paire : lire le LaTeX brut, pas l'export ascii-math (voir valeurDuChampLatex).
-  const val = (ex.type === 'ouiNon' || ex.type === 'vecteur' || ex.type === 'paire')
+  // ouiNon/vecteur/paire/combinaison : lire le LaTeX brut, pas l'export ascii-math (voir valeurDuChampLatex).
+  const val = (ex.type === 'ouiNon' || ex.type === 'vecteur' || ex.type === 'paire' || ex.type === 'combinaison')
     ? valeurDuChampLatex(input)
     : valeurDuChamp(input);
   if (!val) {
@@ -3475,6 +3542,7 @@ function verifierUne(idx) {
   else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'vecteur') ok = checkVecteurNomme(val, ex.coef, ex.from, ex.to);
+  else if (ex.type === 'combinaison') ok = checkCombinaisonVecteurs(val, ex.termes);
   else if (ex.comparaison) ok = checkComparaisonFonctions(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'approx') {
@@ -3561,7 +3629,7 @@ function toutesLesReponsesSontSaisies() {
     // ouiNon/vecteur/paire : l'export ascii-math peut rester vide alors que le LaTeX ne l'est pas
     // (ex. "\overrightarrow{AB}" seul, sans coefficient, s'exporte en ascii-math "" -- verifie
     // empiriquement, David 2026-09-23) -- lire le meme champ que verifierUne pour ces types.
-    if (ex.type === 'ouiNon' || ex.type === 'vecteur' || ex.type === 'paire') {
+    if (ex.type === 'ouiNon' || ex.type === 'vecteur' || ex.type === 'paire' || ex.type === 'combinaison') {
       return valeurDuChampLatex(input) !== '';
     }
     return valeurDuChamp(input) !== '';
@@ -3698,6 +3766,9 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'vecteur') {
       return texteVecteurLatex(ex.coef, ex.from, ex.to);
+    }
+    if (ex.type === 'combinaison') {
+      return texteCombinaisonLatex(ex.termes);
     }
     if (ex.comparaison) {
       return ex.reponse.replace(/x1/g, 'x_1').replace(/x2/g, 'x_2');
