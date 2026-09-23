@@ -1009,7 +1009,8 @@ de changer ce réglage sans qu'il en reparle.
   résultat ni devoir concerné). Avant toute future renumérotation avec des
   élèves actifs : prévoir une migration des documents vers les nouveaux
   identifiants. Le manifeste des devoirs (`assets/js/manifeste-fiches.js`)
-  ne liste toujours pas les cahiers 6 à 8 de Seconde.
+  a été complété le même jour avec les cahiers 6 à 8 de Seconde (51 fiches
+  en tout) : à tenir à jour à chaque nouvelle fiche.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.

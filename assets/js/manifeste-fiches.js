@@ -1,6 +1,6 @@
-// Liste statique des 45 fiches de cahiers de calcul (Première + Seconde), regroupées par
+// Liste statique des 51 fiches de cahiers de calcul (Première + Seconde), regroupées par
 // cahier — sert au sélecteur de fiche de l'outil d'attribution des devoirs
-// (tableau-de-bord/devoirs.html). Extraite une fois des 15 sommaires de cahier
+// (tableau-de-bord/devoirs.html). Extraite une fois des 18 sommaires de cahier
 // (cahiers/<niveau>/cahier-N/index.html) ; à tenir à jour à la main si une fiche est
 // ajoutée/renommée (rare, contrairement au contenu des fiches lui-même).
 
@@ -80,6 +80,18 @@ export const MANIFESTE_CAHIERS = [
     { href: 'fiche-16.html', numero: 16, nom: 'Fonctions affines' },
     { href: 'fiche-17.html', numero: 17, nom: 'Fonctions de référence' },
   ]},
+  { niveau: 'seconde', cahier: 'cahier-6', titreCahier: 'Cahier 6 — Statistiques', fiches: [
+    { href: 'fiche-18.html', numero: 18, nom: 'Indicateurs de position et de dispersion' },
+    { href: 'fiche-19.html', numero: 19, nom: 'Séries groupées et tableaux croisés' },
+  ]},
+  { niveau: 'seconde', cahier: 'cahier-7', titreCahier: 'Cahier 7 — Probabilités', fiches: [
+    { href: 'fiche-20.html', numero: 20, nom: 'Probabilités' },
+  ]},
+  { niveau: 'seconde', cahier: 'cahier-8', titreCahier: 'Cahier 8 — Géométrie repérée et vecteurs', fiches: [
+    { href: 'fiche-21.html', numero: 21, nom: 'Repérage, distances et milieux' },
+    { href: 'fiche-22.html', numero: 22, nom: 'Calcul vectoriel' },
+    { href: 'fiche-23.html', numero: 23, nom: 'Coordonnées de vecteurs' },
+  ]},
 ];
 
 function libelleNiveau(niveau) {
@@ -93,7 +105,7 @@ export function ficheIdDepuis(niveau, cahier, href) {
   return `/cahiers/${niveau}/${cahier}/${href}`;
 }
 
-// Liste à plat des 45 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
+// Liste à plat des 51 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
 export const FICHES_PLATES = MANIFESTE_CAHIERS.flatMap((c) =>
   c.fiches.map((f) => ({
     ficheId: ficheIdDepuis(c.niveau, c.cahier, f.href),
