@@ -2757,9 +2757,64 @@ function genererClavierComparaison(idx, ex) {
       <div class="clavier-apercu">Astuce : écrire la comparaison complète, par exemple « ${ex.nomFonction}(${v1})&gt;${ex.nomFonction}(${v2}) ».</div>`;
 }
 
+// clavier de 21.3 (et de tout oui/non) : deux touches directes plutot que le clavier "ensemble"
+// generique (accolades, racine, comparaisons) qui n'a aucun rapport avec une reponse oui/non --
+// meme principe que le clavier "vrai/faux" de la fiche 21 de Premiere.
+function genererClavierOuiNon(idx) {
+  return `
+      <div class="clavier-groupe">
+        <button class="touche-large" onclick="inserer(${idx},'oui')">oui</button>
+        <button class="touche-large" onclick="inserer(${idx},'non')">non</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+      </div>`;
+}
+
+// clavier des reponses "coefficient + deux points" (21.4, 21.5, 21.6, 21.8) : le clavier
+// "ensemble" generique ne propose ni lettres ni barre de fraction, alors que la reponse en a
+// besoin (ex. "1/2AC") -- seules les deux lettres reellement utilisees dans CETTE reponse sont
+// proposees (ex.from/ex.to), pas tout l'alphabet.
+function genererClavierVecteur(idx, ex) {
+  const lettres = [...new Set([ex.from, ex.to])];
+  const touchesLettres = lettres.map(l => `<button onclick="inserer(${idx},'${l}')">${l}</button>`).join('');
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Points</span>
+        ${touchesLettres}
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Coefficient</span>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="inserer(${idx},'/')">/</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : un coefficient (entier ou fraction, par exemple « 1/2 ») suivi des deux lettres, comme « 2${lettres[0]||'A'}${lettres[1]||'B'} », « -${lettres[0]||'A'}${lettres[1]||'B'} » ou « 0 » pour le vecteur nul.</div>`;
+}
+
+// clavier de 21.7 (couple "m;n") : chiffres, signe et point-virgule seulement -- le clavier
+// "ensemble" generique (accolades, racine, comparaisons) n'a rien a faire ici non plus.
+function genererClavierPaire(idx) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Couple</span>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : les deux valeurs séparées par un point-virgule, par exemple « 2;-1 ».</div>`;
+}
+
 function genererClavierPour(idx, ex) {
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
   if (ex.comparaison) return genererClavierComparaison(idx, ex);
+  if (ex.type === 'ouiNon') return genererClavierOuiNon(idx);
+  if (ex.type === 'vecteur') return genererClavierVecteur(idx, ex);
+  if (ex.type === 'paire') return genererClavierPaire(idx);
   return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
         <span class="clavier-label">Ensemble</span>
