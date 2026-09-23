@@ -2440,6 +2440,17 @@ function specSigne16(m, r, op) {
 }
 const OP_LATEX16 = { '>': '\\gt', '>=': '\\geqslant', '<': '\\lt', '<=': '\\leqslant' };
 const POSITION_AXE16 = { '>': "au-dessus de l'axe des abscisses", '<': "en dessous de l'axe des abscisses" };
+// point d'intersection eventuellement inexistant (16.8 a/b) : "aucun", "vide", "∅", "n'existe pas"...
+// acceptes quand il n'y a pas de point, toujours refuses quand il y en a un.
+const SYNONYMES_AUCUN16 = ['aucun', 'aucune', 'aucunpoint', 'aucunpointdintersection', 'vide', 'emptyset', 'varnothing', 'pasdepoint', 'pasdepointdintersection', 'nexistepas', 'ilnexistepas', 'inexistant'];
+function checkPointOuAucun16(userInput, ex) {
+  const brut = String(userInput);
+  const mot = normaliserTexte(brut.replace(/\\(?:text|mathrm)\{([^}]*)\}/g, '$1'));
+  const saisieAucun = brut.includes('∅') || SYNONYMES_AUCUN16.includes(mot);
+  if (ex.aucunPoint) return saisieAucun;
+  if (saisieAucun) return false;
+  return checkPointCoordonnees(userInput, ex.pa, ex.pb, ex.vars);
+}
 // equation reduite : la saisie doit commencer par "y=" (erreur frequente : donner seulement mx+p),
 // puis le membre de droite est compare a mx+p comme une expression en x.
 function checkEquationReduite(userInput, correctExpr) {
@@ -2535,20 +2546,20 @@ const generateurs = [
   // ---------- 16.4 : lire graphiquement coefficient directeur et ordonnee a l'origine -- une seule
   // figure, trois droites (voir tirerDroites16_4 : pente entiere, fractionnaire, puis numerateur 2
   // ou 3 / horizontale), chaque item ne cite que le nom de la droite. ----------
-  {id:"16.4 a)", type:"num", texteLibre:true, gen: () => {
+  {id:"16.4 a)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     droites16_4 = tirerDroites16_4();
     const elements = droites16_4.map((dr, i) => ({ type:'droite', m: dr.m, p: dr.p, couleur: dr.couleur, labelX: dr.labelX, nom: `d<tspan font-size="10" dy="4">${i+1}</tspan>` }));
     const figure = genererSVGRepereVecteurs(elements, { fenetre: { xmin:-5, xmax:5, ymin:-5, ymax:5 }, largeur: 320, hauteur: 320 });
     const dr = droites16_4[0];
-    return { contexteTexte: "Pour chacune des droites \\(d_1\\), \\(d_2\\) et \\(d_3\\), lire graphiquement le coefficient directeur \\(m\\) et l'ordonnée à l'origine \\(p\\), puis écrire l'expression \\(mx+p\\) de la fonction affine qu'elle représente.", contexteFigure: figure, enonce: `\\(d_1\\).`, reponse: affineReponse16(dr.n, dr.d, dr.p), reponseLatex: affineTexte16(dr.n, dr.d, dr.p) };
+    return { contexteTexte: "Pour chacune des droites \\(d_1\\), \\(d_2\\) et \\(d_3\\), lire graphiquement le coefficient directeur \\(m\\) et l'ordonnée à l'origine \\(p\\), puis écrire l'équation réduite \\(y=mx+p\\) de la droite.", contexteFigure: figure, enonce: `\\(d_1\\)`, reponse: affineReponse16(dr.n, dr.d, dr.p), reponseLatex: 'y=' + affineTexte16(dr.n, dr.d, dr.p) };
   }},
-  {id:"16.4 b)", type:"num", texteLibre:true, gen: () => {
+  {id:"16.4 b)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const dr = droites16_4[1];
-    return { enonce: `\\(d_2\\).`, reponse: affineReponse16(dr.n, dr.d, dr.p), reponseLatex: affineTexte16(dr.n, dr.d, dr.p) };
+    return { enonce: `\\(d_2\\)`, reponse: affineReponse16(dr.n, dr.d, dr.p), reponseLatex: 'y=' + affineTexte16(dr.n, dr.d, dr.p) };
   }},
-  {id:"16.4 c)", type:"num", texteLibre:true, gen: () => {
+  {id:"16.4 c)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const dr = droites16_4[2];
-    return { enonce: `\\(d_3\\).`, reponse: affineReponse16(dr.n, dr.d, dr.p), reponseLatex: affineTexte16(dr.n, dr.d, dr.p) };
+    return { enonce: `\\(d_3\\)`, reponse: affineReponse16(dr.n, dr.d, dr.p), reponseLatex: 'y=' + affineTexte16(dr.n, dr.d, dr.p) };
   }},
 
   // ---------- 16.5 : coefficient directeur de (AB) par le calcul, m = (yB - yA)/(xB - xA) --
@@ -2570,33 +2581,32 @@ const generateurs = [
     return { enonce: `\\(A\\left(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)}\\right)\\) et \\(B\\left(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)}\\right)\\).`, reponse: fracSimplifiee(2*(B.y-A.y), 2*(B.x-A.x)) };
   }},
 
-  // ---------- 16.6 : expression de f / equation reduite d'une droite -- a) f par deux points (m, p
-  // entiers), b) m fractionnaire (abscisses multiples du denominateur pour garder des ordonnees
-  // entieres), c) donne sous forme d'images f(x1) = y1, f(x2) = y2, m ET p fractionnaires ;
-  // d) equation reduite connaissant l'ordonnee a l'origine et un point d'abscisse non nulle ;
-  // e) equation reduite d'une parallele passant par un point (David, 2026-09-26). Pour d/e, la
-  // reponse doit commencer par "y=" (flag equationReduite) : donner seulement "mx+p" est l'erreur
-  // frequente que David veut refuser. ----------
-  {id:"16.6 a)", type:"num", texteLibre:true, gen: () => {
+  // ---------- 16.6 : equation reduite de la droite d, TOUJOURS saisie "y=mx+p" (flag
+  // equationReduite) : "mx+p" seul est une expression, pas une equation -- David, 2026-09-26, a
+  // insister deux fois. a) par deux points (m, p entiers), b) m fractionnaire (abscisses multiples du
+  // denominateur pour garder des ordonnees entieres), c) m ET p fractionnaires ; d) ordonnee a
+  // l'origine et un point d'abscisse non nulle ; e) parallele a une droite donnee passant par un
+  // point. ----------
+  {id:"16.6 a)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const m = entierSigne(1,5), p = entierSigne(1,9);
     let xA, xB; do { xA = alea(-5,5); xB = alea(-5,5); } while (xA === xB);
-    return { contexteTexte: "Dans chaque cas, déterminer ce qui est demandé : l'expression \\(mx+p\\) de la fonction affine \\(f\\), ou l'équation réduite \\(y=mx+p\\) de la droite \\(d\\).", enonce: `\\(f\\) : sa représentation graphique passe par \\(A(${xA};${m*xA+p})\\) et \\(B(${xB};${m*xB+p})\\)`, reponse: affineReponse16(m, 1, p), reponseLatex: affineTexte16(m, 1, p) };
+    return { contexteTexte: "Dans chaque cas, déterminer l'équation réduite \\(y=mx+p\\) de la droite \\(d\\).", enonce: `\\(d\\) passe par \\(A(${xA};${m*xA+p})\\) et \\(B(${xB};${m*xB+p})\\)`, reponse: affineReponse16(m, 1, p), reponseLatex: 'y=' + affineTexte16(m, 1, p) };
   }},
-  {id:"16.6 b)", type:"num", texteLibre:true, gen: () => {
+  {id:"16.6 b)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const d = choix([2,3,4]);
     let n; do { n = entierSigne(1,7); } while (pgcd(Math.abs(n), d) !== 1);
     const p = entierSigne(1,9);
     let k1, k2; do { k1 = alea(-2,2); k2 = alea(-2,2); } while (k1 === k2);
-    return { enonce: `\\(f\\) : sa représentation graphique passe par \\(A(${d*k1};${n*k1+p})\\) et \\(B(${d*k2};${n*k2+p})\\)`, reponse: affineReponse16(n, d, p), reponseLatex: affineTexte16(n, d, p) };
+    return { enonce: `\\(d\\) passe par \\(A(${d*k1};${n*k1+p})\\) et \\(B(${d*k2};${n*k2+p})\\)`, reponse: affineReponse16(n, d, p), reponseLatex: 'y=' + affineTexte16(n, d, p) };
   }},
-  {id:"16.6 c)", type:"num", texteLibre:true, gen: () => {
+  {id:"16.6 c)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const d = choix([2,3]);
     let n; do { n = entierSigne(1,5); } while (pgcd(Math.abs(n), d) !== 1);
     let x1; do { x1 = alea(-4,4); } while (x1 % d === 0);
     const k = choix([-2,-1,1,2]), x2 = x1 + d*k;
     const y1 = alea(-6,6), y2 = y1 + n*k;
     // p = y1 - (n/d) x1 = (d y1 - n x1)/d, jamais entier puisque x1 n'est pas multiple de d
-    return { enonce: `\\(f\\) : \\(f(${x1})=${y1}\\) et \\(f(${x2})=${y2}\\)`, reponse: affineReponse16(n, d, d*y1 - n*x1, d), reponseLatex: affineTexte16(n, d, d*y1 - n*x1, d) };
+    return { enonce: `\\(d\\) passe par \\(A(${x1};${y1})\\) et \\(B(${x2};${y2})\\)`, reponse: affineReponse16(n, d, d*y1 - n*x1, d), reponseLatex: 'y=' + affineTexte16(n, d, d*y1 - n*x1, d) };
   }},
   {id:"16.6 d)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const dd = choix([1,1,2,3]);
@@ -2604,7 +2614,7 @@ const generateurs = [
     const p = entierSigne(1,9);
     const k = choix(dd === 1 ? [-4,-3,-2,-1,1,2,3,4] : [-2,-1,1,2]);
     const xA = dd*k, yA = p + n*k;
-    return { enonce: `\\(d\\) : ordonnée à l'origine \\(${p}\\), passe par \\(A(${xA};${yA})\\)`, reponse: affineReponse16(n, dd, p), reponseLatex: 'y=' + affineTexte16(n, dd, p) };
+    return { enonce: `\\(d\\) a pour ordonnée à l'origine \\(${p}\\) et passe par \\(A(${xA};${yA})\\)`, reponse: affineReponse16(n, dd, p), reponseLatex: 'y=' + affineTexte16(n, dd, p) };
   }},
   {id:"16.6 e)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
     const d = choix([1,2,3]);
@@ -2613,7 +2623,7 @@ const generateurs = [
     // q = yA - (n/d) xA = (d yA - n xA)/d ; la droite donnee ne doit pas passer par A (sinon d = elle-meme)
     const q = d*yA - n*xA;
     do { p0 = entierSigne(1,9); } while (p0*d === q);
-    return { enonce: `\\(d\\) : parallèle à la droite d'équation \\(y=${affineTexte16(n, d, p0)}\\), passe par \\(A(${xA};${yA})\\)`, reponse: affineReponse16(n, d, q, d), reponseLatex: 'y=' + affineTexte16(n, d, q, d) };
+    return { enonce: `\\(d\\) est parallèle à la droite d'équation \\(y=${affineTexte16(n, d, p0)}\\) et passe par \\(A(${xA};${yA})\\)`, reponse: affineReponse16(n, d, q, d), reponseLatex: 'y=' + affineTexte16(n, d, q, d) };
   }},
 
   // ---------- 16.7 : signe d'une fonction affine, pose comme position de la droite representative
@@ -2640,17 +2650,32 @@ const generateurs = [
 
   // ---------- 16.8 : point d'intersection de deux droites, systeme de deux equations -- a) point
   // entier, b) point a coordonnees fractionnaires, c) systeme non ecrit sous forme reduite. ----------
-  {id:"16.8 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+  // a) et b) : une fois sur trois environ, droites paralleles distinctes (meme coefficient
+  // directeur) -> pas de point d'intersection, reponse "aucun" (flag peutEtreSansPoint sur les deux
+  // items, pour que l'aide « ? » l'annonce quel que soit le tirage). David, 2026-09-26.
+  {id:"16.8 a)", type:"paire", formePoint:true, peutEtreSansPoint:true, texteLibre:true, gen: () => {
+    const contexteTexte = "Déterminer les coordonnées du point d'intersection des deux droites dont les équations sont données, s'il existe.";
+    if (alea(1,4) === 1) {
+      const m = entierSigne(1,4);
+      const [p1, p2] = tirerDistincts(2, -9, 9);
+      return { contexteTexte, enonce: `\\(y=${affineTexte(m, p1)}\\) et \\(y=${affineTexte(m, p2)}\\)`, aucunPoint: true, pa: '', pb: '', vars: [], reponseLatex: "\\text{aucun point d'intersection}" };
+    }
     const x0 = alea(-5,5), y0 = alea(-5,5);
     let m1, m2; do { m1 = entierSigne(1,4); m2 = entierSigne(1,4); } while (m1 === m2);
-    return { contexteTexte: "Déterminer les coordonnées du point d'intersection des deux droites dont les équations sont données.", enonce: `\\(y=${affineTexte(m1, y0 - m1*x0)}\\) et \\(y=${affineTexte(m2, y0 - m2*x0)}\\).`, pa: `${x0}`, pb: `${y0}`, vars: [] };
+    return { contexteTexte, enonce: `\\(y=${affineTexte(m1, y0 - m1*x0)}\\) et \\(y=${affineTexte(m2, y0 - m2*x0)}\\)`, pa: `${x0}`, pb: `${y0}`, vars: [] };
   }},
-  {id:"16.8 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+  {id:"16.8 b)", type:"paire", formePoint:true, peutEtreSansPoint:true, texteLibre:true, gen: () => {
+    if (alea(1,3) === 1) {
+      const d = choix([2,3]);
+      let n; do { n = entierSigne(1,5); } while (pgcd(Math.abs(n), d) !== 1);
+      const [p1, p2] = tirerDistincts(2, -9, 9);
+      return { enonce: `\\(y=${affineTexte16(n, d, p1)}\\) et \\(y=${affineTexte16(n, d, p2)}\\)`, aucunPoint: true, pa: '', pb: '', vars: [], reponseLatex: "\\text{aucun point d'intersection}" };
+    }
     let m1, m2, p1, p2;
     do { m1 = entierSigne(1,5); m2 = entierSigne(1,5); p1 = entierSigne(1,9); p2 = entierSigne(1,9); }
     while (m1 === m2 || (p2 - p1) % (m1 - m2) === 0);
     const den = m1 - m2;
-    return { enonce: `\\(y=${affineTexte(m1, p1)}\\) et \\(y=${affineTexte(m2, p2)}\\).`, pa: fracSimplifiee(p2 - p1, den), pb: fracSimplifiee(m1*(p2 - p1) + p1*den, den), vars: [] };
+    return { enonce: `\\(y=${affineTexte(m1, p1)}\\) et \\(y=${affineTexte(m2, p2)}\\)`, pa: fracSimplifiee(p2 - p1, den), pb: fracSimplifiee(m1*(p2 - p1) + p1*den, den), vars: [] };
   }},
   {id:"16.8 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const s = tirerSysteme16(1,3);
@@ -2676,18 +2701,18 @@ const generateurs = [
     return { enonce: `Le système \\(${systemeTexte16(s.e1, s.e2)}\\) admet-il une unique solution ?`, reponseOuiNon: cas === 'secantes' };
   }},
 
-  // ---------- 16.10 (avance) : droites paralleles, alignement, parametre -- a) parallele passant par
-  // un point a une droite donnee par une equation cartesienne ax + by = c (il faut d'abord en
-  // extraire le coefficient directeur -a/b ; la version "droite donnee sous forme reduite" est en
-  // 16.6 e) ; b) trois points alignes ou non (une fois sur deux, le troisieme point est decale d'une
-  // unite : rien ne se voit, il faut comparer les coefficients directeurs) ; c) valeur d'un
-  // parametre rendant deux droites paralleles. ----------
+  // ---------- 16.10 (avance) : droites paralleles, alignement, parametre -- a) parallele a (AB)
+  // passant par C : il faut d'abord calculer le coefficient directeur de (AB) (pas d'equation
+  // cartesienne, vue plus tard dans l'annee -- David, 2026-09-26 ; la version "droite donnee par son
+  // equation reduite" est en 16.6 e) ; b) trois points alignes ou non (une fois sur deux, le
+  // troisieme point est decale d'une unite : rien ne se voit, il faut comparer les coefficients
+  // directeurs) ; c) valeur d'un parametre rendant deux droites paralleles. ----------
   {id:"16.10 a)", type:"num", texteLibre:true, equationReduite:true, gen: () => {
-    let a, b; do { a = entierSigne(1,5); b = entierSigne(2,4); } while (pgcd(Math.abs(a), Math.abs(b)) !== 1);
-    const xA = alea(-5,5), yA = alea(-5,5);
-    let c; do { c = alea(-9,9); } while (a*xA + b*yA === c);
-    // pente -a/b ; ordonnee a l'origine q = yA + (a/b) xA = (b yA + a xA)/b
-    return { enonce: `Déterminer l'équation réduite de la droite parallèle à la droite d'équation \\(${lineaireTexte16(a, b)}=${c}\\) et passant par \\(A(${xA};${yA})\\)`, reponse: affineReponse16(-a, b, b*yA + a*xA, b), reponseLatex: 'y=' + affineTexte16(-a, b, b*yA + a*xA, b) };
+    let dx, dy; do { dx = entierSigne(2,5); dy = entierSigne(1,6); } while (dy % dx === 0);
+    const A = { x: alea(-5,2), y: alea(-5,5) }, B = { x: A.x + dx, y: A.y + dy };
+    let C; do { C = { x: alea(-5,5), y: alea(-5,5) }; } while ((B.x - A.x)*(C.y - A.y) - (B.y - A.y)*(C.x - A.x) === 0);
+    // pente dy/dx ; ordonnee a l'origine q = yC - (dy/dx) xC = (dx yC - dy xC)/dx
+    return { enonce: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\). Déterminer l'équation réduite de la droite parallèle à \\((AB)\\) passant par \\(C\\)`, reponse: affineReponse16(dy, dx, dx*C.y - dy*C.x, dx), reponseLatex: 'y=' + affineTexte16(dy, dx, dx*C.y - dy*C.x, dx) };
   }},
   {id:"16.10 b)", type:"ouiNon", texteLibre:true, gen: () => {
     let dx, dy; do { dx = alea(1,4); dy = entierSigne(1,5); } while (pgcd(dx, Math.abs(dy)) !== 1 || dx === 1);
@@ -2891,6 +2916,9 @@ function aideContextuellePour(ex) {
   if (ex.type === 'combinaison') {
     return "Écrire chaque terme avec le bouton <strong>&#8594;</strong> du clavier (une fois par vecteur), séparés par <code>+</code> ou <code>-</code> : par exemple <code>1/3</code> puis <strong>&#8594;</strong> puis <code>AB</code>, puis <code>+</code>, puis <code>1/3</code> puis <strong>&#8594;</strong> puis <code>AC</code>, pour \\(\\dfrac{1}{3}\\overrightarrow{AB}+\\dfrac{1}{3}\\overrightarrow{AC}\\).";
   }
+  if (ex.peutEtreSansPoint) {
+    return "Donner les coordonnées du point d'intersection sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code> ou <code>(5/2;-1)</code>. Si les deux droites n'ont pas de point d'intersection, écrire <code>aucun</code>.";
+  }
   if (ex.formePoint) {
     return "Donner les coordonnées sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code> ou <code>(5/2;-1)</code> si l'une des valeurs est une fraction.";
   }
@@ -2915,7 +2943,7 @@ function aideContextuellePour(ex) {
     return "Écrire directement l'effectif dans chaque case à compléter, puis cliquer sur « Valider ce tableau ».";
   }
   if (ex.equationReduite) {
-    return "Écrire l'équation réduite complète, en commençant par <code>y=</code> : par exemple <code>y=2x-3</code> ou <code>y=-1/2x+4</code>. Une réponse sans « y= » n'est pas acceptée.";
+    return "Écrire l'équation réduite complète de la droite, sous la forme <code>y=mx+p</code> : par exemple <code>y=2x-3</code> ou <code>y=-1/2x+4</code>. Une réponse <code>2x-3</code> seule n'est pas acceptée : c'est une expression (un nombre qui dépend de \\(x\\)), pas une équation.";
   }
   if (ex.fractionIrreductible) {
     return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
@@ -3633,6 +3661,7 @@ function verifierUne(idx) {
   }
   let ok;
   if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
+  else if (ex.peutEtreSansPoint) ok = checkPointOuAucun16(val, ex);
   else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'vecteur') ok = checkVecteurNomme(val, ex.coef, ex.from, ex.to);
