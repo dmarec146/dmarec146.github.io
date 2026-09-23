@@ -999,6 +999,17 @@ de changer ce réglage sans qu'il en reparle.
 - Les fiches génèrent des exercices **aléatoires** à chaque chargement : une
   réponse figée dans un script de test peut devenir fausse au chargement
   suivant. Toujours relire `exercices[idx].reponse` dynamiquement.
+- **Renuméroter/renommer une fiche change son `ficheId`** (= chemin du
+  fichier) : brouillons, résultats, tentatives et devoirs restent attachés à
+  l'ANCIEN chemin — et si ce chemin est réutilisé par une autre fiche, ils
+  s'y rattachent à tort. Cas du 26/09/2026 : insertion de la fiche Seconde
+  16 « Fonctions affines », fiches 16-22 renommées 17-23. Aucun élève réel
+  n'avait encore d'identifiants ; seuls 6 documents `tentatives` de
+  `l.testeur` visaient les anciens chemins, supprimés (aucun brouillon,
+  résultat ni devoir concerné). Avant toute future renumérotation avec des
+  élèves actifs : prévoir une migration des documents vers les nouveaux
+  identifiants. Le manifeste des devoirs (`assets/js/manifeste-fiches.js`)
+  ne liste toujours pas les cahiers 6 à 8 de Seconde.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
