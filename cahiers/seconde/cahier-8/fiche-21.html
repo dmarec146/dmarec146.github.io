@@ -2108,9 +2108,16 @@ function texteVecteurLatex(coef, from, to) {
 // ---------- checkVecteurNomme : reponse "coef*XY" (ou "0") -- pas de coordonnees ici, comparaison
 // purement symbolique sur le couple de points et le coefficient attendus ; tolere l'ordre inverse
 // des points (coef change alors de signe : -vec(X,Y) = vec(Y,X)) et les variantes d'ecriture
-// (avec/sans *, espaces, coefficient implicite 1). ----------
+// (avec/sans *, espaces, coefficient implicite 1). Lit aussi bien du texte brut ("2AB") que du LaTeX
+// tape via le bouton "inserer un vecteur" du champ MathLive (voir insererVecteur/champReponsePour) :
+// "\overrightarrow{AB}"/"\vec{AB}" sont depouilles de leur habillage, et "\frac{1}{2}" (bouton
+// fraction du clavier virtuel MathLive) est reecrit "1/2" avant l'analyse habituelle. ----------
 function checkVecteurNomme(userInput, coefAttendu, from, to) {
-  const s = normaliserSaisie(userInput).trim().replace(/\s/g, '');
+  let s = normaliserSaisie(userInput).trim();
+  s = s.replace(/\\overrightarrow\{([A-Za-z]{2})\}/g, '$1').replace(/\\vec\{([A-Za-z]{2})\}/g, '$1');
+  s = s.replace(/\\left|\\right/g, '').replace(/\\cdot|\\times/g, '*');
+  s = s.replace(/\\[dt]?frac\{(\d+)\}\{(\d+)\}/g, '$1/$2');
+  s = s.replace(/\s/g, '');
   if (s === '0') return Math.abs(coefAttendu) < 1e-9;
   if (Math.abs(coefAttendu) < 1e-9) return false;
   const m = s.match(/^([+-]?(?:\d+(?:\/\d+)?)?\*?)([A-Za-z])([A-Za-z])$/);
@@ -2125,6 +2132,45 @@ function checkVecteurNomme(userInput, coefAttendu, from, to) {
   if (p1 === from.toUpperCase() && p2 === to.toUpperCase()) return Math.abs(coefUser - coefAttendu) < 1e-9;
   if (p1 === to.toUpperCase() && p2 === from.toUpperCase()) return Math.abs(coefUser + coefAttendu) < 1e-9;
   return false;
+}
+
+// ---------- checkPaire : reponse "x;y" (utilisee par 21.7, forme (m;n)) -- comparaison numerique
+// a scope aleatoire (6 essais valides sur 40 tentatives), tolerance relative 1e-6. Portee depuis
+// fiche-20.html : la fonction etait appelee (verifierUne, type 'paire') mais jamais definie dans ce
+// fichier -- oubliee lors de la construction de la fiche par copie du bloc "helpers" de fiche-20,
+// bug reel jamais detecte car jamais teste en conditions reelles (une saisie sur 21.7 declenchait
+// silencieusement une ReferenceError). Trouve et corrige le 2026-09-23. ----------
+function checkPaire(userInput, correctA, correctB, vars) {
+  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g, '');
+  if (nettoye.startsWith('(') && nettoye.endsWith(')')) nettoye = nettoye.slice(1, -1);
+  const parties = nettoye.split(';');
+  if (parties.length !== 2) return false;
+  try {
+    let essaisValides = 0, tentatives = 0;
+    while (essaisValides < 6 && tentatives < 40) {
+      tentatives++;
+      const scope = {}; (vars || []).forEach(v => { scope[v] = Math.random() * 8 - 1; });
+      let ca, cb;
+      try { ca = math.evaluate(correctA, scope); cb = math.evaluate(correctB, scope); } catch (e) { continue; }
+      if (typeof ca !== 'number' || typeof cb !== 'number' || !isFinite(ca) || !isFinite(cb)) continue;
+      let ua, ub;
+      try { ua = math.evaluate(parties[0], scope); ub = math.evaluate(parties[1], scope); } catch (e) { return false; }
+      if (typeof ua !== 'number' || typeof ub !== 'number' || !isFinite(ua) || !isFinite(ub)) return false;
+      if (Math.abs(ua - ca) > 1e-6 * (1 + Math.abs(ca))) return false;
+      if (Math.abs(ub - cb) > 1e-6 * (1 + Math.abs(cb))) return false;
+      essaisValides++;
+    }
+    return essaisValides >= 6;
+  } catch (e) { return false; }
+}
+// checkPointCoordonnees : comme checkPaire, mais EXIGE la notation "(x;y)" avec parentheses --
+// utilisee des que ex.formePoint est vrai. Non utilisee par un generateur de cette fiche a ce jour,
+// portee ici par prudence/coherence avec fiche-20 (meme dispatch dans verifierUne).
+function checkPointCoordonnees(userInput, correctA, correctB, vars) {
+  const nettoye = String(userInput).trim();
+  const m = nettoye.match(/^\((.*)\)$/);
+  if (!m) return false;
+  return checkPaire(m[1], correctA, correctB, vars);
 }
 
 // ---------- repere SANS coordonnees pour le calcul vectoriel : quadrillage sans axes ni graduations
@@ -2619,7 +2665,7 @@ function aideContextuellePour(ex) {
     return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
   }
   if (ex.type === 'vecteur') {
-    return "Écrire le vecteur sous la forme d'un coefficient suivi des deux points, par exemple <code>2AB</code>, <code>-AC</code> ou <code>1/2AC</code>. Si le résultat est le vecteur nul, écrire <code>0</code>.";
+    return "Écrire le coefficient si besoin, cliquer sur le bouton <strong>&#8594;</strong> du clavier, puis écrire les deux points : par exemple <code>2</code> puis <strong>&#8594;</strong> puis <code>AB</code> pour \\(2\\overrightarrow{AB}\\), ou directement <strong>&#8594;</strong> puis <code>AC</code> pour \\(\\overrightarrow{AC}\\). Un coefficient peut être une fraction, par exemple <code>1/2</code>. Si le résultat est le vecteur nul, écrire <code>0</code>.";
   }
   if (ex.formePoint) {
     return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code> ou <code>(5/2;-1)</code> si l'une des valeurs est une fraction.";
@@ -2656,7 +2702,10 @@ function aideContextuellePour(ex) {
   return "";
 }
 
-const TYPES_MATHFIELD = ['num'];
+// meme clavier MathLive pour toute la fiche (pas de clavier maison different par type de question) :
+// num, ouiNon, vecteur et paire y passent tous. Les autres fiches gardent leur propre liste, celle-ci
+// est locale a fiche-21 (David, 2026-09-23 : "utiliser MathLive et ne pas faire au cas par cas").
+const TYPES_MATHFIELD = ['num', 'ouiNon', 'vecteur', 'paire'];
 
 function estEnsemble(ex) {
   return !!(ex.reponse && ex.reponse.trim().startsWith('{'));
@@ -2669,6 +2718,15 @@ function nbElementsEnsemble(ex) {
 
 function utiliseMathfield(ex) {
   return TYPES_MATHFIELD.includes(ex.type);
+}
+
+// insere le symbole vecteur \overrightarrow{} avec une case a remplir (bouton dedie, reponses de
+// type 'vecteur' uniquement) -- porte de la fiche 21 de Premiere (cahier 7).
+function insererVecteur(idx) {
+  const input = document.getElementById('input-' + idx);
+  input.focus();
+  input.executeCommand(['insert', '\\overrightarrow{#?}', {insertionMode: 'insertBefore'}]);
+  reinitialiserStatut(idx);
 }
 
 function placeholderPour(ex) {
@@ -2757,64 +2815,9 @@ function genererClavierComparaison(idx, ex) {
       <div class="clavier-apercu">Astuce : écrire la comparaison complète, par exemple « ${ex.nomFonction}(${v1})&gt;${ex.nomFonction}(${v2}) ».</div>`;
 }
 
-// clavier de 21.3 (et de tout oui/non) : deux touches directes plutot que le clavier "ensemble"
-// generique (accolades, racine, comparaisons) qui n'a aucun rapport avec une reponse oui/non --
-// meme principe que le clavier "vrai/faux" de la fiche 21 de Premiere.
-function genererClavierOuiNon(idx) {
-  return `
-      <div class="clavier-groupe">
-        <button class="touche-large" onclick="inserer(${idx},'oui')">oui</button>
-        <button class="touche-large" onclick="inserer(${idx},'non')">non</button>
-        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-      </div>`;
-}
-
-// clavier des reponses "coefficient + deux points" (21.4, 21.5, 21.6, 21.8) : le clavier
-// "ensemble" generique ne propose ni lettres ni barre de fraction, alors que la reponse en a
-// besoin (ex. "1/2AC") -- seules les deux lettres reellement utilisees dans CETTE reponse sont
-// proposees (ex.from/ex.to), pas tout l'alphabet.
-function genererClavierVecteur(idx, ex) {
-  const lettres = [...new Set([ex.from, ex.to])];
-  const touchesLettres = lettres.map(l => `<button onclick="inserer(${idx},'${l}')">${l}</button>`).join('');
-  return GROUPE_CHIFFRES(idx) + `
-      <div class="clavier-groupe">
-        <span class="clavier-label">Points</span>
-        ${touchesLettres}
-      </div>
-      <div class="clavier-groupe">
-        <span class="clavier-label">Coefficient</span>
-        <button onclick="inserer(${idx},'-')">−</button>
-        <button onclick="inserer(${idx},'/')">/</button>
-      </div>
-      <div class="clavier-groupe">
-        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-      </div>
-      <div class="clavier-apercu">Astuce : un coefficient (entier ou fraction, par exemple « 1/2 ») suivi des deux lettres, comme « 2${lettres[0]||'A'}${lettres[1]||'B'} », « -${lettres[0]||'A'}${lettres[1]||'B'} » ou « 0 » pour le vecteur nul.</div>`;
-}
-
-// clavier de 21.7 (couple "m;n") : chiffres, signe et point-virgule seulement -- le clavier
-// "ensemble" generique (accolades, racine, comparaisons) n'a rien a faire ici non plus.
-function genererClavierPaire(idx) {
-  return GROUPE_CHIFFRES(idx) + `
-      <div class="clavier-groupe">
-        <span class="clavier-label">Couple</span>
-        <button onclick="inserer(${idx},';')">;</button>
-        <button onclick="inserer(${idx},'-')">−</button>
-      </div>
-      <div class="clavier-groupe">
-        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
-      </div>
-      <div class="clavier-apercu">Astuce : les deux valeurs séparées par un point-virgule, par exemple « 2;-1 ».</div>`;
-}
-
 function genererClavierPour(idx, ex) {
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
   if (ex.comparaison) return genererClavierComparaison(idx, ex);
-  if (ex.type === 'ouiNon') return genererClavierOuiNon(idx);
-  if (ex.type === 'vecteur') return genererClavierVecteur(idx, ex);
-  if (ex.type === 'paire') return genererClavierPaire(idx);
   return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
         <span class="clavier-label">Ensemble</span>
@@ -2893,9 +2896,18 @@ function champReponsePour(idx, ex) {
     <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
   }
   if (utiliseMathfield(ex)) {
-    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="réponse"
+    // bouton dedie "inserer un vecteur" (type 'vecteur' uniquement) : insere le symbole fleche
+    // \overrightarrow{} avec une case a remplir, plutot que de demander a l'eleve de taper les
+    // deux lettres sans notation -- meme principe que le bouton equivalent de la fiche 21 de
+    // Premiere. Un seul type de clavier (MathLive) pour toute la fiche, pas de clavier maison
+    // different par type de question (David, 2026-09-23).
+    const boutonVecteur = ex.type === 'vecteur'
+      ? `<button class="q-clavier-btn" onclick="insererVecteur(${idx})" title="Insérer un vecteur">&#8594;</button>`
+      : '';
+    return `<math-field class="q-mathfield" id="input-${idx}" placeholder="${placeholderPour(ex)}"
               smart-fence="off" smart-superscript="on"
               virtual-keyboard-mode="manual"></math-field>
+    ${boutonVecteur}
     <button class="q-clavier-btn" onclick="document.getElementById('input-${idx}').executeCommand('toggleVirtualKeyboard')" title="Clavier symboles">&#9000;</button>`;
   }
   return `
@@ -3262,6 +3274,18 @@ function valeurDuChamp(el) {
   return el.value.trim();
 }
 
+// Comme valeurDuChamp, mais lit le LaTeX brut d'un math-field plutot que son export ascii-math --
+// necessaire pour les types dont la reponse peut contenir un identifiant de plusieurs lettres
+// (ouiNon "oui"/"non", vecteur "AB"/"\overrightarrow{AB}", paire "2;-1") : l'export ascii-math
+// separe systematiquement les lettres adjacentes d'un espace ("AB" -> "A B", "oui" -> "o u i"),
+// ce que le LaTeX brut ne fait jamais pour une saisie simple. Verifie empiriquement au clavier
+// (David, 2026-09-23) avant d'ecrire cette fonction.
+function valeurDuChampLatex(el) {
+  if (!el) return '';
+  if (el.tagName === 'MATH-FIELD') return el.getValue('latex').trim();
+  return el.value.trim();
+}
+
 // Identifiant stable de la fiche pour le suivi (assets/js/suivi.js) :
 // le chemin de la page lui-meme, donc correct automatiquement si ce
 // fichier est copie sous un autre nom/chemin pour une nouvelle fiche.
@@ -3367,7 +3391,10 @@ function verifierUne(idx) {
     return ok;
   }
   const input = document.getElementById('input-' + idx);
-  const val = valeurDuChamp(input);
+  // ouiNon/vecteur/paire : lire le LaTeX brut, pas l'export ascii-math (voir valeurDuChampLatex).
+  const val = (ex.type === 'ouiNon' || ex.type === 'vecteur' || ex.type === 'paire')
+    ? valeurDuChampLatex(input)
+    : valeurDuChamp(input);
   if (!val) {
     if (reveler) { statut.textContent=''; statut.className='q-statut'; }
     delete saisies[idx];
@@ -3460,7 +3487,14 @@ function toutesLesReponsesSontSaisies() {
     if (ex.type === 'tableauCroiseRempli') {
       return tableauCroiseRempliEstComplet(idx, ex);
     }
-    return valeurDuChamp(document.getElementById('input-' + idx)) !== '';
+    const input = document.getElementById('input-' + idx);
+    // ouiNon/vecteur/paire : l'export ascii-math peut rester vide alors que le LaTeX ne l'est pas
+    // (ex. "\overrightarrow{AB}" seul, sans coefficient, s'exporte en ascii-math "" -- verifie
+    // empiriquement, David 2026-09-23) -- lire le meme champ que verifierUne pour ces types.
+    if (ex.type === 'ouiNon' || ex.type === 'vecteur' || ex.type === 'paire') {
+      return valeurDuChampLatex(input) !== '';
+    }
+    return valeurDuChamp(input) !== '';
   });
 }
 
