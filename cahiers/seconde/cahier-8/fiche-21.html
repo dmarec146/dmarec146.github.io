@@ -2890,8 +2890,10 @@ function placeholderPour(ex) {
   if (ex.type === 'ouiNon') return 'oui / non';
   if (ex.formePoint) return '(x;y)';
   if (ex.type === 'paire') return 'x;y';
-  if (ex.type === 'vecteur') return 'AB';
-  if (ex.type === 'combinaison') return 'AB+AC';
+  // champ vide (pas de placeholder "AB") : un "AB" sans fleche, affiche en filigrane dans le champ,
+  // entretient la confusion avec la distance AB (David, 2026-09-24).
+  if (ex.type === 'vecteur') return '';
+  if (ex.type === 'combinaison') return '';
   if (ex.comparaison) {
     const [v1, v2] = ex.varsComparaison || ['x1','x2'];
     return `${ex.nomFonction}(${v1}) > ${ex.nomFonction}(${v2})`;
