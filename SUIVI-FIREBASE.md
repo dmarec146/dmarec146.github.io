@@ -1381,6 +1381,41 @@ de changer ce réglage sans qu'il en reparle.
   panneau « Voir toutes les réponses » (30/30, aucune erreur MathJax),
   capture d'écran confirmant le rendu visuel (une seule section, 4
   questions a)-d) côte à côte).
+
+  **Même jour, même principe étendu à 3.9-3.10-3.11** : « Équations
+  bicarrées » (2 exemples), « Écart entre les deux racines (I) » et « (II) »
+  (1 exemple chacun) — 4 exemples au total, David demande de « garder 4
+  exemples » en les regroupant en une seule section, malgré des titres
+  différents cette fois (pas la répétition à l'identique de 3.5-3.8) : deux
+  sujets mathématiques distincts (équations bicarrées / écart entre les
+  racines d'un trinôme paramétré) réunis sous un titre composite « Équations
+  bicarrées, écart entre les deux racines. ». Contenu inchangé, juste
+  regroupé en a)/b)/c)/d) dans une seule grille. `genGroupe3_10_11`
+  (fonction partagée, devenue inutile après la fusion) supprimée plutôt que
+  laissée morte dans le fichier. Fiche passée de 11 à 9 groupes, toujours 30
+  questions.
+
+  **Bug trouvé et corrigé au passage, introduit par la fusion précédente
+  (3.5-3.8) et resté invisible jusqu'ici** : `fmtConst3` et
+  `unBiquadratique` étaient chacune déclarées DEUX FOIS dans le fichier
+  (copier-coller en trop lors de l'assemblage du script de fusion). Une
+  redéclaration de fonction en JavaScript n'est pas une erreur de syntaxe
+  (la seconde écrase silencieusement la première, sans changer son
+  comportement puisque les deux étaient identiques) — donc invisible à la
+  vérification `vm.Script` et aux tests fonctionnels, qui portent sur le
+  comportement, pas sur la présence de code mort. Repéré seulement en
+  relisant la zone du fichier à la main pendant ce chantier suivant, pas par
+  un test automatisé. **Leçon retenue** : après un script de fusion qui
+  réassemble des blocs de fonctions extraits indépendamment, relire le
+  fichier obtenu (pas seulement le tester) pour repérer une déclaration
+  dupliquée — aucun outil de vérification utilisé jusqu'ici (syntaxe,
+  tirages auto-cohérents, cycle navigateur) ne l'aurait signalée. Corrigé en
+  supprimant le doublon des deux fonctions.
+
+  Vérifié comme les fusions précédentes : syntaxe, 500 tirages
+  auto-cohérents, cycle complet dans le navigateur (30/30, mêmes échecs
+  isolés déjà connus), panneau « Voir toutes les réponses » (30/30, aucune
+  erreur MathJax), capture d'écran du rendu visuel.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
