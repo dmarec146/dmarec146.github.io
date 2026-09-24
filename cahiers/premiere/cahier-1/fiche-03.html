@@ -1006,15 +1006,7 @@ function genGroupe3_3() {
     const {enonce,reponse} = enonceEtReponseTrinome(F(1),F(r1),F(r2),v);
     return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
   }
-  // b) delicat, meme famille que a) mais racines fractionnaires propres (a=1)
-  function itemFractionPropre(lettre, v) {
-    function racine() { const [n,d]=aleaParmi(PAIRES_COPREMIERES); return F(aleaParmi([1,-1])*n, d); }
-    let r1,r2;
-    do { r1=racine(); r2=racine(); } while (Math.abs(r1.n/r1.d-r2.n/r2.d)<1e-9);
-    const {enonce,reponse} = enonceEtReponseTrinome(F(1), r1, r2, v);
-    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
-  }
-  // c) delicat, famille distincte : coefficient dominant non entier (a>=2), racines
+  // b) delicat, famille distincte : coefficient dominant non entier (a>=2), racines
   // rationnelles de denominateur a
   function itemNonMoniqueRationnel(lettre, v) {
     const a = aleaParmi([2,3,6]);
@@ -1024,7 +1016,7 @@ function genGroupe3_3() {
     const {enonce,reponse} = enonceEtReponseTrinome(F(a), r1, r2, v);
     return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
   }
-  // d) delicat, famille distincte : racines irrationnelles, a=1, centre p entier + rayon sqrt(d)
+  // c) delicat, famille distincte : racines irrationnelles, a=1, centre p entier + rayon sqrt(d)
   function itemCentre(lettre) {
     const p = aleaNonNul(-4,4), d = aleaParmi(RADICANDS_PETITS);
     const B = -2*p, C = p*p-d;
@@ -1032,15 +1024,7 @@ function genGroupe3_3() {
     const reponse = `(x${fmtConst(-p)}-sqrt(${d}))*(x${fmtConst(-p)}+sqrt(${d}))`;
     return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
   }
-  // e) delicat, plus exotique que d) : le centre lui-meme est un surd
-  function itemCentreSurd(lettre) {
-    const m = aleaParmi(RADICANDS_PETITS), k = alea(1,4);
-    const C = m-k*k;
-    const enonce = `x^2-2\\sqrt{${m}}x${fmtConst(C)}`;
-    const reponse = `(x-sqrt(${m})-${k})*(x-sqrt(${m})+${k})`;
-    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
-  }
-  // f) delicat, le plus complet : non-monique (a=2) ET racines irrationnelles
+  // d) delicat, le plus complet : non-monique (a=2) ET racines irrationnelles
   function itemNonMoniqueSurd(lettre) {
     const A = 2;
     let P,K,rad;
@@ -1051,8 +1035,8 @@ function genGroupe3_3() {
     return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
   }
   return [
-    itemEntier('a','x'), itemFractionPropre('b','x'), itemNonMoniqueRationnel('c','x'),
-    itemCentre('d'), itemCentreSurd('e'), itemNonMoniqueSurd('f')
+    itemEntier('a','x'), itemNonMoniqueRationnel('b','x'),
+    itemCentre('c'), itemNonMoniqueSurd('d')
   ];
 }
 
@@ -1284,13 +1268,13 @@ let exercices; // initialise en bas du script
 const groupes = {
   "grille-3-1": [0,1],
   "grille-3-2": [2,3,4,5],
-  "grille-3-3": [6,7,8,9,10,11],
-  "grille-3-4": [12,13],
-  "grille-3-5": [14,15,16,17],
-  "grille-3-6": [18,19,20],
-  "grille-3-7": [21,22,23],
-  "grille-3-8": [24,25],
-  "grille-3-9": [26,27,28,29]
+  "grille-3-3": [6,7,8,9],
+  "grille-3-4": [10,11],
+  "grille-3-5": [12,13,14,15],
+  "grille-3-6": [16,17,18],
+  "grille-3-7": [19,20,21],
+  "grille-3-8": [22,23],
+  "grille-3-9": [24,25,26,27]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 

@@ -1416,6 +1416,21 @@ de changer ce réglage sans qu'il en reparle.
   auto-cohérents, cycle complet dans le navigateur (30/30, mêmes échecs
   isolés déjà connus), panneau « Voir toutes les réponses » (30/30, aucune
   erreur MathJax), capture d'écran du rendu visuel.
+
+  **Même jour, retour de David : 3.3 (6 exemples) ramenée à 4.** Gardé a)
+  classique (racines entières) ; b) délicat famille distincte (coefficient
+  dominant non entier, racines rationnelles, ex-c) ; c) délicat famille
+  distincte (racines irrationnelles, centre entier, ex-d) ; d) délicat le
+  plus complet (non monique ET racines irrationnelles, ex-f). Écartés
+  l'ancien b) (racines fractionnaires propres, redondant avec a) — même
+  famille, aucune difficulté supplémentaire par rapport à un simple
+  changement de forme du résultat) et l'ancien e) (centre lui-même un surd,
+  redondant avec c) — même famille, variante plus exotique mais pas plus
+  instructive). Fiche passée de 30 à 28 questions. Vérifié comme les
+  fusions précédentes : syntaxe, 500 tirages auto-cohérents, cycle complet
+  dans le navigateur (28/28), panneau « Voir toutes les réponses » (28/28,
+  aucune erreur MathJax), exigence de forme factorisée toujours correcte
+  sur 3.3 a) à d).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
