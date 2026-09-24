@@ -1213,6 +1213,18 @@ de changer ce réglage sans qu'il en reparle.
   Vérifié à chaque étape sur 20 régénérations aléatoires (auto-cohérence
   des réponses face à leur propre correcteur) et dans le vrai navigateur,
   aucune erreur console. Fiche passée de 53 à 37 questions au total.
+
+  **1.14 ramenée de 4 à 2 questions** (même jour) : l'ancien b) était un
+  duplicata exact de a) (même fonction génératrice `seuilConstant`, seule
+  la variable changeait de nom — aucune difficulté supplémentaire), retiré
+  sans hésiter. Gardées : a) (classique, comparaison directe d'une
+  expression quadratique à une constante) et l'ancien c) (délicat,
+  comparaison à une AUTRE expression quadratique — il faut regrouper avant
+  de compléter le carré). Retirée aussi l'ancienne d) (regroupement +
+  coefficient fractionnaire + comparaison à un terme linéaire — cumulait
+  trois difficultés à la fois plutôt que d'en isoler une seule ; le
+  regroupement est déjà couvert par c), les fractions par 1.7/1.9). Vérifié
+  sur 20 régénérations, aucune erreur. Fiche passée à 35 questions au total.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.

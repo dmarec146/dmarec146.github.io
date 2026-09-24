@@ -1218,6 +1218,14 @@ function genGroupe1_9() {
   return [a9,b9];
 }
 
+// Ramenee de 4 a 2 questions le 24/09/2026 (David) -- l'ancien b) etait un duplicata exact de
+// a) (meme fonction generatrice seuilConstant, seule la variable changeait de nom, aucune
+// difficulte supplementaire) : retire sans hesiter. Gardees : a) (classique, comparaison
+// directe d'une expression quadratique a une constante) et l'ancien c) (delicat, comparaison a
+// une AUTRE expression quadratique -- il faut regrouper avant de completer le carre). Retiree
+// aussi l'ancienne d) (regroupement + coefficient fractionnaire + comparaison a un terme
+// lineaire, redondante avec c) pour le regroupement et avec 1.7/1.9 pour les fractions --
+// cumulait plusieurs difficultes a la fois plutot que d'en isoler une seule).
 function genGroupe1_14() {
   function seuilConstant(lettre, varName, op) {
     const alpha = aleaNonNul(-4,4), beta = alea(-6,6);
@@ -1231,34 +1239,17 @@ function genGroupe1_14() {
       enonce:`\\forall ${varName}\\in\\mathbb{R},\\ ${varName}^2${fmtLin(B,varName)}${fmtConst(C-T)}${opAff}0`,
       estVrai};
   }
-  // a,b : quadratique compare a une constante
   const ea = seuilConstant('a','x', aleaParmi(['\\geqslant','>']));
-  const eb = seuilConstant('b','t', aleaParmi(['\\geqslant','>']));
-  // c : quadratique compare a quadratique, 3z+z^2 (op) q*z^2+r style
+  // b (ex-c) : quadratique compare a quadratique, 3z+z^2 (op) q*z^2+r style
   const qc = aleaParmi([2,3,4]), pc = aleaNonNul(-6,6), rc = alea(-9,9);
   const opc = aleaParmi(['<','\\leqslant']);
   const Ac=F(qc-1), Bc=F(-pc), Cc=F(rc);
   const {beta:betaC} = completerCarreExact(Ac,Bc,Cc);
   const estVraiC = opc==='<' ? betaC.n>0 : betaC.n>=0;
-  const ec = {id:"1.14 c)", type:"vraifaux",
+  const eb = {id:"1.14 b)", type:"vraifaux",
     enonce:`\\forall z\\in\\mathbb{R},\\ ${pc}z+z^2${opc}${qc}z^2${fmtConst(rc)}`,
     estVrai: estVraiC};
-  // d : quadratique fractionnaire compare a un terme lineaire
-  const [Apd,Aqd] = aleaParmi(PAIRES_COPREMIERES);
-  const Ad = F(Apd,Aqd);
-  const alphaD = F(aleaNonNul(-4,4), aleaParmi([1,2,3]));
-  const betaD = F(alea(-6,6));
-  const Bd = fracMul(F(-2), fracMul(Ad,alphaD));
-  const Cd = fracAdd(fracMul(Ad,fracMul(alphaD,alphaD)), betaD);
-  const opd = aleaParmi(['\\geqslant','>']);
-  const estVraiD = opd==='\\geqslant' ? betaD.n>=0 : betaD.n>0;
-  const Dcoef = fracNeg(Bd); // terme affiche a droite : Dcoef * v
-  const rhsSigneD = Dcoef.n<0 ? '-' : '';
-  const rhsFracD = Dcoef.d===1 ? `${Math.abs(Dcoef.n)}` : `\\dfrac{${Math.abs(Dcoef.n)}}{${Dcoef.d}}`;
-  const ed = {id:"1.14 d)", type:"vraifaux",
-    enonce:`\\forall v\\in\\mathbb{R},\\ \\dfrac{${Ad.n}}{${Ad.d}}v^2${fmtFracApres(Cd)}${opd}${rhsSigneD}${rhsFracD}v`,
-    estVrai: estVraiD};
-  return [ea,eb,ec,ed];
+  return [ea,eb];
 }
 
 function genGroupe1_15() {
@@ -1319,10 +1310,10 @@ function marquerFormesFactorisees(liste) {
 let exercices; // initialise tout en bas du script, une fois genererParametresGraphiques() defini
 
 // Indices recalcules le 24/09/2026 (David : fiches de Premiere trop longues) -- 1.1-1.4
-// ramenees de 6 a 4 questions chacune, 1.6-1.9 de 4/6/3/3 a 2 chacune (16 items en moins au
-// total) ; tout ce qui suit 1.4 dans le tableau `exercices` decale d'autant (1.10-1.13, generes
-// a part par genererParametresGraphiques() et retrouves par id via exercices.findIndex(),
-// n'ont pas besoin d'etre mis a jour ici).
+// ramenees de 6 a 4 questions chacune, 1.6-1.9 de 4/6/3/3 a 2 chacune, 1.14 de 4 a 2 (18 items
+// en moins au total) ; tout ce qui suit 1.4 dans le tableau `exercices` decale d'autant
+// (1.10-1.13, generes a part par genererParametresGraphiques() et retrouves par id via
+// exercices.findIndex(), n'ont pas besoin d'etre mis a jour ici).
 const groupes = {
   "grille-1-1": [0,1,2,3],
   "grille-1-2": [4,5,6,7],
@@ -1333,8 +1324,8 @@ const groupes = {
   "grille-1-7": [20,21],
   "grille-1-8": [22,23],
   "grille-1-9": [24,25],
-  "grille-1-14": [30,31,32,33],
-  "grille-1-15": [34,35,36]
+  "grille-1-14": [30,31],
+  "grille-1-15": [32,33,34]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
