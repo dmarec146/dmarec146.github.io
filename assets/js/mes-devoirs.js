@@ -21,6 +21,9 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
+// Meme sentinelle que suivi.js/devoirs.js/devoirs-notification.js.
+const CLASSE_HORS_CLASSE = 'hors-classe';
+
 const zoneChargement = document.getElementById('md-chargement');
 const zoneErreur = document.getElementById('md-erreur');
 const zoneContenu = document.getElementById('md-contenu');
@@ -89,16 +92,25 @@ onAuthStateChanged(auth, async (utilisateur) => {
   }
   try {
     const profil = await getDoc(doc(db, 'eleves', utilisateur.uid));
-    const classe = profil.exists() ? profil.data().classe : null;
-    if (!classe) {
+    if (!profil.exists()) {
       zoneChargement.hidden = true;
       zoneErreur.textContent = "Ce compte n'est pas associé à une classe élève.";
       zoneErreur.hidden = false;
       return;
     }
+    // Meme sentinelle que suivi.js/devoirs.js : un eleve "hors classe" doit
+    // quand meme pouvoir voir un devoir qui le cible individuellement (voir
+    // le filtre `eleves` juste apres) -- avant le 24/09/2026, cette page
+    // affichait a tort le message "pas associe a une classe" pour lui.
+    const classe = profil.data().classe || CLASSE_HORS_CLASSE;
 
     const instantaneDevoirs = await getDocs(query(collection(db, 'devoirs'), where('classe', '==', classe)));
-    const devoirs = instantaneDevoirs.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Ciblage individuel d'un devoir "Hors classe" (24/09/2026, voir
+    // devoirs.js) : un devoir dont `eleves` existe ne concerne que les uid
+    // qu'il liste, pas tout le groupe.
+    const devoirs = instantaneDevoirs.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((d) => !Array.isArray(d.eleves) || d.eleves.includes(utilisateur.uid));
     const maintenant = Date.now();
 
     const avecStatut = await Promise.all(devoirs.map(async (dv) => {

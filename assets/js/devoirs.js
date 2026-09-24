@@ -19,6 +19,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   doc,
   getDocs,
   query,
@@ -51,6 +52,8 @@ const selectMode = document.getElementById('dev-mode');
 const champDuree = document.getElementById('dev-champ-duree');
 const selectDuree = document.getElementById('dev-duree');
 const selectClasse = document.getElementById('dev-classe');
+const champEleves = document.getElementById('dev-champ-eleves');
+const listeEleves = document.getElementById('dev-eleves-liste');
 const champEcheance = document.getElementById('dev-echeance');
 const champEssais = document.getElementById('dev-essais');
 const boutonSoumettre = document.getElementById('dev-bouton-soumettre');
@@ -167,6 +170,14 @@ function remplirSelectFiche() {
 
 let toutesLesClasses = [];
 
+// Rempli par classesConnues() ci-dessous, en meme temps que la detection de
+// la sentinelle "hors-classe" (un seul passage sur la collection eleves) :
+// liste des eleves sans champ classe, pour la case a cocher individuelle
+// ajoutee le 24/09/2026 (David : pouvoir choisir precisement QUI, dans le
+// groupe hors classe, est concerne par un devoir plutot que tout le groupe
+// d'office).
+let elevesHorsClasse = [];
+
 // Devoir en cours de modification (voir modifierDevoir ci-dessous) -- null
 // en mode creation normale. Le formulaire est le MEME dans les deux cas
 // (pre-rempli le temps de l'edition), seul ce qui se passe a la soumission
@@ -180,15 +191,50 @@ let devoirEnEdition = null;
 async function classesConnues() {
   const instantane = await getDocs(collection(db, 'eleves'));
   const classes = new Set();
-  let auMoinsUnHorsClasse = false;
+  elevesHorsClasse = [];
   instantane.docs.forEach((d) => {
     const classe = d.data().classe;
-    if (classe) classes.add(classe); else auMoinsUnHorsClasse = true;
+    if (classe) classes.add(classe);
+    else elevesHorsClasse.push({ uid: d.id, ...d.data() });
   });
+  elevesHorsClasse.sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b)));
   const liste = [...classes].sort();
-  if (auMoinsUnHorsClasse) liste.push(CLASSE_HORS_CLASSE);
+  if (elevesHorsClasse.length > 0) liste.push(CLASSE_HORS_CLASSE);
   return liste;
 }
+
+// Case a cocher par eleve hors classe, affichee seulement quand "Hors
+// classe" est la classe choisie (voir mettreAJourChampEleves). `selectionnes`
+// (optionnel, utilise par modifierDevoir) : uid deja cibles par le devoir en
+// cours d'edition -- absent (creation, ou devoir existant sans champ
+// `eleves`, cree avant ce chantier) veut dire "tout le monde coche par
+// defaut", pour ne pas forcer un re-cochage manuel de la totalite du groupe
+// a chaque nouvelle attribution.
+function remplirListeEleves(selectionnes) {
+  listeEleves.innerHTML = '';
+  for (const eleve of elevesHorsClasse) {
+    const ligne = document.createElement('label');
+    ligne.className = 'dev-eleve-ligne';
+    const case_ = document.createElement('input');
+    case_.type = 'checkbox';
+    case_.value = eleve.uid;
+    case_.checked = !selectionnes || selectionnes.includes(eleve.uid);
+    ligne.append(case_, document.createTextNode(nomAffiche(eleve)));
+    listeEleves.appendChild(ligne);
+  }
+}
+
+// Affiche/masque la case a cocher selon la classe choisie, et la peuple a la
+// demande (jamais utile hors "Hors classe"). Appelee au changement de classe
+// ET au changement de type (qui repeuple entierement le select classe, voir
+// remplirSelectClasse) -- toujours apres l'un ou l'autre pour rester
+// synchronisee avec la valeur reellement affichee.
+function mettreAJourChampEleves(selectionnes) {
+  const estHorsClasse = selectClasse.value === CLASSE_HORS_CLASSE;
+  champEleves.hidden = !estHorsClasse;
+  if (estHorsClasse) remplirListeEleves(selectionnes);
+}
+selectClasse.addEventListener('change', () => mettreAJourChampEleves());
 
 // Repeuple le select Classe. Plus de filtre par niveau pour un sujet blanc
 // d'automatismes (jusqu'au 24/09/2026, seule la Première etait proposee :
@@ -227,6 +273,7 @@ selectType.addEventListener('change', () => {
   champMode.hidden = !estAutomatismes;
   mettreAJourChampDuree();
   remplirSelectClasse();
+  mettreAJourChampEleves();
 });
 
 selectMode.addEventListener('change', mettreAJourChampDuree);
@@ -242,6 +289,7 @@ async function initialiser() {
       return;
     }
     remplirSelectClasse();
+    mettreAJourChampEleves();
 
     // Échéance par défaut : pas avant maintenant (attribut min du champ,
     // recalculé à l'ouverture de la page plutôt qu'écrit en dur dans le HTML).
@@ -296,6 +344,11 @@ function modifierDevoir(devoir) {
   // remplirSelectClasse) : la classe du devoir doit rester dans la liste
   // puisque c'est forcement une classe deja utilisee par ce devoir.
   selectClasse.value = devoir.classe;
+  // Assigner .value ne declenche pas de "change" -- rappel manuel pour que
+  // la case a cocher hors-classe apparaisse/se peuple si besoin, pre-cochee
+  // sur les eleves deja cibles par ce devoir (devoir.eleves absent = devoir
+  // cree avant ce chantier, s'appliquait a tout le groupe : tout coche).
+  mettreAJourChampEleves(devoir.eleves);
   if (devoir.echeance?.toMillis) champEcheance.value = dateLocalePourChamp(devoir.echeance.toMillis());
   champEssais.value = String(devoir.nbEssaisMax);
 
@@ -364,23 +417,46 @@ formulaire.addEventListener('submit', async (evenement) => {
     return;
   }
 
+  // Cible individuelle (24/09/2026) : uniquement pour "Hors classe", ou le
+  // groupe recouvre des eleves de niveaux differents qui n'ont en commun que
+  // l'absence de classe -- une vraie classe reste ciblee dans son ensemble,
+  // comme avant. Au moins un eleve coche exige (sinon le devoir ne
+  // s'appliquerait litteralement a personne, voir le filtre cote suivi.js).
+  let eleves = null;
+  if (classe === CLASSE_HORS_CLASSE) {
+    eleves = [...listeEleves.querySelectorAll('input:checked')].map((c) => c.value);
+    if (eleves.length === 0) {
+      afficherEtat(zoneErreurFormulaire, 'Merci de sélectionner au moins un élève.');
+      return;
+    }
+  }
+
   boutonSoumettre.disabled = true;
   try {
     if (devoirEnEdition) {
       // Pas de creeLe/creePar ici : on ne touche pas aux metadonnees de
-      // creation d'origine, seulement aux parametres modifies.
-      await updateDoc(doc(db, 'devoirs', devoirEnEdition.id), { ...donnees, classe, echeance, nbEssaisMax });
+      // creation d'origine, seulement aux parametres modifies. deleteField()
+      // quand la classe n'est plus "Hors classe" : un devoir modifie pour
+      // viser une vraie classe ne doit garder aucune trace d'un ancien
+      // ciblage individuel.
+      await updateDoc(doc(db, 'devoirs', devoirEnEdition.id), {
+        ...donnees, classe, echeance, nbEssaisMax, eleves: eleves ?? deleteField(),
+      });
       annulerEdition();
       afficherEtat(zoneConfirmation, 'Devoir modifié.');
     } else {
-      await addDoc(collection(db, 'devoirs'), {
+      const nouveauDevoir = {
         ...donnees,
         classe,
         echeance,
         nbEssaisMax,
         creeLe: serverTimestamp(),
         creePar: auth.currentUser.email || null,
-      });
+      };
+      // Pas de champ `eleves` du tout ici si non hors-classe (plutot que
+      // deleteField(), refuse par addDoc -- reserve a updateDoc).
+      if (eleves) nouveauDevoir.eleves = eleves;
+      await addDoc(collection(db, 'devoirs'), nouveauDevoir);
       formulaire.reset();
       selectType.dispatchEvent(new Event('change'));
       afficherEtat(zoneConfirmation, 'Devoir attribué.');
@@ -416,7 +492,8 @@ async function chargerListeDevoirs() {
     celluleFiche.textContent = devoir.titre || devoir.ficheId;
 
     const celluleClasse = document.createElement('td');
-    celluleClasse.textContent = formaterClasseAffichee(devoir.classe || '—');
+    celluleClasse.textContent = formaterClasseAffichee(devoir.classe || '—')
+      + (devoir.classe === CLASSE_HORS_CLASSE && Array.isArray(devoir.eleves) ? ` (${devoir.eleves.length})` : '');
 
     const celluleEcheance = document.createElement('td');
     const echeanceMillis = devoir.echeance?.toMillis ? devoir.echeance.toMillis() : 0;
@@ -479,9 +556,13 @@ async function afficherResultats(devoir) {
   // "Hors classe" (voir CLASSE_HORS_CLASSE) : aucun eleve n'a litteralement
   // ce champ classe (il en est simplement depourvu), une requete where() ne
   // trouverait donc jamais personne -- filtre cote client sur l'absence du
-  // champ a la place.
+  // champ a la place. Ciblage individuel (24/09/2026, voir devoir.eleves) :
+  // restreint encore la liste aux seuls uid cibles par CE devoir, si le
+  // champ est present (absent = devoir cree avant ce chantier, s'applique a
+  // tout le groupe hors classe, comportement inchange).
   const eleves = (devoir.classe === CLASSE_HORS_CLASSE
-    ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) => !d.data().classe)
+    ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) =>
+        !d.data().classe && (!Array.isArray(devoir.eleves) || devoir.eleves.includes(d.id)))
     : (await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)))).docs
   )
     .map((d) => ({ uid: d.id, ...d.data() }))

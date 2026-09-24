@@ -209,6 +209,19 @@ async function classeEleve() {
   return classeEleveCourant;
 }
 
+// Un devoir "Hors classe" peut desormais cibler seulement CERTAINS eleves du
+// groupe (champ `eleves`, tableau d'uid -- voir devoirs.js, ajoute le
+// 24/09/2026) plutot que tout le monde d'office. La requete Firestore par
+// classe ne peut pas filtrer la-dessus (pas d'egalite possible sur "uid dans
+// ce tableau" combinee aux autres filtres deja en where()) : filtre cote
+// client applique apres coup a chaque endroit qui interroge la collection
+// devoirs pour la classe courante. Absent (devoir cree avant ce chantier, ou
+// devoir d'une vraie classe) = s'applique a tout le monde, comportement
+// inchange.
+function applicablePourEleve(devoir) {
+  return !Array.isArray(devoir.eleves) || devoir.eleves.includes(utilisateurCourant.uid);
+}
+
 // Requete brute (sans filtre d'echeance) : partagee entre
 // enregistrerTentativeDevoirSiApplicable et verifierEtatDevoir ci-dessous.
 async function devoirsPour(ficheId, classe) {
@@ -217,7 +230,7 @@ async function devoirsPour(ficheId, classe) {
     where('ficheId', '==', ficheId),
     where('classe', '==', classe)
   ));
-  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return instantane.docs.map((d) => ({ id: d.id, ...d.data() })).filter(applicablePourEleve);
 }
 
 // Nombre de tentatives DEJA enregistrees par l'eleve courant pour ce devoir
@@ -365,7 +378,7 @@ async function devoirsPourAutomatisme(niveau, mode, duree, classe) {
   ];
   if (mode === 'chrono') filtres.push(where('duree', '==', duree));
   const instantane = await getDocs(query(collection(db, 'devoirs'), ...filtres));
-  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return instantane.docs.map((d) => ({ id: d.id, ...d.data() })).filter(applicablePourEleve);
 }
 
 // Meme principe que enregistrerTentativeDevoirSiApplicable ci-dessus, pour
@@ -465,6 +478,7 @@ export async function devoirAutomatismeActif() {
     const maintenant = Date.now();
     const devoir = instantane.docs
       .map((d) => ({ id: d.id, ...d.data() }))
+      .filter(applicablePourEleve)
       .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
     if (!devoir) return null;
     const essaisUtilises = await nbEssaisUtilises(devoir.id);

@@ -485,6 +485,40 @@ de changer ce réglage sans qu'il en reparle.
   des sujets blancs verra donc directement son suivi apparaître (les
   données étaient déjà enregistrées et remontées, seul l'affichage était
   masqué). Pas testé en conditions réelles, même raison que ci-dessus.
+
+  **Ciblage individuel au sein de "Hors classe" (24/09/2026)**, sur demande
+  de David : le groupe hors classe peut mélanger des élèves de niveaux
+  différents qui n'ont en commun que l'absence de `classe` — vouloir
+  attribuer un devoir à un sous-ensemble précis plutôt qu'à tout le groupe
+  d'office. Nouveau champ optionnel `eleves` (tableau d'uid) sur un devoir
+  `classe:"hors-classe"` : absent = s'applique à tout le groupe, comportement
+  inchangé (devoirs créés avant ce chantier). `devoirs.html`/`devoirs.js` :
+  case à cocher par élève hors classe (`dev-champ-eleves`), affichée
+  seulement pour cette classe, tout coché par défaut (`classesConnues()`
+  collecte maintenant aussi la liste des élèves hors classe en même temps que
+  la détection de la sentinelle, un seul passage sur `eleves`). Au moins un
+  élève coché exigé à la soumission. En modification, la case bascule sur
+  `devoir.eleves` existant ; si la classe est changée pour une vraie classe,
+  `eleves` est explicitement effacé (`deleteField()`) plutôt que laissé
+  traîner.
+
+  Toute la chaîne de lecture mise à jour en conséquence, puisque Firestore ne
+  peut pas filtrer "uid dans ce tableau" en `where()` combiné aux autres
+  filtres déjà utilisés — filtre côté client après coup partout où la
+  collection `devoirs` est interrogée pour une classe : `suivi.js`
+  (`applicablePourEleve()`, appliqué dans `devoirsPour`,
+  `devoirsPourAutomatisme`, `devoirAutomatismeActif` — un devoir sans `eleves`
+  reste applicable à tout le monde), vue résultats de `devoirs.js`, et **au
+  passage** `devoirs-notification.js`/`mes-devoirs.js` : ces deux-là lisaient
+  `classe` brute sans la sentinelle `"hors-classe"` (bug préexistant, pas
+  découvert avant faute de test réel sur un élève hors classe) — un élève
+  hors classe n'a donc jamais vu le bloc "Devoirs" ni pu ouvrir
+  `/mes-devoirs/` jusqu'ici (`classe` restant `null` pour lui), même si son
+  suivi/blocage sur la fiche elle-même fonctionnait déjà via `suivi.js`.
+  Corrigé en appliquant la même sentinelle + le même filtre `eleves` aux deux.
+  **Pas testé en conditions réelles**, même raison que les deux correctifs
+  ci-dessus (pas de compte enseignant ni de service-account.json disponibles
+  sur ce clone) — à vérifier par David.
 - **Groupes de spécialité de Première (19/09/2026)** : David envoie, PDF par
   PDF (export Index Education "Liste des élèves par groupe"), les groupes
   de sa classe de spécialité maths — les élèves viennent de classes

@@ -47,15 +47,27 @@ function afficherBloc(nbAFaire) {
   else document.body.prepend(bloc);
 }
 
+// Meme sentinelle que suivi.js/devoirs.js : un eleve "hors classe" (aucun
+// champ classe sur son document) doit quand meme voir apparaitre ce bloc si
+// un devoir "Hors classe" le cible -- avant le 24/09/2026, `classe` restait
+// `null` pour lui et le bloc de devoirs n'apparaissait jamais, meme si un
+// devoir existait.
+const CLASSE_HORS_CLASSE = 'hors-classe';
+
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) return;
   try {
     const profil = await getDoc(doc(db, 'eleves', utilisateur.uid));
-    const classe = profil.exists() ? profil.data().classe : null;
-    if (!classe) return;
+    if (!profil.exists()) return; // pas un profil eleve (ex. compte admin)
+    const classe = profil.data().classe || CLASSE_HORS_CLASSE;
 
     const instantaneDevoirs = await getDocs(query(collection(db, 'devoirs'), where('classe', '==', classe)));
-    const devoirs = instantaneDevoirs.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Ciblage individuel d'un devoir "Hors classe" (24/09/2026, voir
+    // devoirs.js) : un devoir dont `eleves` existe ne concerne que les uid
+    // qu'il liste, pas tout le groupe.
+    const devoirs = instantaneDevoirs.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((d) => !Array.isArray(d.eleves) || d.eleves.includes(utilisateur.uid));
     if (devoirs.length === 0) return; // jamais aucun devoir attribue a cette classe
 
     const maintenant = Date.now();
