@@ -1238,6 +1238,58 @@ de changer ce réglage sans qu'il en reparle.
   trois difficultés à la fois plutôt que d'en isoler une seule ; le
   regroupement est déjà couvert par c), les fractions par 1.7/1.9). Vérifié
   sur 20 régénérations, aucune erreur. Fiche passée à 35 questions au total.
+
+  **Fiche 2 de Première (cahier 1) — fusions de calculs (24/09/2026)**, sur
+  demande explicite de David (fusionner deux calculs proches en un seul, en
+  gardant un nombre d'exemples réduit) :
+
+  **2.5 « Premières racines » + 2.6 « Calculs de racines » → un seul 2.5
+  « Calculs de racines », 4 exemples.** Deux familles de compétences (racines
+  irrationnelles via discriminant surd, racines rationnelles via Vieta) plus
+  un cas exotique (coefficient linéaire lui-même un surd) : gardé a) classique
+  (A=1, surd) et b) délicat de la même famille (coefficient dominant entier
+  plus grand, calculs plus lourds), c) délicat famille distincte (racines
+  fractionnaires via Vieta, coefficient dominant fractionnaire) et d)
+  délicat/exotique famille distincte (coefficient de x lui-même un surd).
+  Écartés : l'ancien 2.5 b) (simple inversion de signe de a), aucune
+  difficulté supplémentaire) et l'ancien 2.6 b) (racines rationnelles
+  entières via Vieta, même technique que c) en plus simple, subsumé par lui).
+
+  **2.10 « Inéquations (I) » + 2.11 « Inéquations (II) » → un seul 2.9
+  « Inéquations », 4 exemples** (renuméroté 2.9 du fait de la fusion
+  précédente). Gardé a) classique (deux racines, coefficient dominant
+  positif, extérieur, forme directe), b) délicat famille distincte
+  (intervalle borné, coefficient dominant 1), c) délicat même famille que a)
+  (coefficient dominant négatif — même résultat extérieur mais il faut gérer
+  le changement de sens) et d) délicat famille distincte (aucune racine
+  réelle, « jamais vrai »). Écartés : l'ancien 2.11 a) (extérieur, même
+  résultat que a)/c), simple variante de réécriture nécessitant un
+  réarrangement) et l'ancien 2.11 b) (« toujours vrai », même famille que d)
+  mais cas symétrique moins délicat pour un élève).
+
+  **2.13 « Propositions paramétrées (II) » ramenée à 1 seul exemple**
+  (renumérotée 2.11). Gardé le seul cas où le paramètre apparaît à la fois
+  dans le coefficient linéaire ET la constante, avec un résultat non trivial
+  (intervalle borné incluant 0) — le plus complet des trois. Écartés : le cas
+  dégénéré « toujours aucune » (ne teste pas vraiment la technique du
+  discriminant paramétré) et le cas où le résultat est une demi-droite non
+  bornée (moins complet, même idée que le cas gardé).
+
+  Fiche passée de 14 à 12 groupes de calcul, 40 à 34 questions au total. Tous
+  les groupes intermédiaires renumérotés en conséquence (2.7→2.6, 2.8→2.7,
+  2.9→2.8, 2.12→2.10, 2.14→2.12), y compris les trois calculs à paramètre
+  partagé (2.6/2.7/2.8, textes dynamiques via `mettreAJourTextesAvances`).
+  Vérifié : syntaxe des deux blocs `<script>` (`vm.Script`), 500 tirages
+  auto-cohérents contre leur propre correcteur (`checkEqualNumeric`/
+  `checkEnsemble` appelés directement, sans passer par le DOM — même
+  précaution que l'audit `checkEqualNumeric` déjà documenté plus haut), 1000
+  tirages de validité structurelle des `intervalleSpec`, et un cycle complet
+  dans le navigateur (saisie de la bonne réponse dans chaque champ réel via
+  MathLive, `verifierUne()`, 34/34 correctes) — comparé au même test sur
+  l'ancienne fiche (40/40, mêmes échecs isolés dus à un piège déjà connu de
+  MathLive avec les racines/fractions en LaTeX, voir plus bas, donc pas une
+  régression). « Voir toutes les réponses » vérifié également (34/34 lignes,
+  aucune erreur MathJax).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
