@@ -1290,6 +1290,80 @@ de changer ce réglage sans qu'il en reparle.
   MathLive avec les racines/fractions en LaTeX, voir plus bas, donc pas une
   régression). « Voir toutes les réponses » vérifié également (34/34 lignes,
   aucune erreur MathJax).
+
+  **Fiche 3 de Première (cahier 1) — fusions de calculs (24/09/2026)**, sur
+  demande explicite de David, qui pose au passage une **règle standing pour
+  toutes les fiches de Première à venir : la section « Quelques automatismes »
+  se limite à 6 questions au total** (David : « juste 6 automatismes »),
+  quelle que soit la répartition entre les deux calculs qui la composent.
+
+  **3.1 (4→2 questions).** Les 4 items étaient produits par la même fonction
+  appelée 4 fois (mêmes coefficients aléatoires, même gabarit d'inéquation
+  simple) : aucune famille distincte à perdre, réduit sans arbitrage.
+  **3.2 laissée à 4 questions** : contrairement à 3.1, ses 4 items sont 4
+  compétences bien distinctes (arithmétique pure des exposants ; ratio
+  algébrique avec un exposant n ; factorisation d'une combinaison type suite
+  géométrique ; même idée avec signes alternés, plus délicate) — aucune n'est
+  redondante avec une autre, toutes gardées. Total automatismes : 2+4 = 6.
+
+  **3.3 « Factoriser les trinômes suivants » + 3.4 + 3.5 → un seul 3.3, 6
+  exemples** (les 3 groupes portaient déjà le même titre générique). a)
+  classique (coefficient dominant 1, racines entières) ; b) délicat même
+  famille (racines fractionnaires propres, toujours coefficient 1, ex 3.4) ;
+  c) délicat famille distincte (coefficient dominant non entier, racines
+  rationnelles de dénominateur lié au coefficient, ex 3.3 original) ; d)
+  délicat famille distincte (racines irrationnelles via centre entier + rayon
+  surd, ex 3.5) ; e) délicat plus exotique (le centre lui-même est un surd,
+  ex 3.5) ; f) délicat le plus complet (coefficient dominant non entier ET
+  racines irrationnelles à la fois, ex 3.5). Écarté le doublon de 3.3 (la
+  même fonction « racines entières » était déjà appelée deux fois dans
+  l'original, aucune difficulté supplémentaire).
+
+  **3.6 « Factorisation avec un paramètre m » (4→2 exemples)** (renumérotée
+  3.4 du fait des fusions précédentes). Gardé a) classique (racines
+  linéaires en m, factorisation directe) et b) délicat de famille distincte
+  (différence de deux carrés faisant apparaître √D·m). Écartés c) (cas non
+  monique asymétrique, moins central pour ce calcul) et d) (même famille que
+  b mais plus complexe, redondant avec lui).
+
+  **3.7 à 3.10 « Résoudre dans ℝ... » (2×4→1×4 exemples)** (renumérotées 3.5
+  à 3.8). Chaque groupe gardait déjà 2 exemples testant la même technique
+  sous deux formes : un seul gardé par groupe, celui qui teste le plus
+  complètement la technique visée (voir raisons dans le code) — pour 3.7 et
+  3.9, le cas qui filtre explicitement les racines invalides après élévation
+  au carré (réflexe essentiel sur les équations avec racine carrée, l'autre
+  variante n'a par construction qu'une solution valide) ; pour 3.8, le cas
+  qui combine deux fractions plutôt qu'une seule ; pour 3.10, même logique
+  que 3.7/3.9 mais appliquée à la substitution \(u=\sqrt{x}\). Convention
+  déjà en place pour un groupe à un seul exemple (voir 3.16/3.17 devenus
+  3.13/3.14) : identifiant sans lettre.
+
+  **3.14 « Une équation bicarrée » + 3.15 « Équations bicarrées » → un seul
+  3.12, 2 exemples** (renumérotée du fait des fusions précédentes).
+  L'ancienne version guidée de 3.14 (3 sous-questions : substitution
+  \(y=x^2\), factoriser, conclure) est abandonnée — redondante avec le
+  format guidé déjà utilisé ailleurs dans la fiche (3.9/3.10 sur la
+  factorisation de degré 3) et incompatible avec une seule grille homogène à
+  2 exemples. Gardé le format direct de l'ancien 3.15 (deux équations
+  bicarrées résolues directement), qui a déjà un gradient naturel intégré
+  (le premier facteur \(Y_1\) est toujours positif donc donne toujours deux
+  racines réelles, le second \(Y_2\) est de signe aléatoire donc l'équation
+  a parfois 4 solutions, parfois seulement 2).
+
+  Fiche passée de 17 à 14 groupes, 47 à 30 questions au total. Toutes les
+  clés de `FORMES_FACTORISEES` (exigence de réponse sous forme de produit)
+  renumérotées en conséquence. `lettresEtendues` (utilisé pour l'affichage
+  a)/b)/c)... de chaque question dans son groupe) élargi de 4 à 6 lettres
+  — **piège découvert pendant la vérification** : resté à `["a","b","c","d"]`
+  après la fusion, les questions e) et f) du nouveau 3.3 s'affichaient sans
+  aucune lettre (chaîne vide, `lettresEtendues[pos] || ''`) plutôt que de
+  planter — silencieux, à vérifier systématiquement dès qu'un groupe dépasse
+  4 exemples après une fusion. Vérifié : syntaxe, 500 tirages auto-cohérents,
+  cycle complet dans le navigateur (30/30, mêmes échecs isolés que
+  l'original — piège MathLive déjà documenté — donc pas de régression),
+  panneau « Voir toutes les réponses » (30/30 lignes, aucune erreur MathJax),
+  et exigence de forme factorisée vérifiée sur les bons groupes après
+  renumérotation (3.3, 3.4, 3.9 b)/c), 3.10 b)/c), 3.11).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
