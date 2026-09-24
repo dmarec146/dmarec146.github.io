@@ -1133,15 +1133,28 @@ de changer ce réglage sans qu'il en reparle.
 - **Renuméroter/renommer une fiche change son `ficheId`** (= chemin du
   fichier) : brouillons, résultats, tentatives et devoirs restent attachés à
   l'ANCIEN chemin — et si ce chemin est réutilisé par une autre fiche, ils
-  s'y rattachent à tort. Cas du 26/09/2026 : insertion de la fiche Seconde
+  s'y rattachent à tort. Cas du 23/09/2026 : insertion de la fiche Seconde
   16 « Fonctions affines », fiches 16-22 renommées 17-23. Aucun élève réel
   n'avait encore d'identifiants ; seuls 6 documents `tentatives` de
   `l.testeur` visaient les anciens chemins, supprimés (aucun brouillon,
   résultat ni devoir concerné). Avant toute future renumérotation avec des
   élèves actifs : prévoir une migration des documents vers les nouveaux
   identifiants. Le manifeste des devoirs (`assets/js/manifeste-fiches.js`)
-  a été complété le même jour avec les cahiers 6 à 8 de Seconde (51 fiches
-  en tout) : à tenir à jour à chaque nouvelle fiche.
+  a été complété le même jour avec les cahiers 6 à 8 de Seconde, puis la
+  fiche 25 le 24/09 (52 fiches en tout) : à tenir à jour à chaque nouvelle
+  fiche (la fiche 24, pas encore construite, devra y être ajoutée).
+- **Un correctif peut rester oublié sur la branche d'une ancienne session
+  Claude** (`.claude/worktrees/...`, branche `claude/...`) : cas repéré le
+  24/09/2026 sur PC perso — l'échappement du « < » dans les réponses de
+  comparaison de fonctions (« f(a)<f(b) » cassait le panneau « Voir toutes
+  les réponses », les lignes suivantes disparaissant dans une balise
+  fantôme), fait le 19/09 sur les fiches Seconde 14/15/16, n'avait jamais
+  été fusionné dans `master`. Refait sur les 11 fiches Seconde 14 à 25 qui
+  partagent ce code (seules 14 et 17 génèrent réellement des comparaisons,
+  les autres par prévention), vérifié dans le navigateur, branche et
+  worktree supprimés. À l'ouverture d'une session, `git branch -a` doit
+  être lu jusqu'au bout : une branche `claude/...` locale = travail
+  peut-être non fusionné, à vérifier avec `git cherry -v master <branche>`.
 - **Réduire le nombre de questions d'un calcul change les identifiants de
   sous-questions qui suivent (même `ficheId`, piège voisin de celui
   ci-dessus)** : `resultats/{ficheId}.exercicesReussis` retient des chaînes

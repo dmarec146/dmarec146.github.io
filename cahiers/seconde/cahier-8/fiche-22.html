@@ -3794,7 +3794,9 @@ function formaterReponse(ex) {
       return texteCombinaisonLatex(ex.termes);
     }
     if (ex.comparaison) {
-      return ex.reponse.replace(/x1/g, 'x_1').replace(/x2/g, 'x_2');
+      // Le "<" litteral casse le HTML inséré via innerHTML (interprété comme début de
+      // balise s'il est suivi d'une lettre, ex. "f(a)<f(b)") : échappé en "\lt " avant insertion.
+      return ex.reponse.replace(/x1/g, 'x_1').replace(/x2/g, 'x_2').replace(/</g, '\\lt ');
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
