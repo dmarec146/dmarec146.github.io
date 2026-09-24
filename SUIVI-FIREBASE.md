@@ -1364,6 +1364,23 @@ de changer ce réglage sans qu'il en reparle.
   panneau « Voir toutes les réponses » (30/30 lignes, aucune erreur MathJax),
   et exigence de forme factorisée vérifiée sur les bons groupes après
   renumérotation (3.3, 3.4, 3.9 b)/c), 3.10 b)/c), 3.11).
+
+  **Même jour, retour de David : 3.5 à 3.8 avaient exactement le même
+  énoncé de groupe** (« Résoudre dans ℝ les équations suivantes. »), quatre
+  sections consécutives à une seule question chacune plutôt qu'une seule
+  section à quatre questions — pas une fusion de contenu cette fois (les 4
+  exemples restent tels quels, un par technique), juste un regroupement
+  visuel dans une seule grille a)/b)/c)/d), conforme à la règle « une
+  consigne répétée ne se répète pas, elle se factorise » déjà en place sur
+  le reste du site. Fiche passée de 14 à 11 groupes, toujours 30 questions
+  (aucune question perdue ni ajoutée cette fois). Groupes suivants
+  renumérotés en conséquence (3.9→3.6, 3.10→3.7, 3.11→3.8, 3.12→3.9,
+  3.13→3.10, 3.14→3.11), `FORMES_FACTORISEES` mise à jour. Vérifié comme
+  les fusions précédentes : syntaxe, 500 tirages auto-cohérents, cycle
+  complet dans le navigateur (30/30, mêmes échecs isolés déjà connus),
+  panneau « Voir toutes les réponses » (30/30, aucune erreur MathJax),
+  capture d'écran confirmant le rendu visuel (une seule section, 4
+  questions a)-d) côte à côte).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
