@@ -70,6 +70,7 @@ const titreFaits = document.getElementById('dev-faits-titre');
 const listeVideFaits = document.getElementById('dev-faits-vide');
 const tableauFaits = document.getElementById('dev-tableau-faits');
 const corpsFaits = document.getElementById('dev-corps-faits');
+const boutonSupprimerTousFaits = document.getElementById('dev-bouton-supprimer-tous-faits');
 
 const boutonAttribuer = document.getElementById('dev-bouton-attribuer');
 const boutonEnCours = document.getElementById('dev-bouton-encours');
@@ -565,6 +566,12 @@ function remplirTableauDevoirs(corps, tableauEl, videEl, titreEl, titreBase, dev
   tableauEl.hidden = false;
 }
 
+// Devoirs "faits" actuellement affiches (voir chargerListeDevoirs plus bas)
+// -- cible exacte du bouton "Tout supprimer" (dev-bouton-supprimer-tous-faits),
+// ajoute le 24/09/2026 sur demande de David en plus de la suppression
+// individuelle deja existante.
+let devoirsFaitsActuels = [];
+
 async function chargerListeDevoirs() {
   const instantane = await getDocs(collection(db, 'devoirs'));
   const devoirs = instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -582,6 +589,11 @@ async function chargerListeDevoirs() {
 
   remplirTableauDevoirs(corpsEnCours, tableauEnCours, listeVideEnCours, titreEnCours, 'Devoirs en cours', enCours, "Aucun devoir en cours pour l'instant.");
   remplirTableauDevoirs(corpsFaits, tableauFaits, listeVideFaits, titreFaits, 'Devoirs faits', faits, 'Aucun devoir terminé pour l\'instant.');
+
+  // Retenue pour le bouton "Tout supprimer" (voir plus bas) : les devoirs
+  // faits actuellement affiches, exactement ceux que ce bouton doit viser.
+  devoirsFaitsActuels = faits;
+  boutonSupprimerTousFaits.hidden = faits.length === 0;
 }
 
 // Pour chaque élève de la classe visée par ce devoir : va chercher son
@@ -703,3 +715,26 @@ async function supprimerDevoir(devoirId, bouton) {
     afficherEtat(zoneErreurFormulaire, 'Échec de la suppression — réessayer.');
   }
 }
+
+// Suppression groupee de tous les devoirs "faits" affiches (devoirsFaitsActuels,
+// voir chargerListeDevoirs) -- en plus de la suppression individuelle
+// ci-dessus, pour vider d'un coup une liste qui s'accumule (echeances
+// passees) plutot que ligne par ligne. alert() plutot que
+// zoneErreurFormulaire en cas d'echec : ce panneau n'a pas de zone d'erreur
+// dediee, et zoneErreurFormulaire vit dans le panneau d'attribution,
+// invisible quand celui-ci est ferme.
+boutonSupprimerTousFaits.addEventListener('click', async () => {
+  const n = devoirsFaitsActuels.length;
+  if (n === 0) return;
+  if (!confirm(`Supprimer les ${n} devoir${n > 1 ? 's' : ''} faits ? Cette action est définitive.`)) return;
+  boutonSupprimerTousFaits.disabled = true;
+  try {
+    await Promise.all(devoirsFaitsActuels.map((d) => deleteDoc(doc(db, 'devoirs', d.id))));
+    await chargerListeDevoirs();
+  } catch (erreur) {
+    console.error(erreur);
+    alert('Échec de la suppression — réessayer.');
+  } finally {
+    boutonSupprimerTousFaits.disabled = false;
+  }
+});

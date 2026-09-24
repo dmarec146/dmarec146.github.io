@@ -1094,6 +1094,28 @@ de changer ce réglage sans qu'il en reparle.
   d'attribution seul), comptes (3)/(5) corrects sur les 8 devoirs réels
   existants, plus aucune colonne Statut. Compte supprimé après coup, aucune
   donnée Firestore touchée (juste de la lecture/navigation).
+
+  **Suppression groupée des devoirs faits (24/09/2026, même jour)**, sur
+  demande de David, en plus de la suppression individuelle déjà existante :
+  bouton "Tout supprimer" (`dev-bouton-supprimer-tous-faits`, rouge, même
+  style que "Supprimer") dans l'en-tête de la liste "Devoirs faits"
+  (`.dev-panneau-entete`, titre + bouton côte à côte), masqué si la liste est
+  vide. Cible exactement `devoirsFaitsActuels` — les devoirs faits
+  *actuellement affichés* (retenus par `chargerListeDevoirs()` en même temps
+  que le rendu du tableau), confirmation `confirm()` avec le nombre exact
+  avant suppression, un seul `Promise.all` de `deleteDoc()` (même principe
+  que la suppression individuelle). Erreur affichée par `alert()` plutôt que
+  `zoneErreurFormulaire` (qui vit dans le panneau d'attribution, invisible
+  depuis ce panneau-ci). Vérifié avec un compte enseignant temporaire : deux
+  devoirs de test jetables créés directement en base (échéance passée,
+  classe `9999-test-bulk`, sans rapport avec les vraies classes), message de
+  confirmation exact capturé (`Supprimer les 7 devoirs faits ?`, en comptant
+  les 5 vrais devoirs de démo `1ere-demo` du 19/09 déjà présents),
+  annulation testée sans effet — les deux devoirs de test supprimés
+  directement plutôt que par le bouton, pour ne pas risquer de supprimer les
+  5 vrais par la même occasion (le bouton n'a pas de sélection fine, il vide
+  toute la liste "faits" d'un coup, comme demandé). Compte de test et
+  documents de test supprimés après coup, compte revenu à 8 devoirs/5 faits.
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).
