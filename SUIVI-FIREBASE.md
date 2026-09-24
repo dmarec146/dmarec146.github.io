@@ -1522,6 +1522,15 @@ de changer ce réglage sans qu'il en reparle.
   Règle générale corrigée dans la mémoire
   `feedback_simplification_fiches_premiere` pour ne pas la reproduire sur
   les fiches suivantes.
+
+  **Même jour, David supprime 4.10 « Racine avec radical imbriqué »**
+  (cas statique isolé, un seul exemple fixe, sans lien direct avec les
+  groupes voisins). Groupes suivants renumérotés (4.11→4.10, 4.12→4.11).
+  Fiche passée de 33 à 32 questions, 12 à 11 groupes. Vérifié : syntaxe,
+  500 tirages auto-cohérents, cycle complet dans le navigateur (32/32
+  bonnes réponses acceptées, mêmes 2 échecs isolés déjà connus
+  renumérotés), panneau « Voir toutes les réponses » (32/32, aucune
+  erreur MathJax), capture d'écran confirmant l'absence du groupe.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
