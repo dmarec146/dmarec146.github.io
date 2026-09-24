@@ -1272,15 +1272,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
    - S'il n'existe pas encore sur cette machine :
      `git clone https://github.com/dmarec146/dmarec146.github.io.git <chemin-hors-drive>`
      (déjà sur `master` par défaut après clonage).
-2. Lire l'artifact **"Cahier de suivi"** (action `list` des artifacts) pour
-   le contexte et les choix de conception du projet.
-3. Serveur de dev local : `.claude/launch.json` référence
+2. Serveur de dev local : `.claude/launch.json` référence
    `.claude/static-server.ps1` en chemin relatif — les deux sont suivis par
    git, donc ça fonctionne tel quel sur n'importe quel clone, plus besoin de
    corriger un chemin en dur par machine (piège rencontré le 17/09/2026,
    éliminé le 18/09/2026 en sortant le script du scratchpad de session pour
    le verser dans le dépôt).
-4. Pour utiliser `outils/creer-comptes` ou `outils/etiquettes` : `npm install`
+3. Pour utiliser `outils/creer-comptes` ou `outils/etiquettes` : `npm install`
    dans chaque dossier, et vérifier que `outils/creer-comptes/service-account.json`
    est présent (sinon le retélécharger depuis Console Firebase → Paramètres
    du projet → Comptes de service). Ce fichier (et les CSV/PDF générés) ne
