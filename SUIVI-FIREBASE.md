@@ -467,12 +467,7 @@ de changer ce réglage sans qu'il en reparle.
   les élèves puis filtre côté client sur l'absence du champ (`where('classe',
   '==', 'hors-classe')` ne trouverait jamais personne, aucun document n'a
   littéralement cette valeur). Aucune règle Firestore à republier (la règle
-  `devoirs` autorise déjà toute lecture connectée). **Pas testé en conditions
-  réelles** (pas de compte enseignant ni de service-account.json disponibles
-  sur ce clone au moment du correctif) — à vérifier par David : `e.marec`
-  doit apparaître dans le select "Classe" de `devoirs.html` sous "Hors
-  classe", et un devoir qui lui est attribué doit se comporter normalement
-  (blocage/limite d'essais, résultats).
+  `devoirs` autorise déjà toute lecture connectée).
 
   **Au passage, même demande étendue aux Secondes** : la Seconde a déjà
   accès sans restriction technique à `automatismes/premiere/` (fiches et
@@ -484,7 +479,7 @@ de changer ce réglage sans qu'il en reparle.
   condition dans `tableau-de-bord.js`). Un élève de Seconde qui a déjà fait
   des sujets blancs verra donc directement son suivi apparaître (les
   données étaient déjà enregistrées et remontées, seul l'affichage était
-  masqué). Pas testé en conditions réelles, même raison que ci-dessus.
+  masqué).
 
   **Ciblage individuel au sein de "Hors classe" (24/09/2026)**, sur demande
   de David : le groupe hors classe peut mélanger des élèves de niveaux
@@ -516,9 +511,27 @@ de changer ce réglage sans qu'il en reparle.
   `/mes-devoirs/` jusqu'ici (`classe` restant `null` pour lui), même si son
   suivi/blocage sur la fiche elle-même fonctionnait déjà via `suivi.js`.
   Corrigé en appliquant la même sentinelle + le même filtre `eleves` aux deux.
-  **Pas testé en conditions réelles**, même raison que les deux correctifs
-  ci-dessus (pas de compte enseignant ni de service-account.json disponibles
-  sur ce clone) — à vérifier par David.
+
+  **Les trois correctifs ci-dessus testés en conditions réelles le
+  24/09/2026**, une fois `service-account.json` et `npm install` en place sur
+  ce PC pro (voir "Procédure de reprise" plus bas) : comptes jetables créés
+  via `creer-comptes.js` (un compte enseignant temporaire, deux élèves hors
+  classe `c.horsun`/`c.horsdeux`, un élève `2nde-test`), pilotés dans le
+  navigateur intégré, tout supprimé après coup (comptes Auth, profils
+  Firestore, les deux devoirs de test — vérifié par un comptage
+  `eleves`/`devoirs` avant/après, identique, et `e.marec` relu intact).
+  Vérifié : le select "Classe" de `devoirs.html` propose bien "Hors classe"
+  et les classes de Seconde pour un devoir d'automatismes ; un devoir "Hors
+  classe" ciblant uniquement `c.horsun` (case décochée pour `c.horsdeux` et
+  pour `e.marec`, le vrai compte hors classe, volontairement non touché)
+  n'apparaît que dans son `/mes-devoirs/` et sa vue résultats, pas dans ceux
+  de `c.horsdeux` ; le bloc "Devoirs"/`/mes-devoirs/` fonctionne désormais
+  pour un élève hors classe (confirmé les 3 devoirs "Hors classe" existants
+  + le devoir ciblé, 4 au total pour `c.horsun`, 3 pour `c.horsdeux` sans le
+  ciblé) ; un devoir d'automatismes attribué à `2nde-test` apparaît dans son
+  `/mes-devoirs/` et verrouille bien `sujet-blanc.html` sur le niveau/mode/
+  durée choisis à l'attribution ("Devoir en cours — niveau et mode
+  imposés").
 - **Groupes de spécialité de Première (19/09/2026)** : David envoie, PDF par
   PDF (export Index Education "Liste des élèves par groupe"), les groupes
   de sa classe de spécialité maths — les élèves viennent de classes
