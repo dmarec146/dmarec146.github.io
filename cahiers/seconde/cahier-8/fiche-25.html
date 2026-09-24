@@ -3208,7 +3208,12 @@ function aideContextuellePour(ex) {
     const exemples = nbElementsEnsemble(ex) > 2
       ? { simple: '{-2;2;5}', fraction: '{7/2;-3;1/4}' }
       : { simple: '{-2;2}', fraction: '{7/2;-3}' };
-    return `Écrire les valeurs demandées entre accolades, séparées par un point-virgule, dans l'ordre où elles sont demandées : par exemple <code>${exemples.simple}</code>. Une valeur peut être une fraction, par exemple <code>${exemples.fraction}</code>.`;
+    // "l'ordre n'a pas d'importance" (24/09/2026, retour de David) : le correcteur
+    // (checkEnsemble) trie les deux cotes avant de comparer, l'ordre de saisie n'a donc
+    // jamais d'effet -- l'ancien texte affirmait a tort le contraire ("dans l'ordre ou
+    // elles sont demandees"). Mention explicite du cas sans solution (calcul 25.10 :
+    // parametre m sans valeur possible), meme si l'astuce du clavier le disait deja.
+    return `Écrire les valeurs demandées entre accolades, séparées par un point-virgule (l'ordre n'a pas d'importance) : par exemple <code>${exemples.simple}</code>. Une valeur peut être une fraction, par exemple <code>${exemples.fraction}</code>, ou une racine carrée, par exemple <code>{-sqrt(3);sqrt(3)}</code>. <strong>S'il n'y a aucune solution, écrire <code>{}</code> ou <code>∅</code>.</strong>`;
   }
   return "";
 }
