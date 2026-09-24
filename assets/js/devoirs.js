@@ -62,14 +62,21 @@ const titreFormulaire = document.getElementById('dev-formulaire-titre');
 const zoneConfirmation = document.getElementById('dev-confirmation');
 const zoneErreurFormulaire = document.getElementById('dev-erreur-formulaire');
 
-const listeVide = document.getElementById('dev-liste-vide');
-const tableau = document.getElementById('dev-tableau');
-const corpsTableau = document.getElementById('dev-corps');
+const titreEnCours = document.getElementById('dev-encours-titre');
+const listeVideEnCours = document.getElementById('dev-encours-vide');
+const tableauEnCours = document.getElementById('dev-tableau-encours');
+const corpsEnCours = document.getElementById('dev-corps-encours');
+const titreFaits = document.getElementById('dev-faits-titre');
+const listeVideFaits = document.getElementById('dev-faits-vide');
+const tableauFaits = document.getElementById('dev-tableau-faits');
+const corpsFaits = document.getElementById('dev-corps-faits');
 
 const boutonAttribuer = document.getElementById('dev-bouton-attribuer');
+const boutonEnCours = document.getElementById('dev-bouton-encours');
 const boutonDevoirsFaits = document.getElementById('dev-bouton-devoirs-faits');
 const panneauAttribuer = document.getElementById('dev-panneau-attribuer');
-const panneauListe = document.getElementById('dev-panneau-liste');
+const panneauEnCours = document.getElementById('dev-panneau-encours');
+const panneauFaits = document.getElementById('dev-panneau-faits');
 
 const vueListe = document.getElementById('dev-vue-liste');
 const vueResultats = document.getElementById('dev-vue-resultats');
@@ -107,32 +114,57 @@ function afficherEtat(element, texte) {
 
 function masquer(element) { element.hidden = true; }
 
-// Les deux panneaux (formulaire d'attribution / liste "Devoirs faits") sont
-// repliés par defaut et s'ouvrent au clic sur leur bouton -- mutuellement
-// exclusifs (ouvrir l'un referme l'autre) pour eviter une page trop chargee.
-function basculerPanneau(panneau, bouton, autrePanneau, autreBouton) {
-  const ouvrir = panneau.hidden;
-  panneau.hidden = !ouvrir;
-  bouton.setAttribute('aria-expanded', String(ouvrir));
-  bouton.classList.toggle('dev-action-actif', ouvrir);
-  if (ouvrir) {
-    autrePanneau.hidden = true;
-    autreBouton.setAttribute('aria-expanded', 'false');
-    autreBouton.classList.remove('dev-action-actif');
+// Les trois panneaux (formulaire d'attribution / "Devoirs en cours" /
+// "Devoirs faits" -- ce dernier ajoute le 24/09/2026, David : distinguer
+// dans la liste ce qui reste actionnable de ce qui est termine, plutot
+// qu'un seul tableau melangeant les deux avec une colonne Statut) sont
+// replies par defaut et s'ouvrent au clic sur leur bouton -- mutuellement
+// exclusifs (ouvrir l'un referme les deux autres) pour eviter une page trop
+// chargee.
+const PANNEAUX = [
+  { bouton: boutonAttribuer, panneau: panneauAttribuer },
+  { bouton: boutonEnCours, panneau: panneauEnCours },
+  { bouton: boutonDevoirsFaits, panneau: panneauFaits },
+];
+
+function fermerTousLesPanneaux() {
+  for (const { bouton, panneau } of PANNEAUX) {
+    panneau.hidden = true;
+    bouton.setAttribute('aria-expanded', 'false');
+    bouton.classList.remove('dev-action-actif');
   }
 }
+
+function ouvrirPanneau(cible) {
+  cible.panneau.hidden = false;
+  cible.bouton.setAttribute('aria-expanded', 'true');
+  cible.bouton.classList.add('dev-action-actif');
+}
+
+// Clic sur un bouton deja ouvert = referme (comme avant), clic sur un autre
+// = bascule dessus.
+function basculerPanneau(cible) {
+  const etaitOuvert = !cible.panneau.hidden;
+  fermerTousLesPanneaux();
+  if (!etaitOuvert) ouvrirPanneau(cible);
+}
+
 // Fermer le panneau d'attribution (par l'un ou l'autre bouton) alors qu'une
 // edition est en cours l'abandonne -- annulerEdition() est definie plus bas
 // mais deja hissee (declaration de fonction) au moment ou ce clic peut se
 // produire.
 boutonAttribuer.addEventListener('click', () => {
   const allaitFermer = !panneauAttribuer.hidden;
-  basculerPanneau(panneauAttribuer, boutonAttribuer, panneauListe, boutonDevoirsFaits);
+  basculerPanneau(PANNEAUX[0]);
   if (allaitFermer && devoirEnEdition) annulerEdition();
+});
+boutonEnCours.addEventListener('click', () => {
+  if (devoirEnEdition) annulerEdition();
+  basculerPanneau(PANNEAUX[1]);
 });
 boutonDevoirsFaits.addEventListener('click', () => {
   if (devoirEnEdition) annulerEdition();
-  basculerPanneau(panneauListe, boutonDevoirsFaits, panneauAttribuer, boutonAttribuer);
+  basculerPanneau(PANNEAUX[2]);
 });
 
 onAuthStateChanged(auth, async (utilisateur) => {
@@ -356,12 +388,8 @@ function modifierDevoir(devoir) {
   boutonSoumettre.textContent = 'Enregistrer les modifications';
   boutonAnnulerEdition.hidden = false;
 
-  panneauListe.hidden = true;
-  panneauAttribuer.hidden = false;
-  boutonAttribuer.setAttribute('aria-expanded', 'true');
-  boutonAttribuer.classList.add('dev-action-actif');
-  boutonDevoirsFaits.setAttribute('aria-expanded', 'false');
-  boutonDevoirsFaits.classList.remove('dev-action-actif');
+  fermerTousLesPanneaux();
+  ouvrirPanneau(PANNEAUX[0]);
   panneauAttribuer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -470,73 +498,90 @@ formulaire.addEventListener('submit', async (evenement) => {
   }
 });
 
-async function chargerListeDevoirs() {
-  const instantane = await getDocs(collection(db, 'devoirs'));
-  const devoirs = instantane.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (b.echeance?.toMillis() || 0) - (a.echeance?.toMillis() || 0));
+// Une ligne de tableau pour un devoir -- partagee entre les deux listes
+// ("Devoirs en cours" / "Devoirs faits", voir chargerListeDevoirs) : memes
+// colonnes, seule la source (et le tri) differe, plus de colonne Statut
+// (devenue redondante une fois les deux listes separees -- chaque tableau
+// ne contient deja que l'un ou l'autre).
+function construireLigneDevoir(devoir) {
+  const ligne = document.createElement('tr');
 
+  const celluleFiche = document.createElement('td');
+  celluleFiche.textContent = devoir.titre || devoir.ficheId;
+
+  const celluleClasse = document.createElement('td');
+  celluleClasse.textContent = formaterClasseAffichee(devoir.classe || '—')
+    + (devoir.classe === CLASSE_HORS_CLASSE && Array.isArray(devoir.eleves) ? ` (${devoir.eleves.length})` : '');
+
+  const celluleEcheance = document.createElement('td');
+  const echeanceMillis = devoir.echeance?.toMillis ? devoir.echeance.toMillis() : 0;
+  celluleEcheance.textContent = echeanceMillis ? new Date(echeanceMillis).toLocaleString('fr-FR') : '—';
+
+  const celluleEssais = document.createElement('td');
+  celluleEssais.textContent = String(devoir.nbEssaisMax ?? '—');
+
+  const celluleResultats = document.createElement('td');
+  const boutonResultats = document.createElement('button');
+  boutonResultats.type = 'button';
+  boutonResultats.className = 'dev-bouton-resultats';
+  boutonResultats.textContent = 'Résultats';
+  boutonResultats.addEventListener('click', () => afficherResultats(devoir));
+  celluleResultats.appendChild(boutonResultats);
+
+  const celluleModifier = document.createElement('td');
+  const boutonModifier = document.createElement('button');
+  boutonModifier.type = 'button';
+  boutonModifier.className = 'tdb-bouton-secondaire';
+  boutonModifier.textContent = 'Modifier';
+  boutonModifier.addEventListener('click', () => modifierDevoir(devoir));
+  celluleModifier.appendChild(boutonModifier);
+
+  const celluleAction = document.createElement('td');
+  const boutonSupprimer = document.createElement('button');
+  boutonSupprimer.type = 'button';
+  boutonSupprimer.className = 'dev-bouton-supprimer';
+  boutonSupprimer.textContent = 'Supprimer';
+  boutonSupprimer.addEventListener('click', () => supprimerDevoir(devoir.id, boutonSupprimer));
+  celluleAction.appendChild(boutonSupprimer);
+
+  ligne.append(celluleFiche, celluleClasse, celluleEcheance, celluleEssais, celluleResultats, celluleModifier, celluleAction);
+  return ligne;
+}
+
+// Remplit un des deux tableaux (en-cours / faits) avec sa liste de devoirs,
+// ou affiche le message "vide" a la place si elle est vide -- factorise
+// puisque les deux listes partagent exactement la meme mecanique d'affichage.
+function remplirTableauDevoirs(corps, tableauEl, videEl, titreEl, titreBase, devoirs, texteVide) {
+  titreEl.textContent = `${titreBase} (${devoirs.length})`;
   if (devoirs.length === 0) {
-    tableau.hidden = true;
-    corpsTableau.innerHTML = '';
-    afficherEtat(listeVide, 'Aucun devoir attribué pour l\'instant.');
+    tableauEl.hidden = true;
+    corps.innerHTML = '';
+    afficherEtat(videEl, texteVide);
     return;
   }
-  masquer(listeVide);
-  corpsTableau.innerHTML = '';
+  masquer(videEl);
+  corps.innerHTML = '';
+  for (const devoir of devoirs) corps.appendChild(construireLigneDevoir(devoir));
+  tableauEl.hidden = false;
+}
 
-  for (const devoir of devoirs) {
-    const ligne = document.createElement('tr');
+async function chargerListeDevoirs() {
+  const instantane = await getDocs(collection(db, 'devoirs'));
+  const devoirs = instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const maintenant = Date.now();
 
-    const celluleFiche = document.createElement('td');
-    celluleFiche.textContent = devoir.titre || devoir.ficheId;
+  // "En cours" triee par echeance la plus proche (ce qui presse en premier,
+  // comme /mes-devoirs/ cote eleve) ; "Faits" triee par echeance la plus
+  // recente (ce qui vient de se terminer en premier).
+  const enCours = devoirs
+    .filter((d) => (d.echeance?.toMillis ? d.echeance.toMillis() : 0) > maintenant)
+    .sort((a, b) => (a.echeance?.toMillis() || 0) - (b.echeance?.toMillis() || 0));
+  const faits = devoirs
+    .filter((d) => (d.echeance?.toMillis ? d.echeance.toMillis() : 0) <= maintenant)
+    .sort((a, b) => (b.echeance?.toMillis() || 0) - (a.echeance?.toMillis() || 0));
 
-    const celluleClasse = document.createElement('td');
-    celluleClasse.textContent = formaterClasseAffichee(devoir.classe || '—')
-      + (devoir.classe === CLASSE_HORS_CLASSE && Array.isArray(devoir.eleves) ? ` (${devoir.eleves.length})` : '');
-
-    const celluleEcheance = document.createElement('td');
-    const echeanceMillis = devoir.echeance?.toMillis ? devoir.echeance.toMillis() : 0;
-    celluleEcheance.textContent = echeanceMillis ? new Date(echeanceMillis).toLocaleString('fr-FR') : '—';
-
-    const celluleEssais = document.createElement('td');
-    celluleEssais.textContent = String(devoir.nbEssaisMax ?? '—');
-
-    const celluleStatut = document.createElement('td');
-    const enCours = echeanceMillis > Date.now();
-    const badge = document.createElement('span');
-    badge.className = `dev-badge ${enCours ? 'dev-badge-encours' : 'dev-badge-termine'}`;
-    badge.textContent = enCours ? 'En cours' : 'Terminé';
-    celluleStatut.appendChild(badge);
-
-    const celluleResultats = document.createElement('td');
-    const boutonResultats = document.createElement('button');
-    boutonResultats.type = 'button';
-    boutonResultats.className = 'dev-bouton-resultats';
-    boutonResultats.textContent = 'Résultats';
-    boutonResultats.addEventListener('click', () => afficherResultats(devoir));
-    celluleResultats.appendChild(boutonResultats);
-
-    const celluleModifier = document.createElement('td');
-    const boutonModifier = document.createElement('button');
-    boutonModifier.type = 'button';
-    boutonModifier.className = 'tdb-bouton-secondaire';
-    boutonModifier.textContent = 'Modifier';
-    boutonModifier.addEventListener('click', () => modifierDevoir(devoir));
-    celluleModifier.appendChild(boutonModifier);
-
-    const celluleAction = document.createElement('td');
-    const boutonSupprimer = document.createElement('button');
-    boutonSupprimer.type = 'button';
-    boutonSupprimer.className = 'dev-bouton-supprimer';
-    boutonSupprimer.textContent = 'Supprimer';
-    boutonSupprimer.addEventListener('click', () => supprimerDevoir(devoir.id, boutonSupprimer));
-    celluleAction.appendChild(boutonSupprimer);
-
-    ligne.append(celluleFiche, celluleClasse, celluleEcheance, celluleEssais, celluleStatut, celluleResultats, celluleModifier, celluleAction);
-    corpsTableau.appendChild(ligne);
-  }
-  tableau.hidden = false;
+  remplirTableauDevoirs(corpsEnCours, tableauEnCours, listeVideEnCours, titreEnCours, 'Devoirs en cours', enCours, "Aucun devoir en cours pour l'instant.");
+  remplirTableauDevoirs(corpsFaits, tableauFaits, listeVideFaits, titreFaits, 'Devoirs faits', faits, 'Aucun devoir terminé pour l\'instant.');
 }
 
 // Pour chaque élève de la classe visée par ce devoir : va chercher son

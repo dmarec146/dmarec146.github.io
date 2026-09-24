@@ -1073,6 +1073,27 @@ de changer ce réglage sans qu'il en reparle.
   (`resize_window`, 1000px et le préréglage mobile) avec 2 devoirs à faire
   + 1 fait : colonnes côte à côte en large, empilées avec "À faire" en
   premier en étroit.
+
+  **Tableau de bord enseignant `devoirs.html` : trois listes au lieu de deux
+  (24/09/2026)**, sur demande de David : la liste "Devoirs attribués"
+  mélangeait tout (actifs et terminés) avec une colonne "Statut" pour les
+  distinguer — remplacée par deux listes séparées, chacune derrière son
+  propre bouton (troisième carte pleine couleur, gris `--gris-700`, entre
+  "Attribuer un devoir" et "Devoirs faits") : "Devoirs en cours" (triée par
+  échéance la plus proche) et "Devoirs faits" (triée par échéance la plus
+  récente). Colonne "Statut" retirée (devenue redondante une fois les deux
+  listes séparées) ; titre de chaque section complété du nombre de devoirs
+  (`Devoirs en cours (3)`), même principe que `/mes-devoirs/` côté élève.
+  `basculerPanneau()` généralisé de deux à trois panneaux mutuellement
+  exclusifs (`PANNEAUX`, `ouvrirPanneau()`/`fermerTousLesPanneaux()`), et la
+  construction d'une ligne de tableau factorisée (`construireLigneDevoir()`,
+  `remplirTableauDevoirs()`) puisque les deux listes partagent exactement la
+  même mécanique d'affichage. Vérifié avec un compte enseignant temporaire :
+  bascule bien mutuellement exclusive entre les trois panneaux (dont
+  "Modifier" depuis "Devoirs faits", qui rouvre correctement le formulaire
+  d'attribution seul), comptes (3)/(5) corrects sur les 8 devoirs réels
+  existants, plus aucune colonne Statut. Compte supprimé après coup, aucune
+  donnée Firestore touchée (juste de la lecture/navigation).
 - ~~Fil d'ariane des 44 fiches de calcul à agrandir à 14px~~ — **fait le
   18/09/2026** (commit `6acd7ed`, sur le nouveau clone PC perso, une fois
   la fusion effectuée).
