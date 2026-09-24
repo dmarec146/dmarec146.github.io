@@ -1431,6 +1431,45 @@ de changer ce réglage sans qu'il en reparle.
   dans le navigateur (28/28), panneau « Voir toutes les réponses » (28/28,
   aucune erreur MathJax), exigence de forme factorisée toujours correcte
   sur 3.3 a) à d).
+
+  **Fiche 4 de Première (cahier 1) — simplification complète (24/09/2026),
+  David pose deux nouvelles règles standing pour toute fiche future** (voir
+  aussi [[feedback-simplification-fiches-premiere]] en mémoire) :
+
+  1. **Automatismes : 6 questions au total, réparties intelligemment**
+  entre les calculs qui composent la section — pas un partage égal par
+  défaut. Sur cette fiche : 4.1 (calcul numérique fraction) 6→4, 4.2
+  (systèmes) reste à 2 — 4.1 avait un vrai gradient de difficulté
+  exploitable (simple soustraction → distribution → carré → cube), 4.2
+  n'avait que 2 exemples déjà distincts (système 2×2 puis 3×3), rien à
+  couper.
+  2. **Quand plusieurs groupes partagent le même énoncé distingué
+  seulement par (I), (II), (III)..., garder au maximum 2 exemples de
+  CHAQUE groupe** (pas une fusion en une seule section comme pour un
+  énoncé strictement identique sans numérotation — voir plus haut le cas
+  3.5-3.8 — ici chaque groupe (I)/(II)/(III) garde son propre titre et sa
+  propre grille), en choisissant les 2 qui couvrent le mieux la difficulté
+  (un cas courant + un cas plus délicat, jamais deux quasi-doublons).
+  Appliqué ici à 4.7/4.8 (« Développer, réduire et ordonner (I)/(II) »,
+  3→2 chacun) et 4.9/4.10 (« Composition de polynômes (I)/(II) », 3→2
+  chacun ; 4.9 avait un doublon pur, écarté sans arbitrage) ; 4.11
+  (« ...avec racines carrées », titre distinct, pas numéroté I/II/III) et
+  4.12 (« ...(III) », déjà à 2) non touchés.
+
+  En complément, demande explicite ponctuelle : **4.3 à 4.6 (« Évaluer un
+  polynôme » : valeur entière / rationnelle / expression composée / valeur
+  irrationnelle) ramenés à 4 exemples au total, un par groupe, en gardant
+  l'ordre du simple au complexe déjà présent** (les 4 titres marquent déjà
+  une progression) — convention du groupe à un seul exemple (id sans
+  lettre) appliquée aux quatre. Contrairement à 3.5-3.8, ces 4 groupes ont
+  des titres différents : pas de fusion visuelle en une seule section,
+  juste un exemple par étape.
+
+  Fiche passée de 48 à 34 questions. Vérifié : syntaxe, 500 tirages
+  auto-cohérents, cycle complet dans le navigateur (34/34 bonnes réponses
+  acceptées, seuls 3 échecs isolés dans des groupes non touchés — piège
+  MathLive déjà connu), panneau « Voir toutes les réponses » (34/34,
+  aucune erreur MathJax), capture d'écran confirmant le rendu.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.

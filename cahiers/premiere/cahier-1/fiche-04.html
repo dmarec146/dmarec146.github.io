@@ -1065,46 +1065,37 @@ function fracSimple(nmax, denoms) {
 }
 function genGroupe4_1() {
   const denoms = [2,3,4,5,6,7,8,9];
+  // a) classique : simple difference de deux fractions
   function itemA() {
     const p1=fracSimple(9,denoms), p2=fracSimple(9,denoms);
     const enonce = `\\dfrac{${p1.n}}{${p1.d}}-\\dfrac{${p2.n}}{${p2.d}}`;
     return {id:"4.1 a)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(fracSub(p1,p2))};
   }
-  function itemB() {
-    const p1=fracSimple(9,denoms), p2=fracSimple(9,denoms), p3=fracSimple(9,denoms);
-    const enonce = `-\\dfrac{${p1.n}}{${p1.d}}+\\dfrac{${p2.n}}{${p2.d}}+\\dfrac{${p3.n}}{${p3.d}}`;
-    const reponse = fracAdd(fracAdd(fracNeg(p1),p2),p3);
-    return {id:"4.1 b)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
-  }
+  // b) delicat : introduit la distribution d'un coefficient entier
   function itemC() {
     const k = alea(2,3);
     const p1=fracSimple(9,denoms), p2=fracSimple(9,denoms), p3=fracSimple(9,denoms);
     const enonce = `${k}\\left(\\dfrac{${p1.n}}{${p1.d}}-\\dfrac{${p2.n}}{${p2.d}}\\right)+\\dfrac{${p3.n}}{${p3.d}}`;
     const reponse = fracAdd(fracMul(F(k),fracSub(p1,p2)),p3);
-    return {id:"4.1 c)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 b)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
-  function itemD() {
-    const p1=fracSimple(6,denoms), p2=fracSimple(6,denoms), p3=fracSimple(9,denoms);
-    const diff = fracSub(p1,p2);
-    const enonce = `\\left(\\dfrac{${p1.n}}{${p1.d}}-\\dfrac{${p2.n}}{${p2.d}}\\right)^2+\\dfrac{${p3.n}}{${p3.d}}`;
-    const reponse = fracAdd(fracMul(diff,diff),p3);
-    return {id:"4.1 d)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
-  }
+  // c) delicat : introduit le carre et un produit
   function itemE() {
     const p1=fracSimple(6,denoms), p2=fracSimple(9,denoms);
     const k = alea(2,4);
     const enonce = `\\left(\\dfrac{${p1.n}}{${p1.d}}\\right)^2-${k}\\times \\left(-\\dfrac{${p1.n}}{${p1.d}}\\right)-\\dfrac{${p2.n}}{${p2.d}}`;
     const reponse = fracSub(fracAdd(fracMul(p1,p1), fracMul(F(k),p1)), p2);
-    return {id:"4.1 e)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 c)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
+  // d) le plus delicat : introduit le cube
   function itemF() {
     const p1=fracSimple(5,denoms), p2=fracSimple(6,denoms);
     const enonce = `\\left(-\\dfrac{${p1.n}}{${p1.d}}\\right)^3+\\dfrac{${p2.n}}{${p2.d}}\\times \\left(-\\dfrac{${p1.n}}{${p1.d}}\\right)^2`;
     const negP1 = fracNeg(p1);
     const reponse = fracAdd(fracMul(fracMul(negP1,negP1),negP1), fracMul(p2,fracMul(negP1,negP1)));
-    return {id:"4.1 f)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
+    return {id:"4.1 d)", type:"num", fractionIrreductible:true, enonce, reponse: fracStr(reponse)};
   }
-  return [itemA(),itemB(),itemC(),itemD(),itemE(),itemF()];
+  return [itemA(),itemC(),itemE(),itemF()];
 }
 
 // ---------- Groupe 4.2 : systemes lineaires ----------
@@ -1157,103 +1148,52 @@ function polyAleaEntierSparse(deg, maxCoef, probZero) {
   return p;
 }
 function genGroupe4_3() {
-  function item(lettre) {
-    const deg = alea(3,5);
-    const p = polyAleaEntierSparse(deg, 9, 0.3);
-    const a = aleaNonNul(-4,4);
-    const val = pEvalF(p, F(a));
-    return {id:`4.3 ${lettre})`, type:"num", texteLibre:true,
-      enonce:`Avec \\(P=${polyLatexDesc(p,'x')}\\), calculer \\(P(${a})\\)`,
-      reponse: fracStr(val)};
-  }
-  return ['a','b','c','d','e'].map(item);
+  const deg = alea(3,5);
+  const p = polyAleaEntierSparse(deg, 9, 0.3);
+  const a = aleaNonNul(-4,4);
+  const val = pEvalF(p, F(a));
+  return {id:"4.3", type:"num", texteLibre:true,
+    enonce:`Avec \\(P=${polyLatexDesc(p,'x')}\\), calculer \\(P(${a})\\)`,
+    reponse: fracStr(val)};
 }
 function genGroupe4_4() {
-  function item(lettre) {
-    const deg = alea(2,4);
-    const p = [];
-    for (let k=0;k<=deg;k++) {
-      if (Math.random()<0.5) p.push(F(aleaNonNul(-5,5)));
-      else p.push(F(aleaNonNul(-5,5), aleaParmi([2,3,4,5])));
-    }
-    if (p[deg].n===0) p[deg]=F(aleaNonNul(-5,5));
-    const [xn,xd] = aleaParmi([[1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[5,3],[5,2]]);
-    const xVal = F(xn,xd);
-    const val = pEvalF(p, xVal);
-    const xLatex = xd===1?String(xn):`\\dfrac{${xn}}{${xd}}`;
-    return {id:`4.4 ${lettre})`, type:"num", texteLibre:true,
-      enonce:`Avec \\(P=${polyLatexDesc(p,'x')}\\), calculer \\(P\\left(${xLatex}\\right)\\)`,
-      reponse: fracStr(val)};
+  const deg = alea(2,4);
+  const p = [];
+  for (let k=0;k<=deg;k++) {
+    if (Math.random()<0.5) p.push(F(aleaNonNul(-5,5)));
+    else p.push(F(aleaNonNul(-5,5), aleaParmi([2,3,4,5])));
   }
-  return ['a','b','c','d','e'].map(item);
+  if (p[deg].n===0) p[deg]=F(aleaNonNul(-5,5));
+  const [xn,xd] = aleaParmi([[1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[5,3],[5,2]]);
+  const xVal = F(xn,xd);
+  const val = pEvalF(p, xVal);
+  const xLatex = xd===1?String(xn):`\\dfrac{${xn}}{${xd}}`;
+  return {id:"4.4", type:"num", texteLibre:true,
+    enonce:`Avec \\(P=${polyLatexDesc(p,'x')}\\), calculer \\(P\\left(${xLatex}\\right)\\)`,
+    reponse: fracStr(val)};
 }
 
 // ---------- Groupe 4.5 : evaluation d'expressions composees ----------
 function genGroupe4_5() {
-  function itemA() {
-    const A = polyAleaEntierSparse(2, 4, 0.15);
-    const B = polyAleaEntierSparse(alea(4,5), 3, 0.35);
-    const C = polyAleaEntierSparse(2, 3, 0.2);
-    const t = aleaParmi([2,-2,3,-1]);
-    const tF = F(t);
-    const val = fracSub(fracMul(pEvalF(A,tF), pEvalF(B,tF)), pEvalF(C,tF));
-    const enonce = `Avec \\(P=(${polyLatexDesc(A,'x')})(${polyLatexDesc(B,'x')})-(${polyLatexDesc(C,'x')})\\), calculer \\(P(${t})\\)`;
-    return {id:"4.5 a)", type:"num", texteLibre:true, enonce, reponse: fracStr(val)};
-  }
-  function itemB() {
-    const constTerme = F(aleaNonNul(-3,3), aleaParmi([2,3]));
-    const leadCoef = F(aleaNonNul(-4,4));
-    const D = polyAleaEntierSparse(alea(3,4), 3, 0.25);
-    const E = polyAleaEntierSparse(alea(2,3), 3, 0.2);
-    const fracCoef = F(aleaNonNul(-3,3), aleaParmi([2,3]));
-    const t = aleaParmi([1,-1,2,-2]);
-    const tF = F(t);
-    let val = constTerme;
-    val = fracAdd(val, fracMul(leadCoef, fracPow(tF,5)));
-    val = fracSub(val, fracMul(pEvalF(D,tF), pEvalF(E,tF)));
-    val = fracSub(val, fracMul(fracCoef, fracMul(tF,tF)));
-    const enonce = `Avec \\(P=${fracTermLatex(constTerme,'',true)}${fracTermLatex(leadCoef,'x^5',false)}-(${polyLatexDesc(D,'x')})(${polyLatexDesc(E,'x')})${fracTermLatex(fracNeg(fracCoef),'x^2',false)}\\), calculer \\(P(${t})\\)`;
-    return {id:"4.5 b)", type:"num", texteLibre:true, enonce, reponse: fracStr(val)};
-  }
-  return [itemA(), itemB()];
+  const A = polyAleaEntierSparse(2, 4, 0.15);
+  const B = polyAleaEntierSparse(alea(4,5), 3, 0.35);
+  const C = polyAleaEntierSparse(2, 3, 0.2);
+  const t = aleaParmi([2,-2,3,-1]);
+  const tF = F(t);
+  const val = fracSub(fracMul(pEvalF(A,tF), pEvalF(B,tF)), pEvalF(C,tF));
+  const enonce = `Avec \\(P=(${polyLatexDesc(A,'x')})(${polyLatexDesc(B,'x')})-(${polyLatexDesc(C,'x')})\\), calculer \\(P(${t})\\)`;
+  return {id:"4.5", type:"num", texteLibre:true, enonce, reponse: fracStr(val)};
 }
 
 // ---------- Groupe 4.6 : evaluation en une valeur irrationnelle ----------
 function genGroupe4_6() {
-  function itemA() {
-    const p = aleaNonNul(-3,3), d = aleaParmi(RADICANDS_PETITS);
-    const e = aleaNonNul(-3,3), f = aleaNonNul(-3,3);
-    const facteur1 = [F(p*p-d), F(-2*p), F(1)];
-    const facteur2 = [F(f), F(e), F(1)];
-    const P = pMulF(facteur1, facteur2);
-    const enonce = `Avec \\(P=${polyLatexDesc(P,'x')}\\), calculer \\(P(${p}+\\sqrt{${d}})\\)`;
-    return {id:"4.6 a)", type:"num", texteLibre:true, enonce, reponse:"0"};
-  }
-  function itemB() {
-    const A = aleaNonNul(-5,5), d = aleaParmi(RADICANDS_PETITS);
-    const B = aleaNonNul(-4,4);
-    const C = F(aleaNonNul(-3,3), aleaParmi([1,2]));
-    const signe = aleaParmi([1,-1]);
-    const carrePoly = [F(A*A), F(0), F(2*A), F(0), F(1)];
-    const carreVal = F((d+A)*(d+A));
-    const partieA = fracMul(carreVal, C);
-    const partieB = fracMul(carreVal, F(B*signe));
-    const xLatex = signe===1? `\\sqrt{${d}}` : `-\\sqrt{${d}}`;
-    const enonce = `Avec \\(P=(${polyLatexDesc(carrePoly,'x')})(${fracTermLatex(F(B),'x',true)}${fracTermLatex(C,'',false)})\\), calculer \\(P(${xLatex})\\)`;
-    const termeReponse = snAsciiTerm(snMk(partieA,partieB), d);
-    const reponse = (termeReponse.signe<0?'-':'') + termeReponse.texte;
-    return {id:"4.6 b)", type:"num", texteLibre:true, enonce, reponse};
-  }
-  function itemC() {
-    const p = aleaNonNul(-3,3), d = aleaParmi(RADICANDS_PETITS);
-    const e = aleaNonNul(-2,2), f = aleaNonNul(-2,2), g = aleaNonNul(-2,2);
-    const facteur1 = [F(p*p-d), F(-2*p), F(1)];
-    const facteur2 = [F(g), F(f), F(e), F(1)];
-    const P = pMulF(facteur1, facteur2);
-    const enonce = `Avec \\(P=${polyLatexDesc(P,'x')}\\), calculer \\(P(${p}+\\sqrt{${d}})\\)`;
-    return {id:"4.6 c)", type:"num", texteLibre:true, enonce, reponse:"0"};
-  }
-  return [itemA(), itemB(), itemC()];
+  const p = aleaNonNul(-3,3), d = aleaParmi(RADICANDS_PETITS);
+  const e = aleaNonNul(-3,3), f = aleaNonNul(-3,3);
+  const facteur1 = [F(p*p-d), F(-2*p), F(1)];
+  const facteur2 = [F(f), F(e), F(1)];
+  const P = pMulF(facteur1, facteur2);
+  const enonce = `Avec \\(P=${polyLatexDesc(P,'x')}\\), calculer \\(P(${p}+\\sqrt{${d}})\\)`;
+  return {id:"4.6", type:"num", texteLibre:true, enonce, reponse:"0"};
 }
 
 // ---------- Groupes 4.7/4.8 : developper, reduire, ordonner ----------
@@ -1267,16 +1207,7 @@ function genGroupe4_7() {
     const enonce = `(x${fmtConst(-r)})^2(x^2${fmtLin(b,'x')}${fmtConst(c)})`;
     return {id:"4.7 a)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
   }
-  function itemB() {
-    const p=aleaNonNul(-5,5), q=aleaNonNul(-4,4), r=aleaNonNul(-9,9);
-    const k=alea(2,3), s=aleaNonNul(-3,3), t=aleaNonNul(-5,5);
-    const facteur1=[F(p),F(1)], facteur2=[F(r),F(q)];
-    const prod = pMulF(facteur1,facteur2);
-    const correction = pScaleF([F(t),F(s)], F(k));
-    const P = pSubF(prod, correction);
-    const enonce = `(x${fmtConst(p)})(${fmtLin(q,'x').replace(/^\+/,'')}${fmtConst(r)})-${k}(${fmtLin(s,'x').replace(/^\+/,'')}${fmtConst(t)})`;
-    return {id:"4.7 b)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
-  }
+  // b) delicat : introduit des coefficients fractionnaires
   function itemC() {
     const A = aleaParmi([F(2,3),F(3,4),F(4,5),F(1,2),F(3,2),F(5,3)]);
     const B = aleaNonNul(-6,6);
@@ -1287,9 +1218,9 @@ function genGroupe4_7() {
     const prod = pMulF(facteur1, facteur2);
     const P = pAddF(pAddF([F(0),F(1)], prod), [Dconst]);
     const enonce = `x+\\left(${fracTermLatex(A,'x',true)}${fmtConst(B)}\\right)\\left(x${fracTermLatex(C,'',false)}\\right)${fracTermLatex(Dconst,'',false)}`;
-    return {id:"4.7 c)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
+    return {id:"4.7 b)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
   }
-  return [itemA(), itemB(), itemC()];
+  return [itemA(), itemC()];
 }
 function genGroupe4_8() {
   function itemA() {
@@ -1299,27 +1230,16 @@ function genGroupe4_8() {
     const enonce = `(${polyLatexDesc(A,'x')})(${polyLatexDesc(B,'x')})`;
     return {id:"4.8 a)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
   }
-  function itemB() {
-    const A = F(aleaNonNul(-3,3), aleaParmi([1,2]));
-    const B = aleaNonNul(-3,3);
-    const facteur1 = [F(B), A, F(0), F(1)]; // x^3 + A x + B (ascending: [B,A,0,1])
-    const C = aleaNonNul(-2,2), Dd = F(aleaNonNul(-4,4), aleaParmi([1,4]));
-    const facteur2 = [Dd, F(C), F(-2)]; // -2x^2+Cx+Dd (ascending: [Dd,C,-2])
-    const prod = pMulF(facteur1, facteur2);
-    const G = aleaNonNul(-9,9);
-    const P = pSubF(pSubF([F(0),F(1)], prod), [F(0),F(0),F(G)]);
-    const enonce = `x-\\left(x^3${fracTermLatex(A,'x',false)}${fmtConst(B)}\\right)\\left(-2x^2${fmtLin(C,'x')}${fracTermLatex(Dd,'',false)}\\right)${fmtLin(-G,'x^2')}`;
-    return {id:"4.8 b)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
-  }
+  // b) delicat, technique distincte : produit de deux facteurs conjugues avec un surd
   function itemC() {
     const k = aleaNonNul(-3,3), d = aleaParmi(RADICANDS_PETITS);
     // (x^2+k+sqrt(d)x)(x^2+k-sqrt(d)x) = (x^2+k)^2 - d*x^2
     const carre = pMulF([F(k),F(0),F(1)],[F(k),F(0),F(1)]);
     const P = pSubF(carre, [F(0),F(0),F(d)]);
     const enonce = `(x^2${fmtConst(k)}+\\sqrt{${d}}x)(x^2${fmtConst(k)}-\\sqrt{${d}}x)`;
-    return {id:"4.8 c)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
+    return {id:"4.8 b)", type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: polyAsciiDesc(P,'x')};
   }
-  return [itemA(), itemB(), itemC()];
+  return [itemA(), itemC()];
 }
 
 // ---------- Groupes 4.9/4.10 : composition P o Q ----------
@@ -1333,23 +1253,16 @@ function genGroupe4_9() {
     const enonce = `Avec \\(P=${fmtLin(p,'x').replace(/^\+/,'')}${fmtConst(q)}\\) et \\(Q=${fmtLin(r,'x').replace(/^\+/,'')}${fmtConst(s)}\\)`;
     return {id:"4.9 a)", type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(comp,'x')};
   }
-  function itemB() {
-    const p=aleaNonNul(-4,4), q=aleaNonNul(-5,5);
-    const r=aleaNonNul(-4,4), s=aleaNonNul(-5,5);
-    const P = polyLin(p,q), Q = polyLin(r,s);
-    const comp = pComposeF(P,Q);
-    const enonce = `Avec \\(P=${fmtLin(p,'x').replace(/^\+/,'')}${fmtConst(q)}\\) et \\(Q=${fmtLin(r,'x').replace(/^\+/,'')}${fmtConst(s)}\\)`;
-    return {id:"4.9 b)", type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(comp,'x')};
-  }
+  // b) delicat : Q devient un polynome de degre 2 (composition lineaire-dans-quadratique)
   function itemC() {
     const p=aleaNonNul(-4,4), q=aleaNonNul(-5,5);
     const P = polyLin(p,q);
     const Q = polyAleaEntierSparse(2, 4, 0.1);
     const comp = pComposeF(P,Q);
     const enonce = `Avec \\(P=${fmtLin(p,'x').replace(/^\+/,'')}${fmtConst(q)}\\) et \\(Q=${polyLatexDesc(Q,'x')}\\)`;
-    return {id:"4.9 c)", type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(comp,'x')};
+    return {id:"4.9 b)", type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(comp,'x')};
   }
-  return [itemA(), itemB(), itemC()];
+  return [itemA(), itemC()];
 }
 function genGroupe4_10() {
   function polyLin(a,b){ return [F(b),F(a)]; }
@@ -1367,14 +1280,7 @@ function genGroupe4_10() {
     const enonce = `Avec \\(P=${polyLatexDesc(P,'x')}\\) et \\(Q=${polyLatexDesc(Q,'x')}\\)`;
     return {id:"4.10 b)", type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(comp,'x')};
   }
-  function itemC() {
-    const P = polyAleaEntierSparse(3, 3, 0.25);
-    const Q = polyAleaEntierSparse(2, 5, 0.1);
-    const comp = pComposeF(P,Q);
-    const enonce = `Avec \\(P=${polyLatexDesc(P,'x')}\\) et \\(Q=${polyLatexDesc(Q,'x')}\\)`;
-    return {id:"4.10 c)", type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(comp,'x')};
-  }
-  return [itemA(), itemB(), itemC()];
+  return [itemA(), itemB()];
 }
 
 // ---------- Groupes 4.11/4.12 : composition avec racines carrees ----------
@@ -1585,7 +1491,7 @@ function genGroupe4_17() {
 function genererExercices() {
   return [
     ...genGroupe4_1(), ...genGroupe4_2(),
-    ...genGroupe4_3(), ...genGroupe4_4(), ...genGroupe4_5(), ...genGroupe4_6(),
+    genGroupe4_3(), genGroupe4_4(), genGroupe4_5(), genGroupe4_6(),
     ...genGroupe4_7(), ...genGroupe4_8(), ...genGroupe4_9(), ...genGroupe4_10(),
     ...genGroupe4_11(), ...genGroupe4_12(),
     ...genGroupe4_13(), ...genGroupe4_14(), ...genGroupe4_15(),
@@ -1595,23 +1501,23 @@ function genererExercices() {
 let exercices;
 
 const groupes = {
-  "grille-4-1": [0,1,2,3,4,5],
-  "grille-4-2": [6,7],
-  "grille-4-3": [8,9,10,11,12],
-  "grille-4-4": [13,14,15,16,17],
-  "grille-4-5": [18,19],
-  "grille-4-6": [20,21,22],
-  "grille-4-7": [23,24,25],
-  "grille-4-8": [26,27,28],
-  "grille-4-9": [29,30,31],
-  "grille-4-10": [32,33,34],
-  "grille-4-11": [35,36],
-  "grille-4-12": [37,38],
-  "grille-4-13": [39,40,41,42],
-  "grille-4-14": [43,44,45],
-  "grille-4-15": [46],
-  "grille-4-16": [47,48],
-  "grille-4-17": [49,50]
+  "grille-4-1": [0,1,2,3],
+  "grille-4-2": [4,5],
+  "grille-4-3": [6],
+  "grille-4-4": [7],
+  "grille-4-5": [8],
+  "grille-4-6": [9],
+  "grille-4-7": [10,11],
+  "grille-4-8": [12,13],
+  "grille-4-9": [14,15],
+  "grille-4-10": [16,17],
+  "grille-4-11": [18,19],
+  "grille-4-12": [20,21],
+  "grille-4-13": [22,23,24,25],
+  "grille-4-14": [26,27,28],
+  "grille-4-15": [29],
+  "grille-4-16": [30,31],
+  "grille-4-17": [32,33]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
