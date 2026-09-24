@@ -1470,6 +1470,58 @@ de changer ce réglage sans qu'il en reparle.
   acceptées, seuls 3 échecs isolés dans des groupes non touchés — piège
   MathLive déjà connu), panneau « Voir toutes les réponses » (34/34,
   aucune erreur MathJax), capture d'écran confirmant le rendu.
+
+  **Correction immédiate de David, même jour : « tu n'as pas compris ».**
+  Les deux règles ci-dessus (I/II/III limités à 2 CHACUN sans fusion ;
+  progression 4.3-4.6 réduite à un exemple par étape SANS fusion) étaient
+  fausses. La vraie règle, unique : **dès que plusieurs groupes traitent
+  exactement la même chose — numérotés (I)/(II)/(III), ou variantes de
+  titre (entier/rationnel/irrationnel), ou énoncé identique — les fusionner
+  en UNE seule section avec une gradation intelligente plafonnée à 4
+  exemples au total** (pas 4 par groupe d'origine). Seul un groupe
+  qualitativement à part (compétence différente, ou cas nettement plus
+  avancé que toute la gradation réunie) reste séparé. Refait en
+  conséquence :
+
+  - **4.3 + 4.4 + 4.6 → un seul 4.3 « Évaluer un polynôme en une valeur
+  donnée »**, 4 exemples gradués : a) valeur entière, b) valeur
+  rationnelle, c) valeur irrationnelle (cas structuré donnant 0), d) valeur
+  irrationnelle (cas général, résultat non trivial — le plus complet,
+  réintègre l'ancien 4.6 itemB écarté par erreur au tour précédent). 4.5
+  (expressions composées, renumérotée 4.4) reste séparée : compétence
+  différente (évaluer un produit de polynômes, pas juste P).
+  - **4.7 + 4.8 → un seul 4.5 « Développer, réduire et ordonner »**, 4
+  exemples gradués : a) simple produit moins un terme mis à l'échelle
+  (classique), b) facteur au carré × trinôme, c) produit de facteurs
+  conjugués avec un surd (technique distincte), d) le plus complet
+  (plusieurs produits et soustractions combinés).
+  - **4.9 + 4.10 + 4.11 → un seul 4.6 « Composition de polynômes »**, 4
+  exemples gradués : a) linéaire∘linéaire (classique), b) quadratique∘
+  linéaire, c) quadratique∘cubique, d) composition avec un surd (le plus
+  complet). 4.12 (« cas avancé », renumérotée 4.7) reste séparée : combine
+  déjà produits ET surds des deux côtés, plus dur que toute la gradation
+  4.9-4.11 réunie.
+
+  Groupes suivants renumérotés en conséquence (4.13→4.8, 4.14→4.9,
+  4.15→4.10, 4.16→4.11, 4.17→4.12), inchangés sinon. Fiche passée de 34 à
+  33 questions (17 groupes à 12).
+
+  **Deux bugs trouvés et corrigés en vérifiant** : (1) en renommant
+  `genGroupe4_16` en `genGroupe4_11`, le nom de fonction a été changé mais
+  pas les `id` internes (restés `"4.16 a)"`/`"4.16 b)"`) — repéré
+  uniquement en listant les ids réellement générés (`exercices.map(e=>e.id)`),
+  pas par un test de syntaxe ni par les 500 tirages auto-cohérents (qui ne
+  regardent pas les ids). (2) le nouveau bloc HTML inséré recommençait par
+  `<p class="section-titre">Évaluer un polynôme</p>`, alors que ce même
+  titre de section précédait déjà le point de départ choisi pour le
+  remplacement — doublon visible seulement à la capture d'écran, invisible
+  à tous les tests fonctionnels. Les deux corrigés, revérifié en entier
+  après correction (syntaxe, 500 tirages, cycle navigateur 33/33 — mêmes 3
+  échecs isolés déjà connus —, panneau 33/33 sans erreur MathJax, capture
+  d'écran confirmant une seule section par titre et les bonnes gradations).
+  Règle générale corrigée dans la mémoire
+  `feedback_simplification_fiches_premiere` pour ne pas la reproduire sur
+  les fiches suivantes.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
