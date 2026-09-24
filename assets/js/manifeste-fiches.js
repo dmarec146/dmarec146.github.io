@@ -1,4 +1,4 @@
-// Liste statique des 51 fiches de cahiers de calcul (Première + Seconde), regroupées par
+// Liste statique des 52 fiches de cahiers de calcul (Première + Seconde), regroupées par
 // cahier — sert au sélecteur de fiche de l'outil d'attribution des devoirs
 // (tableau-de-bord/devoirs.html). Extraite une fois des 18 sommaires de cahier
 // (cahiers/<niveau>/cahier-N/index.html) ; à tenir à jour à la main si une fiche est
@@ -91,6 +91,7 @@ export const MANIFESTE_CAHIERS = [
     { href: 'fiche-21.html', numero: 21, nom: 'Repérage, distances et milieux' },
     { href: 'fiche-22.html', numero: 22, nom: 'Calcul vectoriel' },
     { href: 'fiche-23.html', numero: 23, nom: 'Coordonnées de vecteurs' },
+    { href: 'fiche-25.html', numero: 25, nom: 'Équations de droites' },
   ]},
 ];
 
@@ -105,7 +106,7 @@ export function ficheIdDepuis(niveau, cahier, href) {
   return `/cahiers/${niveau}/${cahier}/${href}`;
 }
 
-// Liste à plat des 51 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
+// Liste à plat des 52 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
 export const FICHES_PLATES = MANIFESTE_CAHIERS.flatMap((c) =>
   c.fiches.map((f) => ({
     ficheId: ficheIdDepuis(c.niveau, c.cahier, f.href),
