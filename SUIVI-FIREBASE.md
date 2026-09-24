@@ -448,9 +448,43 @@ de changer ce réglage sans qu'il en reparle.
   (pas un compte de démonstration), sans champ `classe` dans Firestore :
   rattaché à aucun niveau, travaille sur tous. Tableau de bord : groupe
   « Hors classe », onglets cahiers ET automatismes (`estHorsClasse` dans
-  `tableau-de-bord.js`). Aucun devoir ne peut lui être attribué (les devoirs
-  visent une classe). Créé avec `creer-comptes.js`, qui accepte désormais une
-  valeur de classe vide.
+  `tableau-de-bord.js`). Créé avec `creer-comptes.js`, qui accepte désormais
+  une valeur de classe vide.
+
+  **Attribution de devoir à un élève hors classe, corrigée le 24/09/2026**
+  (David : Ewenn n'apparaissait pas dans la liste des classes au moment
+  d'attribuer un devoir). Cause : un devoir vise toujours une `classe`
+  (`where('classe','==', ...)`), et `e.marec` n'a précisément AUCUN champ
+  `classe` — invisible à la fois dans `classesConnues()` (`devoirs.js`, qui
+  ignorait toute classe vide) et dans `classeEleve()` (`suivi.js`, qui
+  renvoyait `null` pour un élève hors classe, avec un garde `if (!classe)
+  return` dans chaque fonction de suivi des devoirs). Corrigé en introduisant
+  une valeur sentinelle `"hors-classe"` — écrite UNIQUEMENT côté client
+  (jamais dans le document `eleves/{uid}` lui-même, qui reste sans champ
+  `classe` comme prévu) : `classeEleve()` la renvoie désormais à la place de
+  `null`, `classesConnues()` l'ajoute à la liste dès qu'au moins un élève est
+  hors classe, et la vue résultats d'un devoir "Hors classe" interroge tous
+  les élèves puis filtre côté client sur l'absence du champ (`where('classe',
+  '==', 'hors-classe')` ne trouverait jamais personne, aucun document n'a
+  littéralement cette valeur). Aucune règle Firestore à republier (la règle
+  `devoirs` autorise déjà toute lecture connectée). **Pas testé en conditions
+  réelles** (pas de compte enseignant ni de service-account.json disponibles
+  sur ce clone au moment du correctif) — à vérifier par David : `e.marec`
+  doit apparaître dans le select "Classe" de `devoirs.html` sous "Hors
+  classe", et un devoir qui lui est attribué doit se comporter normalement
+  (blocage/limite d'essais, résultats).
+
+  **Au passage, même demande étendue aux Secondes** : la Seconde a déjà
+  accès sans restriction technique à `automatismes/premiere/` (fiches et
+  sujet blanc — aucune garde de classe n'existe sur ces pages), mais
+  `devoirs.js` ne proposait que les classes de Première dans le select
+  "Classe" pour un devoir de type "Sujet blanc d'automatismes" (filtre
+  `estPremiere` retiré), et le tableau de bord n'affichait l'onglet
+  Automatismes que pour la Première/hors-classe (`estSeconde` ajouté à la
+  condition dans `tableau-de-bord.js`). Un élève de Seconde qui a déjà fait
+  des sujets blancs verra donc directement son suivi apparaître (les
+  données étaient déjà enregistrées et remontées, seul l'affichage était
+  masqué). Pas testé en conditions réelles, même raison que ci-dessus.
 - **Groupes de spécialité de Première (19/09/2026)** : David envoie, PDF par
   PDF (export Index Education "Liste des élèves par groupe"), les groupes
   de sa classe de spécialité maths — les élèves viennent de classes

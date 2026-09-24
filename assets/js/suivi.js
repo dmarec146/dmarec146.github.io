@@ -181,13 +181,27 @@ export async function supprimerBrouillon(ficheId) {
 // ci-dessous -- evite une lecture Firestore supplementaire a CHAQUE
 // validation de fiche alors que la classe ne change jamais en session.
 let classeEleveCourant;
+// "hors-classe" : valeur sentinelle pour un eleve cree sans classe (voir
+// outils/creer-comptes) -- AUCUN champ classe n'est ecrit sur son document
+// eleves/{uid} (ni ici ni migre a posteriori), cette chaine ne sert qu'a
+// cote client pour interroger/ecrire la collection devoirs de facon
+// coherente (un devoir attribue "Hors classe" depuis devoirs.js stocke
+// litteralement classe:"hors-classe"). Avant ce changement (24/09/2026,
+// David : un eleve hors classe cree la veille n'apparaissait pas dans la
+// liste d'attribution d'un devoir), cette fonction renvoyait null pour un
+// eleve hors classe, et chaque appelant plus bas a un garde `if (!classe)
+// return` -- un devoir ne pouvait donc jamais s'appliquer a lui. Distinct du
+// cas "non connecte" (reste null, geree par le if juste en dessous) et du
+// cas "profil eleves/{uid} inexistant" (ex. un compte admin qui visite une
+// fiche : reste null aussi, pas un vrai eleve).
+const CLASSE_HORS_CLASSE = 'hors-classe';
 async function classeEleve() {
   if (classeEleveCourant !== undefined) return classeEleveCourant;
   await authPrete;
   if (!utilisateurCourant) { classeEleveCourant = null; return null; }
   try {
     const profil = await getDoc(doc(db, 'eleves', utilisateurCourant.uid));
-    classeEleveCourant = profil.exists() ? (profil.data().classe || null) : null;
+    classeEleveCourant = profil.exists() ? (profil.data().classe || CLASSE_HORS_CLASSE) : null;
   } catch (erreur) {
     console.warn('Suivi : lecture du profil eleve impossible.', erreur);
     classeEleveCourant = null;

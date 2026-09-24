@@ -27,6 +27,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { FICHES_PLATES } from './manifeste-fiches.js';
 
+// Meme sentinelle que suivi.js (classeEleve()) : un eleve cree sans classe
+// (voir outils/creer-comptes) n'a AUCUN champ classe sur son document
+// eleves/{uid} -- Firestore ne peut pas interroger "classe absente" par
+// egalite, donc un devoir attribue a ce groupe stocke litteralement
+// classe:"hors-classe" ; la liste des eleves concernes (vue resultats plus
+// bas) est alors retrouvee par un filtre cote client plutot qu'une requete
+// where('classe','==', ...).
+const CLASSE_HORS_CLASSE = 'hors-classe';
+
 const zoneChargement = document.getElementById('dev-chargement');
 const zoneErreur = document.getElementById('dev-erreur');
 const zoneContenu = document.getElementById('dev-contenu');
@@ -73,6 +82,7 @@ const boutonRetourResultats = document.getElementById('dev-resultats-retour');
 // qu'importé : fonction triviale, pas de raison de coupler les deux pages
 // pour ça).
 function formaterClasseAffichee(classe) {
+  if (classe === CLASSE_HORS_CLASSE) return 'Hors classe';
   const i = classe.lastIndexOf('-');
   if (i === -1) return classe;
   const suffixe = classe.slice(i + 1);
@@ -85,13 +95,6 @@ function nomAffiche(eleve) {
   return (eleve.nom || eleve.prenom)
     ? `${eleve.nom || ''} ${eleve.prenom || ''}`.trim()
     : (eleve.pseudo || '—');
-}
-
-// Même heuristique que dans tableau-de-bord.js : seule la Première a des
-// automatismes avec suivi pour l'instant -- sert a ne proposer que les
-// classes concernees quand "Sujet blanc d'automatismes" est choisi.
-function estPremiere(classe) {
-  return !!classe && classe.toLowerCase().startsWith('1ere');
 }
 
 function afficherEtat(element, texte) {
@@ -170,22 +173,31 @@ let toutesLesClasses = [];
 // change (addDoc vs updateDoc, voir l'ecouteur "submit").
 let devoirEnEdition = null;
 
+// Ajoute la sentinelle "hors-classe" (voir plus haut) des qu'au moins un
+// eleve n'a aucun champ classe -- sinon ce groupe resterait invisible dans
+// le select d'attribution (bug signale le 24/09/2026, David : un eleve hors
+// classe cree la veille n'apparaissait pas dans la liste des classes).
 async function classesConnues() {
   const instantane = await getDocs(collection(db, 'eleves'));
   const classes = new Set();
+  let auMoinsUnHorsClasse = false;
   instantane.docs.forEach((d) => {
     const classe = d.data().classe;
-    if (classe) classes.add(classe);
+    if (classe) classes.add(classe); else auMoinsUnHorsClasse = true;
   });
-  return [...classes].sort();
+  const liste = [...classes].sort();
+  if (auMoinsUnHorsClasse) liste.push(CLASSE_HORS_CLASSE);
+  return liste;
 }
 
-// Repeuple le select Classe -- filtre sur la Première seule quand un sujet
-// blanc d'automatismes est en cours d'attribution (voir estPremiere), garde
-// la valeur deja choisie si elle reste valide dans la nouvelle liste.
+// Repeuple le select Classe. Plus de filtre par niveau pour un sujet blanc
+// d'automatismes (jusqu'au 24/09/2026, seule la Première etait proposee :
+// David voulait aussi pouvoir attribuer un devoir d'automatismes de
+// Premiere a une classe de Seconde, qui y a deja acces en pratique libre
+// sans restriction technique -- voir automatismes/premiere/, aucune garde
+// de classe). Garde la valeur deja choisie si elle reste valide.
 function remplirSelectClasse() {
-  const estAutomatismes = selectType.value === 'automatismes';
-  const classes = estAutomatismes ? toutesLesClasses.filter(estPremiere) : toutesLesClasses;
+  const classes = toutesLesClasses;
   const valeurPrecedente = selectClasse.value;
   selectClasse.innerHTML = '';
   for (const classe of classes) {
@@ -464,8 +476,14 @@ async function afficherResultats(devoir) {
 
   const echeanceMillis = devoir.echeance?.toMillis ? devoir.echeance.toMillis() : 0;
 
-  const instantaneEleves = await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)));
-  const eleves = instantaneEleves.docs
+  // "Hors classe" (voir CLASSE_HORS_CLASSE) : aucun eleve n'a litteralement
+  // ce champ classe (il en est simplement depourvu), une requete where() ne
+  // trouverait donc jamais personne -- filtre cote client sur l'absence du
+  // champ a la place.
+  const eleves = (devoir.classe === CLASSE_HORS_CLASSE
+    ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) => !d.data().classe)
+    : (await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)))).docs
+  )
     .map((d) => ({ uid: d.id, ...d.data() }))
     .sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b)));
 

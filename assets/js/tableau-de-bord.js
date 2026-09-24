@@ -72,10 +72,15 @@ function horodatageEnMillis(horodatage) {
   return horodatage?.toMillis ? horodatage.toMillis() : 0;
 }
 
-// Seule la Premiere a des automatismes avec suivi pour l'instant (Seconde
-// peut les utiliser aussi, mais sans suivi demande ; Terminale a venir).
 function estPremiere(classe) {
   return !!classe && classe.toLowerCase().startsWith('1ere');
+}
+// La Seconde a aussi acces aux automatismes de Premiere, sans restriction
+// technique (voir automatismes/premiere/) -- David a demande le 24/09/2026
+// que leur suivi apparaisse aussi ici, comme pour la Premiere (Terminale
+// reste a venir, pas de classe de ce niveau pour l'instant).
+function estSeconde(classe) {
+  return !!classe && classe.toLowerCase().startsWith('2nde');
 }
 // Eleve cree sans classe (voir outils/creer-comptes) : rattache a aucun niveau, il travaille sur
 // tous -- son suivi affiche donc aussi les automatismes, comme pour la Premiere.
@@ -382,7 +387,7 @@ function afficherDetail(index) {
     detailTableau.hidden = false;
   }
 
-  if (estPremiere(eleve.classe) || estHorsClasse(eleve)) {
+  if (estPremiere(eleve.classe) || estSeconde(eleve.classe) || estHorsClasse(eleve)) {
     automatismesContenu.innerHTML = '';
     for (const ligneNiveau of donnees.automatismesParNiveau) {
       const li = document.createElement('li');
