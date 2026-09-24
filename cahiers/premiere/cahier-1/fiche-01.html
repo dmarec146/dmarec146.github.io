@@ -1030,87 +1030,90 @@ function fmtTermeCanoniqueFrac(alphaCoef, v, w){
   return `(${v}${s}${coef}${w})`;
 }
 
+// Ramenee de 6 a 4 questions le 24/09/2026 (David : fiches de Premiere trop longues) --
+// gardees : a/b (developper un carre, coefficients entiers, classiques) et c/d (plus
+// delicates, une racine carree isolee puis des coefficients fractionnaires) ; retirees :
+// l'ancienne d) (double racine carree) et l'ancienne f) (double fraction), qui testaient
+// la meme competence que c)/e) en cumulant deux difficultes a la fois plutot qu'une seule.
 function genGroupe1_1() {
   const pa=alea(2,5), qa=alea(2,9);
   const pb=alea(2,5), qb=alea(2,9);
   const kc = aleaParmi(RADICANDS_SIMPLES);
-  const md = aleaParmi(RADICANDS_PETITS);
   const [pe,qe] = aleaParmi(PAIRES_COPREMIERES); const re=alea(2,5);
-  const [pf,qf] = aleaParmi(PAIRES_COPREMIERES); const [rf,sf] = aleaParmi(PAIRES_COPREMIERES);
   return [
     {id:"1.1 a)", type:"alg", enonce:`(${pa}x+${qa})^2`, reponse:`${pa*pa}*x^2+${2*pa*qa}*x+${qa*qa}`},
     {id:"1.1 b)", type:"alg", enonce:`(${pb}y-${qb})^2`, reponse:`${pb*pb}*y^2-${2*pb*qb}*y+${qb*qb}`},
     {id:"1.1 c)", type:"alg", enonce:`(-u+\\sqrt{${kc}})^2`, reponse:`u^2-2*sqrt(${kc})*u+${kc}`},
-    {id:"1.1 d)", type:"alg", enonce:`(-\\sqrt{${md}}t-\\sqrt{${5*md}})^2`, reponse:`${md}*t^2+${2*md}*sqrt(5)*t+${5*md}`},
-    {id:"1.1 e)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^2`, reponse:`${pe*pe}/${qe*qe}*z^2+${2*pe*re}/${qe}*z+${re*re}`},
-    {id:"1.1 f)", type:"alg", enonce:`\\left(\\dfrac{${pf}}{${qf}}v-\\dfrac{${rf}}{${sf}}\\right)^2`, reponse:`${pf*pf}/${qf*qf}*v^2-${2*pf*rf}/${qf*sf}*v+${rf*rf}/${sf*sf}`}
+    {id:"1.1 d)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^2`, reponse:`${pe*pe}/${qe*qe}*z^2+${2*pe*re}/${qe}*z+${re*re}`}
   ];
 }
 
+// Ramenee de 6 a 4 questions le 24/09/2026 (David) -- deux familles (difference de deux
+// carres a/b/c, carre parfait d/e/f) representees chacune par un cas classique et un cas
+// delicat : a (classique, difference de carres entiers) + c (delicat, avec radicaux) ;
+// d (classique, carre parfait entier) + e (delicat, coefficient devant le carre). Retirees :
+// l'ancienne b) (redondante avec a), meme famille sans radical) et l'ancienne f) (redondante
+// avec e), meme famille avec un coefficient qui est lui-meme une racine).
 function genGroupe1_2() {
   const ka = alea(2,12);
-  const pb = alea(2,5), qb = alea(2,9);
   const mc = aleaParmi(RADICANDS_PETITS), nc = aleaParmi([2,3,4]);
   const rc = alea(1,3), dc = aleaParmi(RADICANDS_PETITS.filter(x=>x!==mc));
   const kd = alea(2,9);
   const pe = alea(2,5), ke = alea(2,9);
-  const mf = aleaParmi(RADICANDS_PETITS), kf = alea(2,6);
   return [
     {id:"1.2 a)", type:"alg", enonce:`x^2-${ka*ka}`, reponse:`(x-${ka})*(x+${ka})`},
-    {id:"1.2 b)", type:"alg", enonce:`${pb*pb}t^2-${qb*qb}`, reponse:`(${pb}*t-${qb})*(${pb}*t+${qb})`},
-    {id:"1.2 c)", type:"alg", enonce:`\\dfrac{${mc}}{${nc*nc}}y^2-\\dfrac{${rc*rc}}{${dc}}`, reponse:`(sqrt(${mc})/${nc}*y-${rc}/sqrt(${dc}))*(sqrt(${mc})/${nc}*y+${rc}/sqrt(${dc}))`},
-    {id:"1.2 d)", type:"alg", enonce:`u^2+${2*kd}u+${kd*kd}`, reponse:`(u+${kd})^2`},
-    {id:"1.2 e)", type:"alg", enonce:`${pe*pe}v^2-${2*pe*ke}v+${ke*ke}`, reponse:`(${pe}*v-${ke})^2`},
-    {id:"1.2 f)", type:"alg", enonce:`${mf}z^2+${2*kf}\\sqrt{${mf}}z+${kf*kf}`, reponse:`(sqrt(${mf})*z+${kf})^2`}
+    {id:"1.2 b)", type:"alg", enonce:`\\dfrac{${mc}}{${nc*nc}}y^2-\\dfrac{${rc*rc}}{${dc}}`, reponse:`(sqrt(${mc})/${nc}*y-${rc}/sqrt(${dc}))*(sqrt(${mc})/${nc}*y+${rc}/sqrt(${dc}))`},
+    {id:"1.2 c)", type:"alg", enonce:`u^2+${2*kd}u+${kd*kd}`, reponse:`(u+${kd})^2`},
+    {id:"1.2 d)", type:"alg", enonce:`${pe*pe}v^2-${2*pe*ke}v+${ke*ke}`, reponse:`(${pe}*v-${ke})^2`}
   ];
 }
 
+// Ramenee de 6 a 4 questions le 24/09/2026 (David) -- deux familles (carre nul a/c/d,
+// x^2=a b/e/f) representees chacune par un cas classique et un cas delicat : b (classique,
+// z^2=k entier) + d (delicat, carre nul avec radicaux) ; c (classique, carre nul lineaire)
+// + f (delicat, ax^2=b avec fractions). Retirees : l'ancienne a) (x^2=0, trop elementaire
+// pour rester utile une fois qu'il faut choisir) et l'ancienne e) (redondante avec f, meme
+// famille sans fraction).
 function genGroupe1_3() {
   const kb = aleaParmi([2,3,5,6,7,8,10,11,12,13,14,15,17,18,19,20]);
   const pc = alea(2,5), resc = alea(2,9), qc = pc*resc;
   const md = aleaParmi([2,3,5]);
   const jd = aleaParmi(RADICANDS_PETITS.filter(x=>x!==md));
   const kd = md*jd;
-  const pe = aleaParmi([2,3,4]);
-  const me = aleaParmi([2,3,5,6,7,10,11]);
-  const ke = pe*me;
   const [Pf,Qf] = aleaParmi(PAIRES_COPREMIERES);
   const jf = aleaParmi(RADICANDS_PETITS);
   const cf = alea(1,4), df = aleaParmi([2,3,5].filter(x=>x!==jf));
   let Rf = Pf*cf*cf*jf, Sf = Qf*df*df;
   const gf = pgcd(Rf,Sf); Rf/=gf; Sf/=gf;
   return [
-    {id:"1.3 a)", type:"num", enonce:"x^2=0", reponse:"{0}"},
-    {id:"1.3 b)", type:"num", enonce:`z^2=${kb}`, reponse:`{-sqrt(${kb});sqrt(${kb})}`},
-    {id:"1.3 c)", type:"num", enonce:`(${pc}t+${qc})^2=0`, reponse:`{-${resc}}`},
-    {id:"1.3 d)", type:"num", enonce:`(-\\sqrt{${md}}y+\\sqrt{${kd}})^2=0`, reponse:`{sqrt(${jd})}`},
-    {id:"1.3 e)", type:"num", enonce:`${pe}u^2-${ke}=0`, reponse:`{-sqrt(${me});sqrt(${me})}`},
-    {id:"1.3 f)", type:"num", enonce:`-\\dfrac{${Pf}}{${Qf}}v^2+\\dfrac{${Rf}}{${Sf}}=0`, reponse:`{-${cf}*sqrt(${jf})/${df};${cf}*sqrt(${jf})/${df}}`}
+    {id:"1.3 a)", type:"num", enonce:`z^2=${kb}`, reponse:`{-sqrt(${kb});sqrt(${kb})}`},
+    {id:"1.3 b)", type:"num", enonce:`(${pc}t+${qc})^2=0`, reponse:`{-${resc}}`},
+    {id:"1.3 c)", type:"num", enonce:`(-\\sqrt{${md}}y+\\sqrt{${kd}})^2=0`, reponse:`{sqrt(${jd})}`},
+    {id:"1.3 d)", type:"num", enonce:`-\\dfrac{${Pf}}{${Qf}}v^2+\\dfrac{${Rf}}{${Sf}}=0`, reponse:`{-${cf}*sqrt(${jf})/${df};${cf}*sqrt(${jf})/${df}}`}
   ];
 }
 
+// Ramenee de 6 a 4 questions le 24/09/2026 (David) -- gradient classique -> delicat plutot
+// que deux familles ici : a (le plus simple, coefficient 1) + b (coefficient entier explicite)
+// pour les classiques ; d (coefficient racine carree factorise) + e (coefficients fractionnaires)
+// pour les delicates, chacune testant une seule difficulte a la fois. Retirees : l'ancienne c)
+// et l'ancienne f), qui cumulaient toutes les deux un signe negatif ET une fraction (et, pour c,
+// une racine en plus) -- deja couvert separement par d) et e).
 function genGroupe1_4() {
   // a) (x-p)^2+q
   const pa=alea(2,9), qa=aleaNonNul(-9,9);
   // b) A(x+p)^2+q
   const Ab=aleaParmi([2,3,-2,-3]), pb=alea(1,6), qb=aleaNonNul(-9,9);
-  // c) -(x/n+sqrt(m))^2+q
-  const nc=aleaParmi([2,3]), mc=aleaParmi(RADICANDS_PETITS), qc=alea(-6,6);
   // d) sqrt(m)*(nx-p)^2-k*sqrt(m)
   const md=aleaParmi(RADICANDS_PETITS), nd=aleaParmi([2,3]), pd=alea(1,3), kd=alea(1,4);
   // e) (p/q x + r/s)^2 + t
   const [pe,qe]=aleaParmi(PAIRES_COPREMIERES), [re,se]=aleaParmi(PAIRES_COPREMIERES), te=aleaNonNul(-4,4);
   const constE = F(re*re*te===0?re*re: re*re + te*se*se, se*se); // (r/s)^2+t exact
-  // f) -(x/n - p/n)^2 - q
-  const nf=aleaParmi([2,3,4]), pf=alea(1,nf-1<1?1:nf-1), qf=alea(1,6);
-  const constF = F(-(pf*pf+qf*nf*nf), nf*nf);
   return [
     {id:"1.4 a)", type:"alg", enonce:`(x-${pa})^2${fmtConst(qa)}`, reponse:`x^2-${2*pa}*x+${pa*pa+qa}`},
     {id:"1.4 b)", type:"alg", enonce:`${Ab}(x+${pb})^2${fmtConst(qb)}`, reponse:`${Ab}*x^2+${2*Ab*pb}*x+${Ab*pb*pb+qb}`},
-    {id:"1.4 c)", type:"alg", enonce:`-\\left(\\dfrac{x}{${nc}}+\\sqrt{${mc}}\\right)^2${fmtConst(qc)}`, reponse:`-x^2/${nc*nc}-2/${nc}*sqrt(${mc})*x+${qc-mc}`},
-    {id:"1.4 d)", type:"alg", enonce:`\\sqrt{${md}}(${nd}x-${pd})^2${fmtConst(-kd)}\\sqrt{${md}}`, reponse:`${nd*nd}*sqrt(${md})*x^2-${2*nd*pd}*sqrt(${md})*x+${pd*pd-kd}*sqrt(${md})`},
-    {id:"1.4 e)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^2${fmtConst(te)}`, reponse:`${pe*pe}/${qe*qe}*x^2+${2*pe*re}/${qe*se}*x+${fracStr(constE)}`},
-    {id:"1.4 f)", type:"alg", enonce:`-\\left(\\dfrac{x}{${nf}}-\\dfrac{${pf}}{${nf}}\\right)^2${fmtConst(-qf)}`, reponse:`-1/${nf*nf}*x^2+${2*pf}/${nf*nf}*x+${fracStr(constF)}`}
+    {id:"1.4 c)", type:"alg", enonce:`\\sqrt{${md}}(${nd}x-${pd})^2${fmtConst(-kd)}\\sqrt{${md}}`, reponse:`${nd*nd}*sqrt(${md})*x^2-${2*nd*pd}*sqrt(${md})*x+${pd*pd-kd}*sqrt(${md})`},
+    {id:"1.4 d)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^2${fmtConst(te)}`, reponse:`${pe*pe}/${qe*qe}*x^2+${2*pe*re}/${qe*se}*x+${fracStr(constE)}`}
   ];
 }
 
@@ -1311,18 +1314,23 @@ function marquerFormesFactorisees(liste) {
 
 let exercices; // initialise tout en bas du script, une fois genererParametresGraphiques() defini
 
+// Indices recalcules le 24/09/2026 apres reduction de 1.1-1.4 de 6 a 4 questions chacune
+// (David : fiches de Premiere trop longues) -- 8 items en moins au total, tout ce qui suit
+// 1.4 dans le tableau `exercices` decale d'autant (1.10-1.13, generes a part par
+// genererParametresGraphiques() et retrouves par id via exercices.findIndex(), n'ont pas
+// besoin d'etre mis a jour ici).
 const groupes = {
-  "grille-1-1": [0,1,2,3,4,5],
-  "grille-1-2": [6,7,8,9,10,11],
-  "grille-1-3": [12,13,14,15,16,17],
-  "grille-1-4": [18,19,20,21,22,23],
-  "grille-1-5": [24,25],
-  "grille-1-6": [26,27,28,29],
-  "grille-1-7": [30,31,32,33,34,35],
-  "grille-1-8": [36,37,38],
-  "grille-1-9": [39,40,41],
-  "grille-1-14": [46,47,48,49],
-  "grille-1-15": [50,51,52]
+  "grille-1-1": [0,1,2,3],
+  "grille-1-2": [4,5,6,7],
+  "grille-1-3": [8,9,10,11],
+  "grille-1-4": [12,13,14,15],
+  "grille-1-5": [16,17],
+  "grille-1-6": [18,19,20,21],
+  "grille-1-7": [22,23,24,25,26,27],
+  "grille-1-8": [28,29,30],
+  "grille-1-9": [31,32,33],
+  "grille-1-14": [38,39,40,41],
+  "grille-1-15": [42,43,44]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 

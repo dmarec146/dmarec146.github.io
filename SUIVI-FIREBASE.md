@@ -1142,6 +1142,21 @@ de changer ce réglage sans qu'il en reparle.
   identifiants. Le manifeste des devoirs (`assets/js/manifeste-fiches.js`)
   a été complété le même jour avec les cahiers 6 à 8 de Seconde (51 fiches
   en tout) : à tenir à jour à chaque nouvelle fiche.
+- **Réduire le nombre de questions d'un calcul change les identifiants de
+  sous-questions qui suivent (même `ficheId`, piège voisin de celui
+  ci-dessus)** : `resultats/{ficheId}.exercicesReussis` retient des chaînes
+  comme `"1.1 e)"` (voir `ex.id`), attribuées par POSITION dans le groupe
+  (`lettresEtendues[pos]`), pas par contenu. Cas du 24/09/2026 : fiche 1 de
+  Première (cahier 1), calculs 1.1 à 1.4 ramenés de 6 à 4 questions chacun
+  (David : fiches de Première trop longues) — les questions gardées ont été
+  renommées a/b/c/d pour rester alignées avec leur nouvelle position
+  affichée à l'écran (ex. l'ancienne `"1.2 e)"` devient `"1.2 d)"`). Un élève
+  ayant déjà réussi une sous-question depuis supprimée ou renommée perd
+  silencieusement ce crédit dans `exercicesReussis` (aucune erreur, juste un
+  identifiant qui ne correspond plus à rien) — sans conséquence grave (le
+  score se recalcule normalement dès la prochaine validation), mais à
+  garder en tête si un score affiché semble reculer après une refonte de ce
+  type sur une fiche déjà utilisée par de vrais élèves.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
