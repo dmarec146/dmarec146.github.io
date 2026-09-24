@@ -1156,7 +1156,63 @@ de changer ce réglage sans qu'il en reparle.
   identifiant qui ne correspond plus à rien) — sans conséquence grave (le
   score se recalcule normalement dès la prochaine validation), mais à
   garder en tête si un score affiché semble reculer après une refonte de ce
-  type sur une fiche déjà utilisée par de vrais élèves.
+  type sur une fiche déjà utilisée par de vrais élèves. **Confirmé par
+  David le 24/09/2026 : aucun élève n'a encore travaillé sur les fiches de
+  Première** — ce piège reste décrit ici pour le jour où ce ne sera plus le
+  cas, mais sans risque réel pour l'instant.
+
+- **Refonte des fiches de Première jugées trop longues, méthode à
+  appliquer systématiquement (David, 24/09/2026)** : sur demande explicite
+  de David (« bon travail d'analyse, fais-le à chaque fois »), toute
+  réduction du nombre de questions d'un calcul doit être justifiée, pas
+  un simple découpage au hasard — repérer si le groupe de questions
+  d'origine relève d'un seul gradient de difficulté (garder un cas
+  classique + un cas délicat testant une seule difficulté supplémentaire
+  à la fois, écarter les cas qui cumulaient plusieurs difficultés en même
+  temps) ou de plusieurs familles de compétences distinctes (garder un
+  représentant de chaque famille plutôt que de risquer d'en perdre une
+  entière), et documenter ce choix ici à chaque fois.
+
+  Fiche 1 de Première (cahier 1) — **1.1 à 1.4 ramenées de 6 à 4
+  questions chacune** (24/09/2026) : 1.1 (développer un carré, gradient
+  simple) garde 2 classiques (entiers) + 2 délicates (une racine seule,
+  une fraction seule), retire les 2 cas qui cumulaient deux difficultés à
+  la fois (double racine, double fraction). 1.2 (factoriser, 2 familles :
+  différence de carrés / carré parfait) garde un classique + un délicat
+  dans chaque famille. 1.3 (résoudre x²=a, 2 familles : carré nul /
+  ax²=b) même principe, retire aussi le cas x²=0 trop élémentaire pour
+  rester utile seul. 1.4 (forme canonique → développée, gradient simple)
+  garde le cas le plus simple (coefficient 1) et un cas à coefficient
+  explicite comme classiques, un cas radical et un cas fractionnaire
+  comme délicats, retire les deux versions qui cumulaient négatif,
+  fraction et parfois racine à la fois.
+
+  **1.6 à 1.9 ramenées à 2 questions chacune** (même jour, sur demande
+  explicite de David). 1.6 (coefficient dominant entier, 4 items
+  identiques au tirage près) : plutôt que de piocher 2 lettres au hasard
+  (risque de tomber deux fois sur le même signe), le tirage impose
+  désormais un coefficient positif pour la classique et un négatif pour
+  la délicate — la seule vraie source de difficulté ici. 1.7 (coefficient
+  dominant fractionnaire, 6 items) : gardé l'ancien b) (seul le
+  coefficient dominant est une fraction, le reste simple — classique) et
+  l'ancien f) (coefficient dominant, linéaire et constante tous
+  fractionnaires et négatifs — délicat) ; retiré a) qui ne testait pas
+  vraiment un coefficient fractionnaire (encore égal à 1, déjà couvert
+  par 1.5/1.6) et les cas intermédiaires c/d/e, redondants entre b) et
+  f). 1.8 (position du paramètre λ, 3 familles distinctes — λ constante,
+  λ coefficient de x, λ coefficient de x²) : gardé les deux qui
+  introduisent une vraie nouvelle technique (λ au carré dans β, puis λ au
+  dénominateur — d'où le « λ ∈ ℝ* » du titre), retiré le cas où λ n'est
+  qu'une constante additive qui ne change rien à la méthode. 1.9 (même
+  idée que 1.8 mais λ toujours dans le coefficient de x, 3 items) : gardé
+  a) (classique, coefficient dominant entier, λ apparaît une seule fois)
+  et b) (délicat, coefficient dominant fractionnaire, λ apparaît deux
+  fois — dans le coefficient de x ET dans la constante), retiré le cas
+  intermédiaire c), redondant avec les deux gardés.
+
+  Vérifié à chaque étape sur 20 régénérations aléatoires (auto-cohérence
+  des réponses face à leur propre correcteur) et dans le vrai navigateur,
+  aucune erreur console. Fiche passée de 53 à 37 questions au total.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.

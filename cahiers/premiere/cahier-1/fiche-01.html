@@ -1128,15 +1128,29 @@ function genGroupe1_5() {
   ];
 }
 
+// Ramenee de 4 a 2 questions le 24/09/2026 (David) -- les 4 items d'origine appliquaient tous
+// la meme technique (A entier tire au hasard, signe compris), sans famille distincte : plutot
+// que de piocher 2 lettres au hasard (risque de tomber deux fois sur un A de meme signe), le
+// tirage impose desormais un A positif pour la question classique et un A negatif pour la
+// delicate (signe supplementaire a gerer dans la mise sous forme canonique).
 function genGroupe1_6() {
-  return ['a','b','c','d'].map((lettre) => {
-    const A = aleaParmi([2,3,4,-2,-3,-4,9,-9]);
+  function item(lettre, A) {
     const alpha = aleaNonNul(-5,5), beta = alea(-9,9);
     const B = -2*A*alpha, C = A*alpha*alpha+beta;
     return {id:`1.6 ${lettre})`, type:"alg", enonce:`${A}x^2${fmtLin(B,'x')}${fmtConst(C)}`, reponse:`${A}*(x${sgn(-alpha)}${Math.abs(alpha)})^2${fmtConst(beta)}`};
-  });
+  }
+  return [
+    item('a', aleaParmi([2,3,4,9])),
+    item('b', aleaParmi([-2,-3,-4,-9]))
+  ];
 }
 
+// Ramenee de 6 a 2 questions le 24/09/2026 (David) -- gardees : l'ancien b) et l'ancien f),
+// qui testent toutes les deux la vraie nouveaute de ce calcul (A fractionnaire, pas seulement
+// B et C) ; b) est le cas le plus simple ou seul A est une fraction (classique), f) cumule A,
+// B et C fractionnaires et negatifs (delicat). Retirees : l'ancienne a) (A=1, ne teste pas
+// vraiment un A fractionnaire, deja couvert par 1.5/1.6), c/d/e (cas intermediaires redondants
+// entre b) et f)).
 function genGroupe1_7() {
   function unItem(lettre, Afr, Bfr, Cfr) {
     const {alpha,beta} = completerCarreExact(Afr,Bfr,Cfr);
@@ -1147,43 +1161,42 @@ function genGroupe1_7() {
     const reponse = `${AcoefStr}${fmtTermeCanonique(alpha,'x')}^2${fmtFracApres(beta)}`;
     return {id:`1.7 ${lettre})`, type:"alg", enonce:enonceA+enonceB+enonceC, reponse};
   }
-  const [q1,q2]=[alea(1,9), aleaParmi([2,4])];
-  const [n2,q3]=[aleaParmi([2,3,4]), alea(-4,4)||1];
-  const [Ap3,Aq3]=aleaParmi(PAIRES_COPREMIERES), Bp3=alea(2,9), Cp3=alea(1,9), Cq3=aleaParmi([2,5,7]);
-  const [Ap4,Aq4]=aleaParmi(PAIRES_COPREMIERES), Bp4=alea(1,9), Bq4=aleaParmi([2,3,4]), Cc4=alea(2,6);
-  const [Ap5,Aq5]=aleaParmi(PAIRES_COPREMIERES), [Bp5,Bq5]=aleaParmi(PAIRES_COPREMIERES), [Cp5,Cq5]=aleaParmi(PAIRES_COPREMIERES);
   const [Ap6,Aq6]=aleaParmi(PAIRES_COPREMIERES), [Bp6,Bq6]=aleaParmi(PAIRES_COPREMIERES), [Cp6,Cq6]=aleaParmi(PAIRES_COPREMIERES);
   return [
-    unItem('a', F(1), F(alea(2,9)), F(1,aleaParmi([2,4]))),
-    unItem('b', F(1,aleaParmi([2,3,4])), F(1), F(-alea(1,9))),
-    unItem('c', F(Ap3,Aq3), F(Bp3), F(Cp3,Cq3)),
-    unItem('d', F(-Ap4,Aq4), F(-Bp4,Bq4), F(-Cc4)),
-    unItem('e', F(Ap5,Aq5), F(Bp5,Bq5), F(Cp5,Cq5)),
-    unItem('f', F(-Ap6,Aq6), F(-Bp6,Bq6), F(-Cp6,Cq6))
+    unItem('a', F(1,aleaParmi([2,3,4])), F(1), F(-alea(1,9))),
+    unItem('b', F(-Ap6,Aq6), F(-Bp6,Bq6), F(-Cp6,Cq6))
   ];
 }
 
+// Ramenee de 3 a 2 questions le 24/09/2026 (David) -- les 3 items d'origine placaient lambda a
+// une position differente (constante / coefficient de x / coefficient de x^2), pas une simple
+// histoire de difficulte croissante. Gardees : l'ancien b) (lambda coefficient de x, devient
+// lam^2 dans beta -- premiere vraie nouveaute par rapport a 1.5-1.7) et l'ancien c) (lambda
+// coefficient de x^2, lambda passe au denominateur -- la plus delicate, d'ou "λ ∈ ℝ*" dans le
+// titre du calcul). Retiree : l'ancienne a) (lambda simple constante additive, ne change rien
+// a la technique de mise sous forme canonique par rapport a une fiche sans parametre).
 function genGroupe1_8() {
-  // a) A=1, B=entier, C=lambda (symbolique)
-  const Ba = aleaNonNul(-9,9);
-  const alphaA = F(-Ba,2), betaConstA = F(-Ba*Ba,4);
-  const a8 = {id:"1.8 a)", type:"alg", enonce:`x^2${fmtLin(Ba,'x')}+\\lambda`, reponse:`${fmtTermeCanonique(alphaA,'x')}^2${fmtFracApres(betaConstA)}+lam`};
-  // b) A=1/n, B=lambda (coeff 1), C=entier
+  // a) A=1/n, B=lambda (coeff 1), C=entier
   const nb = aleaParmi([2,3,4]);
   const alphaCoefB = F(-nb,2); // alpha = alphaCoefB * lam
   const betaLam2B = F(-nb,4);  // coeff de lam^2 dans beta
   const Cb = aleaNonNul(-6,6);
-  const b8 = {id:"1.8 b)", type:"alg", enonce:`\\dfrac{1}{${nb}}x^2+\\lambda x${fmtConst(Cb)}`,
+  const a8 = {id:"1.8 a)", type:"alg", enonce:`\\dfrac{1}{${nb}}x^2+\\lambda x${fmtConst(Cb)}`,
     reponse:`1/${nb}*${fmtTermeCanoniqueFrac(alphaCoefB,'x','lam')}^2${fmtFracFoisVar(betaLam2B,'lam^2')}${fmtConst(Cb)}`};
-  // c) A=lambda, B=entier, C=entier
+  // b) A=lambda, B=entier, C=entier
   const Bc = aleaNonNul(-9,9), Cc = alea(-9,9);
   const alphaCoefC = F(-Bc,2); // alpha = alphaCoefC / lam
   const betaCoefC = F(-Bc*Bc,4); // coeff de 1/lam dans beta
-  const c8 = {id:"1.8 c)", type:"alg", enonce:`\\lambda x^2${fmtLin(Bc,'x')}${fmtConst(Cc)}`,
+  const b8 = {id:"1.8 b)", type:"alg", enonce:`\\lambda x^2${fmtLin(Bc,'x')}${fmtConst(Cc)}`,
     reponse:`lam*(x${alphaCoefC.n>=0?'-':'+'}${fracStr(fracAbs(alphaCoefC))}/lam)^2${sgn(betaCoefC.n)}${fracStr(fracAbs(betaCoefC))}/lam${fmtConst(Cc)}`};
-  return [a8,b8,c8];
+  return [a8,b8];
 }
 
+// Ramenee de 3 a 2 questions le 24/09/2026 (David) -- a) (classique : A entier, lambda
+// n'apparait que dans le coefficient de x) et b) (delicat : A fractionnaire, lambda dans le
+// coefficient de x ET dans la constante -- deux occurrences a suivre a la fois). Retiree :
+// l'ancienne c), cas intermediaire (A fractionnaire mais une seule occurrence de lambda comme
+// a), redondant entre les deux gardees.
 function genGroupe1_9() {
   // a) A=entier, B=k*lambda, C=entier
   const Aa = aleaParmi([2,3,4,-2,-3,-4]);
@@ -1202,16 +1215,7 @@ function genGroupe1_9() {
   const betaLam2B = fracNeg(fracMul(fracMul(Bcoefb,Bcoefb), F(mb,4)));
   const b9 = {id:"1.9 b)", type:"alg", enonce:`\\dfrac{1}{${mb}}x^2+\\dfrac{${Bpb}\\lambda}{${Bqb}}x+\\dfrac{${Cpb}\\lambda}{${Cqb}}`,
     reponse:`1/${mb}*${fmtTermeCanoniqueFrac(alphaCoefB,'x','lam')}^2${fmtFracFoisVar(betaLam2B,'lam^2')}${fmtFracFoisVar(Ccoefb,'lam')}`};
-  // c) A=fraction, B=Bcoef*lambda, C=0
-  const [Apc,Aqc] = aleaParmi(PAIRES_COPREMIERES);
-  const Ac = F(-Apc,Aqc);
-  const [Bpc,Bqc] = aleaParmi(PAIRES_COPREMIERES);
-  const Bcoefc = F(-Bpc,Bqc);
-  const alphaCoefC = fracDiv(fracNeg(Bcoefc), fracMul(F(2),Ac));
-  const betaLam2C = fracNeg(fracDiv(fracMul(Bcoefc,Bcoefc), fracMul(F(4),Ac)));
-  const c9 = {id:"1.9 c)", type:"alg", enonce:`-\\dfrac{${Apc}}{${Aqc}}x^2-\\dfrac{${Bpc}\\lambda}{${Bqc}}x`,
-    reponse:`${fracStr(Ac)}*${fmtTermeCanoniqueFrac(alphaCoefC,'x','lam')}^2${fmtFracFoisVar(betaLam2C,'lam^2')}`};
-  return [a9,b9,c9];
+  return [a9,b9];
 }
 
 function genGroupe1_14() {
@@ -1314,23 +1318,23 @@ function marquerFormesFactorisees(liste) {
 
 let exercices; // initialise tout en bas du script, une fois genererParametresGraphiques() defini
 
-// Indices recalcules le 24/09/2026 apres reduction de 1.1-1.4 de 6 a 4 questions chacune
-// (David : fiches de Premiere trop longues) -- 8 items en moins au total, tout ce qui suit
-// 1.4 dans le tableau `exercices` decale d'autant (1.10-1.13, generes a part par
-// genererParametresGraphiques() et retrouves par id via exercices.findIndex(), n'ont pas
-// besoin d'etre mis a jour ici).
+// Indices recalcules le 24/09/2026 (David : fiches de Premiere trop longues) -- 1.1-1.4
+// ramenees de 6 a 4 questions chacune, 1.6-1.9 de 4/6/3/3 a 2 chacune (16 items en moins au
+// total) ; tout ce qui suit 1.4 dans le tableau `exercices` decale d'autant (1.10-1.13, generes
+// a part par genererParametresGraphiques() et retrouves par id via exercices.findIndex(),
+// n'ont pas besoin d'etre mis a jour ici).
 const groupes = {
   "grille-1-1": [0,1,2,3],
   "grille-1-2": [4,5,6,7],
   "grille-1-3": [8,9,10,11],
   "grille-1-4": [12,13,14,15],
   "grille-1-5": [16,17],
-  "grille-1-6": [18,19,20,21],
-  "grille-1-7": [22,23,24,25,26,27],
-  "grille-1-8": [28,29,30],
-  "grille-1-9": [31,32,33],
-  "grille-1-14": [38,39,40,41],
-  "grille-1-15": [42,43,44]
+  "grille-1-6": [18,19],
+  "grille-1-7": [20,21],
+  "grille-1-8": [22,23],
+  "grille-1-9": [24,25],
+  "grille-1-14": [30,31,32,33],
+  "grille-1-15": [34,35,36]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
