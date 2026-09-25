@@ -1797,6 +1797,73 @@ de changer ce réglage sans qu'il en reparle.
   (29/29, aucune erreur MathJax, notation d'intervalle désormais correcte
   aux captures), capture d'écran confirmant le rendu LaTeX des titres et
   le nouvel exemple 7.10 b).
+
+  **Fiche 8 de Première (cahier 2, Dérivation III), 25/09/2026 — faite en
+  autonomie complète** (David : « ok. commence la fiche 8 »), même méthode
+  que les fiches précédentes. Architecture différente des fiches 1-7 :
+  tableau plat `generateurs` (façon fiche-16/25 de Seconde) plutôt que des
+  fonctions `genGroupeN()` par groupe — extraction/reconstruction adaptée
+  en conséquence (bornage sur les marqueurs `{id:"X"` plutôt que sur les
+  noms de fonction).
+
+  **Automatismes (8.1+8.2, 4+4) → 6, répartis 3+3** : les deux traitent
+  des combinaisons linéaires de fractions/polynômes, déjà un vrai
+  gradient chacun — 8.1 perd un cas redondant (même gabarit de fractions
+  rappelé deux fois), 8.2 perd le cas intermédiaire entre le plus simple
+  et le plus complet.
+
+  **8.3 « Puissances (I) » + 8.4 « (II) » → un seul 8.3, 8→4 exemples** :
+  même compétence (dérivée de `(ax+b)^n`), gardé un exemple par famille
+  distincte (carré, puissance 5, cube, quotient de puissance au carré),
+  écartés les doublons de degré.
+
+  **8.5 « Produits de puissances (I) » + 8.6 « (II) » → un seul 8.4,
+  4 exemples** (déjà 4 sans redondance interne une fois fusionnés,
+  aucune coupe nécessaire).
+
+  **8.7 « Quotients (I) » + 8.8 « (II) » → un seul 8.5, 4 exemples**
+  (même situation, fusion pure sans perte).
+
+  **8.9/8.10/8.11 (dérivation à partir de `g(x)=f(mx+n)` ET
+  `h(x)=k·f(px+q)`, 4 exemples chacun) → 8.6/8.7/8.8, 2 exemples
+  chacun** : chaque groupe testait deux compétences en parallèle sur le
+  même énoncé (dériver `g` ET dériver `h`) — gardés uniquement les items
+  b)/c) ou c)/d) portant sur `h` (le cas avec facteur multiplicatif `k`,
+  legèrement plus riche que `g` qui n'en a pas), écartés les items
+  portant sur `g`. Le générateur partagé `genererParametresAvances()`
+  (fonction `ligne()`) calcule déjà les paramètres de `g` et `h`
+  ensemble — aucune modification nécessaire là, seulement les items
+  consommateurs. `texteNote()` et `mettreAJourTextesAvances()` réécrits
+  pour ne plus définir/référencer que `h` (la définition de `g`,
+  désormais inutilisée, supprimée du texte introductif) ; les paragraphes
+  HTML `texte-8-6`/`texte-8-7`/`texte-8-8` (anciennement `texte-8-9`
+  etc.) mis à jour en conséquence.
+
+  **8.12/8.13/8.14/8.15/8.16 (équations de tangentes, ordonnées à
+  l'origine, calculs avancés) laissées inchangées**, renumérotées
+  8.9/8.10/8.11/8.12/8.13 : aucune des cinq ne contient de redondance
+  interne identifiée.
+
+  Fiche passée de 16 à 13 groupes, 49 à 37 questions. **Piège rencontré
+  pendant la reconstruction** : en relabelant les items conservés d'un
+  groupe fusionné, deux lignes du script de fusion faisaient une
+  réaffectation directe de variable (`const n4a = i5a;`) sans appeler la
+  fonction `renum()` qui met à jour le champ `id` du texte — résultat :
+  les items conservés affichaient encore leur ancien numéro (`8.5 a)`
+  au lieu de `8.4 a)`, `8.7 a)` au lieu de `8.5 a)`). Repéré uniquement
+  en listant les `id` réellement générés (pas par un test de syntaxe),
+  corrigé en remplaçant les deux lignes par des appels `renum(...)`
+  explicites. Vérifié après correction : syntaxe (`vm.Script` sur les
+  deux blocs `<script>`, OK), 500 tirages auto-cohérents
+  (`checkEqualNumeric`/`checkEnsemble`, 0 échec), liste des 37 `id`
+  générés conforme au plan exact, cycle complet dans le vrai navigateur
+  avec les vrais champs MathLive (**37/37 bonnes réponses acceptées,
+  aucun échec** — donc pas besoin de comparaison avec une ancienne
+  version pour distinguer régression et bizarrerie MathLive préexistante
+  cette fois), panneau « Voir toutes les réponses » (aucune erreur
+  MathJax), aucune erreur console, capture d'écran confirmant le rendu
+  des sections fusionnées 8.3/8.4/8.5 et du texte introductif simplifié
+  de 8.6 (`h(x)=f(3x-2)` bien rendu en LaTeX, plus de référence à `g`).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
