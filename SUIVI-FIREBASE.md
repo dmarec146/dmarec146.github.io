@@ -1537,6 +1537,65 @@ de changer ce réglage sans qu'il en reparle.
   bonnes réponses acceptées, mêmes 2 échecs isolés déjà connus
   renumérotés), panneau « Voir toutes les réponses » (32/32, aucune
   erreur MathJax), capture d'écran confirmant l'absence du groupe.
+
+  **Fiche 5 de Première (cahier 1) — fusions et réductions (25/09/2026)**,
+  sur PC pro cette fois, même méthode et même règle standing (fusion des
+  groupes numérotés/variantes de titre à 4 exemples au total, gradient
+  classique/délicat sinon) :
+
+  **5.5 « (I) » + 5.6 « (II) » (facteurs communs et identités
+  remarquables) → un seul 5.5, 4 exemples** (3+3 → 4). Gardés : ancien
+  5.5 a) (classique, regroupement entier), ancien 5.5 b) (classique/
+  particulier — le résultat se réduit à UN SEUL facteur, cas à part que
+  l'élève doit savoir reconnaître), ancien 5.6 a) (délicat, même
+  regroupement avec coefficients fractionnaires), ancien 5.6 c) (le plus
+  délicat, combine différence de deux carrés et un terme linéaire
+  supplémentaire). Écartés : ancien 5.5 c) (redondant avec a) et ancien
+  5.6 b) (redondant avec a) du même groupe fusionné).
+
+  **5.7 « (I) » + 5.8 « (II), avec un paramètre a » + 5.9 « (III), non
+  unitaire » (une méthode fondamentale) → un seul 5.6, 4 exemples**
+  (4+2+3 → 4) : répartition naturelle 2 classiques/2 délicats. a)
+  classique (ex-5.7, polynôme unitaire, racines numériques), b) classique/
+  escalade (ex-5.9, non unitaire — même méthode, diviser par le
+  coefficient dominant), c) et d) délicats (les DEUX exemples paramétrés
+  de l'ex-5.8 gardés intégralement, aucune redondance entre eux — deux
+  techniques distinctes, racine substituée directement vs racine
+  reconnue via une différence de deux carrés). Seuls les exemples
+  numériques répétés (5.7 appelait 4 fois le même générateur, 5.9 3 fois)
+  sont réduits à un représentant chacun. Les deux encadrés de rappel
+  (Vieta unitaire/non unitaire) sont conservés tous les deux, empilés,
+  puisque le groupe fusionné teste maintenant les deux cas.
+
+  **Réductions internes sans fusion** (groupes à titre unique, pas de
+  variante I/II/III, mais redondance interne à couper) : 5.3 (5→4,
+  retire l'ancien b, simple variante de coefficient de a, sans nouvelle
+  compétence) ; 5.10 ex-« avec des racines entières visibles » (6→2,
+  les 6 items étaient tous le même générateur — tirage désormais forcé
+  sur un signe positif et un signe négatif, comme 1.6 de la fiche 1) ;
+  5.12 ex-« en degré plus élevé » (4→3, retire l'ancien a — même
+  technique que b, juste un degré plus bas, aucune nouveauté) ; 5.14
+  ex-« produit de deux facteurs non constants » (3→2, retire l'ancien b —
+  même technique que a, degré plus élevé sans rien de neuf) ; 5.15
+  ex-« formule de Bernoulli » (5→3, les items a)/b) étaient deux tirages
+  indépendants de la même formule à n=3, c)/d) de même à n=5 — un seul
+  gardé par degré, plus n=7 déjà unique : le degré n fournit lui-même un
+  gradient de difficulté naturel). Non touchés (déjà sans redondance) :
+  5.4, 5.11 (un seul problème cohérent en 3 étapes, pas 3 répétitions),
+  5.13, 5.16.
+
+  Fiche passée de 16 à 13 groupes, 53 à 37 questions. `FORMES_FACTORISEES`
+  et `groupes` recalculés en conséquence (les deux groupes fusionnés sur
+  la recherche de racine — nouveaux 5.6 et 5.8 — restent absents de
+  `FORMES_FACTORISEES`, leurs réponses étant des nombres/expressions, pas
+  des produits). Vérifié : syntaxe, 500 tirages auto-cohérents (aucun
+  échec), cycle complet dans le vrai navigateur avec les vrais champs
+  MathLive (37/37 acceptées, aucun échec cette fois — contrairement aux
+  fiches précédentes, aucun cas connu de piège MathLive dans cette fiche),
+  panneau « Voir toutes les réponses » (37/37, aucune erreur MathJax),
+  capture d'écran confirmant le rendu des deux sections fusionnées (titres
+  sans « (I)/(II)/(III) », les deux rappels de 5.6 empilés proprement) et
+  du reste de la fiche.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
