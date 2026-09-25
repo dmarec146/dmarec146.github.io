@@ -1648,6 +1648,91 @@ de changer ce réglage sans qu'il en reparle.
   aucune erreur console, capture d'écran confirmant une seule section «
   Calcul 5.11 » (fusion propre, pas de doublon de titre, le rappel de
   formule de Bernoulli et la grille a)/b) bien rendus).
+
+  **Fiche 7 de Première (cahier 2, dérivation), 25/09/2026 — faite en
+  autonomie complète** (David : « je te laisse faire la fiche 7 en
+  autonomie en respectant toutes nos règles intelligentes »), même méthode
+  que les fiches précédentes :
+
+  **Automatismes (7.1+7.2+7.3, 4+3+6=13) → 6, répartis intelligemment
+  entre 3 calculs distincts** (pas 2 comme les fiches précédentes — les
+  trois traitent des sujets différents : inéquation linéaire, simplifier
+  une fraction de puissances, évaluer une fonction quadratique en une
+  valeur irrationnelle). 7.1 (4→2) : même gabarit répété, aucune famille à
+  perdre. 7.2 (3→2) : gardé le cas classique (deux bases premières 2 et 3)
+  et le plus complet (quatre bases composites 12/10/15/8, la décomposition
+  en facteurs premiers la plus complète) ; écarté le cas intermédiaire
+  (une seule base composite, milieu de gradient redondant). 7.3 (6→2) :
+  gardé le cas classique (évaluer en √D pur) et le plus complet
+  (combinaison linéaire (p+√D)/q) ; écartés deux variantes de signe
+  redondantes avec ce dernier et un doublon exact (même générateur rappelé
+  deux fois).
+
+  **Section « Dérivation de polynômes » (7.4/7.5, pas de fusion : deux
+  tâches différentes — expression générale vs valeur en un point).** 7.4
+  (3) laissée telle quelle : trois degrés croissants (4/5/6), un vrai
+  gradient, aucun doublon. 7.5 (4→2) : les trois premiers appels étaient
+  le même générateur (degré 3) rappelé à l'identique — gardé un seul
+  tirage degré 3 (délicat) plus le tirage degré 2 déjà distinct
+  (classique).
+
+  **7.6 « Inverses (I) » + 7.7 « (II) » → un seul 7.6, 4 exemples
+  gradués par degré** (1→2→3→5 ; le degré 3 était testé deux fois à
+  l'identique entre les deux anciens groupes, gardé une seule fois).
+  **7.8 « Quotients (I) » + 7.9 « (II) » → un seul 7.7, 4 exemples**
+  (déjà exactement 4 sans redondance interne, juste fusionnés et
+  relettrés : linéaire/linéaire → cubique/linéaire → cubique/cubique →
+  quartique/quadratique).
+
+  **7.10 « Quotients à simplifier (I) » et 7.11 « (II) » NON fusionnées,
+  contrairement au motif (I)/(II) habituel** : ce ne sont pas deux
+  pratiques indépendantes du même exercice, mais un problème EN DEUX
+  ÉTAPES (7.11 renvoie explicitement à « 7.10 a) », utilise le résultat
+  déjà simplifié pour dériver) — même situation que 3.11/3.12 en fiche 3
+  (calculer P(r) → factoriser → conclure), qui étaient restées séparées
+  pour la même raison. Renumérotées 7.8/7.9 sans changement de contenu ;
+  la référence textuelle « À l'aide de 7.10 a) » mise à jour en « À l'aide
+  de 7.8 a) ».
+
+  **7.12 « Signe de la dérivée » (4, inchangée)** : 4 familles déjà
+  distinctes (dérivée d'un quadratique, quotient au carré, homographie,
+  inverse d'un quadratique), aucune redondance, renumérotée 7.10.
+
+  **7.13 « Dériver puis factoriser (I) » + 7.14 « (II) » → un seul 7.11,
+  4 exemples.** Contrairement aux autres fusions, ce ne sont pas des
+  étapes d'un gradient mais DEUX techniques distinctes (racine double →
+  facteur au carré, vs racines distinctes → produit de deux facteurs) —
+  chaque ancien groupe appelait déjà le même générateur 4 fois à
+  l'identique (aucune variation structurelle, seulement les valeurs
+  tirées). Gardés 2 tirages de chaque technique plutôt qu'1+1, pour
+  utiliser pleinement le budget de 4 exemples sans perdre l'exercice
+  réel de chaque cas.
+
+  **Section « Calculs plus avancés » (7.15/7.16/7.17) entièrement
+  laissée telle quelle**, renumérotée 7.12/7.13/7.14 : aucune des trois
+  ne contient de doublon interne. 7.15 (4) : degré 2 → degré 3 → deux cas
+  statiques de complexité croissante, gradient réel. 7.16 (4) : quatre
+  identités de sommes différentes (série géométrique, série alternée,
+  série factorielle, série paire mise à l'échelle), aucune redondance.
+  7.17 (8) : huit combinaisons symboliques du produit/quotient/racine
+  toutes algébriquement distinctes (fg+gh, f²/g, (f³+g)/(gh), g-f/h³,
+  f³g², f/(g/h), √(f/g), fgh) — délibérément laissée à 8 malgré sa
+  taille : aucune règle ne demande de réduire un groupe déjà sans
+  redondance, et c'est le cœur du chapitre « expressions formelles »
+  (dérivation symbolique), pas une répétition d'exercice numérique.
+
+  Fiche passée de 17 à 14 groupes, 61 à 47 questions.
+  `FORMES_FACTORISEES` recalculée (`'7.11': 'numerateur'`, seule clé
+  restante). Vérifié : syntaxe (`vm.Script`), 500 tirages auto-cohérents
+  (`checkEqualNumeric`/`checkEnsemble`/validité structurelle des
+  `intervalleSpec`, 0 échec), cycle complet dans le vrai navigateur avec
+  les vrais champs MathLive (47/47, avec 10 échecs isolés dans des
+  groupes non modifiés en contenu — 7.1/7.10/7.13 — comparés à l'ancienne
+  fiche où les mêmes catégories échouaient déjà à l'identique, donc pas
+  une régression), panneau « Voir toutes les réponses » (47/47, aucune
+  erreur MathJax), référence croisée « À l'aide de 7.8 a) » vérifiée dans
+  l'énoncé généré, capture d'écran confirmant le rendu des sections
+  fusionnées (7.6 et 7.11).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
