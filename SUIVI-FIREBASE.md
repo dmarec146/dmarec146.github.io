@@ -1864,6 +1864,68 @@ de changer ce réglage sans qu'il en reparle.
   MathJax), aucune erreur console, capture d'écran confirmant le rendu
   des sections fusionnées 8.3/8.4/8.5 et du texte introductif simplifié
   de 8.6 (`h(x)=f(3x-2)` bien rendu en LaTeX, plus de référence à `g`).
+
+  **Même jour, deuxième passe sur fiche 8, retours de David** : « supprimer
+  8.4, 8.5, 8.8. 8.9, supprimer d) et inutile d'écrire (sous la forme ...)
+  à chaque question, c'est écrit dans ? Certains titres ne sont pas en
+  mode LATEX. 8.10 : 2 exemples. Fusionner 8.12 et 8.13 (deux exemples.
+  Un avec et un sans paramètre) ».
+
+  1. **8.4 (Produits de puissances) et 8.5 (Quotients) supprimées
+  entièrement** (pas fusionnées, retirées — David a jugé le reste de la
+  fiche suffisant sans elles ; 8.3 « Puissances » reste seule dans la
+  section « Dérivées de fonctions composées »).
+  2. **8.8 (dérivation à partir de `f'(x)=\sqrt{2x^2+1}`) supprimée
+  entièrement**, avec son texte d'intro et le paramètre partagé `g11`
+  (n'était utilisé que par ce groupe) retiré de
+  `genererParametresAvances()`/`mettreAJourTextesAvances()`. Restent
+  8.6 et 8.7 (renumérotées 8.4/8.5), les deux seuls survivants de la
+  section « Dérivation à partir de relations fondamentales ».
+  3. **8.9 (Équations de tangentes) : item d) supprimé**, et la
+  répétition « (sous la forme y=ax+b) » retirée des trois énoncés
+  restants (a/b/c). **Réponse à la question de David** (« c'est écrit
+  dans ? ») : oui — le format est déjà expliqué dans la bulle d'aide
+  contextuelle du groupe (`aideContextuellePour`, branche `formeYax` :
+  « Écrire l'équation complète, y compris « y= »... ») et rappelé
+  visuellement par le placeholder `y=ax+b` affiché dans chaque champ
+  vide — la répétition dans l'énoncé était donc purement redondante,
+  conformément à la règle standing [[feedback-consigne-generale-factorisee]].
+  4. **Titre 8.1 converti en LaTeX** : « Écrire sous la forme ax+by+cz »
+  → « Écrire sous la forme \(ax+by+cz\) » — seul titre trouvé avec une
+  vraie formule (opérateurs `+`) en dehors d'un `\(...\)` ; les autres
+  titres (8.2 « puissances de x », etc.) ne contiennent que des lettres
+  isolées, déjà couvertes par la convention existante (voir l'audit
+  site-wide de 2026-09-01 dans [[project-premiere-fiche-randomization]]).
+  5. **8.10 (Ordonnées à l'origine) réduite de 4 à 2 exemples** : les 4
+  items testaient 4 techniques distinctes (somme de puissances, quotient
+  de puissances, produit de puissances, puissance négative isolée) —
+  gardés le quotient (b) et le produit (c), qui sont les deux règles
+  de dérivation (quotient/produit) non déjà couvertes ailleurs dans la
+  fiche ; écartée la somme de puissances (même famille que le d) qui
+  vient d'être retiré de 8.9 par cohérence) et la puissance négative
+  isolée (déjà bien représentée dans 8.3, qui inclut des exposants
+  négatifs).
+  6. **8.12 (Tangente passant par un point donné) + 8.13 (Avec un
+  paramètre) fusionnées en une seule section, 2 exemples : un sans
+  paramètre, un avec**, exactement comme demandé. Gardé 8.12 a) (fonction
+  fixe `f(x)=3(1-x/2)^2`, deux valeurs de `a` à trouver — « sans
+  paramètre ») et 8.13 a) (fonction avec paramètre `b`, trouver les
+  valeurs de `b` pour une tangente horizontale — « avec paramètre »),
+  écartés 8.12 b) (redondant avec a), même fonction et même technique,
+  juste un autre point) et 8.13 b) (réponse statique `"0"`, sans aucun
+  calcul réel, le plus faible exemple du groupe). Nouveau titre : «
+  Tangente passant par un point donné, avec ou sans paramètre. »
+
+  Fiche passée de 37 à 22 questions, 13 à 9 groupes. Vérifié : syntaxe
+  (`vm.Script` sur les deux blocs `<script>`, OK), 500 tirages
+  auto-cohérents (0 échec), liste des 22 `id` générés conforme au plan
+  exact, cycle complet dans le vrai navigateur avec les vrais champs
+  MathLive (**22/22 bonnes réponses acceptées, aucun échec**), panneau
+  « Voir toutes les réponses » (aucune erreur MathJax), aucune occurrence
+  restante de « sous la forme y=ax+b » ni de `g11` dans le fichier,
+  aucune erreur console, captures d'écran confirmant le rendu LaTeX du
+  titre 8.1, les sections fusionnées 8.4/8.5/8.9 et la suppression
+  propre de 8.8.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
