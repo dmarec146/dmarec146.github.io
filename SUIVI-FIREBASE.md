@@ -1926,6 +1926,98 @@ de changer ce réglage sans qu'il en reparle.
   aucune erreur console, captures d'écran confirmant le rendu LaTeX du
   titre 8.1, les sections fusionnées 8.4/8.5/8.9 et la suppression
   propre de 8.8.
+
+  **Fiche 9 de Première (cahier 3, Généralités sur l'exponentielle I),
+  25/09/2026 — faite en autonomie complète** (David : « commence la
+  fiche 9 »), même méthode que les fiches précédentes. Architecture par
+  fonction unique `genererExercices()` poussant séquentiellement dans un
+  tableau `ex` (comme les fiches 1-7), avec un `groupes` indexé par
+  position — donc les suppressions/renommages n'ont besoin de toucher
+  que les items concernés, pas de réorganiser physiquement le tableau.
+
+  **Automatismes (9.1+9.2, 3+3=6) laissés inchangés** : déjà exactement
+  au total cible, chaque groupe de 3 teste 3 techniques distinctes
+  (9.1 : soustraction, division emboîtée, fraction composée ; 9.2 :
+  trois manipulations de puissances de 2), aucune redondance interne.
+
+  **9.3 « Quelques calculs pour commencer » + 9.4 « D'autres calculs
+  pour continuer » + 9.5 « Un peu plus compliqué » → un seul 9.3, 4
+  exemples** : trois titres différents mais même compétence testée à
+  complexité croissante (simplifier un produit/quotient d'exponentielles
+  via les règles de calcul), motif identique au précédent fiche 4
+  (4.3+4.4+4.6). Gardé un gradient de 4 sans redondance : 9.3 a) (cas
+  numérique classique, produit de 3 facteurs), 9.3 f) (cas numérique le
+  plus complet, quotient avec un facteur au cube), 9.4 c) (cas algébrique
+  avec x, produit de 3 facteurs dont un au carré), 9.5 b) (cas algébrique
+  le plus complexe, quotient avec un facteur au cube au dénominateur).
+  Titre unifié : « Soit x ∈ ℝ. Simplifier les expressions suivantes. »
+
+  **9.6 « Développer et réduire... » + 9.7 (titre mot pour mot
+  identique) → un seul 9.4, 4 exemples** : signal de fusion le plus
+  fort (rule 2), les deux groupes portaient littéralement le même titre.
+  Gardé 9.6 a) (carré d'une somme symétrique), 9.6 c) (carré d'une
+  différence avec coefficients), 9.6 d) (produit = différence de deux
+  carrés, technique distincte des deux précédentes), 9.7 b) (identité
+  télescopique élégante, (a+b)²-(a-b)²=4ab, bon exemple de clôture).
+  Écartés 9.6 b) (carré d'une somme avec coefficients, redondant avec
+  9.6 a)+9.6 c) combinés) et 9.7 a) (expression la plus complexe,
+  cumule plusieurs difficultés à la fois — le genre de cas que la
+  méthode dit d'écarter en priorité).
+
+  **9.8 « Factorisations » renumérotée 9.5, contenu inchangé** : 2
+  familles déjà distinctes (trinôme carré parfait a/b, différence de
+  carrés c/d), 2 exemples chacune, aucune redondance.
+
+  **9.9 « Résolutions d'équations (I) » + 9.10 « (II) » → un seul 9.6,
+  4 exemples** : motif (I)/(II) explicite, fusion automatique. Gardé
+  les 3 techniques déjà distinctes de 9.9 (comparaison directe des
+  exposants, équation du second degré en x via exp(x²)=exp(cx), produit
+  nul exploitant exp(x)>0) plus 9.10 b) (isoler l'exponentielle avant de
+  comparer les exposants — technique non couverte par 9.9). Écarté
+  9.10 a), redondant avec la technique de comparaison directe de 9.9 a).
+
+  **9.11 « Résolutions d'inéquations » renumérotée 9.7, réduite de 5 à
+  4 exemples** : 5 items couvraient plusieurs formes (bornée, non
+  bornée, union, à isoler), mais c) (union symétrique via une racine
+  carrée) était un cas particulier subsumé par e) (union générale, racines
+  rationnelles quelconques via `fracSimple`, plus riche) — écarté c),
+  gardés a) (comparaison directe), b) (borné), d) (isoler avant de
+  comparer), e) (union générale).
+
+  **9.12 à 9.18 renumérotées 9.8 à 9.14, contenu inchangé** : chacune
+  déjà une compétence à part sans redondance interne (changement de
+  variable à 3 substitutions distinctes, parité en QCM, identité
+  cosh²-sinh²=1, formule de duplication à 2 résultats différents,
+  formules de factorisation à 2 identités différentes en QCM, une
+  équation, calcul de sommes à 2 pas différents).
+
+  Fiche passée de 18 à 14 groupes, 52 à 38 questions. `FORMES_FACTORISEES`
+  mise à jour (`'9.8'` → `'9.5'`). **Piège rencontré pendant la
+  reconstruction** : plusieurs remplacements de `id="grille-9-N">` en
+  `id="grille-9-M"` (renumérotation simple, sans toucher au reste de la
+  balise) ont fait disparaître le `>` de fermeture par inattention —
+  résultat : `<div ... id="grille-9-8"</div>` (accolade jamais fermée),
+  ce qui a fait planter `construireGrilles()` avec `Cannot set properties
+  of null` sur `grille-9-8` et rendu **invisibles dans le DOM tous les
+  groupes suivants (9.8 à 9.14)**, alors même que le texte source HTML
+  brut restait correct pour les balises elles-mêmes (confirmé en lisant
+  le fichier via `fetch` depuis le navigateur) — le symptôme trompeur
+  était que `document.getElementById` renvoyait `null` pour des id qui
+  existaient bien dans le texte source, parce que la balise mal fermée
+  avalait tout le HTML suivant comme contenu texte d'un attribut jamais
+  refermé. Repéré via `Object.keys(groupes).map(id=>document.getElementById(id))`,
+  corrigé par un balayage regex de tout `id="grille-9-N"</div>` restant
+  dans le fichier (7 occurrences, dont une sur `grille-9-7` lui-même
+  passée inaperçue au premier passage). Vérifié après correction :
+  syntaxe (`vm.Script`, OK), 500 tirages auto-cohérents
+  (`checkEqualNumeric`/`checkEnsemble`, 0 échec), liste des 38 `id`
+  générés conforme au plan exact, cycle complet dans le vrai navigateur
+  (**38/38 bonnes réponses acceptées, aucun échec** — types `qcm` et
+  `vraifaux` de cette fiche utilisent un simple champ texte, pas des
+  boutons radio, contrairement à une première hypothèse du test qui a dû
+  être corrigée), panneau « Voir toutes les réponses » (aucune erreur
+  MathJax), capture d'écran confirmant le rendu des sections fusionnées
+  9.3, 9.5 et 9.6.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
