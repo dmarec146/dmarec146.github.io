@@ -1596,6 +1596,58 @@ de changer ce réglage sans qu'il en reparle.
   capture d'écran confirmant le rendu des deux sections fusionnées (titres
   sans « (I)/(II)/(III) », les deux rappels de 5.6 empilés proprement) et
   du reste de la fiche.
+
+  **Fiche 5 de Première (cahier 1) — deuxième passe, réduction
+  supplémentaire (25/09/2026, sur PC pro, même jour)**, sur demande
+  explicite de David (« 5.5, 5.8 et 5.9 juste deux exemples. Supprimer
+  5.11. fusionner 5.12 et 5.13 en gardant juste 2 exemples ») :
+
+  **5.5 (4→2)** : gardés a) (classique, regroupement entier) et l'ancien
+  c) devenu b) (délicat, même regroupement avec coefficients
+  fractionnaires) — un seul gradient de difficulté ajouté. Écartés
+  l'ancien b) (cas particulier où le résultat se réduit à un seul
+  facteur) et l'ancien d) (le plus complet, cumulait fractions ET un
+  terme linéaire supplémentaire) — plus de place pour ces nuances à
+  seulement 2 exemples.
+
+  **5.8 (3→2)** : ce n'est pas un gradient de difficulté mais un même
+  problème (même polynôme P) résolu en plusieurs étapes indépendantes,
+  chacune aussi difficile que les autres. Gardées les deux premières
+  étapes naturelles de résolution — retrouver c) via P(1), puis b) via
+  P(0) — et retirée la troisième (retrouver a) via P(2)), redondante en
+  termes de compétence exercée.
+
+  **5.9 (3→2)** : gardés a) (classique : facteur x² puis différence de
+  deux carrés) et l'ancien c) devenu b) (le plus délicat : reconnaître un
+  carré parfait caché avant de regrouper). Retiré l'ancien b) (factoriser
+  un binôme commun partagé par deux termes) — compétence déjà présente
+  ailleurs dans la fiche (5.3, 5.5).
+
+  **5.11 « produit de deux facteurs non constants » supprimée
+  entièrement** (2 exemples en moins).
+
+  **5.12 (Bernoulli, 3 exemples) + 5.13 (grande identité x¹²-1, 1
+  exemple) → un seul nouveau 5.11, 2 exemples au total** : le degré n de
+  la formule de Bernoulli fournit lui-même un gradient de difficulté
+  (plus n est grand, plus le polynôme facteur a de termes) — gardé n=3,
+  le cas le plus simple, comme classique ; n=5 et n=7 retirés (déjà une
+  escalade suffisante sans eux, plus de place à 2 exemples). Gardée
+  ensuite x¹²-1 comme délicat/capstone de la fiche (déjà la plus avancée,
+  cas isolé sans variante de degré).
+
+  Fiche passée de 13 à 11 groupes, 37 à 29 questions.
+  `FORMES_FACTORISEES` et `groupes` recalculés en conséquence (indices de
+  tous les groupes à partir de 5.5 décalés). Vérifié : syntaxe (`vm.Script`
+  sur les deux blocs `<script>`, OK), 500 tirages auto-cohérents exécutés
+  dans le vrai navigateur (14500 vérifications au total via
+  `checkEqualNumeric`/`checkEnsemble`/`estFactorise` appelés directement,
+  0 échec), liste des 29 `id` générés vérifiée contre la liste attendue
+  (aucun id orphelin d'un ancien numéro de groupe), cycle complet dans le
+  vrai navigateur avec les vrais champs MathLive (29/29 acceptées),
+  panneau « Voir toutes les réponses » (29/29, aucune erreur MathJax),
+  aucune erreur console, capture d'écran confirmant une seule section «
+  Calcul 5.11 » (fusion propre, pas de doublon de titre, le rappel de
+  formule de Bernoulli et la grille a)/b) bien rendus).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
