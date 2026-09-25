@@ -1733,6 +1733,70 @@ de changer ce réglage sans qu'il en reparle.
   erreur MathJax), référence croisée « À l'aide de 7.8 a) » vérifiée dans
   l'énoncé généré, capture d'écran confirmant le rendu des sections
   fusionnées (7.6 et 7.11).
+
+  **Même jour, retours de David sur la fiche 7** :
+
+  1. **Tous les « f'(x) »/« f'(a) » en texte brut dans les titres de
+  calcul rendus en vrai LaTeX** (`\(f'(x)\)` au lieu du texte plain
+  « f'(x) », l'apostrophe droite étant peu lisible comme symbole prime).
+  7 titres concernés (7.4, 7.5, 7.6, 7.7, 7.9, 7.10, 7.11) ; 7.10 profite
+  au passage du même traitement pour son inéquation (`\(f'(x)\geqslant
+  0\)` au lieu de « f'(x)≥0 »). Vérifié que fiche 6 (Dérivation I) n'a pas
+  le même défaut (occurrences de `f'(x)` toutes dans des commentaires de
+  code, jamais dans un texte affiché) — pas de correction nécessaire
+  là-bas.
+  2. **7.12 (Avec des racines carrées) et l'ancien 7.14 (Expressions
+  formelles) supprimés entièrement** (contrairement au reste du chantier,
+  ce ne sont pas des fusions mais des suppressions pures — David a jugé
+  ces deux groupes non nécessaires). 7.13 (Avec des sommes) renumérotée
+  7.12, seule survivante de la section « Calculs plus avancés ».
+  3. **7.6 (Inverses), 7.7 (Quotients) et 7.11 (Dériver puis factoriser)
+  ramenées de 4 à 2 exemples chacune** : 7.6 garde les deux extrémités du
+  gradient de degré (1 et 5, écarte 2 et 3) ; 7.7 garde les deux
+  extrémités (linéaire/linéaire et quartique/quadratique, écarte les deux
+  étapes intermédiaires) ; 7.11 garde un exemple de chacune des deux
+  techniques (racine double, racines distinctes) plutôt que deux de
+  chaque comme lors du chantier initial.
+  4. **7.10 (Signe de la dérivée) : nouvel exemple b) obligatoire, un
+  polynôme de degré 3**, à la place de l'ancien b) (quotient au carré,
+  retiré). `f(x)=Ax³+Bx²+Cx+D` construit par Vieta à partir de deux
+  racines choisies pour `f'(x)=3A(x-r₁)(x-r₂)` (quadratique réelle à deux
+  racines) : extérieur si le coefficient dominant de `f'` est positif,
+  intérieur sinon — même esprit que a) (quadratique) et c) (Möbius) déjà
+  présents, mais avec `f'` elle-même une quadratique à factoriser plutôt
+  qu'une expression déjà linéaire ou homographique. a) (quotient au
+  carré) gardé (David a laissé le choix « b, ou c » — retiré celui des
+  deux qui testait la famille la moins riche, la Möbius/homographique
+  restant une technique plus généraliste et déjà bien distincte de a) et
+  du nouveau b).
+
+  **Bug réel trouvé en vérifiant le nouveau b), présent aussi dans
+  l'ancien a) (itemQuadratique) depuis avant ce chantier** : les deux
+  construisaient leur `intervalleSpec` avec `inclusBas`/`inclusHaut` à
+  `true` du côté d'une borne infinie (`{bas:X, haut:Infinity,
+  inclusHaut:true}`) — mathématiquement incohérent (l'infini n'est jamais
+  « inclus »), et surtout **empêchait un élève tapant la notation
+  correcte** (`[X;+∞[`, crochet fermant vers l'extérieur) **d'être
+  reconnu comme juste**, puisque `checkIntervalle` exige une correspondance
+  stricte des crochets. Confirmé par un test direct (contournant MathLive) :
+  `checkIntervalle` avec la notation mathématiquement correcte échouait
+  systématiquement tant que le bug n'était pas corrigé, réussissait à
+  100% après. Le panneau « Voir toutes les réponses » affichait par
+  ailleurs `[9/8\,;\,+\infty]` (crochet fermant à l'infini, notation
+  fausse) avant correction. `itemMobius` et `itemUnSurQuadratique`
+  (voisins du même groupe) étaient déjà corrects, servant de référence
+  pour le correctif. Corrigé sur les deux items concernés (a et le
+  nouveau b).
+
+  Fiche passée de 47 à 29 questions, 14 à 12 groupes. Vérifié à nouveau
+  en entier après ces changements : syntaxe, 500 tirages auto-cohérents
+  (validité structurelle + test direct `checkIntervalle` avec notation
+  `-inf`/`+inf`, 0 échec sur les deux), cycle complet dans le navigateur
+  (29/29 bonnes réponses acceptées, mêmes échecs isolés déjà connus dans
+  7.1/7.10/7.12 — piège MathLive), panneau « Voir toutes les réponses »
+  (29/29, aucune erreur MathJax, notation d'intervalle désormais correcte
+  aux captures), capture d'écran confirmant le rendu LaTeX des titres et
+  le nouvel exemple 7.10 b).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
