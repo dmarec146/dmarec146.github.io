@@ -2481,7 +2481,8 @@ function construireGrilles() {
       const div = document.createElement('div');
       div.className = 'question';
       div.id = 'q-' + idx;
-      const lettre = lettresEtendues[pos] || '';
+      // Un groupe reduit a une seule question n'a pas besoin de sa lettre a) : superflu.
+      const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
@@ -2491,7 +2492,7 @@ function construireGrilles() {
           ).join('')}</div>`
         : '';
       div.innerHTML = `
-        <span class="q-lettre">${lettre})</span>
+        <span class="q-lettre">${lettre ? lettre + ')' : ''}</span>
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
@@ -3195,7 +3196,7 @@ function genererFigureCercleTangente(largeur, hauteur) {
 function construireGraphique6_5() {
   const { r1, r2, k, ordre, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_5;
   const fprime = x => k*(x-r1)*(x-r2);
-  const svgDeriv = genererSVGCourbe(fprime, xmin, xmax, ymin, ymax);
+  const svgDeriv = genererSVGCourbe(fprime, xmin, xmax, ymin, ymax, undefined, 380, 290);
   const noms = ['f₁','f₂','f₃'];
   const tables = ordre.map((t,i) => genererTableauVariation(noms[i], t.positions, t.sens)).join('');
   let html = `<p>On considère \\(f_1\\), \\(f_2\\) et \\(f_3\\) des fonctions définies et dérivables sur ℝ. La courbe représentative d'une certaine fonction dérivée, notée \\(f'\\), est tracée dans le repère ci-dessous ainsi que trois tableaux de variation.</p>
@@ -3206,16 +3207,17 @@ function construireGraphique6_5() {
   activerCurseurSvg(document.getElementById('graphique-6-5'));
 }
 
-function construireGraphiqueQCMCourbe(divId, params, texteIntro) {
+function construireGraphiqueQCMCourbe(divId, params, texteIntro, largeur, hauteur) {
   // Le tableau montre la variation de f' ELLE-MEME (2 extremums propres a f', avec ses zeros
   // marques sur les fleches), pas un tableau de signe de f' derive pour F - voir
   // genererTableauVariationDerivee(). Pas de courbe de f' affichee en plus : le tableau suffit.
   const { ordre, plageGlobale, xmin, xmax, tableauHTML } = params;
+  largeur = largeur || 240; hauteur = hauteur || 185;
   let html = `<p>${texteIntro}</p>
   <div style="overflow-x:auto;">${tableauHTML}</div>
   <div class="qcm-grille-figures">`;
   ['a','b','c'].forEach((lettre, i) => {
-    const svg = genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax, undefined, 240, 185);
+    const svg = genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax, undefined, largeur, hauteur);
     html += `<div><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span><div class="qcm-figure-label">f_${lettre}</div></div>`;
   });
   html += '</div>';
@@ -3226,7 +3228,8 @@ function construireGraphiqueQCMCourbe(divId, params, texteIntro) {
 
 function construireGraphique6_6() {
   construireGraphiqueQCMCourbe('graphique-6-6', paramsGraphiques.g6_6,
-    "On donne ci-dessous le tableau de variation d'une fonction \\(f'\\) définie sur ℝ ainsi que les courbes représentatives de trois fonctions : \\(f_1\\), \\(f_2\\) et \\(f_3\\).");
+    "On donne ci-dessous le tableau de variation d'une fonction \\(f'\\) définie sur ℝ ainsi que les courbes représentatives de trois fonctions : \\(f_1\\), \\(f_2\\) et \\(f_3\\).",
+    265, 205);
 }
 
 function construireGraphique6_7() {

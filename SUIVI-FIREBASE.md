@@ -1785,6 +1785,35 @@ de changer ce réglage sans qu'il en reparle.
     traverser le texte (repéré sur un arbre à 3 branches initiales, plus
     pentues qu'à 2). Calculer le décalage perpendiculairement à la direction
     réelle de la ligne réglait le problème quelle que soit la pente.
+- **Fiche 6 de Première (cahier 2, dérivation), 25/09/2026** : David signale
+  que 6.5 et 6.6 n'ont qu'une seule question chacune, mais affichaient quand
+  même la lettre « a) » — inutile. `construireGrilles()` (locale à chaque
+  fiche) calcule toujours la lettre par position dans le tableau
+  `lettresEtendues[pos]`, indépendamment du nombre réel de questions du
+  groupe : un groupe réduit à 1 exemple (convention déjà en place ailleurs :
+  id sans lettre, `{id:"6.5", ...}`) affiche quand même « a) » tant que
+  `construireGrilles()` n'est pas averti. Corrigé en ne calculant la lettre
+  que si `indices.length > 1` (sinon chaîne vide, et le `)` retiré avec
+  elle) — corrige au passage 6.7, dans le même cas mais non signalé
+  explicitement, cohérence entre les trois groupes voisins. **Ce correctif
+  est local au fichier de la fiche 6** (chaque fiche a sa propre copie de
+  `construireGrilles()`) : à vérifier au cas par cas sur toute autre fiche
+  qui aurait le même défaut, pas un correctif de portée automatique.
+
+  Au passage, David demande d'agrandir légèrement les graphiques de 6.5 et
+  6.6. 6.5 (courbe unique de \(f'\)) : taille explicite ajoutée à son appel
+  de `genererSVGCourbe` (340×260 → 380×290), sans toucher au défaut de la
+  fonction (partagé avec 6.3/6.4, non concernés par la demande). 6.6 et 6.7
+  partagent la même fonction `construireGraphiqueQCMCourbe` (trois petites
+  courbes still), désormais paramétrée en largeur/hauteur (défaut inchangé
+  240×185) : seul l'appel de 6.6 passe une taille plus grande (265×205),
+  6.7 reste à la taille d'origine, non demandée.
+
+  Vérifié : syntaxe, cycle dans le vrai navigateur (lettre absente
+  confirmée sur 6.5/6.6/6.7 par lecture directe du DOM, présente sur les
+  groupes à plusieurs questions comme 6.3), capture d'écran confirmant le
+  rendu agrandi des deux graphiques concernés et la taille inchangée de
+  6.7.
 
 ## Procédure de reprise sur une autre machine
 
