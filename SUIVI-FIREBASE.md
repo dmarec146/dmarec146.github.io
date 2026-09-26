@@ -2018,6 +2018,94 @@ de changer ce réglage sans qu'il en reparle.
   être corrigée), panneau « Voir toutes les réponses » (aucune erreur
   MathJax), capture d'écran confirmant le rendu des sections fusionnées
   9.3, 9.5 et 9.6.
+
+  **Correctif ultérieur sur la fiche 9 (26/09/2026, fait en même temps
+  que la fiche 10)** : 9.3 a) (repris de l'ancien 9.3 a) lors de la
+  fusion) gardait en fin d'énoncé « (écrire sous la forme exp(...)) » :
+  math en texte brut hors LaTeX, et consigne répétée sur un seul item du
+  groupe alors que les trois autres ne l'ont pas. Retirée : le
+  vérificateur accepte toute forme équivalente, l'indication n'était pas
+  nécessaire. Aucune autre occurrence de ce motif dans les fiches de
+  Première.
+
+  **Fiche 10 de Première (cahier 3, Généralités sur l'exponentielle II),
+  26/09/2026 — faite en autonomie complète** (David : « commence la
+  fiche 10 »). Même architecture que la fiche 9 (`genererExercices()`
+  séquentiel + `groupes` indexé). Modifications faites par un script
+  Node qui exige exactement une occurrence de chaque motif remplacé et
+  isole chaque bloc supprimé (un seul `ex.push` par bloc), pour éviter
+  le piège de la fiche 9 (balise `>` perdue en renumérotant).
+
+  **Automatismes (10.1+10.2, 6+6=12) → 6, répartis 4+2** : 10.1
+  (factorisations) couvre de vraies familles distinctes, 10.2 (fractions
+  de fractions) appelle 6 fois le même générateur. 10.1 garde b) carré
+  parfait, d) \(A^2x^2-B^2\), e) facteur commun caché après
+  développement, f) \((Ax-B)^2-C^2\) ; écartés a) \(x^2-D^2\) (cas
+  particulier de d) et c) (variante de d à coefficients fractionnaires,
+  cumule deux difficultés). 10.2 ramenée à 2 tirages.
+
+  **10.3 (6, numérique, « A entier ») + 10.4 (4, avec x) → un seul
+  10.3, 4 exemples** : même compétence (écrire sous la forme
+  \(\exp(A)\)), complexité croissante, même situation que 9.3-9.5 dans
+  la fiche 9. 10.3 a) et b) étaient d'ailleurs un doublon exact (même
+  générateur). Gardés 10.3 d) (quotient de produits), 10.3 f) (puissances
+  4 et 5), 10.4 b) (carré et quotient, avec x), 10.4 d)
+  (\(\exp(x/q)^n\), exposant fractionnaire). Titre unifié, « où A est
+  un entier » retiré puisque A dépend désormais de x pour c) et d).
+
+  **10.5 (identités remarquables, 1 question) → 10.4**, inchangée.
+
+  **10.6 « Résoudre les équations et inéquations » (6) + 10.7 et 10.8
+  « Résoudre les inéquations » (4+4, titres mot pour mot identiques) →
+  deux groupes par compétence, 4 exemples chacun** : 10.5 « Résoudre
+  dans ℝ les équations suivantes » = les 4 équations de l'ancien 10.6
+  (a, c, e, f : exposant affine = 0, exposant \(x^2\) à deux solutions,
+  équation rationnelle en \(\exp(x)\), puissance et inverse) ; 10.6
+  « Résoudre dans ℝ les inéquations suivantes » = ancien 10.6 d)
+  (comparaison directe), 10.7 a) (exposant \(x^2\), solution bornée),
+  10.8 b) (double inégalité, intervalle fermé), 10.8 c) (inéquation
+  rationnelle en \(\exp\), raisonnement de signe). Écartés 10.6 b)
+  (même technique que d), 10.7 b) et d), 10.8 a) et d) (variantes
+  de la comparaison directe après regroupement des exposants), 10.7 c)
+  (même raisonnement de signe que 10.8 c), qui fait varier davantage
+  la solution). Le bloc de l'ancien 10.6 d) a été déplacé physiquement
+  après les équations pour que l'ordre du tableau suive l'ordre
+  d'affichage (panneau « Voir toutes les réponses »).
+
+  **Deux défauts préexistants corrigés dans cette section** :
+  1. L'encadré disait « on attend les réponses sous la forme « x=a » ou
+  « x⩾a » ou « x>a » » — faux : les inéquations attendent un intervalle
+  (vérifié : `checkIntervalle('x>=2', …)` renvoie faux, `[2;+inf[`
+  vrai). Remplacé par une consigne exacte, en LaTeX : ensemble de
+  solutions pour une équation (\(\{2\}\), \(\{-1;3\}\)), intervalle ou
+  réunion d'intervalles pour une inéquation.
+  2. Dans un même groupe d'équations, certaines réponses étaient un
+  nombre nu (anciens 10.6 a, 10.6 f, 10.9 a, b, c) et d'autres un
+  ensemble (10.6 c, 10.9 d) ; la bulle d'aide du groupe demandait
+  d'écrire `{5}` « s'il n'y a qu'une solution », mais `{2}` était alors
+  refusé sur les réponses à nombre nu (`checkEqualNumeric('{2}','2')`
+  faux). Toutes ces réponses passées au format ensemble : `checkEnsemble`
+  accepte `{2}`, `2` et `x=2`, donc rien de ce qui était accepté avant
+  ne devient refusé.
+
+  **10.9 (équation auxiliaire, 4) → 10.7**, contenu inchangé à part le
+  format ensemble ci-dessus (quatre cas distincts : racine double,
+  substitution symétrique, une racine rejetée car négative, deux
+  racines). **10.10 (système) → 10.8**, « donner (x;y) » passé en
+  LaTeX. **10.11/10.12 (reconnaissance graphique) → 10.9/10.10**,
+  inchangées (les `div` internes `graphique-10-11`/`graphique-10-12`
+  gardent leur nom, non affiché). **10.13/10.14/10.15 (avancés) →
+  10.11/10.12/10.13**, inchangées sauf 10.12 : « sous la forme
+  exp(...) » passé en LaTeX (\(\exp(\ldots)\)).
+
+  Fiche passée de 15 à 13 groupes, 50 à 32 questions. Vérifié : syntaxe
+  (`vm.Script`, OK), 500 tirages auto-cohérents (0 échec), 32 `id`
+  conformes au plan et dans l'ordre des grilles, cycle complet dans le
+  navigateur (**32/32** acceptées, types `intervalle`, `paire`, `texte`,
+  `qcm` et `vraifaux` compris), chaque équation à solution unique
+  acceptée avec et sans accolades, aucune erreur MathJax ni console,
+  capture d'écran de la section équations/inéquations sur un chargement
+  neuf.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
