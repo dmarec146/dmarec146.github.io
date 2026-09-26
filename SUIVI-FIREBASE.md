@@ -2421,6 +2421,41 @@ de changer ce réglage sans qu'il en reparle.
     (les 4 réponses Σ, non injectables dans MathLive, vérifiées
     directement : une somme juste écrite avec des indices décalés est
     acceptée, une fausse est refusée), balayages vides, rendu contrôlé.
+
+  *Fiche 17 (cahier 5, Calcul de sommes II) : 54 → 41 questions, 17 →
+  15 groupes.* Réduction plus modérée : la moitié avancée de la fiche
+  est faite de problèmes à étapes dépendantes (règle 3bis).
+  - Automatismes 17.1 + 17.2 (3+2 = 5, déjà ≤ 6) : inchangés en nombre.
+  - 17.3 et 17.4 avaient **le même contexte** (« On considère deux
+    réels \(a\) et \(b\) ») et la même démarche (compter les termes,
+    développer, multiplier pour obtenir \(a^{N+1}\mp b^{N+1}\)) → un
+    seul groupe de 4 : les trois questions de 17.3, plus la
+    multiplication de 17.4 (version alternée, \(a^{N+1}+b^{N+1}\)).
+    17.5 (même somme avec \(b=-1\)) supprimée.
+  - Sommes arithmétiques 17.7 et 17.8 (3 chacune, contexte propre) → 2
+    chacune : une somme numérique et la formule en fonction de \(N\).
+    « Calculer » retiré des questions (déjà en fin de contexte).
+  - Sommes géométriques 17.10 (4, avec \(u_0\), \(q\)) et 17.11 (4,
+    sommes directes) → 2 + 2 : gardées les bornes décalées et
+    \(\sum_{1}^{2n}\) ; \(\frac{A^k}{B^{k+1}}\) et la différence de deux
+    sommes géométriques. Écartés : raison \(\sqrt{D}\) (calcul lourd),
+    exposant symbolique \(A^p\), les deux cumuls.
+  - Arithmético-géométriques (I) guidée et (II) sans guidage : gardées
+    toutes deux (problèmes à étapes, et la seconde retire l'aide).
+  - Série alternée (6) → 4 : les deux différences \(v_{n+1}-v_n\),
+    \(w_{n+1}-w_n\) et les deux QCM de monotonie qui en découlent ;
+    retirés \(u_3\) (échauffement) et \(w_n-v_n\).
+  - Titres : notations en LaTeX (\(x\), \(1\), \(n\)).
+  - **Défauts préexistants corrigés** : « \(x+-4\) » en 17.2 a) et b) ;
+    en 17.1 b), fractions affichées réductibles avec le signe dans le
+    numérateur (« \(\frac{-6}{6}+\frac{1}{6}x\) ») → irréductibles,
+    signe sorti ; « \(\frac{6}{2}\) » en 17.1 c). **Contrôle
+    d'équivalence** après ces retouches : l'énoncé affiché, relu par
+    MathLive, a été comparé numériquement à la réponse stockée pour
+    chaque automatisme retouché (égalité vérifiée).
+  - Vérifié : 0 échec sur 500 puis 2 000 tirages, 37/37 sur 5 cycles
+    hors réponses Σ (vérifiées directement), ordre OK, balayages vides
+    (hormis le faux positif « \(S(0)\) »), rendu contrôlé.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
