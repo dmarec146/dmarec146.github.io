@@ -2212,6 +2212,61 @@ de changer ce réglage sans qu'il en reparle.
   - Vérifié : 12 000 dérivées comparées aux différences finies (0
     écart), 0 échec sur 500 tirages, 34/34 sur 5 cycles complets, ordre
     OK, balayage d'affichage vide, rendu contrôlé à l'écran.
+
+  *Fiche 12 (cahier 3, Dérivation et exponentielle II) : 56 → 37
+  questions, 17 → 11 groupes.*
+  - Automatismes « Factorisation (I) » + « (II) » (4+4) → un seul
+    groupe de 6 (règle des 6 automatismes ; plafond 4 des fusions non
+    appliqué ici puisque c'est toute la section automatismes) : 1a, 1b
+    (facteur commun), 1d (différence de carrés cachée), 2a (identité
+    puis facteur commun), 2c (\(x^4-k^4\), double identité), 2d (deux
+    variables). Écartés 1c (≈ 1d avec une étape de plus) et 2b (≈ 2a).
+    `FORMES_FACTORISEES` réduit à `'12.1'` (l'ancienne clé `'12.2'`
+    aurait sinon imposé la forme factorisée au nouveau 12.2, les
+    sommes).
+  - Deux séries parallèles fusionnées par opération (même compétence,
+    \(e^x\) puis \(e^{ax+b}\)) : **sommes** 12.3 + 12.6 → 12.2 (2+2,
+    tout gardé) ; **produits** 12.4 + 12.7 → 12.3 (4a \(xe^x\), 4c
+    \((Ax+B)e^x\), 7a \((Ax^2+B)e^{px+q}\), 7c produit de deux sommes
+    d'exponentielles ; écartés 4b ≈ 7a, 4d et 7d carrés, 7b) ;
+    **quotients** 12.5 + 12.8 → 12.4 (5a, 5c, 8c, 8e ; écartés 5b, 5d,
+    8a trivial, 8b, 8d, 8f). Blocs déplacés physiquement pour que
+    l'ordre du tableau suive l'affichage.
+  - 12.9 (un quotient long, 1 question) → 12.5, gardée à part : cas
+    cumulatif nettement au-dessus de la gradation des quotients.
+  - 12.10 (exponentielle et racine) → 12.6, 12.11 (nombres dérivés) →
+    12.7, 12.12 (tangentes) → 12.8 (« (sous la forme y=ax+b) » retiré
+    des 4 énoncés, le titre dit déjà « On attend des équations de la
+    forme \(y=mx+p\) »), 12.13 (QCM variations) → 12.9 : inchangées.
+  - Composées (I)/(II)/(III) (4+3+4) → 12.10, 4 : 14a
+    (\(e^{kx^3}\)), 14b (\(e^{k\sqrt{x}}\)), 15c (\(e^{e^{kx^2}}\),
+    double composition), 16a (produit et composée). « Sur ℝ, » répété
+    en tête des énoncés → une fois dans le titre (« Sauf indication
+    contraire, les fonctions sont définies sur \(\mathbb{R}\) »), seul
+    14b garde son domaine.
+  - 12.17 (somme en trois étapes dépendantes, « En déduire ») → 12.11,
+    non fusionnée (règle 3bis). La phrase « Soit x un réel strictement
+    positif et n un entier… » répétait mot pour mot le titre : retirée
+    de l'énoncé a).
+  - Intervalles affichés passés au point-virgule (convention du site) :
+    titre de 12.6, 12.10 b), options du QCM 12.9.
+  - **Défauts préexistants corrigés** : (1) 12.10 c)
+    (\(e^{e^{kx^2}}\)) : pour \(k=3\), une réponse juste était
+    refusée environ une fois sur cent — le vérificateur teste en des
+    points \(x\) pris entre −1 et 7 et \(e^{e^{3x^2}}\) déborde dès que
+    \(|x|>1{,}5\), si bien qu'il ne trouve parfois pas les 6 points
+    valides nécessaires ; \(k\) restreint à \(\{-3;-2;-1;1\}\) (0 échec
+    sur 3 000 tirages ensuite) ; (2) 12.7 b) affichait
+    « \(e^{-x}+0\) » ; (3) 12.3 b) affichait « \((-2x)e^x\) » —
+    constantes désormais non nulles.
+  - Vérifié : 6 300 dérivées comparées aux différences finies (0 écart),
+    0 échec sur 500 tirages, 36/37 sur 5 cycles complets — la seule
+    question non validée par le test automatique est 12.11 b) (réponse
+    de type somme Σ) : le vérificateur l'accepte bien (appel direct à
+    `checkSomme`, sous forme Σ comme sous forme fermée), c'est
+    l'injection programmée d'un `\displaystyle\sum` dans MathLive qui
+    ne se relit pas (limite de test déjà connue, question inchangée).
+    Rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
