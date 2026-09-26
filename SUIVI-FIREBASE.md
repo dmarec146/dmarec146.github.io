@@ -2456,6 +2456,36 @@ de changer ce réglage sans qu'il en reparle.
   - Vérifié : 0 échec sur 500 puis 2 000 tirages, 37/37 sur 5 cycles
     hors réponses Σ (vérifiées directement), ordre OK, balayages vides
     (hormis le faux positif « \(S(0)\) »), rendu contrôlé.
+
+  *Fiche 18 (cahier 5, Calcul de produits) : 37 → 31 questions, 14 →
+  12 groupes.* Fiche déjà compacte.
+  - Automatismes 18.1 + 18.2 (3+3 = 6) : inchangés.
+  - « Écritures (I) » + « (II) » (4+4) → 18.3, 4 :
+    \(1\times2\times\cdots\times N\), \(k^{k+D}\) (exposant décalé),
+    \((k^2+C)x_k\) (indicé), \((x_k+y_{n-k})\) (indices croisés).
+    Écartés : \(k^k\) (≈ \(k^{k+D}\)), produit constant \(C\times\cdots
+    \times C\), et deux produits indicés plus simples.
+  - « Un produit constant » + « bis » (QCM, 1+1) → 18.6, un groupe de 2.
+  - Télescopage (I), guidé (\(b_1,b_2,b_3,b_{n-1}\)) → 2 questions :
+    \(b_2\) et \(b_{n-1}\).
+  - Reste inchangé (renumérotation), titres en LaTeX (\(a\), \(b\),
+    \(c\), \(\Pi\), \(\Sigma\), \(n\geqslant 3\), \(n\in\mathbb{N}\)).
+  - Formatage : cette fiche écrit `{id: "…"` (avec espace) ; normalisé
+    en `{id:"…"` pour l'outillage, sans effet sur le fonctionnement.
+  - **Défaut préexistant corrigé** : deux énoncés (ancien 18.4 d),
+    produit \((x_0+y_n)\cdots(x_n+y_0)\), et ancien 18.5 b)) étaient
+    plus larges que leur demi-carte et **coupés à droite**. Un
+    défilement horizontal essayé d'abord n'était pas satisfaisant ;
+    écriture raccourcie (termes intermédiaires retirés, motif intact :
+    \((x_0+y_n)(x_1+y_{n-1})\times\cdots\times(x_n+y_0)\)). Contrôle
+    de débordement ajouté à la batterie (position droite de chaque
+    formule comparée à celle de sa carte, sur plusieurs tirages) et
+    relancé sur les fiches 11 à 18 : aucun autre débordement.
+  - Vérifié : 0 échec sur 500 tirages, tout le reste accepté sur 5
+    cycles (dont les **deux** bonnes réponses du QCM à double réponse),
+    les réponses Π/Σ vérifiées directement : formes équivalentes
+    (autre nom de variable, ordre inversé, indice décalé écrit
+    \(x_{k-1}\)) acceptées, formes fausses refusées.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
