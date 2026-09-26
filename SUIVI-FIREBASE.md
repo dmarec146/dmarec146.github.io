@@ -2691,6 +2691,52 @@ de changer ce réglage sans qu'il en reparle.
     6 cycles complets dans l'interface, ordre des cartes = ordre du
     tableau, balayage des énoncés vide, aucun débordement sur 8 tirages,
     rendu contrôlé à l'écran.
+
+  *Fiche 22 (cahier 7, Coordonnées des vecteurs) : 67 → 44 questions,
+  20 → 15 groupes.*
+  - Automatismes 22.1 (6) + 22.2 (6) → 3+3 : inéquations b), d), f)
+    (retirés la plus simple et deux quasi-doublons) ; factorisations c),
+    d), e) (retirées les deux identités directes et la forme qui cumule).
+    « ℝ » du titre passé en \(\mathbb{R}\).
+  - **Fusions** (même compétence, variantes de valeurs) :
+    - coordonnées de \(\overrightarrow{AB}\) : 22.3 (entiers, fractions,
+      radicaux) + 22.4 (paramètre \(n\)) + 22.5 (paramètre \(\alpha\))
+      → 4 exemples (fractions, radicaux, \(n\), \(\alpha\)) ;
+    - point \(M\) tel que \(\overrightarrow{MA}+\overrightarrow{MB}+\overrightarrow{MC}=\vec{0}\) :
+      22.11 + 22.12 (version à \(\alpha\)) → un groupe de 2, consigne
+      en introduction ;
+    - normes : 22.13 + 22.14 (à \(\alpha\geqslant 1\)) → 4 exemples
+      (fractions, radicaux, deux à \(\alpha\)) ; l'hypothèse
+      \(\alpha\geqslant 1\) passe du titre aux questions concernées ;
+    - milieux : 22.17 + 22.18 (à \(\alpha\)) → 4 exemples, titre en
+      LaTeX (« Soient A et B deux points… [AB] » était en texte brut).
+  - Réduits : le problème \(ABCD\) 3 → 2 (les coordonnées de
+    \(\overrightarrow{DC}\) avaient exactement la réponse de
+    \(\overrightarrow{AB}\)) ; « même méthode » 4 → 3 ; valeur de
+    \(\alpha\) telle que \(\overrightarrow{AB}=\vec{u}\) 3 → 2 ;
+    parallèles/sécantes 3 → 2 ; déterminant (avancé) 5 → 4. Gardés
+    entiers : couple \((\alpha,\beta)\), somme de vecteurs (contexte),
+    \(\lambda\) figés (2), Ménélienne (6, problème à étapes dépendantes).
+  - Consignes : « … » final retiré des déterminants ; la dernière
+    question du déterminant n'avait aucune consigne → alignée sur la
+    précédente (« Valeurs de \(\alpha\) pour lesquelles \(\vec{u}\) et
+    \(\vec{v}\) sont colinéaires »). Noms de points, droites et réels en
+    LaTeX (\(D\), \((AB)\), \(ABC\), \(p\), \(q\), \(r\)…), y compris
+    dans les options du QCM.
+  - **Défauts préexistants corrigés** : « \(-4x+0\geqslant 0\) »
+    (22.1 a) ; constantes nulles « \(\alpha+0\) » du couple
+    \((\alpha,\beta)\) ; « \(\dfrac{1}{\alpha+0}\) » (déterminant) ;
+    fractions non réduites « \(\frac44\) », « \(\frac24\) » en 22.3 a)
+    (tirage de fractions irréductibles) ; « \(\frac22\) », « \(\frac64\) »
+    en 22.10 d) et 22.13 c) (facteur d'échelle limité à 1 ou 3) ;
+    coordonnées fractionnaires affichées « 9/2 » avec une barre oblique
+    en 22.10 a) et 22.13 a) → fraction LaTeX (nouvelle fonction
+    `fracL`).
+  - Vérifié : 0 échec sur 6 cycles complets dans l'interface (champs
+    texte des paires et intervalles remplis avec la vraie saisie
+    « (a;b) », « ]-inf;2] »), balayage de 2 000 tirages vide (« +0 »,
+    « -- », fractions réductibles, barres obliques), aucun débordement,
+    rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
