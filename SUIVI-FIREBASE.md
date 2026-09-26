@@ -2843,7 +2843,50 @@ de changer ce réglage sans qu'il en reparle.
     débordement, rendu contrôlé à l'écran.
 
   **Bilan du lot 21-25** : 82+67+52+74+29 = 304 → 55+44+31+39+25 = 194
-  questions.
+  questions. → Poussé le même jour.
+
+  **Fiches 26 à 28, 26/09/2026** (David : « continue les fiches 26 à
+  28 »), même outillage.
+
+  *Fiche 26 (cahier 9, Produit scalaire II) : 63 → 45 questions, 22 → 18
+  groupes.*
+  - Automatismes (2 + 3 = 5, déjà sous 6) : inchangés en nombre ;
+    « Simplifier au maximum, sous forme de produit de puissances »,
+    « Soit x∈ℝ. Développer », « Développer » retirés des énoncés (déjà
+    dans les titres).
+  - **Fusions** : 26.8 + 26.9 (**titres identiques** « Dans chacun des
+    cas suivants, choisir la bonne réponse ») → 4 (trouver un vecteur
+    normal, trouver l'intrus, plusieurs bonnes réponses, droite
+    parallèle à \((Ox)\) ; retirés deux doublons de la première) ;
+    « Projection orthogonale (I)/(II) » → 2 (point entier, point à
+    abscisse fractionnaire) ; « Une distance (I)/(II) » → un groupe de
+    2 ; « Retrouver le centre et le rayon (I)/(II) » → 2 paires
+    centre/rayon. **Le titre du (I) affichait une équation figée
+    (\(x^2+y^2-4x+6y-3=0\)) alors que la question portait sur une
+    équation tirée au sort** : titre réécrit.
+  - Réduits : vecteurs normaux à \((AB)\) 4 → 2 (trois items du même
+    générateur) ; vecteurs directeurs et normaux 8 → 4 (droites \(D_1\)
+    et \(D_3\), renommée \(D_2\) ; \(D_2\) était \(D_1\) dans l'autre
+    ordre, \(D_4\) figée) ; perpendiculaires oui/non 4 → 3 ; équations
+    cartésiennes 3 → 2 ; équations de cercle 3 → 2 ; cercles inconnus
+    3 → 2 (« passant par \(O\) » = cas particulier de « passant par
+    \(B\) »). Gardés entiers : formule générale de la distance (5,
+    étapes dépendantes), tangentes (1+1).
+  - Noms en LaTeX partout : \((d)\), \((D)\), \((d_1)\), \((AB)\),
+    \((BC)\), \((Ox)\), \(H\), \(A\), \(\Omega\), \(\mathcal{C}\),
+    \([AB]\), \(a\), \(b\), \(c\), \(x\in\mathbb{R}\)…
+  - **Défauts préexistants corrigés** : correction de 26.1 b) affichée
+    « 0 » (quotient \(\frac{7}{5^7\times 2^9}\) arrondi à zéro par
+    l'approximation fractionnaire) → une réponse contenant une
+    puissance s'affiche telle quelle, en produit de puissances comme le
+    demande la consigne ; option « \(\frac{-4}{2}\) » (26.8 b) ;
+    « \(m+0\) », « \(0-m\) » (26.6 a) ; rayon « 5/2 » en barre oblique
+    (26.13 b).
+  - Vérifié : 45/45 sur 16 cycles complets (vecteurs, paires, triplets
+    et équations cartésiennes saisis comme un élève : « (a;b) »,
+    « (a;b;c) », « a;b;c »), balayage de 3 000 tirages vide (options
+    comprises, correction affichée comprise), aucun débordement, rendu
+    contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
