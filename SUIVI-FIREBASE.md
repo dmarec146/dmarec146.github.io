@@ -2737,6 +2737,39 @@ de changer ce réglage sans qu'il en reparle.
     « (a;b) », « ]-inf;2] »), balayage de 2 000 tirages vide (« +0 »,
     « -- », fractions réductibles, barres obliques), aucun débordement,
     rendu contrôlé à l'écran.
+
+  *Fiche 23 (cahier 8, Fonctions trigonométriques I) : 52 → 31
+  questions, 15 → 11 groupes.*
+  - Automatismes 23.1 (4) + 23.2 (4) + 23.3 (9) → 2+2+2 : conversions
+    radians → degrés 2 ; degrés → radians 2 (un multiple de 15°, le
+    multiple de 22,5°) ; fractions de \(\pi\) 2 (une somme de deux
+    fractions, une combinaison avec des multiples de \(\pi\)) — les
+    7 retirées étaient des quasi-doublons deux à deux. « π » du titre
+    en LaTeX.
+  - Valeurs particulières : « Premiers angles » 6 → 4 ; « Autres
+    angles » + « Derniers angles » (**même générateur, code
+    identique**) → une section de 4. Les deux sections restent
+    distinctes : lecture directe du tableau d'un côté, réduction modulo
+    \(2\pi\) et parité de l'autre.
+  - **Fusions** : les deux « Monotonie » (sur \([0;\frac{\pi}{2}]\) et
+    sur \([0;\pi]\)) → une section de 4, toutes gardées (la question sur
+    le sinus sur \([0;\pi]\) est la seule à réponse « les deux sont
+    possibles ») ; les deux « Comparaison entre sinus et cosinus » (même
+    titre) → une section de 2, « Plusieurs réponses sont possibles »
+    passé dans l'introduction ; « Avec tangente (I) » + « (II) » → une
+    section de 3. « sin », « cos » des énoncés en LaTeX.
+  - Réduits : valeurs de la tangente 6 → 4 ; « Connaissant l'un,
+    déduire l'autre » 3 → 2 (retiré l'exemple figé \(\frac{\pi}{8}\),
+    calcul pur ; gardés le cas positif et le cas où le signe se déduit
+    de l'intervalle).
+  - Mise en page : les deux QCM de comparaison ont des options sur une
+    ligne défilante ; regroupés, ils auraient perdu la pleine largeur →
+    option `pleineLargeur` (même mécanisme qu'en fiche 21).
+  - **Défaut préexistant corrigé** : 23.3 b) pouvait afficher
+    « \(\frac{6\pi}{6}\) » (fraction tirée sans contrôle de PGCD).
+  - Vérifié : 31/31 sur 10 cycles complets, balayage de 2 000 tirages
+    vide (« +0 », fractions réductibles, NaN), ordre des cartes
+    conforme, rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
