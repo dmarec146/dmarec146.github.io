@@ -2770,6 +2770,45 @@ de changer ce réglage sans qu'il en reparle.
   - Vérifié : 31/31 sur 10 cycles complets, balayage de 2 000 tirages
     vide (« +0 », fractions réductibles, NaN), ordre des cartes
     conforme, rendu contrôlé à l'écran.
+
+  *Fiche 24 (cahier 8, Fonctions trigonométriques II) : 74 → 39
+  questions, 16 → 14 groupes.*
+  - Automatismes 24.1 (8) + 24.2 (6) + 24.3 (6) → 2+2+2 : pour chacun,
+    la forme affine et la forme « carré = carré » / « |…| = |…| » (les
+    formes directes \(x^2=k\), \(|x|=k\) et les variantes
+    fractionnaires, quasi-doublons, retirées) ; inéquations : \(x^2>K\)
+    (réunion d'intervalles) et \(|ax+b|\geqslant k\). « ℝ » des titres
+    en LaTeX. Chaque item était dans sa propre fonction : les fonctions
+    entières sont retirées, pas seulement la ligne.
+  - Valeurs remarquables 9 → 4, valeurs particulières 9 → 4, tangente
+    6 → 4 (trois sections distinctes : premier quadrant, réduction,
+    tangente).
+  - **Fusion** « Angles associés (I) » (QCM) + « (II) » (saisie libre),
+    même compétence → une section de 4 en saisie libre (\(\sin(-x)\),
+    \(\cos(\pi-x)\), \(\cos(x+\frac{\pi}{2})\), \(\sin(\frac{\pi}{2}-x)\)).
+    « Tangente d'angles associés » (4, QCM) gardée à part.
+  - « Formules d'addition (I) » (\(\cos 2a\), \(\sin 2a\)) + « (III) »
+    (\(\cos(a-b)\), \(\sin(a-b)\)) : même compétence (exprimer une
+    formule) → une section de 4, avancée avant « (II) », qui est un
+    calcul numérique (\(\cos\frac{7\pi}{12}\)…) réduit à une paire
+    cos/sin (4 → 2). Gardés : « avec les formules d'addition ? » (2),
+    formule de la tangente (1).
+  - Courbes : 3 → 2. Les formules étaient en texte brut
+    (« f:x↦sin(π/2-x) ») → LaTeX ; la mention « parmi les 4 propositions
+    (a),(b),(c),(d) » répétait la consigne déjà affichée au-dessus de la
+    figure (insérée par le tracé lui-même) → retirée, comme « Pour la
+    courbe a), choisir parmi les propositions… » répété dans « Autres
+    courbes » (les questions deviennent « Courbe a) », « Courbe b) »).
+  - **Défaut préexistant corrigé (affichage de la correction)** :
+    \(x^2>K\) avec \(K\) non carré affichait la correction en décimal
+    (« \(]-\infty;-2.828[\cup]2.828;+\infty[\) ») → `formaterUneBorne`
+    reconnaît une borne de carré entier et l'écrit \(2\sqrt{2}\) (testé
+    avant l'approximation fractionnaire). La correction elle-même
+    acceptait déjà « sqrt(8) ».
+  - Vérifié : 39/39 sur 13 cycles complets (intervalles saisis comme un
+    élève, « ]-inf;-sqrt(8)[U]sqrt(8);+inf[ »), balayage de 2 000
+    tirages vide (dont bornes décimales dans la correction), aucun
+    débordement, rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
