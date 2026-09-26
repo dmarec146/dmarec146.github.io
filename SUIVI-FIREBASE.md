@@ -2387,6 +2387,40 @@ de changer ce réglage sans qu'il en reparle.
 
   **Bilan du lot 11-15** : 58+56+62+44+38 = 258 → 34+37+29+27+28 = 155
   questions. Rien n'est poussé : en attente de la vérification de David.
+  → Poussé le même jour après son « pousse tout ».
+
+  **Fiches 16 à 20, même jour** (David : « continue les 5 prochaines »),
+  même outillage et même batterie de tests que pour 11-15, augmentée du
+  balayage des fractions affichées réductibles.
+
+  *Fiche 16 (cahier 5, Calcul de sommes I) : 46 → 30 questions, 14 →
+  12 groupes.*
+  - Automatismes 16.1 (3) + 16.2 (4) + 16.3 (3) → 2+2+2 : 16.1 garde
+    b) (généralise a) et c) ; 16.2 garde c) et d), **les deux seuls qui
+    utilisent vraiment la quantité conjuguée** annoncée par le titre
+    (a et b se traitaient en multipliant par \(\sqrt{D}\)) ; 16.3 garde
+    a) et c). Le titre de 16.3 excluait \(m=2\) uniquement à cause du
+    dénominateur \(m-2\) de l'ancien b) : exclusion retirée.
+  - 16.4 (5) → 4 : c) retiré (bornes décalées en haut ET en bas,
+    cumule a et b).
+  - « Utilisation du symbole de somme (I) » + « (II) » (4+4) → 16.7,
+    4 : \(\frac{1}{B}+\dots+\frac{1}{B^n}\) (classique), deux bases,
+    exposant multiple (\(A^{Bk}\)), somme alternée harmonique jusqu'à
+    \(2n+1\). Le « Soit \(n\in\mathbb{N}\). » répété en tête de deux
+    énoncés passe dans le titre.
+  - 16.8 et 16.10 (même titre mot pour mot, « Soit n∈ℕ*. Calculer : »,
+    6+5) → 16.8, 4 : \(\sum_{k=L}^n2^k\), \(\sum A^k\), \(\sum(A+2^k)\),
+    \(\sum(Ak+q\,3^k)\). Écartés : \(\sum 1\) (immédiat), \(\sum(-1)^k\)
+    (réponse 0 sans calcul), les variantes de bornes de \(2^k\) et les
+    combinaisons à trois termes.
+  - 16.11 (somme des impairs, titre régénéré par JavaScript) → 16.9 :
+    le numéro était écrit en dur dans `mettreAJourTextesAvances()`,
+    mis à jour avec l'identifiant du titre. 16.12, 16.13, 16.14 (étapes
+    dépendantes) → 16.10, 16.11, 16.12, inchangés.
+  - Vérifié : 0 échec sur 500 tirages, 26/26 sur 5 cycles complets
+    (les 4 réponses Σ, non injectables dans MathLive, vérifiées
+    directement : une somme juste écrite avec des indices décalés est
+    acceptée, une fausse est refusée), balayages vides, rendu contrôlé.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
