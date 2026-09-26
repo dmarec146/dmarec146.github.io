@@ -2568,7 +2568,10 @@ de changer ce réglage sans qu'il en reparle.
     ouvrante initiale se referme sur le dernier caractère), utilisée par
     `checkVecteur`, `checkPaire` et `checkTriplet`. **Le même code
     fautif existe à l'identique dans 27 fiches de Première** (toutes
-    sauf la 4) : non corrigé ailleurs, en attente de l'accord de David.
+    sauf la 4) : ~~non corrigé ailleurs, en attente de l'accord de
+    David~~ → **étendu le même jour** (David : « étends la correction à
+    toutes les fiches (de premières et de secondes si nécessaire) »),
+    voir l'entrée suivante.
   - **Défauts d'affichage préexistants corrigés** : automatismes 20.1 et
     20.2 avec fractions réductibles et signe dans le numérateur
     (« \(\frac{-9}{9}\) », « \(-\frac{-6}{5}\) ») → irréductibles, signe
@@ -2587,6 +2590,44 @@ de changer ce réglage sans qu'il en reparle.
 
   **Bilan du lot 16-20** : 46+54+37+75+50 = 262 → 30+41+31+53+38 = 193
   questions.
+
+  **Correction des parenthèses étendue à toutes les fiches (26/09/2026)**.
+  Recensement de toutes les formes de retrait de parenthèses
+  extérieures dans `cahiers/` :
+  - Première : `if (nettoye.startsWith('(') && nettoye.endsWith(')')) {`
+    dans `checkVecteur`, `checkPaire`, `checkTriplet` de 26 fiches (toutes
+    sauf la 4, qui n'a pas ce code, et la 20, déjà corrigée) ;
+  - Seconde : variante sur une ligne dans `checkPaire` des fiches 16,
+    21, 22, 23 et 25 (code porté depuis la Première) ;
+  - Première, fiche 19 : même défaut dans l'affichage des fractions des
+    arbres (`den`), sans effet sur la correction mais corrigé aussi.
+  Script unique : ajout de `entoureParParentheses` une fois par fichier
+  (avant la première fonction concernée), remplacement de chaque
+  condition. 31 fichiers modifiés, syntaxe vérifiée, plus aucune
+  occurrence de l'ancienne condition, chaque `slice(1,-1)` restant est
+  bien gardé. **Laissés tels quels, volontairement** :
+  `checkPointCoordonnees` (et `checkVecteurDirecteur25` en Seconde),
+  qui retirent les parenthèses **du point** par expression régulière
+  alors qu'elles sont exigées par la consigne — une saisie sans
+  parenthèses de point y est refusée comme prévu, aucune saisie valide
+  n'est refusée à tort.
+  Vérifications :
+  - tests unitaires dans les 31 fichiers chargés réellement (quotients
+    parenthésés avec et sans parenthèses de point, paires simples,
+    paramètre \(m\), réponses fausses) : tous conformes, en Première
+    comme en Seconde ;
+  - non-régression sur les vrais exercices point/vecteur/triplet des
+    fiches concernées (20 à 26 de Première, 16, 21, 22, 23, 25 de
+    Seconde) : réponse attendue saisie dans le vrai champ, tout accepté.
+    Ancien bug effectivement déclenché par des réponses attendues :
+    fiche 20 de Première (4 questions) ;
+  - Seconde, champs MathLive : une vraie frappe « (1/2;-3/2) » est
+    acceptée (dans ces fiches « / » ne crée pas de fraction empilée et
+    le clavier n'a pas de touche fraction). Les formes `\left(…\,;\,…\right)`
+    ou `\frac` injectées par programme sont refusées **avant comme
+    après** la correction (comparé sur une copie de l'ancienne version
+    servie temporairement) : ce sont des formes qu'un élève ne peut pas
+    produire, pas un défaut de la correction.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.

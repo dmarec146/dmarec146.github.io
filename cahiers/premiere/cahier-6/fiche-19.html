@@ -1741,9 +1741,21 @@ function checkTexte(userInput, correctText) {
   return userInput.trim().toLowerCase() === correctText.trim().toLowerCase();
 }
 
+// Vrai seulement si la parenthese ouvrante initiale se referme sur le dernier caractere :
+// « ((a)/(b);(c)/(d)) » oui, « (a)/(b);(c)/(d) » non (retirer ces deux parentheses-la casserait la saisie).
+function entoureParParentheses(s) {
+  if (!s.startsWith('(') || !s.endsWith(')')) return false;
+  let prof = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '(') prof++;
+    else if (s[i] === ')') { prof--; if (prof === 0 && i < s.length - 1) return false; }
+  }
+  return prof === 0;
+}
+
 function checkVecteur(userInput, correctX, correctY, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
-  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+  if (entoureParParentheses(nettoye)) {
     nettoye = nettoye.slice(1,-1);
   }
   const parties = nettoye.split(/;/);
@@ -1765,7 +1777,7 @@ function checkVecteur(userInput, correctX, correctY, vars) {
 
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
-  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+  if (entoureParParentheses(nettoye)) {
     nettoye = nettoye.slice(1,-1);
   }
   const parties = nettoye.split(';');
@@ -1791,7 +1803,7 @@ function checkPaire(userInput, correctA, correctB, vars) {
 
 function checkTriplet(userInput, correctA, correctB, correctC, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
-  if (nettoye.startsWith('(') && nettoye.endsWith(')')) {
+  if (entoureParParentheses(nettoye)) {
     nettoye = nettoye.slice(1,-1);
   }
   const parties = nettoye.split(';');
@@ -2803,7 +2815,7 @@ function probaLabelSVG(xa, ya, xb, yb, proba, fontSize, dir) {
   const m = /^(-?)([^/]+)\/(.+)$/.exec(proba);
   if (m) {
     let den = m[3];
-    if (den.startsWith('(') && den.endsWith(')')) den = den.slice(1, -1);
+    if (entoureParParentheses(den)) den = den.slice(1, -1);
     const num = m[1] + m[2];
     // rendu en vrai LaTeX (MathJax, via foreignObject) plutot qu'un num/barre/denominateur dessine
     // a la main en <text> SVG -- illisible, surtout une fois zoome (bug signale le 2026-09-22,
