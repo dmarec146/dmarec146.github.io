@@ -2143,6 +2143,75 @@ de changer ce réglage sans qu'il en reparle.
   une question, aucune lettre affichée sur ces cartes, nombre de
   questions affichées égal au nombre d'exercices générés, aucune erreur
   console (contrôle visuel sur la fiche 21, 5 questions seules).
+
+  **Fiches 11 à 15 faites en autonomie à la suite (26/09/2026)** (David :
+  « fait les 5 prochaines fiches en autonomie. Je vérifierai
+  ensuite ! »). Outillage commun : script
+  `outil-fiche.js` (scratchpad de session) qui supprime un item en
+  isolant son bloc `{ … }` (un seul `ex.push` par bloc exigé),
+  renomme des id en passant par des id temporaires (pas de collision),
+  supprime/renumérote titres et grilles, reconstruit `groupes` depuis
+  l'ordre des id dans `genererExercices()` et vérifie que les lettres
+  suivent la position. Chaque remplacement exige un nombre exact
+  d'occurrences, sinon rien n'est écrit. Batterie de tests commune dans
+  le navigateur, sur chaque fiche : 500 tirages auto-cohérents ; pour
+  les fiches de dérivation, comparaison de chaque réponse stockée à une
+  dérivée numérique indépendante (différences finies sur `_fAscii`) ;
+  cinq cycles complets avec les vrais champs ; ordre du tableau = ordre
+  des grilles ; **balayage des énoncés affichés à la recherche de
+  défauts de mise en forme** (`+0`, `+-`, `--`, `1x`, `^{1}`,
+  `undefined`, …) sur 500 tirages.
+
+  **Titres en LaTeX** : dans les fiches traitées, toute notation
+  mathématique des titres passe en `\(…\)` (\(x\in\mathbb{R}\),
+  \(n\geqslant 2\), \(f\), \(I\), …). Fait aussi rétroactivement sur les
+  titres des fiches 9 et 10 (« Soit x ∈ ℝ », « 2ᵃ », « inconnues x et
+  y », « fonction f ») pour la cohérence. Piège rencontré : un premier
+  passage via `node -e` dans le shell a mangé les barres obliques
+  inverses (titres affichant `(xinmathbb{R})`), réparé aussitôt avec un
+  script en fichier utilisant `String.raw` — à retenir : ne jamais
+  passer de LaTeX par une chaîne de commande shell.
+
+  *Fiche 11 (cahier 3, Dérivation et exponentielle I) : 58 → 34
+  questions, 15 → 10 groupes.*
+  - Automatismes 11.1/11.2/11.3 (4+4+4) → 2+2+2 : trois sujets
+    distincts (fractions en \(n\), puissances \(2^a3^b\), radicaux).
+    11.1 garde a) (somme de trois fractions) et d) (dénominateur commun
+    à factoriser, le plus complet) ; 11.2 garde a) (produit) et c)
+    (différence à factoriser) — b) même technique que c), d) statique
+    et cumulant tout ; 11.3 garde b) et c), les deux seuls qui
+    répondent vraiment au titre (dénominateur sans radical).
+  - 11.4 (6) → 4 : a) et b) étaient un doublon exact ; e)
+    (demi-somme) couverte par f) (combinaison de deux exponentielles).
+  - 11.5 + 11.6 (titre identique, 3+3) → 11.5, 4 : 5a, 5b, 5c + 6b
+    (seul à faire intervenir \(n\)) ; 6a ≈ 5a, 6c cumule.
+  - 11.7/11.8/11.9 « Exponentielles et produits (I)/(II)/(III) »
+    (2+4+4) → 11.6, 4 : 7a (produit de deux expressions en
+    exponentielle), 8a (\(x\exp(px)\), classique), 8d (racine carrée),
+    9a (polynôme × exponentielle).
+  - 11.10 « quotients » (4) → 11.7, inchangée.
+  - 11.11 « Équation de tangente (I) » (QCM, 4) + 11.12 « (II) »
+    (équation à écrire, 4) → 11.8, les 4 de l'ancien 11.12 : même
+    compétence, la version QCM en est la forme plus facile. « (sous la
+    forme y=ax+b) » retiré des 4 énoncés (déjà dans le titre, « équation
+    réduite », et dans la bulle d'aide — même décision que 8.6).
+  - 11.13 « Variations » (QCM, 4) → 11.9, inchangée sauf options en
+    LaTeX (« \(f\) est croissante sur \(I\) »).
+  - 11.14 + 11.15 « Composée (I)/(II) » (4+4) → 11.10, 4 : 14a, 14c,
+    15a, 15c.
+  - **Défauts préexistants corrigés** : (1) ancien 11.10 c) (quotient) :
+    quand \(p<0\), la réponse stockée contenait `(…)*-2*exp(-2x)` ; le
+    calcul restait juste mais la conversion en LaTeX perdait la
+    multiplication, si bien que le corrigé affiché (« Voir toutes les
+    réponses ») montrait une soustraction, donc une formule fausse
+    (échec du cycle de test 8 fois sur 15) — terme réécrit avec le signe
+    explicite ; (2) ancien 11.12 a) affichait « \(4\exp(3x)+0\) » quand
+    la constante tirée valait 0 ; (3) ancien 11.15 c) affichait
+    « \(\dfrac{x-0}{x^2+2}\) » — constante désormais non nulle. Les deux
+    derniers trouvés par le balayage automatique des énoncés.
+  - Vérifié : 12 000 dérivées comparées aux différences finies (0
+    écart), 0 échec sur 500 tirages, 34/34 sur 5 cycles complets, ordre
+    OK, balayage d'affichage vide, rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
