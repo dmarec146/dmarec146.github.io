@@ -2887,6 +2887,40 @@ de changer ce réglage sans qu'il en reparle.
     « (a;b;c) », « a;b;c »), balayage de 3 000 tirages vide (options
     comprises, correction affichée comprise), aucun débordement, rendu
     contrôlé à l'écran.
+
+  *Fiche 27 (cahier 10, Logique) : 48 → 31 questions, 15 → 10 groupes.*
+  Fiche **statique** (tableau d'exercices figé, pas de randomisation —
+  voulu, cf. audit du 04/09 ; titres « Entraînement » au lieu de
+  « Calcul » : outil adapté). Le code contient un appel à
+  `genererExercices()` qui n'existe pas dans la page, mais il n'est
+  jamais atteint (pas de bouton « Nouvelle fiche ») : laissé tel quel.
+  - Automatismes 27.1 (6) + 27.2 (4) → 3+3 : développements a), d)
+    (coefficient fractionnaire), e) (produit de quatre facteurs) ;
+    fractions a), c), d) (retirée celle dont la réponse est un quotient
+    de deux polynômes de degré 3).
+  - **Fusion** : 27.3, 27.4, 27.5 avaient **le même titre** → une
+    section de 4, une par famille (« et », « ou », implication,
+    quantificateur ; deux vraies, deux fausses). **Défaut préexistant
+    corrigé** : ce titre demandait « Répondez par oui ou non » alors
+    que la correction n'acceptait que vrai/faux (« oui » compté faux) →
+    titre « vraies ou fausses ? », et la correction accepte désormais
+    aussi « oui »/« non ».
+  - **Fusion** : 27.8 + 27.9 (même titre) → 4 (retiré
+    « européen/français », même structure que « rectangle/carré »).
+  - **Fusion** « Négation de proposition quantifiée (I)/(II)/(III) » →
+    une section de 4 (toutes gardées) ; l'énoncé du (I), qui était en
+    trois paragraphes au-dessus d'une question vide, passe dans la
+    question ; « Donner la négation de » ajouté aux questions du (II).
+  - Réduits : négations de phrases 5 → 3 (les deux « la fonction f »
+    retirées) ; négations quantifiées (QCM) 4 → 3 ; vocabulaire 3 → 2.
+    Gardés : 27.7 (2), 27.9 avancé (3, la c) dépend des deux autres).
+  - \(P\), \(Q\) en LaTeX dans les énoncés et les options.
+  - Mise en page : 27.7 et 27.9 c) débordaient → `pleineLargeur`
+    (même mécanisme que fiches 21 et 23), aussi pour le groupe des
+    négations aux énoncés longs.
+  - Vérifié : 31/31 (réponse attendue saisie dans le vrai champ),
+    « oui »/« non » acceptés à bon escient, 0 erreur MathJax, aucun
+    débordement, ordre des cartes conforme, rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
