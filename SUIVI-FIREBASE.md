@@ -2805,10 +2805,45 @@ de changer ce réglage sans qu'il en reparle.
     reconnaît une borne de carré entier et l'écrit \(2\sqrt{2}\) (testé
     avant l'approximation fractionnaire). La correction elle-même
     acceptait déjà « sqrt(8) ».
-  - Vérifié : 39/39 sur 13 cycles complets (intervalles saisis comme un
+  - Vérifié : 39/39 sur 8 cycles complets (intervalles saisis comme un
     élève, « ]-inf;-sqrt(8)[U]sqrt(8);+inf[ »), balayage de 2 000
     tirages vide (dont bornes décimales dans la correction), aucun
     débordement, rendu contrôlé à l'écran.
+
+  *Fiche 25 (cahier 9, Produit scalaire I) : 29 → 25 questions, 12 → 9
+  groupes.* Fiche déjà courte : peu de réductions, surtout des fusions
+  et des corrections.
+  - Automatismes (méli-mélo, 5 QCM) : inchangés (déjà sous 6).
+  - **Fusions** : « orthogonaux : oui ou non ? » en deux groupes (dont
+    un où la réponse était toujours « oui ») → une section de 4
+    (fractions, radicaux, puissances de 10, le cas « non ») ; « Trouver
+    le réel \(x\) » + « Trouver les deux réels \(x\) » → une section de
+    4, **réponses toutes en ensemble** (comme en fiche 21).
+  - 25.6 retiré : exactement le type de 25.7 (point + vecteur normal,
+    coordonnées entières, moins intéressant que les versions
+    fractionnaire et radicale gardées) ; sa mise à jour de titre
+    dynamique retirée, les numéros codés en dur dans les gabarits des
+    titres dynamiques (25.8 → 25.5, 25.9 → 25.6, 25.11 → 25.8) mis à
+    jour.
+  - Étiquettes de droites (d2)…(d7) supprimées (jamais réutilisées,
+    et la numérotation aurait eu des trous) ; \((D)\), \((AB)\),
+    \((BC)\), \(A\), \(C\), \(ABDC\), \(f\) en LaTeX.
+  - **Défauts préexistants corrigés** : fraction « \(\frac82\) »
+    (25.3 b) ; « 1x », « 0x+0 » et propositions non simplifiées alors
+    que la consigne demande « l'écriture la plus simple » (25.1 d),
+    tirage refait : réponse irréductible, sans terme nul, trois
+    propositions distinctes) ; racine double affichée « {−1;−1} » et
+    « 1x » (25.3 d) ; options de QCM en double (25.1 a et e) ; ensembles
+    proposés avec élément répété (« {2;2} », ~10 % des tirages) et
+    fractions en « −1/2 » séparées par une virgule (25.1 b) → fractions
+    LaTeX, point-virgule.
+  - Vérifié : 25/25 sur 18 cycles complets, balayage de 5 000 tirages
+    vide (« +0 », « 1x », « 0x », fractions réductibles ou en barre
+    oblique, options en double, ensembles à élément répété), aucun
+    débordement, rendu contrôlé à l'écran.
+
+  **Bilan du lot 21-25** : 82+67+52+74+29 = 304 → 55+44+31+39+25 = 194
+  questions.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
