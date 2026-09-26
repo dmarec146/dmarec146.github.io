@@ -2628,6 +2628,69 @@ de changer ce réglage sans qu'il en reparle.
     après** la correction (comparé sur une copie de l'ancienne version
     servie temporairement) : ce sont des formes qu'un élève ne peut pas
     produire, pas un défaut de la correction.
+
+  **Fiches 21 à 25, 26/09/2026** (David : « continue les 5 prochaines »),
+  même outillage et même batterie de tests que pour 16-20.
+
+  *Fiche 21 (cahier 7, Généralités sur les vecteurs) : 82 → 55
+  questions, 23 → 19 groupes.*
+  - Automatismes 21.1 (6) + 21.2 (6) → 3+3 : 21.1 garde la différence
+    au carré, le produit conjugué et la forme composée (retirés le carré
+    d'une somme, le plus simple, et deux quasi-doublons) ; 21.2 garde
+    a), c) (factorisation de \(1-q^2\)) et e) (carré au dénominateur).
+  - **Fusions** : « Équations vectorielles (I) » + « (II) » → une seule
+    section de 4 exemples (deux à solution unique, deux à deux
+    solutions) ; la consigne « déterminer l'ensemble des valeurs du réel
+    \(\alpha\) pour lesquelles \(\vec{u}=\vec{0}\) » est posée une fois
+    dans l'introduction et **toutes les réponses sont désormais des
+    ensembles** (bulle d'aide unique ; « {2} », « 2 » et « x=2 » restent
+    acceptés). 21.8 « simplifications » + 21.10 (même compétence :
+    Chasles pur, résultat nul) → 4 exemples. « Exprimer un vecteur en
+    fonction d'un autre (II) » (deux groupes portaient ce même titre) +
+    « (III) » → une seule section de 4 exemples : un par technique
+    (coefficients fractionnaires, équation à deux membres, décomposition
+    sur \(\overrightarrow{AB}\), \(\overrightarrow{AC}\), équation entre
+    points). Le « (I) » est resté à part dans la section Chasles : ce
+    n'est pas de la colinéarité mais une simplification à paramètre
+    \(\alpha\) ; retitré « Exprimer un vecteur en fonction de
+    \(\overrightarrow{AB}\) », 4 → 3.
+  - Réduits : combinaisons sur quadrillage 6 → 4 (\(\vec{w}\) et
+    \(\vec{p}\) restent sur la figure, utilisés par les combinaisons
+    gardées) ; exemples de Chasles 4 → 3 (deux chaînes de longueur 2) ;
+    \(\vec{u}\) en fonction de \(\overrightarrow{AB}\),
+    \(\overrightarrow{AC}\) 4 → 3 ; simplifications à coefficients
+    4 → 3 ; colinéarité sur figure 4 → 3 (deux questions avaient la même
+    réponse) ; avancé « \(\vec{u}\) en fonction de \(\vec{v}\) et
+    \(\alpha\) » 4 → 3. Gardés entiers : 21.11 (\(\alpha\) tel que
+    \(\vec{u}=\vec{0}\), 3), propriété du milieu (4), centre de gravité
+    (4, théorèmes fixes), les deux problèmes à contexte.
+  - Consignes factorisées : « Déterminer (le réel) α tel que » retiré
+    des énoncés (déjà dans l'introduction, et α était en texte brut) ;
+    introduction répétée dans 21.18 a) retirée ; définition des milieux
+    \(A'\), \(B'\), \(C'\) remontée de 21.19 b) dans l'introduction (c)
+    et d) s'en servaient sans l'avoir) ; « Si » orphelin (sans « alors »)
+    retiré de 21.12 b) ; « … » final retiré ; « Simplifier » ajouté à
+    21.18 c) et d), qui n'avaient aucune consigne.
+  - Noms de points en LaTeX partout (introductions, contextes
+    dynamiques, 21.3, 21.8) : \(ABC\), \([AB]\), \(G\), \(M\)…
+  - Conteneurs de figure en double (`graphique-21-4`, `-5`, `-15`
+    présents deux fois, le second toujours vide) : doublons retirés.
+  - **Défauts de tirage préexistants corrigés** : combinaison vectorielle
+    nulle possible en 21.4 c)/d) (vecteurs de la figure parfois
+    colinéaires) → retirage ; « \(\alpha(\alpha+0)\) » en 21.6 b) ;
+    « \(+0\overrightarrow{IA}\) » en 21.18 d) ; « \(0\overrightarrow{CG}\) »
+    en 21.10 a).
+  - **Mise en page** : 21.12 b), c) et 21.17 c) débordaient de leur
+    carte (50 à 94 px à 728 px de large). Nouvelle option d'item
+    `pleineLargeur` : si une question d'un groupe la porte, toutes les
+    cartes du groupe prennent la largeur entière (classe
+    `question-seule`, sans toucher aux lettres). Activée pour 21.12 et
+    21.17.
+  - Vérifié : 0 échec sur 2 000 tirages (réponse attendue soumise à la
+    vraie correction, combinaisons de vecteurs comprises), 55/55 sur
+    6 cycles complets dans l'interface, ordre des cartes = ordre du
+    tableau, balayage des énoncés vide, aucun débordement sur 8 tirages,
+    rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
