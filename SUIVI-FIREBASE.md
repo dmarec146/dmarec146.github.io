@@ -2345,6 +2345,48 @@ de changer ce réglage sans qu'il en reparle.
     complet, balayage énoncés et contextes vide, cohérence
     contexte/réponse recalculée à la main sur 14.6 (\(u_6=10\),
     \(r=8\) ⇒ \(u_1=-30\), \(u_{101}=770\)), rendu contrôlé à l'écran.
+  - Retouche ultérieure (même jour, trouvée par le balayage des
+    fractions de la fiche 15) : 14.2 b) (équation) pouvait afficher des
+    coefficients réductibles comme \(\frac{3}{6}\), une simplification
+    préalable sans rapport avec la question → tirés irréductibles. Les
+    fractions réductibles de 14.1 (« écrire sous forme de fraction
+    irréductible ») sont laissées : les réduire fait partie de
+    l'exercice (même critère qu'en Seconde, fiche 3).
+
+  *Fiche 15 (cahier 4, Suites géométriques) : 38 → 28 questions, 14
+  groupes (aucun groupe supprimé).* Fiche déjà compacte (2 questions
+  par suite pour l'essentiel) : la réduction porte sur les
+  automatismes.
+  - Automatismes 15.1 (4) + 15.2 (6) + 15.3 (2) + 15.4 (2) = 14 →
+    2+2+1+1 : 15.1 garde a) (carré) et d) (forme canonique à
+    développer) ; 15.2 garde b) (\((A-Bx)^2-C^2\)) et f) (facteur commun
+    binôme) ; 15.3 (images) garde \(f\left(\frac{p}{q}\right)\) ; 15.4
+    (antécédents) garde celui de \(-\frac{p}{q}\) (celui de 0 est
+    immédiat) — paragraphe passé au singulier (« Déterminer
+    l'antécédent de : »).
+  - 15.11 (4) → 2 : \(q\) et \(u_{3n}\) (sous-suite, compétence
+    distincte de celles de 15.8/15.9, qui demandent déjà \(q\) et
+    \(u_0\)).
+  - 15.5 : « Calculer » factorisé dans l'énoncé de la suite, comme en
+    fiche 14.
+  - 15.12 et 15.13 (étapes dépendantes, « Donner alors », « question
+    précédente ») : inchangés (règle 3bis). Le reste inchangé.
+  - **Défauts préexistants corrigés** : (1) 15.2 f) (devenu b) n'avait
+    **aucun délimiteur LaTeX** alors que `texteLibre` est vrai : son
+    expression s'affichait en texte brut ; (2) le même item pouvait
+    afficher des facteurs réduits à un monôme ou une constante
+    (« \((4x)\) », « \((5)\) ») → coefficients non nuls ; (3)
+    « \(4u_n+-3\) » dans l'énoncé de 15.12 ; (4) fractions affichées
+    réductibles : « \(\frac{4}{2}\) » en 15.1 b), « \(u_1=\frac{4}{4}\) »
+    dans l'énoncé de 15.13.
+  - Nouveau contrôle ajouté à la batterie à cette occasion : balayage
+    des `\dfrac{p}{q}` affichés réductibles, relancé sur les fiches 11 à
+    15 (seul 14.2 b) en est ressorti, voir ci-dessus).
+  - Vérifié : 0 échec sur 2 000 tirages, 28/28 sur 5 cycles complets,
+    balayages vides, rendu contrôlé à l'écran.
+
+  **Bilan du lot 11-15** : 58+56+62+44+38 = 258 → 34+37+29+27+28 = 155
+  questions. Rien n'est poussé : en attente de la vérification de David.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
