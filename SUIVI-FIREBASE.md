@@ -2106,6 +2106,29 @@ de changer ce réglage sans qu'il en reparle.
   acceptée avec et sans accolades, aucune erreur MathJax ni console,
   capture d'écran de la section équations/inéquations sur un chargement
   neuf.
+
+  **Même jour, mise en page du bloc « Calculs plus avancés » (demande de
+  David : « revoir la mise en page pour les blocs des calculs
+  avancés »), fiche 10 uniquement pour l'instant** : une question seule
+  dans son groupe s'affichait avec un « a) » inutile et dans une carte
+  d'une demi-largeur (grille à 2 colonnes dès 600 px), ce qui écrasait
+  les énoncés longs sur 3 ou 4 lignes à côté d'une moitié vide.
+  Corrigé dans `construireGrilles()` : classe `question-seule` ajoutée
+  quand le groupe n'a qu'une question, et lettre vide dans ce cas. CSS :
+  `.question-seule { grid-column: 1 / -1; }` (dans le bloc ≥ 600 px),
+  `.question-seule .q-mathfield { max-width: 340px; }` (sinon le champ
+  MathLive, renvoyé à la ligne, s'étirait sur toute la largeur),
+  `.q-lettre:empty { display: none; }` (sinon l'emplacement vide de la
+  lettre décalait le texte). Concerne les 6 questions seules de la
+  fiche (10.4, 10.8, 10.10 à 10.13). Au passage, `sansEgal:true` sur
+  10.12 (« … sous la forme \(\exp(\ldots)\) = ») et sur 10.9 a-d
+  (« À quelle courbe correspond … ? = ») : le « = » ajouté
+  automatiquement n'a pas de sens après une phrase ou une question.
+  Vérifié : 6 cartes pleine largeur sans lettre, 32/32 réponses
+  toujours acceptées, captures d'écran. **Même défaut présent dans 23
+  autres fiches de Première** (toutes celles qui ont au moins une
+  question seule ; la fiche 6 retire déjà la lettre mais garde la
+  demi-largeur) : non corrigé, en attente de l'accord de David.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
