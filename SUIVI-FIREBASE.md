@@ -2267,6 +2267,44 @@ de changer ce réglage sans qu'il en reparle.
     l'injection programmée d'un `\displaystyle\sum` dans MathLive qui
     ne se relit pas (limite de test déjà connue, question inchangée).
     Rendu contrôlé à l'écran.
+
+  *Fiche 13 (cahier 4, Généralités sur les suites) : 62 → 29
+  questions, 18 → 15 groupes.* Structure particulière : chaque groupe
+  13.4 à 13.16 porte **sa propre suite** dans un paragraphe d'énoncé
+  (`texte-13-N`, régénéré par `mettreAJourTextesAvances()`), et ses 4
+  questions demandent les termes successifs (\(u_0\) à \(u_3\), ou
+  \(u_1\) à \(u_4\)). Deux suites différentes ne peuvent pas partager
+  une grille : même traitement que les fiches 8.6-8.8 (2 questions par
+  contexte partagé), plus suppression des suites qui répètent un type
+  déjà présent.
+  - Automatismes 13.1 (3) + 13.2 (3) + 13.3 (2) → 3+2+1 : 13.3 a) et
+    b) étaient deux tirages du même générateur (gardé un seul, titre
+    passé au singulier) ; 13.2 b) (\(\frac{x}{a}+\frac{x}{b}\)) écarté,
+    le plus simple des trois.
+  - Suites explicites 13.4 à 13.8 : 2 questions chacune. 13.4 et 13.5 :
+    \(u_1\) et \(u_3\) (\(u_0\) du polynôme = son terme constant).
+    13.6 garde \(u_{n+1}\) et \(u_n+1\) (le contraste est le piège
+    visé). 13.7 : \(u_{n+1}\) et \(u_{2n+1}\). 13.8 : \(v_{2n}\) et
+    \(v_{2n+1}\) (contraste de parité).
+  - Suites récurrentes 13.9 à 13.14 (6 suites × 4 termes = 24 questions
+    de calcul de termes) → 3 suites de types distincts, 2 termes
+    (\(u_2\), \(u_4\)) chacune : 13.9 affine, 13.11 \((n+k)u_n\) →
+    13.10, 13.13 \(\sqrt{u_n^2+\dots}\) → 13.11. Supprimées : 13.10
+    (\(-u_n+B\), cas particulier d'affine), 13.12 (\(B^nu_n\), même
+    idée que \((n+k)u_n\)), 13.14 (\((n+\frac12)u_n\), idem avec des
+    fractions). Leurs paramètres (`g10`, `g12`, `g14`) et leurs lignes
+    dans `mettreAJourTextesAvances()` retirés, paragraphes
+    `texte-13-N` renumérotés dans le HTML et dans la fonction.
+  - Suites avec paramètre 13.15, 13.16 → 13.12, 13.13, 2 termes chacune
+    (\(v_2\), \(v_4\) ; \(w_3\), \(w_4\) — \(w_1\) valait
+    simplement \(w_0\)).
+  - Avancés 13.17, 13.18 → 13.14, 13.15, inchangés.
+  - **Défauts préexistants corrigés** (trouvés par le balayage) :
+    « \((-1)^1\) » en 13.1 c), « \(n^2+0\) » en 13.15 b),
+    « \(u_{n+1}=3u_n+0\) » dans l'énoncé de 13.9.
+  - Vérifié : 0 échec sur 500 puis 2 000 tirages, 29/29 sur 5 cycles
+    complets, ordre OK, balayage des énoncés **et des paragraphes de
+    contexte** vide, rendu contrôlé à l'écran sur un chargement neuf.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
