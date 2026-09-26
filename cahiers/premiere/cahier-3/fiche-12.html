@@ -301,6 +301,7 @@ window.MathJax = {
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .q-lettre:empty { display: none; }
   .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
   .q-enonce { font-size: 15px; flex: 1 1 auto; min-width: 140px; }
   .q-qcm-options {
@@ -581,6 +582,8 @@ window.MathJax = {
       gap: 14px 20px;
     }
     .q-input { width: 150px; flex: 0 0 150px; }
+    .question-seule { grid-column: 1 / -1; }
+    .question-seule .q-mathfield { max-width: 340px; }
     .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
     .btn-principal, .btn-secondaire { width: auto; }
     .mode-label { width: auto; margin-right: 4px; }
@@ -2596,9 +2599,9 @@ function construireGrilles() {
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
-      div.className = 'question';
+      div.className = indices.length === 1 ? 'question question-seule' : 'question';
       div.id = 'q-' + idx;
-      const lettre = lettresEtendues[pos] || '';
+      const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
@@ -2608,7 +2611,7 @@ function construireGrilles() {
           ).join('')}</div>`
         : '';
       div.innerHTML = `
-        <span class="q-lettre">${lettre})</span>
+        <span class="q-lettre">${lettre ? lettre + ')' : ''}</span>
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}

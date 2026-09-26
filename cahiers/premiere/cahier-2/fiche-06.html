@@ -301,6 +301,7 @@ window.MathJax = {
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .q-lettre:empty { display: none; }
   .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
   .q-enonce { font-size: 15px; flex: 1 1 auto; min-width: 140px; }
   .q-qcm-options {
@@ -581,6 +582,8 @@ window.MathJax = {
       gap: 14px 20px;
     }
     .q-input { width: 150px; flex: 0 0 150px; }
+    .question-seule { grid-column: 1 / -1; }
+    .question-seule .q-mathfield { max-width: 340px; }
     .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
     .btn-principal, .btn-secondaire { width: auto; }
     .mode-label { width: auto; margin-right: 4px; }
@@ -2479,7 +2482,7 @@ function construireGrilles() {
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
-      div.className = 'question';
+      div.className = indices.length === 1 ? 'question question-seule' : 'question';
       div.id = 'q-' + idx;
       // Un groupe reduit a une seule question n'a pas besoin de sa lettre a) : superflu.
       const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');

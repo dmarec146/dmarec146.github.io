@@ -2128,7 +2128,21 @@ de changer ce réglage sans qu'il en reparle.
   toujours acceptées, captures d'écran. **Même défaut présent dans 23
   autres fiches de Première** (toutes celles qui ont au moins une
   question seule ; la fiche 6 retire déjà la lettre mais garde la
-  demi-largeur) : non corrigé, en attente de l'accord de David.
+  demi-largeur) : ~~non corrigé, en attente de l'accord de David~~ →
+  **étendu à toutes les fiches de Première le même jour** (David :
+  « oui, applique à toutes les fiches »). Script Node sur les 27 autres
+  fiches, remplacements exigeant exactement une occurrence chacun.
+  Particularités : la fiche 13 contient deux définitions de
+  `construireGrilles()` (la première, ancienne, est masquée par la
+  seconde) — seule la dernière a été modifiée ; la fiche 19 avait déjà
+  sa propre version (`question-pleine-largeur`, portée depuis la
+  Seconde le 22/09) — seule la limite de largeur du champ MathLive y a
+  été ajoutée ; la fiche 6 retirait déjà la lettre. Vérifié : syntaxe
+  des 28 fiches, puis chargement réel de chacune dans le navigateur
+  (dans un `iframe`) : autant de cartes pleine largeur que de groupes à
+  une question, aucune lettre affichée sur ces cartes, nombre de
+  questions affichées égal au nombre d'exercices générés, aucune erreur
+  console (contrôle visuel sur la fiche 21, 5 questions seules).
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
