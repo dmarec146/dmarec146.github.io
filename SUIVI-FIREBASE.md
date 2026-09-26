@@ -2530,6 +2530,63 @@ de changer ce réglage sans qu'il en reparle.
     vide, **aucun SVG « NaN »** au chargement (bug différé de cette
     fiche, voir mémoire : non reproduit ici, code des arbres non
     touché), rendu contrôlé.
+
+  *Fiche 20 (cahier 7, Droites du plan) : 50 → 38 questions, 21 → 19
+  groupes.* Un contexte par groupe (`texte-20-N`, ici construit avec
+  des variables `g5`, `g12`… et non `p5` : lignes retirées à la main).
+  - Automatismes 20.1 (4) + 20.2 (4) → 3+3 : retirés 20.1 d) (quotient
+    de radicaux, cumule) et 20.2 a) (le plus simple) ; « Résoudre »
+    retiré des questions (déjà dans le titre).
+  - Supprimés : 20.5 « Droites passant par deux points (II) »
+    (coordonnées fractionnaires, entre 20.4 entiers et 20.6 radicaux ;
+    le titre de 20.4 perd son « (I) ») et 20.12 (intersection avec une
+    droite verticale, cas trivial de l'intersection générale).
+  - Réduits : 20.6 (radicaux) 3 → 2 ; détermination graphique 4 → 3
+    (l'équation cartésienne et la réduite de la même droite : gardée la
+    réduite) ; calculs de coordonnées 4 → 2 ; parallèles 2 → 1 ;
+    paramètres (II) 2 → 1 (la question retirée avait toujours pour
+    réponse 0) ; intersections avec les axes 3 → 2 (les deux axes
+    étaient symétriques).
+  - 20.7 d) (droite horizontale) demandait « sous la forme y=k (donner
+    juste k) » : contraire à la règle « une droite s'écrit y=mx+p »
+    (mémoire) → réponse attendue sous forme d'équation réduite, comme
+    les autres droites. « , sous la forme y=ax+b » retiré de 6 énoncés
+    (bulle d'aide `formeYax`). « (d1) », « (d2) » des énoncés passés en
+    \((d_1)\), \((d_2)\) comme dans les contextes ; point
+    « (x1,y1) » de 20.9 en LaTeX et au point-virgule.
+  - **Bug de correction préexistant corrigé (important)** :
+    `checkPointCoordonnees` retire les parenthèses du point, puis
+    `checkPaire` retirait à nouveau des « parenthèses extérieures » dès
+    que la chaîne commençait par « ( » et finissait par « ) », **sans
+    vérifier qu'elles se correspondent**. Pour une réponse comme
+    `((-42m-20)/(m^2-8m-4);(5m+2)/(m^2-8m-4))`, il restait
+    `-42m-20)/(…;(5m+2)/(m^2-8m-4` : **réponse juste refusée**, y compris
+    la réponse exacte attendue. Touchait ici l'intersection à
+    paramètre \(m\) et l'intersection avec radicaux (première
+    coordonnée écrite avec une parenthèse). Nouvelle fonction
+    `entoureParParentheses(s)` (vraie seulement si la parenthèse
+    ouvrante initiale se referme sur le dernier caractère), utilisée par
+    `checkVecteur`, `checkPaire` et `checkTriplet`. **Le même code
+    fautif existe à l'identique dans 27 fiches de Première** (toutes
+    sauf la 4) : non corrigé ailleurs, en attente de l'accord de David.
+  - **Défauts d'affichage préexistants corrigés** : automatismes 20.1 et
+    20.2 avec fractions réductibles et signe dans le numérateur
+    (« \(\frac{-9}{9}\) », « \(-\frac{-6}{5}\) ») → irréductibles, signe
+    devant, facteur négatif entre parenthèses ; « \(\frac{6}{9}\) » en
+    20.7 a) ; « \(a-0\) », « \(a--1\) » en 20.16 b) ; dans les
+    contextes : « \(x^2+1x+1\) », « \(-6x+0\) » (parabole),
+    « \((y+0)^2\) » (cercle), « \(mx-1y\) » et « \(y+0=0\) » (droites à
+    paramètre), « \(+0=0\) » (droites à radicaux). Équivalence
+    numérique énoncé/réponse revérifiée sur les automatismes retouchés
+    (180 comparaisons, 0 écart).
+  - Vérifié : 0 échec sur 2 000 tirages, 38/38 sur 8 cycles complets
+    (vecteur, équation cartésienne, point, équation réduite compris),
+    balayage énoncés et contextes vide, aucun débordement (fiches 19 et
+    20), graphique cohérent avec les réponses attendues sur un
+    chargement neuf.
+
+  **Bilan du lot 16-20** : 46+54+37+75+50 = 262 → 30+41+31+53+38 = 193
+  questions.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
