@@ -2486,6 +2486,50 @@ de changer ce réglage sans qu'il en reparle.
     les réponses Π/Σ vérifiées directement : formes équivalentes
     (autre nom de variable, ordre inversé, indice décalé écrit
     \(x_{k-1}\)) acceptées, formes fausses refusées.
+
+  *Fiche 19 (cahier 6, Probabilités) : 75 → 53 questions, 24 → 23
+  groupes.* Fiche la plus chargée en dépendances (tableaux
+  `table-19-N`, arbres SVG `arbre-19-N`, titres et paragraphes
+  régénérés par `mettreAJourTextesAvances()`) : le moins de groupes
+  possible supprimés, réduction surtout à l'intérieur des groupes. Les
+  identifiants internes (`table-`, `arbre-`, `titre-`, `texte-`) gardent
+  leur ancien numéro ; seuls les numéros **affichés** changent, y
+  compris ceux écrits en dur dans les gabarits des cinq titres
+  dynamiques.
+  - Automatismes : 19.1 et 19.2 (même titre, « Calculer : », 3+2) → un
+    seul groupe de 4 (produit de décimaux, produit de fractions,
+    \(p\,q+(1-p)\,r\), somme pondérée), + 19.3 (2) → 19.2 : total 6.
+  - Tableaux, arbres et problèmes concrets (6, 6, 6, 6, 5, 4, 4
+    questions) → 3 chacun, en couvrant des notions complémentaires :
+    tableau de probabilités \(P(\overline{A})\), \(P(A\cup B)\),
+    \(P(\overline{A}\cap B)\) ; tableau d'effectifs \(P(B)\),
+    \(P(A\cap B)\), \(P(\overline{A}\cap\overline{B})\) ; ski/randonnée :
+    intersection, réunion, \(P_R(S)\) ; arbre : \(P(C\cap\overline{D})\),
+    \(P(D)\) (probabilités totales), \(P_D(C)\) (inversion) ; musique :
+    \(P(J\cap S)\), \(P(S)\), \(P_S(J)\) ; arbre à trois branches :
+    \(P(C)\), \(P(D)\), \(P_D(A)\) ; arbre en \(x\) : les trois
+    dernières. Tableau en \(n\) (4) → 2 : les deux conditionnelles.
+  - Conditionnelles (II) (3) et les deux groupes « indépendants » (3+3)
+    → 2 chacun ; (I) et (II) gardées séparées (données différentes dans
+    le titre dynamique).
+  - **Consigne factorisée** : dans 14 groupes dont l'intro dit déjà
+    « Calculer les probabilités suivantes » ou « Calculer : », le mot
+    « Calculer » était répété en tête de chaque question (51
+    occurrences retirées), ainsi que « , sous forme de fraction
+    irréductible » (4). « Simplifier » idem en 19.2. Deux questions
+    recopiaient mot pour mot le contexte du groupe (ancien 19.21 a :
+    « Soit \(a\in]0,1[\). Calculer P(B) » ; ancien 19.24 a : phrase
+    entière du titre répétée) → réduites à \(P(B)\), \(E(X)\).
+  - Math en texte brut passé en LaTeX : « Calculer m pour que
+    E(X+m)=0 » (→ « Déterminer \(m\) pour que \(E(X+m)=0\) »),
+    « P(B) », « E(X) », « A et B » (HTML et gabarits JS), « variable
+    aléatoire X », \(p\), \(a\), \(n\in\mathbb{N}^*\), \(x>0\) ;
+    intervalles \(]0;1[\) au point-virgule.
+  - Vérifié : 0 échec sur 500 tirages, 53/53 sur 5 cycles complets,
+    ordre OK, balayage des énoncés, titres, paragraphes et tableaux
+    vide, **aucun SVG « NaN »** au chargement (bug différé de cette
+    fiche, voir mémoire : non reproduit ici, code des arbres non
+    touché), rendu contrôlé.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
