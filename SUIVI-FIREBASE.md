@@ -2305,6 +2305,46 @@ de changer ce réglage sans qu'il en reparle.
   - Vérifié : 0 échec sur 500 puis 2 000 tirages, 29/29 sur 5 cycles
     complets, ordre OK, balayage des énoncés **et des paragraphes de
     contexte** vide, rendu contrôlé à l'écran sur un chargement neuf.
+
+  *Fiche 14 (cahier 4, Suites arithmétiques) : 44 → 27 questions,
+  15 → 14 groupes.* Même structure que la fiche 13 (une suite par
+  groupe, contexte `texte-14-N`).
+  - Automatismes 14.1 (4) + 14.2 (3) + 14.3 (4) → 2+2+2 : 14.1 garde
+    une somme et « entier − fraction » (b et c : doublons de signe) ;
+    14.2 garde a) (\(\frac{p}{q}x=C\)) et c) (inconnue des deux
+    côtés) ; 14.3 garde a) (carré égal à un non-carré, deux racines
+    irrationnelles) et d) (\((x-P)^2=(x-Q)^2\)).
+  - Premières suites 14.4 à 14.7 : 2 termes par suite ; 14.4 (\(u_0\)
+    donné) : \(u_3\), \(u_{100}\) ; 14.5 (\(u_1\) donné, décalage
+    \(n-1\)) : \(u_4\), \(u_{100}\) ; ancien 14.7 (\(u_K\) donné) →
+    14.6 : \(u_1\), \(u_{101}\). **Ancien 14.6 supprimé** (premier
+    terme fractionnaire : même calcul que 14.5, la difficulté ajoutée
+    n'étant que l'arithmétique des fractions, déjà en automatismes).
+  - Secondes suites (raison inconnue) : 14.8 → 14.7 garde \(r\) et
+    \(u_0\) ; 14.9 (termes fractionnaires, 2) → 14.8 inchangée.
+  - 14.10 à 14.15 → 14.9 à 14.14, inchangées (14.12 → 14.11 reste
+    figée, voir la note de la fiche dans la mémoire projet).
+  - **Consigne factorisée** : dans 14.4 à 14.8, chaque question
+    commençait par « Calculer » ; le mot passe une seule fois à la fin
+    du paragraphe de la suite (« … Calculer : »), comme dans la fiche
+    13, et les questions se réduisent à \(u_3\), \(r\), etc.
+  - **Défauts préexistants corrigés** : (1) 14.3 d) (« donner
+    l'ensemble des solutions ») attendait un nombre nu, `{…}` y était
+    refusé (même défaut que dans la fiche 10) → réponse au format
+    ensemble ; (2) « \(\frac{1x}{3}\) » en 14.2 c) ; (3)
+    « \((x-0)^2\) » en 14.3 d) ; (4) « \(5u_n+0\) » et « \(u_n-0\) »
+    dans l'énoncé de l'ancien 14.14.
+  - Note de test : dans cette fiche les réponses de type ensemble se
+    saisissent dans un champ MathLive. La forme `\left\{…\right\}`
+    produite par le corrigé ne se relit pas (`\{…\}` en ascii-math,
+    refusé), mais une **vraie frappe clavier** de « {3/2} » donne
+    `\lbrace3/2\rbrace` → `{3/2}`, accepté : vérifié en tapant
+    réellement dans le champ. Le test automatique injecte donc la
+    forme `\lbrace…\rbrace`.
+  - Vérifié : 0 échec sur 500 puis 2 000 tirages, 27/27 au cycle
+    complet, balayage énoncés et contextes vide, cohérence
+    contexte/réponse recalculée à la main sur 14.6 (\(u_6=10\),
+    \(r=8\) ⇒ \(u_1=-30\), \(u_{101}=770\)), rendu contrôlé à l'écran.
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
