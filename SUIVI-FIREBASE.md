@@ -2921,6 +2921,36 @@ de changer ce réglage sans qu'il en reparle.
   - Vérifié : 31/31 (réponse attendue saisie dans le vrai champ),
     « oui »/« non » acceptés à bon escient, 0 erreur MathJax, aucun
     débordement, ordre des cartes conforme, rendu contrôlé à l'écran.
+
+  *Fiche 28 (cahier 10, Théorie des ensembles) : 32 → 23 questions,
+  9 → 8 groupes.* Fiche statique, comme la 27.
+  - Automatismes 28.1 (4) + 28.2 (3) → 3+3 (retirée l'équation la plus
+    simple).
+  - Réduits : inéquations 4 → 3, appartenances 4 → 3 (retirées les plus
+    simples), inclusions paramétrées 4 → 3 (deux questions avaient la
+    même réponse et la même mécanique), intersections paramétrées
+    4 → 3. Cardinal gardé.
+  - **Fusion** « Inclusions d'intervalles (I)/(II) » → 4 (deux vraies,
+    deux fausses, dont les fractions étagées). **Même défaut qu'en
+    fiche 27** : le titre demandait « oui » ou « non », refusés par la
+    correction → titre « vraies ou fausses ? », « oui »/« non »
+    acceptés.
+  - 28.6 a) répétait la consigne du titre (« Soit a>0. Déterminer à
+    quelle condition… ») → retirée. Titres en LaTeX (\(x\), \(a>0\),
+    \(a\geqslant\cdots\), \(a\)) ; « \(A\) », « \(\text{Card}(A)\) »,
+    « \(A\), \(B\), \(C\) » en LaTeX dans le rappel.
+  - **Défaut préexistant corrigé** : la correction de l'appartenance à
+    bornes en \(\pi\) s'affichait en décimal (« ]1.237;1.412[ ») →
+    nouveau champ d'exercice `correctionLatex` (écriture exacte
+    \(\left]\frac{\pi}{2}-\frac13;\frac{5\pi}{9}-\frac13\right[\)),
+    prioritaire dans `formaterReponse`. La saisie « ]pi/2-1/3;…[ » était
+    déjà acceptée.
+  - Vérifié : 23/23 (intervalles saisis comme un élève), « oui »/« non »
+    acceptés, aucune correction en décimal, 0 erreur MathJax, aucun
+    débordement, rendu contrôlé à l'écran.
+
+  **Bilan du lot 26-28** : 63+48+32 = 143 → 45+31+23 = 99 questions.
+  **Les 28 fiches de Première sont simplifiées.**
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
