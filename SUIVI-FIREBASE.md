@@ -3417,6 +3417,40 @@ de changer ce réglage sans qu'il en reparle.
   pages. Syntaxe (`vm.Script`/`node --check`) sur les 3 fichiers modifiés,
   aucune erreur console.
 
+  **Retour de David le jour même, après un vrai test à 1 essai** : les
+  boutons de correction se réactivaient bien après la tentative (confirme
+  le mécanisme ci-dessus), mais **aucun message n'informait l'élève que
+  son essai unique venait d'être consommé** — silence complet, alors que
+  le cas « tentative refusée parce que déjà épuisée avant même de
+  commencer » (`etatAvant.bloque`) affichait bien sa pop-up. Cause : ce
+  cas-là (« c'est justement CETTE tentative qui vient d'épuiser le quota
+  ») ne déclenchait que la réactivation technique
+  (`Automatismes.actualiserVerrouille`), sans jamais prévenir l'élève —
+  angle mort du correctif précédent, qui ne traitait que la mécanique de
+  déblocage, pas le message qui doit l'accompagner.
+
+  Corrigé en ajoutant une seconde pop-up, distincte de la première (les
+  deux passent par un `if (etatAvant.bloque) {…} else if (…) {…}` : jamais
+  affichées ensemble) : dès que `etatApres.bloque` devient vrai après
+  l'écriture de la tentative EN COURS, message dédié — « C'était ta
+  dernière tentative autorisée pour ce devoir (« {titre} », {essaisUtilises}
+  /{nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais
+  consulter la correction, et continuer à t'entraîner librement. » — sur
+  `fiche.html` et `sujet-blanc.html`.
+
+  Vérifié en conditions réelles dans le navigateur, en simulant précisément
+  ce scénario (stub de `window.verifierEtatDevoirAutomatisme` renvoyant
+  `bloque:false` au premier appel puis `bloque:true` au second, reproduisant
+  fidèlement le code exact des deux pages plutôt qu'un raccourci) : la
+  pop-up « dernière tentative » s'affiche avec le bon texte et les bons
+  compteurs (1/1), le bouton se débloque en même temps, capture d'écran
+  confirmant un rendu propre ; scénario inverse (tentative déjà refusée,
+  `etatAvant.bloque` vrai dès le premier appel) revérifié séparément sur
+  `sujet-blanc.html` en mode chrono, affiche bien l'AUTRE message (« tu as
+  utilisé tes tentatives… cette tentative ne compte plus ») — confirme que
+  les deux pop-up restent mutuellement exclusives. Syntaxe des deux pages
+  revérifiée, aucune erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

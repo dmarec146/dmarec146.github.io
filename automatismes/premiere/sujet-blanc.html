@@ -208,20 +208,22 @@ window.MathJax = {
         }
         if (etatAvant && etatAvant.bloque) {
           afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
-        }
-        // Reactive "Voir toutes les reponses"/"Voir la correction detaillee"
-        // des que les essais sont epuises (28/09/2026, retour de David) --
-        // reverifie l'etat APRES l'ecriture pour detecter le cas ou CETTE
-        // tentative est justement la derniere autorisee (etatAvant, capture
-        // avant l'ecriture, reste a false dans ce cas precis). Ne fait rien
-        // si deja debloque (verrouille.bloque deja vrai, ex. depuis le
-        // chargement de la page).
-        if (verrouille && !verrouille.bloque && window.verifierEtatDevoirAutomatisme) {
+        } else if (verrouille && !verrouille.bloque && window.verifierEtatDevoirAutomatisme) {
+          // Reactive "Voir toutes les reponses"/"Voir la correction detaillee"
+          // des que les essais sont epuises (28/09/2026, retour de David) --
+          // reverifie l'etat APRES l'ecriture pour detecter le cas ou CETTE
+          // tentative est justement la derniere autorisee (etatAvant, capture
+          // avant l'ecriture, reste a false dans ce cas precis, d'ou le
+          // "else if" : les deux pop-up ne s'affichent jamais ensemble). Si
+          // c'est bien le cas, previent l'eleve explicitement (deuxieme
+          // retour de David, apres un devoir a 1 essai : les boutons se
+          // reactivaient en silence, sans aucun message).
           try {
             const etatApres = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree);
             if (etatApres && etatApres.bloque) {
               verrouille.bloque = true;
               Automatismes.actualiserVerrouille({ bloque: true });
+              afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatApres.titre} », ${etatApres.essaisUtilises}/${etatApres.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais consulter la correction, et continuer à t'entraîner librement.`);
             }
           } catch (erreur) { /* ignore, reste bloque jusqu'au prochain chargement */ }
         }
