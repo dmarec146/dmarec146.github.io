@@ -135,12 +135,18 @@ window.MathJax = {
     // comptee. Passe l'echeance, `devoirAutomatismeActif` ne renvoie plus
     // rien : la page redevient un entrainement libre normal des le
     // prochain chargement, sans rien a faire de plus ici.
+    //
+    // `!devoir.bloque` (28/09/2026, meme correctif que fiche.html) :
+    // devoirAutomatismeActif renvoie le devoir tant que l'echeance n'est pas
+    // passee, MEME si les essais sont deja epuises -- sans cette condition,
+    // un eleve revenant sur cette page apres avoir epuise ses tentatives
+    // restait quand meme verrouille dessus au lieu de redevenir libre.
     let verrouille = null;
     if (window.devoirAutomatismeActif) {
       try {
         const devoir = await window.devoirAutomatismeActif();
-        if (devoir) {
-          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance), bloque: devoir.bloque };
+        if (devoir && !devoir.bloque) {
+          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance) };
         }
       } catch (erreur) {
         verrouille = null;
@@ -208,22 +214,22 @@ window.MathJax = {
         }
         if (etatAvant && etatAvant.bloque) {
           afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
-        } else if (verrouille && !verrouille.bloque && window.verifierEtatDevoirAutomatisme) {
-          // Reactive "Voir toutes les reponses"/"Voir la correction detaillee"
-          // des que les essais sont epuises (28/09/2026, retour de David) --
-          // reverifie l'etat APRES l'ecriture pour detecter le cas ou CETTE
-          // tentative est justement la derniere autorisee (etatAvant, capture
-          // avant l'ecriture, reste a false dans ce cas precis, d'ou le
-          // "else if" : les deux pop-up ne s'affichent jamais ensemble). Si
-          // c'est bien le cas, previent l'eleve explicitement (deuxieme
-          // retour de David, apres un devoir a 1 essai : les boutons se
-          // reactivaient en silence, sans aucun message).
+        } else if (verrouille && window.verifierEtatDevoirAutomatisme) {
+          // Leve le verrouillage des que les essais sont epuises (28/09/2026,
+          // retours de David) -- reverifie l'etat APRES l'ecriture pour
+          // detecter le cas ou CETTE tentative est justement la derniere
+          // autorisee (etatAvant, capture avant l'ecriture, reste a false
+          // dans ce cas precis, d'ou le "else if" : les deux pop-up ne
+          // s'affichent jamais ensemble). Si c'est bien le cas : previent
+          // l'eleve explicitement (les boutons se reactivaient en silence
+          // sans message), ET leve completement le verrouillage cote moteur
+          // (niveau/mode redeviennent libres, pas seulement la correction).
           try {
             const etatApres = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree);
             if (etatApres && etatApres.bloque) {
-              verrouille.bloque = true;
-              Automatismes.actualiserVerrouille({ bloque: true });
               afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatApres.titre} », ${etatApres.essaisUtilises}/${etatApres.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais consulter la correction, et continuer à t'entraîner librement.`);
+              verrouille = null;
+              Automatismes.leverVerrouille();
             }
           } catch (erreur) { /* ignore, reste bloque jusqu'au prochain chargement */ }
         }

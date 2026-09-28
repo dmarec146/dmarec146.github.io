@@ -122,12 +122,22 @@ window.MathJax = {
     // moteur.js). Passe l'echeance, devoirAutomatismeFicheActif ne renvoie
     // plus rien : la page redevient une fiche libre normale, non suivie, des
     // le prochain chargement.
+    //
+    // `!devoir.bloque` (28/09/2026, retour de David) : devoirAutomatismeFicheActif
+    // renvoie le devoir tant que l'echeance n'est pas passee, MEME si les
+    // essais sont deja epuises -- sans cette condition, un eleve revenant sur
+    // fiche.html depuis le sommaire (donc un chargement neuf, hors contexte
+    // devoir) apres avoir epuise un devoir a themes restreints se retrouvait
+    // quand meme verrouille sur CES themes-la au lieu d'une pratique libre
+    // normale (2 themes tires au sort). Essais epuises = plus aucune tentative
+    // possible sur ce devoir = aucune raison de continuer a imposer quoi que
+    // ce soit, memes raisons que la reactivation de la correction plus haut.
     let verrouille = null;
     if (window.devoirAutomatismeFicheActif) {
       try {
         const devoir = await window.devoirAutomatismeFicheActif();
-        if (devoir && Array.isArray(devoir.themes) && devoir.themes.length) {
-          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, themes: devoir.themes, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance), bloque: devoir.bloque };
+        if (devoir && !devoir.bloque && Array.isArray(devoir.themes) && devoir.themes.length) {
+          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, themes: devoir.themes, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance) };
         }
       } catch (erreur) {
         verrouille = null;
@@ -174,22 +184,26 @@ window.MathJax = {
         }
         if (etatAvant && etatAvant.bloque) {
           afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
-        } else if (verrouille && !verrouille.bloque && window.verifierEtatDevoirAutomatisme) {
-          // Reactive "Voir toutes les reponses" des que les essais sont
-          // epuises (28/09/2026, retour de David) -- reverifie l'etat APRES
-          // l'ecriture pour detecter le cas ou CETTE tentative est justement
-          // la derniere autorisee (etatAvant, capture avant l'ecriture,
-          // reste a false dans ce cas precis, d'ou le "else if" : les deux
-          // pop-up ne s'affichent jamais ensemble). Si c'est bien le cas,
-          // previent l'eleve explicitement (deuxieme retour de David, apres
-          // un devoir a 1 essai : les boutons se reactivaient en silence,
-          // sans aucun message).
+        } else if (verrouille && window.verifierEtatDevoirAutomatisme) {
+          // Leve le verrouillage des que les essais sont epuises (28/09/2026,
+          // retours de David) -- reverifie l'etat APRES l'ecriture pour
+          // detecter le cas ou CETTE tentative est justement la derniere
+          // autorisee (etatAvant, capture avant l'ecriture, reste a false
+          // dans ce cas precis, d'ou le "else if" : les deux pop-up ne
+          // s'affichent jamais ensemble). Si c'est bien le cas : previent
+          // l'eleve explicitement (les boutons se reactivaient en silence
+          // sans message), ET leve completement le verrouillage cote moteur
+          // (themes/niveau/mode redeviennent libres, pas seulement la
+          // correction -- sinon un eleve revenant sur cette page depuis le
+          // sommaire apres avoir epuise un devoir a themes restreints
+          // restait quand meme coince sur CES themes-la au lieu d'une
+          // pratique libre normale).
           try {
             const etatApres = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree, 'fiche', themesJoues);
             if (etatApres && etatApres.bloque) {
-              verrouille.bloque = true;
-              Automatismes.actualiserVerrouille({ bloque: true });
               afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatApres.titre} », ${etatApres.essaisUtilises}/${etatApres.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais consulter la correction, et continuer à t'entraîner librement.`);
+              verrouille = null;
+              Automatismes.leverVerrouille();
             }
           } catch (erreur) { /* ignore, reste bloque jusqu'au prochain chargement */ }
         }

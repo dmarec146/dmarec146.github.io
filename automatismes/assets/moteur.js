@@ -348,6 +348,13 @@
       // bouton redondant "Nouvelle fiche (mêmes thèmes)", déjà garanti par
       // le verrouillage lui-même.
       if (Array.isArray(v.themes) && v.themes.length) {
+        // Memorise les valeurs libres d'avant verrouillage : necessaire pour
+        // pouvoir les restaurer si le verrouillage est leve en cours de
+        // session (essais epuises, voir leverVerrouille() plus bas) sans
+        // attendre un rechargement de page.
+        ETAT.config._banquesAvantVerrouillage = ETAT.config.banques;
+        ETAT.config._nbThemesAvantVerrouillage = ETAT.config.nbThemes;
+        ETAT.config._labelNouvelleAvantVerrouillage = ETAT.config.labelNouvelle;
         ETAT.config.banques = v.themes.slice();
         ETAT.config.nbThemes = v.themes.length;
         ETAT.config.themesImposes = true;
@@ -448,30 +455,39 @@
 
   // Devoir en cours (ETAT.config.verrouille) : la correction (« Voir toutes
   // les réponses »/« Voir la correction détaillée ») reste bloquée tant que
-  // les essais du devoir ne sont pas épuisés (verrouille.bloque) -- une fois
-  // le quota atteint, plus aucune raison de la cacher : l'élève ne peut plus
-  // soumettre de nouvelle tentative, voir la correction ne peut donc plus
-  // lui donner un avantage indu (28/09/2026, retour de David : le bouton
-  // restait bloqué même après épuisement des essais). `verrouille.bloque`
-  // est déjà connu au chargement (voir devoirAutomatismeActif/
-  // devoirAutomatismeFicheActif, suivi.js) et mis à jour en direct par la
-  // page dès qu'une tentative épuise le quota EN COURS de session, via
-  // actualiserVerrouille() ci-dessous (pas d'attente d'un rechargement). Se
-  // réactive aussi tout seul au prochain chargement une fois l'échéance
-  // passée (devoirAutomatismeActif() ne retrouve alors plus de devoir actif,
-  // verrouille redevient absent).
+  // le verrouillage est actif. Un devoir dont les essais sont épuisés ne
+  // pose PLUS aucun verrouillage du tout (ni thèmes/niveau/mode, ni
+  // correction) : soit dès le chargement (la page ne construit `verrouille`
+  // que si `!devoir.bloque`, voir devoirAutomatismeActif/
+  // devoirAutomatismeFicheActif côté page), soit en direct pendant la
+  // session en cours via leverVerrouille() ci-dessous, dès que la tentative
+  // qui vient de se terminer épuise le quota (28/09/2026, deux retours de
+  // David : le bouton restait bloqué après épuisement, puis un élève revenu
+  // sur la page depuis le sommaire restait verrouillé sur les thèmes d'un
+  // devoir déjà épuisé). Se lève aussi tout seul au prochain chargement une
+  // fois l'échéance passée (comportement déjà en place).
   const TITRE_CORRECTION_BLOQUEE = 'Devoir en cours : la correction sera disponible une fois tes tentatives épuisées, ou après l&#39;échéance.';
   function correctionBloqueeParDevoir() {
-    return !!(ETAT.config.verrouille && !ETAT.config.verrouille.bloque);
+    return !!ETAT.config.verrouille;
   }
 
-  // Permet à la page (sujet-blanc.html/fiche.html) de mettre à jour l'état
-  // du devoir en cours SANS relancer de série -- utilisé pour réactiver la
-  // correction dès que les essais sont épuisés PENDANT la session en cours
-  // (voir onFinSerie côté page), sans attendre un rechargement.
-  function actualiserVerrouille(patch) {
+  // Lève complètement le verrouillage d'un devoir (thèmes/niveau/mode/durée
+  // + correction) SANS changer la série actuellement affichée -- l'élève
+  // vient de la terminer et de la voir corrigée, la faire disparaître sous
+  // ses yeux serait déroutant. Seules les actions FUTURES (Nouvelle fiche,
+  // changement de niveau/mode) redeviennent libres. Restaure les
+  // thèmes/nbThemes/labelNouvelle mémorisés avant le verrouillage (voir
+  // demarrer() plus haut) si des thèmes étaient effectivement imposés (le
+  // sujet blanc n'en impose jamais, seule la fiche ciblée le fait).
+  function leverVerrouille() {
     if (!ETAT.config.verrouille) return;
-    Object.assign(ETAT.config.verrouille, patch);
+    if (ETAT.config.themesImposes) {
+      ETAT.config.banques = ETAT.config._banquesAvantVerrouillage;
+      ETAT.config.nbThemes = ETAT.config._nbThemesAvantVerrouillage;
+      ETAT.config.labelNouvelle = ETAT.config._labelNouvelleAvantVerrouillage;
+      ETAT.config.themesImposes = false;
+    }
+    ETAT.config.verrouille = null;
     rendre();
   }
 
@@ -996,7 +1012,7 @@
     tirerDansBanque: tirerDansBanque,
     demarrer: demarrer,
     titreBanque: id => (banques[id] ? banques[id].titre : null),
-    actualiserVerrouille: actualiserVerrouille,
+    leverVerrouille: leverVerrouille,
     etat: ETAT
   };
 })();

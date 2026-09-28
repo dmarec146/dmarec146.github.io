@@ -3451,6 +3451,62 @@ de changer ce réglage sans qu'il en reparle.
   les deux pop-up restent mutuellement exclusives. Syntaxe des deux pages
   revérifiée, aucune erreur console.
 
+- **Verrouillage restant actif malgré essais épuisés, sur un chargement neuf
+  (28/09/2026, même jour, troisième retour de David)** : après son test à 1
+  essai sur une fiche ciblée sur 1 thème, il retourne au sommaire puis
+  redemande une fiche d'automatismes libre (2 thèmes) — mais un seul thème
+  lui est proposé, exactement celui du devoir déjà épuisé.
+
+  **Cause** : `devoirAutomatismeActif()`/`devoirAutomatismeFicheActif()`
+  (`suivi.js`) renvoient le devoir tant que l'échéance n'est pas passée,
+  **même si les essais sont épuisés** (`bloque` n'était calculé que pour
+  informer, jamais utilisé pour décider si le devoir doit encore verrouiller
+  quoi que ce soit) — les deux pages construisaient donc `verrouille` dès
+  qu'un devoir existait, sans jamais vérifier `devoir.bloque`. Un devoir
+  épuisé mais pas encore échu continuait donc de verrouiller la page à
+  chaque nouveau chargement, alors qu'aucune tentative supplémentaire n'est
+  de toute façon plus possible dessus.
+
+  **Corrigé à la source, sur les deux pages** : `if (devoir && !devoir.bloque
+  && …)` avant de construire `verrouille` — un devoir épuisé est désormais
+  traité exactement comme un devoir dont l'échéance est passée (aucun
+  verrouillage), dès le prochain chargement.
+
+  **Au passage, simplification du mécanisme ajouté plus tôt dans la
+  journée** : le système à deux temps (`verrouille` présent mais
+  `verrouille.bloque` vrai, correction seule réactivée) devenait incohérent
+  avec ce correctif — un devoir épuisé ne doit plus verrouiller RIEN du
+  tout, pas seulement laisser voir la correction. Remplacé
+  `Automatismes.actualiserVerrouille(patch)` par `Automatismes.
+  leverVerrouille()` (sans paramètre) : lève complètement le verrouillage
+  (thèmes/niveau/mode/durée + correction) SANS changer la série actuellement
+  affichée (déjà corrigée, ne doit pas disparaître sous les yeux de l'élève)
+  — seules les actions futures (Nouvelle fiche, changement de niveau/mode)
+  redeviennent libres. `demarrer()` (`moteur.js`) mémorise désormais
+  `banques`/`nbThemes`/`labelNouvelle` d'AVANT verrouillage
+  (`_banquesAvantVerrouillage` etc.) au moment où `config.verrouille.themes`
+  est appliqué, pour pouvoir les restaurer par `leverVerrouille()` sans les
+  redemander à la page. `correctionBloqueeParDevoir()` simplifié en
+  `!!ETAT.config.verrouille` (un devoir présent verrouille tout ou rien,
+  plus d'état intermédiaire). Les deux pages : `verrouille.bloque = true`
+  remplacé par `verrouille = null; Automatismes.leverVerrouille();` dans
+  `onFinSerie`.
+
+  Vérifié en conditions réelles dans le navigateur (stub de
+  `verifierEtatDevoirAutomatisme`, même méthode que les tests précédents) :
+  scénario complet sur `fiche.html` (devoir 1 thème/1 essai) — pop-up «
+  dernière tentative » affichée, `ETAT.config.verrouille` devient bien
+  `null`, panneau verrouillé disparaît, 3 boutons de niveau réapparaissent ;
+  clic sur « Nouvelle fiche » ensuite tire bien parmi les 8 banques (thèmes
+  aléatoires, plus seulement celui du devoir), `nbThemes`/`banques`/
+  `labelNouvelle` correctement restaurés à leurs valeurs libres d'origine.
+  Même vérification sur `sujet-blanc.html` (niveau/mode redeviennent
+  choisissables). Non-régression revérifiée : un devoir actif et NON
+  épuisé verrouille toujours normalement sur les deux pages (bouton
+  désactivé, panneau verrouillé affiché, aucun bouton de niveau libre).
+  Syntaxe (`node --check`/`vm.Script`) sur les 3 fichiers, aucune erreur
+  console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
