@@ -44,6 +44,7 @@ window.MathJax = {
 </div>
 
 <div id="app"></div>
+<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;text-align:center;" hidden></p>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
@@ -62,26 +63,95 @@ window.MathJax = {
 <script src="banques/07-lectures-graphiques.js"></script>
 <script src="banques/08-probabilites.js"></script>
 <script>
-  Automatismes.demarrer({
-    banques: ['pourcentages', 'proportions', 'calcul-numerique', 'developper-factoriser', 'equations', 'droites', 'lectures-graphiques', 'probabilites'],
-    nbThemes: 2,
-    nb: 10,
-    modeDefaut: 'fiche',
-    duree: 120,
-    cible: '#app',
-    labelNouvelle: 'Nouvelle fiche (autres thèmes)'
-  });
+  function formaterEcheance(millis) {
+    return new Date(millis).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
 
-  // titre adapté quand un thème unique est demandé dans l'adresse (fiche.html?theme=…)
-  (function () {
-    const impose = Automatismes.etat.config.themeImpose;
-    if (!impose) return;
-    const titre = Automatismes.titreBanque(impose);
-    document.title = titre + ' — Automatismes Première';
-    document.getElementById('titre-fiche').textContent = titre;
-    document.getElementById('sous-titre-fiche').textContent =
-      'Automatismes de Première — un seul thème, 10 questions';
-  })();
+  // Attend DOMContentLoaded : assets/js/suivi.js est charge en <script
+  // type="module">, donc differe par nature (comme defer) -- un script
+  // classique place plus bas dans la page (comme celui-ci) peut s'executer
+  // AVANT que ce module ait fini de tourner et attache window.
+  // devoirAutomatismeFicheActif (meme piege que sur sujet-blanc.html, voir
+  // SUIVI-FIREBASE.md). DOMContentLoaded garantit que tous les scripts
+  // differes (modules compris) ont fini de s'executer.
+  document.addEventListener('DOMContentLoaded', async function () {
+    // Devoir en cours (28/09/2026) : si l'enseignant a attribue une fiche
+    // d'automatismes CIBLEE (themes choisis) a la classe de l'eleve avec une
+    // echeance pas encore passee, la page se verrouille sur les themes/
+    // niveau/mode/duree choisis a l'attribution -- meme principe que le
+    // sujet blanc (verrouille passe a Automatismes.demarrer, voir
+    // moteur.js). Passe l'echeance, devoirAutomatismeFicheActif ne renvoie
+    // plus rien : la page redevient une fiche libre normale, non suivie, des
+    // le prochain chargement.
+    let verrouille = null;
+    if (window.devoirAutomatismeFicheActif) {
+      try {
+        const devoir = await window.devoirAutomatismeFicheActif();
+        if (devoir && Array.isArray(devoir.themes) && devoir.themes.length) {
+          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, themes: devoir.themes, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance) };
+        }
+      } catch (erreur) {
+        verrouille = null;
+      }
+    }
+
+    Automatismes.demarrer({
+      banques: ['pourcentages', 'proportions', 'calcul-numerique', 'developper-factoriser', 'equations', 'droites', 'lectures-graphiques', 'probabilites'],
+      nbThemes: 2,
+      nb: 10,
+      modeDefaut: 'fiche',
+      duree: 120,
+      cible: '#app',
+      labelNouvelle: 'Nouvelle fiche (autres thèmes)',
+      verrouille: verrouille,
+      // Meme principe que sujet-blanc.html : la limite d'essais reelle (ce
+      // qui compte ou non pour la note) est appliquee cote suivi.js
+      // (enregistrerTentativeDevoirAutomatismeSiApplicable) ; ce controle-ci
+      // ne fait qu'informer l'eleve quand sa tentative ne compte plus. Une
+      // fiche LIBRE (pas de devoir) n'ecrit jamais rien -- voir le
+      // commentaire devant enregistrerTentativeFicheAutomatismesSiDevoir
+      // (suivi.js).
+      onFinSerie: async function (resultat) {
+        const themesJoues = Automatismes.etat.questions.themesIds || [];
+        let etatAvant = null;
+        if (verrouille && window.verifierEtatDevoirAutomatisme) {
+          try {
+            etatAvant = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree, 'fiche', themesJoues);
+          } catch (erreur) {
+            etatAvant = null;
+          }
+        }
+        if (verrouille && window.enregistrerTentativeFicheAutomatismesSiDevoir) {
+          window.enregistrerTentativeFicheAutomatismesSiDevoir(resultat.bonnes, resultat.total, resultat.niveau, resultat.mode, resultat.duree, themesJoues, resultat.repondues);
+        }
+        const zoneEtat = document.getElementById('suivi-etat');
+        if (zoneEtat && etatAvant && etatAvant.bloque) {
+          zoneEtat.textContent = `Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`;
+          zoneEtat.hidden = false;
+        }
+      }
+    });
+
+    // titre adapté quand un thème unique est demandé dans l'adresse (fiche.html?theme=…)
+    (function () {
+      const impose = Automatismes.etat.config.themeImpose;
+      if (!impose) return;
+      const titre = Automatismes.titreBanque(impose);
+      document.title = titre + ' — Automatismes Première';
+      document.getElementById('titre-fiche').textContent = titre;
+      document.getElementById('sous-titre-fiche').textContent =
+        'Automatismes de Première — un seul thème, 10 questions';
+    })();
+
+    // Masque le message de blocage (s'il est affiche) des qu'une nouvelle
+    // serie demarre, meme principe que sujet-blanc.html.
+    document.getElementById('app').addEventListener('click', function (e) {
+      if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) {
+        const zoneEtat = document.getElementById('suivi-etat');
+        if (zoneEtat) zoneEtat.hidden = true;
+      }
+    });
+  });
 </script>
 <script type="module" src="../../assets/js/nav-auth.js"></script>
 </body>

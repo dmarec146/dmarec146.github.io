@@ -43,10 +43,14 @@ function formaterEcheance(millis) {
 }
 
 // Meme principe que dans devoirs-notification.js : une fiche pointe
-// directement dessus (ficheId, chemin absolu), un sujet blanc d'automatismes
-// n'a qu'une seule page qui se verrouille elle-meme sur le devoir en cours.
+// directement dessus (ficheId, chemin absolu). Un devoir d'automatismes n'a
+// qu'une seule page qui se verrouille elle-meme sur le devoir en cours --
+// sujet-blanc.html (cible absente ou 'sujet-blanc', comportement d'origine)
+// ou fiche.html (cible:'fiche', 28/09/2026 -- fiche d'automatismes ciblee
+// sur des themes choisis, voir devoirs.js et suivi.js).
 function lienPour(devoir) {
-  return devoir.type === 'fiche' ? devoir.ficheId : '/automatismes/premiere/sujet-blanc.html';
+  if (devoir.type === 'fiche') return devoir.ficheId;
+  return devoir.cible === 'fiche' ? '/automatismes/premiere/fiche.html' : '/automatismes/premiere/sujet-blanc.html';
 }
 
 function titreDevoir(devoir) {

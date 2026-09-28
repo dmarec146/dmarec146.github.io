@@ -3159,6 +3159,140 @@ de changer ce réglage sans qu'il en reparle.
   tooltip, `<div id="revue">` vide (aucune bonne réponse dans le HTML de la
   page) ; mode chrono sans devoir — bouton actif, correction affichée
   normalement au clic. `node --check` sur `moteur.js` (syntaxe OK).
+- **Devoir « Fiche d'automatismes ciblée » (28/09/2026)**, sur demande de
+  David : jusqu'ici, un devoir d'automatismes ne pouvait viser QUE le sujet
+  blanc (mix de tous les thèmes du programme) — pas de moyen d'attribuer un
+  entraînement ciblé sur des thèmes précis (la page `fiche.html`, « Fiche
+  d'automatismes », existait déjà pour ça côté élève en pratique libre,
+  jamais suivie ni notée par choix, mais aucun devoir ne pouvait s'y
+  attacher).
+
+  Décisions prises avec David avant de coder (question posée explicitement
+  vu le nombre de choix de conception) : le niveau (1/2/3) reste imposé par
+  l'enseignant comme pour le sujet blanc (pas de libre choix élève) ; le
+  mode (fiche/chrono) et la durée par question restent choisis à
+  l'attribution, mêmes champs réutilisés tels quels ; quand plusieurs
+  thèmes sont cochés, CHAQUE fiche générée couvre la totalité d'entre eux
+  (pas de tirage aléatoire d'un sous-ensemble comme en pratique libre).
+
+  **Modèle retenu** : même document Firestore `type:'automatismes'` que le
+  sujet blanc (pas un troisième `type` à part, pour ne pas dupliquer toute
+  la mécanique d'échéance/essais/résultats déjà en place) — distingué par un
+  nouveau champ `cible` (`'sujet-blanc'` ou `'fiche'`, absent sur tout devoir
+  créé avant ce chantier ⇒ traité comme `'sujet-blanc'`, même sentinelle
+  côté client que `CLASSE_HORS_CLASSE`) et, pour `cible:'fiche'`, un tableau
+  `themes` (identifiants de banques).
+
+  **`automatismes/assets/moteur.js`** : `demarrer()` — quand
+  `config.verrouille.themes` est un tableau non vide, `banques`/`nbThemes`
+  sont réduits à exactement cette liste (`tirerSerie()` pioche alors
+  `min(nbThemes, dispo.length)` = la liste entière : chaque génération
+  couvre donc systématiquement tous les thèmes imposés, sans tirage). Un
+  nouveau `ETAT.config.themesImposes` (comme `themeImpose` au singulier pour
+  `fiche.html?theme=…`) supprime le bouton redondant « Nouvelle fiche (mêmes
+  thèmes) » dans les deux modes (déjà garanti par le verrouillage) ; le
+  paramètre d'URL `?theme=` est désormais ignoré si un devoir verrouille
+  déjà les thèmes (priorité au devoir). Le bandeau « Thèmes de cette fiche »
+  déjà existant (`bandeauThemesHTML`) affiche les thèmes imposés sans
+  modification, puisqu'il lit simplement `ETAT.questions.themes`.
+
+  **`automatismes/premiere/fiche.html`** : passait jusqu'ici
+  `Automatismes.demarrer()` de façon synchrone au chargement du script,
+  sans suivi ni verrouillage possible. Refondu sur le même principe que
+  `sujet-blanc.html` : `DOMContentLoaded` (attend que `assets/js/suivi.js`,
+  chargé en module donc différé, ait fini de s'exécuter), appel à
+  `window.devoirAutomatismeFicheActif()` (nouveau, voir suivi.js) pour
+  construire `verrouille` si un devoir `cible:'fiche'` est actif, `onFinSerie`
+  qui enregistre la tentative SEULEMENT si un devoir est actif
+  (`enregistrerTentativeFicheAutomatismesSiDevoir`, voir suivi.js — une
+  fiche libre, sans devoir, n'écrit toujours rien, choix d'origine préservé)
+  et affiche le même message « tentative épuisée » que le sujet blanc si
+  applicable. Nouveau `<p id="suivi-etat">` ajouté au HTML (absent jusqu'ici
+  sur cette page).
+
+  **`assets/js/suivi.js`** : `devoirsPourAutomatisme()`,
+  `enregistrerTentativeDevoirAutomatismeSiApplicable()`,
+  `verifierEtatDevoirAutomatisme()` et `devoirAutomatismeActif()` acceptent
+  désormais un paramètre `cible` (défaut `'sujet-blanc'`, filtré côté
+  client puisque les devoirs sujet-blanc créés avant ce chantier n'ont pas
+  ce champ du tout — pas de `where()` Firestore dessus). Pour `cible:'fiche'`,
+  une comparaison exacte de l'ensemble des thèmes joués contre
+  `devoir.themes` (nouvelle fonction `memeEnsembleThemes`, ordre indifférent)
+  s'ajoute au filtre niveau/mode/durée : nécessaire pour distinguer deux
+  devoirs `fiche` actifs sur des thèmes différents mais même niveau/mode,
+  ce qui n'existait pas avec le sujet blanc (jamais qu'un seul type de
+  répartition possible). Deux devoirs de cibles différentes (un sujet blanc
+  ET une fiche ciblée) peuvent être actifs simultanément pour la même classe
+  sans se gêner : chaque page ne cherche que sa propre cible. Nouvelle
+  fonction exportée `enregistrerTentativeFicheAutomatismesSiDevoir()` :
+  contrairement à `enregistrerAutomatisme()` (sujet blanc, écrit
+  inconditionnellement dans `eleves/{uid}/automatismes`, l'agrégat utilisé
+  par l'onglet Automatismes du tableau de bord), elle n'écrit JAMAIS dans
+  cet agrégat — seulement dans `devoirsTentatives`, et seulement si un
+  devoir `fiche` est actif — pour ne pas remettre en cause le choix
+  d'origine (fiche libre non suivie/non notée). Pas de barème ici (pas de
+  note /5 comme le sujet blanc) : `score` = nombre de bonnes réponses,
+  `totalExercices` = nombre de questions — la vue résultats de `devoirs.js`
+  et `/mes-devoirs/` n'ont eu besoin d'aucune modification pour l'afficher
+  correctement (`X / 10`), ni pour la colonne « Non-réponses » (déjà
+  générique sur `nbQuestions`/`nbRepondues`, mêmes noms de champs réutilisés).
+
+  **`assets/js/devoirs.js`** (formulaire d'attribution) : nouvelle option
+  « Fiche d'automatismes ciblée » dans le select « Type de devoir »
+  (`automatismes-fiche`, concept purement côté UI — retraduit à l'écriture
+  en `type:'automatismes', cible:'fiche'`) ; nouveau champ « Thèmes
+  travaillés » (cases à cocher, liste `THEMES_AUTOMATISMES` codée en dur —
+  mêmes identifiants/intitulés que `fiche.html` et les banques, à tenir à
+  jour à la main comme `FICHES_PLATES` pour les fiches de calcul), affiché
+  seulement pour ce type, au moins un thème exigé à la soumission. Titre
+  auto-généré incluant les thèmes choisis (ex. « Fiche d'automatismes —
+  Droites et repères, Équations et inéquations — Niveau 2 (mode fiche) »).
+  `modifierDevoir()` retrouve le bon type UI et re-coche les thèmes déjà
+  choisis.
+
+  **Bug latent trouvé et corrigé au passage** (pas introduit par ce
+  chantier, mais du même genre que celui déjà corrigé pour `eleves` lors de
+  l'ajout du ciblage individuel hors-classe) : `updateDoc()` en mode édition
+  ne portait `duree`/`themes` dans son payload que quand ils s'appliquaient
+  ENCORE à la nouvelle configuration — modifier un devoir chrono vers le
+  mode fiche, ou une fiche ciblée vers un sujet blanc, laissait une valeur
+  périmée en base (`updateDoc` fusionne, n'efface jamais un champ absent du
+  payload). Corrigé en ajoutant `duree: donnees.duree ?? deleteField()` et
+  `themes: donnees.themes ?? deleteField()`, même principe que
+  `eleves: eleves ?? deleteField()` déjà en place.
+
+  **`assets/js/mes-devoirs.js`** : `lienPour()` pointe vers `fiche.html` au
+  lieu de `sujet-blanc.html` quand `devoir.cible === 'fiche'`. Aucune autre
+  modification nécessaire (score/non-réponses déjà génériques, voir plus
+  haut). `assets/js/devoirs-notification.js` (bandeau + pastille) : aucune
+  modification nécessaire, ne connaît déjà que le compte de devoirs actifs,
+  jamais leur cible ni leur lien.
+
+  Aucune règle Firestore à republier (`devoirs/{id}` n'a aucune validation
+  de schéma par champ, juste `allow write: if estAdmin()`).
+
+  **Vérifié** : syntaxe (`node --check` sur les 3 scripts modules touchés,
+  `node -e` avec `vm.Script` sur les deux `<script>` classiques de
+  `fiche.html`). Mécanisme de verrouillage des thèmes testé en conditions
+  réelles dans le navigateur, en appelant directement
+  `Automatismes.demarrer()` avec un faux `config.verrouille.themes` (sans
+  passer par un vrai devoir Firestore, même limite que le test du 25/09/2026
+  ci-dessus) : mode fiche ET mode chrono, 3 thèmes imposés — les 10
+  questions couvrent bien les 3 thèmes exacts à chaque génération (y
+  compris après « Nouvelle fiche »), niveau/mode verrouillés, bouton
+  « Nouvelle fiche (mêmes thèmes) » absent, panneau « Devoir en cours »
+  et bandeau des thèmes corrects, bouton de correction déjà bloqué par le
+  correctif précédent (aucune régression, les deux verrouillages se
+  composent normalement). `?theme=droites` sur `fiche.html` sans devoir
+  revérifié, comportement inchangé. **Non testé en conditions réelles avec
+  un vrai devoir Firestore** (création via `devoirs.html`, lecture via
+  `devoirAutomatismeFicheActif()`, écriture dans `devoirsTentatives`,
+  affichage dans la vue résultats de `devoirs.js` et `/mes-devoirs/`) —
+  contrairement aux chantiers devoirs précédents sur ce projet, qui
+  utilisaient systématiquement un compte enseignant/élève jetable créé via
+  `outils/creer-comptes` : à faire par David (ou sur demande explicite) avant
+  de considérer cette brique aussi solide que le reste des devoirs
+  d'automatismes.
 
 ## Procédure de reprise sur une autre machine
 

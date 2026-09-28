@@ -357,19 +357,41 @@ export async function enregistrerConnexion(uid) {
   }
 }
 
+// Deux cibles possibles pour un devoir de type 'automatismes' (28/09/2026) :
+// 'sujet-blanc' (mix de tous les themes, comportement d'origine) ou 'fiche'
+// (fiche d'automatismes ciblee, themes choisis par l'enseignant -- voir
+// automatismes/premiere/fiche.html). Stockee dans le champ `cible` du
+// document devoir ; absente sur tout devoir cree avant ce chantier, traitee
+// alors comme 'sujet-blanc' (meme sentinelle cote client que CLASSE_HORS_CLASSE
+// dans devoirs.js, pour ne rien casser sur les devoirs existants).
+const CIBLE_AUTOMATISMES_DEFAUT = 'sujet-blanc';
+
+// Compare deux listes de themes comme des ensembles (ordre indifferent) --
+// utilise pour verifier qu'une tentative de fiche d'automatismes correspond
+// bien aux themes EXACTS d'un devoir 'fiche', pas seulement a son niveau/
+// mode/duree (qui a eux seuls ne suffiraient pas a distinguer deux devoirs
+// 'fiche' actifs sur des themes differents mais memes niveau/mode).
+function memeEnsembleThemes(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  const sa = [...a].sort(), sb = [...b].sort();
+  return sa.every((v, i) => v === sb[i]);
+}
+
 // Requete brute (sans filtre d'echeance) pour un devoir d'automatismes,
-// identifie par (type 'automatismes', niveau, mode, [duree], classe) plutot
-// que par ficheId -- partagee entre enregistrerTentativeDevoirAutomatisme-
+// identifie par (type 'automatismes', cible, niveau, mode, [duree], classe)
+// plutot que par ficheId -- partagee entre enregistrerTentativeDevoirAutomatisme-
 // SiApplicable et verifierEtatDevoirAutomatisme ci-dessous (meme principe que
 // devoirsPour plus haut, pour les fiches). Ni le niveau, ni le mode, ni la
-// duree ne sont imposes a l'eleve (choisis librement sur la page du sujet
-// blanc, voir moteur.js/changerNiveau, changerMode et le select
-// data-action="duree") : une tentative avec un autre niveau, mode ou duree
-// que ceux du devoir n'est simplement pas comptee, comme une tentative hors
-// delai. La duree n'a de sens qu'en mode chrono (voir devoirs.js) : filtre
-// ajoute seulement si mode === 'chrono', sinon le champ n'existe meme pas
-// sur le document devoir.
-async function devoirsPourAutomatisme(niveau, mode, duree, classe) {
+// duree ne sont imposes a l'eleve SAUF pendant un devoir actif (verrouille
+// cote page, voir moteur.js/demarrer) : une tentative avec un autre niveau,
+// mode ou duree que ceux du devoir n'est simplement pas comptee, comme une
+// tentative hors delai. La duree n'a de sens qu'en mode chrono (voir
+// devoirs.js) : filtre ajoute seulement si mode === 'chrono', sinon le champ
+// n'existe meme pas sur le document devoir. `cible` filtree cote client
+// (pas de where() Firestore dessus : les devoirs 'sujet-blanc' crees avant
+// ce chantier n'ont pas ce champ du tout).
+async function devoirsPourAutomatisme(niveau, mode, duree, classe, cible) {
+  cible = cible || CIBLE_AUTOMATISMES_DEFAUT;
   const filtres = [
     where('type', '==', 'automatismes'),
     where('niveau', '==', niveau),
@@ -378,7 +400,9 @@ async function devoirsPourAutomatisme(niveau, mode, duree, classe) {
   ];
   if (mode === 'chrono') filtres.push(where('duree', '==', duree));
   const instantane = await getDocs(query(collection(db, 'devoirs'), ...filtres));
-  return instantane.docs.map((d) => ({ id: d.id, ...d.data() })).filter(applicablePourEleve);
+  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }))
+    .filter(applicablePourEleve)
+    .filter((d) => (d.cible || CIBLE_AUTOMATISMES_DEFAUT) === cible);
 }
 
 // Meme principe que enregistrerTentativeDevoirSiApplicable ci-dessus, pour
@@ -403,11 +427,16 @@ async function devoirsPourAutomatisme(niveau, mode, duree, classe) {
 // calcule par moteur.js) et `baremeTotal` (points max du bareme choisi pour
 // CETTE serie, voir enregistrerAutomatisme) rendent ces deux champs a
 // nouveau justes.
-async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal) {
+async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal, cible, themes) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
-    const devoirs = await devoirsPourAutomatisme(niveau, mode, duree, classe);
+    let devoirs = await devoirsPourAutomatisme(niveau, mode, duree, classe, cible);
+    // Devoir 'fiche' : niveau/mode/duree seuls ne distinguent pas deux
+    // devoirs actifs sur des themes differents -- comparaison exacte de
+    // l'ensemble des themes joues contre celui du devoir (voir
+    // memeEnsembleThemes plus haut).
+    if (cible === 'fiche') devoirs = devoirs.filter((d) => memeEnsembleThemes(d.themes, themes));
     const maintenant = Date.now();
     for (const devoir of devoirs) {
       const actif = devoir.echeance?.toMillis && devoir.echeance.toMillis() > maintenant;
@@ -432,15 +461,16 @@ async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, d
 // du controle "au chargement de la fiche" ici, puisque le niveau/mode/duree
 // ne sont connus qu'une fois la serie lancee par l'eleve (choisis via
 // moteur.js, pas figes comme un ficheId).
-export async function verifierEtatDevoirAutomatisme(niveau, mode, duree) {
+export async function verifierEtatDevoirAutomatisme(niveau, mode, duree, cible, themes) {
   await authPrete;
   if (!utilisateurCourant) return null;
   try {
     const classe = await classeEleve();
     if (!classe) return null;
     const maintenant = Date.now();
-    const devoir = (await devoirsPourAutomatisme(niveau, mode, duree, classe))
-      .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
+    let devoirs = await devoirsPourAutomatisme(niveau, mode, duree, classe, cible);
+    if (cible === 'fiche') devoirs = devoirs.filter((d) => memeEnsembleThemes(d.themes, themes));
+    const devoir = devoirs.find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
     if (!devoir) return null;
     const essaisUtilises = await nbEssaisUtilises(devoir.id);
     return {
@@ -457,14 +487,20 @@ export async function verifierEtatDevoirAutomatisme(niveau, mode, duree) {
 }
 
 // Devoir d'automatismes actif (echeance pas encore passee) pour la classe de
-// l'eleve connecte, tous niveau/mode/duree confondus -- appelee AVANT de
-// lancer une serie (voir sujet-blanc.html), pour verrouiller la page sur le
-// niveau/mode/duree choisis par l'enseignant a l'attribution plutot que de
+// l'eleve connecte et pour la CIBLE demandee ('sujet-blanc' par defaut, voir
+// CIBLE_AUTOMATISMES_DEFAUT plus haut), tous niveau/mode/duree confondus --
+// appelee AVANT de lancer une serie (voir sujet-blanc.html et fiche.html),
+// pour verrouiller la page sur le niveau/mode/duree (et, pour une cible
+// 'fiche', les themes) choisis par l'enseignant a l'attribution plutot que de
 // laisser l'eleve les choisir librement pendant la fenetre active du devoir.
-// S'il existe plusieurs devoirs actifs pour la meme classe, seul le premier
-// trouve sert au verrouillage (cas non prevu en pratique : un seul devoir
-// d'automatismes actif a la fois par classe).
-export async function devoirAutomatismeActif() {
+// S'il existe plusieurs devoirs actifs pour la meme classe ET la meme cible,
+// seul le premier trouve sert au verrouillage (cas non prevu en pratique :
+// un seul devoir actif a la fois par classe et par cible). Deux devoirs de
+// cibles differentes (un sujet blanc ET une fiche ciblee) peuvent en
+// revanche etre actifs simultanement sans se gener : chaque page ne
+// verrouille que sur SA propre cible.
+export async function devoirAutomatismeActif(cible) {
+  cible = cible || CIBLE_AUTOMATISMES_DEFAUT;
   await authPrete;
   if (!utilisateurCourant) return null;
   try {
@@ -479,6 +515,7 @@ export async function devoirAutomatismeActif() {
     const devoir = instantane.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter(applicablePourEleve)
+      .filter((d) => (d.cible || CIBLE_AUTOMATISMES_DEFAUT) === cible)
       .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
     if (!devoir) return null;
     const essaisUtilises = await nbEssaisUtilises(devoir.id);
@@ -487,6 +524,7 @@ export async function devoirAutomatismeActif() {
       niveau: devoir.niveau,
       mode: devoir.mode,
       duree: devoir.duree,
+      themes: devoir.themes || null,
       nbEssaisMax: devoir.nbEssaisMax,
       essaisUtilises,
       echeance: devoir.echeance.toMillis(),
@@ -526,8 +564,22 @@ export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode
   await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal);
 }
 
+// Fiche d'automatismes ciblee par un devoir (28/09/2026, voir
+// automatismes/premiere/fiche.html) -- contrairement au sujet blanc
+// ci-dessus, une fiche d'automatismes ORDINAIRE reste volontairement non
+// suivie/non notee (pratique libre, choix deja documente plus haut) : rien
+// n'est jamais ecrit dans eleves/{uid}/automatismes pour une fiche. Seule une
+// tentative correspondant a un devoir 'fiche' ACTIF est enregistree, dans
+// devoirsTentatives uniquement (comme une fiche de cahier de calcul). Pas de
+// bareme ici (pas de note /5 comme le sujet blanc) : score = nombre de
+// bonnes reponses, totalExercices = nombre de questions de la serie.
+export async function enregistrerTentativeFicheAutomatismesSiDevoir(bonnes, total, niveau, mode, duree, themes, repondues) {
+  await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, bonnes, bonnes, total, repondues, total, 'fiche', themes);
+}
+
 window.enregistrerTentative = enregistrerTentative;
 window.enregistrerAutomatisme = enregistrerAutomatisme;
+window.enregistrerTentativeFicheAutomatismesSiDevoir = enregistrerTentativeFicheAutomatismesSiDevoir;
 window.enregistrerBrouillon = enregistrerBrouillon;
 window.chargerBrouillon = chargerBrouillon;
 window.supprimerBrouillon = supprimerBrouillon;
@@ -535,4 +587,5 @@ window.validerFiche = validerFiche;
 window.estConnecte = estConnecte;
 window.verifierEtatDevoir = verifierEtatDevoir;
 window.verifierEtatDevoirAutomatisme = verifierEtatDevoirAutomatisme;
+window.devoirAutomatismeFicheActif = () => devoirAutomatismeActif('fiche');
 window.devoirAutomatismeActif = devoirAutomatismeActif;

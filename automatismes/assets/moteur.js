@@ -338,10 +338,28 @@
       ETAT.mode = v.mode;
       ETAT.niveau = v.niveau;
       if (v.mode === 'chrono' && v.duree !== undefined && v.duree !== null) ETAT.duree = v.duree;
+      // Devoir de type "fiche d'automatismes ciblée" (28/09/2026) : en plus
+      // du niveau/mode/duree ci-dessus, les thèmes eux-mêmes sont imposés --
+      // `banques`/`nbThemes` réduits à exactement la liste choisie par
+      // l'enseignant, qui apparaît donc systématiquement en entier à chaque
+      // génération (v.themes.length banques disponibles, tirerSerie() en
+      // pioche `min(nbThemes, dispo.length)` = toutes). `themesImposes`
+      // (comme `themeImpose` au singulier pour l'URL ?theme=) évite le
+      // bouton redondant "Nouvelle fiche (mêmes thèmes)", déjà garanti par
+      // le verrouillage lui-même.
+      if (Array.isArray(v.themes) && v.themes.length) {
+        ETAT.config.banques = v.themes.slice();
+        ETAT.config.nbThemes = v.themes.length;
+        ETAT.config.themesImposes = true;
+        ETAT.config.labelNouvelle = 'Nouvelle fiche';
+      }
     }
     // un thème unique peut être imposé par l'adresse : fiche.html?theme=droites
+    // -- jamais en même temps qu'un devoir (verrouille prioritaire, voir
+    // ci-dessus : les thèmes du devoir ne doivent jamais être court-circuités
+    // par un paramètre d'URL).
     const voulu = (new URLSearchParams(window.location.search).get('theme') || '').trim();
-    if (voulu && banques[voulu] && (ETAT.config.banques || []).indexOf(voulu) !== -1) {
+    if (!ETAT.config.themesImposes && voulu && banques[voulu] && (ETAT.config.banques || []).indexOf(voulu) !== -1) {
       ETAT.config.banques = [voulu];
       ETAT.config.nbThemes = 1;
       ETAT.config.themeImpose = voulu;
@@ -616,7 +634,7 @@
       <div class="barre-controle">
         <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="Devoir en cours : la correction sera disponible après l&#39;échéance."` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
         <button class="btn-secondaire" data-action="recommencer">Recommencer</button>
-        ${ETAT.config.nbThemes && !ETAT.config.themeImpose ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
+        ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
         <button class="btn-secondaire" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
       </div>`;
   }
@@ -740,7 +758,7 @@
       return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}
           <div class="barre-controle">
             <button class="btn-secondaire" data-action="basculer-revue" ${bloque ? `disabled title="Devoir en cours : la correction sera disponible après l&#39;échéance."` : ''}>Voir la correction détaillée</button>
-            ${ETAT.config.nbThemes && !ETAT.config.themeImpose ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
+            ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
             <button class="btn-principal" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
           </div>
         </div>

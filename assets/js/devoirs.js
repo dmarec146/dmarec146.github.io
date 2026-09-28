@@ -1,7 +1,10 @@
 // Outil d'attribution des devoirs (tableau-de-bord/devoirs.html), réservé à
 // l'enseignant. Voir SUIVI-FIREBASE.md et l'artifact "Cahier de suivi" pour
-// le contexte complet : choisir une fiche de cahier de calcul OU un sujet
-// blanc d'automatismes (avec son niveau de difficulté), une classe, une
+// le contexte complet : choisir une fiche de cahier de calcul, un sujet
+// blanc d'automatismes (avec son niveau de difficulté) OU une fiche
+// d'automatismes ciblée sur des thèmes choisis (28/09/2026 -- même
+// document Firestore `type:'automatismes'` que le sujet blanc, distingué
+// par `cible:'fiche'` + `themes`, voir suivi.js), une classe, une
 // échéance et un nombre d'essais ; voir la liste des devoirs attribués et,
 // pour chacun, les résultats par élève (meilleure tentative complète avant
 // l'échéance, enregistrée séparément par suivi.js -- voir
@@ -37,6 +40,23 @@ import { FICHES_PLATES } from './manifeste-fiches.js';
 // where('classe','==', ...).
 const CLASSE_HORS_CLASSE = 'hors-classe';
 
+// Themes disponibles pour un devoir "Fiche d'automatismes ciblee"
+// (28/09/2026) -- memes identifiants que la liste `banques` codee en dur
+// dans automatismes/premiere/fiche.html, memes intitules que le champ
+// `titre` declare par chaque banque (voir automatismes/premiere/banques/).
+// A tenir a jour a la main si une banque est ajoutee/renommee, meme
+// convention que FICHES_PLATES pour les fiches de cahier de calcul.
+const THEMES_AUTOMATISMES = [
+  { id: 'pourcentages', titre: 'Pourcentages' },
+  { id: 'proportions', titre: 'Proportions et ordres de grandeur' },
+  { id: 'calcul-numerique', titre: 'Calcul numérique' },
+  { id: 'developper-factoriser', titre: 'Développer et factoriser' },
+  { id: 'equations', titre: 'Équations et inéquations' },
+  { id: 'droites', titre: 'Droites et repères' },
+  { id: 'lectures-graphiques', titre: 'Lectures graphiques' },
+  { id: 'probabilites', titre: 'Probabilités et statistiques' },
+];
+
 const zoneChargement = document.getElementById('dev-chargement');
 const zoneErreur = document.getElementById('dev-erreur');
 const zoneContenu = document.getElementById('dev-contenu');
@@ -51,6 +71,8 @@ const champMode = document.getElementById('dev-champ-mode');
 const selectMode = document.getElementById('dev-mode');
 const champDuree = document.getElementById('dev-champ-duree');
 const selectDuree = document.getElementById('dev-duree');
+const champThemes = document.getElementById('dev-champ-themes');
+const listeThemes = document.getElementById('dev-themes-liste');
 const selectClasse = document.getElementById('dev-classe');
 const champEleves = document.getElementById('dev-champ-eleves');
 const listeEleves = document.getElementById('dev-eleves-liste');
@@ -257,6 +279,27 @@ function remplirListeEleves(selectionnes) {
   }
 }
 
+// Case a cocher par theme, pour un devoir "Fiche d'automatismes ciblee"
+// (28/09/2026) -- meme principe que remplirListeEleves ci-dessus, mais tout
+// decoche par defaut (contrairement aux eleves hors classe, ou tout cocher
+// par defaut evite un recochage manuel du groupe entier) : ici, un choix
+// explicite du professeur est attendu a chaque attribution, pas un sous-
+// ensemble implicite. `selectionnes` (optionnel, utilise par modifierDevoir)
+// : themes deja cibles par le devoir en cours d'edition.
+function remplirListeThemes(selectionnes) {
+  listeThemes.innerHTML = '';
+  for (const theme of THEMES_AUTOMATISMES) {
+    const ligne = document.createElement('label');
+    ligne.className = 'dev-eleve-ligne';
+    const case_ = document.createElement('input');
+    case_.type = 'checkbox';
+    case_.value = theme.id;
+    case_.checked = !!(selectionnes && selectionnes.includes(theme.id));
+    ligne.append(case_, document.createTextNode(theme.titre));
+    listeThemes.appendChild(ligne);
+  }
+}
+
 // Affiche/masque la case a cocher selon la classe choisie, et la peuple a la
 // demande (jamais utile hors "Hors classe"). Appelee au changement de classe
 // ET au changement de type (qui repeuple entierement le select classe, voir
@@ -293,17 +336,28 @@ function remplirSelectClasse() {
 // masque en mode fiche) : depend a la fois du type ET du mode, d'ou une
 // fonction a part plutot que de dupliquer la logique dans les deux
 // ecouteurs de changement (type et mode).
+// Les deux variantes "automatismes" (sujet blanc et fiche ciblee) partagent
+// niveau/mode/duree -- seule la fiche ciblee ajoute le champ themes (voir
+// listener ci-dessous).
+function estTypeAutomatismes(valeur) {
+  return valeur === 'automatismes' || valeur === 'automatismes-fiche';
+}
+
 function mettreAJourChampDuree() {
-  const estAutomatismes = selectType.value === 'automatismes';
-  champDuree.hidden = !estAutomatismes || selectMode.value !== 'chrono';
+  champDuree.hidden = !estTypeAutomatismes(selectType.value) || selectMode.value !== 'chrono';
 }
 
 selectType.addEventListener('change', () => {
-  const estAutomatismes = selectType.value === 'automatismes';
-  champFiche.hidden = estAutomatismes;
-  selectFiche.required = !estAutomatismes;
+  const valeur = selectType.value;
+  const estFiche = valeur === 'fiche';
+  const estAutomatismes = estTypeAutomatismes(valeur);
+  const estAutomatismesCible = valeur === 'automatismes-fiche';
+  champFiche.hidden = !estFiche;
+  selectFiche.required = estFiche;
   champNiveau.hidden = !estAutomatismes;
   champMode.hidden = !estAutomatismes;
+  champThemes.hidden = !estAutomatismesCible;
+  if (estAutomatismesCible) remplirListeThemes();
   mettreAJourChampDuree();
   remplirSelectClasse();
   mettreAJourChampEleves();
@@ -363,13 +417,19 @@ function modifierDevoir(devoir) {
   masquer(zoneConfirmation);
   masquer(zoneErreurFormulaire);
 
-  selectType.value = devoir.type;
+  // Un devoir 'automatismes' avec cible:'fiche' se re-selectionne dans le
+  // type "automatismes-fiche" du formulaire (concept purement cote UI, voir
+  // le listener "submit" plus bas qui le retraduit en type:'automatismes',
+  // cible:'fiche' a l'ecriture).
+  const estFicheCiblee = devoir.type === 'automatismes' && devoir.cible === 'fiche';
+  selectType.value = estFicheCiblee ? 'automatismes-fiche' : devoir.type;
   selectType.dispatchEvent(new Event('change'));
   if (devoir.type === 'automatismes') {
     selectNiveau.value = String(devoir.niveau);
     selectMode.value = devoir.mode;
     selectMode.dispatchEvent(new Event('change'));
     if (devoir.mode === 'chrono') selectDuree.value = String(devoir.duree);
+    if (estFicheCiblee) remplirListeThemes(devoir.themes);
   } else {
     selectFiche.value = devoir.ficheId;
   }
@@ -417,11 +477,21 @@ formulaire.addEventListener('submit', async (evenement) => {
   const nbEssaisMax = parseInt(champEssais.value, 10);
 
   let donnees;
-  if (type === 'automatismes') {
+  if (estTypeAutomatismes(type)) {
     const niveau = parseInt(selectNiveau.value, 10);
     const mode = selectMode.value;
     const libelleMode = mode === 'chrono' ? 'chrono' : 'fiche';
-    donnees = { type, niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
+    if (type === 'automatismes-fiche') {
+      const themes = [...listeThemes.querySelectorAll('input:checked')].map((c) => c.value);
+      if (themes.length === 0) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir au moins un thème.'); return; }
+      const libellesThemes = THEMES_AUTOMATISMES.filter((t) => themes.includes(t.id)).map((t) => t.titre);
+      donnees = {
+        type: 'automatismes', cible: 'fiche', themes, niveau, mode,
+        titre: `Fiche d'automatismes — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})`,
+      };
+    } else {
+      donnees = { type: 'automatismes', cible: 'sujet-blanc', niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
+    }
     // La duree (temps par question) n'a de sens qu'en mode chrono -- comme
     // le panneau correspondant sur la page du sujet blanc elle-meme,
     // absente du document pour un devoir en mode fiche.
@@ -467,9 +537,18 @@ formulaire.addEventListener('submit', async (evenement) => {
       // creation d'origine, seulement aux parametres modifies. deleteField()
       // quand la classe n'est plus "Hors classe" : un devoir modifie pour
       // viser une vraie classe ne doit garder aucune trace d'un ancien
-      // ciblage individuel.
+      // ciblage individuel. Meme raisonnement etendu ici (28/09/2026, trouve
+      // en ajoutant le champ themes) a `duree` et `themes` : `donnees` ne les
+      // porte que quand ils s'appliquent encore (mode chrono / type "fiche
+      // ciblee") -- sans deleteField() explicite, passer un devoir chrono a
+      // fiche, ou une fiche ciblee a sujet blanc, laisserait une valeur
+      // perimee en base (un `updateDoc` fusionne, il n'efface jamais un
+      // champ absent du payload).
       await updateDoc(doc(db, 'devoirs', devoirEnEdition.id), {
-        ...donnees, classe, echeance, nbEssaisMax, eleves: eleves ?? deleteField(),
+        ...donnees, classe, echeance, nbEssaisMax,
+        eleves: eleves ?? deleteField(),
+        duree: donnees.duree ?? deleteField(),
+        themes: donnees.themes ?? deleteField(),
       });
       annulerEdition();
       afficherEtat(zoneConfirmation, 'Devoir modifié.');
