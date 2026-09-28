@@ -3294,6 +3294,67 @@ de changer ce réglage sans qu'il en reparle.
   de considérer cette brique aussi solide que le reste des devoirs
   d'automatismes.
 
+  **Bug bloquant trouvé par le premier vrai test de David (28/09/2026,
+  compte `demo-eleve`, classe `1ere-demo`)** : devoir créé avec 3 thèmes,
+  mais côté élève seulement 2 thèmes tirés (le défaut de la pratique
+  libre), niveau/mode restés au libre choix, bouton « Voir toutes les
+  réponses » resté actif — comme si aucun devoir n'était détecté du tout.
+
+  **Cause, trouvée en lisant `<script type="module" src=".../suivi.js">` de
+  `sujet-blanc.html` puis en cherchant le même tag dans `fiche.html` : il
+  n'y était pas.** `fiche.html` n'avait jamais eu besoin de `suivi.js`
+  avant ce chantier (pratique libre non suivie) ; toute la logique de
+  verrouillage ajoutée le 28/09/2026 (`window.devoirAutomatismeFicheActif`,
+  `window.verifierEtatDevoirAutomatisme`,
+  `window.enregistrerTentativeFicheAutomatismesSiDevoir`) appelait donc des
+  fonctions `window.X` jamais attachées — `if (window.
+  devoirAutomatismeFicheActif)` silencieusement faux, `verrouille` restait
+  `null` en permanence, d'où les 4 symptômes d'un coup (thèmes, niveau,
+  mode, bouton correction) : rien n'était un bug de LOGIQUE de
+  verrouillage (déjà testée en conditions réelles avec un faux
+  `config.verrouille`, voir plus haut), seulement l'absence du script qui
+  aurait dû fournir la vraie valeur. Corrigé en une ligne : `<script
+  type="module" src="../../assets/js/suivi.js"></script>` ajouté dans
+  `<head>`, même emplacement que `sujet-blanc.html`.
+
+  **Diagnostic mené en lisant directement Firestore** (script Node
+  temporaire dans le scratchpad de session, SDK Admin via `outils/
+  creer-comptes/service-account.json` déjà en place, lecture seule) plutôt
+  qu'en supposant : confirmé que le document `devoirs/{id}` créé par David
+  portait bien `cible:'fiche'` et `themes:['calcul-numerique',
+  'developper-factoriser','equations']` — l'écriture (formulaire
+  `devoirs.html`) était donc correcte du premier coup, seule la LECTURE
+  côté `fiche.html` était cassée. Utile de le vérifier avant de suspecter
+  le formulaire ou la logique de correspondance dans `suivi.js`, plus
+  complexes et donc plus tentants à soupçonner en premier.
+
+  Au passage, deux questions de David clarifiées (comportement déjà correct,
+  pas de code à changer) : (1) un « Recommencer » compte bien comme une
+  tentative normale du devoir dès qu'il est mené à son terme — `recommencer()`
+  remet `ETAT.serieSignalee` à `false` sans changer les questions
+  elles-mêmes (mêmes valeurs générées, contrairement à « Nouvelle fiche » qui
+  en tire de nouvelles), donc la complétion suivante redéclenche `onFinSerie`
+  et s'enregistre normalement dans `devoirsTentatives`, comptée dans
+  `nbEssaisMax` comme n'importe quelle autre tentative. (2) le bouton
+  « Nouvelle fiche (autres thèmes) » ne doit jamais changer de thème pendant
+  un devoir : déjà garanti par le verrouillage lui-même
+  (`ETAT.config.banques`/`nbThemes` réduits aux thèmes imposés, voir plus
+  haut) — une fois `verrouille` correctement peuplé (donc une fois le bug
+  ci-dessus corrigé), le clic régénère de nouvelles questions mais toujours
+  sur les mêmes thèmes, et le libellé du bouton redevient simplement
+  « Nouvelle fiche » (sans « autres thèmes », trompeur sinon).
+
+  Vérifié après correction : `window.devoirAutomatismeFicheActif`/
+  `verifierEtatDevoirAutomatisme`/`enregistrerTentativeFicheAutomatismesSiDevoir`
+  bien définis sur `window` après chargement de `fiche.html` dans le
+  navigateur (`typeof` renvoie `"function"` pour les trois, `"undefined"`
+  avant le correctif — reproduit la cause exacte), aucune erreur console,
+  syntaxe des deux `<script>` classiques revérifiée. **Reste à refaire par
+  David** : le test complet avec son compte `demo-eleve` réel (devoir de
+  test encore actif au moment de ce correctif, échéance 28/09/2026 17h30
+  UTC) pour confirmer le verrouillage réel désormais visible côté élève et
+  l'écriture dans `devoirsTentatives`/l'affichage des résultats.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
