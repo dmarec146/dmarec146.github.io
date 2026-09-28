@@ -45,7 +45,18 @@ window.MathJax = {
 </div>
 
 <div id="app"></div>
-<p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;text-align:center;" hidden></p>
+
+<!-- Pop-up d'information sur le devoir en cours (28/09/2026, remplace un
+     simple texte gris jugé trop discret) : voir afficherModaleDevoir()
+     plus bas. -->
+<div id="modal-devoir" class="modal-devoir" hidden>
+  <div class="modal-devoir-contenu">
+    <button type="button" class="modal-devoir-fermer" data-role="fermer-modal-devoir" aria-label="Fermer">&times;</button>
+    <p class="modal-devoir-titre">Devoir</p>
+    <p class="modal-devoir-texte" id="modal-devoir-texte"></p>
+    <button type="button" class="modal-devoir-ok" data-role="fermer-modal-devoir">Compris</button>
+  </div>
+</div>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
@@ -68,6 +79,33 @@ window.MathJax = {
     return new Date(millis).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
 
+  // Pop-up d'information sur le devoir (28/09/2026) : affiche notamment
+  // quand une tentative vient de ne pas compter (essais du devoir deja
+  // epuises) -- plus visible qu'un simple texte sous la fiche, doit etre
+  // explicitement fermee par l'eleve (bouton, croix, ou clic hors de la
+  // carte -- jamais tout seule).
+  function afficherModaleDevoir(texte) {
+    const modale = document.getElementById('modal-devoir');
+    const zoneTexte = document.getElementById('modal-devoir-texte');
+    if (!modale || !zoneTexte) return;
+    zoneTexte.textContent = texte;
+    modale.hidden = false;
+  }
+  function fermerModaleDevoir() {
+    const modale = document.getElementById('modal-devoir');
+    if (modale) modale.hidden = true;
+  }
+  // Ferme au clic sur la croix/le bouton "Compris", OU directement sur le
+  // fond assombri (pas sur la carte elle-meme, qui contient ces boutons --
+  // e.target.id ne vaut 'modal-devoir' que pour le fond, jamais pour un
+  // descendant, meme principe que fermerZoom() dans moteur.js).
+  document.addEventListener('click', function (e) {
+    if (e.target.id === 'modal-devoir' || e.target.closest('[data-role="fermer-modal-devoir"]')) fermerModaleDevoir();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') fermerModaleDevoir();
+  });
+
   // Attend DOMContentLoaded : assets/js/suivi.js est charge en <script
   // type="module">, donc differe par nature (comme defer) -- un script
   // classique place plus bas dans la page (comme celui-ci) peut s'executer
@@ -89,7 +127,7 @@ window.MathJax = {
       try {
         const devoir = await window.devoirAutomatismeFicheActif();
         if (devoir && Array.isArray(devoir.themes) && devoir.themes.length) {
-          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, themes: devoir.themes, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance) };
+          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, themes: devoir.themes, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance), bloque: devoir.bloque };
         }
       } catch (erreur) {
         verrouille = null;
@@ -114,6 +152,10 @@ window.MathJax = {
       // (suivi.js).
       onFinSerie: async function (resultat) {
         const themesJoues = Automatismes.etat.questions.themesIds || [];
+        // Etat AVANT l'ecriture de cette tentative : sert uniquement a savoir
+        // si elle a ete refusee (essais deja epuises avant meme de la
+        // commencer -- voir enregistrerTentativeDevoirAutomatismeSiApplicable,
+        // suivi.js, qui l'ignore silencieusement dans ce cas).
         let etatAvant = null;
         if (verrouille && window.verifierEtatDevoirAutomatisme) {
           try {
@@ -122,13 +164,31 @@ window.MathJax = {
             etatAvant = null;
           }
         }
+        // Attend la fin de l'ecriture avant de reverifier l'etat -- sinon la
+        // relecture juste apres (etatApres) risquerait de ne pas encore voir
+        // cette tentative.
         if (verrouille && window.enregistrerTentativeFicheAutomatismesSiDevoir) {
-          window.enregistrerTentativeFicheAutomatismesSiDevoir(resultat.bonnes, resultat.total, resultat.niveau, resultat.mode, resultat.duree, themesJoues, resultat.repondues);
+          try {
+            await window.enregistrerTentativeFicheAutomatismesSiDevoir(resultat.bonnes, resultat.total, resultat.niveau, resultat.mode, resultat.duree, themesJoues, resultat.repondues);
+          } catch (erreur) { /* deja logue cote suivi.js */ }
         }
-        const zoneEtat = document.getElementById('suivi-etat');
-        if (zoneEtat && etatAvant && etatAvant.bloque) {
-          zoneEtat.textContent = `Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`;
-          zoneEtat.hidden = false;
+        if (etatAvant && etatAvant.bloque) {
+          afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
+        }
+        // Reactive "Voir toutes les reponses" des que les essais sont
+        // epuises (28/09/2026, retour de David) -- reverifie l'etat APRES
+        // l'ecriture pour detecter le cas ou CETTE tentative est justement
+        // la derniere autorisee (etatAvant, capture avant l'ecriture,
+        // reste a false dans ce cas precis). Ne fait rien si deja debloque
+        // (verrouille.bloque deja vrai, ex. depuis le chargement de la page).
+        if (verrouille && !verrouille.bloque && window.verifierEtatDevoirAutomatisme) {
+          try {
+            const etatApres = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree, 'fiche', themesJoues);
+            if (etatApres && etatApres.bloque) {
+              verrouille.bloque = true;
+              Automatismes.actualiserVerrouille({ bloque: true });
+            }
+          } catch (erreur) { /* ignore, reste bloque jusqu'au prochain chargement */ }
         }
       }
     });
@@ -144,13 +204,10 @@ window.MathJax = {
         'Automatismes de Première — un seul thème, 10 questions';
     })();
 
-    // Masque le message de blocage (s'il est affiche) des qu'une nouvelle
-    // serie demarre, meme principe que sujet-blanc.html.
+    // Ferme la pop-up de blocage (si affichee) des qu'une nouvelle serie
+    // demarre, meme principe que sujet-blanc.html.
     document.getElementById('app').addEventListener('click', function (e) {
-      if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) {
-        const zoneEtat = document.getElementById('suivi-etat');
-        if (zoneEtat) zoneEtat.hidden = true;
-      }
+      if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) fermerModaleDevoir();
     });
   });
 </script>

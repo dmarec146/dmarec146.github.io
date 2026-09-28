@@ -3355,6 +3355,68 @@ de changer ce réglage sans qu'il en reparle.
   UTC) pour confirmer le verrouillage réel désormais visible côté élève et
   l'écriture dans `devoirsTentatives`/l'affichage des résultats.
 
+- **Correction/sujet blanc : réactivation dès essais épuisés + pop-up plus
+  visible (28/09/2026, mêmes échanges avec David que ci-dessus)**, deux
+  retours après son premier test :
+
+  1. **« Voir toutes les réponses »/« Voir la correction détaillée » doit se
+  réactiver dès que les essais du devoir sont épuisés**, pas seulement après
+  l'échéance — jusqu'ici le blocage (ajouté plus haut le 28/09/2026) durait
+  toute la fenêtre du devoir sans exception, alors qu'une fois le quota
+  atteint, l'élève ne peut plus soumettre de nouvelle tentative : plus aucune
+  raison de lui cacher le corrigé. `ETAT.config.verrouille` porte désormais
+  un champ `bloque` (déjà renvoyé par `devoirAutomatismeActif`/
+  `devoirAutomatismeFicheActif`, simplement pas transmis jusqu'ici) : les
+  deux boutons ainsi que `basculerReponses()`/le handler `basculer-revue`
+  (deuxième ligne de défense) utilisent une nouvelle fonction commune
+  `correctionBloqueeParDevoir()` (`ETAT.config.verrouille &&
+  !ETAT.config.verrouille.bloque`) au lieu du simple `!!ETAT.config.verrouille`
+  d'avant. Niveau/mode/durée/thèmes restent verrouillés jusqu'à l'échéance,
+  seule la correction se débloque.
+
+  Le cas intéressant : la tentative qui épuise le quota est SOUVENT celle
+  qui vient tout juste d'être terminée (`verrouille.bloque`, calculé au
+  chargement de la page, ne le sait pas encore). Nouvelle fonction exportée
+  `Automatismes.actualiserVerrouille(patch)` (`moteur.js`) : fusionne un
+  patch dans `ETAT.config.verrouille` et redessine, sans relancer de série
+  — appelée dans `onFinSerie` (`fiche.html`/`sujet-blanc.html`) juste après
+  l'écriture de la tentative (désormais `await`-ée, elle ne l'était pas
+  avant — nécessaire pour que la relecture d'état qui suit voie bien cette
+  tentative) : si l'état rechargé après coup (`etatApres`) indique le quota
+  atteint, `verrouille.bloque` passe à `true` et la page se redessine
+  aussitôt, bouton de correction réactivé sans recharger la page.
+
+  2. **Message « tentative épuisée » transformé en pop-up**, jugé trop
+  discret en petit texte gris sous la fiche/le sujet blanc. Nouveau
+  `.modal-devoir` (`automatismes.css`), même langage visuel que
+  `.modal-figure` déjà en place (fond assombri, carte blanche centrée) mais
+  en plus étroit, avec titre coloré (`--orange`) et bouton d'action explicite
+  « Compris » plutôt qu'un simple clic sur le fond pour fermer (le clic sur
+  le fond ferme quand même, en plus de la croix et du bouton — même principe
+  que `fermerZoom()` : ne se déclenche que si le clic cible directement le
+  fond, jamais un descendant, pour ne pas fermer par erreur au clic dans le
+  texte). `#suivi-etat` (le paragraphe d'origine) retiré des deux pages,
+  remplacé par `afficherModaleDevoir(texte)`/`fermerModaleDevoir()` (dupliquées
+  sur les deux pages, comme `formaterEcheance()` déjà avant elles — pas
+  couplées à `moteur.js`, qui ignore tout du concept de devoir). Fermeture
+  automatique de la pop-up (si ouverte) au clic sur « Nouvelle fiche »/
+  « Nouvelle fiche (mêmes thèmes) », comme avant pour le paragraphe.
+
+  Vérifié en conditions réelles dans le navigateur (faux `config.verrouille`,
+  sans passer par un vrai devoir Firestore, même limite que les tests
+  précédents) sur les deux pages et les deux modes (fiche/chrono) : bouton de
+  correction désactivé avec `bloque:false`, réactivé instantanément par un
+  appel direct à `Automatismes.actualiserVerrouille({bloque:true})` sans
+  rechargement, clic révèle alors bien la correction, panneau « Devoir en
+  cours » (niveau/mode) toujours affiché après réactivation (seule la
+  correction se débloque). Pop-up : ouverture/fermeture par la croix, le
+  bouton « Compris », un clic sur le fond et la touche Échap, un clic à
+  l'intérieur du texte ne la ferme PAS, fermeture automatique confirmée au
+  clic sur « Nouvelle fiche ». Capture d'écran de la pop-up (rendu propre,
+  lisible). Comportement libre (sans devoir) revérifié inchangé sur les deux
+  pages. Syntaxe (`vm.Script`/`node --check`) sur les 3 fichiers modifiés,
+  aucune erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

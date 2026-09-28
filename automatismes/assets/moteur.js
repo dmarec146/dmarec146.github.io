@@ -446,6 +446,35 @@
     return `<div class="themes-bandeau"><span class="themes-label">${libelle} :</span> ${th.map(t => `<span class="theme-puce">${echapper(t)}</span>`).join('')}</div>`;
   }
 
+  // Devoir en cours (ETAT.config.verrouille) : la correction (« Voir toutes
+  // les réponses »/« Voir la correction détaillée ») reste bloquée tant que
+  // les essais du devoir ne sont pas épuisés (verrouille.bloque) -- une fois
+  // le quota atteint, plus aucune raison de la cacher : l'élève ne peut plus
+  // soumettre de nouvelle tentative, voir la correction ne peut donc plus
+  // lui donner un avantage indu (28/09/2026, retour de David : le bouton
+  // restait bloqué même après épuisement des essais). `verrouille.bloque`
+  // est déjà connu au chargement (voir devoirAutomatismeActif/
+  // devoirAutomatismeFicheActif, suivi.js) et mis à jour en direct par la
+  // page dès qu'une tentative épuise le quota EN COURS de session, via
+  // actualiserVerrouille() ci-dessous (pas d'attente d'un rechargement). Se
+  // réactive aussi tout seul au prochain chargement une fois l'échéance
+  // passée (devoirAutomatismeActif() ne retrouve alors plus de devoir actif,
+  // verrouille redevient absent).
+  const TITRE_CORRECTION_BLOQUEE = 'Devoir en cours : la correction sera disponible une fois tes tentatives épuisées, ou après l&#39;échéance.';
+  function correctionBloqueeParDevoir() {
+    return !!(ETAT.config.verrouille && !ETAT.config.verrouille.bloque);
+  }
+
+  // Permet à la page (sujet-blanc.html/fiche.html) de mettre à jour l'état
+  // du devoir en cours SANS relancer de série -- utilisé pour réactiver la
+  // correction dès que les essais sont épuisés PENDANT la session en cours
+  // (voir onFinSerie côté page), sans attendre un rechargement.
+  function actualiserVerrouille(patch) {
+    if (!ETAT.config.verrouille) return;
+    Object.assign(ETAT.config.verrouille, patch);
+    rendre();
+  }
+
   // ----- panneau de mode -----
   // En cas de devoir en cours (ETAT.config.verrouille, voir demarrer()) :
   // resume non cliquable a la place des boutons de choix habituels --
@@ -622,17 +651,11 @@
   function vueFicheHTML() {
     const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i], neutre: true })).join('');
     const revelees = ETAT.corrigees.every(c => c);
-    // Devoir en cours (ETAT.config.verrouille) : la correction reste bloquée
-    // tant que l'échéance n'est pas passée, pour éviter qu'un élève la
-    // consulte puis la partage avec des camarades qui n'ont pas encore fait
-    // le devoir -- se réactive tout seul au prochain chargement une fois
-    // l'échéance passée (devoirAutomatismeActif() ne retrouve alors plus de
-    // devoir actif, verrouille redevient absent).
-    const bloque = !!ETAT.config.verrouille;
+    const bloque = correctionBloqueeParDevoir();
     return `<div class="liste-questions" id="liste-questions">${cartes}</div>
       <div id="bilan-fiche">${bilanFicheHTML()}</div>
       <div class="barre-controle">
-        <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="Devoir en cours : la correction sera disponible après l&#39;échéance."` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
+        <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
         <button class="btn-secondaire" data-action="recommencer">Recommencer</button>
         ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
         <button class="btn-secondaire" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
@@ -713,7 +736,7 @@
   // (voir vueFicheHTML) -- deuxième ligne de défense si l'action est déclenchée
   // autrement qu'en cliquant le bouton désactivé.
   function basculerReponses() {
-    if (ETAT.config.verrouille) return;
+    if (correctionBloqueeParDevoir()) return;
     const revelees = ETAT.corrigees.every(c => c);
     ETAT.corrigees = ETAT.questions.map(() => !revelees);
     rendre();
@@ -750,14 +773,14 @@
     if (c.phase === 'recap') return recapHTML();
     if (c.phase === 'fin') {
       // Devoir en cours (ETAT.config.verrouille) : même blocage que côté fiche
-      // (voir vueFicheHTML) -- les cartes corrigées ne sont même pas générées
-      // pour qu'aucune bonne réponse ne traîne dans le HTML de la page tant
-      // que le bouton est désactivé.
-      const bloque = !!ETAT.config.verrouille;
+      // (voir vueFicheHTML/correctionBloqueeParDevoir) -- les cartes corrigées
+      // ne sont même pas générées pour qu'aucune bonne réponse ne traîne dans
+      // le HTML de la page tant que le bouton est désactivé.
+      const bloque = correctionBloqueeParDevoir();
       const cartes = bloque ? '' : ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: true, cliquable: false })).join('');
       return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}
           <div class="barre-controle">
-            <button class="btn-secondaire" data-action="basculer-revue" ${bloque ? `disabled title="Devoir en cours : la correction sera disponible après l&#39;échéance."` : ''}>Voir la correction détaillée</button>
+            <button class="btn-secondaire" data-action="basculer-revue" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>Voir la correction détaillée</button>
             ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
             <button class="btn-principal" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
           </div>
@@ -930,7 +953,7 @@
       else if (action === 'reprendre') reprendreQuestionsPassees();
       else if (action === 'terminer-serie') terminerSerie();
       else if (action === 'basculer-revue') {
-        if (ETAT.config.verrouille) return; // devoir en cours : correction bloquee jusqu'a l'echeance, voir vueChronoHTML
+        if (correctionBloqueeParDevoir()) return; // devoir en cours, essais pas encore epuises -- voir vueChronoHTML
         const rev = document.getElementById('revue');
         const visible = rev.style.display !== 'none';
         rev.style.display = visible ? 'none' : '';
@@ -973,6 +996,7 @@
     tirerDansBanque: tirerDansBanque,
     demarrer: demarrer,
     titreBanque: id => (banques[id] ? banques[id].titre : null),
+    actualiserVerrouille: actualiserVerrouille,
     etat: ETAT
   };
 })();
