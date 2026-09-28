@@ -3507,6 +3507,46 @@ de changer ce réglage sans qu'il en reparle.
   Syntaxe (`node --check`/`vm.Script`) sur les 3 fichiers, aucune erreur
   console.
 
+- **Latence perçue comme un blocage persistant du bouton de correction
+  (28/09/2026, même jour, quatrième retour de David)** : après confirmation
+  que le déverrouillage des thèmes fonctionnait, David signale que le
+  bouton « Voir toutes les réponses » restait quand même bloqué « en
+  revenant en mode normal après un devoir terminé ».
+
+  **Cause** : le correctif précédent levait le verrouillage en deux
+  allers-retours Firestore SÉQUENTIELS — `enregistrerTentativeFicheAutomatismesSiDevoir`/
+  `enregistrerAutomatisme` (écrit la tentative) PUIS un second appel à
+  `verifierEtatDevoirAutomatisme` (relit l'état pour savoir si cette
+  tentative vient d'épuiser le quota). Le bouton restait donc visiblement
+  désactivé pendant toute la durée cumulée des deux requêtes réseau — pas
+  un blocage permanent, mais un délai perceptible (facilement plusieurs
+  centaines de ms) que David a interprété comme figé.
+
+  **Corrigé en supprimant le second aller-retour**, devenu inutile :
+  l'information nécessaire (le nombre d'essais déjà utilisés AVANT cette
+  tentative, `etatAvant.essaisUtilises`, et le plafond `nbEssaisMax`) est
+  déjà en main depuis la première vérification, faite avant l'écriture.
+  Puisque l'écriture qui vient de se terminer a forcément incrémenté ce
+  compteur de 1 (sinon elle aurait été refusée par
+  `enregistrerTentativeDevoirAutomatismeSiApplicable`, cas déjà couvert par
+  la branche `etatAvant.bloque` juste au-dessus), `essaisApresCetteTentative
+  = etatAvant.essaisUtilises + 1` suffit à savoir si le quota vient d'être
+  atteint — sans relire Firestore une seconde fois. Un seul aller-retour
+  réseau reste incompressible (il faut bien attendre que la tentative soit
+  écrite), mais le second est éliminé.
+
+  Vérifié en conditions réelles dans le navigateur (même méthode de stub
+  fidèle que les tests précédents) : sur `fiche.html`, après un délai
+  artificiel de seulement 20 ms (contre 300 ms utilisés pour les tests
+  précédents, qui masquaient cette latence), le bouton est déjà réactivé,
+  `verrouille` déjà `null`, la pop-up « dernière tentative » déjà affichée
+  avec le bon compteur (1/1) — confirme que le déblocage ne dépend plus
+  que d'un seul aller-retour au lieu de deux. Cas « tentative déjà refusée
+  » (`etatAvant.bloque` vrai dès le premier appel) revérifié séparément sur
+  `sujet-blanc.html`, comportement inchangé (verrouillage maintenu, comme
+  attendu — ce cas ne correspond à aucune écriture nouvelle). Syntaxe des
+  deux pages revérifiée, aucune erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

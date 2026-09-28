@@ -174,9 +174,9 @@ window.MathJax = {
             etatAvant = null;
           }
         }
-        // Attend la fin de l'ecriture avant de reverifier l'etat -- sinon la
-        // relecture juste apres (etatApres) risquerait de ne pas encore voir
-        // cette tentative.
+        // Attend la fin de l'ecriture avant de decider quoi que ce soit
+        // ensuite (voir plus bas) -- pas besoin de relire l'etat apres coup,
+        // etatAvant + savoir que l'ecriture a eu lieu suffisent.
         if (verrouille && window.enregistrerTentativeFicheAutomatismesSiDevoir) {
           try {
             await window.enregistrerTentativeFicheAutomatismesSiDevoir(resultat.bonnes, resultat.total, resultat.niveau, resultat.mode, resultat.duree, themesJoues, resultat.repondues);
@@ -184,28 +184,23 @@ window.MathJax = {
         }
         if (etatAvant && etatAvant.bloque) {
           afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
-        } else if (verrouille && window.verifierEtatDevoirAutomatisme) {
+        } else if (verrouille && etatAvant) {
           // Leve le verrouillage des que les essais sont epuises (28/09/2026,
-          // retours de David) -- reverifie l'etat APRES l'ecriture pour
-          // detecter le cas ou CETTE tentative est justement la derniere
-          // autorisee (etatAvant, capture avant l'ecriture, reste a false
-          // dans ce cas precis, d'ou le "else if" : les deux pop-up ne
-          // s'affichent jamais ensemble). Si c'est bien le cas : previent
-          // l'eleve explicitement (les boutons se reactivaient en silence
-          // sans message), ET leve completement le verrouillage cote moteur
-          // (themes/niveau/mode redeviennent libres, pas seulement la
-          // correction -- sinon un eleve revenant sur cette page depuis le
-          // sommaire apres avoir epuise un devoir a themes restreints
-          // restait quand meme coince sur CES themes-la au lieu d'une
-          // pratique libre normale).
-          try {
-            const etatApres = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree, 'fiche', themesJoues);
-            if (etatApres && etatApres.bloque) {
-              afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatApres.titre} », ${etatApres.essaisUtilises}/${etatApres.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais consulter la correction, et continuer à t'entraîner librement.`);
-              verrouille = null;
-              Automatismes.leverVerrouille();
-            }
-          } catch (erreur) { /* ignore, reste bloque jusqu'au prochain chargement */ }
+          // retours de David). Calcule directement si CETTE tentative (deja
+          // ecrite juste au-dessus) vient d'epuiser le quota, a partir
+          // d'etatAvant (deja en main, aucun nouvel aller-retour Firestore) --
+          // plutot que d'attendre un second appel a verifierEtatDevoirAutomatisme
+          // pour le revérifier : ce second aller-retour ajoutait un delai
+          // reseau pendant lequel le bouton de correction restait visible-
+          // ment bloque (signale par David comme "le bouton reste bloque en
+          // revenant en mode normal" -- en realite une latence, pas un blocage
+          // permanent, mais suffisamment genante pour la supprimer).
+          const essaisApresCetteTentative = etatAvant.essaisUtilises + 1;
+          if (essaisApresCetteTentative >= etatAvant.nbEssaisMax) {
+            afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatAvant.titre} », ${essaisApresCetteTentative}/${etatAvant.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais consulter la correction, et continuer à t'entraîner librement.`);
+            verrouille = null;
+            Automatismes.leverVerrouille();
+          }
         }
       }
     });
