@@ -604,10 +604,17 @@
   function vueFicheHTML() {
     const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i], neutre: true })).join('');
     const revelees = ETAT.corrigees.every(c => c);
+    // Devoir en cours (ETAT.config.verrouille) : la correction reste bloquée
+    // tant que l'échéance n'est pas passée, pour éviter qu'un élève la
+    // consulte puis la partage avec des camarades qui n'ont pas encore fait
+    // le devoir -- se réactive tout seul au prochain chargement une fois
+    // l'échéance passée (devoirAutomatismeActif() ne retrouve alors plus de
+    // devoir actif, verrouille redevient absent).
+    const bloque = !!ETAT.config.verrouille;
     return `<div class="liste-questions" id="liste-questions">${cartes}</div>
       <div id="bilan-fiche">${bilanFicheHTML()}</div>
       <div class="barre-controle">
-        <button class="btn-principal" data-action="reponses">${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
+        <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="Devoir en cours : la correction sera disponible après l&#39;échéance."` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
         <button class="btn-secondaire" data-action="recommencer">Recommencer</button>
         ${ETAT.config.nbThemes && !ETAT.config.themeImpose ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
         <button class="btn-secondaire" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
@@ -684,7 +691,11 @@
   }
 
   // mode fiche : révèle (ou masque) la bonne réponse et l'explication de chaque question.
+  // Devoir en cours (ETAT.config.verrouille) : bloqué, comme le bouton lui-même
+  // (voir vueFicheHTML) -- deuxième ligne de défense si l'action est déclenchée
+  // autrement qu'en cliquant le bouton désactivé.
   function basculerReponses() {
+    if (ETAT.config.verrouille) return;
     const revelees = ETAT.corrigees.every(c => c);
     ETAT.corrigees = ETAT.questions.map(() => !revelees);
     rendre();
@@ -720,10 +731,15 @@
     }
     if (c.phase === 'recap') return recapHTML();
     if (c.phase === 'fin') {
-      const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: true, cliquable: false })).join('');
+      // Devoir en cours (ETAT.config.verrouille) : même blocage que côté fiche
+      // (voir vueFicheHTML) -- les cartes corrigées ne sont même pas générées
+      // pour qu'aucune bonne réponse ne traîne dans le HTML de la page tant
+      // que le bouton est désactivé.
+      const bloque = !!ETAT.config.verrouille;
+      const cartes = bloque ? '' : ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: true, cliquable: false })).join('');
       return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}
           <div class="barre-controle">
-            <button class="btn-secondaire" data-action="basculer-revue">Voir la correction détaillée</button>
+            <button class="btn-secondaire" data-action="basculer-revue" ${bloque ? `disabled title="Devoir en cours : la correction sera disponible après l&#39;échéance."` : ''}>Voir la correction détaillée</button>
             ${ETAT.config.nbThemes && !ETAT.config.themeImpose ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
             <button class="btn-principal" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
           </div>
@@ -896,6 +912,7 @@
       else if (action === 'reprendre') reprendreQuestionsPassees();
       else if (action === 'terminer-serie') terminerSerie();
       else if (action === 'basculer-revue') {
+        if (ETAT.config.verrouille) return; // devoir en cours : correction bloquee jusqu'a l'echeance, voir vueChronoHTML
         const rev = document.getElementById('revue');
         const visible = rev.style.display !== 'none';
         rev.style.display = visible ? 'none' : '';

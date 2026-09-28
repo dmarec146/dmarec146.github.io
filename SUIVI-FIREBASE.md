@@ -1785,6 +1785,48 @@ de changer ce réglage sans qu'il en reparle.
     traverser le texte (repéré sur un arbre à 3 branches initiales, plus
     pentues qu'à 2). Calculer le décalage perpendiculairement à la direction
     réelle de la ligne réglait le problème quelle que soit la pente.
+- **Correction du corrigé d'un sujet blanc d'automatismes accessible pendant
+  un devoir (28/09/2026)**, signalé par David : le verrouillage niveau/mode/
+  durée d'un devoir d'automatismes (19/09/2026, voir plus haut) empêchait
+  bien de jouer « à côté » du devoir, mais rien n'empêchait un élève de
+  révéler le corrigé complet — bouton « Voir toutes les réponses » en mode
+  fiche, « Voir la correction détaillée » en mode chrono (`automatismes/
+  assets/moteur.js`) — puis de la partager avec des camarades qui n'ont pas
+  encore fait le devoir. Contrairement aux fiches de calcul (où « Corrigé
+  des erreurs »/« Voir toutes les réponses » sont déjà bloqués tant que la
+  fiche n'est pas validée), rien de tel n'existait côté automatismes.
+
+  Corrigé en s'appuyant sur `ETAT.config.verrouille`, déjà présent
+  uniquement quand un devoir est actif (échéance pas encore passée, voir
+  `devoirAutomatismeActif()`) et absent de lui-même au chargement suivant
+  une fois l'échéance dépassée — aucune nouvelle donnée à lire, juste
+  réutiliser l'indicateur existant. Trois changements dans `moteur.js` :
+  (1) `vueFicheHTML()` désactive le bouton « Voir toutes les réponses »
+  (`disabled`, tooltip « Devoir en cours : la correction sera disponible
+  après l'échéance. ») tant que `verrouille` est présent ; (2)
+  `basculerReponses()` refuse aussi d'agir si appelée directement
+  (deuxième ligne de défense, même principe que `validerFicheActuelle()`
+  sur les fiches de calcul) ; (3) en mode chrono, `vueChronoHTML()` (phase
+  « fin ») désactive de la même façon « Voir la correction détaillée » ET
+  ne génère même plus le HTML des cartes corrigées dans le `<div id="revue">`
+  caché tant que verrouillé — sinon les bonnes réponses restaient
+  inspectables dans le code source de la page malgré le bouton désactivé,
+  simple `display:none` insuffisant ici contrairement au cas des fiches de
+  calcul (où le corrigé n'est de toute façon jamais généré tant que
+  `corrigees[i]` reste `false`, donc pas concernées par ce risque) ; le
+  handler de l'action `basculer-revue` refuse également d'agir en direct.
+
+  Testé en conditions réelles (appels directs à `Automatismes.demarrer()`
+  avec un faux `config.verrouille`, sur `automatismes/premiere/
+  sujet-blanc.html`, sans passer par un vrai devoir Firestore) : mode
+  fiche verrouillé — bouton désactivé avec le bon tooltip, clic et appel
+  direct de `basculerReponses()` sans effet (`ETAT.corrigees` reste tout à
+  `false`, aucune classe `.opt.bonne` dans le DOM) ; mode fiche sans devoir
+  — bouton actif, clic révèle normalement (comportement inchangé) ; mode
+  chrono verrouillé, série menée à terme — bouton désactivé avec le bon
+  tooltip, `<div id="revue">` vide (aucune bonne réponse dans le HTML de la
+  page) ; mode chrono sans devoir — bouton actif, correction affichée
+  normalement au clic. `node --check` sur `moteur.js` (syntaxe OK).
 
 ## Procédure de reprise sur une autre machine
 
