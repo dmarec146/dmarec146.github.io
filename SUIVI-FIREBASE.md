@@ -1648,6 +1648,1309 @@ de changer ce réglage sans qu'il en reparle.
   aucune erreur console, capture d'écran confirmant une seule section «
   Calcul 5.11 » (fusion propre, pas de doublon de titre, le rappel de
   formule de Bernoulli et la grille a)/b) bien rendus).
+
+  **Fiche 7 de Première (cahier 2, dérivation), 25/09/2026 — faite en
+  autonomie complète** (David : « je te laisse faire la fiche 7 en
+  autonomie en respectant toutes nos règles intelligentes »), même méthode
+  que les fiches précédentes :
+
+  **Automatismes (7.1+7.2+7.3, 4+3+6=13) → 6, répartis intelligemment
+  entre 3 calculs distincts** (pas 2 comme les fiches précédentes — les
+  trois traitent des sujets différents : inéquation linéaire, simplifier
+  une fraction de puissances, évaluer une fonction quadratique en une
+  valeur irrationnelle). 7.1 (4→2) : même gabarit répété, aucune famille à
+  perdre. 7.2 (3→2) : gardé le cas classique (deux bases premières 2 et 3)
+  et le plus complet (quatre bases composites 12/10/15/8, la décomposition
+  en facteurs premiers la plus complète) ; écarté le cas intermédiaire
+  (une seule base composite, milieu de gradient redondant). 7.3 (6→2) :
+  gardé le cas classique (évaluer en √D pur) et le plus complet
+  (combinaison linéaire (p+√D)/q) ; écartés deux variantes de signe
+  redondantes avec ce dernier et un doublon exact (même générateur rappelé
+  deux fois).
+
+  **Section « Dérivation de polynômes » (7.4/7.5, pas de fusion : deux
+  tâches différentes — expression générale vs valeur en un point).** 7.4
+  (3) laissée telle quelle : trois degrés croissants (4/5/6), un vrai
+  gradient, aucun doublon. 7.5 (4→2) : les trois premiers appels étaient
+  le même générateur (degré 3) rappelé à l'identique — gardé un seul
+  tirage degré 3 (délicat) plus le tirage degré 2 déjà distinct
+  (classique).
+
+  **7.6 « Inverses (I) » + 7.7 « (II) » → un seul 7.6, 4 exemples
+  gradués par degré** (1→2→3→5 ; le degré 3 était testé deux fois à
+  l'identique entre les deux anciens groupes, gardé une seule fois).
+  **7.8 « Quotients (I) » + 7.9 « (II) » → un seul 7.7, 4 exemples**
+  (déjà exactement 4 sans redondance interne, juste fusionnés et
+  relettrés : linéaire/linéaire → cubique/linéaire → cubique/cubique →
+  quartique/quadratique).
+
+  **7.10 « Quotients à simplifier (I) » et 7.11 « (II) » NON fusionnées,
+  contrairement au motif (I)/(II) habituel** : ce ne sont pas deux
+  pratiques indépendantes du même exercice, mais un problème EN DEUX
+  ÉTAPES (7.11 renvoie explicitement à « 7.10 a) », utilise le résultat
+  déjà simplifié pour dériver) — même situation que 3.11/3.12 en fiche 3
+  (calculer P(r) → factoriser → conclure), qui étaient restées séparées
+  pour la même raison. Renumérotées 7.8/7.9 sans changement de contenu ;
+  la référence textuelle « À l'aide de 7.10 a) » mise à jour en « À l'aide
+  de 7.8 a) ».
+
+  **7.12 « Signe de la dérivée » (4, inchangée)** : 4 familles déjà
+  distinctes (dérivée d'un quadratique, quotient au carré, homographie,
+  inverse d'un quadratique), aucune redondance, renumérotée 7.10.
+
+  **7.13 « Dériver puis factoriser (I) » + 7.14 « (II) » → un seul 7.11,
+  4 exemples.** Contrairement aux autres fusions, ce ne sont pas des
+  étapes d'un gradient mais DEUX techniques distinctes (racine double →
+  facteur au carré, vs racines distinctes → produit de deux facteurs) —
+  chaque ancien groupe appelait déjà le même générateur 4 fois à
+  l'identique (aucune variation structurelle, seulement les valeurs
+  tirées). Gardés 2 tirages de chaque technique plutôt qu'1+1, pour
+  utiliser pleinement le budget de 4 exemples sans perdre l'exercice
+  réel de chaque cas.
+
+  **Section « Calculs plus avancés » (7.15/7.16/7.17) entièrement
+  laissée telle quelle**, renumérotée 7.12/7.13/7.14 : aucune des trois
+  ne contient de doublon interne. 7.15 (4) : degré 2 → degré 3 → deux cas
+  statiques de complexité croissante, gradient réel. 7.16 (4) : quatre
+  identités de sommes différentes (série géométrique, série alternée,
+  série factorielle, série paire mise à l'échelle), aucune redondance.
+  7.17 (8) : huit combinaisons symboliques du produit/quotient/racine
+  toutes algébriquement distinctes (fg+gh, f²/g, (f³+g)/(gh), g-f/h³,
+  f³g², f/(g/h), √(f/g), fgh) — délibérément laissée à 8 malgré sa
+  taille : aucune règle ne demande de réduire un groupe déjà sans
+  redondance, et c'est le cœur du chapitre « expressions formelles »
+  (dérivation symbolique), pas une répétition d'exercice numérique.
+
+  Fiche passée de 17 à 14 groupes, 61 à 47 questions.
+  `FORMES_FACTORISEES` recalculée (`'7.11': 'numerateur'`, seule clé
+  restante). Vérifié : syntaxe (`vm.Script`), 500 tirages auto-cohérents
+  (`checkEqualNumeric`/`checkEnsemble`/validité structurelle des
+  `intervalleSpec`, 0 échec), cycle complet dans le vrai navigateur avec
+  les vrais champs MathLive (47/47, avec 10 échecs isolés dans des
+  groupes non modifiés en contenu — 7.1/7.10/7.13 — comparés à l'ancienne
+  fiche où les mêmes catégories échouaient déjà à l'identique, donc pas
+  une régression), panneau « Voir toutes les réponses » (47/47, aucune
+  erreur MathJax), référence croisée « À l'aide de 7.8 a) » vérifiée dans
+  l'énoncé généré, capture d'écran confirmant le rendu des sections
+  fusionnées (7.6 et 7.11).
+
+  **Même jour, retours de David sur la fiche 7** :
+
+  1. **Tous les « f'(x) »/« f'(a) » en texte brut dans les titres de
+  calcul rendus en vrai LaTeX** (`\(f'(x)\)` au lieu du texte plain
+  « f'(x) », l'apostrophe droite étant peu lisible comme symbole prime).
+  7 titres concernés (7.4, 7.5, 7.6, 7.7, 7.9, 7.10, 7.11) ; 7.10 profite
+  au passage du même traitement pour son inéquation (`\(f'(x)\geqslant
+  0\)` au lieu de « f'(x)≥0 »). Vérifié que fiche 6 (Dérivation I) n'a pas
+  le même défaut (occurrences de `f'(x)` toutes dans des commentaires de
+  code, jamais dans un texte affiché) — pas de correction nécessaire
+  là-bas.
+  2. **7.12 (Avec des racines carrées) et l'ancien 7.14 (Expressions
+  formelles) supprimés entièrement** (contrairement au reste du chantier,
+  ce ne sont pas des fusions mais des suppressions pures — David a jugé
+  ces deux groupes non nécessaires). 7.13 (Avec des sommes) renumérotée
+  7.12, seule survivante de la section « Calculs plus avancés ».
+  3. **7.6 (Inverses), 7.7 (Quotients) et 7.11 (Dériver puis factoriser)
+  ramenées de 4 à 2 exemples chacune** : 7.6 garde les deux extrémités du
+  gradient de degré (1 et 5, écarte 2 et 3) ; 7.7 garde les deux
+  extrémités (linéaire/linéaire et quartique/quadratique, écarte les deux
+  étapes intermédiaires) ; 7.11 garde un exemple de chacune des deux
+  techniques (racine double, racines distinctes) plutôt que deux de
+  chaque comme lors du chantier initial.
+  4. **7.10 (Signe de la dérivée) : nouvel exemple b) obligatoire, un
+  polynôme de degré 3**, à la place de l'ancien b) (quotient au carré,
+  retiré). `f(x)=Ax³+Bx²+Cx+D` construit par Vieta à partir de deux
+  racines choisies pour `f'(x)=3A(x-r₁)(x-r₂)` (quadratique réelle à deux
+  racines) : extérieur si le coefficient dominant de `f'` est positif,
+  intérieur sinon — même esprit que a) (quadratique) et c) (Möbius) déjà
+  présents, mais avec `f'` elle-même une quadratique à factoriser plutôt
+  qu'une expression déjà linéaire ou homographique. a) (quotient au
+  carré) gardé (David a laissé le choix « b, ou c » — retiré celui des
+  deux qui testait la famille la moins riche, la Möbius/homographique
+  restant une technique plus généraliste et déjà bien distincte de a) et
+  du nouveau b).
+
+  **Bug réel trouvé en vérifiant le nouveau b), présent aussi dans
+  l'ancien a) (itemQuadratique) depuis avant ce chantier** : les deux
+  construisaient leur `intervalleSpec` avec `inclusBas`/`inclusHaut` à
+  `true` du côté d'une borne infinie (`{bas:X, haut:Infinity,
+  inclusHaut:true}`) — mathématiquement incohérent (l'infini n'est jamais
+  « inclus »), et surtout **empêchait un élève tapant la notation
+  correcte** (`[X;+∞[`, crochet fermant vers l'extérieur) **d'être
+  reconnu comme juste**, puisque `checkIntervalle` exige une correspondance
+  stricte des crochets. Confirmé par un test direct (contournant MathLive) :
+  `checkIntervalle` avec la notation mathématiquement correcte échouait
+  systématiquement tant que le bug n'était pas corrigé, réussissait à
+  100% après. Le panneau « Voir toutes les réponses » affichait par
+  ailleurs `[9/8\,;\,+\infty]` (crochet fermant à l'infini, notation
+  fausse) avant correction. `itemMobius` et `itemUnSurQuadratique`
+  (voisins du même groupe) étaient déjà corrects, servant de référence
+  pour le correctif. Corrigé sur les deux items concernés (a et le
+  nouveau b).
+
+  Fiche passée de 47 à 29 questions, 14 à 12 groupes. Vérifié à nouveau
+  en entier après ces changements : syntaxe, 500 tirages auto-cohérents
+  (validité structurelle + test direct `checkIntervalle` avec notation
+  `-inf`/`+inf`, 0 échec sur les deux), cycle complet dans le navigateur
+  (29/29 bonnes réponses acceptées, mêmes échecs isolés déjà connus dans
+  7.1/7.10/7.12 — piège MathLive), panneau « Voir toutes les réponses »
+  (29/29, aucune erreur MathJax, notation d'intervalle désormais correcte
+  aux captures), capture d'écran confirmant le rendu LaTeX des titres et
+  le nouvel exemple 7.10 b).
+
+  **Fiche 8 de Première (cahier 2, Dérivation III), 25/09/2026 — faite en
+  autonomie complète** (David : « ok. commence la fiche 8 »), même méthode
+  que les fiches précédentes. Architecture différente des fiches 1-7 :
+  tableau plat `generateurs` (façon fiche-16/25 de Seconde) plutôt que des
+  fonctions `genGroupeN()` par groupe — extraction/reconstruction adaptée
+  en conséquence (bornage sur les marqueurs `{id:"X"` plutôt que sur les
+  noms de fonction).
+
+  **Automatismes (8.1+8.2, 4+4) → 6, répartis 3+3** : les deux traitent
+  des combinaisons linéaires de fractions/polynômes, déjà un vrai
+  gradient chacun — 8.1 perd un cas redondant (même gabarit de fractions
+  rappelé deux fois), 8.2 perd le cas intermédiaire entre le plus simple
+  et le plus complet.
+
+  **8.3 « Puissances (I) » + 8.4 « (II) » → un seul 8.3, 8→4 exemples** :
+  même compétence (dérivée de `(ax+b)^n`), gardé un exemple par famille
+  distincte (carré, puissance 5, cube, quotient de puissance au carré),
+  écartés les doublons de degré.
+
+  **8.5 « Produits de puissances (I) » + 8.6 « (II) » → un seul 8.4,
+  4 exemples** (déjà 4 sans redondance interne une fois fusionnés,
+  aucune coupe nécessaire).
+
+  **8.7 « Quotients (I) » + 8.8 « (II) » → un seul 8.5, 4 exemples**
+  (même situation, fusion pure sans perte).
+
+  **8.9/8.10/8.11 (dérivation à partir de `g(x)=f(mx+n)` ET
+  `h(x)=k·f(px+q)`, 4 exemples chacun) → 8.6/8.7/8.8, 2 exemples
+  chacun** : chaque groupe testait deux compétences en parallèle sur le
+  même énoncé (dériver `g` ET dériver `h`) — gardés uniquement les items
+  b)/c) ou c)/d) portant sur `h` (le cas avec facteur multiplicatif `k`,
+  legèrement plus riche que `g` qui n'en a pas), écartés les items
+  portant sur `g`. Le générateur partagé `genererParametresAvances()`
+  (fonction `ligne()`) calcule déjà les paramètres de `g` et `h`
+  ensemble — aucune modification nécessaire là, seulement les items
+  consommateurs. `texteNote()` et `mettreAJourTextesAvances()` réécrits
+  pour ne plus définir/référencer que `h` (la définition de `g`,
+  désormais inutilisée, supprimée du texte introductif) ; les paragraphes
+  HTML `texte-8-6`/`texte-8-7`/`texte-8-8` (anciennement `texte-8-9`
+  etc.) mis à jour en conséquence.
+
+  **8.12/8.13/8.14/8.15/8.16 (équations de tangentes, ordonnées à
+  l'origine, calculs avancés) laissées inchangées**, renumérotées
+  8.9/8.10/8.11/8.12/8.13 : aucune des cinq ne contient de redondance
+  interne identifiée.
+
+  Fiche passée de 16 à 13 groupes, 49 à 37 questions. **Piège rencontré
+  pendant la reconstruction** : en relabelant les items conservés d'un
+  groupe fusionné, deux lignes du script de fusion faisaient une
+  réaffectation directe de variable (`const n4a = i5a;`) sans appeler la
+  fonction `renum()` qui met à jour le champ `id` du texte — résultat :
+  les items conservés affichaient encore leur ancien numéro (`8.5 a)`
+  au lieu de `8.4 a)`, `8.7 a)` au lieu de `8.5 a)`). Repéré uniquement
+  en listant les `id` réellement générés (pas par un test de syntaxe),
+  corrigé en remplaçant les deux lignes par des appels `renum(...)`
+  explicites. Vérifié après correction : syntaxe (`vm.Script` sur les
+  deux blocs `<script>`, OK), 500 tirages auto-cohérents
+  (`checkEqualNumeric`/`checkEnsemble`, 0 échec), liste des 37 `id`
+  générés conforme au plan exact, cycle complet dans le vrai navigateur
+  avec les vrais champs MathLive (**37/37 bonnes réponses acceptées,
+  aucun échec** — donc pas besoin de comparaison avec une ancienne
+  version pour distinguer régression et bizarrerie MathLive préexistante
+  cette fois), panneau « Voir toutes les réponses » (aucune erreur
+  MathJax), aucune erreur console, capture d'écran confirmant le rendu
+  des sections fusionnées 8.3/8.4/8.5 et du texte introductif simplifié
+  de 8.6 (`h(x)=f(3x-2)` bien rendu en LaTeX, plus de référence à `g`).
+
+  **Même jour, deuxième passe sur fiche 8, retours de David** : « supprimer
+  8.4, 8.5, 8.8. 8.9, supprimer d) et inutile d'écrire (sous la forme ...)
+  à chaque question, c'est écrit dans ? Certains titres ne sont pas en
+  mode LATEX. 8.10 : 2 exemples. Fusionner 8.12 et 8.13 (deux exemples.
+  Un avec et un sans paramètre) ».
+
+  1. **8.4 (Produits de puissances) et 8.5 (Quotients) supprimées
+  entièrement** (pas fusionnées, retirées — David a jugé le reste de la
+  fiche suffisant sans elles ; 8.3 « Puissances » reste seule dans la
+  section « Dérivées de fonctions composées »).
+  2. **8.8 (dérivation à partir de `f'(x)=\sqrt{2x^2+1}`) supprimée
+  entièrement**, avec son texte d'intro et le paramètre partagé `g11`
+  (n'était utilisé que par ce groupe) retiré de
+  `genererParametresAvances()`/`mettreAJourTextesAvances()`. Restent
+  8.6 et 8.7 (renumérotées 8.4/8.5), les deux seuls survivants de la
+  section « Dérivation à partir de relations fondamentales ».
+  3. **8.9 (Équations de tangentes) : item d) supprimé**, et la
+  répétition « (sous la forme y=ax+b) » retirée des trois énoncés
+  restants (a/b/c). **Réponse à la question de David** (« c'est écrit
+  dans ? ») : oui — le format est déjà expliqué dans la bulle d'aide
+  contextuelle du groupe (`aideContextuellePour`, branche `formeYax` :
+  « Écrire l'équation complète, y compris « y= »... ») et rappelé
+  visuellement par le placeholder `y=ax+b` affiché dans chaque champ
+  vide — la répétition dans l'énoncé était donc purement redondante,
+  conformément à la règle standing [[feedback-consigne-generale-factorisee]].
+  4. **Titre 8.1 converti en LaTeX** : « Écrire sous la forme ax+by+cz »
+  → « Écrire sous la forme \(ax+by+cz\) » — seul titre trouvé avec une
+  vraie formule (opérateurs `+`) en dehors d'un `\(...\)` ; les autres
+  titres (8.2 « puissances de x », etc.) ne contiennent que des lettres
+  isolées, déjà couvertes par la convention existante (voir l'audit
+  site-wide de 2026-09-01 dans [[project-premiere-fiche-randomization]]).
+  5. **8.10 (Ordonnées à l'origine) réduite de 4 à 2 exemples** : les 4
+  items testaient 4 techniques distinctes (somme de puissances, quotient
+  de puissances, produit de puissances, puissance négative isolée) —
+  gardés le quotient (b) et le produit (c), qui sont les deux règles
+  de dérivation (quotient/produit) non déjà couvertes ailleurs dans la
+  fiche ; écartée la somme de puissances (même famille que le d) qui
+  vient d'être retiré de 8.9 par cohérence) et la puissance négative
+  isolée (déjà bien représentée dans 8.3, qui inclut des exposants
+  négatifs).
+  6. **8.12 (Tangente passant par un point donné) + 8.13 (Avec un
+  paramètre) fusionnées en une seule section, 2 exemples : un sans
+  paramètre, un avec**, exactement comme demandé. Gardé 8.12 a) (fonction
+  fixe `f(x)=3(1-x/2)^2`, deux valeurs de `a` à trouver — « sans
+  paramètre ») et 8.13 a) (fonction avec paramètre `b`, trouver les
+  valeurs de `b` pour une tangente horizontale — « avec paramètre »),
+  écartés 8.12 b) (redondant avec a), même fonction et même technique,
+  juste un autre point) et 8.13 b) (réponse statique `"0"`, sans aucun
+  calcul réel, le plus faible exemple du groupe). Nouveau titre : «
+  Tangente passant par un point donné, avec ou sans paramètre. »
+
+  Fiche passée de 37 à 22 questions, 13 à 9 groupes. Vérifié : syntaxe
+  (`vm.Script` sur les deux blocs `<script>`, OK), 500 tirages
+  auto-cohérents (0 échec), liste des 22 `id` générés conforme au plan
+  exact, cycle complet dans le vrai navigateur avec les vrais champs
+  MathLive (**22/22 bonnes réponses acceptées, aucun échec**), panneau
+  « Voir toutes les réponses » (aucune erreur MathJax), aucune occurrence
+  restante de « sous la forme y=ax+b » ni de `g11` dans le fichier,
+  aucune erreur console, captures d'écran confirmant le rendu LaTeX du
+  titre 8.1, les sections fusionnées 8.4/8.5/8.9 et la suppression
+  propre de 8.8.
+
+  **Fiche 9 de Première (cahier 3, Généralités sur l'exponentielle I),
+  25/09/2026 — faite en autonomie complète** (David : « commence la
+  fiche 9 »), même méthode que les fiches précédentes. Architecture par
+  fonction unique `genererExercices()` poussant séquentiellement dans un
+  tableau `ex` (comme les fiches 1-7), avec un `groupes` indexé par
+  position — donc les suppressions/renommages n'ont besoin de toucher
+  que les items concernés, pas de réorganiser physiquement le tableau.
+
+  **Automatismes (9.1+9.2, 3+3=6) laissés inchangés** : déjà exactement
+  au total cible, chaque groupe de 3 teste 3 techniques distinctes
+  (9.1 : soustraction, division emboîtée, fraction composée ; 9.2 :
+  trois manipulations de puissances de 2), aucune redondance interne.
+
+  **9.3 « Quelques calculs pour commencer » + 9.4 « D'autres calculs
+  pour continuer » + 9.5 « Un peu plus compliqué » → un seul 9.3, 4
+  exemples** : trois titres différents mais même compétence testée à
+  complexité croissante (simplifier un produit/quotient d'exponentielles
+  via les règles de calcul), motif identique au précédent fiche 4
+  (4.3+4.4+4.6). Gardé un gradient de 4 sans redondance : 9.3 a) (cas
+  numérique classique, produit de 3 facteurs), 9.3 f) (cas numérique le
+  plus complet, quotient avec un facteur au cube), 9.4 c) (cas algébrique
+  avec x, produit de 3 facteurs dont un au carré), 9.5 b) (cas algébrique
+  le plus complexe, quotient avec un facteur au cube au dénominateur).
+  Titre unifié : « Soit x ∈ ℝ. Simplifier les expressions suivantes. »
+
+  **9.6 « Développer et réduire... » + 9.7 (titre mot pour mot
+  identique) → un seul 9.4, 4 exemples** : signal de fusion le plus
+  fort (rule 2), les deux groupes portaient littéralement le même titre.
+  Gardé 9.6 a) (carré d'une somme symétrique), 9.6 c) (carré d'une
+  différence avec coefficients), 9.6 d) (produit = différence de deux
+  carrés, technique distincte des deux précédentes), 9.7 b) (identité
+  télescopique élégante, (a+b)²-(a-b)²=4ab, bon exemple de clôture).
+  Écartés 9.6 b) (carré d'une somme avec coefficients, redondant avec
+  9.6 a)+9.6 c) combinés) et 9.7 a) (expression la plus complexe,
+  cumule plusieurs difficultés à la fois — le genre de cas que la
+  méthode dit d'écarter en priorité).
+
+  **9.8 « Factorisations » renumérotée 9.5, contenu inchangé** : 2
+  familles déjà distinctes (trinôme carré parfait a/b, différence de
+  carrés c/d), 2 exemples chacune, aucune redondance.
+
+  **9.9 « Résolutions d'équations (I) » + 9.10 « (II) » → un seul 9.6,
+  4 exemples** : motif (I)/(II) explicite, fusion automatique. Gardé
+  les 3 techniques déjà distinctes de 9.9 (comparaison directe des
+  exposants, équation du second degré en x via exp(x²)=exp(cx), produit
+  nul exploitant exp(x)>0) plus 9.10 b) (isoler l'exponentielle avant de
+  comparer les exposants — technique non couverte par 9.9). Écarté
+  9.10 a), redondant avec la technique de comparaison directe de 9.9 a).
+
+  **9.11 « Résolutions d'inéquations » renumérotée 9.7, réduite de 5 à
+  4 exemples** : 5 items couvraient plusieurs formes (bornée, non
+  bornée, union, à isoler), mais c) (union symétrique via une racine
+  carrée) était un cas particulier subsumé par e) (union générale, racines
+  rationnelles quelconques via `fracSimple`, plus riche) — écarté c),
+  gardés a) (comparaison directe), b) (borné), d) (isoler avant de
+  comparer), e) (union générale).
+
+  **9.12 à 9.18 renumérotées 9.8 à 9.14, contenu inchangé** : chacune
+  déjà une compétence à part sans redondance interne (changement de
+  variable à 3 substitutions distinctes, parité en QCM, identité
+  cosh²-sinh²=1, formule de duplication à 2 résultats différents,
+  formules de factorisation à 2 identités différentes en QCM, une
+  équation, calcul de sommes à 2 pas différents).
+
+  Fiche passée de 18 à 14 groupes, 52 à 38 questions. `FORMES_FACTORISEES`
+  mise à jour (`'9.8'` → `'9.5'`). **Piège rencontré pendant la
+  reconstruction** : plusieurs remplacements de `id="grille-9-N">` en
+  `id="grille-9-M"` (renumérotation simple, sans toucher au reste de la
+  balise) ont fait disparaître le `>` de fermeture par inattention —
+  résultat : `<div ... id="grille-9-8"</div>` (accolade jamais fermée),
+  ce qui a fait planter `construireGrilles()` avec `Cannot set properties
+  of null` sur `grille-9-8` et rendu **invisibles dans le DOM tous les
+  groupes suivants (9.8 à 9.14)**, alors même que le texte source HTML
+  brut restait correct pour les balises elles-mêmes (confirmé en lisant
+  le fichier via `fetch` depuis le navigateur) — le symptôme trompeur
+  était que `document.getElementById` renvoyait `null` pour des id qui
+  existaient bien dans le texte source, parce que la balise mal fermée
+  avalait tout le HTML suivant comme contenu texte d'un attribut jamais
+  refermé. Repéré via `Object.keys(groupes).map(id=>document.getElementById(id))`,
+  corrigé par un balayage regex de tout `id="grille-9-N"</div>` restant
+  dans le fichier (7 occurrences, dont une sur `grille-9-7` lui-même
+  passée inaperçue au premier passage). Vérifié après correction :
+  syntaxe (`vm.Script`, OK), 500 tirages auto-cohérents
+  (`checkEqualNumeric`/`checkEnsemble`, 0 échec), liste des 38 `id`
+  générés conforme au plan exact, cycle complet dans le vrai navigateur
+  (**38/38 bonnes réponses acceptées, aucun échec** — types `qcm` et
+  `vraifaux` de cette fiche utilisent un simple champ texte, pas des
+  boutons radio, contrairement à une première hypothèse du test qui a dû
+  être corrigée), panneau « Voir toutes les réponses » (aucune erreur
+  MathJax), capture d'écran confirmant le rendu des sections fusionnées
+  9.3, 9.5 et 9.6.
+
+  **Correctif ultérieur sur la fiche 9 (26/09/2026, fait en même temps
+  que la fiche 10)** : 9.3 a) (repris de l'ancien 9.3 a) lors de la
+  fusion) gardait en fin d'énoncé « (écrire sous la forme exp(...)) » :
+  math en texte brut hors LaTeX, et consigne répétée sur un seul item du
+  groupe alors que les trois autres ne l'ont pas. Retirée : le
+  vérificateur accepte toute forme équivalente, l'indication n'était pas
+  nécessaire. Aucune autre occurrence de ce motif dans les fiches de
+  Première.
+
+  **Fiche 10 de Première (cahier 3, Généralités sur l'exponentielle II),
+  26/09/2026 — faite en autonomie complète** (David : « commence la
+  fiche 10 »). Même architecture que la fiche 9 (`genererExercices()`
+  séquentiel + `groupes` indexé). Modifications faites par un script
+  Node qui exige exactement une occurrence de chaque motif remplacé et
+  isole chaque bloc supprimé (un seul `ex.push` par bloc), pour éviter
+  le piège de la fiche 9 (balise `>` perdue en renumérotant).
+
+  **Automatismes (10.1+10.2, 6+6=12) → 6, répartis 4+2** : 10.1
+  (factorisations) couvre de vraies familles distinctes, 10.2 (fractions
+  de fractions) appelle 6 fois le même générateur. 10.1 garde b) carré
+  parfait, d) \(A^2x^2-B^2\), e) facteur commun caché après
+  développement, f) \((Ax-B)^2-C^2\) ; écartés a) \(x^2-D^2\) (cas
+  particulier de d) et c) (variante de d à coefficients fractionnaires,
+  cumule deux difficultés). 10.2 ramenée à 2 tirages.
+
+  **10.3 (6, numérique, « A entier ») + 10.4 (4, avec x) → un seul
+  10.3, 4 exemples** : même compétence (écrire sous la forme
+  \(\exp(A)\)), complexité croissante, même situation que 9.3-9.5 dans
+  la fiche 9. 10.3 a) et b) étaient d'ailleurs un doublon exact (même
+  générateur). Gardés 10.3 d) (quotient de produits), 10.3 f) (puissances
+  4 et 5), 10.4 b) (carré et quotient, avec x), 10.4 d)
+  (\(\exp(x/q)^n\), exposant fractionnaire). Titre unifié, « où A est
+  un entier » retiré puisque A dépend désormais de x pour c) et d).
+
+  **10.5 (identités remarquables, 1 question) → 10.4**, inchangée.
+
+  **10.6 « Résoudre les équations et inéquations » (6) + 10.7 et 10.8
+  « Résoudre les inéquations » (4+4, titres mot pour mot identiques) →
+  deux groupes par compétence, 4 exemples chacun** : 10.5 « Résoudre
+  dans ℝ les équations suivantes » = les 4 équations de l'ancien 10.6
+  (a, c, e, f : exposant affine = 0, exposant \(x^2\) à deux solutions,
+  équation rationnelle en \(\exp(x)\), puissance et inverse) ; 10.6
+  « Résoudre dans ℝ les inéquations suivantes » = ancien 10.6 d)
+  (comparaison directe), 10.7 a) (exposant \(x^2\), solution bornée),
+  10.8 b) (double inégalité, intervalle fermé), 10.8 c) (inéquation
+  rationnelle en \(\exp\), raisonnement de signe). Écartés 10.6 b)
+  (même technique que d), 10.7 b) et d), 10.8 a) et d) (variantes
+  de la comparaison directe après regroupement des exposants), 10.7 c)
+  (même raisonnement de signe que 10.8 c), qui fait varier davantage
+  la solution). Le bloc de l'ancien 10.6 d) a été déplacé physiquement
+  après les équations pour que l'ordre du tableau suive l'ordre
+  d'affichage (panneau « Voir toutes les réponses »).
+
+  **Deux défauts préexistants corrigés dans cette section** :
+  1. L'encadré disait « on attend les réponses sous la forme « x=a » ou
+  « x⩾a » ou « x>a » » — faux : les inéquations attendent un intervalle
+  (vérifié : `checkIntervalle('x>=2', …)` renvoie faux, `[2;+inf[`
+  vrai). Remplacé par une consigne exacte, en LaTeX : ensemble de
+  solutions pour une équation (\(\{2\}\), \(\{-1;3\}\)), intervalle ou
+  réunion d'intervalles pour une inéquation.
+  2. Dans un même groupe d'équations, certaines réponses étaient un
+  nombre nu (anciens 10.6 a, 10.6 f, 10.9 a, b, c) et d'autres un
+  ensemble (10.6 c, 10.9 d) ; la bulle d'aide du groupe demandait
+  d'écrire `{5}` « s'il n'y a qu'une solution », mais `{2}` était alors
+  refusé sur les réponses à nombre nu (`checkEqualNumeric('{2}','2')`
+  faux). Toutes ces réponses passées au format ensemble : `checkEnsemble`
+  accepte `{2}`, `2` et `x=2`, donc rien de ce qui était accepté avant
+  ne devient refusé.
+
+  **10.9 (équation auxiliaire, 4) → 10.7**, contenu inchangé à part le
+  format ensemble ci-dessus (quatre cas distincts : racine double,
+  substitution symétrique, une racine rejetée car négative, deux
+  racines). **10.10 (système) → 10.8**, « donner (x;y) » passé en
+  LaTeX. **10.11/10.12 (reconnaissance graphique) → 10.9/10.10**,
+  inchangées (les `div` internes `graphique-10-11`/`graphique-10-12`
+  gardent leur nom, non affiché). **10.13/10.14/10.15 (avancés) →
+  10.11/10.12/10.13**, inchangées sauf 10.12 : « sous la forme
+  exp(...) » passé en LaTeX (\(\exp(\ldots)\)).
+
+  Fiche passée de 15 à 13 groupes, 50 à 32 questions. Vérifié : syntaxe
+  (`vm.Script`, OK), 500 tirages auto-cohérents (0 échec), 32 `id`
+  conformes au plan et dans l'ordre des grilles, cycle complet dans le
+  navigateur (**32/32** acceptées, types `intervalle`, `paire`, `texte`,
+  `qcm` et `vraifaux` compris), chaque équation à solution unique
+  acceptée avec et sans accolades, aucune erreur MathJax ni console,
+  capture d'écran de la section équations/inéquations sur un chargement
+  neuf.
+
+  **Même jour, mise en page du bloc « Calculs plus avancés » (demande de
+  David : « revoir la mise en page pour les blocs des calculs
+  avancés »), fiche 10 uniquement pour l'instant** : une question seule
+  dans son groupe s'affichait avec un « a) » inutile et dans une carte
+  d'une demi-largeur (grille à 2 colonnes dès 600 px), ce qui écrasait
+  les énoncés longs sur 3 ou 4 lignes à côté d'une moitié vide.
+  Corrigé dans `construireGrilles()` : classe `question-seule` ajoutée
+  quand le groupe n'a qu'une question, et lettre vide dans ce cas. CSS :
+  `.question-seule { grid-column: 1 / -1; }` (dans le bloc ≥ 600 px),
+  `.question-seule .q-mathfield { max-width: 340px; }` (sinon le champ
+  MathLive, renvoyé à la ligne, s'étirait sur toute la largeur),
+  `.q-lettre:empty { display: none; }` (sinon l'emplacement vide de la
+  lettre décalait le texte). Concerne les 6 questions seules de la
+  fiche (10.4, 10.8, 10.10 à 10.13). Au passage, `sansEgal:true` sur
+  10.12 (« … sous la forme \(\exp(\ldots)\) = ») et sur 10.9 a-d
+  (« À quelle courbe correspond … ? = ») : le « = » ajouté
+  automatiquement n'a pas de sens après une phrase ou une question.
+  Vérifié : 6 cartes pleine largeur sans lettre, 32/32 réponses
+  toujours acceptées, captures d'écran. **Même défaut présent dans 23
+  autres fiches de Première** (toutes celles qui ont au moins une
+  question seule ; la fiche 6 retire déjà la lettre mais garde la
+  demi-largeur) : ~~non corrigé, en attente de l'accord de David~~ →
+  **étendu à toutes les fiches de Première le même jour** (David :
+  « oui, applique à toutes les fiches »). Script Node sur les 27 autres
+  fiches, remplacements exigeant exactement une occurrence chacun.
+  Particularités : la fiche 13 contient deux définitions de
+  `construireGrilles()` (la première, ancienne, est masquée par la
+  seconde) — seule la dernière a été modifiée ; la fiche 19 avait déjà
+  sa propre version (`question-pleine-largeur`, portée depuis la
+  Seconde le 22/09) — seule la limite de largeur du champ MathLive y a
+  été ajoutée ; la fiche 6 retirait déjà la lettre. Vérifié : syntaxe
+  des 28 fiches, puis chargement réel de chacune dans le navigateur
+  (dans un `iframe`) : autant de cartes pleine largeur que de groupes à
+  une question, aucune lettre affichée sur ces cartes, nombre de
+  questions affichées égal au nombre d'exercices générés, aucune erreur
+  console (contrôle visuel sur la fiche 21, 5 questions seules).
+
+  **Fiches 11 à 15 faites en autonomie à la suite (26/09/2026)** (David :
+  « fait les 5 prochaines fiches en autonomie. Je vérifierai
+  ensuite ! »). Outillage commun : script
+  `outil-fiche.js` (scratchpad de session) qui supprime un item en
+  isolant son bloc `{ … }` (un seul `ex.push` par bloc exigé),
+  renomme des id en passant par des id temporaires (pas de collision),
+  supprime/renumérote titres et grilles, reconstruit `groupes` depuis
+  l'ordre des id dans `genererExercices()` et vérifie que les lettres
+  suivent la position. Chaque remplacement exige un nombre exact
+  d'occurrences, sinon rien n'est écrit. Batterie de tests commune dans
+  le navigateur, sur chaque fiche : 500 tirages auto-cohérents ; pour
+  les fiches de dérivation, comparaison de chaque réponse stockée à une
+  dérivée numérique indépendante (différences finies sur `_fAscii`) ;
+  cinq cycles complets avec les vrais champs ; ordre du tableau = ordre
+  des grilles ; **balayage des énoncés affichés à la recherche de
+  défauts de mise en forme** (`+0`, `+-`, `--`, `1x`, `^{1}`,
+  `undefined`, …) sur 500 tirages.
+
+  **Titres en LaTeX** : dans les fiches traitées, toute notation
+  mathématique des titres passe en `\(…\)` (\(x\in\mathbb{R}\),
+  \(n\geqslant 2\), \(f\), \(I\), …). Fait aussi rétroactivement sur les
+  titres des fiches 9 et 10 (« Soit x ∈ ℝ », « 2ᵃ », « inconnues x et
+  y », « fonction f ») pour la cohérence. Piège rencontré : un premier
+  passage via `node -e` dans le shell a mangé les barres obliques
+  inverses (titres affichant `(xinmathbb{R})`), réparé aussitôt avec un
+  script en fichier utilisant `String.raw` — à retenir : ne jamais
+  passer de LaTeX par une chaîne de commande shell.
+
+  *Fiche 11 (cahier 3, Dérivation et exponentielle I) : 58 → 34
+  questions, 15 → 10 groupes.*
+  - Automatismes 11.1/11.2/11.3 (4+4+4) → 2+2+2 : trois sujets
+    distincts (fractions en \(n\), puissances \(2^a3^b\), radicaux).
+    11.1 garde a) (somme de trois fractions) et d) (dénominateur commun
+    à factoriser, le plus complet) ; 11.2 garde a) (produit) et c)
+    (différence à factoriser) — b) même technique que c), d) statique
+    et cumulant tout ; 11.3 garde b) et c), les deux seuls qui
+    répondent vraiment au titre (dénominateur sans radical).
+  - 11.4 (6) → 4 : a) et b) étaient un doublon exact ; e)
+    (demi-somme) couverte par f) (combinaison de deux exponentielles).
+  - 11.5 + 11.6 (titre identique, 3+3) → 11.5, 4 : 5a, 5b, 5c + 6b
+    (seul à faire intervenir \(n\)) ; 6a ≈ 5a, 6c cumule.
+  - 11.7/11.8/11.9 « Exponentielles et produits (I)/(II)/(III) »
+    (2+4+4) → 11.6, 4 : 7a (produit de deux expressions en
+    exponentielle), 8a (\(x\exp(px)\), classique), 8d (racine carrée),
+    9a (polynôme × exponentielle).
+  - 11.10 « quotients » (4) → 11.7, inchangée.
+  - 11.11 « Équation de tangente (I) » (QCM, 4) + 11.12 « (II) »
+    (équation à écrire, 4) → 11.8, les 4 de l'ancien 11.12 : même
+    compétence, la version QCM en est la forme plus facile. « (sous la
+    forme y=ax+b) » retiré des 4 énoncés (déjà dans le titre, « équation
+    réduite », et dans la bulle d'aide — même décision que 8.6).
+  - 11.13 « Variations » (QCM, 4) → 11.9, inchangée sauf options en
+    LaTeX (« \(f\) est croissante sur \(I\) »).
+  - 11.14 + 11.15 « Composée (I)/(II) » (4+4) → 11.10, 4 : 14a, 14c,
+    15a, 15c.
+  - **Défauts préexistants corrigés** : (1) ancien 11.10 c) (quotient) :
+    quand \(p<0\), la réponse stockée contenait `(…)*-2*exp(-2x)` ; le
+    calcul restait juste mais la conversion en LaTeX perdait la
+    multiplication, si bien que le corrigé affiché (« Voir toutes les
+    réponses ») montrait une soustraction, donc une formule fausse
+    (échec du cycle de test 8 fois sur 15) — terme réécrit avec le signe
+    explicite ; (2) ancien 11.12 a) affichait « \(4\exp(3x)+0\) » quand
+    la constante tirée valait 0 ; (3) ancien 11.15 c) affichait
+    « \(\dfrac{x-0}{x^2+2}\) » — constante désormais non nulle. Les deux
+    derniers trouvés par le balayage automatique des énoncés.
+  - Vérifié : 12 000 dérivées comparées aux différences finies (0
+    écart), 0 échec sur 500 tirages, 34/34 sur 5 cycles complets, ordre
+    OK, balayage d'affichage vide, rendu contrôlé à l'écran.
+
+  *Fiche 12 (cahier 3, Dérivation et exponentielle II) : 56 → 37
+  questions, 17 → 11 groupes.*
+  - Automatismes « Factorisation (I) » + « (II) » (4+4) → un seul
+    groupe de 6 (règle des 6 automatismes ; plafond 4 des fusions non
+    appliqué ici puisque c'est toute la section automatismes) : 1a, 1b
+    (facteur commun), 1d (différence de carrés cachée), 2a (identité
+    puis facteur commun), 2c (\(x^4-k^4\), double identité), 2d (deux
+    variables). Écartés 1c (≈ 1d avec une étape de plus) et 2b (≈ 2a).
+    `FORMES_FACTORISEES` réduit à `'12.1'` (l'ancienne clé `'12.2'`
+    aurait sinon imposé la forme factorisée au nouveau 12.2, les
+    sommes).
+  - Deux séries parallèles fusionnées par opération (même compétence,
+    \(e^x\) puis \(e^{ax+b}\)) : **sommes** 12.3 + 12.6 → 12.2 (2+2,
+    tout gardé) ; **produits** 12.4 + 12.7 → 12.3 (4a \(xe^x\), 4c
+    \((Ax+B)e^x\), 7a \((Ax^2+B)e^{px+q}\), 7c produit de deux sommes
+    d'exponentielles ; écartés 4b ≈ 7a, 4d et 7d carrés, 7b) ;
+    **quotients** 12.5 + 12.8 → 12.4 (5a, 5c, 8c, 8e ; écartés 5b, 5d,
+    8a trivial, 8b, 8d, 8f). Blocs déplacés physiquement pour que
+    l'ordre du tableau suive l'affichage.
+  - 12.9 (un quotient long, 1 question) → 12.5, gardée à part : cas
+    cumulatif nettement au-dessus de la gradation des quotients.
+  - 12.10 (exponentielle et racine) → 12.6, 12.11 (nombres dérivés) →
+    12.7, 12.12 (tangentes) → 12.8 (« (sous la forme y=ax+b) » retiré
+    des 4 énoncés, le titre dit déjà « On attend des équations de la
+    forme \(y=mx+p\) »), 12.13 (QCM variations) → 12.9 : inchangées.
+  - Composées (I)/(II)/(III) (4+3+4) → 12.10, 4 : 14a
+    (\(e^{kx^3}\)), 14b (\(e^{k\sqrt{x}}\)), 15c (\(e^{e^{kx^2}}\),
+    double composition), 16a (produit et composée). « Sur ℝ, » répété
+    en tête des énoncés → une fois dans le titre (« Sauf indication
+    contraire, les fonctions sont définies sur \(\mathbb{R}\) »), seul
+    14b garde son domaine.
+  - 12.17 (somme en trois étapes dépendantes, « En déduire ») → 12.11,
+    non fusionnée (règle 3bis). La phrase « Soit x un réel strictement
+    positif et n un entier… » répétait mot pour mot le titre : retirée
+    de l'énoncé a).
+  - Intervalles affichés passés au point-virgule (convention du site) :
+    titre de 12.6, 12.10 b), options du QCM 12.9.
+  - **Défauts préexistants corrigés** : (1) 12.10 c)
+    (\(e^{e^{kx^2}}\)) : pour \(k=3\), une réponse juste était
+    refusée environ une fois sur cent — le vérificateur teste en des
+    points \(x\) pris entre −1 et 7 et \(e^{e^{3x^2}}\) déborde dès que
+    \(|x|>1{,}5\), si bien qu'il ne trouve parfois pas les 6 points
+    valides nécessaires ; \(k\) restreint à \(\{-3;-2;-1;1\}\) (0 échec
+    sur 3 000 tirages ensuite) ; (2) 12.7 b) affichait
+    « \(e^{-x}+0\) » ; (3) 12.3 b) affichait « \((-2x)e^x\) » —
+    constantes désormais non nulles.
+  - Vérifié : 6 300 dérivées comparées aux différences finies (0 écart),
+    0 échec sur 500 tirages, 36/37 sur 5 cycles complets — la seule
+    question non validée par le test automatique est 12.11 b) (réponse
+    de type somme Σ) : le vérificateur l'accepte bien (appel direct à
+    `checkSomme`, sous forme Σ comme sous forme fermée), c'est
+    l'injection programmée d'un `\displaystyle\sum` dans MathLive qui
+    ne se relit pas (limite de test déjà connue, question inchangée).
+    Rendu contrôlé à l'écran.
+
+  *Fiche 13 (cahier 4, Généralités sur les suites) : 62 → 29
+  questions, 18 → 15 groupes.* Structure particulière : chaque groupe
+  13.4 à 13.16 porte **sa propre suite** dans un paragraphe d'énoncé
+  (`texte-13-N`, régénéré par `mettreAJourTextesAvances()`), et ses 4
+  questions demandent les termes successifs (\(u_0\) à \(u_3\), ou
+  \(u_1\) à \(u_4\)). Deux suites différentes ne peuvent pas partager
+  une grille : même traitement que les fiches 8.6-8.8 (2 questions par
+  contexte partagé), plus suppression des suites qui répètent un type
+  déjà présent.
+  - Automatismes 13.1 (3) + 13.2 (3) + 13.3 (2) → 3+2+1 : 13.3 a) et
+    b) étaient deux tirages du même générateur (gardé un seul, titre
+    passé au singulier) ; 13.2 b) (\(\frac{x}{a}+\frac{x}{b}\)) écarté,
+    le plus simple des trois.
+  - Suites explicites 13.4 à 13.8 : 2 questions chacune. 13.4 et 13.5 :
+    \(u_1\) et \(u_3\) (\(u_0\) du polynôme = son terme constant).
+    13.6 garde \(u_{n+1}\) et \(u_n+1\) (le contraste est le piège
+    visé). 13.7 : \(u_{n+1}\) et \(u_{2n+1}\). 13.8 : \(v_{2n}\) et
+    \(v_{2n+1}\) (contraste de parité).
+  - Suites récurrentes 13.9 à 13.14 (6 suites × 4 termes = 24 questions
+    de calcul de termes) → 3 suites de types distincts, 2 termes
+    (\(u_2\), \(u_4\)) chacune : 13.9 affine, 13.11 \((n+k)u_n\) →
+    13.10, 13.13 \(\sqrt{u_n^2+\dots}\) → 13.11. Supprimées : 13.10
+    (\(-u_n+B\), cas particulier d'affine), 13.12 (\(B^nu_n\), même
+    idée que \((n+k)u_n\)), 13.14 (\((n+\frac12)u_n\), idem avec des
+    fractions). Leurs paramètres (`g10`, `g12`, `g14`) et leurs lignes
+    dans `mettreAJourTextesAvances()` retirés, paragraphes
+    `texte-13-N` renumérotés dans le HTML et dans la fonction.
+  - Suites avec paramètre 13.15, 13.16 → 13.12, 13.13, 2 termes chacune
+    (\(v_2\), \(v_4\) ; \(w_3\), \(w_4\) — \(w_1\) valait
+    simplement \(w_0\)).
+  - Avancés 13.17, 13.18 → 13.14, 13.15, inchangés.
+  - **Défauts préexistants corrigés** (trouvés par le balayage) :
+    « \((-1)^1\) » en 13.1 c), « \(n^2+0\) » en 13.15 b),
+    « \(u_{n+1}=3u_n+0\) » dans l'énoncé de 13.9.
+  - Vérifié : 0 échec sur 500 puis 2 000 tirages, 29/29 sur 5 cycles
+    complets, ordre OK, balayage des énoncés **et des paragraphes de
+    contexte** vide, rendu contrôlé à l'écran sur un chargement neuf.
+
+  *Fiche 14 (cahier 4, Suites arithmétiques) : 44 → 27 questions,
+  15 → 14 groupes.* Même structure que la fiche 13 (une suite par
+  groupe, contexte `texte-14-N`).
+  - Automatismes 14.1 (4) + 14.2 (3) + 14.3 (4) → 2+2+2 : 14.1 garde
+    une somme et « entier − fraction » (b et c : doublons de signe) ;
+    14.2 garde a) (\(\frac{p}{q}x=C\)) et c) (inconnue des deux
+    côtés) ; 14.3 garde a) (carré égal à un non-carré, deux racines
+    irrationnelles) et d) (\((x-P)^2=(x-Q)^2\)).
+  - Premières suites 14.4 à 14.7 : 2 termes par suite ; 14.4 (\(u_0\)
+    donné) : \(u_3\), \(u_{100}\) ; 14.5 (\(u_1\) donné, décalage
+    \(n-1\)) : \(u_4\), \(u_{100}\) ; ancien 14.7 (\(u_K\) donné) →
+    14.6 : \(u_1\), \(u_{101}\). **Ancien 14.6 supprimé** (premier
+    terme fractionnaire : même calcul que 14.5, la difficulté ajoutée
+    n'étant que l'arithmétique des fractions, déjà en automatismes).
+  - Secondes suites (raison inconnue) : 14.8 → 14.7 garde \(r\) et
+    \(u_0\) ; 14.9 (termes fractionnaires, 2) → 14.8 inchangée.
+  - 14.10 à 14.15 → 14.9 à 14.14, inchangées (14.12 → 14.11 reste
+    figée, voir la note de la fiche dans la mémoire projet).
+  - **Consigne factorisée** : dans 14.4 à 14.8, chaque question
+    commençait par « Calculer » ; le mot passe une seule fois à la fin
+    du paragraphe de la suite (« … Calculer : »), comme dans la fiche
+    13, et les questions se réduisent à \(u_3\), \(r\), etc.
+  - **Défauts préexistants corrigés** : (1) 14.3 d) (« donner
+    l'ensemble des solutions ») attendait un nombre nu, `{…}` y était
+    refusé (même défaut que dans la fiche 10) → réponse au format
+    ensemble ; (2) « \(\frac{1x}{3}\) » en 14.2 c) ; (3)
+    « \((x-0)^2\) » en 14.3 d) ; (4) « \(5u_n+0\) » et « \(u_n-0\) »
+    dans l'énoncé de l'ancien 14.14.
+  - Note de test : dans cette fiche les réponses de type ensemble se
+    saisissent dans un champ MathLive. La forme `\left\{…\right\}`
+    produite par le corrigé ne se relit pas (`\{…\}` en ascii-math,
+    refusé), mais une **vraie frappe clavier** de « {3/2} » donne
+    `\lbrace3/2\rbrace` → `{3/2}`, accepté : vérifié en tapant
+    réellement dans le champ. Le test automatique injecte donc la
+    forme `\lbrace…\rbrace`.
+  - Vérifié : 0 échec sur 500 puis 2 000 tirages, 27/27 au cycle
+    complet, balayage énoncés et contextes vide, cohérence
+    contexte/réponse recalculée à la main sur 14.6 (\(u_6=10\),
+    \(r=8\) ⇒ \(u_1=-30\), \(u_{101}=770\)), rendu contrôlé à l'écran.
+  - Retouche ultérieure (même jour, trouvée par le balayage des
+    fractions de la fiche 15) : 14.2 b) (équation) pouvait afficher des
+    coefficients réductibles comme \(\frac{3}{6}\), une simplification
+    préalable sans rapport avec la question → tirés irréductibles. Les
+    fractions réductibles de 14.1 (« écrire sous forme de fraction
+    irréductible ») sont laissées : les réduire fait partie de
+    l'exercice (même critère qu'en Seconde, fiche 3).
+
+  *Fiche 15 (cahier 4, Suites géométriques) : 38 → 28 questions, 14
+  groupes (aucun groupe supprimé).* Fiche déjà compacte (2 questions
+  par suite pour l'essentiel) : la réduction porte sur les
+  automatismes.
+  - Automatismes 15.1 (4) + 15.2 (6) + 15.3 (2) + 15.4 (2) = 14 →
+    2+2+1+1 : 15.1 garde a) (carré) et d) (forme canonique à
+    développer) ; 15.2 garde b) (\((A-Bx)^2-C^2\)) et f) (facteur commun
+    binôme) ; 15.3 (images) garde \(f\left(\frac{p}{q}\right)\) ; 15.4
+    (antécédents) garde celui de \(-\frac{p}{q}\) (celui de 0 est
+    immédiat) — paragraphe passé au singulier (« Déterminer
+    l'antécédent de : »).
+  - 15.11 (4) → 2 : \(q\) et \(u_{3n}\) (sous-suite, compétence
+    distincte de celles de 15.8/15.9, qui demandent déjà \(q\) et
+    \(u_0\)).
+  - 15.5 : « Calculer » factorisé dans l'énoncé de la suite, comme en
+    fiche 14.
+  - 15.12 et 15.13 (étapes dépendantes, « Donner alors », « question
+    précédente ») : inchangés (règle 3bis). Le reste inchangé.
+  - **Défauts préexistants corrigés** : (1) 15.2 f) (devenu b) n'avait
+    **aucun délimiteur LaTeX** alors que `texteLibre` est vrai : son
+    expression s'affichait en texte brut ; (2) le même item pouvait
+    afficher des facteurs réduits à un monôme ou une constante
+    (« \((4x)\) », « \((5)\) ») → coefficients non nuls ; (3)
+    « \(4u_n+-3\) » dans l'énoncé de 15.12 ; (4) fractions affichées
+    réductibles : « \(\frac{4}{2}\) » en 15.1 b), « \(u_1=\frac{4}{4}\) »
+    dans l'énoncé de 15.13.
+  - Nouveau contrôle ajouté à la batterie à cette occasion : balayage
+    des `\dfrac{p}{q}` affichés réductibles, relancé sur les fiches 11 à
+    15 (seul 14.2 b) en est ressorti, voir ci-dessus).
+  - Vérifié : 0 échec sur 2 000 tirages, 28/28 sur 5 cycles complets,
+    balayages vides, rendu contrôlé à l'écran.
+
+  **Bilan du lot 11-15** : 58+56+62+44+38 = 258 → 34+37+29+27+28 = 155
+  questions. Rien n'est poussé : en attente de la vérification de David.
+  → Poussé le même jour après son « pousse tout ».
+
+  **Fiches 16 à 20, même jour** (David : « continue les 5 prochaines »),
+  même outillage et même batterie de tests que pour 11-15, augmentée du
+  balayage des fractions affichées réductibles.
+
+  *Fiche 16 (cahier 5, Calcul de sommes I) : 46 → 30 questions, 14 →
+  12 groupes.*
+  - Automatismes 16.1 (3) + 16.2 (4) + 16.3 (3) → 2+2+2 : 16.1 garde
+    b) (généralise a) et c) ; 16.2 garde c) et d), **les deux seuls qui
+    utilisent vraiment la quantité conjuguée** annoncée par le titre
+    (a et b se traitaient en multipliant par \(\sqrt{D}\)) ; 16.3 garde
+    a) et c). Le titre de 16.3 excluait \(m=2\) uniquement à cause du
+    dénominateur \(m-2\) de l'ancien b) : exclusion retirée.
+  - 16.4 (5) → 4 : c) retiré (bornes décalées en haut ET en bas,
+    cumule a et b).
+  - « Utilisation du symbole de somme (I) » + « (II) » (4+4) → 16.7,
+    4 : \(\frac{1}{B}+\dots+\frac{1}{B^n}\) (classique), deux bases,
+    exposant multiple (\(A^{Bk}\)), somme alternée harmonique jusqu'à
+    \(2n+1\). Le « Soit \(n\in\mathbb{N}\). » répété en tête de deux
+    énoncés passe dans le titre.
+  - 16.8 et 16.10 (même titre mot pour mot, « Soit n∈ℕ*. Calculer : »,
+    6+5) → 16.8, 4 : \(\sum_{k=L}^n2^k\), \(\sum A^k\), \(\sum(A+2^k)\),
+    \(\sum(Ak+q\,3^k)\). Écartés : \(\sum 1\) (immédiat), \(\sum(-1)^k\)
+    (réponse 0 sans calcul), les variantes de bornes de \(2^k\) et les
+    combinaisons à trois termes.
+  - 16.11 (somme des impairs, titre régénéré par JavaScript) → 16.9 :
+    le numéro était écrit en dur dans `mettreAJourTextesAvances()`,
+    mis à jour avec l'identifiant du titre. 16.12, 16.13, 16.14 (étapes
+    dépendantes) → 16.10, 16.11, 16.12, inchangés.
+  - Vérifié : 0 échec sur 500 tirages, 26/26 sur 5 cycles complets
+    (les 4 réponses Σ, non injectables dans MathLive, vérifiées
+    directement : une somme juste écrite avec des indices décalés est
+    acceptée, une fausse est refusée), balayages vides, rendu contrôlé.
+
+  *Fiche 17 (cahier 5, Calcul de sommes II) : 54 → 41 questions, 17 →
+  15 groupes.* Réduction plus modérée : la moitié avancée de la fiche
+  est faite de problèmes à étapes dépendantes (règle 3bis).
+  - Automatismes 17.1 + 17.2 (3+2 = 5, déjà ≤ 6) : inchangés en nombre.
+  - 17.3 et 17.4 avaient **le même contexte** (« On considère deux
+    réels \(a\) et \(b\) ») et la même démarche (compter les termes,
+    développer, multiplier pour obtenir \(a^{N+1}\mp b^{N+1}\)) → un
+    seul groupe de 4 : les trois questions de 17.3, plus la
+    multiplication de 17.4 (version alternée, \(a^{N+1}+b^{N+1}\)).
+    17.5 (même somme avec \(b=-1\)) supprimée.
+  - Sommes arithmétiques 17.7 et 17.8 (3 chacune, contexte propre) → 2
+    chacune : une somme numérique et la formule en fonction de \(N\).
+    « Calculer » retiré des questions (déjà en fin de contexte).
+  - Sommes géométriques 17.10 (4, avec \(u_0\), \(q\)) et 17.11 (4,
+    sommes directes) → 2 + 2 : gardées les bornes décalées et
+    \(\sum_{1}^{2n}\) ; \(\frac{A^k}{B^{k+1}}\) et la différence de deux
+    sommes géométriques. Écartés : raison \(\sqrt{D}\) (calcul lourd),
+    exposant symbolique \(A^p\), les deux cumuls.
+  - Arithmético-géométriques (I) guidée et (II) sans guidage : gardées
+    toutes deux (problèmes à étapes, et la seconde retire l'aide).
+  - Série alternée (6) → 4 : les deux différences \(v_{n+1}-v_n\),
+    \(w_{n+1}-w_n\) et les deux QCM de monotonie qui en découlent ;
+    retirés \(u_3\) (échauffement) et \(w_n-v_n\).
+  - Titres : notations en LaTeX (\(x\), \(1\), \(n\)).
+  - **Défauts préexistants corrigés** : « \(x+-4\) » en 17.2 a) et b) ;
+    en 17.1 b), fractions affichées réductibles avec le signe dans le
+    numérateur (« \(\frac{-6}{6}+\frac{1}{6}x\) ») → irréductibles,
+    signe sorti ; « \(\frac{6}{2}\) » en 17.1 c). **Contrôle
+    d'équivalence** après ces retouches : l'énoncé affiché, relu par
+    MathLive, a été comparé numériquement à la réponse stockée pour
+    chaque automatisme retouché (égalité vérifiée).
+  - Vérifié : 0 échec sur 500 puis 2 000 tirages, 37/37 sur 5 cycles
+    hors réponses Σ (vérifiées directement), ordre OK, balayages vides
+    (hormis le faux positif « \(S(0)\) »), rendu contrôlé.
+
+  *Fiche 18 (cahier 5, Calcul de produits) : 37 → 31 questions, 14 →
+  12 groupes.* Fiche déjà compacte.
+  - Automatismes 18.1 + 18.2 (3+3 = 6) : inchangés.
+  - « Écritures (I) » + « (II) » (4+4) → 18.3, 4 :
+    \(1\times2\times\cdots\times N\), \(k^{k+D}\) (exposant décalé),
+    \((k^2+C)x_k\) (indicé), \((x_k+y_{n-k})\) (indices croisés).
+    Écartés : \(k^k\) (≈ \(k^{k+D}\)), produit constant \(C\times\cdots
+    \times C\), et deux produits indicés plus simples.
+  - « Un produit constant » + « bis » (QCM, 1+1) → 18.6, un groupe de 2.
+  - Télescopage (I), guidé (\(b_1,b_2,b_3,b_{n-1}\)) → 2 questions :
+    \(b_2\) et \(b_{n-1}\).
+  - Reste inchangé (renumérotation), titres en LaTeX (\(a\), \(b\),
+    \(c\), \(\Pi\), \(\Sigma\), \(n\geqslant 3\), \(n\in\mathbb{N}\)).
+  - Formatage : cette fiche écrit `{id: "…"` (avec espace) ; normalisé
+    en `{id:"…"` pour l'outillage, sans effet sur le fonctionnement.
+  - **Défaut préexistant corrigé** : deux énoncés (ancien 18.4 d),
+    produit \((x_0+y_n)\cdots(x_n+y_0)\), et ancien 18.5 b)) étaient
+    plus larges que leur demi-carte et **coupés à droite**. Un
+    défilement horizontal essayé d'abord n'était pas satisfaisant ;
+    écriture raccourcie (termes intermédiaires retirés, motif intact :
+    \((x_0+y_n)(x_1+y_{n-1})\times\cdots\times(x_n+y_0)\)). Contrôle
+    de débordement ajouté à la batterie (position droite de chaque
+    formule comparée à celle de sa carte, sur plusieurs tirages) et
+    relancé sur les fiches 11 à 18 : aucun autre débordement.
+  - Vérifié : 0 échec sur 500 tirages, tout le reste accepté sur 5
+    cycles (dont les **deux** bonnes réponses du QCM à double réponse),
+    les réponses Π/Σ vérifiées directement : formes équivalentes
+    (autre nom de variable, ordre inversé, indice décalé écrit
+    \(x_{k-1}\)) acceptées, formes fausses refusées.
+
+  *Fiche 19 (cahier 6, Probabilités) : 75 → 53 questions, 24 → 23
+  groupes.* Fiche la plus chargée en dépendances (tableaux
+  `table-19-N`, arbres SVG `arbre-19-N`, titres et paragraphes
+  régénérés par `mettreAJourTextesAvances()`) : le moins de groupes
+  possible supprimés, réduction surtout à l'intérieur des groupes. Les
+  identifiants internes (`table-`, `arbre-`, `titre-`, `texte-`) gardent
+  leur ancien numéro ; seuls les numéros **affichés** changent, y
+  compris ceux écrits en dur dans les gabarits des cinq titres
+  dynamiques.
+  - Automatismes : 19.1 et 19.2 (même titre, « Calculer : », 3+2) → un
+    seul groupe de 4 (produit de décimaux, produit de fractions,
+    \(p\,q+(1-p)\,r\), somme pondérée), + 19.3 (2) → 19.2 : total 6.
+  - Tableaux, arbres et problèmes concrets (6, 6, 6, 6, 5, 4, 4
+    questions) → 3 chacun, en couvrant des notions complémentaires :
+    tableau de probabilités \(P(\overline{A})\), \(P(A\cup B)\),
+    \(P(\overline{A}\cap B)\) ; tableau d'effectifs \(P(B)\),
+    \(P(A\cap B)\), \(P(\overline{A}\cap\overline{B})\) ; ski/randonnée :
+    intersection, réunion, \(P_R(S)\) ; arbre : \(P(C\cap\overline{D})\),
+    \(P(D)\) (probabilités totales), \(P_D(C)\) (inversion) ; musique :
+    \(P(J\cap S)\), \(P(S)\), \(P_S(J)\) ; arbre à trois branches :
+    \(P(C)\), \(P(D)\), \(P_D(A)\) ; arbre en \(x\) : les trois
+    dernières. Tableau en \(n\) (4) → 2 : les deux conditionnelles.
+  - Conditionnelles (II) (3) et les deux groupes « indépendants » (3+3)
+    → 2 chacun ; (I) et (II) gardées séparées (données différentes dans
+    le titre dynamique).
+  - **Consigne factorisée** : dans 14 groupes dont l'intro dit déjà
+    « Calculer les probabilités suivantes » ou « Calculer : », le mot
+    « Calculer » était répété en tête de chaque question (51
+    occurrences retirées), ainsi que « , sous forme de fraction
+    irréductible » (4). « Simplifier » idem en 19.2. Deux questions
+    recopiaient mot pour mot le contexte du groupe (ancien 19.21 a :
+    « Soit \(a\in]0,1[\). Calculer P(B) » ; ancien 19.24 a : phrase
+    entière du titre répétée) → réduites à \(P(B)\), \(E(X)\).
+  - Math en texte brut passé en LaTeX : « Calculer m pour que
+    E(X+m)=0 » (→ « Déterminer \(m\) pour que \(E(X+m)=0\) »),
+    « P(B) », « E(X) », « A et B » (HTML et gabarits JS), « variable
+    aléatoire X », \(p\), \(a\), \(n\in\mathbb{N}^*\), \(x>0\) ;
+    intervalles \(]0;1[\) au point-virgule.
+  - Vérifié : 0 échec sur 500 tirages, 53/53 sur 5 cycles complets,
+    ordre OK, balayage des énoncés, titres, paragraphes et tableaux
+    vide, **aucun SVG « NaN »** au chargement (bug différé de cette
+    fiche, voir mémoire : non reproduit ici, code des arbres non
+    touché), rendu contrôlé.
+
+  *Fiche 20 (cahier 7, Droites du plan) : 50 → 38 questions, 21 → 19
+  groupes.* Un contexte par groupe (`texte-20-N`, ici construit avec
+  des variables `g5`, `g12`… et non `p5` : lignes retirées à la main).
+  - Automatismes 20.1 (4) + 20.2 (4) → 3+3 : retirés 20.1 d) (quotient
+    de radicaux, cumule) et 20.2 a) (le plus simple) ; « Résoudre »
+    retiré des questions (déjà dans le titre).
+  - Supprimés : 20.5 « Droites passant par deux points (II) »
+    (coordonnées fractionnaires, entre 20.4 entiers et 20.6 radicaux ;
+    le titre de 20.4 perd son « (I) ») et 20.12 (intersection avec une
+    droite verticale, cas trivial de l'intersection générale).
+  - Réduits : 20.6 (radicaux) 3 → 2 ; détermination graphique 4 → 3
+    (l'équation cartésienne et la réduite de la même droite : gardée la
+    réduite) ; calculs de coordonnées 4 → 2 ; parallèles 2 → 1 ;
+    paramètres (II) 2 → 1 (la question retirée avait toujours pour
+    réponse 0) ; intersections avec les axes 3 → 2 (les deux axes
+    étaient symétriques).
+  - 20.7 d) (droite horizontale) demandait « sous la forme y=k (donner
+    juste k) » : contraire à la règle « une droite s'écrit y=mx+p »
+    (mémoire) → réponse attendue sous forme d'équation réduite, comme
+    les autres droites. « , sous la forme y=ax+b » retiré de 6 énoncés
+    (bulle d'aide `formeYax`). « (d1) », « (d2) » des énoncés passés en
+    \((d_1)\), \((d_2)\) comme dans les contextes ; point
+    « (x1,y1) » de 20.9 en LaTeX et au point-virgule.
+  - **Bug de correction préexistant corrigé (important)** :
+    `checkPointCoordonnees` retire les parenthèses du point, puis
+    `checkPaire` retirait à nouveau des « parenthèses extérieures » dès
+    que la chaîne commençait par « ( » et finissait par « ) », **sans
+    vérifier qu'elles se correspondent**. Pour une réponse comme
+    `((-42m-20)/(m^2-8m-4);(5m+2)/(m^2-8m-4))`, il restait
+    `-42m-20)/(…;(5m+2)/(m^2-8m-4` : **réponse juste refusée**, y compris
+    la réponse exacte attendue. Touchait ici l'intersection à
+    paramètre \(m\) et l'intersection avec radicaux (première
+    coordonnée écrite avec une parenthèse). Nouvelle fonction
+    `entoureParParentheses(s)` (vraie seulement si la parenthèse
+    ouvrante initiale se referme sur le dernier caractère), utilisée par
+    `checkVecteur`, `checkPaire` et `checkTriplet`. **Le même code
+    fautif existe à l'identique dans 27 fiches de Première** (toutes
+    sauf la 4) : ~~non corrigé ailleurs, en attente de l'accord de
+    David~~ → **étendu le même jour** (David : « étends la correction à
+    toutes les fiches (de premières et de secondes si nécessaire) »),
+    voir l'entrée suivante.
+  - **Défauts d'affichage préexistants corrigés** : automatismes 20.1 et
+    20.2 avec fractions réductibles et signe dans le numérateur
+    (« \(\frac{-9}{9}\) », « \(-\frac{-6}{5}\) ») → irréductibles, signe
+    devant, facteur négatif entre parenthèses ; « \(\frac{6}{9}\) » en
+    20.7 a) ; « \(a-0\) », « \(a--1\) » en 20.16 b) ; dans les
+    contextes : « \(x^2+1x+1\) », « \(-6x+0\) » (parabole),
+    « \((y+0)^2\) » (cercle), « \(mx-1y\) » et « \(y+0=0\) » (droites à
+    paramètre), « \(+0=0\) » (droites à radicaux). Équivalence
+    numérique énoncé/réponse revérifiée sur les automatismes retouchés
+    (180 comparaisons, 0 écart).
+  - Vérifié : 0 échec sur 2 000 tirages, 38/38 sur 8 cycles complets
+    (vecteur, équation cartésienne, point, équation réduite compris),
+    balayage énoncés et contextes vide, aucun débordement (fiches 19 et
+    20), graphique cohérent avec les réponses attendues sur un
+    chargement neuf.
+
+  **Bilan du lot 16-20** : 46+54+37+75+50 = 262 → 30+41+31+53+38 = 193
+  questions.
+
+  **Correction des parenthèses étendue à toutes les fiches (26/09/2026)**.
+  Recensement de toutes les formes de retrait de parenthèses
+  extérieures dans `cahiers/` :
+  - Première : `if (nettoye.startsWith('(') && nettoye.endsWith(')')) {`
+    dans `checkVecteur`, `checkPaire`, `checkTriplet` de 26 fiches (toutes
+    sauf la 4, qui n'a pas ce code, et la 20, déjà corrigée) ;
+  - Seconde : variante sur une ligne dans `checkPaire` des fiches 16,
+    21, 22, 23 et 25 (code porté depuis la Première) ;
+  - Première, fiche 19 : même défaut dans l'affichage des fractions des
+    arbres (`den`), sans effet sur la correction mais corrigé aussi.
+  Script unique : ajout de `entoureParParentheses` une fois par fichier
+  (avant la première fonction concernée), remplacement de chaque
+  condition. 31 fichiers modifiés, syntaxe vérifiée, plus aucune
+  occurrence de l'ancienne condition, chaque `slice(1,-1)` restant est
+  bien gardé. **Laissés tels quels, volontairement** :
+  `checkPointCoordonnees` (et `checkVecteurDirecteur25` en Seconde),
+  qui retirent les parenthèses **du point** par expression régulière
+  alors qu'elles sont exigées par la consigne — une saisie sans
+  parenthèses de point y est refusée comme prévu, aucune saisie valide
+  n'est refusée à tort.
+  Vérifications :
+  - tests unitaires dans les 31 fichiers chargés réellement (quotients
+    parenthésés avec et sans parenthèses de point, paires simples,
+    paramètre \(m\), réponses fausses) : tous conformes, en Première
+    comme en Seconde ;
+  - non-régression sur les vrais exercices point/vecteur/triplet des
+    fiches concernées (20 à 26 de Première, 16, 21, 22, 23, 25 de
+    Seconde) : réponse attendue saisie dans le vrai champ, tout accepté.
+    Ancien bug effectivement déclenché par des réponses attendues :
+    fiche 20 de Première (4 questions) ;
+  - Seconde, champs MathLive : une vraie frappe « (1/2;-3/2) » est
+    acceptée (dans ces fiches « / » ne crée pas de fraction empilée et
+    le clavier n'a pas de touche fraction). Les formes `\left(…\,;\,…\right)`
+    ou `\frac` injectées par programme sont refusées **avant comme
+    après** la correction (comparé sur une copie de l'ancienne version
+    servie temporairement) : ce sont des formes qu'un élève ne peut pas
+    produire, pas un défaut de la correction.
+
+  **Fiches 21 à 25, 26/09/2026** (David : « continue les 5 prochaines »),
+  même outillage et même batterie de tests que pour 16-20.
+
+  *Fiche 21 (cahier 7, Généralités sur les vecteurs) : 82 → 55
+  questions, 23 → 19 groupes.*
+  - Automatismes 21.1 (6) + 21.2 (6) → 3+3 : 21.1 garde la différence
+    au carré, le produit conjugué et la forme composée (retirés le carré
+    d'une somme, le plus simple, et deux quasi-doublons) ; 21.2 garde
+    a), c) (factorisation de \(1-q^2\)) et e) (carré au dénominateur).
+  - **Fusions** : « Équations vectorielles (I) » + « (II) » → une seule
+    section de 4 exemples (deux à solution unique, deux à deux
+    solutions) ; la consigne « déterminer l'ensemble des valeurs du réel
+    \(\alpha\) pour lesquelles \(\vec{u}=\vec{0}\) » est posée une fois
+    dans l'introduction et **toutes les réponses sont désormais des
+    ensembles** (bulle d'aide unique ; « {2} », « 2 » et « x=2 » restent
+    acceptés). 21.8 « simplifications » + 21.10 (même compétence :
+    Chasles pur, résultat nul) → 4 exemples. « Exprimer un vecteur en
+    fonction d'un autre (II) » (deux groupes portaient ce même titre) +
+    « (III) » → une seule section de 4 exemples : un par technique
+    (coefficients fractionnaires, équation à deux membres, décomposition
+    sur \(\overrightarrow{AB}\), \(\overrightarrow{AC}\), équation entre
+    points). Le « (I) » est resté à part dans la section Chasles : ce
+    n'est pas de la colinéarité mais une simplification à paramètre
+    \(\alpha\) ; retitré « Exprimer un vecteur en fonction de
+    \(\overrightarrow{AB}\) », 4 → 3.
+  - Réduits : combinaisons sur quadrillage 6 → 4 (\(\vec{w}\) et
+    \(\vec{p}\) restent sur la figure, utilisés par les combinaisons
+    gardées) ; exemples de Chasles 4 → 3 (deux chaînes de longueur 2) ;
+    \(\vec{u}\) en fonction de \(\overrightarrow{AB}\),
+    \(\overrightarrow{AC}\) 4 → 3 ; simplifications à coefficients
+    4 → 3 ; colinéarité sur figure 4 → 3 (deux questions avaient la même
+    réponse) ; avancé « \(\vec{u}\) en fonction de \(\vec{v}\) et
+    \(\alpha\) » 4 → 3. Gardés entiers : 21.11 (\(\alpha\) tel que
+    \(\vec{u}=\vec{0}\), 3), propriété du milieu (4), centre de gravité
+    (4, théorèmes fixes), les deux problèmes à contexte.
+  - Consignes factorisées : « Déterminer (le réel) α tel que » retiré
+    des énoncés (déjà dans l'introduction, et α était en texte brut) ;
+    introduction répétée dans 21.18 a) retirée ; définition des milieux
+    \(A'\), \(B'\), \(C'\) remontée de 21.19 b) dans l'introduction (c)
+    et d) s'en servaient sans l'avoir) ; « Si » orphelin (sans « alors »)
+    retiré de 21.12 b) ; « … » final retiré ; « Simplifier » ajouté à
+    21.18 c) et d), qui n'avaient aucune consigne.
+  - Noms de points en LaTeX partout (introductions, contextes
+    dynamiques, 21.3, 21.8) : \(ABC\), \([AB]\), \(G\), \(M\)…
+  - Conteneurs de figure en double (`graphique-21-4`, `-5`, `-15`
+    présents deux fois, le second toujours vide) : doublons retirés.
+  - **Défauts de tirage préexistants corrigés** : combinaison vectorielle
+    nulle possible en 21.4 c)/d) (vecteurs de la figure parfois
+    colinéaires) → retirage ; « \(\alpha(\alpha+0)\) » en 21.6 b) ;
+    « \(+0\overrightarrow{IA}\) » en 21.18 d) ; « \(0\overrightarrow{CG}\) »
+    en 21.10 a).
+  - **Mise en page** : 21.12 b), c) et 21.17 c) débordaient de leur
+    carte (50 à 94 px à 728 px de large). Nouvelle option d'item
+    `pleineLargeur` : si une question d'un groupe la porte, toutes les
+    cartes du groupe prennent la largeur entière (classe
+    `question-seule`, sans toucher aux lettres). Activée pour 21.12 et
+    21.17.
+  - Vérifié : 0 échec sur 2 000 tirages (réponse attendue soumise à la
+    vraie correction, combinaisons de vecteurs comprises), 55/55 sur
+    6 cycles complets dans l'interface, ordre des cartes = ordre du
+    tableau, balayage des énoncés vide, aucun débordement sur 8 tirages,
+    rendu contrôlé à l'écran.
+
+  *Fiche 22 (cahier 7, Coordonnées des vecteurs) : 67 → 44 questions,
+  20 → 15 groupes.*
+  - Automatismes 22.1 (6) + 22.2 (6) → 3+3 : inéquations b), d), f)
+    (retirés la plus simple et deux quasi-doublons) ; factorisations c),
+    d), e) (retirées les deux identités directes et la forme qui cumule).
+    « ℝ » du titre passé en \(\mathbb{R}\).
+  - **Fusions** (même compétence, variantes de valeurs) :
+    - coordonnées de \(\overrightarrow{AB}\) : 22.3 (entiers, fractions,
+      radicaux) + 22.4 (paramètre \(n\)) + 22.5 (paramètre \(\alpha\))
+      → 4 exemples (fractions, radicaux, \(n\), \(\alpha\)) ;
+    - point \(M\) tel que \(\overrightarrow{MA}+\overrightarrow{MB}+\overrightarrow{MC}=\vec{0}\) :
+      22.11 + 22.12 (version à \(\alpha\)) → un groupe de 2, consigne
+      en introduction ;
+    - normes : 22.13 + 22.14 (à \(\alpha\geqslant 1\)) → 4 exemples
+      (fractions, radicaux, deux à \(\alpha\)) ; l'hypothèse
+      \(\alpha\geqslant 1\) passe du titre aux questions concernées ;
+    - milieux : 22.17 + 22.18 (à \(\alpha\)) → 4 exemples, titre en
+      LaTeX (« Soient A et B deux points… [AB] » était en texte brut).
+  - Réduits : le problème \(ABCD\) 3 → 2 (les coordonnées de
+    \(\overrightarrow{DC}\) avaient exactement la réponse de
+    \(\overrightarrow{AB}\)) ; « même méthode » 4 → 3 ; valeur de
+    \(\alpha\) telle que \(\overrightarrow{AB}=\vec{u}\) 3 → 2 ;
+    parallèles/sécantes 3 → 2 ; déterminant (avancé) 5 → 4. Gardés
+    entiers : couple \((\alpha,\beta)\), somme de vecteurs (contexte),
+    \(\lambda\) figés (2), Ménélienne (6, problème à étapes dépendantes).
+  - Consignes : « … » final retiré des déterminants ; la dernière
+    question du déterminant n'avait aucune consigne → alignée sur la
+    précédente (« Valeurs de \(\alpha\) pour lesquelles \(\vec{u}\) et
+    \(\vec{v}\) sont colinéaires »). Noms de points, droites et réels en
+    LaTeX (\(D\), \((AB)\), \(ABC\), \(p\), \(q\), \(r\)…), y compris
+    dans les options du QCM.
+  - **Défauts préexistants corrigés** : « \(-4x+0\geqslant 0\) »
+    (22.1 a) ; constantes nulles « \(\alpha+0\) » du couple
+    \((\alpha,\beta)\) ; « \(\dfrac{1}{\alpha+0}\) » (déterminant) ;
+    fractions non réduites « \(\frac44\) », « \(\frac24\) » en 22.3 a)
+    (tirage de fractions irréductibles) ; « \(\frac22\) », « \(\frac64\) »
+    en 22.10 d) et 22.13 c) (facteur d'échelle limité à 1 ou 3) ;
+    coordonnées fractionnaires affichées « 9/2 » avec une barre oblique
+    en 22.10 a) et 22.13 a) → fraction LaTeX (nouvelle fonction
+    `fracL`).
+  - Vérifié : 0 échec sur 6 cycles complets dans l'interface (champs
+    texte des paires et intervalles remplis avec la vraie saisie
+    « (a;b) », « ]-inf;2] »), balayage de 2 000 tirages vide (« +0 »,
+    « -- », fractions réductibles, barres obliques), aucun débordement,
+    rendu contrôlé à l'écran.
+
+  *Fiche 23 (cahier 8, Fonctions trigonométriques I) : 52 → 31
+  questions, 15 → 11 groupes.*
+  - Automatismes 23.1 (4) + 23.2 (4) + 23.3 (9) → 2+2+2 : conversions
+    radians → degrés 2 ; degrés → radians 2 (un multiple de 15°, le
+    multiple de 22,5°) ; fractions de \(\pi\) 2 (une somme de deux
+    fractions, une combinaison avec des multiples de \(\pi\)) — les
+    7 retirées étaient des quasi-doublons deux à deux. « π » du titre
+    en LaTeX.
+  - Valeurs particulières : « Premiers angles » 6 → 4 ; « Autres
+    angles » + « Derniers angles » (**même générateur, code
+    identique**) → une section de 4. Les deux sections restent
+    distinctes : lecture directe du tableau d'un côté, réduction modulo
+    \(2\pi\) et parité de l'autre.
+  - **Fusions** : les deux « Monotonie » (sur \([0;\frac{\pi}{2}]\) et
+    sur \([0;\pi]\)) → une section de 4, toutes gardées (la question sur
+    le sinus sur \([0;\pi]\) est la seule à réponse « les deux sont
+    possibles ») ; les deux « Comparaison entre sinus et cosinus » (même
+    titre) → une section de 2, « Plusieurs réponses sont possibles »
+    passé dans l'introduction ; « Avec tangente (I) » + « (II) » → une
+    section de 3. « sin », « cos » des énoncés en LaTeX.
+  - Réduits : valeurs de la tangente 6 → 4 ; « Connaissant l'un,
+    déduire l'autre » 3 → 2 (retiré l'exemple figé \(\frac{\pi}{8}\),
+    calcul pur ; gardés le cas positif et le cas où le signe se déduit
+    de l'intervalle).
+  - Mise en page : les deux QCM de comparaison ont des options sur une
+    ligne défilante ; regroupés, ils auraient perdu la pleine largeur →
+    option `pleineLargeur` (même mécanisme qu'en fiche 21).
+  - **Défaut préexistant corrigé** : 23.3 b) pouvait afficher
+    « \(\frac{6\pi}{6}\) » (fraction tirée sans contrôle de PGCD).
+  - Vérifié : 31/31 sur 10 cycles complets, balayage de 2 000 tirages
+    vide (« +0 », fractions réductibles, NaN), ordre des cartes
+    conforme, rendu contrôlé à l'écran.
+
+  *Fiche 24 (cahier 8, Fonctions trigonométriques II) : 74 → 39
+  questions, 16 → 14 groupes.*
+  - Automatismes 24.1 (8) + 24.2 (6) + 24.3 (6) → 2+2+2 : pour chacun,
+    la forme affine et la forme « carré = carré » / « |…| = |…| » (les
+    formes directes \(x^2=k\), \(|x|=k\) et les variantes
+    fractionnaires, quasi-doublons, retirées) ; inéquations : \(x^2>K\)
+    (réunion d'intervalles) et \(|ax+b|\geqslant k\). « ℝ » des titres
+    en LaTeX. Chaque item était dans sa propre fonction : les fonctions
+    entières sont retirées, pas seulement la ligne.
+  - Valeurs remarquables 9 → 4, valeurs particulières 9 → 4, tangente
+    6 → 4 (trois sections distinctes : premier quadrant, réduction,
+    tangente).
+  - **Fusion** « Angles associés (I) » (QCM) + « (II) » (saisie libre),
+    même compétence → une section de 4 en saisie libre (\(\sin(-x)\),
+    \(\cos(\pi-x)\), \(\cos(x+\frac{\pi}{2})\), \(\sin(\frac{\pi}{2}-x)\)).
+    « Tangente d'angles associés » (4, QCM) gardée à part.
+  - « Formules d'addition (I) » (\(\cos 2a\), \(\sin 2a\)) + « (III) »
+    (\(\cos(a-b)\), \(\sin(a-b)\)) : même compétence (exprimer une
+    formule) → une section de 4, avancée avant « (II) », qui est un
+    calcul numérique (\(\cos\frac{7\pi}{12}\)…) réduit à une paire
+    cos/sin (4 → 2). Gardés : « avec les formules d'addition ? » (2),
+    formule de la tangente (1).
+  - Courbes : 3 → 2. Les formules étaient en texte brut
+    (« f:x↦sin(π/2-x) ») → LaTeX ; la mention « parmi les 4 propositions
+    (a),(b),(c),(d) » répétait la consigne déjà affichée au-dessus de la
+    figure (insérée par le tracé lui-même) → retirée, comme « Pour la
+    courbe a), choisir parmi les propositions… » répété dans « Autres
+    courbes » (les questions deviennent « Courbe a) », « Courbe b) »).
+  - **Défaut préexistant corrigé (affichage de la correction)** :
+    \(x^2>K\) avec \(K\) non carré affichait la correction en décimal
+    (« \(]-\infty;-2.828[\cup]2.828;+\infty[\) ») → `formaterUneBorne`
+    reconnaît une borne de carré entier et l'écrit \(2\sqrt{2}\) (testé
+    avant l'approximation fractionnaire). La correction elle-même
+    acceptait déjà « sqrt(8) ».
+  - Vérifié : 39/39 sur 8 cycles complets (intervalles saisis comme un
+    élève, « ]-inf;-sqrt(8)[U]sqrt(8);+inf[ »), balayage de 2 000
+    tirages vide (dont bornes décimales dans la correction), aucun
+    débordement, rendu contrôlé à l'écran.
+
+  *Fiche 25 (cahier 9, Produit scalaire I) : 29 → 25 questions, 12 → 9
+  groupes.* Fiche déjà courte : peu de réductions, surtout des fusions
+  et des corrections.
+  - Automatismes (méli-mélo, 5 QCM) : inchangés (déjà sous 6).
+  - **Fusions** : « orthogonaux : oui ou non ? » en deux groupes (dont
+    un où la réponse était toujours « oui ») → une section de 4
+    (fractions, radicaux, puissances de 10, le cas « non ») ; « Trouver
+    le réel \(x\) » + « Trouver les deux réels \(x\) » → une section de
+    4, **réponses toutes en ensemble** (comme en fiche 21).
+  - 25.6 retiré : exactement le type de 25.7 (point + vecteur normal,
+    coordonnées entières, moins intéressant que les versions
+    fractionnaire et radicale gardées) ; sa mise à jour de titre
+    dynamique retirée, les numéros codés en dur dans les gabarits des
+    titres dynamiques (25.8 → 25.5, 25.9 → 25.6, 25.11 → 25.8) mis à
+    jour.
+  - Étiquettes de droites (d2)…(d7) supprimées (jamais réutilisées,
+    et la numérotation aurait eu des trous) ; \((D)\), \((AB)\),
+    \((BC)\), \(A\), \(C\), \(ABDC\), \(f\) en LaTeX.
+  - **Défauts préexistants corrigés** : fraction « \(\frac82\) »
+    (25.3 b) ; « 1x », « 0x+0 » et propositions non simplifiées alors
+    que la consigne demande « l'écriture la plus simple » (25.1 d),
+    tirage refait : réponse irréductible, sans terme nul, trois
+    propositions distinctes) ; racine double affichée « {−1;−1} » et
+    « 1x » (25.3 d) ; options de QCM en double (25.1 a et e) ; ensembles
+    proposés avec élément répété (« {2;2} », ~10 % des tirages) et
+    fractions en « −1/2 » séparées par une virgule (25.1 b) → fractions
+    LaTeX, point-virgule.
+  - Vérifié : 25/25 sur 18 cycles complets, balayage de 5 000 tirages
+    vide (« +0 », « 1x », « 0x », fractions réductibles ou en barre
+    oblique, options en double, ensembles à élément répété), aucun
+    débordement, rendu contrôlé à l'écran.
+
+  **Bilan du lot 21-25** : 82+67+52+74+29 = 304 → 55+44+31+39+25 = 194
+  questions. → Poussé le même jour.
+
+  **Fiches 26 à 28, 26/09/2026** (David : « continue les fiches 26 à
+  28 »), même outillage.
+
+  *Fiche 26 (cahier 9, Produit scalaire II) : 63 → 45 questions, 22 → 18
+  groupes.*
+  - Automatismes (2 + 3 = 5, déjà sous 6) : inchangés en nombre ;
+    « Simplifier au maximum, sous forme de produit de puissances »,
+    « Soit x∈ℝ. Développer », « Développer » retirés des énoncés (déjà
+    dans les titres).
+  - **Fusions** : 26.8 + 26.9 (**titres identiques** « Dans chacun des
+    cas suivants, choisir la bonne réponse ») → 4 (trouver un vecteur
+    normal, trouver l'intrus, plusieurs bonnes réponses, droite
+    parallèle à \((Ox)\) ; retirés deux doublons de la première) ;
+    « Projection orthogonale (I)/(II) » → 2 (point entier, point à
+    abscisse fractionnaire) ; « Une distance (I)/(II) » → un groupe de
+    2 ; « Retrouver le centre et le rayon (I)/(II) » → 2 paires
+    centre/rayon. **Le titre du (I) affichait une équation figée
+    (\(x^2+y^2-4x+6y-3=0\)) alors que la question portait sur une
+    équation tirée au sort** : titre réécrit.
+  - Réduits : vecteurs normaux à \((AB)\) 4 → 2 (trois items du même
+    générateur) ; vecteurs directeurs et normaux 8 → 4 (droites \(D_1\)
+    et \(D_3\), renommée \(D_2\) ; \(D_2\) était \(D_1\) dans l'autre
+    ordre, \(D_4\) figée) ; perpendiculaires oui/non 4 → 3 ; équations
+    cartésiennes 3 → 2 ; équations de cercle 3 → 2 ; cercles inconnus
+    3 → 2 (« passant par \(O\) » = cas particulier de « passant par
+    \(B\) »). Gardés entiers : formule générale de la distance (5,
+    étapes dépendantes), tangentes (1+1).
+  - Noms en LaTeX partout : \((d)\), \((D)\), \((d_1)\), \((AB)\),
+    \((BC)\), \((Ox)\), \(H\), \(A\), \(\Omega\), \(\mathcal{C}\),
+    \([AB]\), \(a\), \(b\), \(c\), \(x\in\mathbb{R}\)…
+  - **Défauts préexistants corrigés** : correction de 26.1 b) affichée
+    « 0 » (quotient \(\frac{7}{5^7\times 2^9}\) arrondi à zéro par
+    l'approximation fractionnaire) → une réponse contenant une
+    puissance s'affiche telle quelle, en produit de puissances comme le
+    demande la consigne ; option « \(\frac{-4}{2}\) » (26.8 b) ;
+    « \(m+0\) », « \(0-m\) » (26.6 a) ; rayon « 5/2 » en barre oblique
+    (26.13 b).
+  - Vérifié : 45/45 sur 16 cycles complets (vecteurs, paires, triplets
+    et équations cartésiennes saisis comme un élève : « (a;b) »,
+    « (a;b;c) », « a;b;c »), balayage de 3 000 tirages vide (options
+    comprises, correction affichée comprise), aucun débordement, rendu
+    contrôlé à l'écran.
+
+  *Fiche 27 (cahier 10, Logique) : 48 → 31 questions, 15 → 10 groupes.*
+  Fiche **statique** (tableau d'exercices figé, pas de randomisation —
+  voulu, cf. audit du 04/09 ; titres « Entraînement » au lieu de
+  « Calcul » : outil adapté). Le code contient un appel à
+  `genererExercices()` qui n'existe pas dans la page, mais il n'est
+  jamais atteint (pas de bouton « Nouvelle fiche ») : laissé tel quel.
+  - Automatismes 27.1 (6) + 27.2 (4) → 3+3 : développements a), d)
+    (coefficient fractionnaire), e) (produit de quatre facteurs) ;
+    fractions a), c), d) (retirée celle dont la réponse est un quotient
+    de deux polynômes de degré 3).
+  - **Fusion** : 27.3, 27.4, 27.5 avaient **le même titre** → une
+    section de 4, une par famille (« et », « ou », implication,
+    quantificateur ; deux vraies, deux fausses). **Défaut préexistant
+    corrigé** : ce titre demandait « Répondez par oui ou non » alors
+    que la correction n'acceptait que vrai/faux (« oui » compté faux) →
+    titre « vraies ou fausses ? », et la correction accepte désormais
+    aussi « oui »/« non ».
+  - **Fusion** : 27.8 + 27.9 (même titre) → 4 (retiré
+    « européen/français », même structure que « rectangle/carré »).
+  - **Fusion** « Négation de proposition quantifiée (I)/(II)/(III) » →
+    une section de 4 (toutes gardées) ; l'énoncé du (I), qui était en
+    trois paragraphes au-dessus d'une question vide, passe dans la
+    question ; « Donner la négation de » ajouté aux questions du (II).
+  - Réduits : négations de phrases 5 → 3 (les deux « la fonction f »
+    retirées) ; négations quantifiées (QCM) 4 → 3 ; vocabulaire 3 → 2.
+    Gardés : 27.7 (2), 27.9 avancé (3, la c) dépend des deux autres).
+  - \(P\), \(Q\) en LaTeX dans les énoncés et les options.
+  - Mise en page : 27.7 et 27.9 c) débordaient → `pleineLargeur`
+    (même mécanisme que fiches 21 et 23), aussi pour le groupe des
+    négations aux énoncés longs.
+  - Vérifié : 31/31 (réponse attendue saisie dans le vrai champ),
+    « oui »/« non » acceptés à bon escient, 0 erreur MathJax, aucun
+    débordement, ordre des cartes conforme, rendu contrôlé à l'écran.
+
+  *Fiche 28 (cahier 10, Théorie des ensembles) : 32 → 23 questions,
+  9 → 8 groupes.* Fiche statique, comme la 27.
+  - Automatismes 28.1 (4) + 28.2 (3) → 3+3 (retirée l'équation la plus
+    simple).
+  - Réduits : inéquations 4 → 3, appartenances 4 → 3 (retirées les plus
+    simples), inclusions paramétrées 4 → 3 (deux questions avaient la
+    même réponse et la même mécanique), intersections paramétrées
+    4 → 3. Cardinal gardé.
+  - **Fusion** « Inclusions d'intervalles (I)/(II) » → 4 (deux vraies,
+    deux fausses, dont les fractions étagées). **Même défaut qu'en
+    fiche 27** : le titre demandait « oui » ou « non », refusés par la
+    correction → titre « vraies ou fausses ? », « oui »/« non »
+    acceptés.
+  - 28.6 a) répétait la consigne du titre (« Soit a>0. Déterminer à
+    quelle condition… ») → retirée. Titres en LaTeX (\(x\), \(a>0\),
+    \(a\geqslant\cdots\), \(a\)) ; « \(A\) », « \(\text{Card}(A)\) »,
+    « \(A\), \(B\), \(C\) » en LaTeX dans le rappel.
+  - **Défaut préexistant corrigé** : la correction de l'appartenance à
+    bornes en \(\pi\) s'affichait en décimal (« ]1.237;1.412[ ») →
+    nouveau champ d'exercice `correctionLatex` (écriture exacte
+    \(\left]\frac{\pi}{2}-\frac13;\frac{5\pi}{9}-\frac13\right[\)),
+    prioritaire dans `formaterReponse`. La saisie « ]pi/2-1/3;…[ » était
+    déjà acceptée.
+  - Vérifié : 23/23 (intervalles saisis comme un élève), « oui »/« non »
+    acceptés, aucune correction en décimal, 0 erreur MathJax, aucun
+    débordement, rendu contrôlé à l'écran.
+
+  **Bilan du lot 26-28** : 63+48+32 = 143 → 45+31+23 = 99 questions.
+  **Les 28 fiches de Première sont simplifiées.**
 - `firebase-admin` v14+ a une API modulaire
   (`require('firebase-admin/app')`, etc.) — pas l'ancien
   `admin.credential`/`admin.auth()`.
@@ -1785,6 +3088,35 @@ de changer ce réglage sans qu'il en reparle.
     traverser le texte (repéré sur un arbre à 3 branches initiales, plus
     pentues qu'à 2). Calculer le décalage perpendiculairement à la direction
     réelle de la ligne réglait le problème quelle que soit la pente.
+- **Fiche 6 de Première (cahier 2, dérivation), 25/09/2026** : David signale
+  que 6.5 et 6.6 n'ont qu'une seule question chacune, mais affichaient quand
+  même la lettre « a) » — inutile. `construireGrilles()` (locale à chaque
+  fiche) calcule toujours la lettre par position dans le tableau
+  `lettresEtendues[pos]`, indépendamment du nombre réel de questions du
+  groupe : un groupe réduit à 1 exemple (convention déjà en place ailleurs :
+  id sans lettre, `{id:"6.5", ...}`) affiche quand même « a) » tant que
+  `construireGrilles()` n'est pas averti. Corrigé en ne calculant la lettre
+  que si `indices.length > 1` (sinon chaîne vide, et le `)` retiré avec
+  elle) — corrige au passage 6.7, dans le même cas mais non signalé
+  explicitement, cohérence entre les trois groupes voisins. **Ce correctif
+  est local au fichier de la fiche 6** (chaque fiche a sa propre copie de
+  `construireGrilles()`) : à vérifier au cas par cas sur toute autre fiche
+  qui aurait le même défaut, pas un correctif de portée automatique.
+
+  Au passage, David demande d'agrandir légèrement les graphiques de 6.5 et
+  6.6. 6.5 (courbe unique de \(f'\)) : taille explicite ajoutée à son appel
+  de `genererSVGCourbe` (340×260 → 380×290), sans toucher au défaut de la
+  fonction (partagé avec 6.3/6.4, non concernés par la demande). 6.6 et 6.7
+  partagent la même fonction `construireGraphiqueQCMCourbe` (trois petites
+  courbes still), désormais paramétrée en largeur/hauteur (défaut inchangé
+  240×185) : seul l'appel de 6.6 passe une taille plus grande (265×205),
+  6.7 reste à la taille d'origine, non demandée.
+
+  Vérifié : syntaxe, cycle dans le vrai navigateur (lettre absente
+  confirmée sur 6.5/6.6/6.7 par lecture directe du DOM, présente sur les
+  groupes à plusieurs questions comme 6.3), capture d'écran confirmant le
+  rendu agrandi des deux graphiques concernés et la taille inchangée de
+  6.7.
 - **Correction du corrigé d'un sujet blanc d'automatismes accessible pendant
   un devoir (28/09/2026)**, signalé par David : le verrouillage niveau/mode/
   durée d'un devoir d'automatismes (19/09/2026, voir plus haut) empêchait

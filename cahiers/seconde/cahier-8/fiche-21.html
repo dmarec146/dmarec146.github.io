@@ -2168,9 +2168,21 @@ function fracLatexAffichage(num, den) {
 // ---------- checkPaire : reponse "x;y" (coordonnees d'un point, ou d'un milieu), portee telle
 // quelle depuis fiche-21 de Premiere -- comparaison numerique a scope aleatoire (6 essais valides
 // sur 40 tentatives), tolerance relative 1e-6 ----------
+// Vrai seulement si la parenthese ouvrante initiale se referme sur le dernier caractere :
+// « ((a)/(b);(c)/(d)) » oui, « (a)/(b);(c)/(d) » non (retirer ces deux parentheses-la casserait la saisie).
+function entoureParParentheses(s) {
+  if (!s.startsWith('(') || !s.endsWith(')')) return false;
+  let prof = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '(') prof++;
+    else if (s[i] === ')') { prof--; if (prof === 0 && i < s.length - 1) return false; }
+  }
+  return prof === 0;
+}
+
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g, '');
-  if (nettoye.startsWith('(') && nettoye.endsWith(')')) nettoye = nettoye.slice(1, -1);
+  if (entoureParParentheses(nettoye)) nettoye = nettoye.slice(1, -1);
   const parties = nettoye.split(';');
   if (parties.length !== 2) return false;
   try {
