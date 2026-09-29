@@ -4014,6 +4014,24 @@ de changer ce réglage sans qu'il en reparle.
   (`verrouille: null`) : bilan toujours affiché normalement, aucun
   `confirm()` ne se déclenche sur « Nouvelle fiche ».
 
+  **Correctif le jour même** : la correction automatismes restait bloquée
+  pour toute la fenêtre du devoir, même après validation — seul l'épuisement
+  des essais la débloquait. David demande, comme pour les cahiers de calcul
+  (`ficheValidee`) : après avoir validé sa série, l'élève doit voir sa note
+  ET pouvoir consulter toutes les réponses DE CETTE série précisément ;
+  générer un nouveau sujet rebloque le bouton jusqu'à la prochaine
+  validation. `correctionBloqueeParDevoir()` passe de `!!ETAT.config.verrouille`
+  à `!!ETAT.config.verrouille && !ETAT.serieValidee`. Mode chrono concerné
+  aussi : `terminerSerie()` (Terminer le sujet, ou le temps écoulé) joue le
+  même rôle que le clic explicite "Valider ma série" du mode fiche — ajoute
+  `ETAT.serieValidee = true` au même endroit où `ETAT.corrigees` était déjà
+  mis à `true` (préparé mais jusqu'ici jamais révélé avant l'épuisement des
+  essais). Message du bouton désactivé mis à jour (« valide ta série » au
+  lieu de « une fois tes tentatives épuisées »). Vérifié en navigateur sur
+  `sujet-blanc.html` (mode fiche et chrono) et `fiche.html` : score et
+  correction visibles après validation/fin de série, re-bloqués après une
+  nouvelle série confirmée.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

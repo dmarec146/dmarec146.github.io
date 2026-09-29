@@ -485,21 +485,27 @@
   }
 
   // Devoir en cours (ETAT.config.verrouille) : la correction (« Voir toutes
-  // les réponses »/« Voir la correction détaillée ») reste bloquée tant que
-  // le verrouillage est actif. Un devoir dont les essais sont épuisés ne
-  // pose PLUS aucun verrouillage du tout (ni thèmes/niveau/mode, ni
-  // correction) : soit dès le chargement (la page ne construit `verrouille`
-  // que si `!devoir.bloque`, voir devoirAutomatismeActif/
-  // devoirAutomatismeFicheActif côté page), soit en direct pendant la
-  // session en cours via leverVerrouille() ci-dessous, dès que la tentative
-  // qui vient de se terminer épuise le quota (28/09/2026, deux retours de
-  // David : le bouton restait bloqué après épuisement, puis un élève revenu
-  // sur la page depuis le sommaire restait verrouillé sur les thèmes d'un
-  // devoir déjà épuisé). Se lève aussi tout seul au prochain chargement une
-  // fois l'échéance passée (comportement déjà en place).
-  const TITRE_CORRECTION_BLOQUEE = 'Devoir en cours : la correction sera disponible une fois tes tentatives épuisées, ou après l&#39;échéance.';
+  // les réponses »/« Voir la correction détaillée ») reste bloquée pour la
+  // série courante tant qu'elle n'a pas été validée (30/09/2026, retour de
+  // David : puisqu'une nouvelle tentative génère un autre sujet, l'élève
+  // doit voir apparaître sa note et pouvoir consulter toutes les réponses
+  // DE LA SERIE QU'IL VIENT DE VALIDER, pas seulement une fois toutes ses
+  // tentatives épuisées). `ETAT.serieValidee` (mode fiche : mis à vrai par
+  // validerSerie() ; mode chrono : par terminerSerie(), qui joue le même
+  // rôle qu'un clic explicite sur Valider) se remet à faux à chaque nouvelle
+  // série (nouvelleSerie()/nouvelleSerieMemeThemes()) : bloque a nouveau la
+  // correction jusqu'à la prochaine validation, exactement comme "Voir
+  // toutes les réponses" cote cahiers de calcul (ficheValidee).
+  // Un devoir dont les essais sont épuisés ne pose PLUS aucun verrouillage
+  // du tout (ni thèmes/niveau/mode, ni correction) : soit dès le chargement
+  // (la page ne construit `verrouille` que si `!devoir.bloque`, voir
+  // devoirAutomatismeActif/devoirAutomatismeFicheActif côté page), soit en
+  // direct pendant la session en cours via leverVerrouille() ci-dessous, dès
+  // que la tentative qui vient de se terminer épuise le quota. Se lève aussi
+  // tout seul au prochain chargement une fois l'échéance passée.
+  const TITRE_CORRECTION_BLOQUEE = 'Devoir en cours : valide ta série pour voir la correction.';
   function correctionBloqueeParDevoir() {
-    return !!ETAT.config.verrouille;
+    return !!ETAT.config.verrouille && !ETAT.serieValidee;
   }
 
   // Lève complètement le verrouillage d'un devoir (thèmes/niveau/mode/durée
@@ -1008,6 +1014,12 @@
     arreterChrono();
     const c = ETAT.chrono;
     c.phase = 'fin';
+    // Joue, en mode chrono, le meme role que le clic explicite sur "Valider
+    // ma serie" en mode fiche (30/09/2026) : Terminer le sujet (ou le temps
+    // ecoule, qui y mene aussi via finDeFile) EST le geste de validation de
+    // ce mode -- debloque donc la correction pour CETTE serie (voir
+    // correctionBloqueeParDevoir), remis a false a la prochaine serie.
+    ETAT.serieValidee = true;
     ETAT.corrigees = ETAT.questions.map(() => true);
     rendre();
     verifierFinSerie();
