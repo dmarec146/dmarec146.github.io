@@ -792,6 +792,21 @@ window.MathJax = {
     padding: 2px 8px;
   }
   .modal-devoir-fermer:hover { color: var(--rouge); }
+
+  /* Bandeau persistant d'info devoir (30/09/2026) : contrairement au
+     pop-up ci-dessus (evenementiel, se ferme), reste affiche en continu
+     tant qu'un devoir est actif -- pour que l'eleve sache en permanence,
+     sans avoir a cliquer Valider, combien de tentatives il lui reste. */
+  .devoir-info[hidden] { display: none; }
+  .devoir-info {
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--bleu-clair);
+    color: var(--bleu);
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
 </style>
 
 <body>
@@ -890,6 +905,7 @@ window.MathJax = {
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 <p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
+<p id="devoir-info" class="devoir-info" hidden></p>
 
 <div id="modal-devoir" class="modal-devoir" hidden>
   <div class="modal-devoir-contenu">
@@ -1942,23 +1958,47 @@ function mettreAJourEtatBoutons() {
   const boutonToutes = document.getElementById('btn-toutes-reponses');
   boutonToutes.disabled = eleveConnecte && !!etatDevoir && !ficheValidee;
 
-  // En mode devoir (etatDevoir non nul, voir initialiserFiche), une fois la
-  // fiche validee (donc les corrections reveelees) : "Recommencer" masque
-  // (pas de redite de la MEME fiche avec les reponses deja vues) et
-  // "Enregistrer mon avancement" masque (plus d'avancement en cours a
-  // sauvegarder). Les deux se reaffichent normalement a la prochaine
-  // validation d'etat (rafraichissement de page ou "Generer une nouvelle
-  // version", qui remettent ficheValidee a false) -- comportement voulu.
-  const enModeDevoirValide = !!etatDevoir && ficheValidee;
+  // En mode devoir (etatDevoir non nul, voir initialiserFiche) : "Recommencer"
+  // disparait completement (30/09/2026, David : plus question de rejouer la
+  // MEME fiche, deja vue -- seul "Generer une nouvelle version" permet de
+  // retenter, et compte alors une nouvelle tentative, voir genererNouvelleFiche).
+  // "Valider ma fiche" reste affiche mais se desactive une fois la fiche
+  // validee (ficheValidee), pour empecher de revalider plusieurs fois la
+  // meme fiche generee et consommer des tentatives sans regenerer -- les
+  // deux se reactivent a la prochaine "Generer une nouvelle version", qui
+  // remet ficheValidee a false.
   const boutonRecommencer = document.getElementById('btn-recommencer');
-  if (boutonRecommencer) boutonRecommencer.hidden = enModeDevoirValide;
+  if (boutonRecommencer) boutonRecommencer.hidden = eleveConnecte && !!etatDevoir;
+  const boutonValider = document.getElementById('btn-valider');
+  if (boutonValider) boutonValider.disabled = !!(etatDevoir && ficheValidee);
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
   // !etatDevoir : ne jamais reafficher "Enregistrer" hors devoir (29/09/2026)
   // -- avant ce garde, un eleve connecte en entrainement le voyait
   // reapparaitre a chaque appel de cette fonction (ex. a chaque reponse
   // tapee), puisque enModeDevoirValide vaut deja false des que etatDevoir
   // est nul, quelle que soit ficheValidee.
-  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = !etatDevoir || enModeDevoirValide;
+  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = !etatDevoir || (!!etatDevoir && ficheValidee);
+
+  mettreAJourInfoDevoir();
+}
+
+// Bandeau persistant d'info devoir (30/09/2026) : contrairement au pop-up
+// afficherModaleDevoir (evenementiel), reste affiche en continu tant qu'un
+// devoir est actif -- l'eleve doit savoir en permanence combien de
+// tentatives il lui reste, sans attendre une validation ou un blocage.
+function formaterEcheanceDevoir(millis) {
+  return new Date(millis).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+function mettreAJourInfoDevoir() {
+  const zone = document.getElementById('devoir-info');
+  if (!zone) return;
+  if (!eleveConnecte || !etatDevoir) { zone.hidden = true; return; }
+  zone.hidden = false;
+  if (etatDevoir.bloque) {
+    zone.textContent = `Devoir « ${etatDevoir.titre} » : tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`;
+  } else {
+    zone.textContent = `Devoir « ${etatDevoir.titre} » — ${etatDevoir.essaisUtilises} / ${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}, à rendre avant le ${formaterEcheanceDevoir(etatDevoir.echeance)}.`;
+  }
 }
 
 function verifierUne(idx) {
@@ -2058,16 +2098,15 @@ async function validerFicheActuelle() {
     return;
   }
   const bouton = document.getElementById('btn-valider');
-  if (bouton) bouton.disabled = true;
-  // Reste vrai si CETTE validation vient d'epuiser le quota du devoir (voir
-  // plus bas) : le bouton doit alors rester desactive au sortir du "finally",
-  // qui sinon le reactiverait sans condition.
-  let resteDesactive = false;
   try {
     // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
     // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
     // vrai a ce moment-la. Rafraichit aussi saisies avant l'envoi, pour
     // couvrir le cas d'une derniere reponse tapee sans avoir quitte le champ.
+    // mettreAJourEtatBoutons() desactive aussitot "Valider ma fiche" (voir
+    // cette fonction) : en devoir, il ne se reactivera qu'a la prochaine
+    // "Generer une nouvelle version" -- plus possible de revalider la MEME
+    // fiche plusieurs fois de suite (30/09/2026, David).
     ficheValidee = true;
     mettreAJourEtatBoutons();
     verifierTout();
@@ -2077,30 +2116,32 @@ async function validerFicheActuelle() {
     await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
     afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
 
-    // Reactivite immediate de la limite d'essais (29/09/2026, retour de
-    // David : le bouton restait cliquable apres la limite sans que l'eleve
-    // sache si ses tentatives comptaient encore). etatDevoir est fige au
-    // chargement de la page (voir initialiserFiche) : si CETTE validation
-    // est justement celle qui epuise le quota, la seule ecriture qui vient
-    // de reussir (ci-dessus) l'a forcement fait passer de essaisUtilises a
-    // essaisUtilises+1 (sinon enregistrerTentativeDevoirSiApplicable, cote
-    // suivi.js, l'aurait silencieusement ignoree -- deja couvert par la
-    // branche etatDevoir.bloque tout en haut de cette fonction). Pas besoin
-    // de relire Firestore une seconde fois pour le savoir.
+    // etatDevoir.essaisUtilises (30/09/2026) : incremente desormais apres
+    // TOUTE validation reussie, pas seulement celle qui epuise le quota --
+    // corrige un bug ou le bandeau d'info devoir (mettreAJourInfoDevoir)
+    // affichait un compte perime tant que le quota n'etait pas atteint.
+    // etatDevoir est fige au chargement de la page (voir initialiserFiche) :
+    // la seule ecriture qui vient de reussir (ci-dessus) a forcement fait
+    // passer essaisUtilises a essaisUtilises+1 (sinon
+    // enregistrerTentativeDevoirSiApplicable, cote suivi.js, l'aurait
+    // silencieusement ignoree -- deja couvert par la branche
+    // etatDevoir.bloque tout en haut de cette fonction). Pas besoin de
+    // relire Firestore une seconde fois pour le savoir.
     if (etatDevoir) {
-      const essaisApresCetteValidation = etatDevoir.essaisUtilises + 1;
-      if (essaisApresCetteValidation >= etatDevoir.nbEssaisMax) {
+      etatDevoir.essaisUtilises += 1;
+      if (etatDevoir.essaisUtilises >= etatDevoir.nbEssaisMax) {
         etatDevoir.bloque = true;
-        etatDevoir.essaisUtilises = essaisApresCetteValidation;
-        resteDesactive = true;
         if (bouton) bouton.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
-        afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatDevoir.titre} », ${essaisApresCetteValidation}/${etatDevoir.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`);
+        afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatDevoir.titre} », ${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`);
       }
+      mettreAJourEtatBoutons();
     }
   } catch (erreur) {
+    // La validation n'a pas vraiment eu lieu : revient a l'etat d'avant
+    // (bouton reactive) pour permettre de reessayer.
+    ficheValidee = false;
+    mettreAJourEtatBoutons();
     afficherEtatSuivi('Échec de la validation (connexion internet ?).');
-  } finally {
-    if (bouton && !resteDesactive) bouton.disabled = false;
   }
 }
 
@@ -2430,6 +2471,14 @@ function reinitialiser() {
 }
 
 function genererNouvelleFiche() {
+  // En devoir, "Recommencer" a disparu (30/09/2026) : generer une nouvelle
+  // version est desormais le SEUL moyen de rejouer, et demarre une nouvelle
+  // tentative -- l'eleve doit le savoir avant de perdre sa fiche actuelle
+  // (et un eventuel brouillon enregistre dessus), d'ou cette confirmation.
+  if (etatDevoir && !etatDevoir.bloque) {
+    const confirmation = confirm(`Générer une nouvelle version remplace cette fiche par une nouvelle : ce sera une nouvelle tentative pour ce devoir (« ${etatDevoir.titre} », ${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} déjà utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}). Continuer ?`);
+    if (!confirmation) return;
+  }
   PASSE_ACTUELLE = genererIdPasse();
   exercices = marquerFormesFactorisees(genererExercices());
   saisies = {};
@@ -2857,7 +2906,15 @@ async function initialiserFiche() {
         boutonValider.disabled = true;
         boutonValider.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
       }
-      afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`);
+      const messageBloque = `Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`;
+      afficherEtatSuivi(messageBloque);
+      // Pop-up en plus de la ligne de texte ci-dessus (30/09/2026) : avant ce
+      // changement, un eleve arrivant sur la fiche APRES avoir deja epuise
+      // ses tentatives lors d'une session precedente ne voyait jamais le
+      // pop-up (reserve jusque-la au moment precis ou une validation venait
+      // d'epuiser le quota, voir validerFicheActuelle) -- seulement cette
+      // petite ligne grise, facile a manquer.
+      afficherModaleDevoir(messageBloque);
     }
   }
 
