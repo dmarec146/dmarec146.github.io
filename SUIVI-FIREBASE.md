@@ -3989,9 +3989,8 @@ de changer ce réglage sans qu'il en reparle.
   de fiche stable) : `enregistrerBrouillonAutomatisme`,
   `chargerBrouillonAutomatisme`, `supprimerBrouillonAutomatisme` →
   `eleves/{uid}/brouillonsAutomatismes/{devoirId}`. Règle Firestore ajoutée
-  (`firestore.rules`, même principe que `brouillons/{ficheId}`) — **à
-  republier manuellement en Console Firebase par David**, sinon les
-  écritures de brouillon d'automatismes échoueront silencieusement.
+  (`firestore.rules`, même principe que `brouillons/{ficheId}`) et
+  **republiée par David en Console Firebase le 30/09/2026**.
 
   **`sujet-blanc.html`/`fiche.html`** (modifications parallèles) :
   `verrouille` enrichi de `id`/`essaisUtilises`/`nbEssaisMax` ; chargement
