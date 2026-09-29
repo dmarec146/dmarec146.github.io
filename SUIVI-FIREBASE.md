@@ -3866,6 +3866,155 @@ de changer ce réglage sans qu'il en reparle.
   une seule page) supprimé. Vérifié par grep qu'aucun lien restant dans le
   dépôt ne pointe vers `tableau-de-bord/index.html`.
 
+- **Procédure de tentative en mode devoir : 4 corrections demandées par
+  David (30/09/2026)** — après usage réel du système mis en place les jours
+  précédents, David relève quatre manques, tous en mode devoir (élève
+  forcément connecté) :
+  1. Les automatismes (sujet blanc + fiche ciblée) n'avaient ni Enregistrer
+     ni Valider explicite.
+  2. Procédure attendue uniforme sur les 3 surfaces : Enregistrer = reprise
+     exacte ; une tentative ne compte qu'au clic sur Valider ; « Générer une
+     nouvelle fiche » démarre une nouvelle tentative (l'élève doit le
+     savoir) ; Recommencer doit disparaître en devoir.
+  3. Pop-up de limite atteinte manquant dans certains cas.
+  4. Tableau de bord élève : l'élève doit savoir exactement combien de
+     tentatives il lui reste.
+
+  Décisions actées avant implémentation : pas d'Enregistrer en mode chrono
+  pour les automatismes (une série chrono se joue d'une traite, comme le
+  jour de l'épreuve — seul le mode fiche est concerné) ; le compteur de
+  tentatives doit apparaître directement sur la page du devoir, en plus de
+  `/mes-devoirs/` (page déjà existante depuis le 19/09/2026, qui affichait
+  déjà « X tentatives restantes » par devoir mais seulement là).
+
+  **1) Cahiers de calcul (52 fiches)** — piloté sur `fiche-01.html`, propagé
+  aux 51 autres. Trois retouches :
+  - `mettreAJourEtatBoutons()` : `boutonRecommencer.hidden` simplifié en
+    `eleveConnecte && !!etatDevoir` (disparaît dès qu'un devoir est actif,
+    plus seulement après validation) ; nouveau `boutonValider.disabled =
+    !!(etatDevoir && ficheValidee)` — **avant ce correctif, rien n'empêchait
+    de cliquer plusieurs fois « Valider ma fiche » sur la MÊME fiche déjà
+    vue/corrigée** (le bouton était réactivé sans condition à la fin de
+    `validerFicheActuelle()`), consommant des tentatives sans jamais
+    regénérer.
+  - `genererNouvelleFiche()` : ajoute un `confirm()` (si `etatDevoir &&
+    !etatDevoir.bloque`) informant que ce clic démarre une nouvelle
+    tentative, avec le compte essais utilisés/max — c'est désormais le SEUL
+    moyen de rejouer en devoir (Recommencer disparu). Annulé = rien ne
+    change.
+  - `validerFicheActuelle()` : `etatDevoir.essaisUtilises` incrémenté après
+    CHAQUE validation réussie (avant : seulement celle qui épuisait le
+    quota — bug trouvé en marge, sans conséquence visible jusqu'ici car rien
+    n'affichait ce compte en continu).
+
+  Nouvelle bannière persistante `#devoir-info` (répond aux points 3+4) :
+  affiche en continu (pas seulement au clic) « Devoir « titre » — X/Y
+  tentative(s) utilisée(s), à rendre avant le ÉCHÉANCE », ou le message de
+  blocage une fois les essais épuisés. Pop-up au chargement si déjà bloqué
+  (point 3) : avant ce changement, un élève arrivant sur la fiche APRÈS
+  avoir épuisé ses tentatives lors d'une session précédente ne voyait
+  jamais `afficherModaleDevoir` (réservé jusque-là au clic live qui épuise
+  le quota), seulement la petite ligne grise `#suivi-etat`, facile à
+  manquer.
+
+  Propagation mécanique (script dans `.claude/scratch/`), avec le même
+  piège que d'habitude et deux nouveaux à noter :
+  - Un marqueur d'ancre contenant un accent (« Échec ») tapé directement
+    dans le script PowerShell a été mal lu (PowerShell 5.1 lit les `.ps1`
+    en ANSI) — `chec de la validation` (sans le É) utilisé à la place, en
+    s'appuyant sur l'unicité du reste de la phrase.
+  - Un marqueur de début trop court (`if (etatDevoir && etatDevoir.bloque)
+    {`) matchait DEUX endroits dans chaque fiche (le blocage au chargement
+    ET la seconde ligne de défense dans `validerFicheActuelle()`) :
+    `IndexOf` a trouvé la première occurrence (dans `validerFicheActuelle`,
+    bien avant dans le fichier), puis cherché le marqueur de fin bien plus
+    loin — résultat, un bloc de remplacement de 42 000 caractères au lieu
+    d'une poignée de lignes. Le script a échoué avant d'écraser quoi que ce
+    soit d'incohérent, mais avait déjà modifié `fiche-02.html` (le premier
+    fichier traité) avant de s'arrêter sur `fiche-03.html` — reverti via
+    `git checkout` avant de corriger le marqueur (rendu unique en incluant
+    la ligne suivante, `const boutonValider = ...`) et de relancer. Vérifié
+    ensuite : `vm.Script` sur les 52 fiches (0 erreur), grep d'uniformité
+    des 7 changements (52/52 sur le nouveau texte, 0 résidu de l'ancien),
+    test réel dans le navigateur sur `fiche-01.html`, `fiche-02.html` et
+    `fiche-11.html` (Seconde) dans les trois états (anonyme, connecté
+    entraînement — inchangé —, connecté devoir avant/après validation,
+    devoir déjà bloqué au chargement).
+
+  **2) Automatismes (`automatismes/assets/moteur.js`, partagé par
+  sujet-blanc.html et fiche.html)** — jusqu'ici, en mode fiche, une
+  tentative s'écrivait automatiquement dès que la dernière question
+  recevait une réponse (`verifierFinSerie()` déclenchée par `majBilan()`
+  à chaque clic d'option) : aucun geste explicite, et le panneau de score
+  s'affichait déjà à ce moment-là (fuite du score en temps réel avant toute
+  validation, trouvée en marge — corrigée en bloquant `bilanFicheHTML()`
+  par `correctionBloqueeParDevoir()`, comme le reste de la correction). Le
+  mode chrono n'est pas concerné : il a déjà un geste explicite de fin
+  (Terminer le sujet, ou le temps écoulé) et n'expose pas Recommencer dans
+  son HTML — aucun risque de rejouer la même série sans regénérer.
+
+  Ajouté, gated sur `ETAT.config.verrouille && ETAT.mode === 'fiche'` :
+  - `verifierFinSerie()` : ne déclenche plus `onFinSerie` automatiquement
+    dans ce cas — remplacé par un geste explicite.
+  - Nouvelles fonctions `validerSerie()` (payload identique à
+    `verifierFinSerie`, factorisé dans `payloadFinSerie()`, marque
+    `ETAT.serieValidee = true`, supprime le brouillon) et
+    `enregistrerSerieDevoir()` (sauvegarde questions+réponses, retour
+    visuel léger sur le bouton lui-même — « Enregistré ✓ » 2 secondes —
+    plutôt qu'un nouveau composant).
+  - `vueFicheHTML()` : barre de boutons remplacée par Enregistrer/Valider
+    (sans Recommencer) en devoir ; `nouvelleSerie()`/`nouvelleSerieMemeThemes()`
+    remettent `ETAT.serieValidee` à `false` et suppriment tout brouillon
+    devenu obsolète.
+  - `attacherGlobal()` : « Nouvelle série »/« mêmes thèmes » enveloppés d'un
+    `confirm()` si un devoir est actif (même principe que
+    `genererNouvelleFiche()` côté cahiers de calcul) — vérifié qu'aucun
+    `confirm()` ne se déclenche en pratique libre.
+  - `demarrer()` : accepte `config.brouillon` (questions + réponses) pour la
+    toute PREMIÈRE série uniquement — jamais pour les suivantes, qui tirent
+    toujours au hasard.
+  - `panneauVerrouilleHTML()` : ligne « Tentatives utilisées : X / Y »
+    ajoutée (répond au point 4), à partir de `verrouille.essaisUtilises`/
+    `nbEssaisMax` (nouveaux champs, alimentés par la page depuis l'objet déjà
+    renvoyé par `devoirAutomatismeActif`/`devoirAutomatismeFicheActif` —
+    jusqu'ici jamais recopiés dans `verrouille`). Mis à jour après chaque
+    validation (même objet passé par référence à `Automatismes.demarrer`)
+    sans recharger la page.
+
+  **`assets/js/suivi.js`** : `devoirAutomatismeActif()` renvoie désormais
+  aussi `id: devoir.id` (absent jusqu'ici, nécessaire pour cibler le bon
+  devoir sans le rechercher une seconde fois). Trois nouvelles fonctions,
+  même schéma que `enregistrerBrouillon`/`chargerBrouillon`/`supprimerBrouillon`
+  mais indexées par `devoirId` plutôt que `ficheId` (un automatisme n'a pas
+  de fiche stable) : `enregistrerBrouillonAutomatisme`,
+  `chargerBrouillonAutomatisme`, `supprimerBrouillonAutomatisme` →
+  `eleves/{uid}/brouillonsAutomatismes/{devoirId}`. Règle Firestore ajoutée
+  (`firestore.rules`, même principe que `brouillons/{ficheId}`) — **à
+  republier manuellement en Console Firebase par David**, sinon les
+  écritures de brouillon d'automatismes échoueront silencieusement.
+
+  **`sujet-blanc.html`/`fiche.html`** (modifications parallèles) :
+  `verrouille` enrichi de `id`/`essaisUtilises`/`nbEssaisMax` ; chargement
+  d'un brouillon existant avant `Automatismes.demarrer()` si
+  `devoir.mode === 'fiche'` ; pop-up au chargement si `devoir.bloque` (même
+  lacune que côté cahiers de calcul — rien n'était affiché jusqu'ici, le
+  verrouillage était simplement levé en silence) ; `onFinSerie` met à jour
+  `verrouille.essaisUtilises` après chaque tentative réussie.
+
+  Vérifié en navigateur (pas de vraie session Firebase disponible en
+  sandbox, donc `window.enregistrerTentativeSujetBlancSiDevoir`/
+  `verifierEtatDevoirAutomatisme`/`enregistrerBrouillonAutomatisme`/etc.
+  mockées directement, même méthode que pour les tests précédents de cette
+  session) sur les deux pages, en mode fiche ET en mode chrono (non-
+  régression) : boutons corrects selon le mode, réponse à toutes les
+  questions sans fuite du score ni écriture automatique, Enregistrer
+  round-trip, Valider écrit une fois, désactive le bouton, rafraîchit le
+  panneau tentatives (0/3 → 1/3) sans recharger, un second clic (même
+  forcé) n'écrit rien de plus, `confirm()` annulé ne change rien,
+  `confirm()` accepté régénère et réactive Valider ; pratique libre
+  (`verrouille: null`) : bilan toujours affiché normalement, aucun
+  `confirm()` ne se déclenche sur « Nouvelle fiche ».
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
