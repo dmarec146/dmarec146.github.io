@@ -30,8 +30,6 @@ import {
   getDoc,
   deleteDoc,
   serverTimestamp,
-  increment,
-  arrayUnion,
   query,
   where,
   getDocs
@@ -317,28 +315,17 @@ export async function verifierEtatDevoir(ficheId) {
   }
 }
 
-// Cliquer sur "Valider" (fiche complete ou non) fusionne les reponses
-// correctes de ce passage dans le score cumule de la fiche, tous passages
-// confondus -- un exercice reussi une fois reste acquis, meme reussi a un
-// autre passage avec d'autres valeurs generees. Supprime aussi le brouillon
-// en cours : une fois validee, la fiche n'est plus "en cours" pour le
-// tableau de bord.
+// Cliquer sur "Valider" (fiche complete ou non). Depuis le 29/09/2026, sur
+// demande de David ("je ne ferai un suivi enseignant que sur les devoirs
+// donnes"), ce bouton n'existe plus que pendant un devoir actif (voir
+// zoneValider.hidden dans chaque fiche) : plus d'ecriture dans
+// eleves/{uid}/resultats/{ficheId} (score cumule tous passages confondus),
+// qui n'etait lue que par l'ancien tableau de bord "Fiches", retire le meme
+// jour -- seule la tentative de devoir (si applicable) est encore
+// enregistree. Supprime aussi le brouillon en cours : une fois validee, la
+// fiche n'est plus "en cours" a reprendre.
 export async function validerFiche(ficheId, exercicesReussisIds, totalExercices, nbRepondues) {
   if (!utilisateurCourant) return;
-  try {
-    const donnees = {
-      ficheId,
-      totalExercices,
-      nbValidations: increment(1),
-      sommeQuestionsRepondues: increment(nbRepondues),
-      derniereActivite: serverTimestamp(),
-    };
-    if (exercicesReussisIds.length > 0) donnees.exercicesReussis = arrayUnion(...exercicesReussisIds);
-    await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'resultats', idFiche(ficheId)), donnees, { merge: true });
-  } catch (erreur) {
-    console.warn('Suivi : validation de la fiche impossible.', erreur);
-    return;
-  }
   await enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues);
   await supprimerBrouillon(ficheId);
 }
@@ -425,7 +412,7 @@ async function devoirsPourAutomatisme(niveau, mode, duree, classe, cible) {
 // (colonne "Non-reponses" forcee a "—" pour un devoir d'automatismes, voir
 // devoirs.js). `repondues` (nombre REEL de questions ayant une reponse,
 // calcule par moteur.js) et `baremeTotal` (points max du bareme choisi pour
-// CETTE serie, voir enregistrerAutomatisme) rendent ces deux champs a
+// CETTE serie, voir enregistrerTentativeSujetBlancSiDevoir) rendent ces deux champs a
 // nouveau justes.
 async function enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal, cible, themes) {
   try {
@@ -536,31 +523,21 @@ export async function devoirAutomatismeActif(cible) {
   }
 }
 
-// Un sujet blanc termine (mode chrono uniquement, voir automatismes/premiere/
-// sujet-blanc.html et le callback onFinSerie dans assets/moteur.js). Pas de
-// suivi du mode fiche (pratique libre, non notee) ni des themes abordes
-// (tout est melange dans un sujet blanc).
+// Un sujet blanc termine (voir automatismes/premiere/sujet-blanc.html et le
+// callback onFinSerie dans assets/moteur.js). Depuis le 29/09/2026, sur
+// demande de David ("je ne ferai un suivi enseignant que sur les devoirs
+// donnes") : plus aucune ecriture inconditionnelle dans eleves/{uid}/
+// automatismes (agregat qui n'etait lu que par l'ancien tableau de bord
+// "Fiches", retire le meme jour) -- seule une tentative correspondant a un
+// devoir 'sujet-blanc' ACTIF est enregistree, dans devoirsTentatives
+// uniquement, exactement comme enregistrerTentativeFicheAutomatismesSiDevoir
+// ci-dessous pour la fiche ciblee. Un sujet blanc joue hors devoir
+// n'ecrit donc plus jamais rien.
 //
 // `repondues` (nombre reel de questions ayant une reponse) et `baremeTotal`
 // (points max du bareme de CETTE page, voir sujet-blanc.html) : voir le
 // commentaire devant enregistrerTentativeDevoirAutomatismeSiApplicable.
-export async function enregistrerAutomatisme(bonnes, total, points, niveau, mode, duree, repondues, baremeTotal) {
-  if (!utilisateurCourant) return;
-  try {
-    await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'automatismes'), {
-      bonnes,
-      total,
-      repondues,
-      points,
-      niveau,
-      mode,
-      duree,
-      horodatage: serverTimestamp(),
-    });
-  } catch (erreur) {
-    console.warn('Suivi : enregistrement du sujet blanc impossible.', erreur);
-    return;
-  }
+export async function enregistrerTentativeSujetBlancSiDevoir(bonnes, total, points, niveau, mode, duree, repondues, baremeTotal) {
   await enregistrerTentativeDevoirAutomatismeSiApplicable(niveau, mode, duree, points, bonnes, total, repondues, baremeTotal);
 }
 
@@ -578,7 +555,7 @@ export async function enregistrerTentativeFicheAutomatismesSiDevoir(bonnes, tota
 }
 
 window.enregistrerTentative = enregistrerTentative;
-window.enregistrerAutomatisme = enregistrerAutomatisme;
+window.enregistrerTentativeSujetBlancSiDevoir = enregistrerTentativeSujetBlancSiDevoir;
 window.enregistrerTentativeFicheAutomatismesSiDevoir = enregistrerTentativeFicheAutomatismesSiDevoir;
 window.enregistrerBrouillon = enregistrerBrouillon;
 window.chargerBrouillon = chargerBrouillon;

@@ -101,7 +101,12 @@ if (cible) {
   // bouge plus jamais, au prix d'un petit vide invisible et permanent dans
   // la barre pour la tres grande majorite des visiteurs.
   const lienTableau = document.createElement('a');
-  lienTableau.href = '/tableau-de-bord/';
+  // Pointe directement sur devoirs.html (29/09/2026) : l'ancien tableau de
+  // bord "Fiches" (suivi de l'entrainement hors devoir) a ete retire sur
+  // demande de David ("je ne ferai un suivi enseignant que sur les devoirs
+  // donnes") -- devoirs.html est desormais le seul tableau de bord
+  // enseignant.
+  lienTableau.href = '/tableau-de-bord/devoirs.html';
   lienTableau.title = 'Tableau de bord';
   lienTableau.setAttribute('aria-label', 'Tableau de bord');
   lienTableau.innerHTML = ICONE_TABLEAU_DE_BORD;

@@ -156,7 +156,7 @@ window.MathJax = {
     // 0,5 point par question (note sur 5) depuis le 19/09/2026, sur demande
     // de David -- barème encore fixe ici, réglable devoir par devoir prévu
     // plus tard (pas fait). Variable partagée avec l'appel à
-    // enregistrerAutomatisme plus bas (onFinSerie), pour ne jamais risquer
+    // enregistrerTentativeSujetBlancSiDevoir plus bas (onFinSerie), pour ne jamais risquer
     // de désynchroniser le "total" enregistré du barème réellement affiché.
     const bareme = { parQuestion: 0.5, total: 5 };
 
@@ -207,9 +207,9 @@ window.MathJax = {
         // Attend la fin de l'ecriture avant de decider quoi que ce soit
         // ensuite (voir plus bas) -- pas besoin de relire l'etat apres coup,
         // etatAvant + savoir que l'ecriture a eu lieu suffisent.
-        if (window.enregistrerAutomatisme) {
+        if (window.enregistrerTentativeSujetBlancSiDevoir) {
           try {
-            await window.enregistrerAutomatisme(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree, resultat.repondues, bareme.total);
+            await window.enregistrerTentativeSujetBlancSiDevoir(resultat.bonnes, resultat.total, resultat.points, resultat.niveau, resultat.mode, resultat.duree, resultat.repondues, bareme.total);
           } catch (erreur) { /* deja logue cote suivi.js */ }
         }
         if (etatAvant && etatAvant.bloque) {

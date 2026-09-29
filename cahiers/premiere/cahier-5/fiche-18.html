@@ -1898,7 +1898,12 @@ function mettreAJourEtatBoutons() {
   const boutonRecommencer = document.getElementById('btn-recommencer');
   if (boutonRecommencer) boutonRecommencer.hidden = enModeDevoirValide;
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
-  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = enModeDevoirValide;
+  // !etatDevoir : ne jamais reafficher "Enregistrer" hors devoir (29/09/2026)
+  // -- avant ce garde, un eleve connecte en entrainement le voyait
+  // reapparaitre a chaque appel de cette fonction (ex. a chaque reponse
+  // tapee), puisque enModeDevoirValide vaut deja false des que etatDevoir
+  // est nul, quelle que soit ficheValidee.
+  if (zoneEnregistrer && eleveConnecte) zoneEnregistrer.hidden = !etatDevoir || enModeDevoirValide;
 }
 
 function verifierUne(idx) {
@@ -2842,18 +2847,30 @@ async function initialiserFiche() {
     }
   }
 
-// Panneau de mode et "Corrige des erreurs" : corriges ici APRES avoir su
-  // si un devoir est actif -- masques SEULEMENT en mode devoir (etatDevoir
-  // non nul), pas pour tout eleve connecte comme avant (29/09/2026, retour
-  // de David : en entrainement libre, un eleve connecte doit retrouver
-  // exactement le meme confort qu'un visiteur anonyme). L'affectation par
-  // defaut juste au-dessus (eleveConnecte seul) reste inoffensive : ces deux
-  // lignes la corrigent immediatement, avant le premier rendu visible.
+// Panneau de mode, "Corrige des erreurs", "Enregistrer"/"Valider" :
+  // corriges ici APRES avoir su si un devoir est actif -- l'ENSEMBLE de ces
+  // quatre elements ne depend plus seulement de la connexion mais du mode
+  // devoir precisement (etatDevoir non nul), sur demande de David le
+  // 29/09/2026 : "je ne ferai un suivi enseignant que sur les devoirs
+  // donnes... le mode connecte hors devoir doit fonctionner comme un eleve
+  // anonyme (memes boutons, pas de validation obligatoire, pas
+  // d'enregistrement)". Hors devoir, un eleve connecte est donc desormais
+  // rigoureusement identique a un anonyme sur cette fiche -- seul le mode
+  // devoir garde Enregistrer/Valider. L'affectation par defaut juste
+  // au-dessus (eleveConnecte seul) reste inoffensive : ces quatre lignes la
+  // corrigent immediatement, avant le premier rendu visible.
   if (panneauMode) panneauMode.hidden = eleveConnecte && !!etatDevoir;
   if (boutonVerifier) boutonVerifier.hidden = eleveConnecte && !!etatDevoir;
+  if (zoneEnregistrer) zoneEnregistrer.hidden = !(eleveConnecte && etatDevoir);
+  if (zoneValider) zoneValider.hidden = !(eleveConnecte && etatDevoir);
 
   let brouillon = null;
-  if (eleveConnecte && window.chargerBrouillon) {
+  // Charge un brouillon UNIQUEMENT en mode devoir desormais (29/09/2026) :
+  // sans devoir, "Enregistrer" n'existe plus (voir plus haut), donc plus
+  // aucun nouveau brouillon d'entrainement ne peut etre cree -- ce garde
+  // evite seulement qu'un brouillon d'entrainement laisse par une session
+  // anterieure a ce changement soit encore repris silencieusement.
+  if (eleveConnecte && etatDevoir && window.chargerBrouillon) {
     try {
       brouillon = await window.chargerBrouillon(FICHE_ID);
     } catch (erreur) {

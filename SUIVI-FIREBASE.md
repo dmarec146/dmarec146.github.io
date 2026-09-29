@@ -71,17 +71,14 @@ Fondations Firebase complètes et testées (projet Firebase `cahiers-interactifs
 - `outils/creer-comptes/` : script de création des comptes (élèves en masse
   depuis un CSV, ou compte enseignant admin).
 - `outils/etiquettes/` : génère un PDF d'étiquettes à découper (identifiants).
-- `/tableau-de-bord/` : réservé à l'enseignant — liste par classe (nom,
-  fiches effectuées, connexions), détail par élève au clic (score, tentatives,
-  questions faites, dernière activité), navigation élève suivant/précédent.
-  Pour les élèves de Première : deux boutons sous le nom ("Cahiers de calcul"
-  / "Automatismes — sujets blancs") pour basculer entre les deux sections
-  plutôt que de les empiler (le tableau des cahiers de calcul grandira ligne
-  par ligne comme pour la Seconde). Piège rencontré : `.tdb-onglets[hidden]`
-  doit être explicitement redéfini en CSS (`display: none`), sinon
-  `.tdb-onglets { display: flex; }` prend le dessus sur l'attribut `hidden`
-  par spécificité égale et les boutons restent visibles même pour les élèves
-  hors Première.
+- `/tableau-de-bord/` : réservé à l'enseignant. **Depuis le 29/09/2026, seule
+  page restante : `devoirs.html`** (suivi des devoirs donnés uniquement — voir
+  l'entrée du 29/09/2026 plus bas). L'ancienne page `index.html` (liste par
+  classe avec fiches effectuées/connexions hors devoir, détail par élève,
+  onglets Première "Cahiers de calcul"/"Automatismes") a été supprimée à cette
+  date, sur demande de David : plus de suivi enseignant en dehors des devoirs
+  donnés. Le paragraphe qui suit (onglets, piège `.tdb-onglets[hidden]`)
+  décrit cette page supprimée — gardé pour l'historique.
 - Menu du site : icône connexion/déconnexion + icône tableau de bord (admin
   seulement) — chargée désormais sur **toutes les pages** (`assets/js/nav-auth.js`) :
   `.site-nav` sur l'accueil/sommaires/automatismes/tableau de bord (style
@@ -3759,6 +3756,115 @@ de changer ce réglage sans qu'il en reparle.
   `validerEtAvancer` délégué) en entraînement et en anonyme. Comportement
   devoir revérifié inchangé à chaque fois (panneau/Corrigé des erreurs
   masqués, correction cachée jusqu'à validation).
+
+- **Retour en arrière sur le point précédent : suivi enseignant limité aux
+  devoirs donnés, entraînement hors devoir = anonyme (29/09/2026)** : David
+  revient sur la décision « garder Valider en plus » prise quelques échanges
+  plus tôt (entrée ci-dessus) : « Je ne ferai un suivi enseignant que sur les
+  devoirs donnés. je ne suivrai pas les fiches ou les automatismes que feront
+  les élèves, même connectés. » Demande explicite : le mode connecté hors
+  devoir doit fonctionner exactement comme un élève anonyme (mêmes boutons,
+  pas de validation obligatoire, pas d'enregistrement, correction et « Voir
+  toutes les réponses » toujours actifs), et le tableau de bord enseignant ne
+  garde que la vue Devoirs.
+
+  **1) Cahiers de calcul (52 fiches)** — `zone-enregistrer` et `zone-valider`
+  ne sont plus jamais affichées hors devoir (avant : toujours visibles pour
+  un élève connecté). Piloté sur `fiche-01.html`, trois retouches dans
+  `initialiserFiche()`/`mettreAJourEtatBoutons()` :
+  - Bloc correctif de fin de vérification du devoir (déjà existant pour
+    `panneauMode`/`boutonVerifier`, voir entrée précédente) étendu à
+    `zoneEnregistrer`/`zoneValider` : `zoneEnregistrer.hidden =
+    !(eleveConnecte && etatDevoir)`, même chose pour `zoneValider` — au lieu
+    de dépendre uniquement de `eleveConnecte`.
+  - `mettreAJourEtatBoutons()` : la ligne qui pouvait re-révéler
+    `zoneEnregistrer` après une validation en devoir (`zoneEnregistrer.hidden
+    = enModeDevoirValide`) réécrite en `zoneEnregistrer.hidden = !etatDevoir
+    || enModeDevoirValide` — sans ce garde, un élève connecté en entraînement
+    voyait « Enregistrer » réapparaître à chaque appel de cette fonction (donc
+    à chaque réponse tapée), puisque `enModeDevoirValide` vaut déjà `false`
+    dès que `etatDevoir` est nul, quelle que soit `ficheValidee`.
+  - `initialiserFiche()` : le chargement d'un brouillon existant conditionné
+    à `eleveConnecte && etatDevoir` (au lieu de `eleveConnecte` seul) — sans
+    « Enregistrer », plus aucun nouveau brouillon d'entraînement ne peut être
+    créé ; ce garde évite seulement qu'un brouillon d'entraînement laissé par
+    une session antérieure à ce changement soit encore repris silencieusement.
+
+  Propagation mécanique aux 51 autres fiches (script dans `.claude/scratch/`,
+  texte de remplacement extrait dynamiquement du pilote plutôt que tapé à la
+  main). **Piège rencontré** : l'ancre de fin pour le remplacement de la
+  ligne `zoneEnregistrer` dans `mettreAJourEtatBoutons()` incluait, sans
+  intention, la déclaration `const zoneEnregistrer =
+  document.getElementById('zone-enregistrer')` qui la précède immédiatement
+  dans le texte du pilote — cette déclaration existait déjà, à l'identique,
+  dans les 51 fichiers cibles à ce même endroit (héritée du code d'origine),
+  puisque seule la ligne `if (zoneEnregistrer...)` servait d'ancre de
+  remplacement côté script. Résultat : une seconde déclaration `const
+  zoneEnregistrer` insérée juste après la première dans les 51 fichiers →
+  `SyntaxError: Identifier 'zoneEnregistrer' has already been declared`,
+  détecté par la vérification systématique `vm.Script` sur les 52 fiches
+  (0 erreur attendu, 51 trouvées). Un correctif ciblé (autre script, retire
+  uniquement la déclaration surnuméraire, repérée par son voisinage exact
+  avec le dernier commentaire au-dessus) a ensuite corrigé les 51 fichiers —
+  mais ce correctif, appliqué sans distinction sur les 52 fichiers, a retiré
+  par erreur la SEULE déclaration du pilote (qui n'avait jamais été
+  dupliquée), cassant à son tour `fiche-01.html` (référence à
+  `zoneEnregistrer` sans déclaration dans la fonction). Repéré immédiatement
+  par la même vérification `vm.Script`, corrigé en une édition manuelle
+  ciblée sur le pilote (réinsertion de la déclaration). Après ces deux
+  correctifs : `vm.Script` propre sur les 52 fiches (0 erreur), grep
+  d'uniformité des trois changements (52/52 sur le nouveau texte, 0 résidu de
+  l'ancien) sur `zoneEnregistrer`, `zoneValider` et la garde `chargerBrouillon`.
+  Test réel dans le navigateur sur `fiche-01.html` (Première, pilote) et
+  `fiche-11.html` (Seconde, cahier-4) dans les trois états (anonyme, connecté
+  entraînement, connecté devoir + devoir validé) : entraînement connecté
+  désormais identique à anonyme (panneau de mode et Corrigé des erreurs
+  visibles, Enregistrer/Valider absents, Voir toutes les réponses jamais
+  désactivé, y compris après plusieurs appels successifs de
+  `mettreAJourEtatBoutons()` simulant des réponses répétées) ; devoir
+  inchangé (panneau/Corrigé des erreurs masqués, Enregistrer/Valider
+  présents, Voir toutes les réponses désactivé avant validation) ; aucune
+  erreur console.
+
+  **2) `assets/js/suivi.js`** — `validerFiche()` n'écrit plus dans
+  `eleves/{uid}/resultats/{ficheId}` (score cumulé tous passages confondus) :
+  cette collection n'était lue que par l'ancien tableau de bord « Fiches »,
+  supprimé (voir point 3). Ne reste que l'écriture de la tentative de devoir
+  si applicable, plus la suppression du brouillon en cours (une fiche validée
+  n'est plus « en cours » à reprendre). `enregistrerAutomatisme()` renommée
+  `enregistrerTentativeSujetBlancSiDevoir()` (nom qui reflète ce qu'elle fait
+  désormais : plus d'écriture inconditionnelle dans
+  `eleves/{uid}/automatismes`, agrégat lui aussi devenu orphelin — seule la
+  tentative de devoir d'automatismes, si applicable, est encore enregistrée).
+  Site d'appel mis à jour dans `automatismes/premiere/sujet-blanc.html`.
+  Vérifié : `node --check` sur `suivi.js` et sur les deux `<script>` de
+  `sujet-blanc.html` — 0 erreur ; grep sur tout le dépôt confirmant qu'aucune
+  référence à l'ancien nom `enregistrerAutomatisme` ne subsiste.
+
+  **Laissé volontairement de côté** (hors périmètre de cette demande,
+  signalé mais pas traité) : `enregistrerTentative()` (ancien modèle par
+  question, écrit `eleves/{uid}/tentatives`) reste appelée par 14 fiches à
+  widget/graphique — désormais elle aussi orpheline (plus rien ne lit cette
+  collection), mais la retirer proprement demanderait d'examiner
+  individuellement chacun de ces 14 widgets ; risque jugé disproportionné par
+  rapport à la demande. `enregistrerConnexion()` (journal de connexion)
+  également laissée telle quelle, non demandée et gardant une valeur
+  d'audit indépendante du tableau de bord.
+
+  **3) Tableau de bord enseignant** — `tableau-de-bord/index.html` et
+  `assets/js/tableau-de-bord.js` supprimés (`git rm`) : c'était l'unique
+  lecteur des collections `resultats`/`automatismes` ci-dessus, plus les
+  colonnes fiches effectuées/connexions par classe. `assets/css/tableau-de-bord.css`
+  conservé (partagé avec `devoirs.html`, vérifié avant de ne pas le
+  supprimer). `assets/js/nav-auth.js` : le lien de l'icône tableau de bord
+  pointe désormais directement sur `/tableau-de-bord/devoirs.html`.
+  `tableau-de-bord/devoirs.html` devient la seule page : titre et `<h1>`
+  renommés « Tableau de bord » (au lieu de « Devoirs »), phrase d'intro
+  complétée (« Seul le travail fait dans le cadre d'un devoir est suivi ici —
+  l'entraînement libre... n'est pas enregistré »), bloc `<nav
+  class="tdb-nav-principale">` (bascule Fiches/Devoirs, devenue inutile avec
+  une seule page) supprimé. Vérifié par grep qu'aucun lien restant dans le
+  dépôt ne pointe vers `tableau-de-bord/index.html`.
 
 ## Procédure de reprise sur une autre machine
 
