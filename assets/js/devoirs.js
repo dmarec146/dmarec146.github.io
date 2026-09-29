@@ -741,14 +741,14 @@ async function afficherResultats(devoir) {
     // 3.499999999996) -- sans effet sur les scores entiers des fiches de calcul.
     const celluleNote = document.createElement('td');
     celluleNote.textContent = ligneDonnees.meilleure
-      ? `${Math.round(ligneDonnees.meilleure.score * 10) / 10} / ${ligneDonnees.meilleure.totalExercices}`
+      ? `${(Math.round(ligneDonnees.meilleure.score * 10) / 10).toLocaleString('fr-FR')} / ${ligneDonnees.meilleure.totalExercices}`
       : '—';
 
     // Non-reponses = cases/questions laissees vides par l'eleve sur SA
     // meilleure tentative. Fiche : totalExercices - nbRepondues (nbRepondues
     // compte les champs remplis, voir validerFicheActuelle). Automatismes
     // (depuis le 19/09/2026) : nbQuestions - nbRepondues -- deux champs
-    // distincts, voir enregistrerTentativeDevoirAutomatismeSiApplicable
+    // distincts, voir enregistrerTentativeAutomatismeParId
     // (suivi.js) : totalExercices y porte le bareme (points), pas le nombre
     // de questions. Les tentatives enregistrees AVANT ce correctif n'ont pas
     // nbQuestions : affiche "—" plutot qu'un chiffre faux pour elles.

@@ -719,17 +719,28 @@
   }
 
   // ----- vue fiche -----
+  // Devoir en cours, serie deja validee (30/09/2026) : reponses figees. Sans
+  // ca, l'eleve pouvait masquer la correction, corriger ses reponses, les
+  // enregistrer puis recharger la page -- la serie revenait corrigee avec
+  // "Valider" de nouveau actif (seconde tentative parfaite sur les MEMES
+  // questions, faille trouvee en test reel). Le bilan affiche restait aussi
+  // modifiable apres coup, sans rapport avec la note enregistree.
+  function reponsesFigees() {
+    return !!ETAT.config.verrouille && !!ETAT.serieValidee;
+  }
+
   function vueFicheHTML() {
-    const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i], neutre: true })).join('');
+    const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i] && !reponsesFigees(), neutre: true })).join('');
     const revelees = ETAT.corrigees.every(c => c);
     const bloque = correctionBloqueeParDevoir();
     // Devoir en cours (30/09/2026) : Enregistrer/Valider ma serie remplacent
     // Recommencer -- meme principe que les cahiers de calcul en devoir
     // (Enregistrer permet une reprise exacte, Valider est le seul geste qui
     // compte une tentative, Recommencer disparait pour ne pas rejouer la
-    // MEME serie deja vue).
+    // MEME serie deja vue). Enregistrer disparait une fois la serie validee
+    // (plus rien a reprendre -- voir reponsesFigees), comme sur les fiches.
     const boutonsControle = ETAT.config.verrouille
-      ? `<button class="btn-secondaire" data-action="enregistrer-serie">Enregistrer mon avancement</button>
+      ? `${ETAT.serieValidee ? '' : '<button class="btn-secondaire" data-action="enregistrer-serie">Enregistrer mon avancement</button>'}
         <button class="btn-principal" data-action="valider-serie" ${ETAT.serieValidee ? 'disabled' : ''}>Valider ma série</button>`
       : `<button class="btn-secondaire" data-action="recommencer">Recommencer</button>`;
     return `<div class="liste-questions" id="liste-questions">${cartes}</div>
@@ -746,7 +757,7 @@
     const ancienne = document.getElementById('carte-' + i);
     if (!ancienne) return;
     const tmp = document.createElement('div');
-    tmp.innerHTML = carteHTML(ETAT.questions[i], i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i], neutre: true });
+    tmp.innerHTML = carteHTML(ETAT.questions[i], i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i] && !reponsesFigees(), neutre: true });
     const nouvelle = tmp.firstElementChild;
     ancienne.replaceWith(nouvelle);
     typeset(nouvelle);
@@ -793,7 +804,20 @@
     const termineeChrono = ETAT.mode === 'chrono' && ETAT.chrono.phase === 'fin';
     if (!termineeFiche && !termineeChrono) return;
     ETAT.serieSignalee = true;
-    ETAT.config.onFinSerie(payloadFinSerie());
+    // Une fois la tentative enregistree par la page (qui met a jour
+    // verrouille.essaisUtilises), redessine le panneau "Tentatives utilisees"
+    // -- sans ca il restait sur l'ancien compte en mode chrono (30/09/2026,
+    // trouve en test reel). Seul le panneau est remplace, pas l'ecran de fin
+    // (correction detaillee eventuellement deja ouverte par l'eleve).
+    Promise.resolve(ETAT.config.onFinSerie(payloadFinSerie())).then(rafraichirPanneauDevoir);
+  }
+
+  function rafraichirPanneauDevoir() {
+    const ancien = ETAT.racine && ETAT.racine.querySelector('.mode-panneau-verrouille');
+    if (!ancien || !ETAT.config.verrouille) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = panneauVerrouilleHTML();
+    ancien.replaceWith(tmp.firstElementChild);
   }
 
   // "Valider ma serie" (30/09/2026, devoir mode fiche uniquement) : geste
@@ -834,7 +858,7 @@
   // leger directement sur le bouton (pas de nouveau composant), le temps de
   // laisser un signal de succes/echec sans etre intrusif.
   async function enregistrerSerieDevoir(bouton) {
-    if (!ETAT.config.verrouille || !window.enregistrerBrouillonAutomatisme) return;
+    if (!ETAT.config.verrouille || ETAT.serieValidee || !window.enregistrerBrouillonAutomatisme) return;
     const texteInitial = bouton ? bouton.textContent : '';
     try {
       const q = ETAT.questions;
@@ -1128,7 +1152,7 @@
 
   function clicOption(i, k) {
     if (ETAT.mode === 'fiche') {
-      if (ETAT.corrigees[i]) return;
+      if (ETAT.corrigees[i] || reponsesFigees()) return;
       ETAT.reponses[i] = (ETAT.reponses[i] === k) ? null : k;
       majCarte(i);
       majBilan();

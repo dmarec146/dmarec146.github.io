@@ -3635,9 +3635,10 @@ function mettreAJourInfoDevoir() {
 // changement, il restait coince dans un mode devoir inutilisable (Valider et
 // "Voir toutes les reponses" desactives, aucune correction). Meme principe que
 // leverVerrouille() cote automatismes ; seul le bandeau garde la trace du
-// devoir termine (devoirTermine).
-function passerEnEntrainementLibre() {
-  devoirTermine = etatDevoir;
+// devoir termine (devoirTermine) -- sauf quand c'est l'echeance qui vient de
+// passer (garderBandeau false : plus rien a annoncer de durable).
+function passerEnEntrainementLibre(garderBandeau = true) {
+  devoirTermine = garderBandeau ? etatDevoir : null;
   etatDevoir = null;
   const panneauMode = document.getElementById('mode-panneau');
   const boutonVerifier = document.getElementById('btn-verifier');
@@ -3801,9 +3802,27 @@ async function validerFicheActuelle() {
     mettreAJourEtatBoutons();
     verifierTout();
 
+    // Echeance passee depuis l'ouverture de la page (30/09/2026, trouve en
+    // test reel) : suivi.js ne compte plus rien, mais la fiche annoncait quand
+    // meme "1 / 2 tentative utilisee" -- l'eleve doit savoir que cette
+    // validation ne compte pas. La correction reste affichee (verifierTout
+    // ci-dessus), puis retour en entrainement libre.
+    if (etatDevoir && Date.now() > etatDevoir.echeance) {
+      afficherModaleDevoir(`L'échéance de ce devoir (« ${etatDevoir.titre} ») est passée : cette validation n'est plus comptée. Tu peux continuer à t'entraîner librement.`);
+      passerEnEntrainementLibre(false);
+      return;
+    }
+
     const reponses = Object.values(saisies);
     const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
-    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
+    // Reponse vide = aucune valeur non vide, meme imbriquee (30/09/2026) : un
+    // widget jamais touche (tableau de signes, de variations, croise...)
+    // enregistre quand meme une structure de cases vides, comptee jusqu'ici
+    // comme "repondue" -- ce qui faussait la colonne Non-reponses du tableau
+    // de bord enseignant sur 7 fiches de Seconde.
+    const nonVide = (v) => (v !== null && typeof v === 'object') ? Object.values(v).some(nonVide) : (typeof v === 'string' ? v.trim() !== '' : v !== null && v !== undefined);
+    const nbRepondues = reponses.filter((s) => nonVide(s.valeur)).length;
+    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, nbRepondues);
     afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses.`);
 
     // etatDevoir.essaisUtilises (30/09/2026) : incremente desormais apres

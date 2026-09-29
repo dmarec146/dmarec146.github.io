@@ -232,6 +232,14 @@ window.MathJax = {
             await window.enregistrerTentativeSujetBlancSiDevoir(devoirId, resultat.bonnes, resultat.total, resultat.points, resultat.repondues, bareme.total);
           } catch (erreur) { /* deja logue cote suivi.js */ }
         }
+        if (etatAvant && etatAvant.echeance && etatAvant.echeance <= Date.now()) {
+          // Echeance passee depuis l'ouverture de la page (30/09/2026) : rien
+          // n'a ete enregistre (voir enregistrerTentativeAutomatismeParId) --
+          // l'eleve doit le savoir, puis retour en entrainement libre.
+          afficherModaleDevoir(`L'échéance de ce devoir (« ${etatAvant.titre} ») est passée : cette série n'est plus comptée. Tu peux continuer à t'entraîner librement.`);
+          if (verrouille) { verrouille = null; Automatismes.leverVerrouille(); }
+          return;
+        }
         if (etatAvant && etatAvant.bloque) {
           afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
         } else if (verrouille && etatAvant) {

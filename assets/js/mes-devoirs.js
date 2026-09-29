@@ -78,7 +78,7 @@ function rendreFaits(liste) {
   nbFaits.textContent = liste.length ? `(${liste.length})` : '';
   for (const d of liste) {
     const noteTxt = d.meilleure
-      ? `${Math.round(d.meilleure.score * 10) / 10} / ${d.meilleure.totalExercices}`
+      ? `${(Math.round(d.meilleure.score * 10) / 10).toLocaleString('fr-FR')} / ${d.meilleure.totalExercices}`
       : 'Non rendu';
     const li = document.createElement('li');
     li.innerHTML = `<div class="md-item md-item-fait">

@@ -4098,6 +4098,117 @@ de changer ce réglage sans qu'il en reparle.
   « voisin » simulé (même niveau/mode/cible, essais différents) confirmant
   que le decompte cible bien le SEUL devoir verrouillé, blocage exact à 2/2.
 
+- **Ménage du compte `demo-eleve` et campagne de tests réels de bout en bout
+  (30/09/2026)** — demande de David : « fais le ménage, génère de nouveaux
+  devoirs de tout type et teste en profondeur que je puisse être serein ».
+
+  **Ménage** (script Node `firebase-admin`, hors dépôt) : la classe
+  `1ere-demo` ne contient QUE `demo-eleve` (vérifié avant toute suppression,
+  le script s'arrête sinon). Supprimés : ses 9 devoirs de test, et chez
+  `demo-eleve` 63 `devoirsTentatives` + les collections orphelines
+  `automatismes` (8) et `resultats` (3) — 83 documents, sauvegarde JSON
+  complète conservée dans le scratchpad de session. `connexions` gardé.
+  Devoirs des vraies classes (`1ere-Gr 1`, `1ere-Gr 3`, `hors-classe`) non
+  touchés (recomptés avant/après).
+
+  **Méthode de test** : devoirs créés par script avec exactement la forme
+  de document de `devoirs.js` (`classe: '1ere-demo'`, `creePar:
+  'test-automatise'`). **Connexion `demo-eleve` faite par David lui-même**
+  dans le navigateur intégré (je ne saisis pas de mot de passe sur un
+  service d'authentification externe), puis tous les parcours pilotés sur
+  localhost avec de vraies écritures Firestore, chaque étape recoupée par
+  lecture directe de Firestore (`firebase-admin`). Couvert : fiche de calcul
+  Première (Fiche 2), fiche à widget Seconde (Fiche 8), sujet blanc et
+  fiche ciblée en mode fiche, puis sujet blanc et fiche ciblée en mode
+  chrono (dont une question laissée expirer à son minuteur de 60 s),
+  `/mes-devoirs/`, pastille de l'accueil, deux devoirs à échéance courte
+  (3-4 min) pour tester le passage de l'échéance. Résultat final en base :
+  chaque devoir a exactement le nombre de tentatives attendu, jamais une de
+  plus.
+
+  **Sept problèmes trouvés en cours de route, tous corrigés et revérifiés
+  en réel :**
+  1. *Fiches de calcul : élève coincé après épuisement* — une fois les
+     tentatives épuisées (en direct ou au rechargement), la fiche restait
+     en mode devoir inutilisable (Valider et « Voir toutes les réponses »
+     désactivés, aucune correction), contrairement aux automatismes.
+     Nouvelle fonction `passerEnEntrainementLibre()` (+ variable
+     `devoirTermine`, qui ne sert plus qu'au bandeau) : retour complet en
+     entraînement libre (choix de mode, Corrigé des erreurs, correction
+     immédiate, Recommencer), bandeau « tu as utilisé tes N tentatives ».
+  2. *Automatismes : brouillon incomplet* — la répartition du sujet blanc
+     et les thèmes d'une fiche sont des propriétés du tableau de questions,
+     perdues par la sérialisation JSON : le bandeau « Ce sujet couvre… » /
+     « Thèmes de cette fiche » disparaissait à la reprise. Sauvegardés dans
+     un champ `meta` du brouillon (`enregistrerBrouillonAutomatisme`) et
+     restaurés par `demarrer()`.
+  3. *Automatismes : faille de triche* — après validation, « Enregistrer »
+     restait disponible : masquer la correction, corriger ses réponses,
+     enregistrer, recharger → la série revenait corrigée avec « Valider »
+     actif (seconde tentative parfaite sur les mêmes questions). Reproduit
+     en réel avant correction (brouillon piégé supprimé sans valider).
+     Correctif : Enregistrer masqué une fois la série validée (comme sur les
+     fiches) et réponses figées (`reponsesFigees()`) tant que le devoir est
+     actif — le bilan affiché ne peut plus diverger de la note enregistrée.
+  4. *Plusieurs devoirs sur la même cible* — le premier devoir trouvé
+     (ordre arbitraire de Firestore) était retenu : un devoir épuisé pouvait
+     « cacher » un second devoir encore ouvert (ex. deux sujets blancs à une
+     semaine d'intervalle). Côté fiches, une validation était en plus
+     écrite pour TOUS les devoirs visant la fiche. Nouvelle fonction
+     `choisirDevoirActif()` (suivi.js), partagée par `verifierEtatDevoir`,
+     `enregistrerTentativeDevoirSiApplicable` et `devoirAutomatismeActif` :
+     le devoir le plus proche de son échéance parmi ceux encore ouverts ; à
+     défaut le premier épuisé (pour l'annoncer). La tentative n'est comptée
+     que pour ce devoir-là. Vérifié en réel en laissant volontairement les
+     devoirs épuisés en place à côté des nouveaux.
+  5. *Mode chrono : panneau « Tentatives utilisées » pas rafraîchi* après la
+     fin d'une série (resté à 0/2 alors qu'en base et en mémoire la
+     tentative était bien comptée). `verifierFinSerie()` redessine
+     désormais le seul panneau une fois l'enregistrement terminé
+     (`rafraichirPanneauDevoir`), sans toucher à la correction détaillée
+     éventuellement déjà ouverte.
+  6. *Réponses fantômes sur les fiches à widgets* — un widget jamais touché
+     (tableau de signes, de variations, croisé, schéma d'évolution, tableau
+     de programme) enregistre une structure de cases vides, comptée comme
+     « répondue » : la colonne Non-réponses du tableau de bord enseignant
+     était sous-estimée. Balayage automatique des 52 fiches (chargées une à
+     une dans un cadre invisible) : 7 fiches de Seconde concernées
+     (fiche-08, 09, 10, 14, 15, 19, 20), et toutes leurs structures vides ne
+     contiennent que des chaînes vides. `validerFicheActuelle()` ne compte
+     plus que les réponses ayant au moins une valeur non vide (même
+     imbriquée). Vérifié en réel : 1 champ + 1 tableau entamé → 2 réponses
+     (au lieu de 5 avant).
+  7. *Validation après l'échéance* (page ouverte avant, validée après) : la
+     fiche annonçait « 1 / 2 tentative utilisée » alors que rien n'était
+     compté ; côté automatismes, une tentative hors délai était même encore
+     écrite (sans effet sur la note). Désormais : rien n'est écrit, pop-up
+     « l'échéance est passée : cette validation n'est plus comptée »,
+     correction affichée, retour en entraînement libre (fiches et les deux
+     pages d'automatismes).
+
+  Aussi : notes affichées au format français (« 3,5 / 5 » et non « 3.5 »)
+  dans `/mes-devoirs/` et dans les résultats enseignant ; message « Fiche
+  validée : X / Y bonnes réponses » débarrassé de la mention périmée
+  « cumulées, tous passages confondus ».
+
+  **Propagation aux 52 fiches** (trois scripts PowerShell dans
+  `.claude/scratch/`), chaque fois avec vérification complète de toutes les
+  ancres AVANT la moindre écriture (une ancre manquante arrête tout sans
+  rien modifier — c'est ce qui s'est passé une fois, sans dégât). **Piège
+  nouveau** : les blocs insérés avec l'outil d'édition sont en fins de
+  ligne LF dans des fichiers CRLF ; un marqueur construit avec `` `r`n ``
+  ne les retrouve pas. Script rendu insensible aux fins de ligne (regex
+  `\r?\n` + `MatchEvaluator`, pour que les `${...}` du texte inséré ne
+  soient pas interprétés comme références de groupe). Sans conséquence
+  pour les navigateurs ; Git normalise au commit (`core.autocrlf`).
+  Vérifié : `vm.Script` 52/52 sans erreur, grep d'uniformité 52/52 pour
+  chaque changement, 0 résidu.
+
+  **Données de test laissées en place volontairement** (classe `1ere-demo`)
+  pour que David puisse contrôler la vue « Résultats » de son tableau de
+  bord enseignant (je ne peux pas me connecter en enseignant) ; à
+  supprimer ensuite avec le même script de ménage.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

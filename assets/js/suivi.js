@@ -241,67 +241,73 @@ async function nbEssaisUtilises(devoirId) {
   return instantane.size;
 }
 
-// Le modele "resultats" ci-dessus FUSIONNE les passages (score cumule, un
-// exercice reussi une fois reste acquis) -- adapte a l'entrainement libre,
-// mais un devoir a besoin au contraire de la MEILLEURE TENTATIVE COMPLETE
-// individuelle (decide avec David le 18/09/2026), donc d'un historique
-// SEPARE ou chaque validation garde son propre score. Cout Firestore
-// maitrise : rien n'est ecrit tant qu'aucun devoir n'existe pour cette
-// fiche+classe (la tres grande majorite des validations, hors devoir, n'en
-// ecrivent jamais). Ne bloque jamais la validation normale (voir
-// validerFiche) : toute erreur ici reste silencieuse.
+// Parmi les devoirs visant la meme cible (meme fiche, ou meme page
+// d'automatismes), choisit celui qui s'applique maintenant (30/09/2026) :
+// parmi ceux dont l'echeance n'est pas passee, le plus proche de son
+// echeance dont les essais ne sont PAS epuises ; a defaut, le premier epuise
+// (renvoye quand meme pour pouvoir l'annoncer a l'eleve). Avant, le premier
+// devoir trouve (ordre arbitraire de Firestore) etait pris tel quel : un
+// devoir deja epuise pouvait alors "cacher" un second devoir encore ouvert
+// sur la meme cible (ex. deux sujets blancs a rendre a une semaine
+// d'intervalle). Renvoie { devoir, essaisUtilises } ou null.
+async function choisirDevoirActif(devoirs) {
+  const maintenant = Date.now();
+  const actifs = devoirs
+    .filter((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant)
+    .sort((a, b) => a.echeance.toMillis() - b.echeance.toMillis());
+  let premierEpuise = null;
+  for (const devoir of actifs) {
+    const essaisUtilises = await nbEssaisUtilises(devoir.id);
+    if (essaisUtilises < devoir.nbEssaisMax) return { devoir, essaisUtilises };
+    if (!premierEpuise) premierEpuise = { devoir, essaisUtilises };
+  }
+  return premierEpuise;
+}
+
+// Un devoir a besoin de la MEILLEURE TENTATIVE COMPLETE individuelle (decide
+// avec David le 18/09/2026), donc d'un historique ou chaque validation garde
+// son propre score (eleves/{uid}/devoirsTentatives). Ne bloque jamais la
+// validation (voir validerFiche) : toute erreur ici reste silencieuse.
 //
-// Limite d'essais (19/09/2026, decide avec David) : verifiee ici seulement
-// PENDANT la fenetre active du devoir (echeance pas encore passee) -- une
-// fois l'echeance passee, la fiche redevient un entrainement libre illimite
-// (decide des la conception de la brique devoirs) donc plus aucune raison
-// de compter/plafonner ces tentatives-la, meme si elles n'ont plus d'effet
-// sur la note (deja exclues par le filtre d'echeance de la vue resultats).
-// Le VRAI blocage cote UI vit dans verifierEtatDevoir() (appelee au
-// chargement de la fiche, desactive "Valider ma fiche") ; ce filtre ici est
-// une seconde ligne de defense si ce blocage est contourne (ex. appel
-// direct de window.validerFiche() depuis la console).
+// La tentative n'est comptee QUE pour le devoir choisi par
+// choisirDevoirActif -- le meme que celui affiche a l'eleve par
+// verifierEtatDevoir (30/09/2026 ; avant, elle etait ecrite pour TOUS les
+// devoirs visant cette fiche, y compris ceux deja echus). Rien n'est ecrit
+// si ce devoir est deja epuise : seconde ligne de defense si le blocage
+// cote fiche est contourne (ex. appel direct depuis la console).
 async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
-    const devoirs = await devoirsPour(ficheId, classe);
-    const maintenant = Date.now();
-    for (const devoir of devoirs) {
-      const actif = devoir.echeance?.toMillis && devoir.echeance.toMillis() > maintenant;
-      if (actif && (await nbEssaisUtilises(devoir.id)) >= devoir.nbEssaisMax) continue;
-      await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
-        devoirId: devoir.id,
-        ficheId,
-        score: exercicesReussisIds.length,
-        totalExercices,
-        nbRepondues,
-        horodatage: serverTimestamp(),
-      });
-    }
+    const choix = await choisirDevoirActif(await devoirsPour(ficheId, classe));
+    if (!choix || choix.essaisUtilises >= choix.devoir.nbEssaisMax) return;
+    await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
+      devoirId: choix.devoir.id,
+      ficheId,
+      score: exercicesReussisIds.length,
+      totalExercices,
+      nbRepondues,
+      horodatage: serverTimestamp(),
+    });
   } catch (erreur) {
     console.warn('Suivi : enregistrement de la tentative de devoir impossible.', erreur);
   }
 }
 
-// Appelee au chargement d'une fiche (voir initialiserFiche() cote fiche)
-// pour savoir s'il faut desactiver "Valider ma fiche" : renvoie null si
-// aucun devoir actif pour cette fiche+classe (comportement normal), sinon
-// {titre, nbEssaisMax, essaisUtilises, echeance (ms), bloque}. "bloque" ne
-// devient vrai que PENDANT la fenetre active (memes raisons que le filtre
-// dans enregistrerTentativeDevoirSiApplicable ci-dessus) -- passee
-// l'echeance, plus aucun blocage, entrainement libre.
+// Appelee au chargement d'une fiche (voir initialiserFiche() cote fiche) :
+// renvoie null si aucun devoir actif pour cette fiche+classe (comportement
+// normal), sinon {titre, nbEssaisMax, essaisUtilises, echeance (ms), bloque}
+// pour le devoir choisi par choisirDevoirActif. Passee l'echeance, plus
+// aucun devoir actif : entrainement libre.
 export async function verifierEtatDevoir(ficheId) {
   await authPrete;
   if (!utilisateurCourant) return null;
   try {
     const classe = await classeEleve();
     if (!classe) return null;
-    const maintenant = Date.now();
-    const devoir = (await devoirsPour(ficheId, classe))
-      .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
-    if (!devoir) return null;
-    const essaisUtilises = await nbEssaisUtilises(devoir.id);
+    const choix = await choisirDevoirActif(await devoirsPour(ficheId, classe));
+    if (!choix) return null;
+    const { devoir, essaisUtilises } = choix;
     return {
       titre: devoir.titre,
       nbEssaisMax: devoir.nbEssaisMax,
@@ -370,9 +376,11 @@ async function enregistrerTentativeAutomatismeParId(devoirId, score, totalExerci
     const instantane = await getDoc(doc(db, 'devoirs', devoirId));
     if (!instantane.exists()) return;
     const devoir = instantane.data();
-    const maintenant = Date.now();
-    const actif = devoir.echeance?.toMillis && devoir.echeance.toMillis() > maintenant;
-    if (actif && (await nbEssaisUtilises(devoirId)) >= devoir.nbEssaisMax) return;
+    // Echeance passee (page ouverte avant, serie terminee apres) : plus rien
+    // n'est ecrit (30/09/2026), comme pour les fiches de calcul -- une
+    // tentative hors delai ne compte de toute facon pas dans la note.
+    const actif = devoir.echeance?.toMillis && devoir.echeance.toMillis() > Date.now();
+    if (!actif || (await nbEssaisUtilises(devoirId)) >= devoir.nbEssaisMax) return;
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
       devoirId, score, totalExercices, nbQuestions, nbRepondues, horodatage: serverTimestamp(),
     });
@@ -417,12 +425,13 @@ export async function verifierEtatDevoirAutomatismeParId(devoirId) {
 // pour verrouiller la page sur le niveau/mode/duree (et, pour une cible
 // 'fiche', les themes) choisis par l'enseignant a l'attribution plutot que de
 // laisser l'eleve les choisir librement pendant la fenetre active du devoir.
-// S'il existe plusieurs devoirs actifs pour la meme classe ET la meme cible,
-// seul le premier trouve sert au verrouillage (cas non prevu en pratique :
-// un seul devoir actif a la fois par classe et par cible). Deux devoirs de
-// cibles differentes (un sujet blanc ET une fiche ciblee) peuvent en
-// revanche etre actifs simultanement sans se gener : chaque page ne
-// verrouille que sur SA propre cible.
+// S'il existe plusieurs devoirs actifs pour la meme classe ET la meme cible
+// (ex. deux sujets blancs a rendre a une semaine d'intervalle), celui retenu
+// est donne par choisirDevoirActif : le plus proche de son echeance parmi
+// ceux encore ouverts -- un devoir deja epuise ne cache plus un autre devoir
+// encore a faire. Deux devoirs de cibles differentes (un sujet blanc ET une
+// fiche ciblee) peuvent etre actifs simultanement sans se gener : chaque
+// page ne verrouille que sur SA propre cible.
 export async function devoirAutomatismeActif(cible) {
   cible = cible || CIBLE_AUTOMATISMES_DEFAUT;
   await authPrete;
@@ -435,14 +444,12 @@ export async function devoirAutomatismeActif(cible) {
       where('type', '==', 'automatismes'),
       where('classe', '==', classe)
     ));
-    const maintenant = Date.now();
-    const devoir = instantane.docs
+    const choix = await choisirDevoirActif(instantane.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter(applicablePourEleve)
-      .filter((d) => (d.cible || CIBLE_AUTOMATISMES_DEFAUT) === cible)
-      .find((d) => d.echeance?.toMillis && d.echeance.toMillis() > maintenant);
-    if (!devoir) return null;
-    const essaisUtilises = await nbEssaisUtilises(devoir.id);
+      .filter((d) => (d.cible || CIBLE_AUTOMATISMES_DEFAUT) === cible));
+    if (!choix) return null;
+    const { devoir, essaisUtilises } = choix;
     return {
       id: devoir.id,
       titre: devoir.titre,
