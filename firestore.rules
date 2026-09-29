@@ -13,6 +13,9 @@
 //   eleves/{uid}/automatismes/{id}   un sujet blanc termine (journal, non modifiable)
 //   eleves/{uid}/brouillons/{ficheId} état courant d'une fiche de calcul en pause
 //                                    -- nouveau modèle, mutable, écrasé/supprimé par l'élève
+//   eleves/{uid}/brouillonsAutomatismes/{devoirId} état courant d'une série
+//                                    d'automatismes en devoir mode fiche, même principe
+//                                    que brouillons/{ficheId} mais indexé par devoirId
 //   eleves/{uid}/resultats/{ficheId}  score cumulé d'une fiche de calcul (nouveau modèle)
 //   eleves/{uid}/devoirsTentatives/{id} une tentative sur un devoir précis (journal, non
 //                                    modifiable) -- score individuel de CETTE validation,
@@ -78,6 +81,15 @@ service cloud.firestore {
         // Etat courant d'une fiche de calcul en pause (pas un journal) :
         // l'eleve peut l'ecraser ou le supprimer librement, contrairement
         // aux collections ci-dessus. Uniquement les cahiers de calcul.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create, update, delete: if estProprietaire(uid);
+      }
+
+      match /brouillonsAutomatismes/{devoirId} {
+        // Meme principe que brouillons/{ficheId} ci-dessus (etat courant en
+        // pause, pas un journal) : l'eleve peut l'ecraser ou le supprimer
+        // librement. Uniquement les series d'automatismes en devoir mode
+        // fiche (jamais le mode chrono, joue d'une traite).
         allow read: if estProprietaire(uid) || estAdmin();
         allow create, update, delete: if estProprietaire(uid);
       }

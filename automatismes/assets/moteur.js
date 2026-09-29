@@ -375,7 +375,24 @@
     ETAT.racine = document.querySelector(ETAT.config.cible);
     // Échap ferme la figure agrandie
     document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') fermerZoom(); });
-    nouvelleSerie();
+    // Reprise d'un brouillon (30/09/2026, devoir mode fiche uniquement) :
+    // config.brouillon, si fourni par la page (voir chargerBrouillonAutomatisme,
+    // assets/js/suivi.js), remplace le tirage aleatoire de la toute PREMIERE
+    // serie par les memes questions/reponses qu'a la sauvegarde -- seulement
+    // ici, jamais pour les series suivantes (nouvelleSerie() tire toujours au
+    // hasard, y compris "Nouvelle fiche" en devoir).
+    const brouillon = ETAT.config.brouillon;
+    if (brouillon && Array.isArray(brouillon.questions) && brouillon.questions.length) {
+      ETAT.questions = brouillon.questions;
+      ETAT.reponses = Array.isArray(brouillon.reponses) ? brouillon.reponses : ETAT.questions.map(() => null);
+      ETAT.corrigees = ETAT.questions.map(() => false);
+      ETAT.chrono = nouvelEtatChrono();
+      ETAT.serieSignalee = false;
+      ETAT.serieValidee = false;
+      rendre();
+    } else {
+      nouvelleSerie();
+    }
   }
 
   // état initial du chrono, partagé par les 3 points de départ d'une série
@@ -386,25 +403,39 @@
     return { phase: 'intro', file: [], filePos: 0, enReprise: false, restant: ETAT.duree, dureeEffective: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
   }
 
+  // Devoir en cours (ETAT.config.verrouille) : une nouvelle serie rend
+  // obsolete tout brouillon enregistre pour la precedente (30/09/2026) --
+  // supprime cote Firestore avant de continuer, comme genererNouvelleFiche()
+  // le fait deja pour les cahiers de calcul.
+  function supprimerBrouillonDevoirSiApplicable() {
+    if (ETAT.config.verrouille && window.supprimerBrouillonAutomatisme) {
+      window.supprimerBrouillonAutomatisme(ETAT.config.verrouille.id);
+    }
+  }
+
   function nouvelleSerie() {
     arreterChrono();
+    supprimerBrouillonDevoirSiApplicable();
     ETAT.questions = tirerSerie(ETAT.config, ETAT.niveau);
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
     ETAT.chrono = nouvelEtatChrono();
     ETAT.serieSignalee = false;
+    ETAT.serieValidee = false;
     rendre();
   }
 
   // nouvelle série, mêmes thèmes que la série actuelle (mode fiche à plusieurs thèmes uniquement)
   function nouvelleSerieMemeThemes() {
     arreterChrono();
+    supprimerBrouillonDevoirSiApplicable();
     const ids = ETAT.questions.themesIds;
     ETAT.questions = (ids && ids.length) ? construireSeriePourBanques(ETAT.config, ETAT.niveau, ids) : tirerSerie(ETAT.config, ETAT.niveau);
     ETAT.reponses = ETAT.questions.map(() => null);
     ETAT.corrigees = ETAT.questions.map(() => false);
     ETAT.chrono = nouvelEtatChrono();
     ETAT.serieSignalee = false;
+    ETAT.serieValidee = false;
     rendre();
   }
 
@@ -503,9 +534,17 @@
         : `${ETAT.duree >= 60 ? Math.floor(ETAT.duree / 60) + ' min' : ''}${ETAT.duree % 60 ? ' ' + (ETAT.duree % 60) + ' s' : ''} par question`)
       : '';
     const echeanceTxt = v.echeanceTexte ? `, jusqu'au ${v.echeanceTexte}` : '';
+    // Tentatives utilisees/restantes (30/09/2026) : affichees directement sur
+    // la page du devoir, en plus de /mes-devoirs/ -- v.essaisUtilises/
+    // v.nbEssaisMax fournis par la page (voir sujet-blanc.html/fiche.html),
+    // mis a jour apres chaque validation pour rester exacts sans recharger.
+    const essaisTxt = (v.nbEssaisMax !== undefined && v.essaisUtilises !== undefined)
+      ? `<span class="mode-verrouille-resume">Tentatives utilisées : ${v.essaisUtilises} / ${v.nbEssaisMax}</span>`
+      : '';
     return `<div class="mode-panneau mode-panneau-verrouille">
       <span class="mode-label">Devoir en cours — niveau et mode imposés</span>
       <span class="mode-verrouille-resume">${'★'.repeat(ETAT.niveau)} Niveau ${ETAT.niveau} · ${modeTxt}${dureeTxt}</span>
+      ${essaisTxt}
       <span class="mode-explication">${v.titre ? `« ${echapper(v.titre)} »` : 'Ce devoir'}${echeanceTxt} : niveau et mode fixés par ton professeur, entraînement libre à nouveau après cette date.</span>
     </div>`;
   }
@@ -650,6 +689,12 @@
      projet. Rien non plus si l'élève n'a rien coché : révéler le corrigé sans
      avoir répondu, c'est vouloir le lire, pas être noté zéro. */
   function bilanFicheHTML() {
+    // Devoir en cours (30/09/2026) : le score ne doit pas fuiter avant que
+    // l'eleve ait explicitement clique "Valider ma serie" (voir
+    // correctionBloqueeParDevoir/validerSerie plus bas) -- avant ce garde,
+    // ce panneau s'affichait des que toutes les questions avaient une
+    // reponse, meme sans validation, revelant le score en temps reel.
+    if (correctionBloqueeParDevoir()) return '';
     const revelees = ETAT.corrigees.every(c => c);
     const aRepondu = ETAT.reponses.some(r => r !== null);
     const toutRepondu = ETAT.reponses.every(r => r !== null);
@@ -668,11 +713,20 @@
     const cartes = ETAT.questions.map((q, i) => carteHTML(q, i, { choix: ETAT.reponses[i], corrigee: ETAT.corrigees[i], cliquable: !ETAT.corrigees[i], neutre: true })).join('');
     const revelees = ETAT.corrigees.every(c => c);
     const bloque = correctionBloqueeParDevoir();
+    // Devoir en cours (30/09/2026) : Enregistrer/Valider ma serie remplacent
+    // Recommencer -- meme principe que les cahiers de calcul en devoir
+    // (Enregistrer permet une reprise exacte, Valider est le seul geste qui
+    // compte une tentative, Recommencer disparait pour ne pas rejouer la
+    // MEME serie deja vue).
+    const boutonsControle = ETAT.config.verrouille
+      ? `<button class="btn-secondaire" data-action="enregistrer-serie">Enregistrer mon avancement</button>
+        <button class="btn-principal" data-action="valider-serie" ${ETAT.serieValidee ? 'disabled' : ''}>Valider ma série</button>`
+      : `<button class="btn-secondaire" data-action="recommencer">Recommencer</button>`;
     return `<div class="liste-questions" id="liste-questions">${cartes}</div>
       <div id="bilan-fiche">${bilanFicheHTML()}</div>
       <div class="barre-controle">
         <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
-        <button class="btn-secondaire" data-action="recommencer">Recommencer</button>
+        ${boutonsControle}
         ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
         <button class="btn-secondaire" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
       </div>`;
@@ -696,6 +750,16 @@
     return bonnes;
   }
 
+  // Payload transmis a onFinSerie (assets/js/suivi.js) : extrait pour etre
+  // reutilise a l'identique par validerSerie() ci-dessous (devoir mode fiche).
+  function payloadFinSerie() {
+    const bonnes = compterBonnes();
+    const total = ETAT.questions.length;
+    const repondues = ETAT.reponses.filter(r => r !== null).length;
+    const points = ETAT.config.bareme ? arrondir(bonnes * ETAT.config.bareme.parQuestion, 2) : null;
+    return { bonnes: bonnes, total: total, repondues: repondues, points: points, niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree };
+  }
+
   // Point d'accroche pour le suivi (assets/js/suivi.js) : optionnel, ne sert
   // qu'aux pages qui fournissent un callback onFinSerie (voir sujet-blanc.html) --
   // pas fiche.html, qui n'en fournit pas. Se declenche des la fin de la serie,
@@ -703,6 +767,14 @@
   // reponses revelees ; chrono : minuteur/questions epuises), une seule fois
   // par serie (ETAT.serieSignalee, remis a false a chaque nouvelle serie).
   function verifierFinSerie() {
+    // Devoir en cours, mode fiche (30/09/2026) : plus de declenchement
+    // automatique -- l'eleve doit cliquer explicitement "Valider ma serie"
+    // (voir validerSerie plus bas), sinon une tentative etait comptee des
+    // que la derniere question recevait une reponse, sans geste explicite
+    // ni possibilite de revenir en arriere. Le mode chrono n'est pas
+    // concerne : il a deja un geste explicite de fin (Terminer le sujet, ou
+    // le temps ecoule) et n'expose pas Recommencer.
+    if (ETAT.config.verrouille && ETAT.mode === 'fiche') return;
     if (ETAT.serieSignalee || typeof ETAT.config.onFinSerie !== 'function') return;
     const aRepondu = ETAT.reponses.some(r => r !== null);
     const toutRepondu = ETAT.reponses.every(r => r !== null);
@@ -711,11 +783,61 @@
     const termineeChrono = ETAT.mode === 'chrono' && ETAT.chrono.phase === 'fin';
     if (!termineeFiche && !termineeChrono) return;
     ETAT.serieSignalee = true;
-    const bonnes = compterBonnes();
-    const total = ETAT.questions.length;
-    const repondues = ETAT.reponses.filter(r => r !== null).length;
-    const points = ETAT.config.bareme ? arrondir(bonnes * ETAT.config.bareme.parQuestion, 2) : null;
-    ETAT.config.onFinSerie({ bonnes: bonnes, total: total, repondues: repondues, points: points, niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree });
+    ETAT.config.onFinSerie(payloadFinSerie());
+  }
+
+  // "Valider ma serie" (30/09/2026, devoir mode fiche uniquement) : geste
+  // explicite qui remplace le declenchement automatique de verifierFinSerie
+  // dans ce cas precis -- voir le garde ajoute en tete de cette derniere.
+  // Validable a tout moment, meme partiellement repondue (comme "Valider ma
+  // fiche" cote cahiers de calcul) : c'est justement ce qui permet de
+  // valider avant l'echeance sans avoir fini. Ne revele jamais le score
+  // (bilanFicheHTML reste bloque par correctionBloqueeParDevoir tant que les
+  // essais ne sont pas epuises) : seul un accuse de reception neutre est
+  // affiche cote page (voir sujet-blanc.html/fiche.html).
+  async function validerSerie() {
+    if (!ETAT.config.verrouille || ETAT.mode !== 'fiche' || ETAT.serieValidee) return;
+    if (typeof ETAT.config.onFinSerie !== 'function') return;
+    ETAT.serieValidee = true;
+    rendre();
+    await ETAT.config.onFinSerie(payloadFinSerie());
+    if (ETAT.config.verrouille && window.supprimerBrouillonAutomatisme) {
+      window.supprimerBrouillonAutomatisme(ETAT.config.verrouille.id);
+    }
+    rendre();
+  }
+
+  // Devoir en cours (30/09/2026) : generer une nouvelle serie est le SEUL
+  // moyen de rejouer (Recommencer a disparu en mode fiche, absent du HTML en
+  // mode chrono) et demarre une nouvelle tentative -- l'eleve doit le savoir
+  // avant de perdre la serie actuelle (et un eventuel brouillon enregistre
+  // dessus), meme principe que genererNouvelleFiche() cote cahiers de calcul.
+  function confirmerNouvelleSerieDevoir() {
+    const v = ETAT.config.verrouille;
+    if (!v) return true;
+    return confirm(`Générer une nouvelle série remplace celle-ci par une nouvelle : ce sera une nouvelle tentative pour ce devoir (« ${v.titre} », ${v.essaisUtilises}/${v.nbEssaisMax} tentative${v.essaisUtilises > 1 ? 's' : ''} déjà utilisée${v.essaisUtilises > 1 ? 's' : ''}). Continuer ?`);
+  }
+
+  // "Enregistrer mon avancement" (30/09/2026, devoir mode fiche uniquement) :
+  // sauvegarde les questions de la serie en cours (memes valeurs, pas de
+  // nouveau tirage a la reprise) et les reponses deja donnees. Retour visuel
+  // leger directement sur le bouton (pas de nouveau composant), le temps de
+  // laisser un signal de succes/echec sans etre intrusif.
+  async function enregistrerSerieDevoir(bouton) {
+    if (!ETAT.config.verrouille || !window.enregistrerBrouillonAutomatisme) return;
+    const texteInitial = bouton ? bouton.textContent : '';
+    try {
+      await window.enregistrerBrouillonAutomatisme(ETAT.config.verrouille.id, ETAT.questions, ETAT.reponses);
+      if (bouton) {
+        bouton.textContent = 'Enregistré ✓';
+        setTimeout(() => { bouton.textContent = texteInitial; }, 2000);
+      }
+    } catch (erreur) {
+      if (bouton) {
+        bouton.textContent = 'Échec de l’enregistrement';
+        setTimeout(() => { bouton.textContent = texteInitial; }, 2000);
+      }
+    }
   }
 
   function scoreHTML() {
@@ -961,8 +1083,10 @@
       else if (action === 'opt') clicOption(Number(cible.dataset.q), Number(cible.dataset.k));
       else if (action === 'reponses') basculerReponses();
       else if (action === 'recommencer') recommencer();
-      else if (action === 'nouvelle') nouvelleSerie();
-      else if (action === 'nouvelle-memes-themes') nouvelleSerieMemeThemes();
+      else if (action === 'nouvelle') { if (confirmerNouvelleSerieDevoir()) nouvelleSerie(); }
+      else if (action === 'nouvelle-memes-themes') { if (confirmerNouvelleSerieDevoir()) nouvelleSerieMemeThemes(); }
+      else if (action === 'enregistrer-serie') enregistrerSerieDevoir(cible);
+      else if (action === 'valider-serie') validerSerie();
       else if (action === 'demarrer-chrono') demarrerChrono();
       else if (action === 'valider') avancer(false);
       else if (action === 'passer') { ETAT.chrono.choix = null; avancer(false); }

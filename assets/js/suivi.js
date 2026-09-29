@@ -507,6 +507,7 @@ export async function devoirAutomatismeActif(cible) {
     if (!devoir) return null;
     const essaisUtilises = await nbEssaisUtilises(devoir.id);
     return {
+      id: devoir.id,
       titre: devoir.titre,
       niveau: devoir.niveau,
       mode: devoir.mode,
@@ -520,6 +521,50 @@ export async function devoirAutomatismeActif(cible) {
   } catch (erreur) {
     console.warn('Suivi : recherche du devoir actif (automatismes) impossible.', erreur);
     return null;
+  }
+}
+
+// Brouillon d'une serie d'automatismes en devoir mode fiche (30/09/2026) :
+// meme principe que enregistrerBrouillon/chargerBrouillon/supprimerBrouillon
+// ci-dessus pour les cahiers de calcul, mais indexe par devoirId plutot que
+// par ficheId -- un automatisme (sujet blanc ou fiche ciblee) n'a pas
+// d'identifiant de fiche stable, seul le devoir qui l'encadre en a un.
+// Reserve au mode fiche (pas chrono, decide avec David : une serie chrono se
+// joue d'une traite, comme le jour de l'epreuve).
+export async function enregistrerBrouillonAutomatisme(devoirId, questions, reponses) {
+  if (!utilisateurCourant) return;
+  try {
+    const donnees = {
+      devoirId,
+      questions: JSON.parse(JSON.stringify(questions)),
+      reponses: JSON.parse(JSON.stringify(reponses)),
+      horodatage: serverTimestamp(),
+    };
+    await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillonsAutomatismes', devoirId), donnees);
+  } catch (erreur) {
+    console.warn('Suivi : enregistrement du brouillon (automatismes) impossible.', erreur);
+    throw erreur;
+  }
+}
+
+export async function chargerBrouillonAutomatisme(devoirId) {
+  await authPrete;
+  if (!utilisateurCourant) return null;
+  try {
+    const instantane = await getDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillonsAutomatismes', devoirId));
+    return instantane.exists() ? instantane.data() : null;
+  } catch (erreur) {
+    console.warn('Suivi : lecture du brouillon (automatismes) impossible.', erreur);
+    return null;
+  }
+}
+
+export async function supprimerBrouillonAutomatisme(devoirId) {
+  if (!utilisateurCourant) return;
+  try {
+    await deleteDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillonsAutomatismes', devoirId));
+  } catch (erreur) {
+    console.warn('Suivi : suppression du brouillon (automatismes) impossible.', erreur);
   }
 }
 
@@ -566,3 +611,6 @@ window.verifierEtatDevoir = verifierEtatDevoir;
 window.verifierEtatDevoirAutomatisme = verifierEtatDevoirAutomatisme;
 window.devoirAutomatismeFicheActif = () => devoirAutomatismeActif('fiche');
 window.devoirAutomatismeActif = devoirAutomatismeActif;
+window.enregistrerBrouillonAutomatisme = enregistrerBrouillonAutomatisme;
+window.chargerBrouillonAutomatisme = chargerBrouillonAutomatisme;
+window.supprimerBrouillonAutomatisme = supprimerBrouillonAutomatisme;

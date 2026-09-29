@@ -142,11 +142,23 @@ window.MathJax = {
     // un eleve revenant sur cette page apres avoir epuise ses tentatives
     // restait quand meme verrouille dessus au lieu de redevenir libre.
     let verrouille = null;
+    // Brouillon d'une serie en cours (30/09/2026, mode fiche uniquement --
+    // pas chrono, qui se joue d'une traite) : charge AVANT Automatismes.demarrer
+    // pour le lui passer en config.brouillon (voir moteur.js/demarrer).
+    let brouillon = null;
     if (window.devoirAutomatismeActif) {
       try {
         const devoir = await window.devoirAutomatismeActif();
         if (devoir && !devoir.bloque) {
-          verrouille = { niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance) };
+          verrouille = { id: devoir.id, niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance), essaisUtilises: devoir.essaisUtilises, nbEssaisMax: devoir.nbEssaisMax };
+          if (devoir.mode === 'fiche' && window.chargerBrouillonAutomatisme) {
+            try { brouillon = await window.chargerBrouillonAutomatisme(devoir.id); } catch (erreur) { brouillon = null; }
+          }
+        } else if (devoir && devoir.bloque) {
+          // Pop-up au chargement si les tentatives sont deja epuisees
+          // (30/09/2026) : avant ce changement, rien n'etait affiche dans ce
+          // cas -- le verrouillage etait simplement leve en silence.
+          afficherModaleDevoir(`Tu as utilisé tes ${devoir.nbEssaisMax} tentatives pour ce devoir (« ${devoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`);
         }
       } catch (erreur) {
         verrouille = null;
@@ -161,6 +173,7 @@ window.MathJax = {
     const bareme = { parQuestion: 0.5, total: 5 };
 
     Automatismes.demarrer({
+      brouillon: brouillon,
       domaines: [
         { nom: 'Pourcentages et proportions', poids: 26, banques: { 'pourcentages': 7, 'proportions': 3 } },
         { nom: 'Calcul littéral et équations', poids: 25, banques: { 'developper-factoriser': 4, 'equations': 6 } },
@@ -226,6 +239,11 @@ window.MathJax = {
           // revenant en mode normal" -- en realite une latence, pas un blocage
           // permanent, mais suffisamment genante pour la supprimer).
           const essaisApresCetteTentative = etatAvant.essaisUtilises + 1;
+          // Tient le panneau "Tentatives utilisées" (moteur.js/panneauVerrouilleHTML)
+          // a jour sans recharger la page -- meme objet que ETAT.config.verrouille
+          // (passe par reference a Automatismes.demarrer), donc visible au
+          // prochain rendre() (voir validerSerie, qui en appelle un juste apres).
+          verrouille.essaisUtilises = essaisApresCetteTentative;
           if (essaisApresCetteTentative >= etatAvant.nbEssaisMax) {
             afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatAvant.titre} », ${essaisApresCetteTentative}/${etatAvant.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux désormais consulter la correction, et continuer à t'entraîner librement.`);
             verrouille = null;
