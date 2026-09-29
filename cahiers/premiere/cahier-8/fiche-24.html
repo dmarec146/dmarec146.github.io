@@ -2103,9 +2103,13 @@ let saisies = {};
 let eleveConnecte = false;
 // Etat du devoir en cours pour cette fiche (voir verifierEtatDevoir dans
 // suivi.js), determine une fois au chargement -- null si aucun devoir actif
-// pour la classe de l'eleve. { bloque: true } desactive "Valider ma fiche"
-// (voir initialiserFiche et validerFicheActuelle).
+// pour la classe de l'eleve, OU si ses essais sont epuises (voir
+// passerEnEntrainementLibre : l'eleve repasse alors en entrainement libre).
 let etatDevoir = null;
+// Devoir dont les essais sont epuises (30/09/2026) : ne sert plus qu'au
+// bandeau d'information (mettreAJourInfoDevoir), etatDevoir etant remis a
+// null pour que tout le reste de la fiche fonctionne comme hors devoir.
+let devoirTermine = null;
 // Vrai des qu'un clic sur "Valider" a reussi pour ce passage -- remis a
 // false par "Recommencer"/"Generer une nouvelle version". Tant que c'est
 // faux, un eleve connecte ne peut pas voir la correction (empeche de
@@ -2156,13 +2160,35 @@ function formaterEcheanceDevoir(millis) {
 function mettreAJourInfoDevoir() {
   const zone = document.getElementById('devoir-info');
   if (!zone) return;
-  if (!eleveConnecte || !etatDevoir) { zone.hidden = true; return; }
+  if (!eleveConnecte || (!etatDevoir && !devoirTermine)) { zone.hidden = true; return; }
   zone.hidden = false;
-  if (etatDevoir.bloque) {
-    zone.textContent = `Devoir « ${etatDevoir.titre} » : tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`;
+  if (devoirTermine) {
+    zone.textContent = `Devoir « ${devoirTermine.titre} » : tu as utilisé tes ${devoirTermine.nbEssaisMax} tentatives — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`;
   } else {
     zone.textContent = `Devoir « ${etatDevoir.titre} » — ${etatDevoir.essaisUtilises} / ${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}, à rendre avant le ${formaterEcheanceDevoir(etatDevoir.echeance)}.`;
   }
+}
+
+// Essais du devoir epuises (30/09/2026, retour de David) : l'eleve repasse en
+// entrainement libre, exactement comme hors devoir -- choix de mode,
+// "Corrige des erreurs", correction immediate, "Voir toutes les reponses"
+// toujours actif, Recommencer de retour, plus d'Enregistrer/Valider. Avant ce
+// changement, il restait coince dans un mode devoir inutilisable (Valider et
+// "Voir toutes les reponses" desactives, aucune correction). Meme principe que
+// leverVerrouille() cote automatismes ; seul le bandeau garde la trace du
+// devoir termine (devoirTermine).
+function passerEnEntrainementLibre() {
+  devoirTermine = etatDevoir;
+  etatDevoir = null;
+  const panneauMode = document.getElementById('mode-panneau');
+  const boutonVerifier = document.getElementById('btn-verifier');
+  const zoneEnregistrer = document.getElementById('zone-enregistrer');
+  const zoneValider = document.getElementById('zone-valider');
+  if (panneauMode) panneauMode.hidden = false;
+  if (boutonVerifier) boutonVerifier.hidden = false;
+  if (zoneEnregistrer) zoneEnregistrer.hidden = true;
+  if (zoneValider) zoneValider.hidden = true;
+  mettreAJourEtatBoutons();
 }
 
 function verifierUne(idx) {
@@ -2259,7 +2285,6 @@ async function validerFicheActuelle() {
     afficherModaleDevoir(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
     return;
   }
-  const bouton = document.getElementById('btn-valider');
   try {
     // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
     // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
@@ -2276,7 +2301,7 @@ async function validerFicheActuelle() {
     const reponses = Object.values(saisies);
     const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
     await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
-    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses.`);
 
     // etatDevoir.essaisUtilises (30/09/2026) : incremente desormais apres
     // TOUTE validation reussie, pas seulement celle qui epuise le quota --
@@ -2293,10 +2318,11 @@ async function validerFicheActuelle() {
       etatDevoir.essaisUtilises += 1;
       if (etatDevoir.essaisUtilises >= etatDevoir.nbEssaisMax) {
         etatDevoir.bloque = true;
-        if (bouton) bouton.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
         afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatDevoir.titre} », ${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`);
+        passerEnEntrainementLibre();
+      } else {
+        mettreAJourEtatBoutons();
       }
-      mettreAJourEtatBoutons();
     }
   } catch (erreur) {
     // La validation n'a pas vraiment eu lieu : revient a l'etat d'avant
@@ -3240,20 +3266,15 @@ async function initialiserFiche() {
       etatDevoir = null;
     }
     if (etatDevoir && etatDevoir.bloque) {
-      const boutonValider = document.getElementById('btn-valider');
-      if (boutonValider) {
-        boutonValider.disabled = true;
-        boutonValider.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
-      }
-      const messageBloque = `Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`;
-      afficherEtatSuivi(messageBloque);
-      // Pop-up en plus de la ligne de texte ci-dessus (30/09/2026) : avant ce
-      // changement, un eleve arrivant sur la fiche APRES avoir deja epuise
-      // ses tentatives lors d'une session precedente ne voyait jamais le
-      // pop-up (reserve jusque-la au moment precis ou une validation venait
-      // d'epuiser le quota, voir validerFicheActuelle) -- seulement cette
-      // petite ligne grise, facile a manquer.
-      afficherModaleDevoir(messageBloque);
+      // Pop-up (30/09/2026) : avant ce changement, un eleve arrivant sur la
+      // fiche APRES avoir deja epuise ses tentatives lors d'une session
+      // precedente ne voyait qu'une petite ligne grise, facile a manquer.
+      afficherModaleDevoir(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement : cette fiche ne sera plus comptée pour le devoir.`);
+      // Entrainement libre (voir passerEnEntrainementLibre) : les quatre
+      // lignes de visibilite juste en dessous s'appliquent alors comme hors
+      // devoir, puisque etatDevoir est remis a null.
+      devoirTermine = etatDevoir;
+      etatDevoir = null;
     }
   }
 

@@ -384,6 +384,10 @@
     const brouillon = ETAT.config.brouillon;
     if (brouillon && Array.isArray(brouillon.questions) && brouillon.questions.length) {
       ETAT.questions = brouillon.questions;
+      const meta = brouillon.meta || {};
+      if (meta.repartition) ETAT.questions.repartition = meta.repartition;
+      if (meta.themes) ETAT.questions.themes = meta.themes;
+      if (meta.themesIds) ETAT.questions.themesIds = meta.themesIds;
       ETAT.reponses = Array.isArray(brouillon.reponses) ? brouillon.reponses : ETAT.questions.map(() => null);
       ETAT.corrigees = ETAT.questions.map(() => false);
       ETAT.chrono = nouvelEtatChrono();
@@ -833,7 +837,9 @@
     if (!ETAT.config.verrouille || !window.enregistrerBrouillonAutomatisme) return;
     const texteInitial = bouton ? bouton.textContent : '';
     try {
-      await window.enregistrerBrouillonAutomatisme(ETAT.config.verrouille.id, ETAT.questions, ETAT.reponses);
+      const q = ETAT.questions;
+      const meta = { repartition: q.repartition || null, themes: q.themes || null, themesIds: q.themesIds || null };
+      await window.enregistrerBrouillonAutomatisme(ETAT.config.verrouille.id, q, ETAT.reponses, meta);
       if (bouton) {
         bouton.textContent = 'Enregistré ✓';
         setTimeout(() => { bouton.textContent = texteInitial; }, 2000);

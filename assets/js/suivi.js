@@ -468,13 +468,18 @@ export async function devoirAutomatismeActif(cible) {
 // d'identifiant de fiche stable, seul le devoir qui l'encadre en a un.
 // Reserve au mode fiche (pas chrono, decide avec David : une serie chrono se
 // joue d'une traite, comme le jour de l'epreuve).
-export async function enregistrerBrouillonAutomatisme(devoirId, questions, reponses) {
+// `meta` : proprietes portees par le tableau de questions lui-meme
+// (repartition du sujet blanc, themes d'une fiche) que la serialisation JSON
+// d'un tableau perd -- sans elles, le bandeau "Ce sujet couvre..."/"Themes de
+// cette fiche" disparaissait a la reprise (voir moteur.js/demarrer).
+export async function enregistrerBrouillonAutomatisme(devoirId, questions, reponses, meta) {
   if (!utilisateurCourant) return;
   try {
     const donnees = {
       devoirId,
       questions: JSON.parse(JSON.stringify(questions)),
       reponses: JSON.parse(JSON.stringify(reponses)),
+      meta: JSON.parse(JSON.stringify(meta || {})),
       horodatage: serverTimestamp(),
     };
     await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillonsAutomatismes', devoirId), donnees);
