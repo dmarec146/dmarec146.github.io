@@ -3547,6 +3547,118 @@ de changer ce réglage sans qu'il en reparle.
   attendu — ce cas ne correspond à aucune écriture nouvelle). Syntaxe des
   deux pages revérifiée, aucune erreur console.
 
+- **Lot de 4 retours de David après avoir testé l'ensemble des devoirs
+  (29/09/2026)**, avant de coder quoi que ce soit : deux points ont d'abord
+  été vérifiés par relecture de code plutôt que supposés être des bugs.
+
+  1. **« Un élève connecté ne peut plus corriger au fur et à mesure/voir
+  toutes les réponses hors devoir »** — relecture de `fiche-01.html`
+  confirmant que c'est un comportement VOLONTAIRE et déjà en place depuis
+  le 18-19/09/2026 (`reveler = !eleveConnecte || ficheValidee`, masque la
+  correction pour TOUT élève connecté tant qu'il n'a pas validé, devoir ou
+  pas), déjà documenté plus haut dans ce fichier. Question posée à David
+  pour savoir s'il fallait changer cette règle pour ne l'appliquer que
+  pendant un devoir actif — **question laissée sans réponse (« ne pas
+  procéder »)** : aucun changement fait sur ce point, en attente d'une
+  décision de sa part.
+
+  2. **« La limite d'essais ne fonctionne pas en mode devoir (fiche de
+  calcul et sujet blanc) »** — relecture de `enregistrerTentativeDevoirSiApplicable`
+  et `verifierEtatDevoir` (fiche de calcul) confirmant que le blocage
+  serveur (écriture refusée au-delà du quota) était déjà correct et déjà
+  testé le 19/09/2026. David précise alors : le bouton "Valider" restait
+  cliquable après la limite, **sans aucune indication pour dire si la
+  tentative comptait encore** — exactement le même défaut de clarté déjà
+  corrigé côté automatismes un peu plus tôt dans la journée (voir
+  ci-dessus), jamais reporté côté fiches de calcul. Demande explicite de
+  généraliser la pop-up (jugée claire) des fiches d'automatismes ciblées à
+  tous les types de devoir.
+
+  **Généralisé aux 52 fiches de cahiers de calcul** (Première + Seconde),
+  piloté sur `fiche-01.html` avant propagation mécanique (même méthode que
+  les chantiers précédents de ce type) :
+  - Nouveau `#modal-devoir` (HTML + CSS), même composant que sur les pages
+    d'automatismes (fond assombri, carte blanche centrée, titre orange,
+    bouton « Compris », fermeture par croix/fond/Échap), inséré juste après
+    `#suivi-etat` et stylé dans le `<style>` inline de chaque fiche
+    (`#D97706` en dur pour l'orange, `--gris`/`--bleu`/`--rouge` déjà
+    définis partout — vérifié par grep sur les 52 fichiers avant d'écrire
+    le script).
+  - `validerFicheActuelle()` réécrite : le message « tentative refusée »
+    (déjà présent) passe en pop-up ; nouveau calcul `essaisApresCetteValidation
+    = etatDevoir.essaisUtilises + 1` juste après une validation réussie —
+    si elle vient d'épuiser le quota, désactive immédiatement « Valider »
+    (`resteDesactive`, empêche le `finally` de le réactiver sans condition)
+    et affiche la pop-up « C'était ta dernière tentative... », sans attendre
+    un rechargement. Même principe que le correctif équivalent côté
+    automatismes (calcul direct à partir d'un état déjà en main, pas de
+    second aller-retour Firestore).
+  - Le message d'arrivée sur une fiche déjà épuisée (`initialiserFiche()`,
+    inchangé) reste en texte simple, pas en pop-up — pour ne pas imposer une
+    pop-up à chaque visite d'une fiche déjà connue comme épuisée ; seule la
+    réaction à une action de l'élève (valider) déclenche la pop-up.
+
+  **Script de propagation** (`.claude/scratch/propager-popup-devoir.ps1`,
+  hors dépôt) : vérification d'uniformité préalable (hash MD5) sur les 52
+  fiches avant d'écrire quoi que ce soit — `afficherEtatSuivi()`,
+  `validerFicheActuelle()` d'origine, la ligne `#suivi-etat` et les 6
+  dernières lignes avant `</style>` sont 100 % identiques sur les 51 fiches
+  non pilotées (contrairement aux rollouts précédents sur ce projet, qui
+  avaient réservé des surprises de mise en forme) : propagation mécanique
+  sans cas particulier, chaque marqueur extrait dynamiquement de
+  `fiche-01.html`/`fiche-02.html` (jamais de texte accentué tapé en dur
+  dans le `.ps1`, même précaution que les scripts précédents — piège CRLF
+  cette fois : les fichiers du dépôt sont en CRLF sur ce PC, les marqueurs
+  construits à la main utilisent `` `r`n `` et pas seulement `` `n ``).
+  51 fiches modifiées, 0 déjà à jour, aucune erreur de marqueur introuvable.
+
+  Vérifié : syntaxe (`vm.Script`) sur les 52 fiches, 0 erreur ; comptage
+  d'unicité (exactement une modale, une fonction `afficherModaleDevoir`,
+  une nouvelle `validerFicheActuelle` par fichier, aucun doublon) ; aucune
+  trace résiduelle de l'ancien message court ; nombre de `</style>` par
+  fichier resté à 1. Test réel dans le navigateur avec un faux
+  `etatDevoir`/`eleveConnecte` (même méthode que les tests automatismes) :
+  `fiche-01.html` (Première) ET `fiche-01.html` (Seconde, fiche différente
+  de la pilote) — bouton désactivé immédiatement, pop-up avec le bon texte
+  et le bon compteur (1/1), interactions de fermeture (croix/bouton/fond/
+  Échap) toutes correctes, capture d'écran confirmant un rendu identique à
+  celui des pages d'automatismes ; `fiche-08.html` (Seconde, widget
+  `tableauSigne`, structure plus particulière déjà signalée fragile par le
+  passé) revérifiée séparément — fonctions et modale bien présentes,
+  aucune erreur console. Sujet blanc d'automatismes : déjà couvert par le
+  même mécanisme construit plus tôt dans la journée (voir ci-dessus),
+  aucun changement supplémentaire nécessaire.
+
+  3. **« Popup affiché dès la 1ère tentative sur un devoir à 2 essais »**
+  (fiche d'automatismes ciblée) — avant de suspecter la logique de comptage
+  (déjà testée plusieurs fois ce même jour), lecture directe de Firestore
+  (script Node temporaire, lecture seule, même méthode que le diagnostic du
+  script `suivi.js` manquant plus tôt) : le devoir concerné portait bien
+  `nbEssaisMax` correct, MAIS l'historique `devoirsTentatives` de
+  `demo-eleve` a révélé plusieurs paires de tentatives écrites à quelques
+  centaines de millisecondes d'intervalle sur des `devoirId` DIFFERENTS
+  avec un score identique — signe qu'au moment de ces tests, plusieurs
+  devoirs correspondant aux mêmes critères (niveau/mode/thèmes/classe)
+  étaient actifs simultanément (créés/supprimés rapidement pendant les
+  essais successifs de David). `enregistrerTentativeDevoirAutomatismeSiApplicable`/
+  `enregistrerTentativeDevoirSiApplicable` bouclent sur TOUS les devoirs
+  correspondants et écrivent une tentative dans CHACUN — une seule action
+  de l'élève a donc pu consommer un essai sur un devoir « fantôme » dont
+  l'élève n'avait pas conscience, faussant le compte affiché. **Pas de
+  correctif de code appliqué** : la relecture confirme que la logique de
+  comptage elle-même est correcte, ce cas semble provoqué par la création/
+  suppression rapprochée de plusieurs devoirs de test se chevauchant. À
+  vérifier avec un test propre (un seul devoir actif à la fois) ; le
+  chevauchement de plusieurs devoirs identiques sur la même classe reste
+  une amélioration possible (matcher/écrire sur un seul devoir choisi de
+  façon déterministe plutôt que sur tous les matches) si le cas se
+  reproduit en dehors d'un contexte de test.
+
+  4. **« Ajouter Enregistrer/Valider à tous les types de devoir
+  d'automatismes »** — demande notée, pas encore commencée (chantier
+  séparé, plus large : reproduire pour les pages d'automatismes le modèle
+  brouillon/validation déjà construit pour les fiches de cahier de calcul).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

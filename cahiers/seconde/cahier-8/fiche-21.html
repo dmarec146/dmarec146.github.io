@@ -782,6 +782,59 @@ window.MathJax = {
       --keyboard-padding-bottom: 2px;
     }
   }
+
+/* ---------- Pop-up d'information sur un devoir (29/09/2026) -----------
+     Meme principe que sur les pages d'automatismes (fond assombri, carte
+     blanche centree) : remplace le simple texte gris #suivi-etat pour les
+     messages qui informent d'un blocage/deblocage de devoir, juges trop
+     discrets en petit texte. */
+  .modal-devoir[hidden] { display: none; }
+  .modal-devoir {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    background: rgba(20, 20, 25, 0.78);
+  }
+  .modal-devoir-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 30px 22px 22px;
+    width: min(94vw, 420px);
+    max-height: 92vh;
+    overflow: auto;
+    text-align: center;
+  }
+  .modal-devoir-titre { margin: 0 0 10px; font-size: 1.05rem; font-weight: bold; color: #D97706; }
+  .modal-devoir-texte { margin: 0 0 20px; font-size: 0.95rem; line-height: 1.45; color: var(--gris); }
+  .modal-devoir-ok {
+    background: var(--bleu);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 26px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .modal-devoir-ok:hover { opacity: 0.9; }
+  .modal-devoir-fermer {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 26px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 2px 8px;
+  }
+  .modal-devoir-fermer:hover { color: var(--rouge); }
 </style>
 
 <body>
@@ -883,6 +936,15 @@ window.MathJax = {
   <button class="btn-secondaire" id="btn-toutes-reponses" onclick="toggleToutesReponses()">Voir toutes les réponses</button>
 </div>
 <p id="suivi-etat" style="margin:8px 0 0;color:#666;font-size:0.85rem;" hidden></p>
+
+<div id="modal-devoir" class="modal-devoir" hidden>
+  <div class="modal-devoir-contenu">
+    <button type="button" class="modal-devoir-fermer" data-role="fermer-modal-devoir" aria-label="Fermer">&times;</button>
+    <p class="modal-devoir-titre">Devoir</p>
+    <p class="modal-devoir-texte" id="modal-devoir-texte"></p>
+    <button type="button" class="modal-devoir-ok" data-role="fermer-modal-devoir">Compris</button>
+  </div>
+</div>
 
 <div class="score-panneau" id="score-panneau">
   <span class="score-chiffre" id="score-chiffre">0 / 35</span> bonnes réponses
@@ -3398,6 +3460,29 @@ function afficherEtatSuivi(message) {
   zone.hidden = false;
 }
 
+// Pop-up d'information sur un devoir (29/09/2026, meme principe que sur les
+// pages d'automatismes) : plus visible qu'un simple texte gris pour les
+// messages de blocage/deblocage de devoir -- doit etre explicitement fermee
+// par l'eleve (bouton, croix, ou clic hors de la carte -- jamais toute
+// seule).
+function afficherModaleDevoir(message) {
+  const modale = document.getElementById('modal-devoir');
+  const zoneTexte = document.getElementById('modal-devoir-texte');
+  if (!modale || !zoneTexte) return;
+  zoneTexte.textContent = message;
+  modale.hidden = false;
+}
+function fermerModaleDevoir() {
+  const modale = document.getElementById('modal-devoir');
+  if (modale) modale.hidden = true;
+}
+document.addEventListener('click', function (e) {
+  if (e.target.id === 'modal-devoir' || e.target.closest('[data-role="fermer-modal-devoir"]')) fermerModaleDevoir();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') fermerModaleDevoir();
+});
+
 async function enregistrerBrouillonActuel() {
   if (!window.enregistrerBrouillon) return;
   const bouton = document.getElementById('btn-enregistrer');
@@ -3417,11 +3502,15 @@ async function validerFicheActuelle() {
   // Seconde ligne de defense : le bouton est deja desactive dans ce cas
   // (voir initialiserFiche), ceci couvre un appel direct (ex. console).
   if (etatDevoir && etatDevoir.bloque) {
-    afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir — ta meilleure note a été retenue.`);
+    afficherModaleDevoir(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
     return;
   }
   const bouton = document.getElementById('btn-valider');
   if (bouton) bouton.disabled = true;
+  // Reste vrai si CETTE validation vient d'epuiser le quota du devoir (voir
+  // plus bas) : le bouton doit alors rester desactive au sortir du "finally",
+  // qui sinon le reactiverait sans condition.
+  let resteDesactive = false;
   try {
     // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
     // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja
@@ -3435,10 +3524,31 @@ async function validerFicheActuelle() {
     const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
     await window.validerFiche(FICHE_ID, idsReussis, exercices.length, reponses.length);
     afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses (cumulées, tous passages confondus).`);
+
+    // Reactivite immediate de la limite d'essais (29/09/2026, retour de
+    // David : le bouton restait cliquable apres la limite sans que l'eleve
+    // sache si ses tentatives comptaient encore). etatDevoir est fige au
+    // chargement de la page (voir initialiserFiche) : si CETTE validation
+    // est justement celle qui epuise le quota, la seule ecriture qui vient
+    // de reussir (ci-dessus) l'a forcement fait passer de essaisUtilises a
+    // essaisUtilises+1 (sinon enregistrerTentativeDevoirSiApplicable, cote
+    // suivi.js, l'aurait silencieusement ignoree -- deja couvert par la
+    // branche etatDevoir.bloque tout en haut de cette fonction). Pas besoin
+    // de relire Firestore une seconde fois pour le savoir.
+    if (etatDevoir) {
+      const essaisApresCetteValidation = etatDevoir.essaisUtilises + 1;
+      if (essaisApresCetteValidation >= etatDevoir.nbEssaisMax) {
+        etatDevoir.bloque = true;
+        etatDevoir.essaisUtilises = essaisApresCetteValidation;
+        resteDesactive = true;
+        if (bouton) bouton.title = 'Tu as atteint le nombre maximal de tentatives pour ce devoir.';
+        afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatDevoir.titre} », ${essaisApresCetteValidation}/${etatDevoir.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`);
+      }
+    }
   } catch (erreur) {
     afficherEtatSuivi('Échec de la validation (connexion internet ?).');
   } finally {
-    if (bouton) bouton.disabled = false;
+    if (bouton && !resteDesactive) bouton.disabled = false;
   }
 }
 
