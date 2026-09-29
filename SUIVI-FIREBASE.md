@@ -4111,6 +4111,28 @@ de changer ce réglage sans qu'il en reparle.
   Devoirs des vraies classes (`1ere-Gr 1`, `1ere-Gr 3`, `hors-classe`) non
   touchés (recomptés avant/après).
 
+  **Complément le jour même — confirmation avant de consommer une
+  tentative** (suggestion faite à David à l'issue des tests, acceptée) : un
+  clic accidentel sur « Valider » comptait sans recours, même sur une fiche
+  vide (0/33 observé en test). `confirm()` avant chaque geste qui compte
+  une tentative : « Valider ma fiche » (52 fiches, sauf si l'échéance est
+  déjà passée — rien ne serait compté), « Valider ma série » (automatismes,
+  mode fiche) et « Terminer le sujet » (mode chrono, même rôle — mais pas le
+  passage automatique en fin de temps). Message : « Valider compte une
+  tentative pour ce devoir (« titre ») : il t'en restera N ensuite.
+  Continuer ? », ou « … compte ta dernière tentative … » quand c'est la
+  dernière. Aucune confirmation hors devoir. Vérifié en réel sur les trois
+  gestes : annulation sans aucun effet (ni écriture, ni correction
+  révélée), acceptation comptée normalement.
+
+  Défaut repéré pendant ce test et corrigé : en mode fiche, la note d'une
+  série validée avec des questions sans réponse ne s'affichait pas (règle
+  d'origine « pas de bilan tant qu'il reste une question sans réponse »,
+  pensée pour ne pas révéler la justesse clic par clic). Une fois la série
+  validée, les réponses sont figées : `bilanFicheHTML()` affiche désormais
+  toujours la note (`ETAT.serieValidee`), y compris pour la dernière
+  tentative après retour en entraînement libre.
+
   **Méthode de test** : devoirs créés par script avec exactement la forme
   de document de `devoirs.js` (`classe: '1ere-demo'`, `creePar:
   'test-automatise'`). **Connexion `demo-eleve` faite par David lui-même**

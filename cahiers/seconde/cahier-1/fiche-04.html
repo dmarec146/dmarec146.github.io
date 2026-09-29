@@ -1837,6 +1837,17 @@ async function validerFicheActuelle() {
     afficherModaleDevoir(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir, mais tu peux continuer à t'entraîner.`);
     return;
   }
+  // Confirmation avant de consommer une tentative (30/09/2026, demande de
+  // David) : un clic accidentel sur Valider -- meme sur une fiche vide --
+  // comptait sans recours. Inutile une fois l'echeance passee (rien ne sera
+  // compte, voir plus bas).
+  if (etatDevoir && Date.now() <= etatDevoir.echeance) {
+    const restantes = etatDevoir.nbEssaisMax - etatDevoir.essaisUtilises - 1;
+    const message = restantes > 0
+      ? `Valider compte une tentative pour ce devoir (« ${etatDevoir.titre} ») : il t'en restera ${restantes} ensuite. Continuer ?`
+      : `Valider compte ta dernière tentative pour ce devoir (« ${etatDevoir.titre} »). Continuer ?`;
+    if (!confirm(message)) return;
+  }
   try {
     // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
     // "reveler") ne colore et n'affiche le bilan que si ficheValidee est deja

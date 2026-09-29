@@ -708,7 +708,11 @@
     const revelees = ETAT.corrigees.every(c => c);
     const aRepondu = ETAT.reponses.some(r => r !== null);
     const toutRepondu = ETAT.reponses.every(r => r !== null);
-    if (!aRepondu || !(toutRepondu || revelees)) return '';
+    // Serie validee en devoir (30/09/2026) : la note s'affiche toujours, meme
+    // avec des questions sans reponse -- les reponses sont alors figees, la
+    // precaution ci-dessus (ne pas reveler la justesse clic par clic) n'a
+    // plus d'objet.
+    if (!ETAT.serieValidee && (!aRepondu || !(toutRepondu || revelees))) return '';
     return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}</div>`;
   }
   // le bilan se met à jour sans redessiner toute la fiche (ni retypeser les formules)
@@ -829,9 +833,23 @@
   // (bilanFicheHTML reste bloque par correctionBloqueeParDevoir tant que les
   // essais ne sont pas epuises) : seul un accuse de reception neutre est
   // affiche cote page (voir sujet-blanc.html/fiche.html).
+  // Confirmation avant de consommer une tentative (30/09/2026, demande de
+  // David) : un clic accidentel comptait sans recours, meme sur une serie
+  // vide. `geste` : "Valider" (mode fiche) ou "Terminer le sujet" (mode
+  // chrono, meme role -- mais pas le passage automatique en fin de temps).
+  function confirmerValidationDevoir(geste) {
+    const v = ETAT.config.verrouille;
+    if (!v || v.nbEssaisMax === undefined) return true;
+    const restantes = v.nbEssaisMax - v.essaisUtilises - 1;
+    return confirm(restantes > 0
+      ? `${geste} compte une tentative pour ce devoir (« ${v.titre} ») : il t'en restera ${restantes} ensuite. Continuer ?`
+      : `${geste} compte ta dernière tentative pour ce devoir (« ${v.titre} »). Continuer ?`);
+  }
+
   async function validerSerie() {
     if (!ETAT.config.verrouille || ETAT.mode !== 'fiche' || ETAT.serieValidee) return;
     if (typeof ETAT.config.onFinSerie !== 'function') return;
+    if (!confirmerValidationDevoir('Valider')) return;
     ETAT.serieValidee = true;
     rendre();
     await ETAT.config.onFinSerie(payloadFinSerie());
@@ -1133,7 +1151,7 @@
       else if (action === 'valider') avancer(false);
       else if (action === 'passer') { ETAT.chrono.choix = null; avancer(false); }
       else if (action === 'reprendre') reprendreQuestionsPassees();
-      else if (action === 'terminer-serie') terminerSerie();
+      else if (action === 'terminer-serie') { if (confirmerValidationDevoir('Terminer le sujet')) terminerSerie(); }
       else if (action === 'basculer-revue') {
         if (correctionBloqueeParDevoir()) return; // devoir en cours, essais pas encore epuises -- voir vueChronoHTML
         const rev = document.getElementById('revue');
