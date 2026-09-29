@@ -3659,6 +3659,107 @@ de changer ce réglage sans qu'il en reparle.
   séparé, plus large : reproduire pour les pages d'automatismes le modèle
   brouillon/validation déjà construit pour les fiches de cahier de calcul).
 
+- **Mode entraînement connecté (hors devoir) sur les 52 fiches de cahiers de
+  calcul (29/09/2026, suite du point 1 ci-dessus)** : demande de David après
+  un résumé demandé du comportement actuel par cas (anonyme / connecté
+  devoir / connecté entraînement) — confirmé que « Enregistrer mon
+  avancement » n'a jamais compté comme tentative (point déjà vrai, aucun
+  changement nécessaire). Pour le mode entraînement précisément, David
+  demande : garder le choix de mode et « Corrigé des erreurs » comme pour un
+  anonyme, rendre « Voir toutes les réponses » disponible sans attendre une
+  validation, tout en gardant « Valider ma fiche » EN PLUS (pas de
+  changement du mécanisme d'envoi du score au tableau de bord — écarté
+  l'option d'un envoi automatique sans bouton, qui aurait annulé l'économie
+  Firestore du 19/09). Chantier « enregistrement pour fiches hors devoir »
+  (extension aux automatismes, section « Mes fiches enregistrées »,
+  suppression automatique après 1 semaine) explicitement abandonné pour
+  l'instant sur demande de David.
+
+  **Principe retenu** : la restriction « pas de correction avant validation »
+  qui s'appliquait jusqu'ici à TOUT élève connecté (devoir ou non) ne
+  s'applique plus qu'en mode devoir (`etatDevoir` non nul). Piloté sur
+  `fiche-01.html` avant propagation mécanique aux 51 autres :
+  - `mettreAJourEtatBoutons()` : `boutonToutes.disabled = eleveConnecte &&
+    !!etatDevoir && !ficheValidee` (au lieu de `eleveConnecte &&
+    !ficheValidee`) — "Voir toutes les réponses" reste toujours disponible
+    hors devoir.
+  - `verifierUne()` : `reveler = !eleveConnecte || !etatDevoir ||
+    ficheValidee` — correction immédiate hors devoir, comme un anonyme.
+  - Les 3 endroits où l'appui sur Entrée/le blur d'un champ vérifiaient
+    silencieusement la réponse pour TOUT élève connecté (`if (eleveConnecte)
+    { verifierUne(idx); ... } else if (modeImmediat) { ... }`, dans
+    `attacherEcouteurs()` × 2 et `validerEtAvancer()`) : condition passée à
+    `eleveConnecte && etatDevoir`, pour qu'un élève connecté en entraînement
+    tombe désormais dans la branche `else if (modeImmediat)` — c'est-à-dire
+    respecte le choix de mode comme un anonyme, au lieu d'être toujours
+    vérifié silencieusement en arrière-plan.
+  - `initialiserFiche()` : le calcul initial `panneauMode.hidden =
+    eleveConnecte` / `boutonVerifier.hidden = eleveConnecte` (fait avant de
+    savoir si un devoir existe) reste tel quel comme valeur par défaut
+    inoffensive, corrigé juste après par deux lignes ajoutées à la fin du
+    bloc de vérification du devoir (déjà existant, inchangé) :
+    `panneauMode.hidden = eleveConnecte && !!etatDevoir` /
+    `boutonVerifier.hidden = eleveConnecte && !!etatDevoir` — évite de
+    déplacer le bloc de vérification lui-même (dont le contenu varie
+    légèrement selon la fiche, voir plus bas).
+
+  **Propagation mécanique, en trois passes** (scripts dans `.claude/scratch/`,
+  hors dépôt) :
+  1. `boutonToutes.disabled`/`reveler` : uniquement les LIGNES DE CODE
+     remplacées (pas les commentaires juste au-dessus) — découvert en
+     vérifiant l'uniformité au préalable que le commentaire au-dessus de
+     `reveler` varie légèrement sur les fiches à widget (« … a chaque
+     réponse **tapée** » vs « … a chaque réponse **vérifiée** », plus
+     cohérent avec leur interaction par clics plutôt que par saisie) —
+     utiliser ce commentaire comme ancre aurait fait échouer le script sur
+     ces fiches-là.
+  2. `if (eleveConnecte) {` → `if (eleveConnecte && etatDevoir) {` :
+     remplacement global simple (pas de bloc à extraire), puisque ce motif
+     exact n'apparaît nulle part ailleurs avec un sens différent. **Absent
+     sur 14 fiches à widget/graphique** (`fiche-08/09/10/14 à 23/25`,
+     Seconde) : leur `keydown`/`blur` ne teste jamais `eleveConnecte`, juste
+     `modeImmediat` (qui vaut déjà `true` par défaut, jamais changé pour un
+     élève connecté avant ce chantier puisque le panneau était masqué) — ces
+     fiches profitent donc du nouveau comportement entraînement sans aucune
+     modification supplémentaire, uniquement grâce au correctif `reveler`
+     ci-dessus. **2 fiches** (`seconde/cahier-1/fiche-02.html`,
+     `seconde/cahier-2/fiche-06.html`) ont une structure plus ancienne où le
+     clavier délègue à `validerEtAvancer(idx)` au lieu de dupliquer la
+     logique dans `keydown` : seulement 2 occurrences à corriger au lieu de
+     3, mêmes blocs `validerEtAvancer`/`blur` byte-à-byte identiques aux
+     35 « fiches standard » malgré tout (vérifié par hash avant d'écrire le
+     script).
+  3. Insertion des deux lignes correctrices après le bloc (inchangé) de
+     vérification du devoir dans `initialiserFiche()` — bloc localisé en
+     comptant les accolades depuis son `{` d'ouverture plutôt qu'en cherchant
+     un texte de fin fixe (robuste au contenu accentué à l'intérieur,
+     jamais tapé à la main dans le script).
+
+  **Piège rencontré en cours de route** : le tout premier lancement du
+  script de l'étape 1/2 (avec les commentaires inclus dans l'ancre) a
+  partiellement réussi avant d'échouer sur une fiche à commentaire
+  légèrement différent — 35 fichiers déjà réécrits avec le nouveau
+  commentaire au moment du crash, les 17 restants pas encore touchés.
+  Plutôt que de revenir en arrière, passage à l'ancrage code-seul (plus
+  robuste) pour les 17 restants, PUIS un script de nettoyage séparé
+  (`uniformiser-commentaires.ps1`) pour ré-harmoniser le commentaire sur
+  ces 17-là (avec les deux variantes « tapée »/« vérifiée » gérées
+  explicitement) — sans quoi les 52 fiches auraient eu un commentaire
+  incohérent d'un fichier à l'autre pour un même comportement.
+
+  Vérifié : uniformité totale après coup (grep sur les 52 fichiers,
+  0 résidu de l'ancien texte, 52/52 sur le nouveau, dans les deux sens) ;
+  syntaxe (`vm.Script`) sur les 52 fiches, 0 erreur ; test réel dans le
+  navigateur sur 4 fiches représentatives de chaque cas : `fiche-01.html`
+  (Première, pilote, capture d'écran confirmant tous les boutons visibles
+  en entraînement — choix de mode, Corrigé des erreurs, Enregistrer,
+  Valider, Voir toutes les réponses), `fiche-08.html` (Seconde, widget
+  tableauSigne, groupe sans `if (eleveConnecte)`) en entraînement ET en
+  devoir (non-régression confirmée), `fiche-02.html` (Seconde, structure à
+  `validerEtAvancer` délégué) en entraînement et en anonyme. Comportement
+  devoir revérifié inchangé à chaque fois (panneau/Corrigé des erreurs
+  masqués, correction cachée jusqu'à validation).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

@@ -3919,11 +3919,14 @@ let etatDevoir = null;
 let ficheValidee = false;
 
 function mettreAJourEtatBoutons() {
-  // "Corrige des erreurs" est masque en permanence pour un eleve connecte
-  // (voir initialiserFiche) : "Valider" fait deja tourner verifierTout(),
-  // ce bouton n'apporterait plus rien une fois connecte.
+  // "Voir toutes les reponses" reste limite au mode devoir (29/09/2026,
+  // retour de David) : en entrainement libre (eleveConnecte sans
+  // etatDevoir), un eleve connecte retrouve le meme confort qu'un visiteur
+  // anonyme -- toujours disponible, sans attendre une validation. "Valider
+  // ma fiche" reste disponible a cote dans les deux cas connecte, pour
+  // faire remonter le score au tableau de bord quand l'eleve le souhaite.
   const boutonToutes = document.getElementById('btn-toutes-reponses');
-  boutonToutes.disabled = eleveConnecte && !ficheValidee;
+  boutonToutes.disabled = eleveConnecte && !!etatDevoir && !ficheValidee;
 
   // En mode devoir (etatDevoir non nul, voir initialiserFiche), une fois la
   // fiche validee (donc les corrections reveelees) : "Recommencer" masque
@@ -3949,11 +3952,12 @@ function verifierUne(idx) {
   const ex = exercices[idx];
   const div = document.getElementById('q-' + idx);
   const statut = document.getElementById('statut-' + idx);
-  // Un eleve connecte ne voit rien (ni couleur, ni statut) tant qu'il n'a
-  // pas valide sa fiche -- mais le calcul et l'enregistrement dans saisies
-  // se font quand meme, silencieusement, a chaque reponse verifiee. Un
-  // visiteur anonyme voit tout normalement, comme avant.
-  const reveler = !eleveConnecte || ficheValidee;
+  // Un eleve connecte EN MODE DEVOIR ne voit rien (ni couleur, ni statut)
+  // tant qu'il n'a pas valide sa fiche -- mais le calcul et l'enregistrement
+  // dans saisies se font quand meme, silencieusement, a chaque reponse
+  // tapee. Hors devoir (entrainement libre) un eleve connecte voit tout
+  // normalement, comme un visiteur anonyme (29/09/2026, retour de David).
+  const reveler = !eleveConnecte || !etatDevoir || ficheValidee;
   if (reveler) div.classList.remove('correct','incorrect');
   if (ex.type === 'tableauVariations') {
     const ok = verifierTableauVariations(idx, ex, reveler);
@@ -4454,6 +4458,16 @@ async function initialiserFiche() {
       afficherEtatSuivi(`Tu as utilisé tes ${etatDevoir.nbEssaisMax} tentatives pour ce devoir (« ${etatDevoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner, mais cette fiche ne sera plus comptée pour le devoir tant que l'échéance n'est pas passée.`);
     }
   }
+
+// Panneau de mode et "Corrige des erreurs" : corriges ici APRES avoir su
+  // si un devoir est actif -- masques SEULEMENT en mode devoir (etatDevoir
+  // non nul), pas pour tout eleve connecte comme avant (29/09/2026, retour
+  // de David : en entrainement libre, un eleve connecte doit retrouver
+  // exactement le meme confort qu'un visiteur anonyme). L'affectation par
+  // defaut juste au-dessus (eleveConnecte seul) reste inoffensive : ces deux
+  // lignes la corrigent immediatement, avant le premier rendu visible.
+  if (panneauMode) panneauMode.hidden = eleveConnecte && !!etatDevoir;
+  if (boutonVerifier) boutonVerifier.hidden = eleveConnecte && !!etatDevoir;
 
   let brouillon = null;
   if (eleveConnecte && window.chargerBrouillon) {
