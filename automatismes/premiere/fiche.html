@@ -168,21 +168,27 @@ window.MathJax = {
       brouillon: brouillon,
       // Meme principe que sujet-blanc.html : la limite d'essais reelle (ce
       // qui compte ou non pour la note) est appliquee cote suivi.js
-      // (enregistrerTentativeDevoirAutomatismeSiApplicable) ; ce controle-ci
-      // ne fait qu'informer l'eleve quand sa tentative ne compte plus. Une
-      // fiche LIBRE (pas de devoir) n'ecrit jamais rien -- voir le
-      // commentaire devant enregistrerTentativeFicheAutomatismesSiDevoir
-      // (suivi.js).
+      // (enregistrerTentativeAutomatismeParId) ; ce controle-ci ne fait
+      // qu'informer l'eleve quand sa tentative ne compte plus. Une fiche
+      // LIBRE (pas de devoir) n'ecrit jamais rien -- voir le commentaire
+      // devant enregistrerTentativeFicheAutomatismesSiDevoir (suivi.js).
       onFinSerie: async function (resultat) {
-        const themesJoues = Automatismes.etat.questions.themesIds || [];
+        // Cible le devoir par son id (30/09/2026), connu des le verrouillage
+        // (verrouille.id, voir plus haut) -- plus par niveau/mode/duree/themes,
+        // qui pouvait matcher un AUTRE devoir 'fiche' similaire actif sur la
+        // meme classe, decalant le compteur de tentatives d'un cran (bug
+        // remonte par David). Capture immediate : `verrouille` peut etre
+        // remis a null plus bas dans cette meme fonction si cette tentative
+        // epuise le quota.
+        const devoirId = verrouille && verrouille.id;
         // Etat AVANT l'ecriture de cette tentative : sert uniquement a savoir
         // si elle a ete refusee (essais deja epuises avant meme de la
-        // commencer -- voir enregistrerTentativeDevoirAutomatismeSiApplicable,
-        // suivi.js, qui l'ignore silencieusement dans ce cas).
+        // commencer -- voir enregistrerTentativeAutomatismeParId, suivi.js,
+        // qui l'ignore silencieusement dans ce cas).
         let etatAvant = null;
-        if (verrouille && window.verifierEtatDevoirAutomatisme) {
+        if (devoirId && window.verifierEtatDevoirAutomatismeParId) {
           try {
-            etatAvant = await window.verifierEtatDevoirAutomatisme(resultat.niveau, resultat.mode, resultat.duree, 'fiche', themesJoues);
+            etatAvant = await window.verifierEtatDevoirAutomatismeParId(devoirId);
           } catch (erreur) {
             etatAvant = null;
           }
@@ -190,9 +196,9 @@ window.MathJax = {
         // Attend la fin de l'ecriture avant de decider quoi que ce soit
         // ensuite (voir plus bas) -- pas besoin de relire l'etat apres coup,
         // etatAvant + savoir que l'ecriture a eu lieu suffisent.
-        if (verrouille && window.enregistrerTentativeFicheAutomatismesSiDevoir) {
+        if (devoirId && window.enregistrerTentativeFicheAutomatismesSiDevoir) {
           try {
-            await window.enregistrerTentativeFicheAutomatismesSiDevoir(resultat.bonnes, resultat.total, resultat.niveau, resultat.mode, resultat.duree, themesJoues, resultat.repondues);
+            await window.enregistrerTentativeFicheAutomatismesSiDevoir(devoirId, resultat.bonnes, resultat.total, resultat.repondues);
           } catch (erreur) { /* deja logue cote suivi.js */ }
         }
         if (etatAvant && etatAvant.bloque) {
@@ -202,7 +208,7 @@ window.MathJax = {
           // retours de David). Calcule directement si CETTE tentative (deja
           // ecrite juste au-dessus) vient d'epuiser le quota, a partir
           // d'etatAvant (deja en main, aucun nouvel aller-retour Firestore) --
-          // plutot que d'attendre un second appel a verifierEtatDevoirAutomatisme
+          // plutot que d'attendre un second appel a verifierEtatDevoirAutomatismeParId
           // pour le revérifier : ce second aller-retour ajoutait un delai
           // reseau pendant lequel le bouton de correction restait visible-
           // ment bloque (signale par David comme "le bouton reste bloque en

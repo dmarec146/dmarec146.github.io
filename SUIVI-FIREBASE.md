@@ -4032,6 +4032,72 @@ de changer ce réglage sans qu'il en reparle.
   correction visibles après validation/fin de série, re-bloqués après une
   nouvelle série confirmée.
 
+- **Décalage de +1 sur la limite de tentatives, deux bugs distincts trouvés
+  (30/09/2026)** — David signale : avec 2 tentatives autorisées, la première
+  se compte bien, la deuxième non, et il faut une troisième pour que le
+  pop-up de blocage se déclenche. Diagnostiqué en inspectant directement
+  Firestore (script Node temporaire, `firebase-admin`, sur le compte
+  `demo-eleve`) plutôt qu'en devinant : les **écritures réelles**
+  (`devoirsTentatives`) s'arrêtaient bien exactement à 2 pour les trois
+  devoirs fraîchement créés par David — l'enregistrement côté `suivi.js`
+  était donc déjà correct. Le problème est double, et purement côté UI :
+
+  1. **Cahiers de calcul** : `boutonValider.disabled` ne dépendait que de
+     `ficheValidee`, pas de `etatDevoir.bloque`. Une fois les essais
+     épuisés, `genererNouvelleFiche()` remet quand même `ficheValidee` à
+     `false` (aucune confirmation affichée dans ce cas précis, mais la
+     fonction régénère une fiche pour l'entraînement libre) — ce qui
+     réactivait par erreur le bouton Valider pour UN clic de plus, intercepté
+     ensuite par la « seconde ligne de défense » de `validerFicheActuelle()`
+     sans rien écrire, d'où l'impression d'une limite décalée. Correctif :
+     `boutonValider.disabled = !!(etatDevoir && (etatDevoir.bloque ||
+     ficheValidee))`. Propagé aux 52 fiches (remplacement d'une seule ligne,
+     aucun accent dans le texte cette fois, pas de piège PowerShell).
+
+  2. **Automatismes** : plus profond. `verifierEtatDevoirAutomatisme()` et
+     `enregistrerTentativeDevoirAutomatismeSiApplicable()` re-dérivaient le
+     devoir concerné par une recherche floue (niveau + mode + duree + cible,
+     +ensemble des thèmes pour une fiche ciblée) à CHAQUE appel, au lieu de
+     cibler l'id du devoir déjà verrouillé sur la page. Dès que plusieurs
+     devoirs similaires coexistent pour la même classe (niveau/mode/cible
+     identiques, comme le confirme l'inspection Firestore : jusqu'à 4 devoirs
+     « sujet blanc niveau 2 mode fiche » actifs simultanément sur la classe
+     de test, tous recevant une écriture à la même validation), cette
+     recherche peut retrouver un devoir différent de celui affiché à
+     l'élève, décalant le compteur utilisé pour la décision de blocage.
+     Reproduit délibérément en test (deux devoirs simulés, même
+     niveau/mode/cible, essais indépendants) : sans le correctif, impossible
+     à isoler proprement in vivo à cause du chevauchement des devoirs de
+     test déjà documenté plus haut ; avec la simulation, le décalage est
+     net.
+
+     Corrigé en ciblant systématiquement par id, plus jamais par
+     niveau/mode/duree/cible/themes :
+     - `devoirAutomatismeActif()` (suivi.js, déjà modifié le 30/09/2026)
+       fournissait déjà `id: devoir.id` — jusqu'ici seulement utilisé pour le
+       brouillon.
+     - Nouvelles fonctions `verifierEtatDevoirAutomatismeParId(devoirId)` et
+       `enregistrerTentativeAutomatismeParId(devoirId, ...)` (suivi.js),
+       lisent/écrivent pour CE devoir précis. Les anciennes
+       `verifierEtatDevoirAutomatisme`, `enregistrerTentativeDevoirAutomatismeSiApplicable`,
+       `devoirsPourAutomatisme` et `memeEnsembleThemes` sont devenues
+       inutilisées et supprimées (aucun autre appelant trouvé par grep).
+     - `enregistrerTentativeSujetBlancSiDevoir`/`enregistrerTentativeFicheAutomatismesSiDevoir`
+       prennent désormais `devoirId` en premier paramètre ; les deux pages
+       (`sujet-blanc.html`/`fiche.html`) le capturent dans une constante
+       (`verrouille.id`) au tout début d'`onFinSerie`, AVANT que `verrouille`
+       ne soit potentiellement remis à `null` plus bas dans la même fonction
+       (essais épuisés par cette tentative).
+
+  Vérifié : `vm.Script` sur les 52 fiches (0 erreur) ; grep d'uniformité du
+  correctif cahiers de calcul (52/52, 0 résidu) ; grep confirmant la
+  suppression complète des anciennes fonctions automatismes (aucune
+  référence restante) ; test navigateur cahiers de calcul (2 tentatives
+  bloquent exactement à la 2ᵉ, un 3ᵉ « Générer une nouvelle version » ne
+  réactive plus Valider) ; test navigateur automatismes avec un devoir
+  « voisin » simulé (même niveau/mode/cible, essais différents) confirmant
+  que le decompte cible bien le SEUL devoir verrouillé, blocage exact à 2/2.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
