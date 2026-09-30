@@ -4207,7 +4207,11 @@ de changer ce réglage sans qu'il en reparle.
   **Données de test laissées en place volontairement** (classe `1ere-demo`)
   pour que David puisse contrôler la vue « Résultats » de son tableau de
   bord enseignant (je ne peux pas me connecter en enseignant) ; à
-  supprimer ensuite avec le même script de ménage.
+  supprimer ensuite avec le même script de ménage. Trois d'entre eux (les
+  devoirs à échéance courte : deux « Fiche 3 », un « Sujet blanc —
+  Niveau 1 ») apparaissent dans « Devoirs faits » en « Non rendu » : c'est
+  voulu (validés APRÈS l'échéance pour tester que ça ne compte pas) ; les
+  autres, avec leurs notes, sont dans « Devoirs en cours ».
 
   **Complément le jour même — confirmation avant de consommer une
   tentative** (suggestion faite à David à l'issue des tests, acceptée) : un
