@@ -4770,6 +4770,17 @@ de changer ce réglage sans qu'il en reparle.
   boutons d'aide « ? » présents, aucune erreur ; capture (Seconde 3).
   **Pour toute nouvelle fiche ou tout nouveau titre** : baliser de la même
   façon l'expression qui impose la forme de la réponse.
+  **Rendu revu le jour même** (David : « le rendu ne me plaît pas » ;
+  titre déjà rouge → ne pas agrandir, trancher par la couleur). Maquette
+  comparée (noir, bleu du site #4B46C7, bleu foncé #3A36A0) : **bleu
+  foncé #3A36A0** retenu — contraste net avec le rouge #990000, couleur
+  de la charte (survol des boutons), moins « bouton » que le bleu vif ;
+  le noir se distinguait mal du rouge foncé en gras. Règle devenue
+  `.calcul-titre .titre-mise-en-valeur { color: #3A36A0; }` dans les 52
+  fiches (plus de `font-size`). Vérifié : 16 px comme le titre, couleur
+  rgb(58,54,160), capture Seconde 1. « l'équation réduite » (Première
+  11.8, 25.4) volontairement **non** balisée : la forme attendue est déjà
+  expliquée dans le bouton « ? » (David).
 
 ## Procédure de reprise sur une autre machine
 
