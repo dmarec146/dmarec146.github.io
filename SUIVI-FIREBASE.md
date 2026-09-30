@@ -4467,6 +4467,35 @@ de changer ce réglage sans qu'il en reparle.
   affichés avec accolades et acceptés) ; Première 09 champ texte (√ →
   `√(▢)`, a/b √ 5 → `(√(5))/(▢)`).
 
+- **Case grisée avec le clavier simplifié : question de focus (30/09/2026)**
+  — David, Seconde 06, 6.6 b) : « le clavier MathType grise bien la case
+  mais pas le clavier simplifié ». La case existait (entrée précédente),
+  mais la « case grisée » est la *sélection* du `<math-field>`, affichée
+  seulement quand il a le focus. Or un clic sur une touche du clavier
+  simplifié retirait le focus au champ (seules Première 01–04 avaient un
+  écouteur `mousedown` → `preventDefault()`), et `inserer` ne le rendait
+  pas. Correctif dans `assets/js/claviers.js` (donc les 52 fiches), pour
+  toute touche d'un clavier rattaché à un `<math-field>` : `mousedown` sans
+  action par défaut (le champ garde le focus) et, en phase de capture du
+  clic, `focus()` du champ s'il l'avait perdu (clavier ouvert par ⌨) avant
+  le gestionnaire de la touche. Les champs texte ne sont pas concernés.
+  **Au passage** : les attributs `virtual-keyboard-mode="off"/"manual"`
+  des fiches datent d'avant MathLive 0.90 et sont ignorés par la version
+  chargée (0.110), dont la politique par défaut `auto` ouvre le clavier
+  MathLive dès qu'un champ a le focus sur écran tactile — donc, sur
+  tablette, par-dessus le clavier simplifié des champs « off ». Ces champs
+  reçoivent désormais `math-virtual-keyboard-policy="manual"` (attribut ET
+  propriété : l'attribut posé avant l'initialisation du composant restait
+  sans effet). Les champs « manual » (bouton ⌨ → MathLive) ne sont pas
+  modifiés : sur tablette, le clavier MathLive s'y ouvre toujours au
+  toucher du champ, comme avant.
+  Vérifié par vrais clics sur Seconde 06 (clavier ouvert par ⌨, champ sans
+  focus : { puis ÷ → numérateur sélectionné et grisé, focus conservé,
+  clavier MathLive fermé ; √ → case de la racine grisée ; 3 → dans la
+  racine), et Première 01, 14, Seconde 18 (÷ puis √ : focus, sélection de
+  la case, politique `manual`), Première 09 champ texte inchangé ; aucune
+  erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

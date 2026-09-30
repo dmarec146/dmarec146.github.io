@@ -152,10 +152,58 @@
     }
   }
 
+  // --- 3. Focus des champs mathematiques pendant la saisie au clavier -------
+  //
+  // Retour de David (30/09/2026, Seconde 06, 6.6 b) : avec le clavier
+  // simplifie, la case a remplir d'une fraction ou d'une racine apparaissait
+  // mais pas grisee, contrairement au clavier MathLive. La case grisee est la
+  // selection du <math-field>, visible seulement quand il a le focus : or un
+  // clic sur une touche le lui retirait (seules Premiere 01-04 l'evitaient,
+  // par leur propre ecouteur "mousedown"), et l'insertion se faisait
+  // ensuite dans un champ sans focus. Donc, pour toute touche d'un clavier
+  // simplifie rattache a un <math-field> :
+  //   - "mousedown" sans action par defaut : le champ garde le focus ;
+  //   - au clic, avant le gestionnaire de la touche (phase de capture), le
+  //     champ reprend le focus s'il l'avait perdu (ex. clavier ouvert par
+  //     le bouton ⌨) -- MathLive conserve la position du curseur.
+  function champMathDuClavier(cible) {
+    const clavier = cible instanceof Element && cible.closest('.clavier-visuel[id^="clavier-"]');
+    if (!clavier) return null;
+    const champ = document.getElementById('input-' + clavier.id.replace('clavier-', ''));
+    return champ && champ.tagName === 'MATH-FIELD' ? champ : null;
+  }
+  document.addEventListener('mousedown', (e) => {
+    if (champMathDuClavier(e.target)) e.preventDefault();
+  }, true);
+  document.addEventListener('click', (e) => {
+    const bouton = e.target instanceof Element && e.target.closest('button');
+    const champ = bouton && champMathDuClavier(bouton);
+    if (champ && !champ.hasFocus?.() && document.activeElement !== champ) champ.focus();
+  }, true);
+
+  // Champs mathematiques prevus sans clavier MathLive (attribut
+  // virtual-keyboard-mode="off", nom d'avant MathLive 0.90 -- ignore par la
+  // version chargee, dont la politique par defaut "auto" ouvre le clavier
+  // MathLive des qu'un champ recoit le focus sur ecran tactile, par-dessus
+  // le clavier simplifie) : politique "manual", le clavier MathLive ne
+  // s'ouvre plus de lui-meme.
+  // Attribut ET propriete : l'attribut pose avant l'initialisation du
+  // composant n'est pas toujours pris en compte (constate le 30/09/2026).
+  function reglerPolitiqueClavier() {
+    document.querySelectorAll('math-field[virtual-keyboard-mode="off"]').forEach((mf) => {
+      if (mf.getAttribute('math-virtual-keyboard-policy') !== 'manual') mf.setAttribute('math-virtual-keyboard-policy', 'manual');
+      if ('mathVirtualKeyboardPolicy' in mf && mf.mathVirtualKeyboardPolicy !== 'manual') mf.mathVirtualKeyboardPolicy = 'manual';
+    });
+  }
+  if (window.customElements && customElements.whenDefined) {
+    customElements.whenDefined('math-field').then(() => requestAnimationFrame(reglerPolitiqueClavier)).catch(() => {});
+  }
+
   let planifie = false;
   function completerClaviers() {
     planifie = false;
     document.querySelectorAll('.clavier-visuel[id^="clavier-"]').forEach(completerClavier);
+    reglerPolitiqueClavier();
   }
   function planifier() {
     if (planifie) return;
