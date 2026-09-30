@@ -4654,6 +4654,47 @@ de changer ce réglage sans qu'il en reparle.
      décalés d'un indice. Vérifié : ids ↔ `groupes`, 500 tirages sans
      échec, saisie 31/31, panneau 31/31 sans erreur MathJax.
 
+- **Revue des groupes (I)/(II) restants dans les fiches de Première
+  (30/09/2026)** — David : « passe en revue la fusion des (I)/(II)... dans
+  les fiches ». Inventaire (28 fiches chargées) : groupes numérotés encore
+  présents dans les fiches 3, 7, 17, 18, 19, 20, 24 (plus 2, traitée
+  juste avant). Décisions de David, sur proposition :
+  - **Problèmes guidés en plusieurs étapes (fiches 3 et 17)** : fusion
+    avec le plafond de 4 = n'en garder qu'un, **le plus complet**.
+    - **Fiche 3 (28 → 25)** : 3.6 (I) + 3.7 (II) « Factorisation d'un
+      polynôme de degré 3 » → **3.6** = l'ancien (II) (coefficient dominant
+      2, racines éventuellement fractionnaires) ; retiré l'ancien (I)
+      (dominant 1) ; 3.8 → 3.7, 3.9 → 3.8, `FORMES_FACTORISEES` mis à jour
+      (3.6 b/c, 3.7). **Défaut d'affichage corrigé au passage** dans 3.8
+      c)/d) (ex-3.9) : l'énoncé montrait un astérisque (« −3*a² ») et des
+      fractions en ligne (« 3/4 ») — désormais `\dfrac` et pas de « * »
+      (500 tirages vérifiés).
+    - **Fiche 17 (41 → 34)** : 17.10 (I) + 17.11 (II) « Une somme
+      arithmético-géométrique » → **17.10** = l'ancien (II) (λ à trouver
+      sans équation donnée, uₙ à exprimer soi-même) ; 17.12 (I) + 17.13
+      (II) « Une somme pour calculer le terme général » → **17.11** =
+      l'ancien (I) (4 étapes complètes S(0), S(1), S(p)−S(n), uₙ contre
+      3) ; 17.14/17.15 → 17.12/17.13 ; textes d'introduction générés
+      (`mettreAJourTextesAvances`) adaptés (clés internes `paramsAvances.g*`
+      inchangées, déjà décalées des numéros avant cette passe).
+  - **Petits (I)/(II) avec leurs propres données (fiches 18, 19, 20)** :
+    **rien fusionné, rien modifié** (décision de David) — 18.7/18.8
+    télescopage, 19.9/19.10 probabilités conditionnelles, 20.9/20.10
+    paramètres ; les deux variantes existant, la numérotation reste.
+  - **Consignes différentes (fiches 7 et 24)** : pas de fusion, (I)/(II)
+    retirés des titres. 7.8 « Quotients à simplifier » / 7.9 « Dériver des
+    quotients simplifiés » ; 24.11 « Avec les formules d'addition » / 24.12
+    « Valeurs exactes avec les formules d'addition » (24.13 « Avec les
+    formules d'addition ? » laissé tel quel). **Bug corrigé en fiche 7** :
+    7.9 b) tirait (px+q)/(rx+s) sans exclure ps = qr — fonction constante
+    possible (vu : « dériver f(x)=(4x+4)/(4x+4) »), désormais redessinée
+    tant que ps = qr (2000 tirages : aucune constante).
+  Vérifié pour 3 et 17 comme d'habitude (ids ↔ `groupes`, 500 tirages,
+  saisie complète 25/25 et 34/34, panneau sans erreur MathJax,
+  régénération, console) ; 7 et 24 : `vm.Script`, 500 tirages (7), titres,
+  chargement sans erreur. Scripts `.claude/scratch/fiche03.js`,
+  `fiche17.js`.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
