@@ -4644,6 +4644,15 @@ de changer ce réglage sans qu'il en reparle.
   auto-cohérents sans échec (2.3 c/d : énoncés et Δ entiers), saisie de
   toutes les bonnes réponses 32/32, panneau 32/32 sans erreur MathJax,
   capture de 2.3/2.4, aucune erreur console.
+  3. « ne garder que 2 exemples dans 2.10 » (32 → 31). Les trois exemples
+     plaçaient a différemment. Gardés : a) a dans la constante (ancien c,
+     classique : Δ affine en a, inéquation du premier degré) ; b) a
+     coefficient dominant (ancien a, délicat : signe de a ET Δ, réponse
+     « aucune » — famille absente du reste de la fiche). Retiré : l'ancien
+     b) (a dans le terme linéaire, Δ du second degré en a), technique
+     reprise en 2.11 (a dans le terme linéaire ET la constante). 2.11/2.12
+     décalés d'un indice. Vérifié : ids ↔ `groupes`, 500 tirages sans
+     échec, saisie 31/31, panneau 31/31 sans erreur MathJax.
 
 ## Procédure de reprise sur une autre machine
 

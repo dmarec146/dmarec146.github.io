@@ -1217,25 +1217,24 @@ function genGroupe2_9() {
   ];
 }
 
+// 2.10 ramene de 3 a 2 exemples le 30/09/2026 (demande de David). Les trois exemples d'origine
+// placaient a differemment. Gardes : a) a dans la constante (ancien c, classique : delta affine en
+// a, inequation du premier degre) ; b) a coefficient dominant (ancien a, delicat : raisonner sur le
+// signe de a ET sur delta, reponse "aucune" -- famille absente du reste de la fiche). Retire :
+// l'ancien b) (a dans le terme lineaire, delta du second degre en a), technique reprise en 2.11
+// (a dans le terme lineaire ET la constante).
 function genGroupe2_10() {
-  // a) toujours "aucune" (constante < 0)
-  const Ba12=alea(1,6), Ca12=-alea(1,9);
-  // b) a n'apparait que dans le terme lineaire (Ba*a), A,C fixes > 0
-  const [Ap12,Aq12]=aleaParmi(PAIRES_COPREMIERES), kB12=alea(2,6), [Cp12,Cq12]=aleaParmi(PAIRES_COPREMIERES);
-  const Ab12=F(Ap12,Aq12), Cb12=F(Cp12,Cq12);
-  const bound12 = Math.sqrt(4*Ab12.n*Cb12.n/(Ab12.d*Cb12.d)) / kB12;
-  // c) a n'apparait que dans la constante (a/dc12), A,B fixes
+  // a) a n'apparait que dans la constante (a/dc12), A,B fixes
   const Ac12=F(aleaParmi([2,3]), aleaParmi([2,3])); // A>0 fixe (fraction)
   const Bc12=aleaNonNul(-9,9); const dc12=aleaParmi([2,3,4]);
   const boundC12 = (Bc12*Bc12)/(4*(Ac12.n/Ac12.d)/dc12);
+  // b) toujours "aucune" (constante < 0)
+  const Ba12=alea(1,6), Ca12=-alea(1,9);
   return [
-    {id:"2.10 a)", type:"texte", texteLibre:true, enonce:`Avec \\(P(x)=ax^2+${Ba12}x${fmtConst(Ca12)}\\)`, reponse:"aucune"},
-    {id:"2.10 b)", type:"intervalle", texteLibre:true,
-      enonce:`Avec \\(P(x)=\\dfrac{${Ab12.n}}{${Ab12.d}}x^2+${kB12}ax+\\dfrac{${Cb12.n}}{${Cb12.d}}\\)`,
-      intervalleSpec:{type:'intervalles', liste:[{bas:-bound12,haut:bound12,inclusBas:true,inclusHaut:true}]}},
-    {id:"2.10 c)", type:"intervalle", texteLibre:true,
+    {id:"2.10 a)", type:"intervalle", texteLibre:true,
       enonce:`Avec \\(P(x)=\\dfrac{${Ac12.n}}{${Ac12.d}}x^2${fmtLin(Bc12,'x')}+\\dfrac{a}{${dc12}}\\)`,
-      intervalleSpec:{type:'intervalles', liste:[{bas:boundC12,haut:Infinity,inclusBas:true,inclusHaut:true}]}}
+      intervalleSpec:{type:'intervalles', liste:[{bas:boundC12,haut:Infinity,inclusBas:true,inclusHaut:true}]}},
+    {id:"2.10 b)", type:"texte", texteLibre:true, enonce:`Avec \\(P(x)=ax^2+${Ba12}x${fmtConst(Ca12)}\\)`, reponse:"aucune"}
   ];
 }
 
@@ -1297,7 +1296,8 @@ function genererExercices() {
 }
 
 // Indices recalcules le 30/09/2026 : 2.1 ramene de 4 a 2 questions, tout ce qui suit decale de 2 ;
-// puis 2.3 porte a 4 et 2.4 ramene a 2 (meme total, indices suivants inchanges).
+// puis 2.3 porte a 4 et 2.4 ramene a 2 (meme total, indices suivants inchanges) ; puis 2.10
+// ramene de 3 a 2 (2.11 et 2.12 decales de 1).
 const groupes = {
   "grille-2-1": [0,1],
   "grille-2-2": [2,3,4,5],
@@ -1308,9 +1308,9 @@ const groupes = {
   "grille-2-7": [19,20],
   "grille-2-8": [21,22],
   "grille-2-9": [23,24,25,26],
-  "grille-2-10": [27,28,29],
-  "grille-2-11": [30],
-  "grille-2-12": [31]
+  "grille-2-10": [27,28],
+  "grille-2-11": [29],
+  "grille-2-12": [30]
 };
 const lettresEtendues = ["a","b","c","d"];
 let exercices; // initialise en bas du script
