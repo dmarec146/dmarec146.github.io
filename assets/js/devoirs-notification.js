@@ -2,8 +2,8 @@
 // (pas pour l'enseignant ni un visiteur anonyme) qui a une classe et au
 // moins un devoir deja attribue a celle-ci (actif ou non) -- lien
 // permanent vers /mes-devoirs/, avec une pastille de notification donnant
-// le nombre de devoirs encore A FAIRE (echeance active ET essais pas
-// epuises). Remplace, le 19/09/2026, l'ancien bandeau pleine largeur qui
+// le nombre de devoirs a faire ou enregistres (voir devoirs-eleve.js).
+// Remplace, le 19/09/2026, l'ancien bandeau pleine largeur qui
 // listait chaque devoir ici meme -- desormais seulement sur /mes-devoirs/.
 // Chargee sur les pages d'entree du site (accueil, sommaires cahiers/
 // automatismes) plutot que les 44 fiches individuelles -- le but est
@@ -12,18 +12,11 @@
 // Silencieux comme le reste du suivi (assets/js/suivi.js) : une erreur
 // reseau ou hors ligne ne doit jamais bloquer l'affichage normal du site.
 
-import { auth, db } from './firebase-config.js';
+import { auth } from './firebase-config.js';
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { chargerDevoirsEleve } from './devoirs-eleve.js';
 
 // Cloche de notification, glyphe plein (currentColor) -- meme poids visuel
 // que les autres icones du site (nav-auth.js), pas de librairie chargee
@@ -47,45 +40,18 @@ function afficherBloc(nbAFaire) {
   else document.body.prepend(bloc);
 }
 
-// Meme sentinelle que suivi.js/devoirs.js : un eleve "hors classe" (aucun
-// champ classe sur son document) doit quand meme voir apparaitre ce bloc si
-// un devoir "Hors classe" le cible -- avant le 24/09/2026, `classe` restait
-// `null` pour lui et le bloc de devoirs n'apparaissait jamais, meme si un
-// devoir existait.
-const CLASSE_HORS_CLASSE = 'hors-classe';
-
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) return;
   try {
-    const profil = await getDoc(doc(db, 'eleves', utilisateur.uid));
-    if (!profil.exists()) return; // pas un profil eleve (ex. compte admin)
-    const classe = profil.data().classe || CLASSE_HORS_CLASSE;
+    // Meme classement que /mes-devoirs/ (devoirs-eleve.js, 30/09/2026) : la
+    // pastille compte ce qui reste a faire ET les devoirs enregistres pas
+    // encore valides -- plus un devoir deja rendu, meme s'il reste des
+    // essais pour ameliorer la note (il est classe "Faits").
+    const resultat = await chargerDevoirsEleve(utilisateur.uid);
+    if (!resultat) return; // pas un profil eleve (ex. compte admin)
+    if (resultat.nbDevoirs === 0) return; // jamais aucun devoir attribue
 
-    const instantaneDevoirs = await getDocs(query(collection(db, 'devoirs'), where('classe', '==', classe)));
-    // Ciblage individuel d'un devoir "Hors classe" (24/09/2026, voir
-    // devoirs.js) : un devoir dont `eleves` existe ne concerne que les uid
-    // qu'il liste, pas tout le groupe.
-    const devoirs = instantaneDevoirs.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((d) => !Array.isArray(d.eleves) || d.eleves.includes(utilisateur.uid));
-    if (devoirs.length === 0) return; // jamais aucun devoir attribue a cette classe
-
-    const maintenant = Date.now();
-    // "A faire" = echeance pas encore passee ET essais pas epuises -- un
-    // devoir dont les tentatives sont epuisees bascule "fait" meme si
-    // l'echeance court encore (decide avec David le 19/09/2026) : rien
-    // d'actionnable ne justifie plus de le compter dans la notification.
-    const nbAFaire = (await Promise.all(devoirs.map(async (dv) => {
-      const echeanceMillis = dv.echeance?.toMillis ? dv.echeance.toMillis() : 0;
-      if (echeanceMillis <= maintenant) return false;
-      const instantaneTentatives = await getDocs(query(
-        collection(db, 'eleves', utilisateur.uid, 'devoirsTentatives'),
-        where('devoirId', '==', dv.id)
-      ));
-      return instantaneTentatives.size < dv.nbEssaisMax;
-    }))).filter(Boolean).length;
-
-    afficherBloc(nbAFaire);
+    afficherBloc(resultat.aFaire.length + resultat.enregistres.length);
   } catch (erreur) {
     console.warn('Devoirs : vérification impossible.', erreur);
   }

@@ -2072,6 +2072,34 @@ function fermerModaleDevoir() {
   const modale = document.getElementById('modal-devoir');
   if (modale) modale.hidden = true;
 }
+// Confirmation dans le meme style que le pop-up ci-dessus (30/09/2026, David :
+// plus ergonomique que la boite native du navigateur, affichee en haut de
+// page). Resout a true sur le bouton d'action, false sur Annuler, la croix
+// implicite (clic sur le fond) ou Echap. Construite a la volee : aucun
+// balisage a ajouter dans la page.
+function demanderConfirmationDevoir(titre, message, libelleAction) {
+  return new Promise((resoudre) => {
+    const fond = document.createElement('div');
+    fond.className = 'modal-devoir';
+    fond.innerHTML = '<div class="modal-devoir-contenu"><p class="modal-devoir-titre"></p><p class="modal-devoir-texte"></p>'
+      + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'
+      + '<button type="button" data-choix="non" style="background:#fff;color:#5F5E5A;border:1.5px solid #ccc;border-radius:8px;padding:10px 22px;font-size:0.95rem;font-weight:600;cursor:pointer;">Annuler</button>'
+      + '<button type="button" class="modal-devoir-ok" data-choix="oui"></button></div></div>';
+    fond.querySelector('.modal-devoir-titre').textContent = titre;
+    fond.querySelector('.modal-devoir-texte').textContent = message;
+    fond.querySelector('[data-choix="oui"]').textContent = libelleAction;
+    const surTouche = (e) => { if (e.key === 'Escape') fermer(false); };
+    const fermer = (choix) => { document.removeEventListener('keydown', surTouche); fond.remove(); resoudre(choix); };
+    fond.addEventListener('click', (e) => {
+      const bouton = e.target.closest('[data-choix]');
+      if (bouton) fermer(bouton.dataset.choix === 'oui');
+      else if (e.target === fond) fermer(false);
+    });
+    document.addEventListener('keydown', surTouche);
+    document.body.appendChild(fond);
+    fond.querySelector('[data-choix="oui"]').focus();
+  });
+}
 document.addEventListener('click', function (e) {
   if (e.target.id === 'modal-devoir' || e.target.closest('[data-role="fermer-modal-devoir"]')) fermerModaleDevoir();
 });
@@ -2108,9 +2136,9 @@ async function validerFicheActuelle() {
   if (etatDevoir && Date.now() <= etatDevoir.echeance) {
     const restantes = etatDevoir.nbEssaisMax - etatDevoir.essaisUtilises - 1;
     const message = restantes > 0
-      ? `Valider compte une tentative pour ce devoir (« ${etatDevoir.titre} ») : il t'en restera ${restantes} ensuite. Continuer ?`
-      : `Valider compte ta dernière tentative pour ce devoir (« ${etatDevoir.titre} »). Continuer ?`;
-    if (!confirm(message)) return;
+      ? `Cette validation compte une tentative pour le devoir « ${etatDevoir.titre} » : il t'en restera ${restantes} ensuite.`
+      : `Cette validation compte ta dernière tentative pour le devoir « ${etatDevoir.titre} ».`;
+    if (!(await demanderConfirmationDevoir('Valider ta fiche ?', message, 'Valider'))) return;
   }
   try {
     // Deverrouille AVANT de repeindre : verifierTout() (via verifierUne, voir
@@ -2482,13 +2510,13 @@ function reinitialiser() {
   document.getElementById('score-panneau').classList.remove('visible');
 }
 
-function genererNouvelleFiche() {
+async function genererNouvelleFiche() {
   // En devoir, "Recommencer" a disparu (30/09/2026) : generer une nouvelle
   // version est desormais le SEUL moyen de rejouer, et demarre une nouvelle
   // tentative -- l'eleve doit le savoir avant de perdre sa fiche actuelle
   // (et un eventuel brouillon enregistre dessus), d'ou cette confirmation.
   if (etatDevoir && !etatDevoir.bloque) {
-    const confirmation = confirm(`Générer une nouvelle version remplace cette fiche par une nouvelle : ce sera une nouvelle tentative pour ce devoir (« ${etatDevoir.titre} », ${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} déjà utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}). Continuer ?`);
+    const confirmation = await demanderConfirmationDevoir('Nouvelle version ?', `Générer une nouvelle version remplace cette fiche par une nouvelle : ce sera une nouvelle tentative pour le devoir « ${etatDevoir.titre} » (${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} déjà utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}). Ta fiche actuelle et son éventuel enregistrement seront perdus.`, 'Générer');
     if (!confirmation) return;
   }
   PASSE_ACTUELLE = genererIdPasse();

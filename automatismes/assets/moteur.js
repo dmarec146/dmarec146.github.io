@@ -404,7 +404,7 @@
   // cours (toutes au premier passage, voir demarrerChrono ; seulement les
   // sans-réponse lors d'une reprise, voir reprendreQuestionsPassees).
   function nouvelEtatChrono() {
-    return { phase: 'intro', file: [], filePos: 0, enReprise: false, restant: ETAT.duree, dureeEffective: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0 };
+    return { phase: 'intro', file: [], filePos: 0, enReprise: false, restant: ETAT.duree, dureeEffective: ETAT.duree, timer: null, choix: null, debut: 0, tempsTotal: 0, debutRecap: 0 };
   }
 
   // Devoir en cours (ETAT.config.verrouille) : une nouvelle serie rend
@@ -824,32 +824,73 @@
     ancien.replaceWith(tmp.firstElementChild);
   }
 
-  // "Valider ma serie" (30/09/2026, devoir mode fiche uniquement) : geste
-  // explicite qui remplace le declenchement automatique de verifierFinSerie
-  // dans ce cas precis -- voir le garde ajoute en tete de cette derniere.
-  // Validable a tout moment, meme partiellement repondue (comme "Valider ma
-  // fiche" cote cahiers de calcul) : c'est justement ce qui permet de
-  // valider avant l'echeance sans avoir fini. Ne revele jamais le score
-  // (bilanFicheHTML reste bloque par correctionBloqueeParDevoir tant que les
-  // essais ne sont pas epuises) : seul un accuse de reception neutre est
-  // affiche cote page (voir sujet-blanc.html/fiche.html).
+  // Confirmation dans le style des pop-ups "Devoir" des pages (30/09/2026,
+  // David : plus ergonomique que la boite native du navigateur, affichee en
+  // haut de page). Resout a true sur le bouton d'action, false sur Annuler,
+  // un clic sur le fond ou Echap. Classes .modal-devoir* : automatismes.css.
+  // `annulerConfirmationEnCours` : permet au chrono de refermer une
+  // confirmation restee ouverte quand le temps imparti s'epuise.
+  let annulerConfirmationEnCours = null;
+  function demanderConfirmation(titre, message, libelleAction) {
+    return new Promise((resoudre) => {
+      const fond = document.createElement('div');
+      fond.className = 'modal-devoir';
+      fond.innerHTML = '<div class="modal-devoir-contenu"><p class="modal-devoir-titre"></p><p class="modal-devoir-texte"></p>'
+        + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'
+        + '<button type="button" data-choix="non" style="background:#fff;color:#5F5E5A;border:1.5px solid #ccc;border-radius:8px;padding:10px 22px;font-size:0.95rem;font-weight:600;cursor:pointer;">Annuler</button>'
+        + '<button type="button" class="modal-devoir-ok" data-choix="oui"></button></div></div>';
+      fond.querySelector('.modal-devoir-titre').textContent = titre;
+      fond.querySelector('.modal-devoir-texte').textContent = message;
+      fond.querySelector('[data-choix="oui"]').textContent = libelleAction;
+      const surTouche = (e) => { if (e.key === 'Escape') fermer(false); };
+      const fermer = (choix) => {
+        document.removeEventListener('keydown', surTouche);
+        fond.remove();
+        annulerConfirmationEnCours = null;
+        resoudre(choix);
+      };
+      fond.addEventListener('click', (e) => {
+        const bouton = e.target.closest('[data-choix]');
+        if (bouton) fermer(bouton.dataset.choix === 'oui');
+        else if (e.target === fond) fermer(false);
+      });
+      document.addEventListener('keydown', surTouche);
+      document.body.appendChild(fond);
+      annulerConfirmationEnCours = () => fermer(false);
+      fond.querySelector('[data-choix="oui"]').focus();
+    });
+  }
+
   // Confirmation avant de consommer une tentative (30/09/2026, demande de
   // David) : un clic accidentel comptait sans recours, meme sur une serie
   // vide. `geste` : "Valider" (mode fiche) ou "Terminer le sujet" (mode
   // chrono, meme role -- mais pas le passage automatique en fin de temps).
   function confirmerValidationDevoir(geste) {
     const v = ETAT.config.verrouille;
-    if (!v || v.nbEssaisMax === undefined) return true;
+    if (!v || v.nbEssaisMax === undefined) return Promise.resolve(true);
     const restantes = v.nbEssaisMax - v.essaisUtilises - 1;
-    return confirm(restantes > 0
-      ? `${geste} compte une tentative pour ce devoir (« ${v.titre} ») : il t'en restera ${restantes} ensuite. Continuer ?`
-      : `${geste} compte ta dernière tentative pour ce devoir (« ${v.titre} »). Continuer ?`);
+    const sansReponse = ETAT.reponses.filter(r => r === null).length;
+    const avertissement = sansReponse > 0 ? `${sansReponse} question${sansReponse > 1 ? 's' : ''} sans réponse. ` : '';
+    const message = avertissement + (restantes > 0
+      ? `Cette validation compte une tentative pour le devoir « ${v.titre} » : il t'en restera ${restantes} ensuite.`
+      : `Cette validation compte ta dernière tentative pour le devoir « ${v.titre} ».`);
+    return geste === 'Valider'
+      ? demanderConfirmation('Valider ta série ?', message, 'Valider')
+      : demanderConfirmation('Terminer le sujet ?', message, 'Terminer');
   }
 
+  // "Valider ma serie" (30/09/2026, devoir mode fiche uniquement) : geste
+  // explicite qui remplace le declenchement automatique de verifierFinSerie
+  // dans ce cas precis -- voir le garde ajoute en tete de cette derniere.
+  // Validable a tout moment, meme partiellement repondue (comme "Valider ma
+  // fiche" cote cahiers de calcul) : c'est justement ce qui permet de
+  // valider avant l'echeance sans avoir fini. La note et la correction de
+  // CETTE serie deviennent visibles une fois validee (voir
+  // correctionBloqueeParDevoir et bilanFicheHTML).
   async function validerSerie() {
     if (!ETAT.config.verrouille || ETAT.mode !== 'fiche' || ETAT.serieValidee) return;
     if (typeof ETAT.config.onFinSerie !== 'function') return;
-    if (!confirmerValidationDevoir('Valider')) return;
+    if (!(await confirmerValidationDevoir('Valider'))) return;
     ETAT.serieValidee = true;
     rendre();
     await ETAT.config.onFinSerie(payloadFinSerie());
@@ -866,8 +907,8 @@
   // dessus), meme principe que genererNouvelleFiche() cote cahiers de calcul.
   function confirmerNouvelleSerieDevoir() {
     const v = ETAT.config.verrouille;
-    if (!v) return true;
-    return confirm(`Générer une nouvelle série remplace celle-ci par une nouvelle : ce sera une nouvelle tentative pour ce devoir (« ${v.titre} », ${v.essaisUtilises}/${v.nbEssaisMax} tentative${v.essaisUtilises > 1 ? 's' : ''} déjà utilisée${v.essaisUtilises > 1 ? 's' : ''}). Continuer ?`);
+    if (!v) return Promise.resolve(true);
+    return demanderConfirmation('Nouvelle série ?', `Générer une nouvelle série remplace celle-ci par une nouvelle : ce sera une nouvelle tentative pour le devoir « ${v.titre} » (${v.essaisUtilises}/${v.nbEssaisMax} tentative${v.essaisUtilises > 1 ? 's' : ''} déjà utilisée${v.essaisUtilises > 1 ? 's' : ''}). La série actuelle et son éventuel enregistrement seront perdus.`, 'Générer');
   }
 
   // "Enregistrer mon avancement" (30/09/2026, devoir mode fiche uniquement) :
@@ -1023,7 +1064,7 @@
       <p>${aRevoir.length > 0
         ? `${aRevoir.length} question${aRevoir.length > 1 ? 's' : ''} sans réponse : n°${aRevoir.map(k => k + 1).join(', n°')}.`
         : 'Toutes les questions ont une réponse.'}</p>
-      ${ETAT.duree > 0 ? `<p>Temps restant : ${formatTemps(globalRestant)}.</p>` : ''}
+      ${ETAT.duree > 0 ? `<p>Temps restant : <b id="recap-temps">${formatTemps(globalRestant)}</b> — le chrono continue de tourner.</p>` : ''}
     </div>
     <div class="barre-controle">
       ${dispoReprise ? `<button class="btn-principal" data-action="reprendre">Reprendre les questions sans réponse</button>` : ''}
@@ -1047,7 +1088,41 @@
     rendre();
   }
 
+  // Ecran de reprise (30/09/2026, retour de David) : le temps global continue
+  // de s'ecouler pendant que l'eleve lit cet ecran -- avant, le chrono
+  // s'arretait entre deux passes, laissant tout le temps voulu pour
+  // reflechir hors minuteur. Compte a rebours affiche en direct ; a zero, le
+  // sujet se termine tout seul, comme a l'expiration d'une question (et
+  // referme une eventuelle confirmation "Terminer le sujet" restee ouverte).
+  function lancerMinuteurRecap() {
+    arreterChrono();
+    const c = ETAT.chrono;
+    if (ETAT.duree === 0) return;
+    c.debutRecap = Date.now();
+    c.timer = setInterval(() => {
+      const restant = tempsGlobalRestant() - (Date.now() - c.debutRecap) / 1000;
+      const t = document.getElementById('recap-temps');
+      if (t) { t.textContent = formatTemps(restant); t.classList.toggle('alerte', restant <= 10); }
+      if (restant <= 0) {
+        if (annulerConfirmationEnCours) annulerConfirmationEnCours();
+        terminerSerie();
+      }
+    }, 200);
+  }
+
+  // Quitte l'ecran de reprise : le temps passe dessus est decompte du budget
+  // global (tempsTotal), puis le minuteur de l'ecran est arrete.
+  function quitterRecap() {
+    const c = ETAT.chrono;
+    if (c.debutRecap) {
+      c.tempsTotal += (Date.now() - c.debutRecap) / 1000;
+      c.debutRecap = 0;
+    }
+    arreterChrono();
+  }
+
   function reprendreQuestionsPassees() {
+    quitterRecap();
     const c = ETAT.chrono;
     c.file = ETAT.questions.map((_, i) => i).filter(i => ETAT.reponses[i] === null);
     c.filePos = 0;
@@ -1059,7 +1134,7 @@
   }
 
   function terminerSerie() {
-    arreterChrono();
+    quitterRecap();
     const c = ETAT.chrono;
     c.phase = 'fin';
     // Joue, en mode chrono, le meme role que le clic explicite sur "Valider
@@ -1082,6 +1157,7 @@
     if (!aRevoir || tempsGlobalRestant() <= 0) { terminerSerie(); return; }
     ETAT.chrono.phase = 'recap';
     rendre();
+    lancerMinuteurRecap();
   }
 
   function lancerMinuteur() {
@@ -1143,15 +1219,17 @@
       else if (action === 'opt') clicOption(Number(cible.dataset.q), Number(cible.dataset.k));
       else if (action === 'reponses') basculerReponses();
       else if (action === 'recommencer') recommencer();
-      else if (action === 'nouvelle') { if (confirmerNouvelleSerieDevoir()) nouvelleSerie(); }
-      else if (action === 'nouvelle-memes-themes') { if (confirmerNouvelleSerieDevoir()) nouvelleSerieMemeThemes(); }
+      else if (action === 'nouvelle') confirmerNouvelleSerieDevoir().then((ok) => { if (ok) nouvelleSerie(); });
+      else if (action === 'nouvelle-memes-themes') confirmerNouvelleSerieDevoir().then((ok) => { if (ok) nouvelleSerieMemeThemes(); });
       else if (action === 'enregistrer-serie') enregistrerSerieDevoir(cible);
       else if (action === 'valider-serie') validerSerie();
       else if (action === 'demarrer-chrono') demarrerChrono();
       else if (action === 'valider') avancer(false);
       else if (action === 'passer') { ETAT.chrono.choix = null; avancer(false); }
       else if (action === 'reprendre') reprendreQuestionsPassees();
-      else if (action === 'terminer-serie') { if (confirmerValidationDevoir('Terminer le sujet')) terminerSerie(); }
+      // phase re-verifiee apres la confirmation : le chrono de l'ecran de
+      // reprise a pu terminer le sujet entre-temps (voir lancerMinuteurRecap).
+      else if (action === 'terminer-serie') confirmerValidationDevoir('Terminer le sujet').then((ok) => { if (ok && ETAT.chrono.phase === 'recap') terminerSerie(); });
       else if (action === 'basculer-revue') {
         if (correctionBloqueeParDevoir()) return; // devoir en cours, essais pas encore epuises -- voir vueChronoHTML
         const rev = document.getElementById('revue');

@@ -4240,6 +4240,76 @@ de changer ce réglage sans qu'il en reparle.
   toujours la note (`ETAT.serieValidee`), y compris pour la dernière
   tentative après retour en entraînement libre.
 
+- **Trois améliorations après le test réel de David (30/09/2026)** — « Cela
+  fonctionne plutôt très bien. Quelques améliorations : »
+
+  1. **Section « Enregistrés » dans `/mes-devoirs/`**, entre « À faire » et
+     « Faits ». Nouveau module partagé `assets/js/devoirs-eleve.js`
+     (`chargerDevoirsEleve`), utilisé par `mes-devoirs.js` ET
+     `devoirs-notification.js` (pastille des pages d'entrée) pour qu'ils
+     comptent exactement la même chose. Classement :
+     - *Enregistrés* : échéance à venir, essais non épuisés, brouillon en
+       cours (`brouillons/{ficheId}` pour une fiche de calcul,
+       `brouillonsAutomatismes/{devoirId}` pour les automatismes) ;
+     - *À faire* : échéance à venir, essais non épuisés, rien rendu, rien
+       enregistré ;
+     - *Faits* : tout le reste. **Changement de sens voulu par David** :
+       un devoir passe dans « Faits » dès sa première tentative validée
+       (« lorsque ces devoirs sont validés, les faire passer dans devoirs
+       faits »), et non plus seulement une fois les essais épuisés ou
+       l'échéance passée. Un devoir rendu mais encore ouvert y reste
+       cliquable (« encore N tentatives possibles avant le … ») pour
+       permettre d'améliorer sa note.
+     La pastille compte « À faire » + « Enregistrés » (plus les devoirs
+     déjà rendus avec des essais restants). `mes-devoirs.js` supprime au
+     passage (`nettoyerBrouillons`) tout brouillon qui n'est plus rattaché
+     à un devoir ouvert — échéance passée sans validation (demande de David :
+     « s'ils ne sont pas terminés à la date limite, les supprimer »), devoir
+     supprimé, ou vieux brouillon d'entraînement d'avant le 29/09/2026. Une
+     seule requête par collection (tentatives, brouillons) au lieu d'une
+     requête de tentatives par devoir.
+  2. **Confirmations dans le style du pop-up « Devoir »** au lieu de la
+     boîte native du navigateur (affichée en haut de page, jugée peu
+     ergonomique) : `demanderConfirmationDevoir()` dans les 52 fiches et
+     `demanderConfirmation()` dans `moteur.js`, fenêtre construite à la
+     volée avec les classes `.modal-devoir*` existantes (aucun balisage à
+     ajouter), boutons « Annuler » + action ; Échap et clic sur le fond
+     annulent. Utilisées pour Valider (fiche / série), Terminer le sujet, et
+     aussi Générer une nouvelle version / série (même boîte native).
+     `genererNouvelleFiche()` devient asynchrone (seul appelant : le bouton).
+     Côté automatismes, le message indique le nombre de questions sans
+     réponse.
+  3. **Mode chrono : le temps continue de s'écouler sur l'écran de reprise**
+     (« Reprendre les questions sans réponse ») — avant, le chrono
+     s'arrêtait entre deux passes. `lancerMinuteurRecap()` : compte à
+     rebours en direct (« le chrono continue de tourner », rouge sous 10 s) ;
+     `quitterRecap()` décompte le temps passé sur l'écran du budget global à
+     la reprise ou à la fin ; à zéro, le sujet se termine tout seul et
+     referme une éventuelle confirmation « Terminer le sujet ? » restée
+     ouverte (phase revérifiée après la confirmation pour ne jamais
+     terminer deux fois). S'applique aussi à l'entraînement libre.
+
+  **Propagation aux 52 fiches** : nouveau script Node
+  (`.claude/scratch/propager.js` + fichier de blocs JSON) qui prend l'ancien
+  texte dans la version committée du pilote (`git show HEAD:…`), compare
+  sans tenir compte des fins de ligne, vérifie tout avant d'écrire — plus
+  aucun piège d'encodage PowerShell. Vérifié : `vm.Script` 52/52, 52/52
+  sur chaque changement, plus aucun `confirm()` natif dans les fiches ni
+  dans les automatismes.
+
+  **Tests** : confirmations et chrono de reprise dans le navigateur (devoir
+  simulé : Annuler/Échap sans effet, confirmation fermée automatiquement à
+  l'expiration, une seule tentative comptée) ; section « Enregistrés » avec
+  une vraie session `demo-eleve` (reconnectée par David) sur 6 cas préparés
+  en base (à faire, enregistré fiche/automatismes, rendu puis réenregistré,
+  rendu 1/2, échu avec brouillon) + un brouillon orphelin — classement
+  exact, brouillons périmés supprimés ; puis vrai parcours fiche de calcul
+  et sujet blanc (enregistrer → « Enregistrés », reprise depuis le tableau
+  de bord, validation par la fenêtre stylée → « Faits »), pastille à jour.
+  Données de test supprimées ensuite (y compris 8 tentatives orphelines
+  laissées par les tests de David du matin sur des devoirs qu'il avait
+  supprimés — sauvegarde JSON conservée).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

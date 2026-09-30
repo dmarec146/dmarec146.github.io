@@ -1,53 +1,36 @@
-// Tableau de bord eleve : /mes-devoirs/ (19/09/2026). Deux listes -- "A
-// faire" (echeance active ET essais pas epuises, triee par echeance la
-// plus proche) et "Faits" (le reste : echeance passee OU essais epuises,
-// triee par derniere activite la plus recente) -- sur le meme principe que
-// devoirs-notification.js (bloc + pastille sur les pages d'entree), mais
-// en detail complet ici plutot qu'un simple compteur.
+// Tableau de bord eleve : /mes-devoirs/ (19/09/2026). Trois listes depuis le
+// 30/09/2026 (demande de David) -- "A faire", "Enregistres" (commences et
+// sauvegardes, pas encore valides) et "Faits" ; voir devoirs-eleve.js pour
+// le classement exact, partage avec la pastille des pages d'entree
+// (devoirs-notification.js). Un devoir enregistre passe dans "Faits" des
+// qu'il est valide ; s'il n'est pas termine a l'echeance, son brouillon est
+// supprime (nettoyerBrouillons) et il apparait dans "Faits" comme non rendu.
 //
 // Page reservee a un compte eleve connecte : redirige vers /connexion/
-// sinon, meme garde que tableau-de-bord.js pour l'enseignant.
+// sinon.
 
-import { auth, db } from './firebase-config.js';
+import { auth } from './firebase-config.js';
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-
-// Meme sentinelle que suivi.js/devoirs.js/devoirs-notification.js.
-const CLASSE_HORS_CLASSE = 'hors-classe';
+import { chargerDevoirsEleve } from './devoirs-eleve.js';
 
 const zoneChargement = document.getElementById('md-chargement');
 const zoneErreur = document.getElementById('md-erreur');
 const zoneContenu = document.getElementById('md-contenu');
-const listeAFaire = document.getElementById('md-a-faire-liste');
-const videAFaire = document.getElementById('md-a-faire-vide');
-const nbAFaire = document.getElementById('md-a-faire-nb');
-const listeFaits = document.getElementById('md-faits-liste');
-const videFaits = document.getElementById('md-faits-vide');
-const nbFaits = document.getElementById('md-faits-nb');
 
 function echapper(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-function formaterEcheance(millis) {
+function formaterDate(millis) {
   return new Date(millis).toLocaleString('fr-FR', {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
   });
 }
 
-// Meme principe que dans devoirs-notification.js : une fiche pointe
-// directement dessus (ficheId, chemin absolu). Un devoir d'automatismes n'a
-// qu'une seule page qui se verrouille elle-meme sur le devoir en cours --
-// sujet-blanc.html (cible absente ou 'sujet-blanc', comportement d'origine)
-// ou fiche.html (cible:'fiche', 28/09/2026 -- fiche d'automatismes ciblee
-// sur des themes choisis, voir devoirs.js et suivi.js).
+// Une fiche pointe directement dessus (ficheId, chemin absolu). Un devoir
+// d'automatismes n'a qu'une seule page qui se verrouille elle-meme sur le
+// devoir en cours : sujet-blanc.html (cible absente ou 'sujet-blanc') ou
+// fiche.html (cible 'fiche').
 function lienPour(devoir) {
   if (devoir.type === 'fiche') return devoir.ficheId;
   return devoir.cible === 'fiche' ? '/automatismes/premiere/fiche.html' : '/automatismes/premiere/sujet-blanc.html';
@@ -57,35 +40,24 @@ function titreDevoir(devoir) {
   return devoir.titre || devoir.ficheId || 'Devoir';
 }
 
-function rendreAFaire(liste) {
-  listeAFaire.innerHTML = '';
-  videAFaire.hidden = liste.length > 0;
-  nbAFaire.textContent = liste.length ? `(${liste.length})` : '';
-  for (const d of liste) {
-    const restantes = d.nbEssaisMax - d.essaisUtilises;
-    const li = document.createElement('li');
-    li.innerHTML = `<a class="md-item md-item-lien" href="${lienPour(d)}">
-      <span class="md-item-titre">${echapper(titreDevoir(d))}</span>
-      <span class="md-item-meta">À rendre avant le ${formaterEcheance(d.echeanceMillis)} — ${restantes} tentative${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}</span>
-    </a>`;
-    listeAFaire.appendChild(li);
-  }
+const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+
+function note(d) {
+  return `${(Math.round(d.meilleure.score * 10) / 10).toLocaleString('fr-FR')} / ${d.meilleure.totalExercices}`;
 }
 
-function rendreFaits(liste) {
-  listeFaits.innerHTML = '';
-  videFaits.hidden = liste.length > 0;
-  nbFaits.textContent = liste.length ? `(${liste.length})` : '';
+function remplir(section, liste, meta, estLien) {
+  const ul = document.getElementById(`md-${section}-liste`);
+  ul.innerHTML = '';
+  document.getElementById(`md-${section}-vide`).hidden = liste.length > 0;
+  document.getElementById(`md-${section}-nb`).textContent = liste.length ? `(${liste.length})` : '';
   for (const d of liste) {
-    const noteTxt = d.meilleure
-      ? `${(Math.round(d.meilleure.score * 10) / 10).toLocaleString('fr-FR')} / ${d.meilleure.totalExercices}`
-      : 'Non rendu';
     const li = document.createElement('li');
-    li.innerHTML = `<div class="md-item md-item-fait">
-      <span class="md-item-titre">${echapper(titreDevoir(d))}</span>
-      <span class="md-item-meta">${noteTxt} — ${d.nbEssaisAvantEcheance} tentative${d.nbEssaisAvantEcheance > 1 ? 's' : ''}</span>
-    </div>`;
-    listeFaits.appendChild(li);
+    const contenu = `<span class="md-item-titre">${echapper(titreDevoir(d))}</span><span class="md-item-meta">${meta(d)}</span>`;
+    li.innerHTML = estLien(d)
+      ? `<a class="md-item md-item-lien" href="${lienPour(d)}">${contenu}</a>`
+      : `<div class="md-item md-item-fait">${contenu}</div>`;
+    ul.appendChild(li);
   }
 }
 
@@ -95,57 +67,34 @@ onAuthStateChanged(auth, async (utilisateur) => {
     return;
   }
   try {
-    const profil = await getDoc(doc(db, 'eleves', utilisateur.uid));
-    if (!profil.exists()) {
+    const resultat = await chargerDevoirsEleve(utilisateur.uid, { nettoyerBrouillons: true });
+    if (!resultat) {
       zoneChargement.hidden = true;
       zoneErreur.textContent = "Ce compte n'est pas associé à une classe élève.";
       zoneErreur.hidden = false;
       return;
     }
-    // Meme sentinelle que suivi.js/devoirs.js : un eleve "hors classe" doit
-    // quand meme pouvoir voir un devoir qui le cible individuellement (voir
-    // le filtre `eleves` juste apres) -- avant le 24/09/2026, cette page
-    // affichait a tort le message "pas associe a une classe" pour lui.
-    const classe = profil.data().classe || CLASSE_HORS_CLASSE;
 
-    const instantaneDevoirs = await getDocs(query(collection(db, 'devoirs'), where('classe', '==', classe)));
-    // Ciblage individuel d'un devoir "Hors classe" (24/09/2026, voir
-    // devoirs.js) : un devoir dont `eleves` existe ne concerne que les uid
-    // qu'il liste, pas tout le groupe.
-    const devoirs = instantaneDevoirs.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((d) => !Array.isArray(d.eleves) || d.eleves.includes(utilisateur.uid));
-    const maintenant = Date.now();
+    remplir('a-faire', resultat.aFaire,
+      (d) => `À rendre avant le ${formaterDate(d.echeanceMillis)} — ${pluriel(d.restantes, 'tentative')} restante${d.restantes > 1 ? 's' : ''}`,
+      () => true);
 
-    const avecStatut = await Promise.all(devoirs.map(async (dv) => {
-      const instantaneTentatives = await getDocs(query(
-        collection(db, 'eleves', utilisateur.uid, 'devoirsTentatives'),
-        where('devoirId', '==', dv.id)
-      ));
-      const tentatives = instantaneTentatives.docs.map((t) => t.data());
-      const echeanceMillis = dv.echeance?.toMillis ? dv.echeance.toMillis() : 0;
-      const actif = echeanceMillis > maintenant;
-      const essaisUtilises = tentatives.length;
-      const epuise = essaisUtilises >= dv.nbEssaisMax;
+    remplir('enregistres', resultat.enregistres,
+      (d) => `Enregistré${d.enregistreMillis ? ` le ${formaterDate(d.enregistreMillis)}` : ''} — à terminer et valider avant le ${formaterDate(d.echeanceMillis)}`
+        + (d.meilleure ? ` — meilleure note : ${note(d)}` : '')
+        + ` — ${pluriel(d.restantes, 'tentative')} restante${d.restantes > 1 ? 's' : ''}`,
+      () => true);
 
-      // Meilleure tentative AVANT l'echeance (meme regle que la vue
-      // resultats de l'enseignant, devoirs.js) : une tentative apres
-      // l'echeance est un entrainement libre, jamais une note.
-      const avantEcheance = tentatives
-        .map((t) => ({ ...t, millis: t.horodatage?.toMillis ? t.horodatage.toMillis() : 0 }))
-        .filter((t) => t.millis > 0 && t.millis <= echeanceMillis);
-      let meilleure = null;
-      for (const t of avantEcheance) { if (!meilleure || t.score > meilleure.score) meilleure = t; }
-      const derniereActivite = tentatives.reduce((max, t) => Math.max(max, t.horodatage?.toMillis ? t.horodatage.toMillis() : 0), 0);
+    // Un devoir rendu mais encore ouvert (echeance a venir, essais restants)
+    // reste cliquable : l'eleve peut retenter pour ameliorer sa note.
+    remplir('faits', resultat.faits,
+      (d) => {
+        if (!d.meilleure) return `Non rendu — ${pluriel(d.nbEssaisAvantEcheance, 'tentative')}`;
+        if (d.ouvert) return `Meilleure note : ${note(d)} — encore ${pluriel(d.restantes, 'tentative')} possible${d.restantes > 1 ? 's' : ''} avant le ${formaterDate(d.echeanceMillis)}`;
+        return `${note(d)} — ${pluriel(d.nbEssaisAvantEcheance, 'tentative')}`;
+      },
+      (d) => d.ouvert);
 
-      return { ...dv, echeanceMillis, essaisUtilises, actif, epuise, meilleure, nbEssaisAvantEcheance: avantEcheance.length, derniereActivite };
-    }));
-
-    const aFaire = avecStatut.filter((d) => d.actif && !d.epuise).sort((a, b) => a.echeanceMillis - b.echeanceMillis);
-    const faits = avecStatut.filter((d) => !(d.actif && !d.epuise)).sort((a, b) => b.derniereActivite - a.derniereActivite);
-
-    rendreAFaire(aFaire);
-    rendreFaits(faits);
     zoneChargement.hidden = true;
     zoneContenu.hidden = false;
   } catch (erreur) {
