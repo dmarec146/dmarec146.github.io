@@ -4347,13 +4347,15 @@ de changer ce réglage sans qu'il en reparle.
        place sur `.clavier-visuel` pour ces champs.
   2. **Accolades** : le clavier MathLive (bouton ⌨ des champs en mode
      `manual`, le « clavier MathType » de David) n'a que ( ) et [ ].
-     Nouveau fichier partagé `assets/js/clavier-mathlive.js`, chargé juste
-     après `unpkg.com/mathlive` dans les 52 fiches : part des dispositions
-     normalisées de MathLive et remplace, sur la couche « 123 », la touche
-     intégrale par **{** (Maj : ∅) et **∀** par **}** (Maj : ;) — deux
-     touches hors programme. Si MathLive change et que ces deux touches ne
-     sont pas trouvées, rien n'est modifié (le script MathLive est chargé
-     sans numéro de version). Saisie `\{1;2\}` → lue `{1;2}` → acceptée par
+     Nouveau fichier partagé (d'abord `assets/js/clavier-mathlive.js`,
+     renommé `assets/js/claviers.js` le jour même, voir l'entrée suivante),
+     chargé juste après `unpkg.com/mathlive` dans les 52 fiches : part des
+     dispositions normalisées de MathLive et remplace, sur la couche « 123 »,
+     la touche intégrale par **{** (Maj : ∅) et **∀** par **}** (Maj : ;).
+     *Corrigé le jour même, entrée suivante : l'intégrale à bornes était
+     perdue.* Si MathLive change et que ces touches ne sont pas trouvées,
+     rien n'est modifié (le script MathLive est chargé sans numéro de
+     version). Saisie `\{1;2\}` → lue `{1;2}` → acceptée par
      `checkEnsemble`.
      Inventaire au passage (les 52 fiches chargées une à une, réponse
      attendue commençant par `{`) : aucune question « ensemble » n'utilise en
@@ -4374,6 +4376,55 @@ de changer ce réglage sans qu'il en reparle.
   `{` a/b √ 5 → racine dans le numérateur, `;` et « ← Suppr. » au
   curseur), clavier MathLive avec { } sur les fiches 01 de Première et 14
   de Seconde, sans erreur console.
+
+- **Claviers : quatre opérations partout, intégrale rétablie (30/09/2026)**
+  — deux retours de David sur l'entrée précédente.
+
+  1. **« Le clavier simplifié doit toujours comporter les quatre opérations
+     élémentaires (la division permet d'écrire des fractions) »**.
+     Inventaire des 526 claviers des 52 fiches (chargées une à une) : les
+     claviers complets (groupe « Opérations ») avaient déjà + − × ÷, mais
+     les claviers spécialisés non — intervalles (+ × ÷ absents), ensembles
+     et cercle en champ mathématique (× ÷), valeur absolue, pourcentages
+     (Seconde 10 : pas de +), écriture f(x) de Seconde 14/17, clavier
+     « Chiffres/Ensemble » de Première 14, 24 et Seconde 06, 14–20…
+     Plutôt que de retoucher chaque variante de générateur (une dizaine,
+     réparties sur les 52 fiches), le fichier partagé
+     `assets/js/clavier-mathlive.js` devient **`assets/js/claviers.js`**
+     (52 balises `<script>` mises à jour) et complète les claviers dans le
+     DOM, à chaque (re)génération (MutationObserver, un passage par image) :
+     - touches manquantes ajoutées dans le groupe qui contient déjà +, ×, ÷
+       (sinon a/b, sinon √, sinon −), à leur place dans l'ordre + − × ÷ ;
+       sinon nouveau groupe « Opérations » avant l'astuce ou avant le groupe
+       Effacer ;
+     - ancienne touche « / » (Première 14, 24, Seconde 06) remplacée sur
+       place par ÷ ;
+     - champ texte : `inserer(idx, …)` avec `*` et `/`, comme les claviers
+       complets ; champ mathématique : `insererMath` si la fiche l'a, sinon
+       `inserer` (qui gère alors le `<math-field>`), avec `\times` (lu
+       `2 * 3`) et `\frac{#@}{#?}` pour ÷ (le nombre qui précède devient le
+       numérateur, curseur au dénominateur : 3 ÷ 4 → `\frac34`) ;
+     - claviers sans rien de numérique laissés tels quels : QCM a/b/c/d,
+       vrai/faux, oui/non.
+  2. **« On a perdu la possibilité d'écrire une intégrale avec ses
+     bornes ? »** — oui (en Maj ne restait qu'un ∫ sans bornes). Désormais
+     la touche intégrale d'origine, bornes comprises, est déplacée à la
+     place du « i » des nombres complexes (hors programme de Seconde/
+     Première) ; **{** et **}** occupent les places de l'intégrale et de
+     ∀. ∀ et ∃ restent disponibles sur la couche « ∞≠∈ ». Écarté : une
+     seule touche « {▢} » — laissée vide pour l'ensemble vide, elle serait
+     lue `{()}` au lieu de `{}` et refusée.
+
+  Vérifié : `vm.Script` 52/52, `node --check` sur `claviers.js` ; nouvel
+  inventaire des 526 claviers → plus aucune opération manquante hors
+  QCM/vrai-faux/oui-non, aucune erreur ; saisie 6 ÷ 3 × 2 + 1 − 5 par les
+  touches sur 11 claviers différents (texte et mathématiques, Seconde 06,
+  10, 13, 14, Première 09) → toujours lue et évaluée à 0 ; vrais clics sur
+  le champ ensemble de Première 01 (`{3 ÷ 4` → `\{\frac34`) ; claviers
+  toujours complets après « Générer une nouvelle fiche » ; clavier
+  MathLive : intégrale à bornes insérée
+  (`\int_0^{\infty}\!\placeholder{}\,\mathrm{d}x`), { } fonctionnels ;
+  aucune erreur console.
 
 ## Procédure de reprise sur une autre machine
 
