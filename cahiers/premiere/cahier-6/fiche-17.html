@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Fiche 5 — Polynômes II (Première) — interactif</title>
+<title>Fiche 17 — Probabilités (Première) — interactif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
@@ -306,7 +306,6 @@ window.MathJax = {
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
-  .q-lettre:empty { display: none; }
   .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
   .q-enonce { font-size: 15px; flex: 1 1 auto; min-width: 140px; }
   .q-qcm-options {
@@ -319,6 +318,61 @@ window.MathJax = {
     flex-basis: 100%;
     margin: 6px 0 2px 0;
     padding: 8px 6px;
+  }
+  .q-qcm-options-wrapper {
+    position: relative;
+    width: 100%;
+    flex-basis: 100%;
+    padding-right: 0;
+  }
+  .q-qcm-options-wrapper--scroll {
+    padding-right: 32px;
+  }
+  .q-qcm-options-wrapper--scroll::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, transparent, #fff 55%);
+    pointer-events: none;
+  }
+  .q-qcm-options-wrapper--scroll::after {
+    content: "→";
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: #7b6fd4;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .q-qcm-options--scroll {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .q-qcm-options--scroll::-webkit-scrollbar {
+    height: 5px;
+  }
+  .q-qcm-options--scroll::-webkit-scrollbar-thumb {
+    background: #b3aef0;
+    border-radius: 3px;
+  }
+  .q-qcm-options--scroll::-webkit-scrollbar-track {
+    background: transparent;
   }
   .q-qcm-option {
     display: inline-flex;
@@ -410,8 +464,8 @@ window.MathJax = {
     flex: 0 0 auto;
     line-height: 1;
     padding: 0;
-    vertical-align: middle;
     margin-left: 6px;
+    vertical-align: middle;
   }
   .q-aide-btn:hover { background: var(--bleu); color: white; }
   .q-aide-bulle {
@@ -586,9 +640,12 @@ window.MathJax = {
       grid-template-columns: 1fr 1fr;
       gap: 14px 20px;
     }
+    /* section a une seule question (ex. 19.20, 19.23) : inutile de reserver une colonne vide a
+       cote -- la carte prend toute la largeur (David, 2026-09-22, porte depuis la fiche 19 de
+       Seconde). */
+    .question-pleine-largeur { grid-column: 1 / -1; }
+    .question-pleine-largeur .q-mathfield { max-width: 340px; }
     .q-input { width: 150px; flex: 0 0 150px; }
-    .question-seule { grid-column: 1 / -1; }
-    .question-seule .q-mathfield { max-width: 340px; }
     .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
     .btn-principal, .btn-secondaire { width: auto; }
     .mode-label { width: auto; margin-right: 4px; }
@@ -630,6 +687,47 @@ window.MathJax = {
   .figure-centree svg.qcm-svg {
     max-width: 220px;
   }
+  /* ---------- Arbres en grand + zoom au clic -- porte depuis la fiche 19 de Seconde (David,
+     2026-09-22 : "les arbres exactement comme en Seconde, avec zoom"). ---------- */
+  .svg-police-manuel { font-family: 'Cambria Math', Cambria, Georgia, serif; }
+  svg.svg-agrandissable { cursor: zoom-in; }
+  svg.svg-agrandissable:hover { outline: 2px solid var(--bleu-clair); outline-offset: 2px; }
+  .modal-svg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 25, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .modal-svg-overlay.ouvert { display: flex; }
+  .modal-svg-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 32px 14px 14px;
+    width: min(96vw, 800px);
+    max-height: 94vh;
+    overflow: auto;
+    cursor: default;
+  }
+  .modal-svg-contenu svg { display: block; margin: 0 auto; width: 100%; height: auto; }
+  .modal-svg-fermer {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-svg-fermer:hover { color: var(--rouge); }
   .qcm-options {
     display: flex;
     flex-direction: column;
@@ -647,13 +745,14 @@ window.MathJax = {
     min-width: 18px;
   }
   .qcm-grille-figures {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
     margin-bottom: 8px;
   }
-  @media (min-width: 500px) {
-    .qcm-grille-figures { grid-template-columns: repeat(4, 1fr); }
+  .qcm-grille-figures > div {
+    flex: 0 1 160px;
   }
   .qcm-figure-label {
     text-align: center;
@@ -815,20 +914,27 @@ window.MathJax = {
 
 <body>
 
-<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 1</a></p>
+<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
+  <div class="modal-svg-contenu">
+    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
+    <div id="modal-svg-contenu-interieur"></div>
+  </div>
+</div>
+
+<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 6</a></p>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <a class="nav-btn" href="fiche-04.html">&larr; Fiche précédente</a>
+  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
-  <div class="badge">5</div>
+  <div class="badge">17</div>
   <div class="entete-texte">
-    <h1>Polynômes II</h1>
-    <p class="cahier-repere">Première — Cahier 1</p>
+    <h1>Probabilités</h1>
+    <p class="cahier-repere">Première — Cahier 6</p>
   </div>
 </div>
 <div class="filet"></div>
@@ -842,66 +948,120 @@ window.MathJax = {
   <span class="mode-explication" id="mode-explication"></span>
 </div>
 
-<div class="remarque-generale">
-  <strong>Remarque</strong>
-  Dans cette fiche, on présente, à travers des exemples, différentes techniques pour factoriser un polynôme. Le but est d'éviter de calculer le discriminant.<br>
-  Ainsi, dans tous les calculs proposés, on cherchera à répondre sans calculer de discriminant.
-</div>
-
 <div class="bloc-general">
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 5.1 — Soit a ∈ ℝ. Développer et ordonner les expressions suivantes.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
-<div class="question-grille" id="grille-5-1"></div>
+<p class="calcul-titre"><span>Calcul 17.1 — Calculer :</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<div class="question-grille" id="grille-17-1"></div>
 
-<p class="calcul-titre"><span>Calcul 5.2 — Factoriser les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="rappel-formule">Soient \(a,b\in\mathbb{R}\). On rappelle que \(a^2-b^2=(a+b)(a-b)\).</div>
-<div class="question-grille" id="grille-5-2"></div>
+<p class="calcul-titre"><span>Calcul 17.2 — Soient \(p\) et \(a\) des nombres réels. Simplifier les expressions :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-2"></div>
 </div>
 
-<p class="section-titre">Premières factorisations</p>
+<p class="section-titre">Calculs de probabilités</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 5.3 — Factorisez ! En reconnaissant des facteurs communs.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-5-3"></div>
+<p class="calcul-titre"><span>Calcul 17.3 — Avec un tableau de probabilités.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>On donne le tableau de probabilités suivant :</p><table id="table-17-4" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
+<p>Calculer les probabilités suivantes. On donnera les résultats sous forme décimale.</p>
+<div class="question-grille" id="grille-17-3"></div>
 
-<p class="calcul-titre"><span>Calcul 5.4 — Factorisez, encore ! En utilisant des identités remarquables.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-5-4"></div>
+<p class="calcul-titre"><span>Calcul 17.4 — Avec un tableau d'effectifs.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>On donne le tableau d'effectifs suivant :</p><table id="table-17-5" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
+<p>Calculer les probabilités suivantes. On donnera les résultats sous forme de fraction irréductible.</p>
+<div class="question-grille" id="grille-17-4"></div>
 
-<p class="calcul-titre"><span>Calcul 5.5 — Facteurs communs et identités remarquables. Factoriser les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-5-5"></div>
-
-<p class="section-titre">En utilisant les racines</p>
+<p class="section-titre">Avec des probabilités conditionnelles</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 5.6 — Une méthode fondamentale.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="rappel-formule">Cas <strong>unitaire</strong> (coefficient dominant égal à 1) : si les racines du polynôme \(P=x^2+bx+c\) sont \(\alpha\) et \(\beta\), alors on a \(\alpha+\beta=-b\) et \(\alpha\beta=c\).</div>
-<div class="rappel-formule">Cas <strong>non unitaire</strong> (coefficient dominant différent de 1) : si \(P=ax^2+bx+c\), avec \(a\in\mathbb{R}^*\), est un polynôme dont les racines sont \(\alpha\) et \(\beta\), alors on a \(\alpha+\beta=-\dfrac{b}{a}\) et \(\alpha\beta=\dfrac{c}{a}\).</div>
-<div class="question-grille" id="grille-5-6"></div>
+<p class="calcul-titre"><span id="titre-17-6">Calcul 17.5 — On considère deux événements \(A\) et \(B\) tels que \(P(\overline{A})=0{,}3\) et \(P(\overline{A}\cap B)=0{,}15\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-5"></div>
 
-<p class="calcul-titre"><span>Calcul 5.7 — Avec des racines entières visibles. Factoriser les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-5-7"></div>
+<p class="calcul-titre"><span>Calcul 17.6 — Avec un tableau dans un cas concret.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-17-7">On a interrogé 500 personnes sur leurs loisirs. Les choix proposés étaient le ski et la randonnée. Parmi les personnes interrogées, 125 personnes font du ski, un cinquième des skieurs font aussi de la randonnée et 300 personnes ne font ni ski ni randonnée.</p>
+<p>On note <em>R</em> : « la personne fait de la randonnée » et <em>S</em> : « la personne fait du ski ». Calculer les probabilités suivantes. On donnera les résultats sous forme de fraction irréductible.</p>
+<div class="question-grille" id="grille-17-6"></div>
 
-<p class="calcul-titre"><span>Calcul 5.8 — À la recherche des coefficients.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-5-8"></div>
+<p class="calcul-titre"><span>Calcul 17.7 — Soit \(n\in\mathbb{N}^*\). On donne le tableau d'effectifs suivant :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table style="border-collapse:collapse;margin:12px auto;font-size:16px;">
+<tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>A</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>\(\overline{A}\)</em></td></tr>
+<tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>B</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n^2\)</td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(2n+2n^2\)</td></tr>
+<tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>\(\overline{B}\)</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n\)</td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n+n^2\)</td></tr>
+</table>
+<p>Calculer les probabilités suivantes. On s'efforcera de simplifier le plus possible les résultats.</p>
+<div class="question-grille" id="grille-17-7"></div>
 
-<p class="section-titre">En degré plus élevé</p>
+<p class="calcul-titre"><span>Calcul 17.8 — Avec un arbre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="arbre-17-9"></div>
+<p>Calculer :</p>
+<div class="question-grille" id="grille-17-8"></div>
+
+<p class="calcul-titre"><span id="titre-17-10">Calcul 17.9 — Avec des probabilités conditionnelles (I). On donne \(P(A)=0{,}45\) et \(P_A(B)=0{,}6\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-9"></div>
+
+<p class="calcul-titre"><span id="titre-17-11">Calcul 17.10 — Avec des probabilités conditionnelles (II). On donne \(P(A)=0{,}05\) ainsi que \(P(B)=0{,}1\) et \(P_A(B)=0{,}8\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-10"></div>
+
+<p class="calcul-titre"><span>Calcul 17.11 — Avec un arbre dans un cas concret.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-17-12">On a interrogé un grand nombre de personnes sur leurs habitudes musicales. 30% de la population interrogée est composée de mineurs. 20% des mineurs écoutent de la musique en streaming alors que 55% des majeurs écoutent de la musique en streaming.</p>
+<p>On note <em>J</em> : « la personne interrogée est mineure » et <em>S</em> : « la personne écoute de la musique en streaming ». On interroge une personne au hasard. Calculer les probabilités suivantes. On donnera les réponses sous forme de fraction irréductible.</p>
+<div class="question-grille" id="grille-17-11"></div>
+
+<p class="calcul-titre"><span id="titre-17-13">Calcul 17.12 — On considère \(A\) et \(B\) deux événements indépendants tels que \(P(A)=0{,}8\) et \(P(B)=0{,}2\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-12"></div>
+
+<p class="calcul-titre"><span>Calcul 17.13 — On considère l'arbre pondéré suivant.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="arbre-17-14"></div>
+<p>Calculer les probabilités suivantes. On donnera les résultats sous forme décimale.</p>
+<div class="question-grille" id="grille-17-13"></div>
+
+<p class="calcul-titre"><span id="titre-17-15">Calcul 17.14 — On considère \(A\) et \(B\) deux événements indépendants tels que \(P(A)=0{,}75\) et \(P(A\cap B)=0{,}36\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-14"></div>
+
+<p class="calcul-titre"><span>Calcul 17.15 — Soit \(x&gt;0\). On considère l'arbre pondéré :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="arbre-17-16"></div>
+<p>Calculer :</p>
+<div class="question-grille" id="grille-17-15"></div>
+
+<p class="section-titre">Variables aléatoires</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 5.9 — En degré plus élevé. Factoriser les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-5-9"></div>
+<p class="calcul-titre"><span>Calcul 17.16 — Une loi de probabilité incomplète.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>On donne la loi de probabilité d'une variable aléatoire \(X\) :</p><table id="table-17-17" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
+<p>Calculer :</p>
+<div class="question-grille" id="grille-17-16"></div>
+
+<p class="calcul-titre"><span>Calcul 17.17 — On donne la loi de probabilité d'une variable aléatoire \(X\) :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-17-18" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
+<p>Calculer :</p>
+<div class="question-grille" id="grille-17-17"></div>
+
+<p class="calcul-titre"><span>Calcul 17.18 — On donne la loi de probabilité d'une variable aléatoire \(X\) :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-17-19" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
+<p>Calculer, sous forme de fraction irréductible :</p>
+<div class="question-grille" id="grille-17-18"></div>
+
+<p class="calcul-titre"><span>Calcul 17.19 — On donne la loi de probabilité d'une variable aléatoire \(X\) :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-17-20" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
+<div class="question-grille" id="grille-17-19"></div>
 
 <div class="bloc-avance">
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 5.10 — À l'aide d'une identité remarquable. Factoriser l'expression suivante.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<div class="question-grille" id="grille-5-10"></div>
+<p class="calcul-titre"><span>Calcul 17.20 — Avec un arbre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<div id="arbre-17-21"></div>
+<p>Calculer :</p>
+<div class="question-grille" id="grille-17-20"></div>
 
-<p class="calcul-titre"><span>Calcul 5.11 — Autour de la formule de Bernoulli et d'une grande identité remarquable. Factoriser les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<div class="rappel-formule">Étant donné \(a\in\mathbb{R}\), on a la factorisation suivante : \[x^n-a^n=(x-a)\sum_{k=0}^{n-1}a^{n-1-k}x^k=(x-a)(x^{n-1}+ax^{n-2}+\cdots+a^{n-2}x+a^{n-1}).\] Par exemple, avec \(a=2\) et \(n=3\), la formule donne \(x^3-8=(x-2)(x^2+2x+4)\). Il faut garder à l'esprit que cette identité est valide aussi bien pour \(a>0\) que pour \(a<0\).</div>
-<div class="question-grille" id="grille-5-11"></div>
+<p class="calcul-titre"><span>Calcul 17.21 — Une variable aléatoire uniforme.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>On considère une variable aléatoire \(X\) qui peut prendre les valeurs \(1,2,\ldots,n\) et telle que, pour tout entier \(i\in\{1,2,\ldots,n\}\), on ait \(P(X=i)=\dfrac{1}{n}\). Calculer :</p>
+<div class="question-grille" id="grille-17-21"></div>
+
+<p class="calcul-titre"><span>Calcul 17.22</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>On considère une variable aléatoire \(X\) qui peut prendre les valeurs \(1,a,a^2,a^3,\ldots,a^n\) et telle que, pour tout entier \(i\in\{0,1,2,\ldots,n\}\), on ait \(P(X=a^i)=\dfrac{1}{n+1}\).</p>
+<div class="question-grille" id="grille-17-22"></div>
+
+<p class="calcul-titre"><span>Calcul 17.23 — Soit \(x\in\,]0;1[\) et soit \(X\) une variable aléatoire prenant les valeurs \(1\) et \(x\), telle que \(P(X=1)=x\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>Calculer :</p>
+<div class="question-grille" id="grille-17-23"></div>
 </div>
 
 <div class="barre-controle">
@@ -942,7 +1102,7 @@ window.MathJax = {
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <a class="nav-btn" href="fiche-04.html">&larr; Fiche précédente</a>
+  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
@@ -996,425 +1156,298 @@ function restaurerApresImpression() {
 }
 window.addEventListener('afterprint', restaurerApresImpression);
 function exporterPDF() { preparerPourImpression(); window.print(); }
-
-// ---------- Boite a outils fractions exactes ----------
-function pgcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=b;b=a%b;a=t;}return a||1;}
-function F(n,d){ d=d===undefined?1:d; if(d<0){n=-n;d=-d;} const g=pgcd(n,d)||1; return {n:n/g,d:d/g}; }
-function fracAdd(a,b){return F(a.n*b.d+b.n*a.d, a.d*b.d);}
-function fracSub(a,b){return F(a.n*b.d-b.n*a.d, a.d*b.d);}
-function fracMul(a,b){return F(a.n*b.n, a.d*b.d);}
-function fracDiv(a,b){return F(a.n*b.d, a.d*b.n);}
-function fracNeg(a){return {n:-a.n, d:a.d};}
-function fracAbs(a){return a.n<0?{n:-a.n,d:a.d}:a;}
-function fracStr(a){return a.d===1?String(a.n):`${a.n}/${a.d}`;}
-function aleaParmi(liste){return liste[alea(0, liste.length-1)];}
-function aleaNonNul(min,max,exclu){let v; do{v=alea(min,max);}while(v===0||v===exclu); return v;}
-function melanger(arr){
-  const a = arr.slice();
-  for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-  return a;
-}
-const RADICANDS_PETITS = [2,3,5,6,7];
-function sgn(v){ return v>=0? '+':'-'; }
-function fmtLin(coef, v){ if(coef===0) return ''; const a=Math.abs(coef); return sgn(coef)+(a===1?'':a)+v; }
-function fmtConst(c){ if(c===0) return ''; return sgn(c)+Math.abs(c); }
-
-// terme signe "coef*v" (v='' pour une constante) ; premier=true => pas de "+" force mais garde le "-"
-function fracTermLatex(fr, v, premier) {
-  if (fr.n===0) return premier?'0':'';
-  const neg = fr.n<0; const mag=fracAbs(fr);
-  const magLatex = mag.d===1?String(mag.n):`\\dfrac{${mag.n}}{${mag.d}}`;
-  const corps = (mag.n===1&&mag.d===1&&v)?'':magLatex;
-  return (premier?(neg?'-':''):(neg?'-':'+'))+corps+v;
-}
-function fracTermAscii(fr, v, premier) {
-  if (fr.n===0) return premier?'0':'';
-  const neg = fr.n<0; const mag=fracAbs(fr);
-  const magStr = fracStr(mag);
-  let corps;
-  if (!v) corps = magStr;
-  else corps = (mag.n===1&&mag.d===1) ? v : (magStr+'*'+v);
-  return (premier?(neg?'-':''):(neg?'-':'+'))+corps;
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function fracStr(n, d) { if (d < 0) { n = -n; d = -d; } const g = pgcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; }
+function fracToStr(f) { f = math.fraction(f); const n = f.s * f.n, d = f.d; return d === 1 ? String(n) : `${n}/${d}`; }
+function coefPrefixe(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}*`; }
+function coefPrefixeL(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}`; }
+function decLatexFromFrac(num, den) {
+  const decimals = Math.round(Math.log10(den));
+  let s = (num / den).toFixed(decimals);
+  if (s.includes('.')) { s = s.replace(/0+$/, '').replace(/\.$/, ''); }
+  return s.replace('.', '{,}');
 }
 
-// ---------- Groupe 5.1 : developper et ordonner ----------
-function genGroupe5_1() {
-  function itemA() {
-    const p = aleaNonNul(-4,4), q = aleaNonNul(-4,4), r = aleaNonNul(-4,4);
-    const enonce = `\\((a${fmtConst(p)})(a${fmtConst(q)})(a${fmtConst(r)})\\)`;
-    const c2 = p+q+r, c1 = p*q+p*r+q*r, c0 = p*q*r;
-    const reponse = `a^3${fmtLin(c2,'a^2')}${fmtLin(c1,'a')}${fmtConst(c0)}`;
-    return {id:"5.1 a)", type:"alg", texteLibre:true, enonce, reponse: reponse||'a^3'};
-  }
-  function itemB() {
-    const k = aleaNonNul(2,6);
-    const moins = Math.random()<0.5;
-    let enonce, reponse;
-    if (moins) {
-      enonce = `\\((a-${k})(a^2${fmtLin(k,'a')}${fmtConst(k*k)})\\)`;
-      reponse = `a^3${fmtConst(-(k*k*k))}`;
-    } else {
-      enonce = `\\((a+${k})(a^2${fmtLin(-k,'a')}${fmtConst(k*k)})\\)`;
-      reponse = `a^3${fmtConst(k*k*k)}`;
-    }
-    return {id:"5.1 b)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [itemA(), itemB()];
-}
-
-// ---------- Groupe 5.2 : factoriser via a^2-b^2 ----------
-function genGroupe5_2() {
-  function itemA() {
-    const m = aleaParmi([1,2,3]);
-    const p = alea(-5,5);
-    const k = alea(2,7);
-    const enonce = `\\((${m===1?'':m}x${fmtConst(p)})^2-${k*k}\\)`;
-    const reponse = `(${m===1?'':m}x${fmtConst(p-k)})*(${m===1?'':m}x${fmtConst(p+k)})`;
-    return {id:"5.2 a)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemB() {
-    let n,p,q;
-    do { n = aleaNonNul(-4,4); } while (n===1 || n===-1);
-    p = alea(-5,5); q = alea(-5,5);
-    const enonce = `\\((x${fmtConst(p)})^2-(${n===1?'':(n===-1?'-':n)}x${fmtConst(q)})^2\\)`;
-    const c1 = 1-n, d1 = p-q, c2 = 1+n, d2 = p+q;
-    const f1 = `${fracTermAscii(F(c1),'x',true)}${fmtConst(d1)}`;
-    const f2 = `${fracTermAscii(F(c2),'x',true)}${fmtConst(d2)}`;
-    const reponse = `(${f1})*(${f2})`;
-    return {id:"5.2 b)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemC() {
-    const D = aleaParmi(RADICANDS_PETITS);
-    const sq = alea(1,3);
-    const k = alea(1,4);
-    const c = k*sq*sq*D;
-    const enonce = `\\(${k===1?'':k}x^2-${c}\\)`;
-    const terme = sq===1?`sqrt(${D})`:`${sq}*sqrt(${D})`;
-    const reponse = (k===1?'':`${k}*`)+`(x-${terme})*(x+${terme})`;
-    return {id:"5.2 c)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemD() {
-    const p = alea(-5,5);
-    const d = aleaParmi(RADICANDS_PETITS);
-    const enonce = `\\((x${fmtConst(p)})^2-${d}\\)`;
-    const reponse = `(x${fmtConst(p)}-sqrt(${d}))*(x${fmtConst(p)}+sqrt(${d}))`;
-    return {id:"5.2 d)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [itemA(), itemB(), itemC(), itemD()];
-}
-
-// Ramenee de 5 a 4 questions le 25/09/2026 (David) -- l'ancien b) (facteur commun x/coefficient
-// fractionnaire, un seul terme) n'apportait rien par rapport a a) : meme technique elementaire
-// (extraire x), juste un coefficient different. Gardees : a) classique (extraction simple d'un
-// facteur x), c) classique (le vrai coeur du calcul : regrouper un facteur commun partage par
-// DEUX produits), d) delicat (meme regroupement mais sur TROIS termes), e) le plus delicat
-// (regroupement + coefficients fractionnaires combines).
-// ---------- Groupe 5.3 : facteur commun ----------
-function genGroupe5_3() {
-  function itemA() {
-    const k = alea(2,6);
-    const enonce = `\\(x+x(x-${k})\\)`;
-    const reponse = `x*(x${fmtConst(-(k-1))})`;
-    return {id:"5.3 a)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemB() {
-    const p = aleaNonNul(-5,5), q = aleaNonNul(-5,5), r = aleaNonNul(-5,5);
-    const enonce = `\\((x${fmtConst(-p)})(x${fmtConst(-q)})+(x${fmtConst(r)})(x${fmtConst(-p)})\\)`;
-    const m = 2, n = r-q;
-    const reponse = `(x${fmtConst(-p)})*(${m}*x${fmtConst(n)})`;
-    return {id:"5.3 b)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemC() {
-    const p = aleaNonNul(-5,5), q = aleaNonNul(-5,5);
-    const enonce = `\\(x(x${fmtConst(p)})+(x${fmtConst(q)})(x${fmtConst(p)})+(x${fmtConst(p)})^2\\)`;
-    const c = 3, cst = p+q;
-    const reponse = `(x${fmtConst(p)})*(${c}*x${fmtConst(cst)})`;
-    return {id:"5.3 c)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemD() {
-    const a = aleaNonNul(-5,5), b = aleaNonNul(-5,5);
-    const c = aleaNonNul(-8,8), d = aleaNonNul(-8,8);
-    let e, f, m, n;
-    do {
-      e = aleaNonNul(-8,8); f = aleaNonNul(-8,8);
-      m = c-e; n = d-f;
-    } while (m===0);
-    const enonce = `\\((${fracTermLatex(F(a),'x',true)}${fmtConst(b)})(${fracTermLatex(F(c),'x',true)}${fmtConst(d)})-(${fracTermLatex(F(a),'x',true)}${fmtConst(b)})(${fracTermLatex(F(e),'x',true)}${fmtConst(f)})\\)`;
-    let reponse;
-    if (m<0) reponse = `-(${fracTermAscii(F(a),'x',true)}${fmtConst(b)})*(${fracTermAscii(F(-m),'x',true)}${fmtConst(-n)})`;
-    else reponse = `(${fracTermAscii(F(a),'x',true)}${fmtConst(b)})*(${fracTermAscii(F(m),'x',true)}${fmtConst(n)})`;
-    return {id:"5.3 d)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [itemA(), itemB(), itemC(), itemD()];
-}
-
-// ---------- Groupe 5.4 : identites remarquables ----------
-function genGroupe5_4() {
-  function itemA() {
-    const p = aleaNonNul(2,9);
-    const enonce = `\\(x^2${fmtLin(-2*p,'x')}${fmtConst(p*p)}\\)`;
-    const reponse = `(x${fmtConst(-p)})^2`;
-    return {id:"5.4 a)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemB() {
-    const d = aleaParmi(RADICANDS_PETITS);
-    const enonce = `\\(x^2-${d}\\)`;
-    const reponse = `(x-sqrt(${d}))*(x+sqrt(${d}))`;
-    return {id:"5.4 b)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemC() {
-    const k = alea(1,4);
-    const D = aleaParmi(RADICANDS_PETITS);
-    const cste = F(D,k);
-    const enonce = `\\(${k===1?'':k}x^2-2\\sqrt{${D}}x+${cste.d===1?cste.n:`\\dfrac{${cste.n}}{${cste.d}}`}\\)`;
-    const terme = k===1?`sqrt(${D})`:`sqrt(${D})/${k}`;
-    const reponse = (k===1?'':`${k}*`)+`(x-${terme})^2`;
-    return {id:"5.4 c)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemD() {
-    const k = alea(2,7), m = aleaNonNul(1,4), p = alea(-6,6);
-    const enonce = `\\(${k*k}-(${m===1?'':m}x${fmtConst(p)})^2\\)`;
-    const reponse = `-(${m===1?'':m}x${fmtConst(p-k)})*(${m===1?'':m}x${fmtConst(p+k)})`;
-    return {id:"5.4 d)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [itemA(), itemB(), itemC(), itemD()];
-}
-
-// Fusionne les anciens 5.5 « (I) » et 5.6 « (II) » (meme titre, numerotes) le 25/09/2026
-// (David) -- regle standing (voir SUIVI-FIREBASE.md) : deux groupes qui traitent exactement la
-// meme chose fusionnent en UNE section plafonnee a 4 exemples au total, pas 4 par groupe
-// d'origine. Gardes : ancien 5.5 a) (classique entier, regroupement type "x(x+p)+..."), ancien
-// 5.5 b) (classique/particulier : le resultat se reduit a UN SEUL facteur, pas deux -- cas a
-// part entiere que l'eleve doit savoir reconnaitre), ancien 5.6 a) (delicat, meme regroupement
-// que a) mais coefficients fractionnaires), ancien 5.6 c) (le plus delicat, combine difference
-// de deux carres ET un terme lineaire supplementaire absorbe dans le resultat). Ecartes : ancien
-// 5.5 c) (redondant avec a), meme regroupement, aucune difficulte en plus) et ancien 5.6 b)
-// (redondant avec a) de ce meme groupe fusionne, memes fractions/signes, cadre juste different).
-// ---------- Groupe 5.5 : facteur commun + identites remarquables ----------
-// Ramenee de 4 a 2 questions le 25/09/2026 (David) -- gardees a) (classique, regroupement
-// entier) et l'ancienne c) devenue b) (delicat, meme regroupement avec coefficients
-// fractionnaires) : gradient simple -> une seule difficulte ajoutee. Retirees l'ancienne b)
-// (cas particulier ou le resultat se reduit a un seul facteur) et l'ancienne d) (la plus
-// complete, cumulait fractions ET un terme lineaire supplementaire) -- plus de place pour ces
-// nuances a seulement 2 exemples.
-function genGroupe5_5() {
-  function itemA() {
-    const p = aleaNonNul(-6,6);
-    const enonce = `\\(x(x${fmtConst(p)})+x^2${fmtConst(-p*p)}\\)`;
-    const reponse = `(x${fmtConst(p)})*(2*x${fmtConst(-p)})`;
-    return {id:"5.5 a)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemB() {
-    let a,b,c,d,M,N;
-    do {
-      a = aleaNonNul(-6,6);
-      b = aleaNonNul(-9,9);
-      c = alea(2,7);
-      d = aleaNonNul(-9,9);
-      M = a+c; N = b-d;
-    } while (M===0);
-    const enonce = `\\((${fracTermLatex(F(a),'x',true)}${fmtConst(b)})(${c}x${fmtConst(d)})+(${c*c}x^2${fmtConst(-d*d)})\\)`;
-    let reponse;
-    if (M<0) reponse = `-(${c}x${fmtConst(d)})*(${-M}x${fmtConst(-N)})`;
-    else reponse = `(${c}x${fmtConst(d)})*(${M}x${fmtConst(N)})`;
-    return {id:"5.5 b)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [itemA(), itemB()];
-}
-
-// Fusionne les anciens 5.7 « (I) », 5.8 « (II) » et 5.9 « (III) » (meme titre "Une methode
-// fondamentale", numerotes) le 25/09/2026 (David) -- meme regle standing que 5.5/5.6 plus haut :
-// plafonne a 4 exemples au total. Gardes, un par sous-competence : a) classique (ancien 5.7,
-// polynome UNITAIRE, racines numeriques -- Vieta direct) ; b) classique/escalade (ancien 5.9,
-// polynome NON unitaire -- meme methode mais il faut diviser par le coefficient dominant) ;
-// c) delicat (ancien 5.8 a, racine PARAMETREE par a, substitution Vieta) ; d) le plus delicat
-// (ancien 5.8 b, racine parametree reconnue via une difference de deux carres -- technique
-// differente de c). Les DEUX exemples parametres de l'ancien 5.8 sont gardes (aucune redondance
-// entre eux, deux techniques distinctes) ; seuls les exemples numeriques repetes (5.7 avait 4
-// fois le meme generateur, 5.9 3 fois) sont reduits a un representant chacun. Repartition
-// naturelle 2 classiques / 2 delicats, comme demande.
-// ---------- Groupe 5.6 : une methode fondamentale ----------
-function genGroupe5_6() {
-  function itemUnitaire(id) {
-    const denom = aleaParmi([1,1,1,2]);
-    const r1 = F(aleaNonNul(-9,9), denom);
-    const r2 = F(aleaNonNul(-9,9), aleaParmi([1,1,2]));
-    const b = fracNeg(fracAdd(r1,r2));
-    const c = fracMul(r1,r2);
-    const enonce = `\\(P=x^2${fracTermLatex(b,'x',false)}${fracTermLatex(c,'',false)}\\) admet ${r1.d===1?r1.n:`\\(\\dfrac{${r1.n}}{${r1.d}}\\)`} comme racine. Quelle est l'autre ?`;
-    return {id, type:"num", texteLibre:true, enonce, reponse: fracStr(r2)};
-  }
-  function itemNonUnitaire(id) {
-    const A = alea(2,6);
-    const r1 = F(aleaNonNul(-6,6));
-    const r2 = F(aleaNonNul(-6,6), aleaParmi([1,2,3,4]));
-    const B = fracNeg(fracMul(F(A), fracAdd(r1,r2)));
-    const C = fracMul(F(A), fracMul(r1,r2));
-    const enonce = `\\(P=${A}x^2${fracTermLatex(B,'x',false)}${fracTermLatex(C,'',false)}\\) admet ${r1.n} comme racine. Quelle est l'autre ?`;
-    return {id, type:"num", texteLibre:true, enonce, reponse: fracStr(r2)};
-  }
-  function itemParametreVieta() {
-    const k = aleaParmi([2,3,4,5]);
-    const enonce = `\\(P=x^2-\\left(a+\\dfrac{${k}}{a}\\right)x+${k}\\) admet \\(a\\) comme racine. Quelle est l'autre (en fonction de \\(a\\)) ?`;
-    return {id:"5.6 c)", type:"alg", texteLibre:true, enonce, reponse: `${k}/a`};
-  }
-  function itemParametreCarre() {
-    const h = aleaNonNul(-6,6);
-    const enonce = `\\(P=x^2${fmtLin(-2*h,'x')}${fmtConst(h*h)}-a^2\\) admet \\(a${fmtConst(h)}\\) comme racine. Quelle est l'autre ?`;
-    return {id:"5.6 d)", type:"alg", texteLibre:true, enonce, reponse: `-a${fmtConst(h)}`};
-  }
-  return [itemUnitaire("5.6 a)"), itemNonUnitaire("5.6 b)"), itemParametreVieta(), itemParametreCarre()];
-}
-
-// Ramenee de 6 a 2 questions le 25/09/2026 (David) -- les 6 items etaient tous produits par le
-// meme generateur (signe tire au hasard, pondere 2:1 vers le coefficient dominant positif) :
-// aucune famille distincte, juste des repetitions. Comme pour 1.6 (fiche 1), le tirage impose
-// desormais un signe positif (classique) et un signe negatif (delicat -- signe supplementaire a
-// gerer) plutot que de laisser 2 lettres au hasard risquer de tomber deux fois sur le meme signe.
-// ---------- Groupe 5.7 : racines entieres visibles ----------
-function genGroupe5_7() {
-  function item(id, signe) {
-    let r1, r2;
-    do { r1 = aleaNonNul(-15,15); r2 = aleaNonNul(-15,15); } while (r1===r2);
-    const enonce = `\\(${signe<0?'-':''}x^2${fmtLin(-signe*(r1+r2),'x')}${fmtConst(signe*r1*r2)}\\)`;
-    const reponse = (signe<0?'-':'')+`(x${fmtConst(-r1)})*(x${fmtConst(-r2)})`;
-    return {id, type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [item("5.7 a)", 1), item("5.7 b)", -1)];
-}
-
-// Ramenee de 3 a 2 questions le 25/09/2026 (David) -- les 3 sous-questions partageaient le MEME
-// polynome P, chacune retrouvant un coefficient different par une evaluation differente : pas
-// de gradient de difficulte entre elles (memes calculs, juste un coefficient different a
-// isoler), donc gardees dans leur ordre naturel de resolution -- c) (via P(1)) puis b) (via
-// P(0)) -- et retiree la troisieme (a) via P(2)), redondante en termes de competence.
-// ---------- Groupe 5.8 : recherche de coefficients (meme P pour a,b) ----------
-function genGroupe5_8() {
-  const B = aleaNonNul(-6,6), Cc = aleaNonNul(-6,6);
-  const P1 = -Cc;
-  const P0 = 2*B;
-  return [
-    {id:"5.8 a)", type:"num", texteLibre:true,
-      enonce:`Avec \\(P=ax(x-1)+b(x-1)(x-2)+cx(x-2)\\), sachant \\(P(1)=${P1}\\), que vaut \\(c\\) ?`, reponse:String(Cc)},
-    {id:"5.8 b)", type:"num", texteLibre:true,
-      enonce:`Avec le même \\(P\\), sachant \\(P(0)=${P0}\\), que vaut \\(b\\) ?`, reponse:String(B)}
-  ];
-}
-
-// Ramenee de 3 a 2 questions le 25/09/2026 (David) -- gardees a) (classique : facteur x^2 puis
-// difference de deux carres) et l'ancienne c) devenue b) (le plus delicat : reconnaitre un
-// carre parfait (x+p)^2 cache dans l'expression avant de regrouper). Retiree l'ancienne b)
-// (factoriser un binome commun partage par deux termes) -- cas intermediaire, sa competence
-// (regrouper avant de redecomposer) reste presente ailleurs dans la fiche (5.3, 5.5).
-// ---------- Groupe 5.9 : degre plus eleve ----------
-function genGroupe5_9() {
-  function itemA() {
-    const k = alea(1,4);
-    const enonce = `\\(x^4${fmtLin(-(k*k),'x^2')}\\)`;
-    const reponse = `x^2*(x${fmtConst(-k)})*(x${fmtConst(k)})`;
-    return {id:"5.9 a)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemB() {
-    const p = aleaNonNul(-5,5);
-    const m = -p-1;
-    const enonce = `\\((x^2${fmtLin(2*p,'x')}${fmtConst(p*p)})(x${fmtConst(m)})+(x${fmtConst(p)})x\\)`;
-    const inner = p*m;
-    const reponse = `(x${fmtConst(p)})*(x^2${fmtConst(inner)})`;
-    return {id:"5.9 b)", type:"alg", texteLibre:true, enonce, reponse};
-  }
-  return [itemA(), itemB()];
-}
-
-// ---------- Groupe 5.10 : identite remarquable, 3 facteurs ----------
-function genGroupe5_10() {
-  const k = alea(1,4);
-  const enonce = `\\(x^4-${k*k*k*k}\\) en produit de trois facteurs non constants`;
-  const reponse = `(x${fmtConst(-k)})*(x${fmtConst(k)})*(x^2${fmtConst(k*k)})`;
-  return [{id:"5.10", type:"alg", texteLibre:true, enonce, reponse}];
-}
-
-// Groupe 5.11 (factoriser en produit de deux facteurs non constants) supprime entierement le
-// 25/09/2026 sur demande de David.
-
-// ---------- Groupe 5.11 (ex-5.15, puis ex-5.12) : formule de Bernoulli ----------
-function polyBernoulliAscii(n, a) {
-  let out=''; let premier=true;
-  for (let k=0;k<n;k++) {
-    const coef = F(Math.pow(a,k));
-    const puissance = n-1-k;
-    const v = puissance===0?'':(puissance===1?'x':'x^'+puissance);
-    out += fracTermAscii(coef, v, premier);
-    premier=false;
-  }
-  return out;
-}
-// Fusionne 5.12 (formule de Bernoulli) et 5.13 (grande identite remarquable) le 25/09/2026 sur
-// demande de David, en 2 exemples au total (etaient a 3 et 1 respectivement). Le degre n fournit
-// un gradient naturel de difficulte pour Bernoulli (plus n est grand, plus le polynome facteur a
-// de termes) : garde n=3, le cas le plus simple, comme classique -- n=5 et n=7 retires (deja une
-// escalade suffisante sans eux). Gardee ensuite la grande identite x^12-1 comme delicat/capstone
-// de la fiche (deja la plus avancee de la fiche, cas isole).
-// ---------- Groupe 5.11 : formule de Bernoulli et grande identite remarquable ----------
-function genGroupe5_11() {
-  function itemBernoulli(id) {
-    const n = 3;
-    const a = aleaNonNul(-3,3);
-    const enonce = `\\(x^${n}${fmtConst(-Math.pow(a,n))}\\)`;
-    const reponse = `(x${fmtConst(-a)})*(${polyBernoulliAscii(n,a)})`;
-    return {id, type:"alg", texteLibre:true, enonce, reponse};
-  }
-  function itemGrandeIdentite(id) {
-    return {id, type:"alg", texteLibre:true,
-      enonce:"\\(x^{12}-1\\) en au moins 4 facteurs non constants",
-      reponse:"(x-1)*(x+1)*(x^2+1)*(x^2-x+1)*(x^2+x+1)*(x^4-x^2+1)"};
-  }
-  return [itemBernoulli("5.11 a)"), itemGrandeIdentite("5.11 b)")];
-}
+let paramsAvances = {};
 
 function genererExercices() {
-  return [
-    ...genGroupe5_1(), ...genGroupe5_2(), ...genGroupe5_3(), ...genGroupe5_4(),
-    ...genGroupe5_5(), ...genGroupe5_6(), ...genGroupe5_7(), ...genGroupe5_8(),
-    ...genGroupe5_9(), ...genGroupe5_10(), ...genGroupe5_11()
-  ];
+  const ex = [];
+
+  // ---------- 19.1 : calculs de base ----------
+  {
+    const Ai = alea(1, 9), Bi = alea(1, 9);
+    ex.push({id:"17.1 a)", type: "num", enonce: `${decLatexFromFrac(Ai,10)}\\times ${decLatexFromFrac(Bi,100)}`, reponse: fracStr(Ai * Bi, 1000)});
+
+    let Ci, Di;
+    do { Ci = alea(1, 50); Di = alea(1, 50); } while (Ci + Di >= 100);
+
+    const N1 = alea(2, 40), D1 = alea(2, 40), N2 = alea(2, 40), D2 = alea(2, 40);
+    ex.push({id:"17.1 b)", type: "num", enonce: `\\dfrac{${N1}}{${D1}}\\times \\dfrac{${N2}}{${D2}}`, reponse: fracStr(N1 * N2, D1 * D2)});
+  }
+
+  // ---------- 19.2 : calculs de base ----------
+  {
+    const Ai = alea(1, 9), Ci = 10 - Ai, Bi = alea(1, 9), Di = alea(1, 9);
+    ex.push({id:"17.1 c)", type: "num", enonce: `${decLatexFromFrac(Ai,10)}\\times ${decLatexFromFrac(Bi,10)}+${decLatexFromFrac(Ci,10)}\\times ${decLatexFromFrac(Di,10)}`, reponse: fracStr(Ai * Bi + Ci * Di, 100)});
+
+    const V1 = alea(-10, 10), V2 = alea(-10, 10), V3 = alea(-10, 10);
+    const termes = [[V1, 6], [V2, 3], [V3, 2]].map(([v, den]) => (v < 0 ? '-' : '+') + Math.abs(v) + `\\times \\dfrac{1}{${den}}`);
+    const enonce2b = termes.join('').replace(/^\+/, '');
+    ex.push({id:"17.1 d)", type: "num", enonce: enonce2b, reponse: fracStr(V1 + 2 * V2 + 3 * V3, 6)});
+  }
+
+  // ---------- 19.3 : avec parametres p et a ----------
+  {
+    const Ai = alea(5, 95), Bi = alea(5, 95);
+    const coefStr = fracStr(Ai - Bi, 100);
+    const reponse3a = coefStr.startsWith('-') ? `${fracStr(Bi,100)}-${coefStr.slice(1)}*p` : `${fracStr(Bi,100)}+${coefStr}*p`;
+    ex.push({id:"17.2 a)", type: "alg", texteLibre: true, enonce: `\\(p\\times ${decLatexFromFrac(Ai,100)}+(1-p)\\times ${decLatexFromFrac(Bi,100)}\\)`, reponse: reponse3a});
+
+    const K = alea(1, 4);
+    ex.push({id:"17.2 b)", type: "alg", texteLibre: true, enonce: `\\(-a(${K}-a)+(${K*K}-a^2)\\)`, reponse: `${K*K}-${coefPrefixe(K)}a`});
+  }
+
+  // ---------- 19.4 : tableau de probabilites ----------
+  {
+    let pAB, pAnB, pnAB, pnAnB;
+    do {
+      pAB = alea(10, 50); pAnB = alea(5, 30); pnAB = alea(5, 30);
+      pnAnB = 100 - pAB - pAnB - pnAB;
+    } while (pnAnB < 5 || pnAnB > 60);
+    const colA = pAB + pnAB, rowB = pAB + pAnB, colAbar = pAnB + pnAnB;
+    ex.push({id:"17.3 a)", type: "num", texteLibre: true, enonce: "\\(P(\\overline{A})\\)", reponse: fracStr(colAbar, 100)});
+    ex.push({id:"17.3 b)", type: "num", texteLibre: true, enonce: "\\(P(A∪B)\\)", reponse: fracStr(colA + rowB - pAB, 100)});
+    ex.push({id:"17.3 c)", type: "num", texteLibre: true, enonce: "\\(P(\\overline{A}∩B)\\)", reponse: fracStr(pAnB, 100)});
+    paramsAvances.g4 = {pAB, pAnB, pnAB, pnAnB};
+  }
+
+  // ---------- 19.5 : tableau d'effectifs ----------
+  {
+    const nAB = alea(30, 250), nAnB = alea(30, 250), nnAB = alea(30, 250), nnAnB = alea(30, 250);
+    const rowB = nAB + nAnB, rowBbar = nnAB + nnAnB, colA = nAB + nnAB, colAbar = nAnB + nnAnB, N = rowB + rowBbar;
+    ex.push({id:"17.4 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(B)\\)", reponse: fracStr(rowB, N)});
+    ex.push({id:"17.4 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(A∩B)\\)", reponse: fracStr(nAB, N)});
+    ex.push({id:"17.4 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(\\overline{A}∩\\overline{B})\\)", reponse: fracStr(nnAnB, N)});
+    paramsAvances.g5 = {nAB, nAnB, nnAB, nnAnB, rowB, rowBbar, colA, colAbar, N};
+  }
+
+  // ---------- 19.6 : deux evenements ----------
+  {
+    const q = alea(10, 60), r = alea(5, q - 5);
+    ex.push({id:"17.5 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∪B)\\)", reponse: fracStr(100 - q + r, 100)});
+    ex.push({id:"17.5 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A)\\)", reponse: fracStr(100 - q, 100)});
+    paramsAvances.g6 = {q, r};
+  }
+
+  // ---------- 19.7 : probleme concret ski/rando ----------
+  {
+    const Dw = [3, 4, 5, 6][alea(0, 3)];
+    const N7 = alea(10, 30) * 20;
+    const sMult = alea(3, 8);
+    const S7 = Dw * sMult, nBoth7 = sMult;
+    const nNeither7 = Math.round((N7 - S7) * (alea(40, 70) / 100));
+    const nRandoOnly7 = N7 - nNeither7 - S7;
+    const nRandoTotal7 = nRandoOnly7 + nBoth7;
+    ex.push({id:"17.6 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "la probabilité que la personne fasse du ski et de la randonnée", reponse: fracStr(nBoth7, N7)});
+    ex.push({id:"17.6 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(S∪R)\\)", reponse: fracStr(S7 + nRandoOnly7, N7)});
+    ex.push({id:"17.6 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P_R(S)\\)", reponse: fracStr(nBoth7, nRandoTotal7)});
+    paramsAvances.g7 = {N7, S7, Dw, nNeither7};
+  }
+
+  // ---------- 19.8 : tableau avec n (fixe) ----------
+  ex.push({id:"17.7 a)", type: "alg", texteLibre: true, enonce: "\\(P_A(B)\\)", reponse: "n/(n+1)"});
+  ex.push({id:"17.7 b)", type: "alg", texteLibre: true, enonce: "\\(P_B(A)\\)", reponse: "n/(3*n+2)"});
+
+  // ---------- 19.9 : arbre ----------
+  {
+    const dC = [2, 3, 4][alea(0, 2)], nC = alea(1, dC - 1);
+    const pC = math.fraction(nC, dC), pCbar = math.subtract(1, pC);
+    const dQ1 = [2, 3, 4][alea(0, 2)], nQ1 = alea(1, dQ1 - 1), q1 = math.fraction(nQ1, dQ1);
+    const dQ2 = [2, 3, 4][alea(0, 2)], nQ2 = alea(1, dQ2 - 1), q2 = math.fraction(nQ2, dQ2);
+    const q1bar = math.subtract(1, q1), q2bar = math.subtract(1, q2);
+    const pD = math.add(math.multiply(pC, q1), math.multiply(pCbar, q2));
+    const pDbar = math.subtract(1, pD);
+    const pCandDbar = math.multiply(pC, q1bar);
+    const pCgivenD = math.divide(math.multiply(pC, q1), pD);
+    ex.push({id:"17.8 a)", type: "num", texteLibre: true, enonce: "\\(P(C∩\\overline{D})\\)", reponse: fracToStr(pCandDbar)});
+    ex.push({id:"17.8 b)", type: "num", texteLibre: true, enonce: "\\(P(D)\\)", reponse: fracToStr(pD)});
+    ex.push({id:"17.8 c)", type: "num", texteLibre: true, enonce: "\\(P_D(C)\\)", reponse: fracToStr(pCgivenD)});
+    paramsAvances.g9 = {pC, pCbar, q1, q1bar, q2, q2bar};
+  }
+
+  // ---------- 19.10 : probabilites conditionnelles I ----------
+  {
+    const p = alea(10, 80), q = alea(10, 90);
+    ex.push({id:"17.9 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(\\overline{A})\\)", reponse: fracStr(100 - p, 100)});
+    ex.push({id:"17.9 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∩B)\\)", reponse: fracStr(p * q, 10000)});
+    paramsAvances.g10 = {p, q};
+  }
+
+  // ---------- 19.11 : probabilites conditionnelles II ----------
+  {
+    const p = alea(5, 20), r = alea(50, 90);
+    const pABnum = p * r;
+    const q0 = alea(Math.ceil(pABnum / 100) + 1, 95);
+    ex.push({id:"17.10 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P_B(A)\\)", reponse: fracStr(pABnum, q0 * 100)});
+    ex.push({id:"17.10 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∪B)\\)", reponse: fracStr(100 * p + 100 * q0 - pABnum, 10000)});
+    paramsAvances.g11 = {p, q0, r};
+  }
+
+  // ---------- 19.12 : probleme concret musique ----------
+  {
+    const m = alea(15, 45), sMin = alea(10, 40), sMaj = alea(40, 80);
+    const pS = m * sMin + (100 - m) * sMaj;
+    ex.push({id:"17.11 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(J∩S)\\)", reponse: fracStr(m * sMin, 10000)});
+    ex.push({id:"17.11 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "la probabilité que la personne interrogée écoute de la musique en streaming", reponse: fracStr(pS, 10000)});
+    ex.push({id:"17.11 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P_S(J)\\)", reponse: fracStr(m * sMin, pS)});
+    paramsAvances.g12 = {m, sMin, sMaj};
+  }
+
+  // ---------- 19.13 : evenements independants ----------
+  {
+    const p = alea(20, 90), q = alea(10, 50);
+    ex.push({id:"17.12 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∩B)\\)", reponse: fracStr(p * q, 10000)});
+    ex.push({id:"17.12 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∪B)\\)", reponse: fracStr(100 * p + 100 * q - p * q, 10000)});
+    paramsAvances.g13 = {p, q};
+  }
+
+  // ---------- 19.14 : arbre a 3 branches ----------
+  {
+    let p1, p2, p3;
+    do { p1 = alea(10, 70); p2 = alea(10, 70); p3 = 100 - p1 - p2; } while (p3 < 5 || p3 > 70);
+    const q1 = alea(10, 90), q2 = alea(10, 90), q3 = alea(10, 90);
+    const pD14 = p1 * q1 + p2 * q2 + p3 * q3;
+    ex.push({id:"17.13 a)", type: "num", texteLibre: true, enonce: "\\(P(C)\\)", reponse: fracStr(p3, 100)});
+    ex.push({id:"17.13 b)", type: "num", texteLibre: true, enonce: "\\(P(D)\\)", reponse: fracStr(pD14, 10000)});
+    ex.push({id:"17.13 c)", type: "num", texteLibre: true, enonce: "\\(P_D(A)\\)", reponse: fracStr(p1 * q1, pD14)});
+    paramsAvances.g14 = {p1, p2, p3, q1, q2, q3};
+  }
+
+  // ---------- 19.15 : evenements independants ----------
+  {
+    const p = alea(30, 90), q = alea(20, 80);
+    ex.push({id:"17.14 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(B)\\)", reponse: fracStr(q, 100)});
+    ex.push({id:"17.14 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∩\\overline{B})\\)", reponse: fracStr(100 * p - p * q, 10000)});
+    paramsAvances.g15 = {p, q};
+  }
+
+  // ---------- 19.16 : arbre avec parametre x ----------
+  {
+    const K = alea(2, 4);
+    const fracs = [[1, 2], [1, 3], [1, 4], [2, 3], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5]];
+    const [Fp, Fq] = fracs[alea(0, fracs.length - 1)];
+    const [Gp, Gq] = fracs[alea(0, fracs.length - 1)];
+    const C1 = Fp * Gq, C2 = Gp * Fq, A16 = C2, B16 = C1 + C2 * (K - 1), D16 = Fq * Gq;
+    ex.push({id:"17.15 a)", type: "alg", texteLibre: true, enonce: "\\(P(A∩B)\\)", reponse: `${Fp}/(${Fq}*(x+${K}))`});
+    ex.push({id:"17.15 b)", type: "alg", texteLibre: true, enonce: "\\(P(B)\\)", reponse: `(${B16}+${coefPrefixe(A16)}x)/(${D16}*(x+${K}))`});
+    ex.push({id:"17.15 c)", type: "alg", texteLibre: true, enonce: "\\(P_B(A)\\)", reponse: `${C1}/(${B16}+${coefPrefixe(A16)}x)`});
+    paramsAvances.g16 = {K, Fp, Fq, Gp, Gq};
+  }
+
+  // ---------- 19.17 : loi de probabilite incomplete ----------
+  {
+    let v = [];
+    do {
+      v = [alea(3,25), alea(3,25), alea(3,25), alea(3,25), alea(3,25)];
+    } while (v.reduce((a,b)=>a+b,0) >= 95);
+    const sum5 = v.reduce((a,b)=>a+b,0);
+    const missing = 100 - sum5;
+    ex.push({id:"17.16 a)", type: "num", texteLibre: true, enonce: "\\(P(X=5)\\)", reponse: fracStr(missing, 100)});
+    ex.push({id:"17.16 b)", type: "num", texteLibre: true, enonce: "\\(P(X≤4)\\)", reponse: fracStr(v[0]+v[1]+v[2]+v[3], 100)});
+    paramsAvances.g17 = {v, missing};
+  }
+
+  // ---------- 19.18 : esperance et variance ----------
+  {
+    let p0, p1v, p2v, p3v;
+    do {
+      p0 = alea(5, 40); p1v = alea(5, 40); p2v = alea(5, 40);
+      p3v = 100 - p0 - p1v - p2v;
+    } while (p3v < 5 || p3v > 60);
+    const EX = 0*p0 + 1*p1v + 2*p2v + 3*p3v; // out of 100
+    const EX2 = 0*p0 + 1*p1v + 4*p2v + 9*p3v; // out of 100
+    // V(X) = E(X^2) - E(X)^2, exact via fractions (percent/100)
+    const EXf = math.fraction(EX, 100), EX2f = math.fraction(EX2, 100);
+    const VXf = math.subtract(EX2f, math.multiply(EXf, EXf));
+    ex.push({id:"17.17 a)", type: "num", texteLibre: true, enonce: "\\(E(X)\\)", reponse: fracToStr(EXf)});
+    ex.push({id:"17.17 b)", type: "num", texteLibre: true, enonce: "\\(V(X)\\)", reponse: fracToStr(VXf)});
+    paramsAvances.g18 = {p0, p1v, p2v, p3v};
+  }
+
+  // ---------- 19.19 : loi cumulative ----------
+  {
+    const Dtot = [20, 24, 28, 30, 36][alea(0, 4)];
+    let n = [];
+    do {
+      let rest = Dtot, parts = [];
+      for (let i = 0; i < 5; i++) { const maxV = Math.max(1, rest - (5 - i)); const v2 = alea(1, Math.max(1, Math.min(maxV, Math.floor(Dtot/3)))); parts.push(v2); rest -= v2; }
+      parts.push(rest);
+      n = parts;
+    } while (n.some(x => x < 1) || n[5] < 1);
+    let cum = 0; const C = n.map(x => (cum += x));
+    ex.push({id:"17.18 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(X=3)\\)", reponse: fracStr(n[2], Dtot)});
+    ex.push({id:"17.18 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(X=4)\\)", reponse: fracStr(n[3], Dtot)});
+    paramsAvances.g19 = {n, C, Dtot};
+  }
+
+  // ---------- 19.20 : E(X+m) ----------
+  {
+    const xs = [-2, -1, 0, 1, alea(3, 6)];
+    let pr;
+    do {
+      const a1 = alea(5, 40), a2 = alea(5, 40), a3 = alea(5, 40), a4 = alea(5, 40);
+      const a5 = 100 - a1 - a2 - a3 - a4;
+      pr = [a1, a2, a3, a4, a5];
+    } while (pr[4] < 5 || pr[4] > 50);
+    const EX20 = xs.reduce((s, x, i) => s + x * pr[i], 0); // out of 100
+    ex.push({id:"17.19", type: "num", texteLibre: true, enonce: "Déterminer \\(m\\) pour que \\(E(X+m)=0\\)", reponse: fracStr(-EX20, 100)});
+    paramsAvances.g20 = {xs, pr};
+  }
+
+  // ---------- 19.21 : arbre avec parametre a (fixe) ----------
+  ex.push({id:"17.20 a)", type: "alg", texteLibre: true, enonce: "\\(P(B)\\)", reponse: "a*(1-a)*(1+2*a)"});
+  ex.push({id:"17.20 b)", type: "alg", texteLibre: true, enonce: "\\(P_B(A)\\)", reponse: "a/(1+2*a)"});
+
+  // ---------- 19.22 : variable aleatoire uniforme (fixe) ----------
+  ex.push({id:"17.21 a)", type: "alg", texteLibre: true, enonce: "\\(E(X)\\)", reponse: "(n+1)/2"});
+  ex.push({id:"17.21 b)", type: "alg", texteLibre: true, enonce: "\\(V(X)\\)", reponse: "(n-1)*(n+1)/12"});
+
+  // ---------- 19.23 : variable aleatoire geometrique (fixe) ----------
+  ex.push({id:"17.22", type: "alg", texteLibre: true, enonce: "Calculer \\(E(X)\\)", reponse: "(1-a^(n+1))/((n+1)*(1-a))"});
+
+  // ---------- 19.24 : variable aleatoire a 2 valeurs (fixe) ----------
+  ex.push({id:"17.23 a)", type: "alg", texteLibre: true, enonce: "\\(E(X)\\)", reponse: "-x^2+2*x"});
+  ex.push({id:"17.23 b)", type: "alg", texteLibre: true, enonce: "\\(V(X)\\)", reponse: "x*(1-x)^3"});
+
+  return ex;
 }
 
-// Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
-// Table declarative, cle = identifiant complet ou prefixe de groupe. La valeur 'numerateur'
-// restreint l'exigence au numerateur du quotient obtenu. Tout exercice absent de cette table
-// est volontairement hors exigence (consigne souple, simplification, question preparatoire).
-// Renumerotee a nouveau le 25/09/2026 (suppression de 5.11, fusion de 5.12+5.13) -- '5.6'
-// (recherche de l'autre racine) et '5.8' (recherche de coefficients) restent volontairement
-// absentes : leurs reponses sont des nombres/expressions, pas des produits.
-const FORMES_FACTORISEES = { '5.2': true, '5.3': true, '5.4': true, '5.5': true,
-  '5.7': true, '5.9': true, '5.10': true, '5.11': true };
-function marquerFormesFactorisees(liste) {
-  return liste.map(function (ex) {
-    const id = String(ex.id).trim();
-    const groupe = id.replace(/\s*[a-z]\)\s*$/, '').trim();
-    const portee = Object.prototype.hasOwnProperty.call(FORMES_FACTORISEES, id)
-      ? FORMES_FACTORISEES[id]
-      : FORMES_FACTORISEES[groupe];
-    return portee ? Object.assign({}, ex, { formeFactorisee: portee }) : ex;
-  });
-}
+let exercices = genererExercices();
 
-let exercices = marquerFormesFactorisees(genererExercices());
-// Indices recalcules le 25/09/2026, deuxieme passe (David) -- 5.5/5.8/5.9 ramenees a 2 exemples
-// chacune, 5.11 (produit de deux facteurs non constants) supprimee, 5.12+5.13 fusionnees en un
-// seul 5.11 a 2 exemples. 13 groupes/37 questions -> 11 groupes/29 questions.
 const groupes = {
-  "grille-5-1": [0,1],
-  "grille-5-2": [2,3,4,5],
-  "grille-5-3": [6,7,8,9],
-  "grille-5-4": [10,11,12,13],
-  "grille-5-5": [14,15],
-  "grille-5-6": [16,17,18,19],
-  "grille-5-7": [20,21],
-  "grille-5-8": [22,23],
-  "grille-5-9": [24,25],
-  "grille-5-10": [26],
-  "grille-5-11": [27,28]
+  "grille-17-1": [0,1,2,3],
+  "grille-17-2": [4,5],
+  "grille-17-3": [6,7,8],
+  "grille-17-4": [9,10,11],
+  "grille-17-5": [12,13],
+  "grille-17-6": [14,15,16],
+  "grille-17-7": [17,18],
+  "grille-17-8": [19,20,21],
+  "grille-17-9": [22,23],
+  "grille-17-10": [24,25],
+  "grille-17-11": [26,27,28],
+  "grille-17-12": [29,30],
+  "grille-17-13": [31,32,33],
+  "grille-17-14": [34,35],
+  "grille-17-15": [36,37,38],
+  "grille-17-16": [39,40],
+  "grille-17-17": [41,42],
+  "grille-17-18": [43,44],
+  "grille-17-19": [45],
+  "grille-17-20": [46,47],
+  "grille-17-21": [48,49],
+  "grille-17-22": [50],
+  "grille-17-23": [51,52]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
@@ -1422,7 +1455,6 @@ function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
-  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
   clavier.classList.toggle('ouvert', !etaitOuvert);
 }
 
@@ -1575,34 +1607,47 @@ function normaliserSaisie(str) {
   return s;
 }
 
-// Une consigne "Factoriser" n'etait controlee que par l'egalite numerique : repondre x^2-64
-// a « factoriser x^2-64 » etait donc accepte, la question passant pour sa propre reponse.
-// On controle aussi la FORME : la racine de l'arbre doit etre un produit ou une puissance.
-// portee vaut 'numerateur' quand la consigne ne demande de factoriser que le numerateur
-// du quotient obtenu (« calculer f'(x) puis factoriser le numerateur »).
-function estFactorise(userInput, portee) {
+// Une consigne "sous forme de fraction irreductible" n'etait controlee que par l'egalite
+// numerique : 4/6 passait pour 2/3, de meme qu'une ecriture decimale ou le calcul non effectue.
+// On controle donc aussi la FORME : un entier, ou un quotient de deux entiers premiers entre eux.
+// facteurSymbolique ('pi' pour les angles en radians) exige en plus la presence de ce symbole.
+function estFractionIrreductible(userInput, facteurSymbolique) {
   try {
     const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
-    // un noeud est constant si son evaluation aboutit sans variable libre
-    const estConstant = (n) => { try { n.evaluate(); return true; } catch(e) { return false; } };
-    const estProduit = (n) => {
-      n = sansParentheses(n);
-      if (n.type !== 'OperatorNode') return false;
-      if (n.op === '*' || n.op === '^') return true;
-      if (n.op === '-' && n.args.length === 1) return estProduit(n.args[0]); // -(x-3)(x+3)
-      // un produit divise par une constante reste une forme factorisee : (3x-1)^2/9
-      if (n.op === '/' && estConstant(n.args[1])) return estProduit(n.args[0]);
-      return false; // somme, difference, quotient par une expression : rien n'est factorise
+    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
+    const estDivision = (n) => n.type === 'OperatorNode' && n.op === '/';
+    const valeurEntiere = (n) => {
+      const v = n.evaluate();
+      return (typeof v === 'number' && Number.isInteger(v)) ? v : null;
     };
-    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
-    if (portee === 'numerateur') {
-      while (noeud.type === 'OperatorNode' && noeud.op === '-' && noeud.args.length === 1) {
-        noeud = sansParentheses(noeud.args[0]);
-      }
-      if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
-      return estProduit(noeud.args[0]);
+    let noeud = math.parse(normaliserSaisie(userInput));
+    if (facteurSymbolique) {
+      // on remplace le symbole par 1 pour se ramener au cas numerique, apres avoir verifie
+      // qu'il figure bien dans la reponse : un angle en radians doit s'exprimer avec pi
+      let present = false;
+      noeud = noeud.transform((n) => {
+        if (n.type === 'SymbolNode' && n.name === facteurSymbolique) { present = true; return new math.ConstantNode(1); }
+        return n;
+      });
+      if (!present) return false;
     }
-    return estProduit(noeud);
+    noeud = sansParentheses(noeud);
+    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
+    // ecriture "fraction en facteur" : (5/12)*pi devient (5/12)*1 apres substitution
+    if (noeud.type === 'OperatorNode' && noeud.op === '*') {
+      const membres = noeud.args.map(sansParentheses);
+      const divisions = membres.filter(estDivision);
+      if (divisions.length === 1 && membres.filter((m) => !estDivision(m)).every((m) => valeurEntiere(m) === 1)) {
+        noeud = divisions[0];
+      }
+    }
+    if (!estDivision(noeud)) return valeurEntiere(noeud) !== null;
+    const num = valeurEntiere(sansParentheses(noeud.args[0]));
+    let denNoeud = sansParentheses(noeud.args[1]);
+    if (moinsUnaire(denNoeud)) denNoeud = sansParentheses(denNoeud.args[0]);
+    const den = valeurEntiere(denNoeud);
+    if (num === null || den === null || den === 0) return false;
+    return pgcd(num, den) === 1;
   } catch(e) {
     return false;
   }
@@ -1943,12 +1988,36 @@ function checkSomme(userInput, correctExpr) {
   return essaisValides >= 6;
 }
 
+function corrigerParenthesesExcedentaires(v) {
+  let ouvrantes = 0, fermantes = 0;
+  for (const c of v) {
+    if (c === '(') ouvrantes++;
+    if (c === ')') fermantes++;
+  }
+  let exces = fermantes - ouvrantes;
+  while (exces > 0 && v.endsWith(')')) {
+    v = v.slice(0, -1);
+    exces--;
+  }
+  return v;
+}
+
 function valeurDuChamp(el) {
   if (!el) return '';
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
     // normaliser les lettres grecques residuelles vers la convention interne (alpha/lambda -> lam, beta -> bet)
     v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
+    // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
+    v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
+    // normaliser f'/g'/h' (frappe naturelle du prime, converti par MathLive en f^′) vers la convention interne fp/gp/hp
+    v = v.replace(/f\^′/g, 'fp ').replace(/g\^′/g, 'gp ').replace(/h\^′/g, 'hp ');
+    // normaliser aussi fp/gp/hp si jamais MathLive les a decomposes en deux lettres separees (ex: "f p" -> "fp")
+    v = v.replace(/\bf p\b/g, 'fp').replace(/\bg p\b/g, 'gp').replace(/\bh p\b/g, 'hp');
+    // normaliser sum si decompose en lettres separees par MathLive (ex: "s u m(" -> "sum(")
+    v = v.replace(/\bs u m\(/g, 'sum(');
+    // corriger un eventuel desequilibre de parentheses (MathLive insere parfois une fermante surnumeraire apres "sum(")
+    v = corrigerParenthesesExcedentaires(v);
     return v;
   }
   return el.value.trim();
@@ -2101,7 +2170,7 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
-  else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
     div.classList.add(ok ? 'correct' : 'incorrect');
@@ -2170,12 +2239,26 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') fermerModaleDevoir();
 });
 
+// Etat auxiliaire de rendu (courbes/QCM, voir plus haut dans le fichier) :
+// non lu par verifierUne (qui se contente de exercices[idx]), mais
+// necessaire pour reafficher exactement le meme rendu a la reprise d'un
+// brouillon plutot que d'en regenerer un nouveau, incoherent avec la
+// reponse deja enregistree. Voir le commentaire au-dessus de
+// enregistrerBrouillon dans assets/js/suivi.js.
+function etatSupplementairePourBrouillon() {
+  return { paramsAvances };
+}
+function restaurerEtatSupplementaire(extra) {
+  if (!extra) return;
+  if (extra.paramsAvances !== undefined) paramsAvances = extra.paramsAvances;
+}
+
 async function enregistrerBrouillonActuel() {
   if (!window.enregistrerBrouillon) return;
   const bouton = document.getElementById('btn-enregistrer');
   if (bouton) bouton.disabled = true;
   try {
-    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE, etatSupplementairePourBrouillon());
     afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
   } catch (erreur) {
     afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
@@ -2278,6 +2361,11 @@ function toutesLesReponsesSontSaisies() {
 function attacherEcouteurs() {
   exercices.forEach((ex, idx) => {
     const input = document.getElementById('input-' + idx);
+    if (input.tagName === 'MATH-FIELD') {
+      const raccourcis = Object.assign({}, input.inlineShortcuts);
+      delete raccourcis['sum'];
+      input.inlineShortcuts = raccourcis;
+    }
     let ignorerProchainInput = false;
     let valideeParEntree = false;
     input.addEventListener('keydown', (evenement) => {
@@ -2361,6 +2449,25 @@ function convertirSqrt(s) {
     s = s.slice(0, idx) + '\\sqrt{' + inner + '}' + s.slice(i);
   }
   return s;
+}
+function convertirExposant(s) {
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '^' && s[i+1] === '(') {
+      let depth = 1, j = i + 2;
+      while (j < s.length && depth > 0) {
+        if (s[j] === '(') depth++;
+        else if (s[j] === ')') depth--;
+        j++;
+      }
+      const inner = s.slice(i+2, j-1);
+      result += '^{' + inner + '}';
+      i = j - 1;
+    } else {
+      result += s[i];
+    }
+  }
+  return result;
 }
 // certaines variables du site (m, t, b, g, h, N, ...) coincident avec des unites physiques connues
 // de math.js (metre, tonne, bit, gramme, heure, newton...) : math.js les evalue/typeset alors comme
@@ -2553,6 +2660,9 @@ function reinitialiser() {
   const zoneEtatReinit = document.getElementById('suivi-etat');
   if (zoneEtatReinit) zoneEtatReinit.hidden = true;
   document.getElementById('score-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
 }
 
 async function genererNouvelleFiche() {
@@ -2565,7 +2675,7 @@ async function genererNouvelleFiche() {
     if (!confirmation) return;
   }
   PASSE_ACTUELLE = genererIdPasse();
-  exercices = marquerFormesFactorisees(genererExercices());
+  exercices = genererExercices();
   saisies = {};
   ficheValidee = false;
   mettreAJourEtatBoutons();
@@ -2575,25 +2685,36 @@ async function genererNouvelleFiche() {
   construireGrilles();
   attacherEcouteurs();
   attacherEcouteursTactiles();
+  mettreAJourTextesAvances();
+  construireArbre19_9();
+  construireArbre19_14();
+  construireArbre19_16();
+  activerZoomSvg(document.body);
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
-  document.getElementById('toutes-reponses-panneau').classList.remove('visible');
+  const panneauToutes = document.getElementById('toutes-reponses-panneau');
+  panneauToutes.classList.remove('visible');
+  panneauToutes.innerHTML = '';
   document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
 }
+
 function toggleToutesReponses() {
-  const panel = document.getElementById('toutes-reponses-panneau');
-  const estOuvert = panel.classList.contains('visible');
-  if (!estOuvert) {
-    panel.innerHTML = exercices.map(ex => {
+  const panneau = document.getElementById('toutes-reponses-panneau');
+  const btn = document.getElementById('btn-toutes-reponses');
+  if (!panneau.classList.contains('visible')) {
+    panneau.innerHTML = exercices.map(ex => {
       const reponseFormatee = formaterReponse(ex);
       return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
     }).join('');
-    if (window.MathJax) MathJax.typesetPromise([panel]);
+    if (window.MathJax) MathJax.typesetPromise([panneau]);
+    panneau.classList.add('visible');
+    btn.textContent = 'Masquer toutes les réponses';
+  } else {
+    panneau.classList.remove('visible');
+    btn.textContent = 'Voir toutes les réponses';
   }
-  panel.classList.toggle('visible', !estOuvert);
-  document.getElementById('btn-toutes-reponses').textContent = !estOuvert ? 'Masquer toutes les réponses' : 'Voir toutes les réponses';
 }
 
 function placeholderPour(ex) {
@@ -2606,27 +2727,54 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
-  if (ex.formeFactorisee === 'numerateur') {
-    return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
+  if (ex.fractionIrreductible) {
+    return ex.facteurSymbolique === 'pi'
+      ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
+      : "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>, ni un calcul comme <code>1/2+1/6</code>. Si le résultat est un entier, l'écrire tel quel.";
   }
-  if (ex.formeFactorisee) {
-    return "La réponse doit être un produit de facteurs : par exemple <code>(x+2)(x-2)</code>, <code>(x+5)^2</code> ou <code>x(3x+1)</code>. Une expression développée n'est pas acceptée, même si elle est égale.";
-  }
-  if (ex.type === 'texte') {
-    return "Écrire simplement <code>oui</code> ou <code>non</code>.";
+  if (ex.type === 'ineq') {
+    return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
+  }
+  if (ex.type === 'cercle') {
+    return "Donner les coordonnées du centre puis le rayon, séparés par des points-virgules : <code>cx;cy;r</code>. Exemple pour un centre (1;-2) et un rayon 3 : <code>1;-2;3</code>.";
+  }
+  if (ex.type === 'vraifaux') {
+    return "Écrire simplement <code>vrai</code> ou <code>faux</code>.";
+  }
+  if (ex.type === 'qcm') {
+    return "Écrire la lettre de la bonne réponse : <code>a</code>, <code>b</code>, <code>c</code> ou <code>d</code>.";
+  }
+  if (ex.type === 'intervalle') {
+    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ou » : <code>]-inf;1[ ou ]3;+inf[</code>. Écrire <code>R</code> si la réponse est l'ensemble des réels, ou <code>vide</code> s'il n'y a aucune solution.";
+  }
+  if (ex.type === 'vecteur') {
+    return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
+  }
+  if (ex.type === 'somme') {
+    return "Écrire directement <code>sum(k,1,n,expr)</code> au clavier pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le symbole &Sigma; du clavier virtuel (Maj + touche <code>+</code>) fonctionne aussi si besoin.";
+  }
+  if (ex.type === 'paire') {
+    return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
+  }
+  if (ex.type === 'eqcart') {
+    return "Donner une équation cartésienne sous la forme <code>a;b;c</code> (les coefficients de <code>ax+by+c=0</code>, séparés par des points-virgules). Toute équation proportionnelle à la réponse attendue est acceptée.";
+  }
+  if (ex.type === 'triplet') {
+    return "Donner les trois coefficients demandés, séparés par des points-virgules (ex : <code>a;b;c</code>).";
   }
   return "Utiliser <code>^</code> pour une puissance (x^2), le bouton √ pour une racine carrée, <code>/</code> pour une fraction. Toute écriture équivalente est acceptée.";
 }
 
 function necessiteAide(ex) {
-  if (ex.formeFactorisee) return true;
-  if (ex.type === 'texte') return true;
+  if (ex.fractionIrreductible) return true;
+  if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
+
 function texteAideGroupe(indices) {
   const groupes = [];
   for (const idx of indices) {
@@ -2664,7 +2812,7 @@ function injecterAideGroupe(gridId, indices) {
   bulle.className = 'q-aide-bulle';
   bulle.id = 'aide-groupe-' + gridId;
   bulle.innerHTML = texte;
-  titre.insertAdjacentElement('afterend', bulle);
+  titre.after(bulle);
 }
 function toggleAideGroupe(gridId) {
   const aide = document.getElementById('aide-groupe-' + gridId);
@@ -2679,22 +2827,25 @@ function construireGrilles() {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
     injecterAideGroupe(gridId, indices);
+    // une seule question dans la section : pas de lettre (rien a distinguer) et la carte prend
+    // toute la largeur plutot que de laisser une colonne vide a cote (David, 2026-09-22, porte
+    // depuis la fiche 19 de Seconde).
+    const seul = indices.length === 1;
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
-      div.className = indices.length === 1 ? 'question question-seule' : 'question';
+      div.className = seul ? 'question question-pleine-largeur' : 'question';
       div.id = 'q-' + idx;
-      const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
-      const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
-      const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
-      const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
+      const lettre = lettresEtendues[pos] || '';
+      const suffixe = ex.avecEgal ? ' =' : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
-        ? `<div class="q-qcm-options">${ex.options.map(o =>
+        ? `<div class="q-qcm-options-wrapper${ex.optionsSurUneLigne ? ' q-qcm-options-wrapper--scroll' : ''}"><div class="q-qcm-options${ex.optionsSurUneLigne ? ' q-qcm-options--scroll' : ''}">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
-          ).join('')}</div>`
+          ).join('')}</div></div>`
         : '';
+      const lettreHtml = seul ? '' : `<span class="q-lettre">${lettre})</span>`;
       div.innerHTML = `
-        <span class="q-lettre">${lettre ? lettre + ')' : ''}</span>
+        ${lettreHtml}
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
@@ -2705,7 +2856,7 @@ function construireGrilles() {
   }
 }
 
-const TYPES_MATHFIELD = ['num', 'alg'];
+const TYPES_MATHFIELD = ['num', 'alg', 'somme'];
 
 function utiliseMathfield(ex) {
   if (!TYPES_MATHFIELD.includes(ex.type)) return false;
@@ -2906,6 +3057,267 @@ function labelFormeCanonique(a, alpha, beta) {
   return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
 }
 
+function texteEvenementSVG(x, y, label) {
+  const suffixe = '&#772;';
+  if (!label.endsWith(suffixe)) return `<text x="${x}" y="${y}">${label}</text>`;
+  const lettre = label.slice(0, -suffixe.length);
+  // barre dessinee manuellement (plutot que de compter sur le macron combinant de la police, trop court/fin
+  // pour bien se lire) : depasse legerement la lettre de part et d'autre pour une meilleure lisibilite
+  return `<text x="${x}" y="${y}">${lettre}</text><line x1="${x-1.5}" y1="${y-11}" x2="${x+10.5}" y2="${y-11}" stroke="#1a1a1a" stroke-width="1.1"/>`;
+}
+
+// etiquette de probabilite (decimale ou fraction n/d), decalee PERPENDICULAIREMENT a la branche
+// (xa,ya)->(xb,yb) plutot que verticalement -- un decalage seulement vertical ne degageait pas
+// assez la ligne sur les branches pentues (arbre a 3 branches initiales, 19.14), la ligne finissait
+// par traverser le denominateur (bug signale le 2026-09-22, David : "les ponderations ne sont pas
+// du tout correctement affichees"). dir<0 : etiquette du cote "au-dessus" (svg y plus petit).
+function probaLabelSVG(xa, ya, xb, yb, proba, fontSize, dir) {
+  if (!proba) return '';
+  const cx = (xa + xb) / 2, cy = (ya + yb) / 2;
+  const dx = xb - xa, dy = yb - ya;
+  const long = Math.hypot(dx, dy) || 1;
+  let perpX = -dy / long, perpY = dx / long;
+  if ((dir < 0 && perpY > 0) || (dir >= 0 && perpY < 0)) { perpX = -perpX; perpY = -perpY; }
+  const m = /^(-?)([^/]+)\/(.+)$/.exec(proba);
+  if (m) {
+    let den = m[3];
+    if (entoureParParentheses(den)) den = den.slice(1, -1);
+    const num = m[1] + m[2];
+    // rendu en vrai LaTeX (MathJax, via foreignObject) plutot qu'un num/barre/denominateur dessine
+    // a la main en <text> SVG -- illisible, surtout une fois zoome (bug signale le 2026-09-22,
+    // David : "les fractions pas du tout... ce n'est pas affiche en LaTeX"). Le foreignObject vit
+    // dans les memes coordonnees que le reste du SVG, donc suit le redimensionnement responsive
+    // (max-width + viewBox) sans calcul separe. Typeset differe : voir MathJax.typesetPromise()
+    // appele juste apres l'insertion dans le DOM (construireArbre19_X).
+    const recul = fontSize * 1.35;
+    const centreX = cx + perpX * recul, centreY = cy + perpY * recul;
+    const w = fontSize * 3.6, h = fontSize * 2.6;
+    const fsLatex = Math.round(fontSize * 1.25);
+    return `<foreignObject x="${(centreX - w / 2).toFixed(1)}" y="${(centreY - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}">`
+      + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fsLatex}px;color:#333;">\\(\\dfrac{${num}}{${den}}\\)</div>`
+      + `</foreignObject>`;
+  }
+  const recul = fontSize * 0.95;
+  const x = cx + perpX * recul, y = cy + perpY * recul + fontSize * 0.3;
+  return `<text x="${x}" y="${y}" text-anchor="middle" font-style="italic" font-size="${fontSize}">${proba}</text>`;
+}
+
+// fleche (ligne raccourcie + pointe triangulaire) -- repris tel quel de la fiche 19 de Seconde
+// (David, 2026-09-22 : "les arbres exactement comme en Seconde"). reculDepart (optionnel) : recule
+// le DEBUT du trait le long du segment, pour les branches qui repartent d'un noeud de niveau 1 sans
+// traverser sa lettre.
+function ligneAvecFleche(xa, ya, xb, yb, reculDepart) {
+  reculDepart = reculDepart || 0;
+  const dx = xb - xa, dy = yb - ya;
+  const long = Math.hypot(dx, dy);
+  const ux = dx / long, uy = dy / long;
+  const debutX = xa + ux * reculDepart, debutY = ya + uy * reculDepart;
+  const taille = 7, demiLargeur = 3;
+  const finLigneX = xb - ux * taille, finLigneY = yb - uy * taille;
+  const perpX = -uy, perpY = ux;
+  const p1x = finLigneX + perpX * demiLargeur, p1y = finLigneY + perpY * demiLargeur;
+  const p2x = finLigneX - perpX * demiLargeur, p2y = finLigneY - perpY * demiLargeur;
+  return `<line x1="${debutX.toFixed(1)}" y1="${debutY.toFixed(1)}" x2="${finLigneX.toFixed(1)}" y2="${finLigneY.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`
+    + `<polygon points="${xb.toFixed(1)},${yb.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
+}
+
+function genererSVGArbre(niveau1, niveau2, largeur, hauteur) {
+  // agrandi et fleches ajoutees le 2026-09-22 (porte depuis la fiche 19 de Seconde) : l'arbre
+  // n'est dessine qu'une seule fois par groupe, autant en profiter pour la lisibilite plutot que
+  // garder la taille/le style penses a l'origine pour une carte de question etroite. class
+  // "qcm-svg svg-grande-figure svg-police-manuel" + activerZoomSvg (voir plus bas) : zoom au clic.
+  largeur = largeur || 380; hauteur = hauteur || 300;
+  const n1 = niveau1.length;
+  const x0 = 20, xm = largeur*0.44, xf = largeur-70;
+  // marge de 25% en haut/bas, branches reparties uniformement entre les deux -- se reduit a la
+  // repartition 0,25/0,75 de la fiche de Seconde quand n1=2.
+  const marge = 0.25;
+  const yPositions1 = [];
+  for (let i=0;i<n1;i++) yPositions1.push(n1 === 1 ? hauteur/2 : hauteur*(marge + i*(1-2*marge)/(n1-1)));
+  const ecartBase = n1 === 1 ? hauteur*0.18 : (hauteur*(1-2*marge)/(n1-1)) * 0.36;
+  // max-width en style inline (pas la classe svg-grande-figure, pensee pour un autre type de
+  // figure et qui, combinee au "width:100%" de .qcm-svg, etirait l'arbre a la largeur entiere de
+  // la carte -- 804px de large a l'ecran au lieu d'une taille raisonnable) : c'est exactement le
+  // mecanisme utilise par les arbres de la fiche 19 de Seconde (voir svgArbrePondere, meme largeur
+  // de 380px). Bug signale le 2026-09-22 (David : "les arbres sont enormes").
+  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}" font-family="Georgia, serif" font-size="13" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:380px;">`;
+  svg += `<circle cx="${x0}" cy="${hauteur/2}" r="2" fill="#333"/>`;
+  niveau1.forEach((br1, i) => {
+    const y1 = yPositions1[i];
+    svg += ligneAvecFleche(x0, hauteur/2, xm, y1);
+    const dir1 = y1 > hauteur/2 ? 1 : -1;
+    svg += probaLabelSVG(x0, hauteur/2, xm, y1, br1.proba, 13, dir1);
+    svg += texteEvenementSVG(xm+8, y1+5, br1.label);
+    const br2list = niveau2[i];
+    const n2 = br2list.length;
+    const ecart = ecartBase;
+    const yPositions2 = [];
+    for (let j=0;j<n2;j++) yPositions2.push(y1 - ecart*(n2-1)/2 + ecart*j);
+    br2list.forEach((br2, j) => {
+      const y2 = yPositions2[j];
+      svg += ligneAvecFleche(xm+22, y1, xf, y2);
+      const dir2 = y2 > y1 ? 1 : -1;
+      svg += probaLabelSVG(xm+22, y1, xf, y2, br2.proba, 11, dir2);
+      svg += texteEvenementSVG(xf+8, y2+5, br2.label);
+    });
+  });
+  svg += '</svg>';
+  return `<div class="figure-centree">${svg}</div>`;
+}
+
+// ---------- Agrandissement des graphiques au clic -- repris tel quel de la fiche 19 de Seconde
+// (David, 2026-09-22), sans la partie "curseur" (fonctionnalite absente de cette fiche). ----------
+function activerZoomSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    svg.classList.add('svg-agrandissable');
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'button');
+    svg.setAttribute('aria-label', 'Agrandir ce graphique');
+    svg.addEventListener('click', () => ouvrirModalSvg(svg));
+    svg.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
+    });
+  });
+}
+function ouvrirModalSvg(svg) {
+  const interieur = document.getElementById('modal-svg-contenu-interieur');
+  interieur.innerHTML = '';
+  const clone = svg.cloneNode(true);
+  clone.classList.remove('svg-agrandissable', 'qcm-svg');
+  clone.removeAttribute('style');
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  interieur.appendChild(clone);
+  document.getElementById('modal-svg-overlay').classList.add('ouvert');
+}
+function fermerModalSvg(evt, force) {
+  if (force || evt.target.id === 'modal-svg-overlay') {
+    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
+  }
+}
+document.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Escape') fermerModalSvg(null, true);
+});
+
+function decPlainFromFrac(num, den) {
+  const decimals = Math.round(Math.log10(den));
+  let s = (num / den).toFixed(decimals);
+  if (s.includes('.')) { s = s.replace(/0+$/, '').replace(/\.$/, ''); }
+  return s.replace('.', ',');
+}
+
+const MOT_FRACTION = {3:'tiers', 4:'quart', 5:'cinquième', 6:'sixième'};
+// cases agrandies le 2026-09-22 (David : "les tableaux restent relativement petits" a cote des
+// arbres, desormais bien dimensionnes) -- police et marges augmentees, plus le meme changement de
+// taille de police sur l'element <table> lui-meme (voir le style inline "font-size:16px" ajoute a
+// chaque <table id="table-19-X">).
+const styleTd = 'border:1px solid #999;padding:8px 16px;text-align:center;';
+
+function mettreAJourTextesAvances() {
+  const g4 = paramsAvances.g4;
+  document.getElementById('table-17-4').innerHTML = `
+    <tr><td style="${styleTd}"></td><td style="${styleTd}"><em>A</em></td><td style="${styleTd}"><em>\\(\\overline{A}\\)</em></td></tr>
+    <tr><td style="${styleTd}"><em>B</em></td><td style="${styleTd}">${decPlainFromFrac(g4.pAB,100)}</td><td style="${styleTd}">${decPlainFromFrac(g4.pAnB,100)}</td></tr>
+    <tr><td style="${styleTd}"><em>\\(\\overline{B}\\)</em></td><td style="${styleTd}">${decPlainFromFrac(g4.pnAB,100)}</td><td style="${styleTd}">${decPlainFromFrac(g4.pnAnB,100)}</td></tr>`;
+
+  const g5 = paramsAvances.g5;
+  document.getElementById('table-17-5').innerHTML = `
+    <tr><td style="${styleTd}"></td><td style="${styleTd}"><em>A</em></td><td style="${styleTd}"><em>\\(\\overline{A}\\)</em></td><td style="${styleTd}">Total</td></tr>
+    <tr><td style="${styleTd}"><em>B</em></td><td style="${styleTd}">${g5.nAB}</td><td style="${styleTd}">${g5.nAnB}</td><td style="${styleTd}">${g5.rowB}</td></tr>
+    <tr><td style="${styleTd}"><em>\\(\\overline{B}\\)</em></td><td style="${styleTd}">${g5.nnAB}</td><td style="${styleTd}">${g5.nnAnB}</td><td style="${styleTd}">${g5.rowBbar}</td></tr>
+    <tr><td style="${styleTd}">Total</td><td style="${styleTd}">${g5.colA}</td><td style="${styleTd}">${g5.colAbar}</td><td style="${styleTd}">${g5.N}</td></tr>`;
+
+  const g6 = paramsAvances.g6;
+  document.getElementById('titre-17-6').textContent = `Calcul 17.5 — On considère deux événements \\(A\\) et \\(B\\) tels que \\(P(\\overline{A})=${decPlainFromFrac(g6.q,100).replace(',','{,}')}\\) et \\(P(\\overline{A}\\cap B)=${decPlainFromFrac(g6.r,100).replace(',','{,}')}\\).`;
+
+  const g7 = paramsAvances.g7;
+  document.getElementById('texte-17-7').textContent = `On a interrogé ${g7.N7} personnes sur leurs loisirs. Les choix proposés étaient le ski et la randonnée. Parmi les personnes interrogées, ${g7.S7} personnes font du ski, un ${MOT_FRACTION[g7.Dw]} des skieurs font aussi de la randonnée et ${g7.nNeither7} personnes ne font ni ski ni randonnée.`;
+
+  const g10 = paramsAvances.g10;
+  document.getElementById('titre-17-10').textContent = `Calcul 17.9 — Avec des probabilités conditionnelles (I). On donne \\(P(A)=${decPlainFromFrac(g10.p,100).replace(',','{,}')}\\) et \\(P_A(B)=${decPlainFromFrac(g10.q,100).replace(',','{,}')}\\).`;
+
+  const g11 = paramsAvances.g11;
+  document.getElementById('titre-17-11').textContent = `Calcul 17.10 — Avec des probabilités conditionnelles (II). On donne \\(P(A)=${decPlainFromFrac(g11.p,100).replace(',','{,}')}\\) ainsi que \\(P(B)=${decPlainFromFrac(g11.q0,100).replace(',','{,}')}\\) et \\(P_A(B)=${decPlainFromFrac(g11.r,100).replace(',','{,}')}\\).`;
+
+  const g12 = paramsAvances.g12;
+  document.getElementById('texte-17-12').textContent = `On a interrogé un grand nombre de personnes sur leurs habitudes musicales. ${g12.m}% de la population interrogée est composée de mineurs. ${g12.sMin}% des mineurs écoutent de la musique en streaming alors que ${g12.sMaj}% des majeurs écoutent de la musique en streaming.`;
+
+  const g13 = paramsAvances.g13;
+  document.getElementById('titre-17-13').textContent = `Calcul 17.12 — On considère \\(A\\) et \\(B\\) deux événements indépendants tels que \\(P(A)=${decPlainFromFrac(g13.p,100).replace(',','{,}')}\\) et \\(P(B)=${decPlainFromFrac(g13.q,100).replace(',','{,}')}\\).`;
+
+  const g15 = paramsAvances.g15;
+  document.getElementById('titre-17-15').textContent = `Calcul 17.14 — On considère \\(A\\) et \\(B\\) deux événements indépendants tels que \\(P(A)=${decPlainFromFrac(g15.p,100).replace(',','{,}')}\\) et \\(P(A\\cap B)=${decPlainFromFrac(g15.p*g15.q,10000).replace(',','{,}')}\\).`;
+
+  const g17 = paramsAvances.g17;
+  document.getElementById('table-17-17').innerHTML = `
+    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">1</td><td style="${styleTd}">2</td><td style="${styleTd}">3</td><td style="${styleTd}">4</td><td style="${styleTd}">5</td><td style="${styleTd}">6</td></tr>
+    <tr><td style="${styleTd}">P(X=x_i)</td><td style="${styleTd}">${decPlainFromFrac(g17.v[0],100)}</td><td style="${styleTd}">${decPlainFromFrac(g17.v[1],100)}</td><td style="${styleTd}">${decPlainFromFrac(g17.v[2],100)}</td><td style="${styleTd}">${decPlainFromFrac(g17.v[3],100)}</td><td style="${styleTd}">?</td><td style="${styleTd}">${decPlainFromFrac(g17.v[4],100)}</td></tr>`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-17')]);
+
+  const g18 = paramsAvances.g18;
+  document.getElementById('table-17-18').innerHTML = `
+    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">0</td><td style="${styleTd}">1</td><td style="${styleTd}">2</td><td style="${styleTd}">3</td></tr>
+    <tr><td style="${styleTd}">P(X=x_i)</td><td style="${styleTd}">${fracStr(g18.p0,100)}</td><td style="${styleTd}">${fracStr(g18.p1v,100)}</td><td style="${styleTd}">${fracStr(g18.p2v,100)}</td><td style="${styleTd}">${fracStr(g18.p3v,100)}</td></tr>`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-18')]);
+
+  const g19 = paramsAvances.g19;
+  document.getElementById('table-17-19').innerHTML = `
+    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">1</td><td style="${styleTd}">2</td><td style="${styleTd}">3</td><td style="${styleTd}">4</td><td style="${styleTd}">5</td><td style="${styleTd}">6</td></tr>
+    <tr><td style="${styleTd}">P(X≤x_i)</td><td style="${styleTd}">${fracStr(g19.C[0],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[1],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[2],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[3],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[4],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[5],g19.Dtot)}</td></tr>`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-19')]);
+
+  const g20 = paramsAvances.g20;
+  document.getElementById('table-17-20').innerHTML = `
+    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">${g20.xs[0]}</td><td style="${styleTd}">${g20.xs[1]}</td><td style="${styleTd}">${g20.xs[2]}</td><td style="${styleTd}">${g20.xs[3]}</td><td style="${styleTd}">${g20.xs[4]}</td></tr>
+    <tr><td style="${styleTd}">P(X=x_i)</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[0],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[1],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[2],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[3],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[4],100)}</td></tr>`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-20')]);
+}
+
+function construireArbre19_9() {
+  const g = paramsAvances.g9;
+  const niveau1 = [{label:'C', proba:fracToStr(g.pC)}, {label:'C&#772;', proba:fracToStr(g.pCbar)}];
+  const niveau2 = [
+    [{label:'D', proba:fracToStr(g.q1)}, {label:'D&#772;', proba:fracToStr(g.q1bar)}],
+    [{label:'D', proba:fracToStr(g.q2)}, {label:'D&#772;', proba:fracToStr(g.q2bar)}],
+  ];
+  document.getElementById('arbre-17-9').innerHTML = `<p>On donne l'arbre pondéré :</p>${genererSVGArbre(niveau1, niveau2)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-9')]);
+}
+
+function construireArbre19_14() {
+  const g = paramsAvances.g14;
+  const niveau1 = [{label:'A', proba:decPlainFromFrac(g.p1,100)}, {label:'B', proba:decPlainFromFrac(g.p2,100)}, {label:'C', proba:decPlainFromFrac(g.p3,100)}];
+  const niveau2 = [
+    [{label:'D', proba:decPlainFromFrac(g.q1,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q1,100)}],
+    [{label:'D', proba:decPlainFromFrac(g.q2,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q2,100)}],
+    [{label:'D', proba:decPlainFromFrac(g.q3,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q3,100)}],
+  ];
+  document.getElementById('arbre-17-14').innerHTML = `${genererSVGArbre(niveau1, niveau2, 380, 340)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-14')]);
+}
+
+function construireArbre19_16() {
+  const g = paramsAvances.g16;
+  const niveau1 = [{label:'A', proba:`1/(${g.K}+x)`}, {label:'A&#772;', proba:''}];
+  const niveau2 = [
+    [{label:'B', proba:fracStr(g.Fp,g.Fq)}, {label:'B&#772;', proba:fracStr(g.Fq-g.Fp,g.Fq)}],
+    [{label:'B', proba:fracStr(g.Gp,g.Gq)}, {label:'B&#772;', proba:fracStr(g.Gq-g.Gp,g.Gq)}],
+  ];
+  document.getElementById('arbre-17-16').innerHTML = `${genererSVGArbre(niveau1, niveau2)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-16')]);
+}
+
+function construireArbre19_21() {
+  const niveau1 = [{label:'A', proba:'a&#178;'}, {label:'A&#772;', proba:'1-a&#178;'}];
+  const niveau2 = [
+    [{label:'B', proba:'1-a'}, {label:'B&#772;', proba:'a'}],
+    [{label:'B', proba:'a'}, {label:'B&#772;', proba:'1-a'}],
+  ];
+  document.getElementById('arbre-17-21').innerHTML = `<p>Soit \\(a\\in\\,]0;1[\\). On donne l'arbre pondéré ci-dessous :</p>${genererSVGArbre(niveau1, niveau2)}`;
+  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-21')]);
+}
+
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
 // sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
 // et les reponses deja saisies plutot que d'en tirer de nouvelles.
@@ -2985,8 +3397,15 @@ async function initialiserFiche() {
   if (brouillonValide) {
     exercices = brouillon.exercices;
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
+    restaurerEtatSupplementaire(brouillon.extra);
   }
 construireGrilles();
+mettreAJourTextesAvances();
+construireArbre19_9();
+construireArbre19_14();
+construireArbre19_16();
+construireArbre19_21();
+activerZoomSvg(document.body);
 attacherEcouteurs();
 attacherEcouteursTactiles();
 definirMode(true);

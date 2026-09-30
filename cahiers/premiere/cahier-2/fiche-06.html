@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Fiche 6 — Dérivation I (Première) — interactif</title>
+<title>Fiche 6 — Dérivation III (Première) — interactif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
@@ -617,11 +617,6 @@ window.MathJax = {
     border: 1px solid #ddd;
     border-radius: 6px;
   }
-  /* police "type manuel scolaire" des graphiques : classe a part (pas juste .qcm-svg) pour qu'elle
-     survive au clonage dans la modale d'agrandissement, qui retire la classe qcm-svg elle-meme */
-  .svg-police-manuel {
-    font-family: 'Cambria Math', Cambria, Georgia, serif;
-  }
   .figure-centree {
     display: flex;
     justify-content: center;
@@ -634,83 +629,6 @@ window.MathJax = {
   }
   .figure-centree svg.qcm-svg {
     max-width: 220px;
-  }
-  svg.svg-agrandissable {
-    cursor: zoom-in;
-  }
-  svg.svg-agrandissable:hover {
-    outline: 2px solid var(--bleu-clair);
-    outline-offset: 2px;
-  }
-  /* ---------- bouton-icone "curseur avec coordonnees", porte depuis les fiches 14/15 de Seconde
-     apres validation : meme gabarit que le bouton loupe d'automatismes/assets/automatismes.css
-     (.zoom-btn) — bouton rond-carre semi-transparent, hover en bleu plein, place legerement en
-     dehors du cadre du graphique (a droite, via un padding-right dedie sur le conteneur). Masque
-     sur les appareils sans survol reel (tablette/telephone) : un curseur "au doigt" cacherait en
-     permanence le point vise. ---------- */
-  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
-  .btn-curseur {
-    position: absolute; top: 4px; right: 0;
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 24px; height: 24px; border-radius: 6px;
-    background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
-    color: var(--bleu); cursor: pointer; line-height: 0;
-  }
-  .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
-  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
-  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
-  .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
-  .curseur-groupe { pointer-events: none; }
-  svg.qcm-svg.curseur-actif { cursor: crosshair; }
-  /* empeche le glissement tactile sur la figure d'etre intercepte comme un scroll de page : sans
-     ca, un geste au doigt sur une figure scrolle au lieu d'activer le curseur (voir cablerCurseurUnique).
-     Le clone agrandi de la modale (#modal-svg-contenu-interieur) perd la classe qcm-svg (voir
-     ouvrirModalSvg), d'ou le second selecteur. */
-  svg.qcm-svg, #modal-svg-contenu-interieur svg { touch-action: none; }
-  .modal-svg-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 20, 25, 0.8);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    cursor: zoom-out;
-  }
-  .modal-svg-overlay.ouvert {
-    display: flex;
-  }
-  .modal-svg-contenu {
-    position: relative;
-    background: white;
-    border-radius: 10px;
-    padding: 32px 14px 14px;
-    width: min(96vw, 720px);
-    max-height: 94vh;
-    overflow: auto;
-    cursor: default;
-  }
-  .modal-svg-contenu svg {
-    display: block;
-    margin: 0 auto;
-    width: 100%;
-    height: auto;
-  }
-  .modal-svg-fermer {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    background: none;
-    border: none;
-    font-size: 22px;
-    line-height: 1;
-    color: var(--gris);
-    cursor: pointer;
-    padding: 4px 8px;
-  }
-  .modal-svg-fermer:hover {
-    color: var(--rouge);
   }
   .qcm-options {
     display: flex;
@@ -736,7 +654,7 @@ window.MathJax = {
     margin-bottom: 8px;
   }
   .qcm-grille-figures > div {
-    flex: 0 1 210px;
+    flex: 0 1 160px;
   }
   .qcm-figure-label {
     text-align: center;
@@ -898,26 +816,19 @@ window.MathJax = {
 
 <body>
 
-<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
-  <div class="modal-svg-contenu">
-    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
-    <div id="modal-svg-contenu-interieur"></div>
-  </div>
-</div>
-
 <p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 2</a></p>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
-  <a class="nav-btn" href="fiche-07.html">Fiche suivante &rarr;</a>
+  <a class="nav-btn" href="fiche-05.html">&larr; Fiche précédente</a>
+  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
   <div class="badge">6</div>
   <div class="entete-texte">
-    <h1>Dérivation I</h1>
+    <h1>Dérivation III</h1>
     <p class="cahier-repere">Première — Cahier 2</p>
   </div>
 </div>
@@ -932,43 +843,59 @@ window.MathJax = {
   <span class="mode-explication" id="mode-explication"></span>
 </div>
 
+<div class="remarque-generale"><strong>Remarque</strong>
+Dans cette fiche, on ne se préoccupera pas (sauf mention du contraire) des ensembles de définition des fonctions considérées.</div>
+
 <div class="bloc-general">
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 6.1 — Des puissances. Soit n ∈ ℤ. Écrire <span class="titre-mise-en-valeur">sous la forme \(2^k\) avec \(k\in\mathbb{Z}\)</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 6.1 — Écrire <span class="titre-mise-en-valeur">sous la forme \(ax+by+cz\)</span>, où a, b et c sont des réels.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-6-1"></div>
 
-<p class="calcul-titre"><span>Calcul 6.2 — Factorisations dans des fractions.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 6.2 — Développer et ordonner <span class="titre-mise-en-valeur">selon les puissances de x</span>.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-6-2"></div>
 </div>
 
-<p class="section-titre">Lectures graphiques</p>
+<p class="section-titre">Dérivées de fonctions composées</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 6.3 — Lecture graphique d'un nombre dérivé.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="graphique-6-3"></div>
-<div id="graphique-6-3g"></div>
+<p class="calcul-titre"><span>Calcul 6.3 — Puissances. Déterminer l'expression de la dérivée de f, définie par les expressions suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-6-3"></div>
 
-<p class="calcul-titre"><span>Calcul 6.4 — Une courbe, trois tableaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="graphique-6-4"></div>
+<p class="section-titre">Dérivation à partir de relations fondamentales</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 6.4 — On considère une fonction f, définie et dérivable sur ℝ*, et vérifiant \(f'(x)=\dfrac{1}{x}+x\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-6-4">On note, si \(x\ne 1\), \(h(x)=f(1-x)\).</p>
 <div class="question-grille" id="grille-6-4"></div>
 
-<p class="calcul-titre"><span>Calcul 6.5 — Un tableau et trois courbes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="graphique-6-5a"></div>
-<div class="question-grille" id="grille-6-5a"></div>
-<div id="graphique-6-5b"></div>
-<div class="question-grille" id="grille-6-5b"></div>
+<p class="calcul-titre"><span>Calcul 6.5 — On considère une fonction f, définie et dérivable sur ℝ, et vérifiant \(f'(x)=\dfrac{2x}{3+x^2}\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-6-5">On note, pour tout réel \(x\), \(h(x)=f(1-x)\).</p>
+<div class="question-grille" id="grille-6-5"></div>
+
+<p class="section-titre">Équations de tangentes</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 6.6 — Des équations de tangentes. Pour les fonctions f définies ci-dessous et pour les réels a suivants, donner une équation de la tangente à la courbe représentative de f au point d'abscisse a.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-6-6"></div>
+
+<p class="calcul-titre"><span>Calcul 6.7 — Des ordonnées à l'origine. Pour les fonctions f définies ci-dessous et pour les réels a suivants, déterminer l'ordonnée à l'origine de la tangente à la courbe de f au point d'abscisse a.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-6-7"></div>
 
 <div class="bloc-avance">
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 6.6 — Tangente et rayon.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<div id="figure-6-6"></div>
-<div class="rappel-formule">On rappelle la propriété suivante : dans un repère orthonormé, si \(\vec{u}\begin{pmatrix}x\\y\end{pmatrix}\) et \(\vec{v}\begin{pmatrix}x'\\y'\end{pmatrix}\) sont deux vecteurs, alors \(\vec{u}\) et \(\vec{v}\) sont orthogonaux si, et seulement si, \(x\times x'+y\times y'=0\).</div>
-<div class="question-grille" id="grille-6-6"></div>
+<div class="rappel-formule"><strong>Notation.</strong> Si \(f\) est une fonction et si \(a\) un réel en lequel \(f\) est dérivable, on note \(T_{f,a}\) la tangente à la courbe représentative de \(f\) au point d'abscisse \(a\).</div>
+
+<p class="calcul-titre"><span>Calcul 6.8 — Intersection de tangentes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<div class="question-grille" id="grille-6-8"></div>
+
+<p class="calcul-titre"><span>Calcul 6.9 — Tangente passant par un point donné, avec ou sans paramètre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<div class="question-grille" id="grille-6-9"></div>
+
+
 </div>
 
 <div class="barre-controle">
@@ -1009,8 +936,8 @@ window.MathJax = {
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
-  <a class="nav-btn" href="fiche-07.html">Fiche suivante &rarr;</a>
+  <a class="nav-btn" href="fiche-05.html">&larr; Fiche précédente</a>
+  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
@@ -1065,353 +992,519 @@ window.addEventListener('afterprint', restaurerApresImpression);
 function exporterPDF() { preparerPourImpression(); window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
 
-function fmtLinN(a, b) {
-  let s = (a === 1 ? 'n' : (a === -1 ? '-n' : a + '*n'));
-  if (b !== 0) s += (b > 0 ? '+' + b : b);
-  return s;
+// ---------- Générateurs de calcul formel (dérivées) ----------
+// f(x) = k*(a*x+b)^n  =>  f'(x) = k*n*a*(a*x+b)^(n-1)
+// Vérifié à la main sur les exemples d'origine : (2x-1)^3 -> 6*(2x-1)^2 ; (1-x)^5 -> -5*(1-x)^4 ; 1/(1-2x)^3 -> 6/(1-2x)^4.
+function fmtLin(a, b, ascii) {
+  const mult = ascii ? '*' : '';
+  const axPart = a === 1 ? 'x' : a === -1 ? '-x' : `${a}${mult}x`;
+  const bPart = b === 0 ? '' : (b > 0 ? `+${b}` : `${b}`);
+  return axPart + bPart;
+}
+function derivPuissanceLineaire(k, a, b, n) {
+  const coef = k * n * a;
+  const newExp = n - 1;
+  const baseAscii = `(${fmtLin(a, b, true)})`;
+  const baseLatex = `(${fmtLin(a, b, false)})`;
+  const coefStr = coef === 1 ? '' : coef === -1 ? '-' : `${coef}*`;
+  const coefStrLatex = coef === 1 ? '' : coef === -1 ? '-' : `${coef}`;
+  let reponse, derivLatex;
+  if (newExp === 0) {
+    reponse = `${coef}`;
+    derivLatex = `${coef}`;
+  } else if (newExp > 0) {
+    reponse = `${coefStr}${baseAscii}^${newExp}`;
+    derivLatex = `${coefStrLatex}${baseLatex}^{${newExp}}`;
+  } else {
+    const denomExp = -newExp;
+    reponse = coef === 1 ? `1/${baseAscii}^${denomExp}` : `${coef}/${baseAscii}^${denomExp}`;
+    derivLatex = `\\dfrac{${coef === 1 ? '1' : coef}}{${baseLatex}^{${denomExp}}}`;
+  }
+  let enonceLatex;
+  if (n > 0) {
+    const kStr = k === 1 ? '' : `${k}`;
+    enonceLatex = `f(x)=${kStr}${baseLatex}^{${n}}`;
+  } else {
+    const numer = k === 1 ? '1' : `${k}`;
+    enonceLatex = `f(x)=\\dfrac{${numer}}{${baseLatex}^{${-n}}}`;
+  }
+  return { enonce: enonceLatex, reponse, derivLatex };
 }
 
-function termePolyN(coeff, puissance) {
-  if (coeff === 0) return null;
-  const abs = Math.abs(coeff);
-  const varPart = puissance === 0 ? '' : (puissance === 1 ? 'n' : 'n^' + puissance);
-  const text = varPart ? (abs === 1 ? varPart : abs + varPart) : String(abs);
-  return { sign: coeff < 0 ? '-' : '+', text };
+function puissanceStr(a, b, n, ascii) {
+  const base = `(${fmtLin(a, b, ascii)})`;
+  if (n === 0) return '1';
+  if (n === 1) return base;
+  return ascii ? `${base}^${n}` : `${base}^{${n}}`;
 }
-function joinPolyN(poly) {
-  const deg = poly.length - 1;
+function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+
+// (u*v)' = u'v + uv' = (a1x+b1)^(n1-1) * (a2x+b2)^(n2-1) * [facteur commun mis en évidence] — forme factorisée.
+// Vérifiée : reproduit exactement l'exemple original (2x-1)^2(3x+2)^4 -> 4*(2x-1)*(3x+2)^3*(9x-1), + ~600 tirages contre dérivée numérique.
+function derivProduitPuissances(a1, b1, n1, a2, b2, n2) {
+  const coefX = a1 * a2 * (n1 + n2);
+  const coefConst = n1 * a1 * b2 + n2 * a2 * b1;
+  let g = pgcd(coefX, coefConst);
+  if (coefX < 0) g = -g;
+  const bx = coefX / g, bc = coefConst / g;
+  const bracketAscii = (bx === 0) ? `${bc}` : `(${fmtLin(bx, bc, true)})`;
+  let sign = '';
+  let numParts = [puissanceStr(a1, b1, n1 - 1, true), puissanceStr(a2, b2, n2 - 1, true), bracketAscii].filter(p => p !== '1');
+  if (g === -1) sign = '-'; else if (g !== 1) numParts.unshift(`${g}`);
+  if (numParts.length === 0) numParts = ['1'];
+  const reponse = sign + numParts.join('*');
+  const enonceLatex = `f(x)=${puissanceStr(a1, b1, n1, false)}${puissanceStr(a2, b2, n2, false)}`;
+  return { enonce: enonceLatex, reponse };
+}
+
+// (u/v)' = (u'v - uv') / v^2 = (a1x+b1)^(n1-1) * [facteur commun] / (a2x+b2)^(n2+1) — forme factorisée.
+// Vérifiée : reproduit exactement les 2 exemples originaux (linéaire/linéaire et puissance/puissance), + ~600 tirages contre dérivée numérique.
+function derivQuotientPuissances(a1, b1, n1, a2, b2, n2) {
+  const coefX = a1 * a2 * (n1 - n2);
+  const coefConst = n1 * a1 * b2 - n2 * a2 * b1;
+  const denom = puissanceStr(a2, b2, n2 + 1, true);
+  let g = pgcd(coefX, coefConst);
+  if (coefX < 0 || (coefX === 0 && coefConst < 0)) g = -g;
+  const bx = coefX / g, bc = coefConst / g;
+  const bracketAscii = (bx === 0) ? `${bc}` : `(${fmtLin(bx, bc, true)})`;
+  let sign = '';
+  let numParts = [puissanceStr(a1, b1, n1 - 1, true), bracketAscii].filter(p => p !== '1');
+  if (g === -1) sign = '-'; else if (g !== 1) numParts.unshift(`${g}`);
+  if (numParts.length === 0) numParts = ['1'];
+  const reponse = sign + numParts.join('*') + '/' + denom;
+  const enonceLatex = `f(x)=\\dfrac{${puissanceStr(a1, b1, n1, false)}}{${puissanceStr(a2, b2, n2, false)}}`;
+  return { enonce: enonceLatex, reponse };
+}
+
+// ---------- Fractions exactes (pas de virgule flottante — cohérent avec un contexte sans calculatrice) ----------
+function frac(n, d) { if (d < 0) { n = -n; d = -d; } const g = pgcd(n, d); return { n: n / g, d: d / g }; }
+const F = {
+  add: (x, y) => frac(x.n * y.d + y.n * x.d, x.d * y.d),
+  sub: (x, y) => frac(x.n * y.d - y.n * x.d, x.d * y.d),
+  mul: (x, y) => frac(x.n * y.n, x.d * y.d),
+  div: (x, y) => frac(x.n * y.d, x.d * y.n),
+  of: (n, d) => frac(n, d === undefined ? 1 : d),
+  str: (x) => x.d === 1 ? `${x.n}` : `${x.n}/${x.d}`,
+  fmtLatex: (x) => x.d === 1 ? `${x.n}` : `\\dfrac{${x.n}}{${x.d}}`
+};
+
+function equationReduiteAscii(pa, pb) {
+  const paTrim = String(pa).trim(), pbTrim = String(pb).trim();
+  let penteTerme;
+  if (paTrim === '0') penteTerme = '';
+  else if (paTrim === '1') penteTerme = 'x';
+  else if (paTrim === '-1') penteTerme = '-x';
+  else penteTerme = `(${paTrim})*x`;
+  const interceptTerme = pbTrim === '0' ? '' : (pbTrim.startsWith('-') ? pbTrim : '+'+pbTrim);
+  const joint = penteTerme + interceptTerme;
+  if (joint === '') return '0';
+  return joint.startsWith('+') ? joint.slice(1) : joint;
+}
+function termePoly(coef, unit) {
+  if (coef.n === 0) return null;
+  const abs = F.of(Math.abs(coef.n), coef.d);
+  const sign = coef.n < 0 ? '-' : '+';
+  const coefStr = (abs.n === 1 && abs.d === 1 && unit !== '') ? '' : F.fmtLatex(abs);
+  return { sign, text: coefStr + unit };
+}
+function joinTermes(termes) {
+  const valid = termes.filter(t => t !== null);
+  if (valid.length === 0) return '0';
+  let out = valid[0].sign === '-' ? '-' + valid[0].text : valid[0].text;
+  for (let i = 1; i < valid.length; i++) out += valid[i].sign + valid[i].text;
+  return out;
+}
+
+// Équation de tangente : coef=f'(a), ordonnée=f(a)-a*f'(a) — vérifiées sur les 4 exemples originaux (8.12 a-d), valeurs exactes reproduites au signe près.
+function tangenteQuadratique(A, B, C, a) {
+  const coef = F.add(F.mul(F.of(2), F.mul(A, a)), B);
+  const intercept = F.sub(C, F.mul(A, F.mul(a, a)));
+  const enonce = `f(x)=${joinTermes([termePoly(A, 'x^2'), termePoly(B, 'x'), termePoly(C, '')])}\\) et \\(a=${F.fmtLatex(a)}`;
+  return { enonce, pa: F.str(coef), pb: F.str(intercept) };
+}
+function tangenteRationnelle(k, a, b, pt) {
+  const denom = F.add(F.mul(a, pt), b);
+  const fprime = F.div(F.mul(k, b), F.mul(denom, denom));
+  const fval = F.div(F.mul(k, pt), denom);
+  const intercept = F.sub(fval, F.mul(pt, fprime));
+  const numerK = k.n === 1 ? '' : k.n === -1 ? '-' : F.fmtLatex(k);
+  const enonce = `f(x)=\\dfrac{${numerK}x}{${fmtLin(a.n, b.n, false)}}\\) et \\(a=${F.fmtLatex(pt)}`;
+  return { enonce, pa: F.str(fprime), pb: F.str(intercept) };
+}
+function tangenteSommePuissances(k1, a1, b1, n1, k2, a2, b2, n2, pt) {
+  function powF(base, n) { let r = F.of(1); for (let i = 0; i < n; i++) r = F.mul(r, base); return r; }
+  const u1 = F.add(F.mul(a1, pt), b1), u2 = F.add(F.mul(a2, pt), b2);
+  const fval = F.add(F.mul(k1, powF(u1, n1)), F.mul(k2, powF(u2, n2)));
+  const dval = F.add(F.mul(k1, F.mul(F.of(n1), F.mul(a1, powF(u1, n1 - 1)))), F.mul(k2, F.mul(F.of(n2), F.mul(a2, powF(u2, n2 - 1)))));
+  const intercept = F.sub(fval, F.mul(pt, dval));
+  const terme1 = termePoly(k1, puissanceStr(a1.n, b1.n, n1, false));
+  const terme2 = termePoly(k2, puissanceStr(a2.n, b2.n, n2, false));
+  const enonce = `f(x)=${joinTermes([terme1, terme2])}\\) et \\(a=${F.fmtLatex(pt)}`;
+  return { enonce, pa: F.str(dval), pb: F.str(intercept) };
+}
+
+// powFrac gère les exposants négatifs (1/x^k), utile pour 8.13 d) — vérifié : 200+400 tirages contre dérivée numérique.
+function powFrac(base, n) {
+  if (n >= 0) { let r = F.of(1); for (let i = 0; i < n; i++) r = F.mul(r, base); return r; }
+  let r = F.of(1); for (let i = 0; i < -n; i++) r = F.mul(r, base); return F.div(F.of(1), r);
+}
+function ordonneeOrigineProduit(a1, b1, n1, a2, b2, n2, pt) {
+  const u = F.add(F.mul(a1, pt), b1), v = F.add(F.mul(a2, pt), b2);
+  const un = powFrac(u, n1), vn = powFrac(v, n2);
+  const uprime = F.mul(F.of(n1), F.mul(a1, powFrac(u, n1 - 1)));
+  const vprime = F.mul(F.of(n2), F.mul(a2, powFrac(v, n2 - 1)));
+  const fval = F.mul(un, vn);
+  const dval = F.add(F.mul(uprime, vn), F.mul(un, vprime));
+  const intercept = F.sub(fval, F.mul(pt, dval));
+  const enonce = `f(x)=${puissanceStr(a1.n, b1.n, n1, false)}${puissanceStr(a2.n, b2.n, n2, false)}\\) et \\(a=${F.fmtLatex(pt)}`;
+  return { enonce, pb: F.str(intercept) };
+}
+function ordonneeOrigineQuotient(a1, b1, n1, a2, b2, n2, pt) {
+  const u = F.add(F.mul(a1, pt), b1), v = F.add(F.mul(a2, pt), b2);
+  const un = powFrac(u, n1), vn = powFrac(v, n2);
+  const uprime = F.mul(F.of(n1), F.mul(a1, powFrac(u, n1 - 1)));
+  const vprime = F.mul(F.of(n2), F.mul(a2, powFrac(v, n2 - 1)));
+  const fval = F.div(un, vn);
+  const dval = F.div(F.sub(F.mul(uprime, vn), F.mul(un, vprime)), F.mul(vn, vn));
+  const intercept = F.sub(fval, F.mul(pt, dval));
+  const enonce = `f(x)=\\dfrac{${puissanceStr(a1.n, b1.n, n1, false)}}{${puissanceStr(a2.n, b2.n, n2, false)}}\\) et \\(a=${F.fmtLatex(pt)}`;
+  return { enonce, pb: F.str(intercept) };
+}
+function ordonneeOriginePuissance(k, a, b, n, pt) {
+  const u = F.add(F.mul(a, pt), b);
+  const fval = F.mul(k, powFrac(u, n));
+  const dval = F.mul(k, F.mul(F.of(n), F.mul(a, powFrac(u, n - 1))));
+  const intercept = F.sub(fval, F.mul(pt, dval));
+  let enonce;
+  if (n > 0) {
+    const kStr = k.n === 1 ? '' : F.fmtLatex(k);
+    enonce = `f(x)=${kStr}${puissanceStr(a.n, b.n, n, false)}\\) et \\(a=${F.fmtLatex(pt)}`;
+  } else {
+    const numer = k.n === 1 ? '1' : F.fmtLatex(k);
+    enonce = `f(x)=\\dfrac{${numer}}{${puissanceStr(a.n, b.n, -n, false)}}\\) et \\(a=${F.fmtLatex(pt)}`;
+  }
+  return { enonce, pb: F.str(intercept) };
+}
+
+// ---------- Algèbre pure : combinaisons linéaires (8.1) et polynômes (8.2) ----------
+function pNeg(x) { return F.of(-x.n, x.d); }
+function termePolyAscii(coef, unit) {
+  if (coef.n === 0) return null;
+  const abs = F.of(Math.abs(coef.n), coef.d);
+  const sign = coef.n < 0 ? '-' : '+';
+  const fracStr = abs.d === 1 ? `${abs.n}` : `${abs.n}/${abs.d}`;
+  const coefStr = (abs.n === 1 && abs.d === 1 && unit !== '') ? '' : fracStr + (unit ? '*' : '');
+  return { sign, text: coefStr + unit };
+}
+// Somme de fractions (Ax+By+Cz)/D — vérifiée : reproduit exactement 8.1 a) original.
+function combinaisonLineaire(termes) {
+  let cx = F.of(0), cy = F.of(0), cz = F.of(0);
   const parts = [];
-  poly.forEach((c, i) => { const t = termePolyN(c, deg - i); if (t) parts.push(t); });
-  if (parts.length === 0) return '0';
-  let s = (parts[0].sign === '-' ? '-' : '') + parts[0].text;
-  for (let i = 1; i < parts.length; i++) s += parts[i].sign + parts[i].text;
-  return s;
-}
-
-function termeDivN(coeff, puissanceDiv) {
-  if (coeff === 0) return null;
-  const abs = Math.abs(coeff);
-  const text = puissanceDiv === 0 ? String(abs) : (abs === 1 ? '1' : abs) + '/n' + (puissanceDiv === 1 ? '' : '^' + puissanceDiv);
-  return { sign: coeff < 0 ? '-' : '+', text };
-}
-function joinDivN(poly) {
-  const parts = [];
-  poly.forEach((c, i) => { const t = termeDivN(c, i); if (t) parts.push(t); });
-  if (parts.length === 0) return '0';
-  let s = (parts[0].sign === '-' ? '-' : '') + parts[0].text;
-  for (let i = 1; i < parts.length; i++) s += parts[i].sign + parts[i].text;
-  return s;
-}
-
-function polyAlea(deg) {
-  const poly = [aleaNonNul(1, 3)];
-  for (let i = 1; i < deg; i++) poly.push(alea(-3, 3));
-  poly.push(alea(-3, 3));
-  return poly;
-}
-
-function melanger(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = alea(0, i);
-    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  for (const t of termes) {
+    cx = F.add(cx, F.of(t.A, t.D)); cy = F.add(cy, F.of(t.B, t.D)); cz = F.add(cz, F.of(t.C, t.D));
+    const num = joinTermes([termePoly(F.of(t.A), 'x'), termePoly(F.of(t.B), 'y'), termePoly(F.of(t.C), 'z')]);
+    parts.push(t.D === 1 ? `(${num})` : `\\dfrac{${num}}{${t.D}}`);
   }
-  return a;
+  const enonce = parts.join('+').replace(/\+-/g, '-');
+  const reponse = joinTermes([termePolyAscii(cx, 'x'), termePolyAscii(cy, 'y'), termePolyAscii(cz, 'z')]);
+  return { enonce, reponse };
+}
+// Polynômes à coefficients exacts (Fraction[]), indice = degré.
+function pLinear(a, b) { return [b, a]; }
+function pAdd(p, q) { const n = Math.max(p.length, q.length); const r = []; for (let i = 0; i < n; i++) r.push(F.add(p[i] || F.of(0), q[i] || F.of(0))); return r; }
+function pSub(p, q) { const n = Math.max(p.length, q.length); const r = []; for (let i = 0; i < n; i++) r.push(F.sub(p[i] || F.of(0), q[i] || F.of(0))); return r; }
+function pMul(p, q) { const r = Array(p.length + q.length - 1).fill(0).map(() => F.of(0)); for (let i = 0; i < p.length; i++) for (let j = 0; j < q.length; j++) r[i + j] = F.add(r[i + j], F.mul(p[i], q[j])); return r; }
+function pScale(p, k) { return p.map(c => F.mul(c, k)); }
+function pTrim(p) { let n = p.length; while (n > 1 && p[n - 1].n === 0) n--; return p.slice(0, n); }
+function pToAscii(p) {
+  p = pTrim(p);
+  const terms = [];
+  for (let deg = p.length - 1; deg >= 0; deg--) { const c = p[deg]; if (c.n === 0) continue; const unit = deg === 0 ? '' : deg === 1 ? 'x' : `x^${deg}`; terms.push(termePolyAscii(c, unit)); }
+  return joinTermes(terms.length ? terms : [termePolyAscii(F.of(0), '')]);
+}
+function pToLatex(p) {
+  p = pTrim(p);
+  const terms = [];
+  for (let deg = p.length - 1; deg >= 0; deg--) { const c = p[deg]; if (c.n === 0) continue; const unit = deg === 0 ? '' : deg === 1 ? 'x' : `x^{${deg}}`; terms.push(termePoly(c, unit)); }
+  return joinTermes(terms.length ? terms : [termePoly(F.of(0), '')]);
 }
 
-function fmtX(n) { return n < 0 ? '−' + Math.abs(n) : String(n); }
-
-function construireAntideriveeCubique(k, r1, r2, r3, C0) {
-  const S1 = r1+r2+r3, S2 = r1*r2+r1*r3+r2*r3, S3 = r1*r2*r3;
-  return x => k*(x**4/4 - S1*x**3/3 + S2*x**2/2 - S3*x) + C0;
+// ---------- Calculs plus avancés (8.14-8.16) : réponses symboliques en un paramètre a/b ----------
+function pPow(p, n) { let r = [F.of(1)]; for (let i = 0; i < n; i++) r = pMul(r, p); return r; }
+function pToAsciiVar(p, v) {
+  p = pTrim(p);
+  const terms = [];
+  for (let deg = p.length - 1; deg >= 0; deg--) { const c = p[deg]; if (c.n === 0) continue; const unit = deg === 0 ? '' : deg === 1 ? v : `${v}^${deg}`; terms.push(termePolyAscii(c, unit)); }
+  return joinTermes(terms.length ? terms : [termePolyAscii(F.of(0), '')]);
+}
+// Divise p par (c*x+d), en supposant que c'est un facteur exact (reste attendu = 0) : utilisé pour simplifier
+// la fraction avant de la donner comme réponse — sans cette simplification, le vérificateur (qui teste avec des
+// valeurs aléatoires de a) pourrait tomber près d'une "fausse" division par zéro provenant du facteur commun.
+function pDivLinear(p, c, d) {
+  p = pTrim(p);
+  const n = p.length - 1;
+  const q = new Array(Math.max(n, 1)).fill(F.of(0));
+  let carry = p[n];
+  for (let i = n; i >= 1; i--) { q[i - 1] = F.div(carry, c); carry = F.sub(p[i - 1], F.mul(d, q[i - 1])); }
+  return [q, carry];
+}
+// Abscisse d'intersection de T_{f,a} et T_{g,a}, avec f=k1(cx+d)^n1, g=k2(cx+d)^n2 (n1,n2>=2).
+// Vérifiée : reproduit exactement l'exemple original, + 300 tirages contre un calcul par différences finies indépendant.
+function intersectionTangentes(k1, n1, k2, n2, c, d) {
+  const base = pLinear(c, d);
+  const fA = pScale(pPow(base, n1), k1), gA = pScale(pPow(base, n2), k2);
+  const fPrimeA = pScale(pPow(base, n1 - 1), F.mul(k1, F.mul(F.of(n1), c)));
+  const gPrimeA = pScale(pPow(base, n2 - 1), F.mul(k2, F.mul(F.of(n2), c)));
+  const numMinusA = pSub(gA, fA);
+  const denom = pSub(fPrimeA, gPrimeA);
+  const numFull = pAdd(pMul([F.of(0), F.of(1)], denom), numMinusA);
+  const [numS] = pDivLinear(numFull, c, d);
+  const [denomS] = pDivLinear(denom, c, d);
+  return `(${pToAsciiVar(numS, 'a')})/(${pToAsciiVar(denomS, 'a')})`;
+}
+// Point (px,py) tel que T_{f,a} (f=k(cx+d)^2) passe par ce point exactement pour a=r1 et a=r2 — on choisit les
+// racines d'abord (garantit des solutions "propres") plutôt que de résoudre l'équation et risquer un radical.
+function pointDepuisRacines(k, c, d, r1, r2) {
+  const px = F.div(F.add(r1, r2), F.of(2));
+  const py = F.add(F.add(F.mul(k, F.mul(F.mul(c, c), F.mul(r1, r2))), F.mul(k, F.mul(d, d))), F.mul(F.of(2), F.mul(k, F.mul(c, F.mul(d, px)))));
+  return { px, py };
 }
 
-// plage y reelle d'une courbe sur un domaine donne (avec marge) : utilisee uniquement sur des
-// domaines x resserres autour des points/racines qui comptent pour l'exercice, jamais sur un
-// domaine large fixe (c'est ce qui provoquait des courbes aplaties, voir memoire du projet)
-function calculerPlage(f, xmin, xmax, margeMin) {
-  let lo = Infinity, hi = -Infinity;
-  for (let i = 0; i <= 40; i++) {
-    const x = xmin + (xmax - xmin) * i / 40;
-    const y = f(x);
-    if (y < lo) lo = y;
-    if (y > hi) hi = y;
+// ---------- 8.9-8.11 : dérivation à partir d'une relation fondamentale f'=... (état partagé entre 4 exercices sœurs) ----------
+// g(x)=f(m*x+n), h(x)=k*f(p*x+q) — seuls m,n,p,q,k et les points d'évaluation changent ; la forme de f' reste fixe
+// (3 formes différentes : 1/x+x, 2x/(3+x^2), sqrt(2x^2+1)), chacune vérifiée séparément par intégration/différences finies.
+let paramsAvances = {};
+function genererParametresAvances() {
+  function ligne(kFixe) {
+    const m = aleaNonNul(-3,3), n = alea(-3,3), p = aleaNonNul(-3,3), q = alea(-3,3);
+    const tg = aleaNonNul(-3,3), th = aleaNonNul(-3,3);
+    const epG = F.div(F.of(tg - n), F.of(m));
+    const epH = F.div(F.of(th - q), F.of(p));
+    const k = kFixe ? F.of(kFixe) : F.of(aleaNonNul(-3,3));
+    return { m, n, p, q, k, tg, th, epG, epH };
   }
-  const pad = Math.max((hi - lo) * 0.15, margeMin);
-  return { ymin: lo - pad, ymax: hi + pad };
+  paramsAvances = { g9: ligne(1), g10: ligne(1) };
 }
-
-// Panels de courbes verifiees a l'oeil (span y resserre, graduations lisibles) : on tire dans un
-// petit choix fixe plutot que dans une combinatoire libre, qui pouvait produire des courbes
-// aplaties (echelle y trop grande) ou mal cadrees. Tant pis si les mêmes reviennent de temps en temps.
-
-// 6.3 (courbe de f) : f(x) = (1/m)(x-p)^2(x-q)+r  =>  f'(p)=0 toujours, f'(q)=(q-p)^2/m
-// condition ajoutee : la pente f'(q), reduite, doit avoir un denominateur <= 2 - sinon il faut
-// suivre la tangente sur 5 unites ou plus pour retrouver un deuxieme point de grille exact, ce qui
-// ne rentre pas dans le cadre trace et rend la lecture graphique du nombre derive impossible
-// (signale par l'utilisateur : "on ne peut pas choisir deux points clairs")
-const PANEL_6_3 = [
-  { m: -8, p: -2, q: 2, r: -1 },
-  { m: 8,  p: -2, q: 2, r: 0 },
-  { m: -8, p: -1, q: 1, r: 1 },
-  { m: 8,  p: -1, q: 1, r: -2 },
-  { m: -6, p: -1, q: 2, r: 0 },
-  { m: 6,  p: -1, q: 2, r: 1 },
-  { m: -8, p: -1, q: 3, r: -1 },
-  { m: 8,  p: -1, q: 3, r: 0 },
-];
-
-// 6.3 (courbe de g, ex-6.4) : g cubique (degre 3, pas 4) pour des variations nettes : g'(x) = (1/m)*x*(x-e), une
-// parabole a 2 racines (0 et e) au lieu d'un cube a 3 racines - g'(0)=0 toujours (tangente
-// horizontale en x=0), g'(p2) = p2(p2-e)/m au deuxieme point observe.
-// Condition 1 (lisibilite de la pente) : le denominateur de la pente reduite doit etre <= 2.
-// Condition 2, plus subtile : le point de tangence (p2, g(p2)) doit LUI-MEME etre tel que la
-// droite passe par un point de grille entier - sinon la pente a beau etre simple, la partie
-// fractionnaire de g(p2) decale toute la droite hors de la grille et AUCUN point entier n'est
-// jamais atteint (verifie : g(p2) = (p2^3/3 - e*p2^2/2)/m + C0, non entier en general puisque
-// C0 ne modifie que le decalage vertical global, jamais la partie fractionnaire du terme cubique).
-// Chaque entree ci-dessous a ete verifiee par recherche exhaustive pour satisfaire les 2 conditions.
-const PANEL_6_3G = [
-  { e: -4, p2: -3, m: 3,  C0: -1 },
-  { e: -4, p2: -3, m: -3, C0: 0 },
-  { e: -2, p2: 3,  m: 3,  C0: 1 },
-  { e: -2, p2: 3,  m: -3, C0: -1 },
-  { e: 2,  p2: -3, m: 3,  C0: 0 },
-  { e: 2,  p2: -3, m: -3, C0: 1 },
-  { e: 4,  p2: 3,  m: 3,  C0: -1 },
-  { e: 4,  p2: 3,  m: -3, C0: 0 },
-];
-
-// 6.4 (ex-6.5) : f'(x) = k(x-r1)(x-r2) (2 racines) -> tableau vrai a 3 segments, signe [s,-s,s].
-// Seules les racines sont fixees ; domaine et cadre sont recalcules a chaque tirage (adaptes aux
-// racines choisies, voir genererParametresGraphiques) et k est recalcule pour viser un extremum net
-// (AMPLITUDE_CIBLE_6_4), sinon la courbe reste correcte mais visuellement plate/peu lisible.
-const PANEL_6_4_RACINES = [
-  [-3,-1], [-3,1], [-3,2], [-3,3], [-2,1], [-2,2], [-2,3], [-1,1], [-1,2], [-1,3], [1,3],
-];
-const AMPLITUDE_CIBLE_6_4 = 2;
-
-// 6.5 a)/b) (ex-6.6/6.7) : construits a partir des extremums PROPRES de f' (m1,v1) et (m2,v2), pas de ses racines.
-// C'est l'ordre naturel : demander des racines entieres pour f' force ses propres extremums (m1,m2,
-// racines de f'') a tomber sur des decimales quelconques - l'exercice montre justement le tableau de
-// VARIATION de f' (sommets = ses extremums), donc ce sont m1,m2,f'(m1),f'(m2) qui doivent etre nets ;
-// les racines de f' (ou f' s'annule, simples points de passage sur les fleches) n'ont besoin que
-// d'etre lisibles sur un graphique, pas entieres - voir la remarque de l'utilisateur dans ce sens.
-// f'(x) = k(x-m1)(x-m2)... non : on part de f''(x)=3k(x-m1)(x-m2), on integre, on cale f'(m1)=v1 et
-// f'(m2)=v2, ce qui determine k,p,q,C entierement (2 conditions, 2 inconnues restantes). Les racines
-// a<m1<b<m2<c de f' sont ensuite trouvees numeriquement (bissection - fait standard, toujours 3
-// racines reelles distinctes des lors que v1,v2 sont de signes opposes).
-const PANEL_EXTREMUMS_M1 = [-3,-2,-1,0,1];
-const PANEL_EXTREMUMS_ECARTS = [2,3,4];
-const PANEL_EXTREMUMS_V = [1,2,3,4];
-
-function bissection(f, xa, xb, iterations) {
-  let fa = f(xa), fb = f(xb);
-  if (fa*fb > 0) return null;
-  for (let i = 0; i < (iterations||80); i++) {
-    const xm = (xa+xb)/2, fm = f(xm);
-    if (fa*fm <= 0) { xb = xm; fb = fm; } else { xa = xm; fa = fm; }
-  }
-  return (xa+xb)/2;
+function texteNote(params, avecCondition) {
+  const hCond = avecCondition ? `, si \\(x\\ne ${F.fmtLatex(F.of(-params.q, params.p))}\\),` : ', pour tout réel \\(x\\),';
+  const kStr = params.k.n === 1 ? '' : params.k.n === -1 ? '-' : F.fmtLatex(params.k);
+  const hDef = `\\(h(x)=${kStr}f(${fmtLin(params.p, params.q, false)})\\)`;
+  return `On note${hCond} ${hDef}.`;
 }
-
-// cubique f' dont on choisit directement les extremums (m1,v1) et (m2,v2)
-function construireCubiqueDepuisExtremums(m1, m2, v1, v2) {
-  const k = 2*(v1-v2) / Math.pow(m2-m1, 3);
-  const p = -1.5*k*(m1+m2);
-  const q = 3*k*m1*m2;
-  const C = v1 - (k*m1**3 + p*m1**2 + q*m1);
-  return { fn: x => k*x**3 + p*x**2 + q*x + C, k, p, q, C };
-}
-function antideriveeDepuisCoeffsCubiques(cub, C0) {
-  const { k, p, q, C } = cub;
-  return x => k*x**4/4 + p*x**3/3 + q*x**2/2 + C*x + C0;
-}
-
-function genererParamsQCM3Courbes() {
-  let m1, m2, v1, v2, cub, a, b, c, C0, F, Fa, Fc, plageGlobale, xmin, xmax, sens;
-  const testPointsDe = (a,b,c) => [a-1, (a+b)/2, (b+c)/2, c+1];
-  const h = 1e-4;
-  const signeEn = (f, x) => (f(x+h) - f(x-h)) >= 0 ? '+' : '-';
-
-  let essais = 0, ok = false;
-  do {
-    essais++;
-    m1 = PANEL_EXTREMUMS_M1[alea(0, PANEL_EXTREMUMS_M1.length-1)];
-    m2 = m1 + PANEL_EXTREMUMS_ECARTS[alea(0, PANEL_EXTREMUMS_ECARTS.length-1)];
-    const signe = alea(0,1) === 0 ? 1 : -1;
-    v1 = signe * PANEL_EXTREMUMS_V[alea(0, PANEL_EXTREMUMS_V.length-1)];
-    v2 = -signe * PANEL_EXTREMUMS_V[alea(0, PANEL_EXTREMUMS_V.length-1)];
-    cub = construireCubiqueDepuisExtremums(m1, m2, v1, v2);
-    const ecart = m2 - m1;
-    a = bissection(cub.fn, m1-4*ecart, m1, 80);
-    b = bissection(cub.fn, m1, m2, 80);
-    c = bissection(cub.fn, m2, m2+4*ecart, 80);
-    if (a===null || b===null || c===null) continue;
-    if (Math.min(Math.abs(m1-a), Math.abs(b-m1), Math.abs(m2-b), Math.abs(c-m2)) < 0.25) continue;
-
-    xmin = a - 1; xmax = c + 1;
-    C0 = alea(-3, 3);
-    F = antideriveeDepuisCoeffsCubiques(cub, C0);
-    Fa = x => -0.7*F(x) + 1; // signe oppose de F en tout point : toujours un leurre valide
-
-    // second leurre : memes extremums (m1,m2) mais valeurs v1,v2 permutees -> cubique differente,
-    // racines differentes en general, jamais loin du domaine de F (pas de risque d'explosion)
-    const cubLeurre = construireCubiqueDepuisExtremums(m1, m2, v2, v1);
-    Fc = antideriveeDepuisCoeffsCubiques(cubLeurre, C0);
-
-    const testPoints = testPointsDe(a,b,c);
-    sens = testPoints.map(x => signeEn(F, x));
-    const sensLeurre = testPoints.map(x => signeEn(Fc, x));
-    if (!sensLeurre.some((s,i) => s !== sens[i])) continue; // leurre accidentellement correct : retirer
-
-    const pF = calculerPlage(F, xmin, xmax, 1), pFa = calculerPlage(Fa, xmin, xmax, 1), pFc = calculerPlage(Fc, xmin, xmax, 1);
-    plageGlobale = { ymin: Math.min(pF.ymin, pFa.ymin, pFc.ymin), ymax: Math.max(pF.ymax, pFa.ymax, pFc.ymax) };
-    ok = (plageGlobale.ymax - plageGlobale.ymin) <= 16;
-  } while (!ok && essais < 80);
-
-  const ordre = melanger([{fn:F, estCorrect:true}, {fn:Fa, estCorrect:false}, {fn:Fc, estCorrect:false}]);
-  const bonneReponse = ['a','b','c'][ordre.findIndex(o => o.estCorrect)];
-
-  const tableauHTML = genererTableauVariationDerivee(a, m1, v1, b, m2, v2, c);
-
-  return { sens, ordre, plageGlobale, bonneReponse, xmin, xmax, tableauHTML };
-}
-
-let paramsGraphiques = {};
-
-function genererParametresGraphiques() {
-  // Depuis la fusion 6.3+6.4 (30/09/2026) : pente f'(q) toujours fractionnaire (d^2 non multiple
-  // de m -- 4 entrees du panel sur 8), la pente entiere etant lue sur g (6.3 b) : chaque question
-  // teste une seule difficulte, et aucun tirage ne peut sauter le cas fractionnaire.
-  const panel3 = PANEL_6_3.filter(e => ((e.q-e.p)**2) % Math.abs(e.m) !== 0);
-  const e3 = panel3[alea(0, panel3.length-1)];
-  // domaine adaptatif : marge de 2.4 autour de p et q pour que le segment de tangente (+/-2.2)
-  // ne soit jamais rogne par le bord du cadre, quel que soit p/q du panel
-  const xmin3 = Math.min(e3.p, e3.q) - 2.4, xmax3 = Math.max(e3.p, e3.q) + 2.4;
-  const f3 = x => (1/e3.m)*(x-e3.p)*(x-e3.p)*(x-e3.q)+e3.r;
-  const plage3 = calculerPlage(f3, xmin3, xmax3, 1);
-  // le cadre vertical ci-dessus ne vient QUE de la courbe : la tangente T1 en q (seule non
-  // horizontale, tracee sur +/-2.2 autour de q par construireGraphique6_3) peut s'en ecarter bien
-  // davantage qu'elle si sa pente est raide, et se faire rogner par le bord du SVG -- rendant son
-  // coefficient directeur illisible. On etend donc le cadre pour englober aussi les deux extremites
-  // reellement tracees de cette tangente. Bug trouve en lisant plusieurs tirages du panel (pente
-  // jusqu'a +/-2 -> ecart jusqu'a +/-4.4 autour de r, souvent hors du cadre base sur la seule courbe).
-  const penteQ3 = (1/e3.m)*(e3.q-e3.p)*(e3.q-e3.p);
-  const yTangenteBas3 = e3.r - Math.abs(penteQ3)*2.2, yTangenteHaut3 = e3.r + Math.abs(penteQ3)*2.2;
-  const ymin3 = Math.min(plage3.ymin, yTangenteBas3 - 0.4), ymax3 = Math.max(plage3.ymax, yTangenteHaut3 + 0.4);
-  paramsGraphiques.g6_3 = { a: 1/e3.m, p: e3.p, q: e3.q, r: e3.r, d: e3.q-e3.p, m: e3.m, xmin: xmin3, xmax: xmax3, ymin: ymin3, ymax: ymax3 };
-
-  const e4 = PANEL_6_3G[alea(0, PANEL_6_3G.length-1)];
-  const slopeNum4 = e4.p2 * (e4.p2 - e4.e);
-  const xmin4 = Math.min(0, e4.e, e4.p2) - 2.4, xmax4 = Math.max(0, e4.e, e4.p2) + 2.4;
-  const g4 = x => (1/e4.m)*(x**3/3 - e4.e*x**2/2) + e4.C0;
-  const plage4 = calculerPlage(g4, xmin4, xmax4, 1);
-  // meme correction que pour g6_3 : la tangente T2 en p2 (celle en x=0 est horizontale, jamais un
-  // risque) est tracee sur +/-2.2 autour de p2 et peut deborder du cadre base sur la seule courbe.
-  const penteP2_4 = (1/e4.m)*e4.p2*(e4.p2-e4.e);
-  const yP2_4 = g4(e4.p2);
-  const yTangenteBas4 = yP2_4 - Math.abs(penteP2_4)*2.2, yTangenteHaut4 = yP2_4 + Math.abs(penteP2_4)*2.2;
-  const ymin4 = Math.min(plage4.ymin, yTangenteBas4 - 0.4), ymax4 = Math.max(plage4.ymax, yTangenteHaut4 + 0.4);
-  paramsGraphiques.g6_3g = { c: 1/e4.m, e: e4.e, p2: e4.p2, m: e4.m, slopeNum: slopeNum4, C0: e4.C0, xmin: xmin4, xmax: xmax4, ymin: ymin4, ymax: ymax4 };
-
-  const [r15, r25] = PANEL_6_4_RACINES[alea(0, PANEL_6_4_RACINES.length-1)];
-  const signe5 = alea(0,1) === 0 ? 1 : -1;
-  const extremum1_5 = -((r25-r15)**2)/4; // valeur de l'extremum a k=1
-  const k5 = signe5 * AMPLITUDE_CIBLE_6_4 / Math.abs(extremum1_5);
-  const xmin5 = r15 - 1, xmax5 = r25 + 1;
-  const plage5 = calculerPlage(x => k5*(x-r15)*(x-r25), xmin5, xmax5, 1);
-  const s5 = k5 > 0 ? '+' : '-', sOpp5 = k5 > 0 ? '-' : '+';
-  const tableauVrai5 = { positions: ['−∞', fmtX(r15), fmtX(r25), '+∞'], sens: [s5, sOpp5, s5], estCorrect: true };
-  const leurre5a = { positions: ['−∞','−2','1','3','+∞'], sens: ['+','-','+','-'], estCorrect: false };
-  const leurre5b = { positions: ['−∞','−2','1','3','+∞'], sens: ['-','+','-','+'], estCorrect: false };
-  const ordre5 = melanger([tableauVrai5, leurre5a, leurre5b]);
-  const lettre5 = ['a','b','c'][ordre5.findIndex(t => t.estCorrect)];
-  paramsGraphiques.g6_4 = { r1: r15, r2: r25, k: k5, ordre: ordre5, lettre: lettre5, xmin: xmin5, xmax: xmax5, ymin: plage5.ymin, ymax: plage5.ymax };
-
-  paramsGraphiques.g6_5a = genererParamsQCM3Courbes();
-  paramsGraphiques.g6_5b = genererParamsQCM3Courbes();
+function mettreAJourTextesAvances() {
+  document.getElementById('texte-6-4').innerHTML = texteNote(paramsAvances.g9, true);
+  document.getElementById('texte-6-5').innerHTML = texteNote(paramsAvances.g10, false);
 }
 
 const generateurs = [
-  // Calcul 6.1 - puissances (3 items)
+  // Calcul 6.1 - combinaisons lineaires (3 items, garde a/b classiques et l'ancien d, le plus
+  // complet a 3 termes ; ecarte l'ancien c, simple variante a plus grands nombres de b)
   {id:"6.1 a)", type:"alg", gen: () => {
-    const p = alea(1,6);
-    const base = Math.pow(2,p);
-    return { texteLibre:true, enonce:`\\(${base}^n+${base}^n\\)`, reponse: fmtLinN(p,1) };
+    const t1 = { A: aleaNonNul(-3,3), B: aleaNonNul(-3,3), C: aleaNonNul(-3,3), D: alea(2,5) };
+    const t2 = { A: aleaNonNul(-3,3), B: aleaNonNul(-3,3), C: 0, D: alea(2,5) };
+    const { enonce, reponse } = combinaisonLineaire([t1, t2]);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
   }},
   {id:"6.1 b)", type:"alg", gen: () => {
-    const p = alea(1,6);
-    const base = Math.pow(2,p);
-    return { texteLibre:true, enonce:`\\(${base}^n\\times ${base}^n\\)`, reponse: fmtLinN(2*p,0) };
+    const t1 = { A: aleaNonNul(-3,3), B: aleaNonNul(-3,3), C: aleaNonNul(-3,3), D: alea(2,4) };
+    const t2 = { A: aleaNonNul(-3,3), B: aleaNonNul(-3,3), C: aleaNonNul(-3,3), D: alea(2,4) };
+    const { enonce, reponse } = combinaisonLineaire([t1, t2]);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
   }},
   {id:"6.1 c)", type:"alg", gen: () => {
-    const p = alea(2,3), q = alea(1,2), c = alea(1,4), d = alea(1,2);
-    const A = Math.pow(2,p), B = Math.pow(2,q);
-    return { texteLibre:true, enonce:`\\(\\dfrac{${A}^n\\times 2^{n+${c}}}{${B}^{n+${d}}}\\)`, reponse: fmtLinN(p+1-q, c-q*d) };
+    const t1 = { A: aleaNonNul(-2,2), B: 0, C: 0, D: 1 };
+    const t2 = { A: aleaNonNul(-3,3), B: aleaNonNul(-3,3), C: 0, D: alea(2,3) };
+    const t3 = { A: aleaNonNul(-3,3), B: aleaNonNul(-3,3), C: aleaNonNul(-3,3), D: alea(2,3) };
+    const { enonce, reponse } = combinaisonLineaire([t1, t2, t3]);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
   }},
-  // Calcul 6.2 - factorisation dans des fractions (2 items)
+  // Calcul 6.2 - developper (4 items),
+  // Calcul 6.2 - developper (3 items, garde a/c/d, trois techniques distinctes ; ecarte b,
+  // redondant avec d, meme motif carre-de-fraction)
   {id:"6.2 a)", type:"alg", gen: () => {
-    const num = polyAlea(2), den = polyAlea(2);
-    return { texteLibre:true, enonce:`Simplifier \\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\) en factorisant par \\(n^2\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})` };
+    const p = aleaNonNul(-4,4), q = aleaNonNul(-4,4), r = aleaNonNul(-4,4);
+    const t1 = pMul(pLinear(F.of(1),F.of(-p)), pLinear(F.of(1),F.of(p)));
+    const t2 = pMul(pLinear(F.of(1),F.of(0)), pMul(pLinear(F.of(1),F.of(-q)), pLinear(F.of(2),F.of(-r))));
+    const poly = pAdd(t1,t2);
+    const enonce = `(x${-p>=0?'+':''}${-p})(x${p>=0?'+':''}${p})+x(x${-q>=0?'+':''}${-q})(2x${-r>=0?'+':''}${-r})`;
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pToAscii(poly) };
   }},
   {id:"6.2 b)", type:"alg", gen: () => {
-    const num = polyAlea(3), den = polyAlea(3);
-    return { texteLibre:true, enonce:`Simplifier \\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\) en factorisant par \\(n^3\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})` };
+    let p, q, r;
+    do { p = aleaNonNul(-4,4); q = aleaNonNul(-4,4); r = aleaNonNul(-4,4); } while (p===q || q===r || p===r);
+    const prod = pMul(pMul(pLinear(F.of(1),F.of(-p)), pLinear(F.of(1),F.of(-q))), pLinear(F.of(1),F.of(-r)));
+    const poly = pSub(prod, [F.of(0),F.of(0),F.of(0),F.of(1)]);
+    const enonce = `(x${-p>=0?'+':''}${-p})(x${-q>=0?'+':''}${-q})(x${-r>=0?'+':''}${-r})-x^3`;
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pToAscii(poly) };
   }},
-  // Calcul 6.3 - lecture graphique d'un nombre derive : fusion le 30/09/2026 des anciens 6.3 (I,
-  // courbe de f) et 6.4 (II, courbe de g), meme consigne numerotee I/II (regle standing de David :
-  // une seule section, 4 exemples maximum, gradation une difficulte a la fois). 4 -> 3 :
-  // a) tangente horizontale (f'(p)=0, classique) ; b) pente entiere lue sur g (ancien 6.4 a) ;
-  // c) pente fractionnaire lue sur f (ancien 6.3 b, tirage force, voir genererParametresGraphiques).
-  // Retiree : l'ancienne 6.4 b) g'(0)=0, deuxieme lecture de tangente horizontale (doublon de a).
-  {id:"6.3 a)", type:"num", gen: () => {
-    const { p } = paramsGraphiques.g6_3;
-    return { texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
+  {id:"6.2 c)", type:"alg", gen: () => {
+    const A = alea(2,4), Bn = aleaNonNul(1,3), Bd = alea(2,4);
+    const inner = pLinear(F.of(A), pNeg(F.of(Bn,Bd)));
+    const poly = pSub([F.of(0),F.of(0),F.of(1)], pMul(inner,inner));
+    const enonce = `x^2-\\left(${A}x-${F.fmtLatex(F.of(Bn,Bd))}\\right)^2`;
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pToAscii(poly) };
   }},
-  {id:"6.3 b)", type:"num", gen: () => {
-    const { p2, slopeNum, m } = paramsGraphiques.g6_3g;
-    return { texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}` };
+  // Calcul 6.3 - derivees composees puissances I (4 items),
+  // Calcul 6.3 - Puissances, fusion des anciens 8.3+8.4 (8->4, gradation de signe/amplitude :
+  // classique -> coefficient plus grand -> base negative -> coefficient et exposant negatifs)
+  {id:"6.3 a)", type:"alg", gen: () => {
+    const a = alea(2,4), b = aleaNonNul(-6,6), n = alea(2,4);
+    const { enonce, reponse } = derivPuissanceLineaire(1, a, b, n);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
   }},
-  {id:"6.3 c)", type:"num", gen: () => {
-    const { q, d, m } = paramsGraphiques.g6_3;
-    return { texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
+  {id:"6.3 b)", type:"alg", gen: () => {
+    const k = alea(2,5), a = alea(2,5), b = aleaNonNul(-7,7), n = alea(3,6);
+    const { enonce, reponse } = derivPuissanceLineaire(k, a, b, n);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
   }},
-  // Calcul 6.4 (ex-6.5) - courbe et tableaux (1 item, QCM)
-  {id:"6.4", type:"qcm", gen: () => ({ texteLibre:true, enonce:"Quel tableau de variation correspond à une fonction \\(f_1\\), \\(f_2\\) ou \\(f_3\\) dont \\(f'\\) est la dérivée :", bonneReponse: paramsGraphiques.g6_4.lettre })},
-  // Calcul 6.5 - un tableau et trois courbes : fusion le 30/09/2026 des anciens 6.6 (I) et 6.7 (II),
-  // meme consigne mot pour mot -> une section, sous-questions a) et b) (chacune son tableau et ses
-  // trois courbes, la lettre est portee par le texte d'introduction de la figure).
-  {id:"6.5 a)", type:"qcm", gen: () => ({ texteLibre:true, enonce:"\\(f'\\) est la fonction dérivée de :", bonneReponse: paramsGraphiques.g6_5a.bonneReponse })},
-  {id:"6.5 b)", type:"qcm", gen: () => ({ texteLibre:true, enonce:"\\(f'\\) est la fonction dérivée de :", bonneReponse: paramsGraphiques.g6_5b.bonneReponse })},
-  // Calcul 6.6 (ex-6.8) - tangente et rayon (7 items : etapes d'un meme probleme guide, pas des exemples -- non reduit, déjà génériques en t : rien à randomiser)
-  {id:"6.6 a)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Exprimer \\(OM(t)\\) en fonction de \\(t\\)", reponse:"sqrt(t^2+yt^2)" })},
-  {id:"6.6 b)", type:"alg", gen: () => ({ texteLibre:true, enonce:"En déduire une expression de \\(y_t\\) en fonction de \\(t\\)", reponse:"sqrt(1-t^2)" })},
-  {id:"6.6 c)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Avec \\(f(t)=\\sqrt{1-t^2}\\), donner l'expression de \\(f'(t)\\)", reponse:"-t/sqrt(1-t^2)" })},
-  {id:"6.6 d)", type:"alg", gen: () => ({ formeYax:true, texteLibre:true, enonce:"Donner l'équation réduite de la tangente \\(T\\) à \\(C_f\\) au point d'abscisse \\(t\\), sous la forme y=ax+b", reponse: equationReduiteAscii("-t/sqrt(1-t^2)","1/sqrt(1-t^2)") })},
-  {id:"6.6 e)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur \\(\\vec{w}\\) de \\(T\\) sous la forme \\((x;y)\\)", vx:"sqrt(1-t^2)", vy:"-t", vars:["t"] })},
-  {id:"6.6 f)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur de la droite \\((OM(t))\\) sous la forme \\((x;y)\\)", vx:"t", vy:"sqrt(1-t^2)", vars:["t"] })},
-  {id:"6.6 g)", type:"vraifaux", gen: () => ({ texteLibre:true, enonce:"Les vecteurs \\(\\vec{w}\\) et \\(\\overrightarrow{OM}(t)\\) sont-ils orthogonaux ?", estVrai:true })}
+  {id:"6.3 c)", type:"alg", gen: () => {
+    const a = -alea(2,4), b = aleaNonNul(-6,6), n = alea(2,5);
+    const { enonce, reponse } = derivPuissanceLineaire(1, a, b, n);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
+  }},
+  {id:"6.3 d)", type:"alg", gen: () => {
+    const signes = [-3,-2,2,3];
+    const k = -alea(1,3), a = signes[alea(0,3)], b = aleaNonNul(-6,6), n = -alea(2,4);
+    const { enonce, reponse } = derivPuissanceLineaire(k, a, b, n);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
+  }},
+  // Calcul 6.4 - Produits de puissances, fusion des anciens 8.5+8.6 (4 exemples, deja sans
+  // redondance, juste fusionnes et relettres)
+  // Calcul 6.7 - quotients I (2 items),
+  // Calcul 6.5 - Quotients, fusion des anciens 8.7+8.8 (4 exemples, deja sans redondance,
+  // juste fusionnes et relettres)
+  // Calcul 6.9 - derivation a partir de f'(x)=1/x+x (4 items),
+  // Calcul 6.6 - derivation a partir de f'(x)=1/x+x (4->2, garde les deux exemples "h" avec
+  // constante multiplicative k -- version la plus complete, plutot que les deux exemples "g"
+  // plus simples qu'ils subsument)
+  {id:"6.4 a)", type:"alg", gen: () => {
+    const { p, q, k } = paramsAvances.g9;
+    const kp = k.n*p; const kc = kp===1?'':kp===-1?'-':kp+'*';
+    const u = fmtLin(p,q,true);
+    return { texteLibre:true, enonce:"Que vaut \\(h'(x)\\) ?", reponse:`${kc}(1/(${u})+${u})`.replace(/\+-/g,'-') };
+  }},
+  {id:"6.4 b)", type:"num", gen: () => {
+    const { p, k, th, epH } = paramsAvances.g9;
+    const reponse = F.str(F.mul(F.mul(k,F.of(p)), F.add(F.div(F.of(1),F.of(th)), F.of(th))));
+    return { texteLibre:true, enonce:`Calculer \\(h'\\left(${F.fmtLatex(epH)}\\right)\\)`, reponse };
+  }},
+  // Calcul 6.10 - derivation a partir de f'(x)=2x/(3+x^2) (4 items),
+  // Calcul 6.7 - derivation a partir de f'(x)=2x/(3+x^2) (4->2, meme logique)
+  {id:"6.5 a)", type:"alg", gen: () => {
+    const { p, q, k } = paramsAvances.g10;
+    const kp = k.n*p; const u = fmtLin(p,q,true);
+    return { texteLibre:true, enonce:"Que vaut \\(h'(x)\\) ?", reponse:`${kp}*(2*(${u}))/(3+(${u})^2)` };
+  }},
+  {id:"6.5 b)", type:"num", gen: () => {
+    const { p, k, th, epH } = paramsAvances.g10;
+    const reponse = F.str(F.div(F.mul(F.mul(k,F.of(p)), F.mul(F.of(2), F.of(th))), F.add(F.of(3), F.mul(F.of(th),F.of(th)))));
+    return { texteLibre:true, enonce:`Calculer \\(h'\\left(${F.fmtLatex(epH)}\\right)\\)`, reponse };
+  }},
+  // Calcul 6.11 - derivation a partir de f'(x)=sqrt(2x^2+1) (4 items),
+  // Calcul 6.8 - derivation a partir de f'(x)=sqrt(2x^2+1) (4->2, meme logique)
+  // Calcul 6.12 - equations de tangentes (4 items),
+  // Calcul 6.9 - equations de tangentes (inchangee, 4 fonctions distinctes)
+  {id:"6.6 a)", type:"alg", gen: () => {
+    const A = F.of(aleaNonNul(-3,3)), B = F.of(alea(-4,4)), C = F.of(alea(-4,4)), a = F.of(aleaNonNul(-3,3));
+    const { enonce, pa, pb } = tangenteQuadratique(A, B, C, a);
+    return { formeYax:true, texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: equationReduiteAscii(pa, pb) };
+  }},
+  {id:"6.6 b)", type:"alg", gen: () => {
+    const demiImpair = () => { let k; do { k = alea(-5,5); } while (k % 2 === 0); return k; };
+    const A = F.of(demiImpair(),2), B = F.of(demiImpair(),2), C = F.of(demiImpair(),2), a = F.of(alea(-2,2) || 1);
+    const { enonce, pa, pb } = tangenteQuadratique(A, B, C, a);
+    return { formeYax:true, texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: equationReduiteAscii(pa, pb) };
+  }},
+  {id:"6.6 c)", type:"alg", gen: () => {
+    let k, a, b, pt;
+    do { k = aleaNonNul(-3,3); a = aleaNonNul(-3,3); b = aleaNonNul(-4,4); pt = aleaNonNul(-3,3); } while (a*pt + b === 0);
+    const { enonce, pa, pb } = tangenteRationnelle(F.of(k), F.of(a), F.of(b), F.of(pt));
+    return { formeYax:true, texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: equationReduiteAscii(pa, pb) };
+  }},
+  // Calcul 6.13 - ordonnees a l'origine (4 items),
+  // Calcul 6.10 - ordonnees a l'origine (inchangee, 4 fonctions distinctes)
+  {id:"6.7 a)", type:"num", gen: () => {
+    let a1, b1, a2, b2, pt, u1, u2;
+    do {
+      a1 = aleaNonNul(-4,4); b1 = alea(-4,4); a2 = aleaNonNul(-3,3); b2 = aleaNonNul(-4,4); pt = aleaNonNul(-3,3);
+      u1 = a1*pt+b1; u2 = a2*pt+b2;
+    } while (Math.abs(u2) < 0.4 || Math.abs(u1) > 4 || Math.abs(u2) > 3);
+    const { enonce, pb } = ordonneeOrigineQuotient(F.of(a1), F.of(b1), 1, F.of(a2), F.of(b2), 2, F.of(pt));
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pb };
+  }},
+  {id:"6.7 b)", type:"num", gen: () => {
+    // a1, a2 choisis multiples du dénominateur de pt pour que u1=a1*pt+b1 et u2=a2*pt+b2 restent des entiers (calcul mental).
+    const q = alea(2,3);
+    const pNum = aleaNonNul(1,q-1) * (Math.random()<0.5?1:-1);
+    const pt = F.of(pNum, q);
+    let m1, m2, a1, a2, b1, b2, u1, u2;
+    do {
+      m1 = aleaNonNul(-2,2); m2 = aleaNonNul(-2,2);
+      a1 = q*m1; a2 = q*m2;
+      b1 = alea(-3,3); b2 = alea(-3,3);
+      u1 = m1*pNum + b1; u2 = m2*pNum + b2;
+    } while (Math.abs(u1) < 1 || Math.abs(u1) > 3 || Math.abs(u2) < 1 || Math.abs(u2) > 3);
+    const { enonce, pb } = ordonneeOrigineProduit(F.of(a1), F.of(b1), 2, F.of(a2), F.of(b2), 2, pt);
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pb };
+  }},
+  // Calcul 6.14 - intersection de tangentes (1 item, avance),
+  // Calcul 6.11 - intersection de tangentes (inchangee)
+  {id:"6.8", type:"alg", gen: () => {
+    const signes = [1,-1,2,-2];
+    let k1n, k2n, n1, n2;
+    do {
+      k1n = signes[alea(0,3)]; k2n = signes[alea(0,3)];
+      n1 = alea(2,3); n2 = alea(2,3);
+    } while (k1n === k2n && n1 === n2); // sinon f=g : tangentes toujours parallèles, réponse dégénérée 0/0
+    const k1 = F.of(k1n), k2 = F.of(k2n);
+    const c = F.of(aleaNonNul(-2,2)), d = F.of(alea(-3,3));
+    const reponse = intersectionTangentes(k1, n1, k2, n2, c, d);
+    const enonce = `On définit, pour tout réel \\(x\\), \\(f(x)=${k1.n===1?'':F.fmtLatex(k1)}${puissanceStr(c.n,d.n,n1,false)}\\) et \\(g(x)=${k2.n===1?'':F.fmtLatex(k2)}${puissanceStr(c.n,d.n,n2,false)}\\). Soit \\(a\\) un réel pour lequel les tangentes \\(T_{f,a}\\) et \\(T_{g,a}\\) sont sécantes (non parallèles). Déterminer l'abscisse du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,a}\\)`;
+    return { texteLibre:true, enonce, reponse };
+  }},
+  // Calcul 6.15 - tangente passant par un point (2 items, avance),
+  // Calcul 6.12 - tangente passant par un point (inchangee)
+  {id:"6.9 a)", type:"num", gen: () => {
+    const k = F.of(3), c = F.of(-1,2), d = F.of(1);
+    let r1, r2; do { r1 = aleaNonNul(-3,3); r2 = aleaNonNul(-3,3); } while (r1 === r2);
+    const { px, py } = pointDepuisRacines(k, c, d, F.of(r1), F.of(r2));
+    const roots = [r1,r2].sort((a,b)=>a-b);
+    const enonce = `Avec \\(f(x)=3\\left(1-\\dfrac{x}{2}\\right)^2\\), trouver les deux valeurs de \\(a\\) telles que \\(T_{f,a}\\) passe par le point \\(\\left(${F.fmtLatex(px)},${F.fmtLatex(py)}\\right)\\)`;
+    return { texteLibre:true, enonce, reponse: `{${roots[0]};${roots[1]}}` };
+  }},
+  // Calcul 6.16 - avec un parametre (1 item, avance),
+  // Calcul 6.13 - avec un parametre (inchangee)
+  {id:"6.9 b)", type:"num", gen: () => {
+    const x0 = aleaNonNul(-4,4);
+    const b1 = F.of(-1,x0), b2 = F.of(1,x0);
+    const roots = [b1,b2].sort((p,q)=> (p.n/p.d) - (q.n/q.d));
+    const enonce = `On considère un réel b et, pour x réel, la fonction f définie par \\(f(x)=\\dfrac{x}{(bx)^2+1}\\). Pour quelles valeurs de b la tangente \\(T_{f,${x0}}\\) est-elle horizontale ?`;
+    return { texteLibre:true, enonce, reponse: `{${F.str(roots[0])};${F.str(roots[1])}}` };
+  }}
 ];
 
 function genererExercices() {
-  genererParametresGraphiques();
-  return generateurs.map(g => ({ id: g.id, type: g.type, ...g.gen() }));
+  genererParametresAvances();
+  return generateurs.map(g => {
+    const res = g.gen();
+    return { id: g.id, type: g.type, ...res };
+  });
 }
+
 let exercices = genererExercices();
 
-// Recalcule le 30/09/2026 (fiche passee de 19 a 18 questions : fusions 6.3+6.4 -> 6.3 et
-// 6.6+6.7 -> 6.5 a/b, renumerotation 6.5 -> 6.4 et 6.8 -> 6.6).
 const groupes = {
   "grille-6-1": [0,1,2],
-  "grille-6-2": [3,4],
-  "grille-6-3": [5,6,7],
-  "grille-6-4": [8],
-  "grille-6-5a": [9],
-  "grille-6-5b": [10],
-  "grille-6-6": [11,12,13,14,15,16,17]
+  "grille-6-2": [3,4,5],
+  "grille-6-3": [6,7,8,9],
+  "grille-6-4": [10,11],
+  "grille-6-5": [12,13],
+  "grille-6-6": [14,15,16],
+  "grille-6-7": [17,18],
+  "grille-6-8": [19],
+  "grille-6-9": [20,21]
 };
-const lettresEtendues = ["a","b","c","d","e","f","g","h","i","j"];
+const lettresEtendues = ["a","b","c","d","e","f","g","h"];
 
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
@@ -1575,39 +1668,6 @@ function checkEquationYax(userInput, correctExpr) {
   if (!m) return false;
   return checkEqualNumeric(m[1], correctExpr);
 }
-// Une consigne "Factoriser" n'etait controlee que par l'egalite numerique : repondre x^2-64
-// a « factoriser x^2-64 » etait donc accepte, la question passant pour sa propre reponse.
-// On controle aussi la FORME : la racine de l'arbre doit etre un produit ou une puissance.
-// portee vaut 'numerateur' quand la consigne ne demande de factoriser que le numerateur
-// du quotient obtenu (« calculer f'(x) puis factoriser le numerateur »).
-function estFactorise(userInput, portee) {
-  try {
-    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
-    // un noeud est constant si son evaluation aboutit sans variable libre
-    const estConstant = (n) => { try { n.evaluate(); return true; } catch(e) { return false; } };
-    const estProduit = (n) => {
-      n = sansParentheses(n);
-      if (n.type !== 'OperatorNode') return false;
-      if (n.op === '*' || n.op === '^') return true;
-      if (n.op === '-' && n.args.length === 1) return estProduit(n.args[0]); // -(x-3)(x+3)
-      // un produit divise par une constante reste une forme factorisee : (3x-1)^2/9
-      if (n.op === '/' && estConstant(n.args[1])) return estProduit(n.args[0]);
-      return false; // somme, difference, quotient par une expression : rien n'est factorise
-    };
-    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
-    if (portee === 'numerateur') {
-      while (noeud.type === 'OperatorNode' && noeud.op === '-' && noeud.args.length === 1) {
-        noeud = sansParentheses(noeud.args[0]);
-      }
-      if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
-      return estProduit(noeud.args[0]);
-    }
-    return estProduit(noeud);
-  } catch(e) {
-    return false;
-  }
-}
-
 // Un calcul numerique (sans variable) doit etre une forme finale deja evaluee - pas un
 // calcul encore a faire. Sans ce controle, taper "144-72" validait "12^2-8*9" puisque
 // l'expression s'evalue a la bonne valeur, sans que l'eleve ait vraiment calcule.
@@ -1746,8 +1806,8 @@ function parseUnIntervalle(str) {
   if (!m) return null;
   const [_, cg, a, b, cd] = m;
   try {
-    const va = a.includes('inf') ? -Infinity : math.evaluate(a);
-    const vb = b.includes('inf') ? Infinity : math.evaluate(b);
+    const va = (a.includes('inf')||a.includes('∞')) ? -Infinity : math.evaluate(a);
+    const vb = (b.includes('inf')||b.includes('∞')) ? Infinity : math.evaluate(b);
     return {bas:va, haut:vb, inclusBas: cg==='[', inclusHaut: cd===']'};
   } catch(e) { return null; }
 }
@@ -1951,8 +2011,10 @@ function valeurDuChamp(el) {
     v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
     v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
-    // normaliser aussi yt si jamais MathLive l'a decompose en deux lettres separees (ex: "y t" -> "yt")
-    v = v.replace(/\by t\b/g, 'yt');
+    // normaliser f'/g'/h' (frappe naturelle du prime, converti par MathLive en f^′) vers la convention interne fp/gp/hp
+    v = v.replace(/f\^′/g, 'fp ').replace(/g\^′/g, 'gp ').replace(/h\^′/g, 'hp ');
+    // normaliser aussi fp/gp/hp si jamais MathLive les a decomposes en deux lettres separees (ex: "f p" -> "fp")
+    v = v.replace(/\bf p\b/g, 'fp').replace(/\bg p\b/g, 'gp').replace(/\bh p\b/g, 'hp');
     return v;
   }
   return el.value.trim();
@@ -2106,7 +2168,6 @@ function verifierUne(idx) {
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.formeYax) ok = checkEquationYax(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
-  else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
     div.classList.add(ok ? 'correct' : 'incorrect');
@@ -2425,18 +2486,6 @@ function collerCoefficientLettre(tex) {
   out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
   return out;
 }
-function equationReduiteAscii(pa, pb) {
-  const paTrim = String(pa).trim(), pbTrim = String(pb).trim();
-  let penteTerme;
-  if (paTrim === '0') penteTerme = '';
-  else if (paTrim === '1') penteTerme = 'x';
-  else if (paTrim === '-1') penteTerme = '-x';
-  else penteTerme = `(${paTrim})*x`;
-  const interceptTerme = pbTrim === '0' ? '' : (pbTrim.startsWith('-') ? pbTrim : '+'+pbTrim);
-  const joint = penteTerme + interceptTerme;
-  if (joint === '') return '0';
-  return joint.startsWith('+') ? joint.slice(1) : joint;
-}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
@@ -2510,17 +2559,14 @@ function formaterReponse(ex) {
     if (ex.type === 'qcm') {
       return `\\text{Réponse } ${ex.bonneReponse}`;
     }
-    if (ex.type === 'vecteur') {
-      return `(${jsVersLatex(ex.vx)}\\,;\\,${jsVersLatex(ex.vy)})`;
-    }
     if (ex.type === 'intervalle') {
       return formaterIntervalleSpec(ex.intervalleSpec);
     }
     if (ex.type === 'texte') {
-      if (/[+\-*/^();]|sqrt/.test(ex.reponse)) {
-        return ex.reponse.split(';').map(jsVersLatex).join('\\ ;\\ ');
-      }
       return `\\text{${ex.reponse}}`;
+    }
+    if (ex.type === 'paire') {
+      return `${ex.pa} \\; ; \\; ${ex.pb}`;
     }
     if (ex.formeYax) {
       return `y=${jsVersLatex(ex.reponse)}`;
@@ -2617,11 +2663,7 @@ async function genererNouvelleFiche() {
   const zoneEtatGnf = document.getElementById('suivi-etat');
   if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
-  construireGraphique6_3();
-  construireGraphique6_3g();
-  construireGraphique6_4();
-  construireGraphique6_5a();
-  construireGraphique6_5b();
+  mettreAJourTextesAvances();
   attacherEcouteurs();
   attacherEcouteursTactiles();
   document.getElementById('score-panneau').classList.remove('visible');
@@ -2652,17 +2694,10 @@ function placeholderPour(ex) {
   if (ex.type === 'ineq') return 'x>4';
   if (ex.type === 'intervalle') return ']a;b[';
   if (ex.type === 'texte') return 'réponse';
-  if (ex.type === 'vecteur') return '(x;y)';
   return 'réponse';
 }
 
 function aideContextuellePour(ex) {
-  if (ex.formeFactorisee === 'numerateur') {
-    return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
-  }
-  if (ex.formeFactorisee) {
-    return "La réponse doit être un produit de facteurs : par exemple <code>(x+2)(x-2)</code>, <code>(x+5)^2</code> ou <code>x(3x+1)</code>. Une expression développée n'est pas acceptée, même si elle est égale.";
-  }
   if (ex.formeYax) {
     return "Écrire l'équation complète, y compris « y= » : par exemple <code>y=2x+3</code>.";
   }
@@ -2685,7 +2720,7 @@ function aideContextuellePour(ex) {
     return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.type === 'vecteur') {
-    return "Donner les deux coordonnées séparées par un point-virgule : <code>(x;y)</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
+    return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
   }
   if (ex.type === 'somme') {
     return "Utiliser la notation <code>sum(k,1,n,expr)</code> pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le bouton &Sigma; du clavier insère ce squelette.";
@@ -2703,7 +2738,6 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
-  if (ex.formeFactorisee) return true;
   if (ex.formeYax) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
@@ -2766,7 +2800,6 @@ function construireGrilles() {
       const div = document.createElement('div');
       div.className = indices.length === 1 ? 'question question-seule' : 'question';
       div.id = 'q-' + idx;
-      // Un groupe reduit a une seule question n'a pas besoin de sa lettre a) : superflu.
       const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
@@ -2855,7 +2888,21 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${groupeEnsembleClavier(idx, ex)}${genererClavierPour(idx, ex)}</div>`;
+}
+
+// Reponse attendue sous forme d'ensemble ("{-2;3}", "{}" : voir
+// checkEnsemble) : touches accolades et point-virgule en tete du clavier.
+function groupeEnsembleClavier(idx, ex) {
+  if (!(ex.reponse && String(ex.reponse).trim().startsWith('{'))) return '';
+  return `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire l'ensemble des solutions entre accolades, séparées par un point-virgule. Exemple : {-2;3}, ou {} s'il n'y a aucune solution.</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -2912,6 +2959,28 @@ function genererClavierPour(idx, ex) {
       </div>
       <div class="clavier-apercu">Astuce : la réponse commence toujours par « x », suivi du symbole puis du nombre. Exemple : « x&gt;4 ».</div>`;
   }
+  if (ex.type === 'intervalle') {
+    return groupeChiffres + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Intervalle</span>
+        <button onclick="inserer(${idx},']')">]</button>
+        <button onclick="inserer(${idx},'[')">[</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button class="touche-large" onclick="inserer(${idx},'+∞')">+∞</button>
+        <button class="touche-large" onclick="inserer(${idx},'-∞')">−∞</button>
+      </div>
+      <div class="clavier-groupe">
+        <span class="clavier-label">Autre</span>
+        <button onclick="insererFraction(${idx})">a/b</button>
+        <button onclick="insererRacine(${idx})">√</button>
+        <button class="touche-large" onclick="inserer(${idx},' ou ')">ou</button>
+        <button class="touche-large" onclick="inserer(${idx},'R')">R</button>
+        <button class="touche-large" onclick="inserer(${idx},'vide')">vide</button>
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « ]-inf;1[ ou ]3/2;+inf[ » pour une réunion de deux intervalles.</div>`;
+  }
   if (ex.type === 'cercle') {
     return groupeChiffres + `
       <div class="clavier-groupe">
@@ -2965,569 +3034,6 @@ function labelFormeCanonique(a, alpha, beta) {
   const absBeta = Math.abs(beta);
   const coeffStr = (a === 1) ? '' : (a === -1 ? '-' : a + '');
   return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
-}
-
-function labelFormeCanonique(a, alpha, beta) {
-  const decalage = -alpha;
-  const signeDecalage = decalage >= 0 ? '+' : '-';
-  const absDecalage = Math.abs(decalage);
-  const signeBeta = beta >= 0 ? '+' : '-';
-  const absBeta = Math.abs(beta);
-  const coeffStr = (a === 1) ? '' : (a === -1 ? '-' : a + '');
-  return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
-}
-
-// pas de graduation "rond" (1, 2 ou 5 x une puissance de 10) vise environ 5-6 graduations sur l'axe -
-// evite a la fois un axe trop dense (pas=1 sur une grande plage) et trop clairseme
-function pasGraduation(etendue) {
-  if (!(etendue > 0)) return 1;
-  const brut = etendue / 6;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(brut)));
-  const normalise = brut / magnitude;
-  const pas = normalise <= 1 ? 1 : normalise <= 2 ? 2 : normalise <= 5 ? 5 : 10;
-  return pas * magnitude;
-}
-function fmtGraduation(v) {
-  const arrondi = Math.round(v * 1000) / 1000;
-  return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
-}
-
-// style "type manuel scolaire" : quadrillage complet (fond), axes graves avec fleches, police serif -
-// necessaire pour les exercices de lecture graphique (determiner un nombre derive) ou l'eleve doit
-// pouvoir suivre visuellement un point de la courbe jusqu'aux graduations, pas juste voir des petits
-// traits sur les axes
-function genererSVGCourbe(fonctionJs, xmin, xmax, ymin, ymax, tangentes, largeur, hauteur) {
-  largeur = largeur || 340; hauteur = hauteur || 260;
-  // marge proportionnelle a la taille (memes proportions que l'ancien format 220x170, marge 14)
-  const marge = Math.round(largeur * 0.064);
-  const toSvgX = x => marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
-  const toSvgY = y => hauteur - marge - (y - ymin) / (ymax - ymin) * (hauteur - 2*marge);
-  let points = [];
-  for (let i = 0; i <= 160; i++) {
-    const x = xmin + (xmax-xmin)*i/160;
-    const y = fonctionJs(x);
-    if (y >= ymin - 1 && y <= ymax + 1) {
-      points.push(toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1));
-    }
-  }
-  const path = 'M ' + points.join(' L ');
-  const ox = toSvgX(0), oy = toSvgY(0);
-
-  const pasX = pasGraduation(xmax - xmin);
-  const pasY = pasGraduation(ymax - ymin);
-  // sous-graduations (sous-quadrillage), un quart du pas principal : reperes intermediaires pour
-  // une lecture plus fine (coefficient directeur, image/antecedent approches) que les seules
-  // graduations entieres -- repris des fiches 14/15 de Seconde apres validation sur celles-ci.
-  const sousPasX = pasX / 4;
-  const sousPasY = pasY / 4;
-
-  // quadrillage complet (fond, tres discret) + sous-quadrillage + traits de graduation + etiquettes
-  let quadrillage = '', sousQuadrillage = '', graduations = '';
-  const sousDebutX = Math.ceil(xmin / sousPasX) * sousPasX;
-  for (let i = 0; i <= Math.floor((xmax - sousDebutX) / sousPasX) + 1e-9; i++) {
-    const gx = +(sousDebutX + i * sousPasX).toFixed(6);
-    const rangX = gx / pasX;
-    if (Math.abs(rangX - Math.round(rangX)) < 1e-6) continue; // deja trace par le quadrillage principal
-    const sx = toSvgX(gx).toFixed(1);
-    sousQuadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#ececec" stroke-width="0.5"/>`;
-    sousQuadrillage += `<line x1="${sx}" y1="${(oy-1.8).toFixed(1)}" x2="${sx}" y2="${(oy+1.8).toFixed(1)}" stroke="#999" stroke-width="0.8"/>`;
-  }
-  const sousDebutY = Math.ceil(ymin / sousPasY) * sousPasY;
-  for (let i = 0; i <= Math.floor((ymax - sousDebutY) / sousPasY) + 1e-9; i++) {
-    const gy = +(sousDebutY + i * sousPasY).toFixed(6);
-    const rangY = gy / pasY;
-    if (Math.abs(rangY - Math.round(rangY)) < 1e-6) continue;
-    const sy = toSvgY(gy).toFixed(1);
-    sousQuadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#ececec" stroke-width="0.5"/>`;
-    sousQuadrillage += `<line x1="${(ox-1.8).toFixed(1)}" y1="${sy}" x2="${(ox+1.8).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="0.8"/>`;
-  }
-  const debutX = Math.ceil(xmin / pasX) * pasX;
-  for (let i = 0; i <= Math.floor((xmax - debutX) / pasX) + 1e-9; i++) {
-    const gx = +(debutX + i * pasX).toFixed(6);
-    const sx = toSvgX(gx).toFixed(1);
-    quadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#dcdcdc" stroke-width="0.6"/>`;
-    if (Math.abs(gx) < pasX * 1e-6) continue;
-    graduations += `<line x1="${sx}" y1="${(oy-2.5).toFixed(1)}" x2="${sx}" y2="${(oy+2.5).toFixed(1)}" stroke="#555" stroke-width="1"/><text x="${sx}" y="${(oy+11).toFixed(1)}" font-size="8" text-anchor="middle" fill="#333">${fmtGraduation(gx)}</text>`;
-  }
-  const debutY = Math.ceil(ymin / pasY) * pasY;
-  for (let i = 0; i <= Math.floor((ymax - debutY) / pasY) + 1e-9; i++) {
-    const gy = +(debutY + i * pasY).toFixed(6);
-    const sy = toSvgY(gy).toFixed(1);
-    quadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#dcdcdc" stroke-width="0.6"/>`;
-    if (Math.abs(gy) < pasY * 1e-6) continue;
-    graduations += `<line x1="${(ox-2.5).toFixed(1)}" y1="${sy}" x2="${(ox+2.5).toFixed(1)}" y2="${sy}" stroke="#555" stroke-width="1"/><text x="${(ox-9).toFixed(1)}" y="${(parseFloat(sy)+2.8).toFixed(1)}" font-size="8" text-anchor="middle" fill="#333">${fmtGraduation(gy)}</text>`;
-  }
-
-  // axes graves, avec fleche a l'extremite positive (convention manuel scolaire / TikZ)
-  const axeXFin = largeur - marge + 8, axeYFin = marge - 8;
-  let axes = `<line x1="${marge-8}" y1="${oy.toFixed(1)}" x2="${axeXFin.toFixed(1)}" y2="${oy.toFixed(1)}" stroke="#1a1a1a" stroke-width="0.8"/>`;
-  axes += `<polygon points="${axeXFin.toFixed(1)},${oy.toFixed(1)} ${(axeXFin-6).toFixed(1)},${(oy-3).toFixed(1)} ${(axeXFin-6).toFixed(1)},${(oy+3).toFixed(1)}" fill="#1a1a1a"/>`;
-  axes += `<line x1="${ox.toFixed(1)}" y1="${(hauteur-marge+8).toFixed(1)}" x2="${ox.toFixed(1)}" y2="${axeYFin.toFixed(1)}" stroke="#1a1a1a" stroke-width="0.8"/>`;
-  axes += `<polygon points="${ox.toFixed(1)},${axeYFin.toFixed(1)} ${(ox-3).toFixed(1)},${(axeYFin+6).toFixed(1)} ${(ox+3).toFixed(1)},${(axeYFin+6).toFixed(1)}" fill="#1a1a1a"/>`;
-  axes += `<text x="${(ox-8).toFixed(1)}" y="${(oy+11).toFixed(1)}" font-size="8" fill="#333">O</text>`;
-
-  let tangentesHtml = '';
-  if (tangentes) {
-    tangentes.forEach(t => {
-      const y1=t.pente*(t.x0-t.px)+t.py, y2=t.pente*(t.x1-t.px)+t.py;
-      tangentesHtml += `<line x1="${toSvgX(t.x0).toFixed(1)}" y1="${toSvgY(y1).toFixed(1)}" x2="${toSvgX(t.x1).toFixed(1)}" y2="${toSvgY(y2).toFixed(1)}" stroke="${t.couleur||'#e74c3c'}" stroke-width="1.8"/><text x="${toSvgX(t.x1).toFixed(1)}" y="${toSvgY(y2).toFixed(1)}" font-size="9" font-style="italic" fill="${t.couleur||'#e74c3c'}">${t.label||''}</text>`;
-      // point de tangence marque sur la courbe (convention manuel : petit disque plein)
-      const pxSvg = toSvgX(t.px).toFixed(1), pySvg = toSvgY(t.py).toFixed(1);
-      tangentesHtml += `<circle cx="${pxSvg}" cy="${pySvg}" r="2.6" fill="${t.couleur||'#e74c3c'}" stroke="white" stroke-width="0.8"/>`;
-    });
-  }
-
-  // data-* : donnees de conversion pixel<->coordonnees, reutilisees par activerCurseurSvg (voir
-  // plus bas) pour retrouver (x;y) sous la souris. width/height explicites (en plus du viewBox) :
-  // sans eux, un <svg> n'a pas de taille intrinseque et "max-width:100%;height:auto" (voir CSS
-  // .figure-centree svg) n'a rien a partir de quoi calculer une hauteur des qu'il n'est plus un
-  // enfant direct du conteneur flex (ce qu'introduit le bouton-icone du curseur). ouvrirModalSvg
-  // retire deja ces attributs sur le clone affiche en grand (meme raison que pour style="max-width").
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:${largeur}px;"
-    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="${marge}" data-pas="${pasX}">
-    ${sousQuadrillage}
-    ${quadrillage}
-    ${axes}
-    ${graduations}
-    ${tangentesHtml}
-    <path d="${path}" fill="none" stroke="#4B46C7" stroke-width="2.2"/>
-    <g class="curseur-groupe" visibility="hidden">
-      <line class="curseur-ligne-v" x1="0" y1="${marge}" x2="0" y2="${(hauteur-marge).toFixed(1)}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
-      <line class="curseur-ligne-h" x1="${marge}" y1="0" x2="${(largeur-marge).toFixed(1)}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
-      <text class="curseur-texte" font-size="9" fill="#666"></text>
-    </g>
-  </svg>`;
-}
-// ---------- curseur avec lecture des coordonnees : ecoute les Pointer Events (souris ET tactile,
-// une seule API) sur les SVG generes par genererSVGCourbe, convertit la position du pointeur en
-// coordonnees (x;y) via les data-* du <svg> lui-meme, et affiche un reticule pointille jusqu'aux
-// deux axes plus un texte des coordonnees pres du point.
-// - Souris : comportement inchange depuis la version d'origine (survol libre dans tout le
-//   graphique, actif seulement si l'utilisateur a clique sur le bouton-icone dedie — voir
-//   boutonCurseurHTML et la classe curseur-actif) ; un pointermove de type "mouse" se comporte
-//   exactement comme l'ancien mousemove.
-// - Tactile/stylet : le curseur reste ANCRE SUR LA COURBE elle-meme (pas libre dans tout le plan)
-//   — seule l'abscisse suit le doigt, l'ordonnee est recalculee sur la courbe via
-//   path.getPointAtLength()/getTotalLength() (API SVG native, dichotomie car le trace va toujours
-//   de gauche a droite, x croissant). L'abscisse est en plus aimantee au quart du pas de la grille
-//   (data-pas/4 — meme granularite que le sous-quadrillage deja trace, voir genererSVGCourbe) :
-//   viser le pixel exact au doigt est illusoire, et ca donne des valeurs lisibles alignees sur les
-//   reperes visibles. Au relachement, le repere RESTE affiche a sa derniere position (pas de
-//   disparition) — laisse le temps de lire.
-// Adaptation tactile portee depuis la fiche 1 de Premiere apres validation sur celle-ci (18/09/2026).
-function activerCurseurSvg(container) {
-  if (!container) return;
-  container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
-}
-// cable le curseur sur UN svg donne (independant de la classe qcm-svg, requise pour re-cabler le
-// clone affiche dans la modale de zoom — voir ouvrirModalSvg — qui retire cette classe).
-function cablerCurseurUnique(svg) {
-  const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
-  const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
-  const marge = parseFloat(svg.dataset.marge);
-  const pas = parseFloat(svg.dataset.pas) || 0;
-  const groupe = svg.querySelector('.curseur-groupe');
-  const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
-  const texte = svg.querySelector('.curseur-texte');
-  const chemin = svg.querySelector('path');
-  const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
-  // aimantation au doigt : au quart du pas de la grille, meme granularite que le sous-quadrillage
-  // deja affiche (voir commentaire ci-dessus) — pas au pas entier, trop grossier.
-  const pasFin = pas > 0 ? pas / 4 : 0;
-  const auPasFin = (v) => pasFin > 0 ? Math.round(v / pasFin) * pasFin : v;
-
-  // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
-  function pointCourbeA(pxCible) {
-    if (!chemin) return null;
-    let bas = 0, haut = chemin.getTotalLength();
-    for (let i = 0; i < 24; i++) {
-      const milieu = (bas + haut) / 2;
-      if (chemin.getPointAtLength(milieu).x < pxCible) bas = milieu; else haut = milieu;
-    }
-    return chemin.getPointAtLength((bas + haut) / 2);
-  }
-
-  function afficherRepere(px, py, tactile) {
-    groupe.setAttribute('visibility', 'visible');
-    ligneV.setAttribute('x1', px.toFixed(1)); ligneV.setAttribute('x2', px.toFixed(1));
-    ligneH.setAttribute('y1', py.toFixed(1)); ligneH.setAttribute('y2', py.toFixed(1));
-    const x = xmin + (px - marge) / (largeur - 2*marge) * (xmax - xmin);
-    const y = ymin + (hauteur - marge - py) / (hauteur - 2*marge) * (ymax - ymin);
-    const texteX = px < largeur - 60 ? px + 5 : px - 5;
-    const ancrage = px < largeur - 60 ? 'start' : 'end';
-    // au doigt, le texte doit degager la pointe du doigt (pas juste le trait) : decalage bien plus large.
-    const decalage = tactile ? 26 : 5;
-    const texteY = py > marge + decalage ? py - decalage : py + (tactile ? 30 : 12);
-    texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
-    texte.setAttribute('text-anchor', ancrage);
-    texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
-  }
-
-  svg.addEventListener('pointermove', (evt) => {
-    const tactile = evt.pointerType !== 'mouse';
-    if (!tactile && !svg.classList.contains('curseur-actif')) return;
-    const pt = svg.createSVGPoint();
-    pt.x = evt.clientX; pt.y = evt.clientY;
-    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
-    if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
-    if (tactile) {
-      let pxCible = local.x;
-      if (pasFin > 0) {
-        const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
-        const xAimante = auPasFin(xBrut);
-        pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
-      }
-      const ptCourbe = pointCourbeA(pxCible);
-      if (ptCourbe) afficherRepere(ptCourbe.x, ptCourbe.y, true);
-    } else {
-      if (local.y < marge || local.y > hauteur - marge) { groupe.setAttribute('visibility', 'hidden'); return; }
-      afficherRepere(local.x, local.y, false);
-    }
-  });
-  // seule la souris masque le repere en quittant le graphique/relachant — au doigt, il reste
-  // affiche a sa derniere position (voir le commentaire en tete de fichier).
-  const cacherSiSouris = (evt) => { if (evt.pointerType === 'mouse') groupe.setAttribute('visibility', 'hidden'); };
-  svg.addEventListener('pointerup', cacherSiSouris);
-  svg.addEventListener('pointercancel', cacherSiSouris);
-  svg.addEventListener('pointerleave', cacherSiSouris);
-}
-// icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js
-// (seul precedent d'icone en coin de figure trouve sur le site), pour rester visuellement coherent.
-const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
-  + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
-  + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-  + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-  + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-  + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-// pas d'id a fournir : le bouton retrouve son svg via son propre parent (toujours le meme span
-// .figure-avec-curseur, voir chaque appelant).
-function boutonCurseurHTML() {
-  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
-    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
-    role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
-}
-function toggleCurseurSvg(btn) {
-  const svg = btn.parentElement.querySelector('svg');
-  if (!svg) return;
-  const actif = svg.classList.toggle('curseur-actif');
-  btn.classList.toggle('actif', actif);
-  if (!actif) svg.querySelector('.curseur-groupe').setAttribute('visibility', 'hidden');
-}
-
-// ---------- Agrandissement des graphiques au clic ----------
-// selecteur "svg.qcm-svg" (pas juste "svg") : necessaire depuis que le bouton-icone du curseur
-// (voir boutonCurseurHTML) contient lui-meme un <svg> -- un selecteur generique l'aurait aussi
-// rendu zoomable, ouvrant a tort la modale sur l'icone au lieu du graphique au clic sur ce bouton.
-function activerZoomSvg(container) {
-  if (!container) return;
-  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
-    svg.classList.add('svg-agrandissable');
-    svg.setAttribute('tabindex', '0');
-    svg.setAttribute('role', 'button');
-    svg.setAttribute('aria-label', 'Agrandir ce graphique');
-    svg.addEventListener('click', () => ouvrirModalSvg(svg));
-    svg.addEventListener('keydown', (evt) => {
-      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
-    });
-  });
-}
-
-function ouvrirModalSvg(svg) {
-  const interieur = document.getElementById('modal-svg-contenu-interieur');
-  interieur.innerHTML = '';
-  const clone = svg.cloneNode(true);
-  // les graphiques ont leur propre width/max-width (classe qcm-svg, style inline) pour rester petits
-  // dans la fiche : on les retire ici pour laisser la taille du clone dans le modal (`.modal-svg-contenu svg`) s'appliquer
-  clone.classList.remove('svg-agrandissable', 'qcm-svg');
-  clone.removeAttribute('style');
-  clone.removeAttribute('width');
-  clone.removeAttribute('height');
-  // le curseur (voir cablerCurseurUnique) doit continuer a fonctionner dans la modale agrandie :
-  // cloneNode() ne copie pas les ecouteurs, il faut recabler explicitement le clone. On propose
-  // le meme bouton-icone que sur la petite figure, et on reprend l'etat actif/inactif d'origine.
-  const aCurseur = svg.dataset.xmin !== undefined;
-  if (aCurseur) {
-    const enveloppe = document.createElement('span');
-    enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
-    enveloppe.appendChild(clone);
-    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
-    interieur.appendChild(enveloppe);
-    cablerCurseurUnique(clone);
-    if (svg.classList.contains('curseur-actif')) {
-      clone.classList.add('curseur-actif');
-      enveloppe.querySelector('.btn-curseur').classList.add('actif');
-    }
-  } else {
-    interieur.appendChild(clone);
-  }
-  document.getElementById('modal-svg-overlay').classList.add('ouvert');
-}
-
-function fermerModalSvg(evt, force) {
-  if (force || evt.target.id === 'modal-svg-overlay') {
-    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
-  }
-}
-
-document.addEventListener('keydown', (evt) => {
-  if (evt.key === 'Escape') fermerModalSvg(null, true);
-});
-
-function construireGraphique6_3() {
-  const { a, p, q, r, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_3;
-  const f = x => a*(x-p)*(x-p)*(x-q)+r;
-  const penteQ = a*(q-p)*(q-p);
-  const bord1 = xmin+0.2, bord2 = xmax-0.2;
-  const svg = genererSVGCourbe(f, xmin, xmax, ymin, ymax, [
-    {x0:bord1, x1:bord2, pente:0, px:p, py:r, couleur:'#1a9e75', label:'T2'},
-    {x0:Math.max(bord1,q-2.2), x1:Math.min(bord2,q+2.2), pente:penteQ, px:q, py:r, couleur:'#e74c3c', label:'T1'}
-  ]);
-  document.getElementById('graphique-6-3').innerHTML = `
-    <p>Dans le repère ci-dessous, on a représenté le graphe d'une fonction <em>f</em> définie et dérivable sur ℝ ainsi que deux de ses tangentes.</p>
-    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
-  activerZoomSvg(document.getElementById('graphique-6-3'));
-  activerCurseurSvg(document.getElementById('graphique-6-3'));
-}
-
-function construireGraphique6_3g() {
-  const { c, e, p2, C0, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_3g;
-  const g = x => c*(x**3/3 - e*x**2/2) + C0;
-  const penteP2 = c*p2*(p2-e);
-  const bord1 = xmin+0.2, bord2 = xmax-0.2;
-  const svg = genererSVGCourbe(g, xmin, xmax, ymin, ymax, [
-    // tangente horizontale en x=0 retiree le 30/09/2026 : g'(0) n'est plus demande depuis la fusion
-    {x0:Math.max(bord1,p2-2.2), x1:Math.min(bord2,p2+2.2), pente:penteP2, px:p2, py:g(p2), couleur:'#1a9e75', label:'T'}
-  ]);
-  document.getElementById('graphique-6-3g').innerHTML = `
-    <p>Dans le repère ci-dessous, on a tracé la représentation graphique d'une fonction <em>g</em> définie et dérivable sur ℝ ainsi que l'une de ses tangentes.</p>
-    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
-  activerZoomSvg(document.getElementById('graphique-6-3g'));
-  activerCurseurSvg(document.getElementById('graphique-6-3g'));
-}
-
-function genererTableauVariation(nom, positionsX, sens, valeurs) {
-  const n = positionsX.length;
-  const largeurCol = 90;
-  const margeGaucheEntete = 40;
-  const largeurSvg = margeGaucheEntete + largeurCol * (n - 1) + 20;
-  const hauteurLigneX = 30;
-  const hauteurLigneFleches = 90;
-  const hauteurTotale = hauteurLigneX + hauteurLigneFleches;
-
-  const xPos = [];
-  for (let i = 0; i < n; i++) xPos.push(margeGaucheEntete + i * largeurCol);
-
-  const niveaux = [0];
-  for (let i = 0; i < sens.length; i++) {
-    niveaux.push(niveaux[i] + (sens[i] === '+' ? 1 : -1));
-  }
-  const min = Math.min(...niveaux), max = Math.max(...niveaux);
-  const yHautLigne = hauteurLigneX + 20;
-  const yBasLigne = hauteurTotale - 20;
-  const yPos = niveaux.map(niv => max === min ? (yHautLigne+yBasLigne)/2 :
-    yBasLigne - (niv - min) / (max - min) * (yBasLigne - yHautLigne));
-
-  let svg = `<svg width="${largeurSvg}" height="${hauteurTotale}" viewBox="0 0 ${largeurSvg} ${hauteurTotale}" font-family="Georgia, serif" font-size="14">`;
-  svg += `<line x1="0" y1="${hauteurLigneX}" x2="${largeurSvg}" y2="${hauteurLigneX}" stroke="#333" stroke-width="1"/>`;
-  svg += `<line x1="${margeGaucheEntete-15}" y1="0" x2="${margeGaucheEntete-15}" y2="${hauteurTotale}" stroke="#333" stroke-width="1"/>`;
-  svg += `<rect x="0" y="0" width="${largeurSvg}" height="${hauteurTotale}" fill="none" stroke="#333" stroke-width="1"/>`;
-  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX/2+5}" text-anchor="middle" font-style="italic">x</text>`;
-  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX + hauteurLigneFleches/2+5}" text-anchor="middle" font-style="italic">${nom}</text>`;
-
-  xPos.forEach((x, i) => {
-    svg += `<text x="${x}" y="${hauteurLigneX/2+5}" text-anchor="middle">${positionsX[i]}</text>`;
-    svg += `<line x1="${x}" y1="${hauteurLigneX}" x2="${x}" y2="${hauteurTotale}" stroke="#999" stroke-width="0.7" stroke-dasharray="2,2"/>`;
-  });
-
-  const shorten = 6;
-  for (let i = 0; i < n-1; i++) {
-    const x1=xPos[i], y1=yPos[i], x2=xPos[i+1], y2=yPos[i+1];
-    const dx = x2-x1, dy = y2-y1;
-    const longueur = Math.sqrt(dx*dx+dy*dy);
-    const ux = dx/longueur, uy = dy/longueur;
-    const sx1 = x1 + ux*shorten, sy1 = y1 + uy*shorten;
-    const sx2 = x2 - ux*shorten, sy2 = y2 - uy*shorten;
-    svg += `<line x1="${sx1.toFixed(1)}" y1="${sy1.toFixed(1)}" x2="${sx2.toFixed(1)}" y2="${sy2.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`;
-    const angle = Math.atan2(dy,dx);
-    const taille = 6;
-    const a1 = angle + Math.PI*150/180, a2 = angle - Math.PI*150/180;
-    const p1x = sx2+taille*Math.cos(a1), p1y = sy2+taille*Math.sin(a1);
-    const p2x = sx2+taille*Math.cos(a2), p2y = sy2+taille*Math.sin(a2);
-    svg += `<polygon points="${sx2.toFixed(1)},${sy2.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
-  }
-
-  if (valeurs) {
-    valeurs.forEach((val, i) => {
-      if (val === null || val === undefined || val === '') return;
-      const estHaut = i === 0 ? (sens[0] === '-') : (i === n-1 ? (sens[n-2] === '+') : (sens[i-1]==='+' && sens[i]==='-'));
-      const y = estHaut ? yPos[i] - 10 : yPos[i] + 18;
-      svg += `<text x="${xPos[i]}" y="${y}" text-anchor="middle">${val}</text>`;
-    });
-  }
-
-  svg += '</svg>';
-  return `<div class="figure-centree">${svg}</div>`;
-}
-
-// Tableau de variation de f' ELLE-MEME (utilise par 6.5 a/b) : f'(x) = k(x-a)(x-b)(x-c) a 2
-// extremums propres (racines de sa propre derivee, 3k x^2 - 2k(a+b+c) x + k(ab+ac+bc)) qui
-// s'intercalent forcement entre les racines a<m1<b<m2<c (fait standard pour un cubique a 3
-// racines reelles distinctes). Le zero de f' a chaque racine a/b/c est marque directement SUR le
-// segment oblique (ce n'est pas un sommet, juste un point de passage), les valeurs f'(m1)/f'(m2)
-// sont affichees aux deux sommets.
-function genererTableauVariationDerivee(a, m1, v1, b, m2, v2, c) {
-  const fmtXVal = v => {
-    if (Math.abs(v - Math.round(v)) < 1e-6) return fmtX(Math.round(v));
-    const s = Math.abs(v).toFixed(2).replace('.', ',');
-    return (v < 0 ? '−' : '') + s;
-  };
-  const fmtValeur = fmtXVal; // v1,v2 sont toujours des entiers choisis directement : meme format que les positions
-
-  const positions = ['−∞', fmtXVal(a), fmtXVal(m1), fmtXVal(b), fmtXVal(m2), fmtXVal(c), '+∞'];
-  const n = 7;
-  const largeurCol = 80;
-  const margeGaucheEntete = 40;
-  const largeurSvg = margeGaucheEntete + largeurCol * (n - 1) + 20;
-  const hauteurLigneX = 30;
-  const hauteurLigneFleches = 100;
-  const hauteurTotale = hauteurLigneX + hauteurLigneFleches;
-
-  const xPos = [];
-  for (let i = 0; i < n; i++) xPos.push(margeGaucheEntete + i * largeurCol);
-
-  // v1 est la valeur du premier extremum (en x=m1) : s'il est positif, f' monte depuis -infini
-  // jusqu'a ce sommet haut, puis redescend vers v2 (negatif) avant de remonter vers +infini
-  const yHaut = hauteurLigneX + 20, yBas = hauteurTotale - 20;
-  const yPos = new Array(n);
-  yPos[0] = v1 > 0 ? yBas : yHaut;   // -infini
-  yPos[2] = v1 > 0 ? yHaut : yBas;   // m1 (premier extremum)
-  yPos[4] = v1 > 0 ? yBas : yHaut;   // m2 (second extremum)
-  yPos[6] = v1 > 0 ? yHaut : yBas;   // +infini
-  yPos[1] = (yPos[0] + yPos[2]) / 2; // racine a, a mi-hauteur du segment qui la contient
-  yPos[3] = (yPos[2] + yPos[4]) / 2; // racine b
-  yPos[5] = (yPos[4] + yPos[6]) / 2; // racine c
-
-  let svg = `<svg width="${largeurSvg}" height="${hauteurTotale}" viewBox="0 0 ${largeurSvg} ${hauteurTotale}" font-family="Georgia, serif" font-size="13">`;
-  svg += `<line x1="0" y1="${hauteurLigneX}" x2="${largeurSvg}" y2="${hauteurLigneX}" stroke="#333" stroke-width="1"/>`;
-  svg += `<line x1="${margeGaucheEntete-15}" y1="0" x2="${margeGaucheEntete-15}" y2="${hauteurTotale}" stroke="#333" stroke-width="1"/>`;
-  svg += `<rect x="0" y="0" width="${largeurSvg}" height="${hauteurTotale}" fill="none" stroke="#333" stroke-width="1"/>`;
-  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX/2+5}" text-anchor="middle" font-style="italic">x</text>`;
-  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX + hauteurLigneFleches/2+5}" text-anchor="middle" font-style="italic">f′</text>`;
-
-  xPos.forEach((x, i) => { svg += `<text x="${x}" y="${hauteurLigneX/2+5}" text-anchor="middle">${positions[i]}</text>`; });
-  svg += `<line x1="${xPos[0]}" y1="${hauteurLigneX}" x2="${xPos[0]}" y2="${hauteurTotale}" stroke="#999" stroke-width="0.7" stroke-dasharray="2,2"/>`;
-  svg += `<line x1="${xPos[6]}" y1="${hauteurLigneX}" x2="${xPos[6]}" y2="${hauteurTotale}" stroke="#999" stroke-width="0.7" stroke-dasharray="2,2"/>`;
-
-  const sommets = [[xPos[0],yPos[0]], [xPos[2],yPos[2]], [xPos[4],yPos[4]], [xPos[6],yPos[6]]];
-  const shorten = 6;
-  for (let i = 0; i < 3; i++) {
-    const [x1,y1] = sommets[i], [x2,y2] = sommets[i+1];
-    const dx = x2-x1, dy = y2-y1;
-    const longueur = Math.sqrt(dx*dx+dy*dy);
-    const ux = dx/longueur, uy = dy/longueur;
-    const sx1 = x1 + ux*shorten, sy1 = y1 + uy*shorten;
-    const sx2 = x2 - ux*shorten, sy2 = y2 - uy*shorten;
-    svg += `<line x1="${sx1.toFixed(1)}" y1="${sy1.toFixed(1)}" x2="${sx2.toFixed(1)}" y2="${sy2.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`;
-    const angle = Math.atan2(dy,dx);
-    const taille = 6;
-    const a1 = angle + Math.PI*150/180, a2 = angle - Math.PI*150/180;
-    const p1x = sx2+taille*Math.cos(a1), p1y = sy2+taille*Math.sin(a1);
-    const p2x = sx2+taille*Math.cos(a2), p2y = sy2+taille*Math.sin(a2);
-    svg += `<polygon points="${sx2.toFixed(1)},${sy2.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
-  }
-
-  // "0" sur les segments, aux abscisses des racines (indices 1, 3, 5) - pas des sommets
-  [1,3,5].forEach(i => { svg += `<text x="${xPos[i]}" y="${(yPos[i]-6).toFixed(1)}" text-anchor="middle" font-size="12">0</text>`; });
-
-  // valeurs aux deux extremums et aux infinis, decalees au-dessus si sommet haut, en dessous si bas
-  const decalage = (y) => Math.abs(y - yHaut) < 0.5 ? -10 : 18;
-  svg += `<text x="${xPos[0]}" y="${(yPos[0]+decalage(yPos[0])).toFixed(1)}" text-anchor="middle">−∞</text>`;
-  svg += `<text x="${xPos[2]}" y="${(yPos[2]+decalage(yPos[2])).toFixed(1)}" text-anchor="middle">${fmtValeur(v1)}</text>`;
-  svg += `<text x="${xPos[4]}" y="${(yPos[4]+decalage(yPos[4])).toFixed(1)}" text-anchor="middle">${fmtValeur(v2)}</text>`;
-  svg += `<text x="${xPos[6]}" y="${(yPos[6]+decalage(yPos[6])).toFixed(1)}" text-anchor="middle">+∞</text>`;
-
-  svg += '</svg>';
-  return `<div class="figure-centree">${svg}</div>`;
-}
-
-function genererFigureCercleTangente(largeur, hauteur) {
-  largeur = largeur || 200; hauteur = hauteur || 200;
-  const marge = 20;
-  const rayon = Math.min(largeur, hauteur) / 2 - marge - 10;
-  const cx = marge + rayon, cy = hauteur - marge - rayon;
-  // point M(t) approximatif pour l'illustration, avec t=0.5
-  const t = 0.5;
-  const yt = Math.sqrt(1 - t*t);
-  const mx = cx + t * rayon, my = cy - yt * rayon;
-  // tangente en M(t) : perpendiculaire au rayon OM(t)
-  const pente = -t / yt;
-  const dx = 30;
-  const tx1 = mx - dx, ty1 = my - pente * (-dx);
-  const tx2 = mx + dx, ty2 = my - pente * (dx);
-
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg" style="max-width:220px;display:block;margin:0 auto;">
-    <circle cx="${cx}" cy="${cy}" r="${rayon}" fill="none" stroke="#4B46C7" stroke-width="1.5"/>
-    <line x1="${marge}" y1="${cy}" x2="${largeur-marge+15}" y2="${cy}" stroke="#999" stroke-width="1"/>
-    <line x1="${cx}" y1="${hauteur-marge+15}" x2="${cx}" y2="${marge-15}" stroke="#999" stroke-width="1"/>
-    <line x1="${cx}" y1="${cy}" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#333" stroke-width="1.2"/>
-    <line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="#e74c3c" stroke-width="1.5"/>
-    <circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="2.5" fill="#333"/>
-    <text x="${(mx+6).toFixed(1)}" y="${(my-6).toFixed(1)}" font-size="11" fill="#333">M(t)</text>
-    <text x="${(cx+3).toFixed(1)}" y="${(cy+13).toFixed(1)}" font-size="11" fill="#333">O</text>
-    <text x="${(tx2+3).toFixed(1)}" y="${(ty2).toFixed(1)}" font-size="11" fill="#e74c3c">T</text>
-    <text x="${(cx+rayon+3).toFixed(1)}" y="${(cy-3).toFixed(1)}" font-size="10" fill="#666">1</text>
-  </svg>`;
-}
-function construireGraphique6_4() {
-  const { r1, r2, k, ordre, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_4;
-  const fprime = x => k*(x-r1)*(x-r2);
-  const svgDeriv = genererSVGCourbe(fprime, xmin, xmax, ymin, ymax, undefined, 380, 290);
-  const noms = ['f₁','f₂','f₃'];
-  const tables = ordre.map((t,i) => genererTableauVariation(noms[i], t.positions, t.sens)).join('');
-  let html = `<p>On considère \\(f_1\\), \\(f_2\\) et \\(f_3\\) des fonctions définies et dérivables sur ℝ. La courbe représentative d'une certaine fonction dérivée, notée \\(f'\\), est tracée dans le repère ci-dessous ainsi que trois tableaux de variation.</p>
-  <div class="figure-centree"><span class="figure-avec-curseur">${svgDeriv}${boutonCurseurHTML()}</span></div>
-  <div style="overflow-x:auto;">${tables}</div>`;
-  document.getElementById('graphique-6-4').innerHTML = html;
-  activerZoomSvg(document.getElementById('graphique-6-4'));
-  activerCurseurSvg(document.getElementById('graphique-6-4'));
-}
-
-function construireGraphiqueQCMCourbe(divId, params, texteIntro, largeur, hauteur) {
-  // Le tableau montre la variation de f' ELLE-MEME (2 extremums propres a f', avec ses zeros
-  // marques sur les fleches), pas un tableau de signe de f' derive pour F - voir
-  // genererTableauVariationDerivee(). Pas de courbe de f' affichee en plus : le tableau suffit.
-  const { ordre, plageGlobale, xmin, xmax, tableauHTML } = params;
-  largeur = largeur || 240; hauteur = hauteur || 185;
-  let html = `<p>${texteIntro}</p>
-  <div style="overflow-x:auto;">${tableauHTML}</div>
-  <div class="qcm-grille-figures">`;
-  ['a','b','c'].forEach((lettre, i) => {
-    const svg = genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax, undefined, largeur, hauteur);
-    html += `<div><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span><div class="qcm-figure-label">f_${lettre}</div></div>`;
-  });
-  html += '</div>';
-  document.getElementById(divId).innerHTML = html;
-  activerZoomSvg(document.getElementById(divId));
-  activerCurseurSvg(document.getElementById(divId));
-}
-
-function construireGraphique6_5a() {
-  construireGraphiqueQCMCourbe('graphique-6-5a', paramsGraphiques.g6_5a,
-    "<span class=\"q-lettre\">a)</span> On donne ci-dessous le tableau de variation d'une fonction \\(f'\\) définie sur ℝ ainsi que les courbes représentatives de trois fonctions : \\(f_1\\), \\(f_2\\) et \\(f_3\\).",
-    265, 205);
-}
-
-function construireGraphique6_5b() {
-  construireGraphiqueQCMCourbe('graphique-6-5b', paramsGraphiques.g6_5b,
-    "<span class=\"q-lettre\">b)</span> On donne ci-contre le tableau de variation d'une fonction \\(f'\\) définie sur ℝ et, ci-dessous, les courbes représentatives de trois fonctions : \\(f_1\\), \\(f_2\\) et \\(f_3\\).");
-}
-
-function construireFigure6_6() {
-  const svg = genererFigureCercleTangente();
-  document.getElementById('figure-6-6').innerHTML = `
-    <p>Dans le plan muni d'un repère orthonormé, on considère le cercle <em>C</em> de centre O et de rayon 1. Pour \\(t\\in\\,]-1,1[\\), on note M(t) l'unique point du cercle <em>C</em> d'abscisse \\(t\\) et d'ordonnée strictement positive, et on note \\(y_t\\) l'ordonnée de M(t).</p>
-    <div class="figure-centree">${svg}</div>`;
-  activerZoomSvg(document.getElementById('figure-6-6'));
 }
 
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
@@ -3611,12 +3117,7 @@ async function initialiserFiche() {
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
   }
 construireGrilles();
-construireGraphique6_3();
-construireGraphique6_3g();
-construireGraphique6_4();
-construireGraphique6_5a();
-construireGraphique6_5b();
-construireFigure6_6();
+mettreAJourTextesAvances();
 attacherEcouteurs();
 attacherEcouteursTactiles();
 definirMode(true);

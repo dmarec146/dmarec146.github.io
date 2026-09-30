@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Fiche 15 — Suites géométriques (Première) — interactif</title>
+<title>Fiche 4 — Dérivation I (Première) — interactif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
@@ -405,13 +405,13 @@ window.MathJax = {
     min-width: 20px;
     cursor: pointer;
     font-size: 11px;
-    vertical-align: middle;
-    margin-left: 6px;
     font-weight: bold;
     color: var(--bleu);
     flex: 0 0 auto;
     line-height: 1;
     padding: 0;
+    vertical-align: middle;
+    margin-left: 6px;
   }
   .q-aide-btn:hover { background: var(--bleu); color: white; }
   .q-aide-bulle {
@@ -617,6 +617,11 @@ window.MathJax = {
     border: 1px solid #ddd;
     border-radius: 6px;
   }
+  /* police "type manuel scolaire" des graphiques : classe a part (pas juste .qcm-svg) pour qu'elle
+     survive au clonage dans la modale d'agrandissement, qui retire la classe qcm-svg elle-meme */
+  .svg-police-manuel {
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+  }
   .figure-centree {
     display: flex;
     justify-content: center;
@@ -629,6 +634,83 @@ window.MathJax = {
   }
   .figure-centree svg.qcm-svg {
     max-width: 220px;
+  }
+  svg.svg-agrandissable {
+    cursor: zoom-in;
+  }
+  svg.svg-agrandissable:hover {
+    outline: 2px solid var(--bleu-clair);
+    outline-offset: 2px;
+  }
+  /* ---------- bouton-icone "curseur avec coordonnees", porte depuis les fiches 14/15 de Seconde
+     apres validation : meme gabarit que le bouton loupe d'automatismes/assets/automatismes.css
+     (.zoom-btn) — bouton rond-carre semi-transparent, hover en bleu plein, place legerement en
+     dehors du cadre du graphique (a droite, via un padding-right dedie sur le conteneur). Masque
+     sur les appareils sans survol reel (tablette/telephone) : un curseur "au doigt" cacherait en
+     permanence le point vise. ---------- */
+  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
+  .btn-curseur {
+    position: absolute; top: 4px; right: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
+    color: var(--bleu); cursor: pointer; line-height: 0;
+  }
+  .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
+  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
+  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
+  .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
+  .curseur-groupe { pointer-events: none; }
+  svg.qcm-svg.curseur-actif { cursor: crosshair; }
+  /* empeche le glissement tactile sur la figure d'etre intercepte comme un scroll de page : sans
+     ca, un geste au doigt sur une figure scrolle au lieu d'activer le curseur (voir cablerCurseurUnique).
+     Le clone agrandi de la modale (#modal-svg-contenu-interieur) perd la classe qcm-svg (voir
+     ouvrirModalSvg), d'ou le second selecteur. */
+  svg.qcm-svg, #modal-svg-contenu-interieur svg { touch-action: none; }
+  .modal-svg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 25, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: zoom-out;
+  }
+  .modal-svg-overlay.ouvert {
+    display: flex;
+  }
+  .modal-svg-contenu {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 32px 14px 14px;
+    width: min(96vw, 720px);
+    max-height: 94vh;
+    overflow: auto;
+    cursor: default;
+  }
+  .modal-svg-contenu svg {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto;
+  }
+  .modal-svg-fermer {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gris);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .modal-svg-fermer:hover {
+    color: var(--rouge);
   }
   .qcm-options {
     display: flex;
@@ -654,7 +736,7 @@ window.MathJax = {
     margin-bottom: 8px;
   }
   .qcm-grille-figures > div {
-    flex: 0 1 160px;
+    flex: 0 1 210px;
   }
   .qcm-figure-label {
     text-align: center;
@@ -816,20 +898,27 @@ window.MathJax = {
 
 <body>
 
-<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 4</a></p>
+<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
+  <div class="modal-svg-contenu">
+    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
+    <div id="modal-svg-contenu-interieur"></div>
+  </div>
+</div>
+
+<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 2</a></p>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <a class="nav-btn" href="fiche-14.html">&larr; Fiche précédente</a>
-  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
+  <a class="nav-btn" href="fiche-05.html">Fiche suivante &rarr;</a>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
 <div class="entete">
-  <div class="badge">15</div>
+  <div class="badge">4</div>
   <div class="entete-texte">
-    <h1>Suites géométriques</h1>
-    <p class="cahier-repere">Première — Cahier 4</p>
+    <h1>Dérivation I</h1>
+    <p class="cahier-repere">Première — Cahier 2</p>
   </div>
 </div>
 <div class="filet"></div>
@@ -847,70 +936,39 @@ window.MathJax = {
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 15.1 — Des développements. Développer les expressions suivantes.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
-<div class="question-grille" id="grille-15-1"></div>
+<p class="calcul-titre"><span>Calcul 4.1 — Des puissances. Soit n ∈ ℤ. Écrire <span class="titre-mise-en-valeur">sous la forme \(2^k\) avec \(k\in\mathbb{Z}\)</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-4-1"></div>
 
-<p class="calcul-titre"><span>Calcul 15.2 — Des factorisations. Factoriser les expressions suivantes.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
-<div class="question-grille" id="grille-15-2"></div>
-
-<p class="calcul-titre"><span>Calcul 15.3 — Images.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-3">On considère la fonction \(f\) définie par \(f(x)=\dfrac{x}{2}-\dfrac{3}{5}\). Calculer :</p>
-<div class="question-grille" id="grille-15-3"></div>
-
-<p class="calcul-titre"><span>Calcul 15.4 — Antécédents.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-4">On considère la fonction \(f\) définie par \(f(x)=-\dfrac{1}{4}x+5\). Déterminer l'antécédent de :</p>
-<div class="question-grille" id="grille-15-4"></div>
+<p class="calcul-titre"><span>Calcul 4.2 — Factorisations dans des fractions.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-4-2"></div>
 </div>
 
-<p class="section-titre">Calcul de termes</p>
+<p class="section-titre">Lectures graphiques</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 15.5</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-5">La suite \(\left(u_n\right)_{n\in\mathbb{N}}\) est géométrique de raison \(q=2\) et de premier terme \(u_0=3\). Calculer :</p>
-<div class="question-grille" id="grille-15-5"></div>
+<p class="calcul-titre"><span>Calcul 4.3 — Lecture graphique d'un nombre dérivé.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="graphique-4-3"></div>
+<div id="graphique-4-3g"></div>
+<div class="question-grille" id="grille-4-3"></div>
 
-<p class="calcul-titre"><span>Calcul 15.6</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-6">La suite \(\left(u_n\right)_{n\in\mathbb{N}}\) est géométrique de raison \(q=\sqrt{3}\) et de premier terme \(u_0=-\dfrac{1}{\sqrt{3}}\).</p>
-<div class="question-grille" id="grille-15-6"></div>
+<p class="calcul-titre"><span>Calcul 4.4 — Une courbe, trois tableaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="graphique-4-4"></div>
+<div class="question-grille" id="grille-4-4"></div>
 
-<p class="calcul-titre"><span>Calcul 15.7</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-7">On considère la suite \(\left(u_n\right)_{n\in\mathbb{N}}\) géométrique de raison \(q=\dfrac{3}{2}\) telle que \(u_6=16\).</p>
-<div class="question-grille" id="grille-15-7"></div>
-
-<p class="section-titre">Calcul de raisons et de termes</p>
-<div class="section-barre"></div>
-
-<p class="calcul-titre"><span>Calcul 15.8</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-8">On considère la suite \(\left(u_n\right)_{n\in\mathbb{N}}\) géométrique de raison \(q\) telle que \(u_3=\sqrt{2}\) et \(u_6=27\sqrt{2}\).</p>
-<div class="question-grille" id="grille-15-8"></div>
-
-<p class="calcul-titre"><span>Calcul 15.9</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-9">Soit \(\left(u_n\right)_{n\in\mathbb{N}}\) une suite géométrique de raison \(q\) et de premier terme \(u_0\) telle que \(u_2=\dfrac{3}{4}\) et \(u_4=12\).</p>
-<div class="question-grille" id="grille-15-9"></div>
-
-<p class="calcul-titre"><span>Calcul 15.10</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-10">Soit \(a\) un nombre réel. On considère \(\left(u_n\right)_{n\in\mathbb{N}}\) une suite telle que \(u_{41}=a\), \(u_{42}=a-2\) et \(u_{43}=a+1\).</p>
-<div class="question-grille" id="grille-15-10"></div>
-
-<p class="calcul-titre"><span>Calcul 15.11</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-11">Soit \(q\in\mathbb{R}\). On considère la suite géométrique \(\left(u_n\right)_{n\in\mathbb{N}}\) de raison \(q\) telle que \(u_6=-5\) et \(u_9=10\sqrt{2}\).</p>
-<div class="question-grille" id="grille-15-11"></div>
-
-<p class="calcul-titre"><span>Calcul 15.12</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-15-12">Soit \(\left(u_n\right)_{n\in\mathbb{N}^*}\) définie par \(u_1=5\) et, pour tout \(n\in\mathbb{N}^*\), \(u_{n+1}=3u_n+\dfrac{4}{3}\). Soit \(x\) un réel et \(v_n=u_n+x\).</p>
-<div class="question-grille" id="grille-15-12"></div>
+<p class="calcul-titre"><span>Calcul 4.5 — Un tableau et trois courbes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div id="graphique-4-5a"></div>
+<div class="question-grille" id="grille-4-5a"></div>
+<div id="graphique-4-5b"></div>
+<div class="question-grille" id="grille-4-5b"></div>
 
 <div class="bloc-avance">
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 15.13</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<p id="texte-15-13">Soit \(\left(u_n\right)_{n\in\mathbb{N}}\) une suite géométrique de raison \(q\) telle que \(u_1=\dfrac{1}{2}\).</p>
-<div class="question-grille" id="grille-15-13"></div>
-
-<p class="calcul-titre"><span>Calcul 15.14</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<p>La suite \(\left(u_n\right)_{n\in\mathbb{N}}\) est géométrique de raison \(q=2\) et de premier terme \(u_0=a\).</p>
-<div class="question-grille" id="grille-15-14"></div>
+<p class="calcul-titre"><span>Calcul 4.6 — Tangente et rayon.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<div id="figure-4-6"></div>
+<div class="rappel-formule">On rappelle la propriété suivante : dans un repère orthonormé, si \(\vec{u}\begin{pmatrix}x\\y\end{pmatrix}\) et \(\vec{v}\begin{pmatrix}x'\\y'\end{pmatrix}\) sont deux vecteurs, alors \(\vec{u}\) et \(\vec{v}\) sont orthogonaux si, et seulement si, \(x\times x'+y\times y'=0\).</div>
+<div class="question-grille" id="grille-4-6"></div>
 </div>
 
 <div class="barre-controle">
@@ -951,8 +1009,8 @@ window.MathJax = {
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <a class="nav-btn" href="fiche-14.html">&larr; Fiche précédente</a>
-  <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
+  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
+  <a class="nav-btn" href="fiche-05.html">Fiche suivante &rarr;</a>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
 
@@ -1006,368 +1064,360 @@ function restaurerApresImpression() {
 window.addEventListener('afterprint', restaurerApresImpression);
 function exporterPDF() { preparerPourImpression(); window.print(); }
 function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
-function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
-function fracStr(n, d) {
-  if (d < 0) { n = -n; d = -d; }
-  const g = pgcd(n, d);
-  n /= g; d /= g;
-  return d === 1 ? String(n) : `${n}/${d}`;
-}
-function fracLatex(n, d) {
-  if (d < 0) { n = -n; d = -d; }
-  const g = pgcd(n, d);
-  n /= g; d /= g;
-  if (d === 1) return String(n);
-  return n < 0 ? `-\\dfrac{${-n}}{${d}}` : `\\dfrac{${n}}{${d}}`;
-}
-function fracToStr(f) {
-  f = math.fraction(f);
-  return (f.s < 0 ? '-' : '') + (f.d === 1 ? String(f.n) : `${f.n}/${f.d}`);
-}
-function fracToLatex(f) {
-  f = math.fraction(f);
-  return fracLatex(f.s * f.n, f.d);
-}
-function fmtLin(a, b, ascii, vr) {
-  vr = vr || 'x';
-  const mult = ascii ? '*' : '';
-  let s = a === 1 ? vr : a === -1 ? '-'+vr : (a === 0 ? '' : `${a}${mult}${vr}`);
-  if (b > 0) s += (s ? '+' : '') + b;
-  else if (b < 0) s += b;
-  else if (!s) s = '0';
-  return s;
-}
-function polyQuadStr(a, b, c, ascii, vr) {
-  vr = vr || 'n';
-  const mult = ascii ? '*' : '';
-  const termA = a === 0 ? '' : (a === 1 ? `${vr}^2` : a === -1 ? `-${vr}^2` : `${a}${mult}${vr}^2`);
-  const termB = b === 0 ? '' : (b > 0 ? `+${b === 1 ? vr : (b === -1 ? '-'+vr : `${b}${mult}${vr}`)}` : `${b === -1 ? '-'+vr : `${b}${mult}${vr}`}`);
-  const termC = c === 0 ? '' : (c > 0 ? `+${c}` : `${c}`);
-  let s = termA + termB + termC;
-  if (!s) s = '0';
-  if (s[0] === '+') s = s.slice(1);
-  return s;
-}
-function carreStr(A, B) {
-  const a2 = A*A, b2 = 2*A*B, c2 = B*B;
-  let s = `${a2}*x^2`;
-  s += b2 >= 0 ? `+${b2}*x` : `${b2}*x`;
-  s += c2 >= 0 ? `+${c2}` : `${c2}`;
-  return s;
-}
-function nonCarreParfait(min, max) {
-  let d;
-  do { d = alea(min, max); } while (Number.isInteger(Math.sqrt(d)));
-  return d;
-}
-function coefPrefixeL(n) {
-  return n === 1 ? '' : n === -1 ? '-' : `${n}`;
-}
-function coefPrefixe(n) {
-  return n === 1 ? '' : n === -1 ? '-' : `${n}*`;
-}
-function coefFracPrefix(n, d) {
-  const s = fracStr(n, d);
-  if (s === '1') return '';
-  if (s === '-1') return '-';
-  return s.includes('/') ? `(${s})*` : `${s}*`;
-}
-function coefPrefixFrac(f) {
-  f = math.fraction(f);
-  if (f.n === 1 && f.d === 1) return f.s < 0 ? '-' : '';
-  return `${fracToStr(f)}*`;
-}
-function coefSqrtStr(sigma, m, D) {
-  const neg = sigma < 0;
-  if (m === 1) return neg ? `-sqrt(${D})` : `sqrt(${D})`;
-  return neg ? `-${m}*sqrt(${D})` : `${m}*sqrt(${D})`;
-}
-function polyQuadFracStr(aF, bF, cF, vr) {
-  vr = vr || 'x';
-  aF = math.fraction(aF); bF = math.fraction(bF); cF = math.fraction(cF);
-  let s = '';
-  if (!(aF.n === 0)) {
-    const aStr = fracToStr(aF);
-    s += aStr === '1' ? `${vr}^2` : aStr === '-1' ? `-${vr}^2` : `${aStr}*${vr}^2`;
-  }
-  if (!(bF.n === 0)) {
-    const bStr = fracToStr(bF);
-    const isNeg = bStr.startsWith('-');
-    const bAbs = isNeg ? bStr.slice(1) : bStr;
-    const bTerm = bAbs === '1' ? vr : `${bAbs}*${vr}`;
-    s += (isNeg ? '-' : (s ? '+' : '')) + bTerm;
-  }
-  if (!(cF.n === 0)) {
-    const cStr = fracToStr(cF);
-    s += cStr.startsWith('-') ? cStr : (s ? '+' : '') + cStr;
-  }
-  if (!s) s = '0';
+
+function fmtLinN(a, b) {
+  let s = (a === 1 ? 'n' : (a === -1 ? '-n' : a + '*n'));
+  if (b !== 0) s += (b > 0 ? '+' + b : b);
   return s;
 }
 
-let paramsAvances = {};
-
-function mettreAJourTextesAvances() {
-  const p3 = paramsAvances.g3;
-  document.getElementById('texte-15-3').innerHTML = `On considère la fonction \\(f\\) définie par \\(f(x)=\\dfrac{x}{${p3.A}}-\\dfrac{${p3.B}}{${p3.C}}\\). Calculer :`;
-  const p4 = paramsAvances.g4;
-  document.getElementById('texte-15-4').innerHTML = `On considère la fonction \\(f\\) définie par \\(f(x)=-\\dfrac{x}{${p4.A}}+${p4.B}\\). Déterminer l'antécédent de :`;
-  const p5 = paramsAvances.g5;
-  document.getElementById('texte-15-5').innerHTML = `La suite \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) est géométrique de raison \\(q=${p5.q}\\) et de premier terme \\(u_0=${p5.u0}\\). Calculer :`;
-  const p6 = paramsAvances.g6;
-  document.getElementById('texte-15-6').innerHTML = `La suite \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) est géométrique de raison \\(q=\\sqrt{${p6.D}}\\) et de premier terme \\(u_0=${p6.S<0?'-':''}\\dfrac{1}{\\sqrt{${p6.D}}}\\).`;
-  const p7 = paramsAvances.g7;
-  document.getElementById('texte-15-7').innerHTML = `On considère la suite \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) géométrique de raison \\(q=\\dfrac{${p7.P}}{${p7.Q}}\\) telle que \\(u_{${p7.K}}=${p7.T}\\).`;
-  const p8 = paramsAvances.g8;
-  document.getElementById('texte-15-8').innerHTML = `On considère la suite \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) géométrique de raison \\(q\\) telle que \\(u_{${p8.K1}}=\\sqrt{${p8.D}}\\) et \\(u_{${p8.K2}}=${coefPrefixeL(p8.B8)}\\sqrt{${p8.D}}\\).`;
-  const p9 = paramsAvances.g9;
-  document.getElementById('texte-15-9').innerHTML = `Soit \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) une suite géométrique de raison \\(q\\) et de premier terme \\(u_0\\) telle que \\(u_{${p9.K1}}=${fracLatex(p9.p1,p9.q1)}\\) et \\(u_{${p9.K2}}=${fracToLatex(p9.T2f)}\\).`;
-  const p10 = paramsAvances.g10;
-  document.getElementById('texte-15-10').innerHTML = `Soit \\(a\\) un nombre réel. On considère \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) une suite telle que \\(u_{${p10.K}}=a\\), \\(u_{${p10.K+1}}=a${p10.D1>=0?'+':''}${p10.D1}\\) et \\(u_{${p10.K+2}}=a${p10.D2>=0?'+':''}${p10.D2}\\).`;
-  const p11 = paramsAvances.g11;
-  document.getElementById('texte-15-11').innerHTML = `Soit \\(q\\in\\mathbb{R}\\). On considère la suite géométrique \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) de raison \\(q\\) telle que \\(u_{${p11.K1}}=${p11.T1}\\) et \\(u_{${p11.K1+3}}=${coefPrefixeL(p11.T2coef)}\\sqrt{${p11.D}}\\).`;
-  const p12 = paramsAvances.g12;
-  document.getElementById('texte-15-12').innerHTML = `Soit \\(\\left(u_n\\right)_{n\\in\\mathbb{N}^*}\\) définie par \\(u_1=${p12.A}\\) et, pour tout \\(n\\in\\mathbb{N}^*\\), \\(u_{n+1}=${p12.B}u_n${p12.Cp<0?'-':'+'}${fracLatex(Math.abs(p12.Cp),p12.Cq)}\\). Soit \\(x\\) un réel et \\(v_n=u_n+x\\).`;
-  const p13 = paramsAvances.g13;
-  document.getElementById('texte-15-13').innerHTML = `Soit \\(\\left(u_n\\right)_{n\\in\\mathbb{N}}\\) une suite géométrique de raison \\(q\\) telle que \\(u_1=\\dfrac{${p13.P}}{${p13.Q}}\\).`;
+function termePolyN(coeff, puissance) {
+  if (coeff === 0) return null;
+  const abs = Math.abs(coeff);
+  const varPart = puissance === 0 ? '' : (puissance === 1 ? 'n' : 'n^' + puissance);
+  const text = varPart ? (abs === 1 ? varPart : abs + varPart) : String(abs);
+  return { sign: coeff < 0 ? '-' : '+', text };
 }
+function joinPolyN(poly) {
+  const deg = poly.length - 1;
+  const parts = [];
+  poly.forEach((c, i) => { const t = termePolyN(c, deg - i); if (t) parts.push(t); });
+  if (parts.length === 0) return '0';
+  let s = (parts[0].sign === '-' ? '-' : '') + parts[0].text;
+  for (let i = 1; i < parts.length; i++) s += parts[i].sign + parts[i].text;
+  return s;
+}
+
+function termeDivN(coeff, puissanceDiv) {
+  if (coeff === 0) return null;
+  const abs = Math.abs(coeff);
+  const text = puissanceDiv === 0 ? String(abs) : (abs === 1 ? '1' : abs) + '/n' + (puissanceDiv === 1 ? '' : '^' + puissanceDiv);
+  return { sign: coeff < 0 ? '-' : '+', text };
+}
+function joinDivN(poly) {
+  const parts = [];
+  poly.forEach((c, i) => { const t = termeDivN(c, i); if (t) parts.push(t); });
+  if (parts.length === 0) return '0';
+  let s = (parts[0].sign === '-' ? '-' : '') + parts[0].text;
+  for (let i = 1; i < parts.length; i++) s += parts[i].sign + parts[i].text;
+  return s;
+}
+
+function polyAlea(deg) {
+  const poly = [aleaNonNul(1, 3)];
+  for (let i = 1; i < deg; i++) poly.push(alea(-3, 3));
+  poly.push(alea(-3, 3));
+  return poly;
+}
+
+function melanger(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = alea(0, i);
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function fmtX(n) { return n < 0 ? '−' + Math.abs(n) : String(n); }
+
+function construireAntideriveeCubique(k, r1, r2, r3, C0) {
+  const S1 = r1+r2+r3, S2 = r1*r2+r1*r3+r2*r3, S3 = r1*r2*r3;
+  return x => k*(x**4/4 - S1*x**3/3 + S2*x**2/2 - S3*x) + C0;
+}
+
+// plage y reelle d'une courbe sur un domaine donne (avec marge) : utilisee uniquement sur des
+// domaines x resserres autour des points/racines qui comptent pour l'exercice, jamais sur un
+// domaine large fixe (c'est ce qui provoquait des courbes aplaties, voir memoire du projet)
+function calculerPlage(f, xmin, xmax, margeMin) {
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i <= 40; i++) {
+    const x = xmin + (xmax - xmin) * i / 40;
+    const y = f(x);
+    if (y < lo) lo = y;
+    if (y > hi) hi = y;
+  }
+  const pad = Math.max((hi - lo) * 0.15, margeMin);
+  return { ymin: lo - pad, ymax: hi + pad };
+}
+
+// Panels de courbes verifiees a l'oeil (span y resserre, graduations lisibles) : on tire dans un
+// petit choix fixe plutot que dans une combinatoire libre, qui pouvait produire des courbes
+// aplaties (echelle y trop grande) ou mal cadrees. Tant pis si les mêmes reviennent de temps en temps.
+
+// 6.3 (courbe de f) : f(x) = (1/m)(x-p)^2(x-q)+r  =>  f'(p)=0 toujours, f'(q)=(q-p)^2/m
+// condition ajoutee : la pente f'(q), reduite, doit avoir un denominateur <= 2 - sinon il faut
+// suivre la tangente sur 5 unites ou plus pour retrouver un deuxieme point de grille exact, ce qui
+// ne rentre pas dans le cadre trace et rend la lecture graphique du nombre derive impossible
+// (signale par l'utilisateur : "on ne peut pas choisir deux points clairs")
+const PANEL_6_3 = [
+  { m: -8, p: -2, q: 2, r: -1 },
+  { m: 8,  p: -2, q: 2, r: 0 },
+  { m: -8, p: -1, q: 1, r: 1 },
+  { m: 8,  p: -1, q: 1, r: -2 },
+  { m: -6, p: -1, q: 2, r: 0 },
+  { m: 6,  p: -1, q: 2, r: 1 },
+  { m: -8, p: -1, q: 3, r: -1 },
+  { m: 8,  p: -1, q: 3, r: 0 },
+];
+
+// 6.3 (courbe de g, ex-6.4) : g cubique (degre 3, pas 4) pour des variations nettes : g'(x) = (1/m)*x*(x-e), une
+// parabole a 2 racines (0 et e) au lieu d'un cube a 3 racines - g'(0)=0 toujours (tangente
+// horizontale en x=0), g'(p2) = p2(p2-e)/m au deuxieme point observe.
+// Condition 1 (lisibilite de la pente) : le denominateur de la pente reduite doit etre <= 2.
+// Condition 2, plus subtile : le point de tangence (p2, g(p2)) doit LUI-MEME etre tel que la
+// droite passe par un point de grille entier - sinon la pente a beau etre simple, la partie
+// fractionnaire de g(p2) decale toute la droite hors de la grille et AUCUN point entier n'est
+// jamais atteint (verifie : g(p2) = (p2^3/3 - e*p2^2/2)/m + C0, non entier en general puisque
+// C0 ne modifie que le decalage vertical global, jamais la partie fractionnaire du terme cubique).
+// Chaque entree ci-dessous a ete verifiee par recherche exhaustive pour satisfaire les 2 conditions.
+const PANEL_6_3G = [
+  { e: -4, p2: -3, m: 3,  C0: -1 },
+  { e: -4, p2: -3, m: -3, C0: 0 },
+  { e: -2, p2: 3,  m: 3,  C0: 1 },
+  { e: -2, p2: 3,  m: -3, C0: -1 },
+  { e: 2,  p2: -3, m: 3,  C0: 0 },
+  { e: 2,  p2: -3, m: -3, C0: 1 },
+  { e: 4,  p2: 3,  m: 3,  C0: -1 },
+  { e: 4,  p2: 3,  m: -3, C0: 0 },
+];
+
+// 6.4 (ex-6.5) : f'(x) = k(x-r1)(x-r2) (2 racines) -> tableau vrai a 3 segments, signe [s,-s,s].
+// Seules les racines sont fixees ; domaine et cadre sont recalcules a chaque tirage (adaptes aux
+// racines choisies, voir genererParametresGraphiques) et k est recalcule pour viser un extremum net
+// (AMPLITUDE_CIBLE_6_4), sinon la courbe reste correcte mais visuellement plate/peu lisible.
+const PANEL_6_4_RACINES = [
+  [-3,-1], [-3,1], [-3,2], [-3,3], [-2,1], [-2,2], [-2,3], [-1,1], [-1,2], [-1,3], [1,3],
+];
+const AMPLITUDE_CIBLE_6_4 = 2;
+
+// 6.5 a)/b) (ex-6.6/6.7) : construits a partir des extremums PROPRES de f' (m1,v1) et (m2,v2), pas de ses racines.
+// C'est l'ordre naturel : demander des racines entieres pour f' force ses propres extremums (m1,m2,
+// racines de f'') a tomber sur des decimales quelconques - l'exercice montre justement le tableau de
+// VARIATION de f' (sommets = ses extremums), donc ce sont m1,m2,f'(m1),f'(m2) qui doivent etre nets ;
+// les racines de f' (ou f' s'annule, simples points de passage sur les fleches) n'ont besoin que
+// d'etre lisibles sur un graphique, pas entieres - voir la remarque de l'utilisateur dans ce sens.
+// f'(x) = k(x-m1)(x-m2)... non : on part de f''(x)=3k(x-m1)(x-m2), on integre, on cale f'(m1)=v1 et
+// f'(m2)=v2, ce qui determine k,p,q,C entierement (2 conditions, 2 inconnues restantes). Les racines
+// a<m1<b<m2<c de f' sont ensuite trouvees numeriquement (bissection - fait standard, toujours 3
+// racines reelles distinctes des lors que v1,v2 sont de signes opposes).
+const PANEL_EXTREMUMS_M1 = [-3,-2,-1,0,1];
+const PANEL_EXTREMUMS_ECARTS = [2,3,4];
+const PANEL_EXTREMUMS_V = [1,2,3,4];
+
+function bissection(f, xa, xb, iterations) {
+  let fa = f(xa), fb = f(xb);
+  if (fa*fb > 0) return null;
+  for (let i = 0; i < (iterations||80); i++) {
+    const xm = (xa+xb)/2, fm = f(xm);
+    if (fa*fm <= 0) { xb = xm; fb = fm; } else { xa = xm; fa = fm; }
+  }
+  return (xa+xb)/2;
+}
+
+// cubique f' dont on choisit directement les extremums (m1,v1) et (m2,v2)
+function construireCubiqueDepuisExtremums(m1, m2, v1, v2) {
+  const k = 2*(v1-v2) / Math.pow(m2-m1, 3);
+  const p = -1.5*k*(m1+m2);
+  const q = 3*k*m1*m2;
+  const C = v1 - (k*m1**3 + p*m1**2 + q*m1);
+  return { fn: x => k*x**3 + p*x**2 + q*x + C, k, p, q, C };
+}
+function antideriveeDepuisCoeffsCubiques(cub, C0) {
+  const { k, p, q, C } = cub;
+  return x => k*x**4/4 + p*x**3/3 + q*x**2/2 + C*x + C0;
+}
+
+function genererParamsQCM3Courbes() {
+  let m1, m2, v1, v2, cub, a, b, c, C0, F, Fa, Fc, plageGlobale, xmin, xmax, sens;
+  const testPointsDe = (a,b,c) => [a-1, (a+b)/2, (b+c)/2, c+1];
+  const h = 1e-4;
+  const signeEn = (f, x) => (f(x+h) - f(x-h)) >= 0 ? '+' : '-';
+
+  let essais = 0, ok = false;
+  do {
+    essais++;
+    m1 = PANEL_EXTREMUMS_M1[alea(0, PANEL_EXTREMUMS_M1.length-1)];
+    m2 = m1 + PANEL_EXTREMUMS_ECARTS[alea(0, PANEL_EXTREMUMS_ECARTS.length-1)];
+    const signe = alea(0,1) === 0 ? 1 : -1;
+    v1 = signe * PANEL_EXTREMUMS_V[alea(0, PANEL_EXTREMUMS_V.length-1)];
+    v2 = -signe * PANEL_EXTREMUMS_V[alea(0, PANEL_EXTREMUMS_V.length-1)];
+    cub = construireCubiqueDepuisExtremums(m1, m2, v1, v2);
+    const ecart = m2 - m1;
+    a = bissection(cub.fn, m1-4*ecart, m1, 80);
+    b = bissection(cub.fn, m1, m2, 80);
+    c = bissection(cub.fn, m2, m2+4*ecart, 80);
+    if (a===null || b===null || c===null) continue;
+    if (Math.min(Math.abs(m1-a), Math.abs(b-m1), Math.abs(m2-b), Math.abs(c-m2)) < 0.25) continue;
+
+    xmin = a - 1; xmax = c + 1;
+    C0 = alea(-3, 3);
+    F = antideriveeDepuisCoeffsCubiques(cub, C0);
+    Fa = x => -0.7*F(x) + 1; // signe oppose de F en tout point : toujours un leurre valide
+
+    // second leurre : memes extremums (m1,m2) mais valeurs v1,v2 permutees -> cubique differente,
+    // racines differentes en general, jamais loin du domaine de F (pas de risque d'explosion)
+    const cubLeurre = construireCubiqueDepuisExtremums(m1, m2, v2, v1);
+    Fc = antideriveeDepuisCoeffsCubiques(cubLeurre, C0);
+
+    const testPoints = testPointsDe(a,b,c);
+    sens = testPoints.map(x => signeEn(F, x));
+    const sensLeurre = testPoints.map(x => signeEn(Fc, x));
+    if (!sensLeurre.some((s,i) => s !== sens[i])) continue; // leurre accidentellement correct : retirer
+
+    const pF = calculerPlage(F, xmin, xmax, 1), pFa = calculerPlage(Fa, xmin, xmax, 1), pFc = calculerPlage(Fc, xmin, xmax, 1);
+    plageGlobale = { ymin: Math.min(pF.ymin, pFa.ymin, pFc.ymin), ymax: Math.max(pF.ymax, pFa.ymax, pFc.ymax) };
+    ok = (plageGlobale.ymax - plageGlobale.ymin) <= 16;
+  } while (!ok && essais < 80);
+
+  const ordre = melanger([{fn:F, estCorrect:true}, {fn:Fa, estCorrect:false}, {fn:Fc, estCorrect:false}]);
+  const bonneReponse = ['a','b','c'][ordre.findIndex(o => o.estCorrect)];
+
+  const tableauHTML = genererTableauVariationDerivee(a, m1, v1, b, m2, v2, c);
+
+  return { sens, ordre, plageGlobale, bonneReponse, xmin, xmax, tableauHTML };
+}
+
+let paramsGraphiques = {};
+
+function genererParametresGraphiques() {
+  // Depuis la fusion 6.3+6.4 (30/09/2026) : pente f'(q) toujours fractionnaire (d^2 non multiple
+  // de m -- 4 entrees du panel sur 8), la pente entiere etant lue sur g (6.3 b) : chaque question
+  // teste une seule difficulte, et aucun tirage ne peut sauter le cas fractionnaire.
+  const panel3 = PANEL_6_3.filter(e => ((e.q-e.p)**2) % Math.abs(e.m) !== 0);
+  const e3 = panel3[alea(0, panel3.length-1)];
+  // domaine adaptatif : marge de 2.4 autour de p et q pour que le segment de tangente (+/-2.2)
+  // ne soit jamais rogne par le bord du cadre, quel que soit p/q du panel
+  const xmin3 = Math.min(e3.p, e3.q) - 2.4, xmax3 = Math.max(e3.p, e3.q) + 2.4;
+  const f3 = x => (1/e3.m)*(x-e3.p)*(x-e3.p)*(x-e3.q)+e3.r;
+  const plage3 = calculerPlage(f3, xmin3, xmax3, 1);
+  // le cadre vertical ci-dessus ne vient QUE de la courbe : la tangente T1 en q (seule non
+  // horizontale, tracee sur +/-2.2 autour de q par construireGraphique6_3) peut s'en ecarter bien
+  // davantage qu'elle si sa pente est raide, et se faire rogner par le bord du SVG -- rendant son
+  // coefficient directeur illisible. On etend donc le cadre pour englober aussi les deux extremites
+  // reellement tracees de cette tangente. Bug trouve en lisant plusieurs tirages du panel (pente
+  // jusqu'a +/-2 -> ecart jusqu'a +/-4.4 autour de r, souvent hors du cadre base sur la seule courbe).
+  const penteQ3 = (1/e3.m)*(e3.q-e3.p)*(e3.q-e3.p);
+  const yTangenteBas3 = e3.r - Math.abs(penteQ3)*2.2, yTangenteHaut3 = e3.r + Math.abs(penteQ3)*2.2;
+  const ymin3 = Math.min(plage3.ymin, yTangenteBas3 - 0.4), ymax3 = Math.max(plage3.ymax, yTangenteHaut3 + 0.4);
+  paramsGraphiques.g6_3 = { a: 1/e3.m, p: e3.p, q: e3.q, r: e3.r, d: e3.q-e3.p, m: e3.m, xmin: xmin3, xmax: xmax3, ymin: ymin3, ymax: ymax3 };
+
+  const e4 = PANEL_6_3G[alea(0, PANEL_6_3G.length-1)];
+  const slopeNum4 = e4.p2 * (e4.p2 - e4.e);
+  const xmin4 = Math.min(0, e4.e, e4.p2) - 2.4, xmax4 = Math.max(0, e4.e, e4.p2) + 2.4;
+  const g4 = x => (1/e4.m)*(x**3/3 - e4.e*x**2/2) + e4.C0;
+  const plage4 = calculerPlage(g4, xmin4, xmax4, 1);
+  // meme correction que pour g6_3 : la tangente T2 en p2 (celle en x=0 est horizontale, jamais un
+  // risque) est tracee sur +/-2.2 autour de p2 et peut deborder du cadre base sur la seule courbe.
+  const penteP2_4 = (1/e4.m)*e4.p2*(e4.p2-e4.e);
+  const yP2_4 = g4(e4.p2);
+  const yTangenteBas4 = yP2_4 - Math.abs(penteP2_4)*2.2, yTangenteHaut4 = yP2_4 + Math.abs(penteP2_4)*2.2;
+  const ymin4 = Math.min(plage4.ymin, yTangenteBas4 - 0.4), ymax4 = Math.max(plage4.ymax, yTangenteHaut4 + 0.4);
+  paramsGraphiques.g6_3g = { c: 1/e4.m, e: e4.e, p2: e4.p2, m: e4.m, slopeNum: slopeNum4, C0: e4.C0, xmin: xmin4, xmax: xmax4, ymin: ymin4, ymax: ymax4 };
+
+  const [r15, r25] = PANEL_6_4_RACINES[alea(0, PANEL_6_4_RACINES.length-1)];
+  const signe5 = alea(0,1) === 0 ? 1 : -1;
+  const extremum1_5 = -((r25-r15)**2)/4; // valeur de l'extremum a k=1
+  const k5 = signe5 * AMPLITUDE_CIBLE_6_4 / Math.abs(extremum1_5);
+  const xmin5 = r15 - 1, xmax5 = r25 + 1;
+  const plage5 = calculerPlage(x => k5*(x-r15)*(x-r25), xmin5, xmax5, 1);
+  const s5 = k5 > 0 ? '+' : '-', sOpp5 = k5 > 0 ? '-' : '+';
+  const tableauVrai5 = { positions: ['−∞', fmtX(r15), fmtX(r25), '+∞'], sens: [s5, sOpp5, s5], estCorrect: true };
+  const leurre5a = { positions: ['−∞','−2','1','3','+∞'], sens: ['+','-','+','-'], estCorrect: false };
+  const leurre5b = { positions: ['−∞','−2','1','3','+∞'], sens: ['-','+','-','+'], estCorrect: false };
+  const ordre5 = melanger([tableauVrai5, leurre5a, leurre5b]);
+  const lettre5 = ['a','b','c'][ordre5.findIndex(t => t.estCorrect)];
+  paramsGraphiques.g6_4 = { r1: r15, r2: r25, k: k5, ordre: ordre5, lettre: lettre5, xmin: xmin5, xmax: xmax5, ymin: plage5.ymin, ymax: plage5.ymax };
+
+  paramsGraphiques.g6_5a = genererParamsQCM3Courbes();
+  paramsGraphiques.g6_5b = genererParamsQCM3Courbes();
+}
+
+const generateurs = [
+  // Calcul 4.1 - puissances (3 items)
+  {id:"4.1 a)", type:"alg", gen: () => {
+    const p = alea(1,6);
+    const base = Math.pow(2,p);
+    return { texteLibre:true, enonce:`\\(${base}^n+${base}^n\\)`, reponse: fmtLinN(p,1) };
+  }},
+  {id:"4.1 b)", type:"alg", gen: () => {
+    const p = alea(1,6);
+    const base = Math.pow(2,p);
+    return { texteLibre:true, enonce:`\\(${base}^n\\times ${base}^n\\)`, reponse: fmtLinN(2*p,0) };
+  }},
+  {id:"4.1 c)", type:"alg", gen: () => {
+    const p = alea(2,3), q = alea(1,2), c = alea(1,4), d = alea(1,2);
+    const A = Math.pow(2,p), B = Math.pow(2,q);
+    return { texteLibre:true, enonce:`\\(\\dfrac{${A}^n\\times 2^{n+${c}}}{${B}^{n+${d}}}\\)`, reponse: fmtLinN(p+1-q, c-q*d) };
+  }},
+  // Calcul 4.2 - factorisation dans des fractions (2 items)
+  {id:"4.2 a)", type:"alg", gen: () => {
+    const num = polyAlea(2), den = polyAlea(2);
+    return { texteLibre:true, enonce:`Simplifier \\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\) en factorisant par \\(n^2\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})` };
+  }},
+  {id:"4.2 b)", type:"alg", gen: () => {
+    const num = polyAlea(3), den = polyAlea(3);
+    return { texteLibre:true, enonce:`Simplifier \\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\) en factorisant par \\(n^3\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})` };
+  }},
+  // Calcul 4.3 - lecture graphique d'un nombre derive : fusion le 30/09/2026 des anciens 6.3 (I,
+  // courbe de f) et 6.4 (II, courbe de g), meme consigne numerotee I/II (regle standing de David :
+  // une seule section, 4 exemples maximum, gradation une difficulte a la fois). 4 -> 3 :
+  // a) tangente horizontale (f'(p)=0, classique) ; b) pente entiere lue sur g (ancien 6.4 a) ;
+  // c) pente fractionnaire lue sur f (ancien 6.3 b, tirage force, voir genererParametresGraphiques).
+  // Retiree : l'ancienne 6.4 b) g'(0)=0, deuxieme lecture de tangente horizontale (doublon de a).
+  {id:"4.3 a)", type:"num", gen: () => {
+    const { p } = paramsGraphiques.g6_3;
+    return { texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
+  }},
+  {id:"4.3 b)", type:"num", gen: () => {
+    const { p2, slopeNum, m } = paramsGraphiques.g6_3g;
+    return { texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}` };
+  }},
+  {id:"4.3 c)", type:"num", gen: () => {
+    const { q, d, m } = paramsGraphiques.g6_3;
+    return { texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
+  }},
+  // Calcul 4.4 (ex-6.5) - courbe et tableaux (1 item, QCM)
+  {id:"4.4", type:"qcm", gen: () => ({ texteLibre:true, enonce:"Quel tableau de variation correspond à une fonction \\(f_1\\), \\(f_2\\) ou \\(f_3\\) dont \\(f'\\) est la dérivée :", bonneReponse: paramsGraphiques.g6_4.lettre })},
+  // Calcul 4.5 - un tableau et trois courbes : fusion le 30/09/2026 des anciens 6.6 (I) et 6.7 (II),
+  // meme consigne mot pour mot -> une section, sous-questions a) et b) (chacune son tableau et ses
+  // trois courbes, la lettre est portee par le texte d'introduction de la figure).
+  {id:"4.5 a)", type:"qcm", gen: () => ({ texteLibre:true, enonce:"\\(f'\\) est la fonction dérivée de :", bonneReponse: paramsGraphiques.g6_5a.bonneReponse })},
+  {id:"4.5 b)", type:"qcm", gen: () => ({ texteLibre:true, enonce:"\\(f'\\) est la fonction dérivée de :", bonneReponse: paramsGraphiques.g6_5b.bonneReponse })},
+  // Calcul 4.6 (ex-6.8) - tangente et rayon (7 items : etapes d'un meme probleme guide, pas des exemples -- non reduit, déjà génériques en t : rien à randomiser)
+  {id:"4.6 a)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Exprimer \\(OM(t)\\) en fonction de \\(t\\)", reponse:"sqrt(t^2+yt^2)" })},
+  {id:"4.6 b)", type:"alg", gen: () => ({ texteLibre:true, enonce:"En déduire une expression de \\(y_t\\) en fonction de \\(t\\)", reponse:"sqrt(1-t^2)" })},
+  {id:"4.6 c)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Avec \\(f(t)=\\sqrt{1-t^2}\\), donner l'expression de \\(f'(t)\\)", reponse:"-t/sqrt(1-t^2)" })},
+  {id:"4.6 d)", type:"alg", gen: () => ({ formeYax:true, texteLibre:true, enonce:"Donner l'équation réduite de la tangente \\(T\\) à \\(C_f\\) au point d'abscisse \\(t\\), sous la forme y=ax+b", reponse: equationReduiteAscii("-t/sqrt(1-t^2)","1/sqrt(1-t^2)") })},
+  {id:"4.6 e)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur \\(\\vec{w}\\) de \\(T\\) sous la forme \\((x;y)\\)", vx:"sqrt(1-t^2)", vy:"-t", vars:["t"] })},
+  {id:"4.6 f)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur de la droite \\((OM(t))\\) sous la forme \\((x;y)\\)", vx:"t", vy:"sqrt(1-t^2)", vars:["t"] })},
+  {id:"4.6 g)", type:"vraifaux", gen: () => ({ texteLibre:true, enonce:"Les vecteurs \\(\\vec{w}\\) et \\(\\overrightarrow{OM}(t)\\) sont-ils orthogonaux ?", estVrai:true })}
+];
 
 function genererExercices() {
-  const ex = [];
-  paramsAvances = {};
-
-  // ---------- 15.1 : developpements ----------
-  {
-    const A = alea(2,5), B = aleaNonNul(-9,9);
-    ex.push({id:"15.1 a)", type:"alg", texteLibre:true, enonce:`\\((${fmtLin(A,B,false)})^2\\)`, reponse: carreStr(A,B)});
-  }
-  {
-    const K = alea(2,6), p = [1,3,5][alea(0,2)], q = 2;
-    let r, s; do { r = alea(1,6); s = alea(2,6); } while (pgcd(r,s) !== 1);
-    const a = K, b = -K*p;
-    const constFrac = math.add(math.fraction(K*p*p, q*q), math.fraction(r,s));
-    const head = polyQuadStr(a,b,0,true,'x');
-    const constStr = fracToStr(constFrac);
-    ex.push({id:"15.1 b)", type:"alg", texteLibre:true, enonce:`\\(${K}\\left(x-\\dfrac{${p}}{${q}}\\right)^2+\\dfrac{${r}}{${s}}\\)`, reponse:`${head}${constStr.startsWith('-')?constStr:'+'+constStr}`});
-  }
-
-  // ---------- 15.2 : factorisations ----------
-  {
-    const A = alea(2,7), B = aleaNonNul(2,6), C = alea(2,6);
-    ex.push({id:"15.2 a)", type:"alg", texteLibre:true, enonce:`\\((${A}-${B}x)^2-${C*C}\\)`, reponse:`(${A}-${B}*x-${C})*(${A}-${B}*x+${C})`});
-  }
-  {
-    const A = aleaNonNul(-6,6), B = aleaNonNul(-8,8);
-    const C = aleaNonNul(-5,5), D = aleaNonNul(-8,8);
-    let E; do { E = aleaNonNul(-5,5); } while (E === C);
-    const F = aleaNonNul(-8,8);
-    ex.push({id:"15.2 b)", type:"alg", texteLibre:true, enonce:`\\((${fmtLin(A,B,false)})(${fmtLin(C,D,false)})-(${fmtLin(A,B,false)})(${fmtLin(E,F,false)})\\)`, reponse:`(${fmtLin(A,B,true)})*(${fmtLin(C-E,D-F,true)})`});
-  }
-
-  // ---------- 15.3 : images ----------
-  {
-    const A = alea(2,4);
-    let B, C; do { B = alea(1,6); C = alea(2,6); } while (pgcd(B,C) !== 1 || A % C === 0);
-    let p, q; do { p = alea(1,8); q = alea(2,6); } while (pgcd(p,q) !== 1);
-    const reponseA = fracStr(p*C - B*q*A, q*A*C);
-    let K, g, dispNum, dispDen;
-    do {
-      K = aleaNonNul(1,4);
-      g = pgcd(A*K, C);
-      dispNum = (A*K)/g; dispDen = C/g;
-    } while (dispDen === 1);
-    const constant = -B;
-    const reponseB = `(${coefPrefixe(K)}sqrt(2)${constant>=0?'+':''}${constant})/${C}`;
-    ex.push({id:"15.3", type:"num", enonce:`f\\left(\\dfrac{${p}}{${q}}\\right)`, reponse: reponseA});
-    paramsAvances.g3 = {A,B,C};
-  }
-
-  // ---------- 15.4 : antecedents ----------
-  {
-    const A = alea(2,6), B = alea(2,8);
-    let p, q; do { p = alea(1,8); q = alea(2,6); } while (pgcd(p,q) !== 1);
-    const reponseB = fracStr(A*p + A*B*q, q);
-    ex.push({id:"15.4", type:"num", enonce:`-\\dfrac{${p}}{${q}}`, sansEgal:true, reponse: reponseB});
-    paramsAvances.g4 = {A,B};
-  }
-
-  // ---------- 15.5 : calcul de termes ----------
-  {
-    let q; do { q = aleaNonNul(-3,3); } while (Math.abs(q) === 1);
-    const u0 = aleaNonNul(-4,4);
-    ex.push({id:"15.5 a)", type:"num", texteLibre:true, enonce:"\\(u_4\\)", reponse: String(u0*Math.pow(q,4))});
-    ex.push({id:"15.5 b)", type:"num", texteLibre:true, enonce:"\\(u_6\\)", reponse: String(u0*Math.pow(q,6))});
-    paramsAvances.g5 = {q,u0};
-  }
-
-  // ---------- 15.6 : raison irrationnelle ----------
-  {
-    const D = nonCarreParfait(2,7);
-    const S = alea(0,1) === 0 ? 1 : -1;
-    const M = alea(2,9);
-    const N = 2*M+1;
-    ex.push({id:"15.6 a)", type:"alg", texteLibre:true, enonce:"Exprimer \\(u_n\\) en fonction de \\(n\\)", reponse:`${S===1?'':'-'}${D}^((n-1)/2)`});
-    ex.push({id:"15.6 b)", type:"num", texteLibre:true, enonce:`Calculer \\(u_{${N}}\\)`, reponse:`${S===1?'':'-'}${D}^${M}`});
-    paramsAvances.g6 = {D,S};
-  }
-
-  // ---------- 15.7 : terme donne ----------
-  {
-    const K = alea(3,8), T = alea(5,20);
-    let P,Q; do { P = alea(2,5); Q = alea(2,3); } while (P===Q || pgcd(P,Q)!==1);
-    const offset = alea(2,5), N = K+offset;
-    const uN = math.multiply(T, math.pow(math.fraction(P,Q), offset));
-    ex.push({id:"15.7 a)", type:"alg", texteLibre:true, enonce:"Donner l'expression de \\(u_n\\) en fonction de \\(n\\)", reponse:`${T}*(${P}/${Q})^(n-${K})`});
-    ex.push({id:"15.7 b)", type:"num", texteLibre:true, enonce:`Combien vaut \\(u_{${N}}\\) ?`, reponse: fracToStr(uN)});
-    paramsAvances.g7 = {K,T,P,Q};
-  }
-
-  // ---------- 15.8 : raison et terme, avec racine ----------
-  {
-    let q; do { q = aleaNonNul(-3,3); } while (Math.abs(q)===1);
-    const K1 = alea(1,4), offset = alea(2,4), K2 = K1+offset;
-    const D = nonCarreParfait(2,7);
-    const B8 = Math.pow(q, offset);
-    const qPowK1 = Math.pow(q, K1);
-    const reponseB = qPowK1===1 ? `sqrt(${D})` : qPowK1===-1 ? `-sqrt(${D})` : (qPowK1<0 ? `-sqrt(${D})/${-qPowK1}` : `sqrt(${D})/${qPowK1}`);
-    ex.push({id:"15.8 a)", type:"num", texteLibre:true, enonce:"Déterminer la valeur de la raison de la suite", reponse: String(q)});
-    ex.push({id:"15.8 b)", type:"num", texteLibre:true, enonce:"Calculer \\(u_0\\)", reponse: reponseB});
-    paramsAvances.g8 = {K1,K2,D,B8};
-  }
-
-  // ---------- 15.9 : deux valeurs possibles ----------
-  {
-    const K1 = [2,4][alea(0,1)], evenOffset = [2,4][alea(0,1)], K2 = K1+evenOffset;
-    const m = aleaNonNul(2,5);
-    const p1 = alea(1,8), q1 = alea(2,8);
-    const T1f = math.fraction(p1,q1);
-    const T2f = math.multiply(T1f, Math.pow(m, evenOffset));
-    const u0f = math.divide(T1f, Math.pow(m, K1));
-    ex.push({id:"15.9 a)", type:"num", texteLibre:true, enonce:"Déterminer les deux valeurs possibles de la raison \\(q\\)", reponse:`{-${m};${m}}`});
-    ex.push({id:"15.9 b)", type:"num", texteLibre:true, enonce:"Calculer \\(u_0\\)", reponse: fracToStr(u0f)});
-    paramsAvances.g9 = {K1,K2,p1,q1,T2f};
-  }
-
-  // ---------- 15.10 : determiner a ----------
-  {
-    let D1,D2;
-    do { D1 = aleaNonNul(-6,6); D2 = aleaNonNul(-6,6); } while (D1===D2 || 2*D1===D2);
-    const K = alea(3,9);
-    const aF = math.divide(math.fraction(-D1*D1), math.fraction(2*D1-D2));
-    const qF = math.divide(math.add(aF,D1), aF);
-    const qAbsInv = math.abs(math.divide(1, qF));
-    const qNegative = math.compare(qF,0) < 0;
-    const signFlips = qNegative && (K % 2 === 1);
-    const overallSign = signFlips ? -1 : 1;
-    const coefValue = math.multiply(overallSign, aF);
-    ex.push({id:"15.10 a)", type:"num", texteLibre:true, enonce:"Déterminer la valeur de \\(a\\) pour que la suite \\((u_n)\\) soit géométrique", reponse: fracToStr(aF)});
-    ex.push({id:"15.10 b)", type:"num", texteLibre:true, enonce:"Calculer dans ce cas \\(u_0\\)", reponse:`${coefPrefixFrac(coefValue)}(${fracToStr(qAbsInv)})^${K}`});
-    paramsAvances.g10 = {D1,D2,K};
-  }
-
-  // ---------- 15.11 : avec q et n ----------
-  {
-    const K1 = [2,4][alea(0,1)];
-    const T1 = aleaNonNul(-8,8);
-    const m = alea(1,2);
-    const D = nonCarreParfait(2,6);
-    const sigma = alea(0,1)===0 ? 1 : -1;
-    const u0f = math.fraction(T1, Math.pow(m,K1)*Math.pow(D,K1/2));
-    const sigmaCoef = sigma*Math.pow(m,3)*D;
-    const T2coef = T1*sigmaCoef;
-    ex.push({id:"15.11 a)", type:"num", texteLibre:true, enonce:"Déterminer \\(q\\)", reponse: coefSqrtStr(sigma,m,D)});
-    ex.push({id:"15.11 b)", type:"alg", texteLibre:true, enonce:"Exprimer \\(u_{3n}\\) en fonction de \\(n\\)", reponse:`${coefPrefixFrac(u0f)}(${sigmaCoef}*sqrt(${D}))^n`});
-    paramsAvances.g11 = {K1,T1,T2coef,D};
-  }
-
-  // ---------- 15.12 : suite auxiliaire ----------
-  {
-    const A = alea(2,8);
-    const B = [2,3,4][alea(0,2)];
-    let Cq, Cp, x, v1;
-    do {
-      Cq = alea(2,4); Cp = aleaNonNul(-10,10);
-      x = math.divide(math.fraction(Cp, Cq), B-1);
-      v1 = math.add(A, x);
-    } while (v1.n === 0);
-    const reponseVn = `${coefPrefixFrac(v1)}${B}^(n-1)`;
-    const negXStr = fracToStr(math.multiply(-1, x));
-    ex.push({id:"15.12 a)", type:"num", texteLibre:true, enonce:`Déterminer la valeur de \\(x\\) pour qu'on ait \\(v_{n+1}=${B}v_n\\)`, reponse: fracToStr(x)});
-    ex.push({id:"15.12 b)", type:"alg", texteLibre:true, enonce:"Donner alors l'expression de \\(v_n\\) en fonction de \\(n\\)", reponse: reponseVn});
-    ex.push({id:"15.12 c)", type:"alg", texteLibre:true, enonce:"Exprimer enfin \\(u_n\\) en fonction de \\(n\\)", reponse:`${reponseVn}${negXStr.startsWith('-')?negXStr:'+'+negXStr}`});
-    paramsAvances.g12 = {A,B,Cp,Cq};
-  }
-
-  // ---------- 15.13 : maximum (avance) ----------
-  {
-    let P, Q; do { P = alea(1,4); Q = alea(2,5); } while (pgcd(P,Q) !== 1);
-    const u1f = math.fraction(P,Q);
-    const K2c = alea(2,8), K3c = alea(2,8);
-    const aF = math.multiply(-K3c, u1f);
-    const bF = math.multiply(-K2c, u1f);
-    const cF = u1f;
-    const q0 = math.divide(math.multiply(-1,bF), math.multiply(2,aF));
-    const N13 = alea(4,8);
-    const uN13 = math.multiply(u1f, math.pow(q0, N13-1));
-    ex.push({id:"15.13 a)", type:"alg", texteLibre:true, enonce:`Exprimer \\(u_1-${K2c}u_2-${K3c}u_3\\) en fonction de la raison \\(q\\)`, reponse: polyQuadFracStr(aF,bF,cF,'q')});
-    ex.push({id:"15.13 b)", type:"num", texteLibre:true, enonce:`Déterminer la raison \\(q\\) pour que l'expression \\(u_1-${K2c}u_2-${K3c}u_3\\) soit maximale`, reponse: fracToStr(q0)});
-    ex.push({id:"15.13 c)", type:"num", texteLibre:true, enonce:`Avec la raison trouvée à la question précédente, calculer \\(u_{${N13}}\\)`, reponse: fracToStr(uN13)});
-    paramsAvances.g13 = {P,Q};
-  }
-
-  // ---------- 15.14 : somme (avance) ----------
-  {
-    const M14 = alea(6,12);
-    const p14 = alea(1,5), r14 = alea(2,6);
-    const aFrac = math.fraction(p14, r14);
-    const S14 = math.multiply(aFrac, Math.pow(2,M14)-1);
-    ex.push({id:"15.14 a)", type:"num", texteLibre:true, enonce:`Combien vaut \\(2^{${M14}}\\) ?`, reponse: String(Math.pow(2,M14))});
-    ex.push({id:"15.14 b)", type:"num", texteLibre:true, enonce:`Déterminer la valeur de \\(a\\) telle que \\(u_0+u_1+\\cdots+u_{${M14-1}}=${fracToLatex(S14)}\\)`, reponse: fracToStr(aFrac)});
-  }
-
-  return ex;
+  genererParametresGraphiques();
+  return generateurs.map(g => ({ id: g.id, type: g.type, ...g.gen() }));
 }
+let exercices = genererExercices();
 
-// Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
-// Table declarative, cle = identifiant complet ou prefixe de groupe. La valeur 'numerateur'
-// restreint l'exigence au numerateur du quotient obtenu. Tout exercice absent de cette table
-// est volontairement hors exigence (consigne souple, simplification, question preparatoire).
-const FORMES_FACTORISEES = { '15.2': true };
-function marquerFormesFactorisees(liste) {
-  return liste.map(function (ex) {
-    const id = String(ex.id).trim();
-    const groupe = id.replace(/\s*[a-z]\)\s*$/, '').trim();
-    const portee = Object.prototype.hasOwnProperty.call(FORMES_FACTORISEES, id)
-      ? FORMES_FACTORISEES[id]
-      : FORMES_FACTORISEES[groupe];
-    return portee ? Object.assign({}, ex, { formeFactorisee: portee }) : ex;
-  });
-}
-
-let exercices = marquerFormesFactorisees(genererExercices());
-
+// Recalcule le 30/09/2026 (fiche passee de 19 a 18 questions : fusions 6.3+6.4 -> 6.3 et
+// 6.6+6.7 -> 6.5 a/b, renumerotation 6.5 -> 6.4 et 6.8 -> 6.6).
 const groupes = {
-  "grille-15-1": [0,1],
-  "grille-15-2": [2,3],
-  "grille-15-3": [4],
-  "grille-15-4": [5],
-  "grille-15-5": [6,7],
-  "grille-15-6": [8,9],
-  "grille-15-7": [10,11],
-  "grille-15-8": [12,13],
-  "grille-15-9": [14,15],
-  "grille-15-10": [16,17],
-  "grille-15-11": [18,19],
-  "grille-15-12": [20,21,22],
-  "grille-15-13": [23,24,25],
-  "grille-15-14": [26,27]
+  "grille-4-1": [0,1,2],
+  "grille-4-2": [3,4],
+  "grille-4-3": [5,6,7],
+  "grille-4-4": [8],
+  "grille-4-5a": [9],
+  "grille-4-5b": [10],
+  "grille-4-6": [11,12,13,14,15,16,17]
 };
-const lettresEtendues = ["a","b","c","d","e","f"];
+const lettresEtendues = ["a","b","c","d","e","f","g","h","i","j"];
 
 function toggleClavier(idx) {
   const clavier = document.getElementById('clavier-' + idx);
   const etaitOuvert = clavier.classList.contains('ouvert');
   fermerAutresClaviers(idx);
+  document.querySelectorAll('.q-aide-bulle.ouverte').forEach(el => el.classList.remove('ouverte'));
   clavier.classList.toggle('ouvert', !etaitOuvert);
 }
 
@@ -1520,6 +1570,11 @@ function normaliserSaisie(str) {
   return s;
 }
 
+function checkEquationYax(userInput, correctExpr) {
+  const m = String(userInput).trim().match(/^y\s*=\s*(.+)$/i);
+  if (!m) return false;
+  return checkEqualNumeric(m[1], correctExpr);
+}
 // Une consigne "Factoriser" n'etait controlee que par l'egalite numerique : repondre x^2-64
 // a « factoriser x^2-64 » etait donc accepte, la question passant pour sa propre reponse.
 // On controle aussi la FORME : la racine de l'arbre doit etre un produit ou une puissance.
@@ -1691,8 +1746,8 @@ function parseUnIntervalle(str) {
   if (!m) return null;
   const [_, cg, a, b, cd] = m;
   try {
-    const va = (a.includes('inf')||a.includes('∞')) ? -Infinity : math.evaluate(a);
-    const vb = (b.includes('inf')||b.includes('∞')) ? Infinity : math.evaluate(b);
+    const va = a.includes('inf') ? -Infinity : math.evaluate(a);
+    const vb = b.includes('inf') ? Infinity : math.evaluate(b);
     return {bas:va, haut:vb, inclusBas: cg==='[', inclusHaut: cd===']'};
   } catch(e) { return null; }
 }
@@ -1896,10 +1951,8 @@ function valeurDuChamp(el) {
     v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
     v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
-    // normaliser f'/g'/h' (frappe naturelle du prime, converti par MathLive en f^′) vers la convention interne fp/gp/hp
-    v = v.replace(/f\^′/g, 'fp ').replace(/g\^′/g, 'gp ').replace(/h\^′/g, 'hp ');
-    // normaliser aussi fp/gp/hp si jamais MathLive les a decomposes en deux lettres separees (ex: "f p" -> "fp")
-    v = v.replace(/\bf p\b/g, 'fp').replace(/\bg p\b/g, 'gp').replace(/\bh p\b/g, 'hp');
+    // normaliser aussi yt si jamais MathLive l'a decompose en deux lettres separees (ex: "y t" -> "yt")
+    v = v.replace(/\by t\b/g, 'yt');
     return v;
   }
   return el.value.trim();
@@ -2051,6 +2104,7 @@ function verifierUne(idx) {
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
+  else if (ex.formeYax) ok = checkEquationYax(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -2371,6 +2425,18 @@ function collerCoefficientLettre(tex) {
   out = out.replace(/\\right\)\s*\\cdot/g, '\\right)');
   return out;
 }
+function equationReduiteAscii(pa, pb) {
+  const paTrim = String(pa).trim(), pbTrim = String(pb).trim();
+  let penteTerme;
+  if (paTrim === '0') penteTerme = '';
+  else if (paTrim === '1') penteTerme = 'x';
+  else if (paTrim === '-1') penteTerme = '-x';
+  else penteTerme = `(${paTrim})*x`;
+  const interceptTerme = pbTrim === '0' ? '' : (pbTrim.startsWith('-') ? pbTrim : '+'+pbTrim);
+  const joint = penteTerme + interceptTerme;
+  if (joint === '') return '0';
+  return joint.startsWith('+') ? joint.slice(1) : joint;
+}
 function jsVersLatex(expr) {
   let s = String(expr);
   s = s.replace(/\blam\b/g, 'lambda');
@@ -2444,11 +2510,20 @@ function formaterReponse(ex) {
     if (ex.type === 'qcm') {
       return `\\text{Réponse } ${ex.bonneReponse}`;
     }
+    if (ex.type === 'vecteur') {
+      return `(${jsVersLatex(ex.vx)}\\,;\\,${jsVersLatex(ex.vy)})`;
+    }
     if (ex.type === 'intervalle') {
       return formaterIntervalleSpec(ex.intervalleSpec);
     }
     if (ex.type === 'texte') {
+      if (/[+\-*/^();]|sqrt/.test(ex.reponse)) {
+        return ex.reponse.split(';').map(jsVersLatex).join('\\ ;\\ ');
+      }
       return `\\text{${ex.reponse}}`;
+    }
+    if (ex.formeYax) {
+      return `y=${jsVersLatex(ex.reponse)}`;
     }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
@@ -2534,7 +2609,7 @@ async function genererNouvelleFiche() {
     if (!confirmation) return;
   }
   PASSE_ACTUELLE = genererIdPasse();
-  exercices = marquerFormesFactorisees(genererExercices());
+  exercices = genererExercices();
   saisies = {};
   ficheValidee = false;
   mettreAJourEtatBoutons();
@@ -2542,19 +2617,20 @@ async function genererNouvelleFiche() {
   const zoneEtatGnf = document.getElementById('suivi-etat');
   if (zoneEtatGnf) zoneEtatGnf.hidden = true;
   construireGrilles();
+  construireGraphique6_3();
+  construireGraphique6_3g();
+  construireGraphique6_4();
+  construireGraphique6_5a();
+  construireGraphique6_5b();
   attacherEcouteurs();
   attacherEcouteursTactiles();
-  mettreAJourTextesAvances();
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
-  const panelToutes = document.getElementById('toutes-reponses-panneau');
-  panelToutes.classList.remove('visible');
-  panelToutes.innerHTML = '';
+  document.getElementById('toutes-reponses-panneau').classList.remove('visible');
   document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
   if (window.MathJax) MathJax.typesetPromise();
 }
-
 function toggleToutesReponses() {
   const panel = document.getElementById('toutes-reponses-panneau');
   const estOuvert = panel.classList.contains('visible');
@@ -2570,11 +2646,13 @@ function toggleToutesReponses() {
 }
 
 function placeholderPour(ex) {
+  if (ex.formeYax) return 'y=ax+b';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
   if (ex.type === 'intervalle') return ']a;b[';
   if (ex.type === 'texte') return 'réponse';
+  if (ex.type === 'vecteur') return '(x;y)';
   return 'réponse';
 }
 
@@ -2584,6 +2662,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.formeFactorisee) {
     return "La réponse doit être un produit de facteurs : par exemple <code>(x+2)(x-2)</code>, <code>(x+5)^2</code> ou <code>x(3x+1)</code>. Une expression développée n'est pas acceptée, même si elle est égale.";
+  }
+  if (ex.formeYax) {
+    return "Écrire l'équation complète, y compris « y= » : par exemple <code>y=2x+3</code>.";
   }
   if (ex.type === 'ineq') {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
@@ -2601,10 +2682,10 @@ function aideContextuellePour(ex) {
     return "Écrire la lettre de la bonne réponse : <code>a</code>, <code>b</code>, <code>c</code> ou <code>d</code>.";
   }
   if (ex.type === 'intervalle') {
-    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ou » : <code>]-inf;1[ ou ]3;+inf[</code>. Écrire <code>R</code> si la réponse est l'ensemble des réels, ou <code>vide</code> s'il n'y a aucune solution.";
+    return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
   }
   if (ex.type === 'vecteur') {
-    return "Donner les deux coordonnées séparées par un point-virgule : <code>x;y</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
+    return "Donner les deux coordonnées séparées par un point-virgule : <code>(x;y)</code>. Tout vecteur colinéaire (multiple) au vecteur attendu est accepté.";
   }
   if (ex.type === 'somme') {
     return "Utiliser la notation <code>sum(k,1,n,expr)</code> pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le bouton &Sigma; du clavier insère ce squelette.";
@@ -2623,11 +2704,11 @@ function aideContextuellePour(ex) {
 
 function necessiteAide(ex) {
   if (ex.formeFactorisee) return true;
+  if (ex.formeYax) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
-
 function texteAideGroupe(indices) {
   const groupes = [];
   for (const idx of indices) {
@@ -2665,7 +2746,7 @@ function injecterAideGroupe(gridId, indices) {
   bulle.className = 'q-aide-bulle';
   bulle.id = 'aide-groupe-' + gridId;
   bulle.innerHTML = texte;
-  titre.after(bulle);
+  titre.insertAdjacentElement('afterend', bulle);
 }
 function toggleAideGroupe(gridId) {
   const aide = document.getElementById('aide-groupe-' + gridId);
@@ -2685,6 +2766,7 @@ function construireGrilles() {
       const div = document.createElement('div');
       div.className = indices.length === 1 ? 'question question-seule' : 'question';
       div.id = 'q-' + idx;
+      // Un groupe reduit a une seule question n'a pas besoin de sa lettre a) : superflu.
       const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
@@ -2773,21 +2855,7 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${groupeEnsembleClavier(idx, ex)}${genererClavierPour(idx, ex)}</div>`;
-}
-
-// Reponse attendue sous forme d'ensemble ("{-2;3}", "{}" : voir
-// checkEnsemble) : touches accolades et point-virgule en tete du clavier.
-function groupeEnsembleClavier(idx, ex) {
-  if (!(ex.reponse && String(ex.reponse).trim().startsWith('{'))) return '';
-  return `
-      <div class="clavier-groupe">
-        <span class="clavier-label">Ensemble</span>
-        <button onclick="inserer(${idx},'{')">{</button>
-        <button onclick="inserer(${idx},'}')">}</button>
-        <button onclick="inserer(${idx},';')">;</button>
-      </div>
-      <div class="clavier-apercu">Astuce : écrire l'ensemble des solutions entre accolades, séparées par un point-virgule. Exemple : {-2;3}, ou {} s'il n'y a aucune solution.</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -2844,28 +2912,6 @@ function genererClavierPour(idx, ex) {
       </div>
       <div class="clavier-apercu">Astuce : la réponse commence toujours par « x », suivi du symbole puis du nombre. Exemple : « x&gt;4 ».</div>`;
   }
-  if (ex.type === 'intervalle') {
-    return groupeChiffres + `
-      <div class="clavier-groupe">
-        <span class="clavier-label">Intervalle</span>
-        <button onclick="inserer(${idx},']')">]</button>
-        <button onclick="inserer(${idx},'[')">[</button>
-        <button onclick="inserer(${idx},';')">;</button>
-        <button onclick="inserer(${idx},'-')">−</button>
-        <button class="touche-large" onclick="inserer(${idx},'+∞')">+∞</button>
-        <button class="touche-large" onclick="inserer(${idx},'-∞')">−∞</button>
-      </div>
-      <div class="clavier-groupe">
-        <span class="clavier-label">Autre</span>
-        <button onclick="insererFraction(${idx})">a/b</button>
-        <button onclick="insererRacine(${idx})">√</button>
-        <button class="touche-large" onclick="inserer(${idx},' ou ')">ou</button>
-        <button class="touche-large" onclick="inserer(${idx},'R')">R</button>
-        <button class="touche-large" onclick="inserer(${idx},'vide')">vide</button>
-        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
-      </div>
-      <div class="clavier-apercu">Astuce : « ]-inf;1[ ou ]3/2;+inf[ » pour une réunion de deux intervalles.</div>`;
-  }
   if (ex.type === 'cercle') {
     return groupeChiffres + `
       <div class="clavier-groupe">
@@ -2919,6 +2965,569 @@ function labelFormeCanonique(a, alpha, beta) {
   const absBeta = Math.abs(beta);
   const coeffStr = (a === 1) ? '' : (a === -1 ? '-' : a + '');
   return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
+}
+
+function labelFormeCanonique(a, alpha, beta) {
+  const decalage = -alpha;
+  const signeDecalage = decalage >= 0 ? '+' : '-';
+  const absDecalage = Math.abs(decalage);
+  const signeBeta = beta >= 0 ? '+' : '-';
+  const absBeta = Math.abs(beta);
+  const coeffStr = (a === 1) ? '' : (a === -1 ? '-' : a + '');
+  return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
+}
+
+// pas de graduation "rond" (1, 2 ou 5 x une puissance de 10) vise environ 5-6 graduations sur l'axe -
+// evite a la fois un axe trop dense (pas=1 sur une grande plage) et trop clairseme
+function pasGraduation(etendue) {
+  if (!(etendue > 0)) return 1;
+  const brut = etendue / 6;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(brut)));
+  const normalise = brut / magnitude;
+  const pas = normalise <= 1 ? 1 : normalise <= 2 ? 2 : normalise <= 5 ? 5 : 10;
+  return pas * magnitude;
+}
+function fmtGraduation(v) {
+  const arrondi = Math.round(v * 1000) / 1000;
+  return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
+}
+
+// style "type manuel scolaire" : quadrillage complet (fond), axes graves avec fleches, police serif -
+// necessaire pour les exercices de lecture graphique (determiner un nombre derive) ou l'eleve doit
+// pouvoir suivre visuellement un point de la courbe jusqu'aux graduations, pas juste voir des petits
+// traits sur les axes
+function genererSVGCourbe(fonctionJs, xmin, xmax, ymin, ymax, tangentes, largeur, hauteur) {
+  largeur = largeur || 340; hauteur = hauteur || 260;
+  // marge proportionnelle a la taille (memes proportions que l'ancien format 220x170, marge 14)
+  const marge = Math.round(largeur * 0.064);
+  const toSvgX = x => marge + (x - xmin) / (xmax - xmin) * (largeur - 2*marge);
+  const toSvgY = y => hauteur - marge - (y - ymin) / (ymax - ymin) * (hauteur - 2*marge);
+  let points = [];
+  for (let i = 0; i <= 160; i++) {
+    const x = xmin + (xmax-xmin)*i/160;
+    const y = fonctionJs(x);
+    if (y >= ymin - 1 && y <= ymax + 1) {
+      points.push(toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1));
+    }
+  }
+  const path = 'M ' + points.join(' L ');
+  const ox = toSvgX(0), oy = toSvgY(0);
+
+  const pasX = pasGraduation(xmax - xmin);
+  const pasY = pasGraduation(ymax - ymin);
+  // sous-graduations (sous-quadrillage), un quart du pas principal : reperes intermediaires pour
+  // une lecture plus fine (coefficient directeur, image/antecedent approches) que les seules
+  // graduations entieres -- repris des fiches 14/15 de Seconde apres validation sur celles-ci.
+  const sousPasX = pasX / 4;
+  const sousPasY = pasY / 4;
+
+  // quadrillage complet (fond, tres discret) + sous-quadrillage + traits de graduation + etiquettes
+  let quadrillage = '', sousQuadrillage = '', graduations = '';
+  const sousDebutX = Math.ceil(xmin / sousPasX) * sousPasX;
+  for (let i = 0; i <= Math.floor((xmax - sousDebutX) / sousPasX) + 1e-9; i++) {
+    const gx = +(sousDebutX + i * sousPasX).toFixed(6);
+    const rangX = gx / pasX;
+    if (Math.abs(rangX - Math.round(rangX)) < 1e-6) continue; // deja trace par le quadrillage principal
+    const sx = toSvgX(gx).toFixed(1);
+    sousQuadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#ececec" stroke-width="0.5"/>`;
+    sousQuadrillage += `<line x1="${sx}" y1="${(oy-1.8).toFixed(1)}" x2="${sx}" y2="${(oy+1.8).toFixed(1)}" stroke="#999" stroke-width="0.8"/>`;
+  }
+  const sousDebutY = Math.ceil(ymin / sousPasY) * sousPasY;
+  for (let i = 0; i <= Math.floor((ymax - sousDebutY) / sousPasY) + 1e-9; i++) {
+    const gy = +(sousDebutY + i * sousPasY).toFixed(6);
+    const rangY = gy / pasY;
+    if (Math.abs(rangY - Math.round(rangY)) < 1e-6) continue;
+    const sy = toSvgY(gy).toFixed(1);
+    sousQuadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#ececec" stroke-width="0.5"/>`;
+    sousQuadrillage += `<line x1="${(ox-1.8).toFixed(1)}" y1="${sy}" x2="${(ox+1.8).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="0.8"/>`;
+  }
+  const debutX = Math.ceil(xmin / pasX) * pasX;
+  for (let i = 0; i <= Math.floor((xmax - debutX) / pasX) + 1e-9; i++) {
+    const gx = +(debutX + i * pasX).toFixed(6);
+    const sx = toSvgX(gx).toFixed(1);
+    quadrillage += `<line x1="${sx}" y1="${marge}" x2="${sx}" y2="${(hauteur-marge).toFixed(1)}" stroke="#dcdcdc" stroke-width="0.6"/>`;
+    if (Math.abs(gx) < pasX * 1e-6) continue;
+    graduations += `<line x1="${sx}" y1="${(oy-2.5).toFixed(1)}" x2="${sx}" y2="${(oy+2.5).toFixed(1)}" stroke="#555" stroke-width="1"/><text x="${sx}" y="${(oy+11).toFixed(1)}" font-size="8" text-anchor="middle" fill="#333">${fmtGraduation(gx)}</text>`;
+  }
+  const debutY = Math.ceil(ymin / pasY) * pasY;
+  for (let i = 0; i <= Math.floor((ymax - debutY) / pasY) + 1e-9; i++) {
+    const gy = +(debutY + i * pasY).toFixed(6);
+    const sy = toSvgY(gy).toFixed(1);
+    quadrillage += `<line x1="${marge}" y1="${sy}" x2="${(largeur-marge).toFixed(1)}" y2="${sy}" stroke="#dcdcdc" stroke-width="0.6"/>`;
+    if (Math.abs(gy) < pasY * 1e-6) continue;
+    graduations += `<line x1="${(ox-2.5).toFixed(1)}" y1="${sy}" x2="${(ox+2.5).toFixed(1)}" y2="${sy}" stroke="#555" stroke-width="1"/><text x="${(ox-9).toFixed(1)}" y="${(parseFloat(sy)+2.8).toFixed(1)}" font-size="8" text-anchor="middle" fill="#333">${fmtGraduation(gy)}</text>`;
+  }
+
+  // axes graves, avec fleche a l'extremite positive (convention manuel scolaire / TikZ)
+  const axeXFin = largeur - marge + 8, axeYFin = marge - 8;
+  let axes = `<line x1="${marge-8}" y1="${oy.toFixed(1)}" x2="${axeXFin.toFixed(1)}" y2="${oy.toFixed(1)}" stroke="#1a1a1a" stroke-width="0.8"/>`;
+  axes += `<polygon points="${axeXFin.toFixed(1)},${oy.toFixed(1)} ${(axeXFin-6).toFixed(1)},${(oy-3).toFixed(1)} ${(axeXFin-6).toFixed(1)},${(oy+3).toFixed(1)}" fill="#1a1a1a"/>`;
+  axes += `<line x1="${ox.toFixed(1)}" y1="${(hauteur-marge+8).toFixed(1)}" x2="${ox.toFixed(1)}" y2="${axeYFin.toFixed(1)}" stroke="#1a1a1a" stroke-width="0.8"/>`;
+  axes += `<polygon points="${ox.toFixed(1)},${axeYFin.toFixed(1)} ${(ox-3).toFixed(1)},${(axeYFin+6).toFixed(1)} ${(ox+3).toFixed(1)},${(axeYFin+6).toFixed(1)}" fill="#1a1a1a"/>`;
+  axes += `<text x="${(ox-8).toFixed(1)}" y="${(oy+11).toFixed(1)}" font-size="8" fill="#333">O</text>`;
+
+  let tangentesHtml = '';
+  if (tangentes) {
+    tangentes.forEach(t => {
+      const y1=t.pente*(t.x0-t.px)+t.py, y2=t.pente*(t.x1-t.px)+t.py;
+      tangentesHtml += `<line x1="${toSvgX(t.x0).toFixed(1)}" y1="${toSvgY(y1).toFixed(1)}" x2="${toSvgX(t.x1).toFixed(1)}" y2="${toSvgY(y2).toFixed(1)}" stroke="${t.couleur||'#e74c3c'}" stroke-width="1.8"/><text x="${toSvgX(t.x1).toFixed(1)}" y="${toSvgY(y2).toFixed(1)}" font-size="9" font-style="italic" fill="${t.couleur||'#e74c3c'}">${t.label||''}</text>`;
+      // point de tangence marque sur la courbe (convention manuel : petit disque plein)
+      const pxSvg = toSvgX(t.px).toFixed(1), pySvg = toSvgY(t.py).toFixed(1);
+      tangentesHtml += `<circle cx="${pxSvg}" cy="${pySvg}" r="2.6" fill="${t.couleur||'#e74c3c'}" stroke="white" stroke-width="0.8"/>`;
+    });
+  }
+
+  // data-* : donnees de conversion pixel<->coordonnees, reutilisees par activerCurseurSvg (voir
+  // plus bas) pour retrouver (x;y) sous la souris. width/height explicites (en plus du viewBox) :
+  // sans eux, un <svg> n'a pas de taille intrinseque et "max-width:100%;height:auto" (voir CSS
+  // .figure-centree svg) n'a rien a partir de quoi calculer une hauteur des qu'il n'est plus un
+  // enfant direct du conteneur flex (ce qu'introduit le bouton-icone du curseur). ouvrirModalSvg
+  // retire deja ces attributs sur le clone affiche en grand (meme raison que pour style="max-width").
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:${largeur}px;"
+    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="${marge}" data-pas="${pasX}">
+    ${sousQuadrillage}
+    ${quadrillage}
+    ${axes}
+    ${graduations}
+    ${tangentesHtml}
+    <path d="${path}" fill="none" stroke="#4B46C7" stroke-width="2.2"/>
+    <g class="curseur-groupe" visibility="hidden">
+      <line class="curseur-ligne-v" x1="0" y1="${marge}" x2="0" y2="${(hauteur-marge).toFixed(1)}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <line class="curseur-ligne-h" x1="${marge}" y1="0" x2="${(largeur-marge).toFixed(1)}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+      <text class="curseur-texte" font-size="9" fill="#666"></text>
+    </g>
+  </svg>`;
+}
+// ---------- curseur avec lecture des coordonnees : ecoute les Pointer Events (souris ET tactile,
+// une seule API) sur les SVG generes par genererSVGCourbe, convertit la position du pointeur en
+// coordonnees (x;y) via les data-* du <svg> lui-meme, et affiche un reticule pointille jusqu'aux
+// deux axes plus un texte des coordonnees pres du point.
+// - Souris : comportement inchange depuis la version d'origine (survol libre dans tout le
+//   graphique, actif seulement si l'utilisateur a clique sur le bouton-icone dedie — voir
+//   boutonCurseurHTML et la classe curseur-actif) ; un pointermove de type "mouse" se comporte
+//   exactement comme l'ancien mousemove.
+// - Tactile/stylet : le curseur reste ANCRE SUR LA COURBE elle-meme (pas libre dans tout le plan)
+//   — seule l'abscisse suit le doigt, l'ordonnee est recalculee sur la courbe via
+//   path.getPointAtLength()/getTotalLength() (API SVG native, dichotomie car le trace va toujours
+//   de gauche a droite, x croissant). L'abscisse est en plus aimantee au quart du pas de la grille
+//   (data-pas/4 — meme granularite que le sous-quadrillage deja trace, voir genererSVGCourbe) :
+//   viser le pixel exact au doigt est illusoire, et ca donne des valeurs lisibles alignees sur les
+//   reperes visibles. Au relachement, le repere RESTE affiche a sa derniere position (pas de
+//   disparition) — laisse le temps de lire.
+// Adaptation tactile portee depuis la fiche 1 de Premiere apres validation sur celle-ci (18/09/2026).
+function activerCurseurSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
+}
+// cable le curseur sur UN svg donne (independant de la classe qcm-svg, requise pour re-cabler le
+// clone affiche dans la modale de zoom — voir ouvrirModalSvg — qui retire cette classe).
+function cablerCurseurUnique(svg) {
+  const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
+  const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
+  const marge = parseFloat(svg.dataset.marge);
+  const pas = parseFloat(svg.dataset.pas) || 0;
+  const groupe = svg.querySelector('.curseur-groupe');
+  const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
+  const texte = svg.querySelector('.curseur-texte');
+  const chemin = svg.querySelector('path');
+  const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
+  // aimantation au doigt : au quart du pas de la grille, meme granularite que le sous-quadrillage
+  // deja affiche (voir commentaire ci-dessus) — pas au pas entier, trop grossier.
+  const pasFin = pas > 0 ? pas / 4 : 0;
+  const auPasFin = (v) => pasFin > 0 ? Math.round(v / pasFin) * pasFin : v;
+
+  // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
+  function pointCourbeA(pxCible) {
+    if (!chemin) return null;
+    let bas = 0, haut = chemin.getTotalLength();
+    for (let i = 0; i < 24; i++) {
+      const milieu = (bas + haut) / 2;
+      if (chemin.getPointAtLength(milieu).x < pxCible) bas = milieu; else haut = milieu;
+    }
+    return chemin.getPointAtLength((bas + haut) / 2);
+  }
+
+  function afficherRepere(px, py, tactile) {
+    groupe.setAttribute('visibility', 'visible');
+    ligneV.setAttribute('x1', px.toFixed(1)); ligneV.setAttribute('x2', px.toFixed(1));
+    ligneH.setAttribute('y1', py.toFixed(1)); ligneH.setAttribute('y2', py.toFixed(1));
+    const x = xmin + (px - marge) / (largeur - 2*marge) * (xmax - xmin);
+    const y = ymin + (hauteur - marge - py) / (hauteur - 2*marge) * (ymax - ymin);
+    const texteX = px < largeur - 60 ? px + 5 : px - 5;
+    const ancrage = px < largeur - 60 ? 'start' : 'end';
+    // au doigt, le texte doit degager la pointe du doigt (pas juste le trait) : decalage bien plus large.
+    const decalage = tactile ? 26 : 5;
+    const texteY = py > marge + decalage ? py - decalage : py + (tactile ? 30 : 12);
+    texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
+    texte.setAttribute('text-anchor', ancrage);
+    texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
+  }
+
+  svg.addEventListener('pointermove', (evt) => {
+    const tactile = evt.pointerType !== 'mouse';
+    if (!tactile && !svg.classList.contains('curseur-actif')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
+    if (tactile) {
+      let pxCible = local.x;
+      if (pasFin > 0) {
+        const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
+        const xAimante = auPasFin(xBrut);
+        pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
+      }
+      const ptCourbe = pointCourbeA(pxCible);
+      if (ptCourbe) afficherRepere(ptCourbe.x, ptCourbe.y, true);
+    } else {
+      if (local.y < marge || local.y > hauteur - marge) { groupe.setAttribute('visibility', 'hidden'); return; }
+      afficherRepere(local.x, local.y, false);
+    }
+  });
+  // seule la souris masque le repere en quittant le graphique/relachant — au doigt, il reste
+  // affiche a sa derniere position (voir le commentaire en tete de fichier).
+  const cacherSiSouris = (evt) => { if (evt.pointerType === 'mouse') groupe.setAttribute('visibility', 'hidden'); };
+  svg.addEventListener('pointerup', cacherSiSouris);
+  svg.addEventListener('pointercancel', cacherSiSouris);
+  svg.addEventListener('pointerleave', cacherSiSouris);
+}
+// icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js
+// (seul precedent d'icone en coin de figure trouve sur le site), pour rester visuellement coherent.
+const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+  + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
+  + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+// pas d'id a fournir : le bouton retrouve son svg via son propre parent (toujours le meme span
+// .figure-avec-curseur, voir chaque appelant).
+function boutonCurseurHTML() {
+  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
+    role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
+}
+function toggleCurseurSvg(btn) {
+  const svg = btn.parentElement.querySelector('svg');
+  if (!svg) return;
+  const actif = svg.classList.toggle('curseur-actif');
+  btn.classList.toggle('actif', actif);
+  if (!actif) svg.querySelector('.curseur-groupe').setAttribute('visibility', 'hidden');
+}
+
+// ---------- Agrandissement des graphiques au clic ----------
+// selecteur "svg.qcm-svg" (pas juste "svg") : necessaire depuis que le bouton-icone du curseur
+// (voir boutonCurseurHTML) contient lui-meme un <svg> -- un selecteur generique l'aurait aussi
+// rendu zoomable, ouvrant a tort la modale sur l'icone au lieu du graphique au clic sur ce bouton.
+function activerZoomSvg(container) {
+  if (!container) return;
+  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
+    svg.classList.add('svg-agrandissable');
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'button');
+    svg.setAttribute('aria-label', 'Agrandir ce graphique');
+    svg.addEventListener('click', () => ouvrirModalSvg(svg));
+    svg.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
+    });
+  });
+}
+
+function ouvrirModalSvg(svg) {
+  const interieur = document.getElementById('modal-svg-contenu-interieur');
+  interieur.innerHTML = '';
+  const clone = svg.cloneNode(true);
+  // les graphiques ont leur propre width/max-width (classe qcm-svg, style inline) pour rester petits
+  // dans la fiche : on les retire ici pour laisser la taille du clone dans le modal (`.modal-svg-contenu svg`) s'appliquer
+  clone.classList.remove('svg-agrandissable', 'qcm-svg');
+  clone.removeAttribute('style');
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  // le curseur (voir cablerCurseurUnique) doit continuer a fonctionner dans la modale agrandie :
+  // cloneNode() ne copie pas les ecouteurs, il faut recabler explicitement le clone. On propose
+  // le meme bouton-icone que sur la petite figure, et on reprend l'etat actif/inactif d'origine.
+  const aCurseur = svg.dataset.xmin !== undefined;
+  if (aCurseur) {
+    const enveloppe = document.createElement('span');
+    enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
+    enveloppe.appendChild(clone);
+    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
+    interieur.appendChild(enveloppe);
+    cablerCurseurUnique(clone);
+    if (svg.classList.contains('curseur-actif')) {
+      clone.classList.add('curseur-actif');
+      enveloppe.querySelector('.btn-curseur').classList.add('actif');
+    }
+  } else {
+    interieur.appendChild(clone);
+  }
+  document.getElementById('modal-svg-overlay').classList.add('ouvert');
+}
+
+function fermerModalSvg(evt, force) {
+  if (force || evt.target.id === 'modal-svg-overlay') {
+    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
+  }
+}
+
+document.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Escape') fermerModalSvg(null, true);
+});
+
+function construireGraphique6_3() {
+  const { a, p, q, r, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_3;
+  const f = x => a*(x-p)*(x-p)*(x-q)+r;
+  const penteQ = a*(q-p)*(q-p);
+  const bord1 = xmin+0.2, bord2 = xmax-0.2;
+  const svg = genererSVGCourbe(f, xmin, xmax, ymin, ymax, [
+    {x0:bord1, x1:bord2, pente:0, px:p, py:r, couleur:'#1a9e75', label:'T2'},
+    {x0:Math.max(bord1,q-2.2), x1:Math.min(bord2,q+2.2), pente:penteQ, px:q, py:r, couleur:'#e74c3c', label:'T1'}
+  ]);
+  document.getElementById('graphique-4-3').innerHTML = `
+    <p>Dans le repère ci-dessous, on a représenté le graphe d'une fonction <em>f</em> définie et dérivable sur ℝ ainsi que deux de ses tangentes.</p>
+    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
+  activerZoomSvg(document.getElementById('graphique-4-3'));
+  activerCurseurSvg(document.getElementById('graphique-4-3'));
+}
+
+function construireGraphique6_3g() {
+  const { c, e, p2, C0, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_3g;
+  const g = x => c*(x**3/3 - e*x**2/2) + C0;
+  const penteP2 = c*p2*(p2-e);
+  const bord1 = xmin+0.2, bord2 = xmax-0.2;
+  const svg = genererSVGCourbe(g, xmin, xmax, ymin, ymax, [
+    // tangente horizontale en x=0 retiree le 30/09/2026 : g'(0) n'est plus demande depuis la fusion
+    {x0:Math.max(bord1,p2-2.2), x1:Math.min(bord2,p2+2.2), pente:penteP2, px:p2, py:g(p2), couleur:'#1a9e75', label:'T'}
+  ]);
+  document.getElementById('graphique-4-3g').innerHTML = `
+    <p>Dans le repère ci-dessous, on a tracé la représentation graphique d'une fonction <em>g</em> définie et dérivable sur ℝ ainsi que l'une de ses tangentes.</p>
+    <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
+  activerZoomSvg(document.getElementById('graphique-4-3g'));
+  activerCurseurSvg(document.getElementById('graphique-4-3g'));
+}
+
+function genererTableauVariation(nom, positionsX, sens, valeurs) {
+  const n = positionsX.length;
+  const largeurCol = 90;
+  const margeGaucheEntete = 40;
+  const largeurSvg = margeGaucheEntete + largeurCol * (n - 1) + 20;
+  const hauteurLigneX = 30;
+  const hauteurLigneFleches = 90;
+  const hauteurTotale = hauteurLigneX + hauteurLigneFleches;
+
+  const xPos = [];
+  for (let i = 0; i < n; i++) xPos.push(margeGaucheEntete + i * largeurCol);
+
+  const niveaux = [0];
+  for (let i = 0; i < sens.length; i++) {
+    niveaux.push(niveaux[i] + (sens[i] === '+' ? 1 : -1));
+  }
+  const min = Math.min(...niveaux), max = Math.max(...niveaux);
+  const yHautLigne = hauteurLigneX + 20;
+  const yBasLigne = hauteurTotale - 20;
+  const yPos = niveaux.map(niv => max === min ? (yHautLigne+yBasLigne)/2 :
+    yBasLigne - (niv - min) / (max - min) * (yBasLigne - yHautLigne));
+
+  let svg = `<svg width="${largeurSvg}" height="${hauteurTotale}" viewBox="0 0 ${largeurSvg} ${hauteurTotale}" font-family="Georgia, serif" font-size="14">`;
+  svg += `<line x1="0" y1="${hauteurLigneX}" x2="${largeurSvg}" y2="${hauteurLigneX}" stroke="#333" stroke-width="1"/>`;
+  svg += `<line x1="${margeGaucheEntete-15}" y1="0" x2="${margeGaucheEntete-15}" y2="${hauteurTotale}" stroke="#333" stroke-width="1"/>`;
+  svg += `<rect x="0" y="0" width="${largeurSvg}" height="${hauteurTotale}" fill="none" stroke="#333" stroke-width="1"/>`;
+  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX/2+5}" text-anchor="middle" font-style="italic">x</text>`;
+  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX + hauteurLigneFleches/2+5}" text-anchor="middle" font-style="italic">${nom}</text>`;
+
+  xPos.forEach((x, i) => {
+    svg += `<text x="${x}" y="${hauteurLigneX/2+5}" text-anchor="middle">${positionsX[i]}</text>`;
+    svg += `<line x1="${x}" y1="${hauteurLigneX}" x2="${x}" y2="${hauteurTotale}" stroke="#999" stroke-width="0.7" stroke-dasharray="2,2"/>`;
+  });
+
+  const shorten = 6;
+  for (let i = 0; i < n-1; i++) {
+    const x1=xPos[i], y1=yPos[i], x2=xPos[i+1], y2=yPos[i+1];
+    const dx = x2-x1, dy = y2-y1;
+    const longueur = Math.sqrt(dx*dx+dy*dy);
+    const ux = dx/longueur, uy = dy/longueur;
+    const sx1 = x1 + ux*shorten, sy1 = y1 + uy*shorten;
+    const sx2 = x2 - ux*shorten, sy2 = y2 - uy*shorten;
+    svg += `<line x1="${sx1.toFixed(1)}" y1="${sy1.toFixed(1)}" x2="${sx2.toFixed(1)}" y2="${sy2.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`;
+    const angle = Math.atan2(dy,dx);
+    const taille = 6;
+    const a1 = angle + Math.PI*150/180, a2 = angle - Math.PI*150/180;
+    const p1x = sx2+taille*Math.cos(a1), p1y = sy2+taille*Math.sin(a1);
+    const p2x = sx2+taille*Math.cos(a2), p2y = sy2+taille*Math.sin(a2);
+    svg += `<polygon points="${sx2.toFixed(1)},${sy2.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
+  }
+
+  if (valeurs) {
+    valeurs.forEach((val, i) => {
+      if (val === null || val === undefined || val === '') return;
+      const estHaut = i === 0 ? (sens[0] === '-') : (i === n-1 ? (sens[n-2] === '+') : (sens[i-1]==='+' && sens[i]==='-'));
+      const y = estHaut ? yPos[i] - 10 : yPos[i] + 18;
+      svg += `<text x="${xPos[i]}" y="${y}" text-anchor="middle">${val}</text>`;
+    });
+  }
+
+  svg += '</svg>';
+  return `<div class="figure-centree">${svg}</div>`;
+}
+
+// Tableau de variation de f' ELLE-MEME (utilise par 6.5 a/b) : f'(x) = k(x-a)(x-b)(x-c) a 2
+// extremums propres (racines de sa propre derivee, 3k x^2 - 2k(a+b+c) x + k(ab+ac+bc)) qui
+// s'intercalent forcement entre les racines a<m1<b<m2<c (fait standard pour un cubique a 3
+// racines reelles distinctes). Le zero de f' a chaque racine a/b/c est marque directement SUR le
+// segment oblique (ce n'est pas un sommet, juste un point de passage), les valeurs f'(m1)/f'(m2)
+// sont affichees aux deux sommets.
+function genererTableauVariationDerivee(a, m1, v1, b, m2, v2, c) {
+  const fmtXVal = v => {
+    if (Math.abs(v - Math.round(v)) < 1e-6) return fmtX(Math.round(v));
+    const s = Math.abs(v).toFixed(2).replace('.', ',');
+    return (v < 0 ? '−' : '') + s;
+  };
+  const fmtValeur = fmtXVal; // v1,v2 sont toujours des entiers choisis directement : meme format que les positions
+
+  const positions = ['−∞', fmtXVal(a), fmtXVal(m1), fmtXVal(b), fmtXVal(m2), fmtXVal(c), '+∞'];
+  const n = 7;
+  const largeurCol = 80;
+  const margeGaucheEntete = 40;
+  const largeurSvg = margeGaucheEntete + largeurCol * (n - 1) + 20;
+  const hauteurLigneX = 30;
+  const hauteurLigneFleches = 100;
+  const hauteurTotale = hauteurLigneX + hauteurLigneFleches;
+
+  const xPos = [];
+  for (let i = 0; i < n; i++) xPos.push(margeGaucheEntete + i * largeurCol);
+
+  // v1 est la valeur du premier extremum (en x=m1) : s'il est positif, f' monte depuis -infini
+  // jusqu'a ce sommet haut, puis redescend vers v2 (negatif) avant de remonter vers +infini
+  const yHaut = hauteurLigneX + 20, yBas = hauteurTotale - 20;
+  const yPos = new Array(n);
+  yPos[0] = v1 > 0 ? yBas : yHaut;   // -infini
+  yPos[2] = v1 > 0 ? yHaut : yBas;   // m1 (premier extremum)
+  yPos[4] = v1 > 0 ? yBas : yHaut;   // m2 (second extremum)
+  yPos[6] = v1 > 0 ? yHaut : yBas;   // +infini
+  yPos[1] = (yPos[0] + yPos[2]) / 2; // racine a, a mi-hauteur du segment qui la contient
+  yPos[3] = (yPos[2] + yPos[4]) / 2; // racine b
+  yPos[5] = (yPos[4] + yPos[6]) / 2; // racine c
+
+  let svg = `<svg width="${largeurSvg}" height="${hauteurTotale}" viewBox="0 0 ${largeurSvg} ${hauteurTotale}" font-family="Georgia, serif" font-size="13">`;
+  svg += `<line x1="0" y1="${hauteurLigneX}" x2="${largeurSvg}" y2="${hauteurLigneX}" stroke="#333" stroke-width="1"/>`;
+  svg += `<line x1="${margeGaucheEntete-15}" y1="0" x2="${margeGaucheEntete-15}" y2="${hauteurTotale}" stroke="#333" stroke-width="1"/>`;
+  svg += `<rect x="0" y="0" width="${largeurSvg}" height="${hauteurTotale}" fill="none" stroke="#333" stroke-width="1"/>`;
+  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX/2+5}" text-anchor="middle" font-style="italic">x</text>`;
+  svg += `<text x="${(margeGaucheEntete-15)/2}" y="${hauteurLigneX + hauteurLigneFleches/2+5}" text-anchor="middle" font-style="italic">f′</text>`;
+
+  xPos.forEach((x, i) => { svg += `<text x="${x}" y="${hauteurLigneX/2+5}" text-anchor="middle">${positions[i]}</text>`; });
+  svg += `<line x1="${xPos[0]}" y1="${hauteurLigneX}" x2="${xPos[0]}" y2="${hauteurTotale}" stroke="#999" stroke-width="0.7" stroke-dasharray="2,2"/>`;
+  svg += `<line x1="${xPos[6]}" y1="${hauteurLigneX}" x2="${xPos[6]}" y2="${hauteurTotale}" stroke="#999" stroke-width="0.7" stroke-dasharray="2,2"/>`;
+
+  const sommets = [[xPos[0],yPos[0]], [xPos[2],yPos[2]], [xPos[4],yPos[4]], [xPos[6],yPos[6]]];
+  const shorten = 6;
+  for (let i = 0; i < 3; i++) {
+    const [x1,y1] = sommets[i], [x2,y2] = sommets[i+1];
+    const dx = x2-x1, dy = y2-y1;
+    const longueur = Math.sqrt(dx*dx+dy*dy);
+    const ux = dx/longueur, uy = dy/longueur;
+    const sx1 = x1 + ux*shorten, sy1 = y1 + uy*shorten;
+    const sx2 = x2 - ux*shorten, sy2 = y2 - uy*shorten;
+    svg += `<line x1="${sx1.toFixed(1)}" y1="${sy1.toFixed(1)}" x2="${sx2.toFixed(1)}" y2="${sy2.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`;
+    const angle = Math.atan2(dy,dx);
+    const taille = 6;
+    const a1 = angle + Math.PI*150/180, a2 = angle - Math.PI*150/180;
+    const p1x = sx2+taille*Math.cos(a1), p1y = sy2+taille*Math.sin(a1);
+    const p2x = sx2+taille*Math.cos(a2), p2y = sy2+taille*Math.sin(a2);
+    svg += `<polygon points="${sx2.toFixed(1)},${sy2.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
+  }
+
+  // "0" sur les segments, aux abscisses des racines (indices 1, 3, 5) - pas des sommets
+  [1,3,5].forEach(i => { svg += `<text x="${xPos[i]}" y="${(yPos[i]-6).toFixed(1)}" text-anchor="middle" font-size="12">0</text>`; });
+
+  // valeurs aux deux extremums et aux infinis, decalees au-dessus si sommet haut, en dessous si bas
+  const decalage = (y) => Math.abs(y - yHaut) < 0.5 ? -10 : 18;
+  svg += `<text x="${xPos[0]}" y="${(yPos[0]+decalage(yPos[0])).toFixed(1)}" text-anchor="middle">−∞</text>`;
+  svg += `<text x="${xPos[2]}" y="${(yPos[2]+decalage(yPos[2])).toFixed(1)}" text-anchor="middle">${fmtValeur(v1)}</text>`;
+  svg += `<text x="${xPos[4]}" y="${(yPos[4]+decalage(yPos[4])).toFixed(1)}" text-anchor="middle">${fmtValeur(v2)}</text>`;
+  svg += `<text x="${xPos[6]}" y="${(yPos[6]+decalage(yPos[6])).toFixed(1)}" text-anchor="middle">+∞</text>`;
+
+  svg += '</svg>';
+  return `<div class="figure-centree">${svg}</div>`;
+}
+
+function genererFigureCercleTangente(largeur, hauteur) {
+  largeur = largeur || 200; hauteur = hauteur || 200;
+  const marge = 20;
+  const rayon = Math.min(largeur, hauteur) / 2 - marge - 10;
+  const cx = marge + rayon, cy = hauteur - marge - rayon;
+  // point M(t) approximatif pour l'illustration, avec t=0.5
+  const t = 0.5;
+  const yt = Math.sqrt(1 - t*t);
+  const mx = cx + t * rayon, my = cy - yt * rayon;
+  // tangente en M(t) : perpendiculaire au rayon OM(t)
+  const pente = -t / yt;
+  const dx = 30;
+  const tx1 = mx - dx, ty1 = my - pente * (-dx);
+  const tx2 = mx + dx, ty2 = my - pente * (dx);
+
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg" style="max-width:220px;display:block;margin:0 auto;">
+    <circle cx="${cx}" cy="${cy}" r="${rayon}" fill="none" stroke="#4B46C7" stroke-width="1.5"/>
+    <line x1="${marge}" y1="${cy}" x2="${largeur-marge+15}" y2="${cy}" stroke="#999" stroke-width="1"/>
+    <line x1="${cx}" y1="${hauteur-marge+15}" x2="${cx}" y2="${marge-15}" stroke="#999" stroke-width="1"/>
+    <line x1="${cx}" y1="${cy}" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#333" stroke-width="1.2"/>
+    <line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="#e74c3c" stroke-width="1.5"/>
+    <circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="2.5" fill="#333"/>
+    <text x="${(mx+6).toFixed(1)}" y="${(my-6).toFixed(1)}" font-size="11" fill="#333">M(t)</text>
+    <text x="${(cx+3).toFixed(1)}" y="${(cy+13).toFixed(1)}" font-size="11" fill="#333">O</text>
+    <text x="${(tx2+3).toFixed(1)}" y="${(ty2).toFixed(1)}" font-size="11" fill="#e74c3c">T</text>
+    <text x="${(cx+rayon+3).toFixed(1)}" y="${(cy-3).toFixed(1)}" font-size="10" fill="#666">1</text>
+  </svg>`;
+}
+function construireGraphique6_4() {
+  const { r1, r2, k, ordre, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_4;
+  const fprime = x => k*(x-r1)*(x-r2);
+  const svgDeriv = genererSVGCourbe(fprime, xmin, xmax, ymin, ymax, undefined, 380, 290);
+  const noms = ['f₁','f₂','f₃'];
+  const tables = ordre.map((t,i) => genererTableauVariation(noms[i], t.positions, t.sens)).join('');
+  let html = `<p>On considère \\(f_1\\), \\(f_2\\) et \\(f_3\\) des fonctions définies et dérivables sur ℝ. La courbe représentative d'une certaine fonction dérivée, notée \\(f'\\), est tracée dans le repère ci-dessous ainsi que trois tableaux de variation.</p>
+  <div class="figure-centree"><span class="figure-avec-curseur">${svgDeriv}${boutonCurseurHTML()}</span></div>
+  <div style="overflow-x:auto;">${tables}</div>`;
+  document.getElementById('graphique-4-4').innerHTML = html;
+  activerZoomSvg(document.getElementById('graphique-4-4'));
+  activerCurseurSvg(document.getElementById('graphique-4-4'));
+}
+
+function construireGraphiqueQCMCourbe(divId, params, texteIntro, largeur, hauteur) {
+  // Le tableau montre la variation de f' ELLE-MEME (2 extremums propres a f', avec ses zeros
+  // marques sur les fleches), pas un tableau de signe de f' derive pour F - voir
+  // genererTableauVariationDerivee(). Pas de courbe de f' affichee en plus : le tableau suffit.
+  const { ordre, plageGlobale, xmin, xmax, tableauHTML } = params;
+  largeur = largeur || 240; hauteur = hauteur || 185;
+  let html = `<p>${texteIntro}</p>
+  <div style="overflow-x:auto;">${tableauHTML}</div>
+  <div class="qcm-grille-figures">`;
+  ['a','b','c'].forEach((lettre, i) => {
+    const svg = genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax, undefined, largeur, hauteur);
+    html += `<div><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span><div class="qcm-figure-label">f_${lettre}</div></div>`;
+  });
+  html += '</div>';
+  document.getElementById(divId).innerHTML = html;
+  activerZoomSvg(document.getElementById(divId));
+  activerCurseurSvg(document.getElementById(divId));
+}
+
+function construireGraphique6_5a() {
+  construireGraphiqueQCMCourbe('graphique-4-5a', paramsGraphiques.g6_5a,
+    "<span class=\"q-lettre\">a)</span> On donne ci-dessous le tableau de variation d'une fonction \\(f'\\) définie sur ℝ ainsi que les courbes représentatives de trois fonctions : \\(f_1\\), \\(f_2\\) et \\(f_3\\).",
+    265, 205);
+}
+
+function construireGraphique6_5b() {
+  construireGraphiqueQCMCourbe('graphique-4-5b', paramsGraphiques.g6_5b,
+    "<span class=\"q-lettre\">b)</span> On donne ci-contre le tableau de variation d'une fonction \\(f'\\) définie sur ℝ et, ci-dessous, les courbes représentatives de trois fonctions : \\(f_1\\), \\(f_2\\) et \\(f_3\\).");
+}
+
+function construireFigure6_6() {
+  const svg = genererFigureCercleTangente();
+  document.getElementById('figure-4-6').innerHTML = `
+    <p>Dans le plan muni d'un repère orthonormé, on considère le cercle <em>C</em> de centre O et de rayon 1. Pour \\(t\\in\\,]-1,1[\\), on note M(t) l'unique point du cercle <em>C</em> d'abscisse \\(t\\) et d'ordonnée strictement positive, et on note \\(y_t\\) l'ordonnée de M(t).</p>
+    <div class="figure-centree">${svg}</div>`;
+  activerZoomSvg(document.getElementById('figure-4-6'));
 }
 
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
@@ -3002,9 +3611,14 @@ async function initialiserFiche() {
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
   }
 construireGrilles();
+construireGraphique6_3();
+construireGraphique6_3g();
+construireGraphique6_4();
+construireGraphique6_5a();
+construireGraphique6_5b();
+construireFigure6_6();
 attacherEcouteurs();
 attacherEcouteursTactiles();
-mettreAJourTextesAvances();
 definirMode(true);
   mettreAJourEtatBoutons();
 

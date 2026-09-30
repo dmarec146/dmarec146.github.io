@@ -4782,6 +4782,54 @@ de changer ce réglage sans qu'il en reparle.
   11.8, 25.4) volontairement **non** balisée : la forme attendue est déjà
   expliquée dans le bouton « ? » (David).
 
+- **Première : fiches 4 et 5 supprimées, fiches 6–28 renumérotées 4–26
+  (30/09/2026).** Demande de David : « supprimer les fiches 4 et 5,
+  adapter toute la numérotation des autres fiches » (Première confirmé :
+  les deux niveaux ont des fiches 4 et 5). Supprimées : cahier 1, fiche 4
+  « Polynômes I » et fiche 5 « Polynômes II » (restent dans l'historique
+  git). **Correspondance ancien → nouveau : N → N−2 pour N = 6 à 28**,
+  chaque fiche restant dans son dossier de cahier (cahier-2/fiche-06 →
+  cahier-2/fiche-04, …, cahier-10/fiche-28 → cahier-10/fiche-26).
+  ⚠️ Toutes les entrées de ce fichier antérieures à celle-ci parlent des
+  **anciens** numéros (ex. « fiche 6 de Première » = l'actuelle fiche 4,
+  « fiche 17 » = l'actuelle 15).
+  - Fichiers renommés par `git mv` (ordre croissant, chaque cible libérée
+    avant d'être occupée) ; dans chaque fiche : titre de page, pastille,
+    liens précédent/suivant, titres « Calcul N.k » / « Entraînement N.k »,
+    identifiants d'exercices (`id:"N.k a)"`, arguments `item("N.k a)")`,
+    clés de `FORMES_FACTORISEES`), identifiants DOM (`grille-`, `texte-`,
+    `graphique-`, `titre-`, `table-`, `arbre-`, `fleche-…-N-k`), renvoi
+    d'énoncé « À l'aide de N.k a) ». Remplacements **ciblés par
+    contexte** : un remplacement global aurait cassé `r="6.5"` (rayon SVG),
+    `font-size="7.3"`, `Math.random()*8-1`… (audit préalable de tous les
+    contextes). Noms internes invisibles (`genGroupeN_k`, `gN_…`,
+    `PANEL_N_…`) et commentaires historiques laissés tels quels.
+  - Fiche 3 devient la dernière du cahier 1 (« Fiche suivante »
+    désactivé) ; sommaire du cahier 1 sans la section « Polynômes »
+    (3 fiches) ; sommaires des cahiers 2–10 renumérotés ; « Tous les
+    cahiers » : 26 fiches, cahier 1 à 3 fiches ;
+    `assets/js/manifeste-fiches.js` (devoirs) mis à jour. Le titre du
+    cahier 1 « Second degré et polynômes » est **inchangé** (question
+    posée à David).
+  - **Firebase** (inventaire en lecture seule avant l'opération, élèves
+    réels désormais inscrits : 1ère Gr 1, 1ère Gr 3, 2nde-207) : aucun
+    devoir, brouillon ni tentative sur les fiches de Première 4 à 28 ; un
+    seul document concerné, `resultats` du compte de test « Nina »
+    (classe 1ere-test) sur l'ancien chemin `cahier-2/fiche-06.html`
+    (0 question répondue) — ce chemin désigne désormais « Dérivation III » :
+    migration ou suppression soumise à David.
+  Script `.claude/scratch/suppr-fiches-4-5.js` (contrôles avant écriture,
+  audits `analyse-numeros.js`, `analyse-ambigus.js`, `audit-guillemets.js`).
+  Vérifié : `vm.Script` 50/50 ; pour les 26 fiches (chargées une à une) :
+  identifiants tous préfixés du nouveau numéro, table `groupes` ↔ ids ↔
+  grilles cohérents, aucun champ manquant, titres renumérotés, aucune
+  erreur de page, 100 tirages auto-cohérents par fiche (y compris
+  y=ax+b et produits Π, 3000 vérifications ; fiches 25–26 à questions
+  fixes) ; titre/pastille/cahier/liens de chaque fiche listés et
+  conformes ; fiche 5 : renvoi « À l'aide de 5.8 a) », panneau des
+  réponses 29/29 sans erreur MathJax ; aucune référence restante aux
+  anciens fichiers ou aux fiches supprimées.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
