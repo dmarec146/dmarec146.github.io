@@ -2,9 +2,10 @@
 // 30/09/2026 (demande de David) -- "A faire", "Enregistres" (commences et
 // sauvegardes, pas encore valides) et "Faits" ; voir devoirs-eleve.js pour
 // le classement exact, partage avec la pastille des pages d'entree
-// (devoirs-notification.js). Un devoir enregistre passe dans "Faits" des
-// qu'il est valide ; s'il n'est pas termine a l'echeance, son brouillon est
-// supprime (nettoyerBrouillons) et il apparait dans "Faits" comme non rendu.
+// (devoirs-notification.js). Un devoir enregistre quitte "Enregistres" des
+// qu'il est valide (retour dans "A faire" s'il reste des essais, "Faits"
+// sinon) ; s'il n'est pas termine a l'echeance, son brouillon est supprime
+// (nettoyerBrouillons) et il apparait dans "Faits" comme non rendu.
 //
 // Page reservee a un compte eleve connecte : redirige vers /connexion/
 // sinon.
@@ -76,7 +77,8 @@ onAuthStateChanged(auth, async (utilisateur) => {
     }
 
     remplir('a-faire', resultat.aFaire,
-      (d) => `À rendre avant le ${formaterDate(d.echeanceMillis)} — ${pluriel(d.restantes, 'tentative')} restante${d.restantes > 1 ? 's' : ''}`,
+      (d) => (d.meilleure ? `Meilleure note : ${note(d)} — ` : '')
+        + `À rendre avant le ${formaterDate(d.echeanceMillis)} — ${pluriel(d.restantes, 'tentative')} restante${d.restantes > 1 ? 's' : ''}`,
       () => true);
 
     remplir('enregistres', resultat.enregistres,
@@ -85,15 +87,9 @@ onAuthStateChanged(auth, async (utilisateur) => {
         + ` — ${pluriel(d.restantes, 'tentative')} restante${d.restantes > 1 ? 's' : ''}`,
       () => true);
 
-    // Un devoir rendu mais encore ouvert (echeance a venir, essais restants)
-    // reste cliquable : l'eleve peut retenter pour ameliorer sa note.
     remplir('faits', resultat.faits,
-      (d) => {
-        if (!d.meilleure) return `Non rendu — ${pluriel(d.nbEssaisAvantEcheance, 'tentative')}`;
-        if (d.ouvert) return `Meilleure note : ${note(d)} — encore ${pluriel(d.restantes, 'tentative')} possible${d.restantes > 1 ? 's' : ''} avant le ${formaterDate(d.echeanceMillis)}`;
-        return `${note(d)} — ${pluriel(d.nbEssaisAvantEcheance, 'tentative')}`;
-      },
-      (d) => d.ouvert);
+      (d) => (d.meilleure ? note(d) : 'Non rendu') + ` — ${pluriel(d.nbEssaisAvantEcheance, 'tentative')}`,
+      () => false);
 
     zoneChargement.hidden = true;
     zoneContenu.hidden = false;

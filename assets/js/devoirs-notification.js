@@ -44,9 +44,8 @@ onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) return;
   try {
     // Meme classement que /mes-devoirs/ (devoirs-eleve.js, 30/09/2026) : la
-    // pastille compte ce qui reste a faire ET les devoirs enregistres pas
-    // encore valides -- plus un devoir deja rendu, meme s'il reste des
-    // essais pour ameliorer la note (il est classe "Faits").
+    // pastille compte tous les devoirs encore ouverts ("A faire", y compris
+    // ceux deja rendus une fois avec des essais restants, et "Enregistres").
     const resultat = await chargerDevoirsEleve(utilisateur.uid);
     if (!resultat) return; // pas un profil eleve (ex. compte admin)
     if (resultat.nbDevoirs === 0) return; // jamais aucun devoir attribue

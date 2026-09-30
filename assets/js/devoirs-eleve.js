@@ -3,13 +3,14 @@
 // (devoirs-notification.js), pour que les deux comptent exactement la meme
 // chose :
 //
-//   aFaire      : echeance a venir, essais pas epuises, rien encore rendu,
-//                 rien d'enregistre ;
+//   aFaire      : echeance a venir, essais pas epuises, aucun brouillon en
+//                 cours -- y compris un devoir deja rendu une fois auquel il
+//                 reste des essais (il doit rester accessible, retour de
+//                 David le 30/09/2026 apres un premier classement qui le
+//                 rangeait a tort dans "faits" des la premiere validation) ;
 //   enregistres : echeance a venir, essais pas epuises, un brouillon en cours
 //                 ("Enregistrer mon avancement" clique, pas encore valide) ;
-//   faits       : tout le reste -- au moins une tentative rendue (meme s'il
-//                 reste des essais pour ameliorer sa note), essais epuises, ou
-//                 echeance passee (rendu ou non).
+//   faits       : essais epuises, ou echeance passee (rendu ou non).
 //
 // Brouillons : cles differentes selon le type de devoir -- fiche de calcul
 // (eleves/{uid}/brouillons, un document par ficheId) ou automatismes
@@ -94,10 +95,8 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
 
   const parEcheance = (a, b) => a.echeanceMillis - b.echeanceMillis;
   const enregistres = avecStatut.filter((d) => d.enregistre).sort(parEcheance);
-  const aFaire = avecStatut.filter((d) => d.ouvert && !d.enregistre && d.nbEssaisAvantEcheance === 0).sort(parEcheance);
-  const faits = avecStatut
-    .filter((d) => !d.enregistre && !(d.ouvert && d.nbEssaisAvantEcheance === 0))
-    .sort((a, b) => b.derniereActivite - a.derniereActivite);
+  const aFaire = avecStatut.filter((d) => d.ouvert && !d.enregistre).sort(parEcheance);
+  const faits = avecStatut.filter((d) => !d.ouvert).sort((a, b) => b.derniereActivite - a.derniereActivite);
 
   if (nettoyerBrouillons) {
     const perimes = [...instBrouillonsFiches.docs, ...instBrouillonsAuto.docs].filter((b) => !brouillonsUtiles.has(b.ref.path));

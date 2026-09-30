@@ -4310,6 +4310,19 @@ de changer ce réglage sans qu'il en reparle.
   laissées par les tests de David du matin sur des devoirs qu'il avait
   supprimés — sauvegarde JSON conservée).
 
+  **Correctif le jour même** (retour de David) : un devoir de fiche de calcul
+  validé une fois sur 2 passait dans « Faits » — mon interprétation de « les
+  faire passer dans devoirs faits » était trop large. Un devoir auquel il
+  reste des essais doit rester accessible dans « À faire ». Classement
+  final (`devoirs-eleve.js`) : **Enregistrés** = ouvert + brouillon en
+  cours ; **À faire** = ouvert sans brouillon (avec sa meilleure note s'il a
+  déjà été rendu) ; **Faits** = essais épuisés ou échéance passée,
+  uniquement. Un devoir enregistré puis validé quitte donc « Enregistrés »
+  pour « À faire » s'il reste des essais, « Faits » sinon. La pastille
+  compte à nouveau tous les devoirs ouverts. Vérifié sur les vraies données
+  de test de David (deux devoirs à 1/2 revenus dans « À faire »,
+  cliquables ; le devoir à 2/2 dans « Faits » ; pastille à 2).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
