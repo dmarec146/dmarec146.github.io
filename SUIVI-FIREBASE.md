@@ -4833,6 +4833,21 @@ de changer ce réglage sans qu'il en reparle.
   réponses 29/29 sans erreur MathJax ; aucune référence restante aux
   anciens fichiers ou aux fiches supprimées.
 
+- **Fiche 4 de Première (nouvelle numérotation, ex-6), 4.1 — écriture
+  2^k exigée (30/09/2026).** David : la consigne demande « sous la forme
+  2^k » mais la réponse attendue n'était que l'exposant k (« n+1 »).
+  Désormais : réponse attendue `2^(k)` (corrigé affiché 2^{4n+1}),
+  drapeau `formePuissance2` (dans l'objet renvoyé par `gen()` : la fiche
+  ne recopie que `id` et `type` de la définition du générateur),
+  `estPuissanceDe2` exige une racine `2^E` avec E écrit seulement avec n,
+  des entiers, +, −, × (2^(n+1), 2^(2n), 2^(−n+3) acceptés ; n+1, 4^n×2,
+  2^n×2, 2^n/2, exposant décimal ou avec puissance refusés), la valeur
+  étant vérifiée par `checkEqualNumeric`. Aide « ? » dédiée, exemple
+  « 2^k » dans le champ vide. Vérifié : 16 cas unitaires, 500 tirages
+  (réponse acceptée, exposant seul toujours refusé), vrais champs
+  MathLive (2^{4n+1} accepté, y compris sans signe ×, exposant seul et
+  2^{4n}×2 refusés), fiche complète 18/18, panneau sans erreur MathJax.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

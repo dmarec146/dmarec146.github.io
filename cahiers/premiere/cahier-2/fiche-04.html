@@ -1334,21 +1334,23 @@ function genererParametresGraphiques() {
 }
 
 const generateurs = [
-  // Calcul 4.1 - puissances (3 items)
+  // Calcul 4.1 - puissances (3 items). Depuis le 30/09/2026 (demande de David), la reponse attendue
+  // est l'ecriture 2^k elle-meme -- auparavant seul l'exposant k etait demande, alors que la
+  // consigne dit « ecrire sous la forme 2^k » -- et cette forme est exigee (formePuissance2).
   {id:"4.1 a)", type:"alg", gen: () => {
     const p = alea(1,6);
     const base = Math.pow(2,p);
-    return { texteLibre:true, enonce:`\\(${base}^n+${base}^n\\)`, reponse: fmtLinN(p,1) };
+    return { formePuissance2:true, texteLibre:true, enonce:`\\(${base}^n+${base}^n\\)`, reponse: `2^(${fmtLinN(p,1)})` };
   }},
   {id:"4.1 b)", type:"alg", gen: () => {
     const p = alea(1,6);
     const base = Math.pow(2,p);
-    return { texteLibre:true, enonce:`\\(${base}^n\\times ${base}^n\\)`, reponse: fmtLinN(2*p,0) };
+    return { formePuissance2:true, texteLibre:true, enonce:`\\(${base}^n\\times ${base}^n\\)`, reponse: `2^(${fmtLinN(2*p,0)})` };
   }},
   {id:"4.1 c)", type:"alg", gen: () => {
     const p = alea(2,3), q = alea(1,2), c = alea(1,4), d = alea(1,2);
     const A = Math.pow(2,p), B = Math.pow(2,q);
-    return { texteLibre:true, enonce:`\\(\\dfrac{${A}^n\\times 2^{n+${c}}}{${B}^{n+${d}}}\\)`, reponse: fmtLinN(p+1-q, c-q*d) };
+    return { formePuissance2:true, texteLibre:true, enonce:`\\(\\dfrac{${A}^n\\times 2^{n+${c}}}{${B}^{n+${d}}}\\)`, reponse: `2^(${fmtLinN(p+1-q, c-q*d)})` };
   }},
   // Calcul 4.2 - factorisation dans des fractions (2 items)
   {id:"4.2 a)", type:"alg", gen: () => {
@@ -1624,6 +1626,31 @@ function estFormeFinaleNumerique(n) {
     return estEntierSigne(n.args[0]) && estEntierSigne(n.args[1]);
   }
   return false;
+}
+
+// 4.1 (30/09/2026, demande de David) : la reponse doit etre ecrite sous la forme 2^k, k ecrit
+// seulement avec n, des entiers, +, - et * (pas de puissance ni de division dans l'exposant) :
+// 2^(n+1), 2^(2n), 2^(-n+3) acceptes ; n+1 (l'exposant seul), 4^n*2, 2^n*2, 2^(n)/2 refuses.
+// La valeur est verifiee a part (checkEqualNumeric).
+function estPuissanceDe2(userInput) {
+  try {
+    const sansP = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    const racine = sansP(math.parse(normaliserSaisie(String(userInput))));
+    if (racine.type !== 'OperatorNode' || racine.op !== '^' || racine.args.length !== 2) return false;
+    const base = sansP(racine.args[0]);
+    if (base.type !== 'ConstantNode' || base.value !== 2) return false;
+    let exposantOk = true;
+    racine.args[1].traverse((n) => {
+      if (n.type === 'ParenthesisNode') return;
+      if (n.type === 'ConstantNode') { if (!Number.isInteger(n.value)) exposantOk = false; return; }
+      if (n.type === 'SymbolNode') { if (n.name !== 'n') exposantOk = false; return; }
+      if (n.type === 'OperatorNode' && ['+', '-', '*'].includes(n.op)) return;
+      exposantOk = false;
+    });
+    return exposantOk;
+  } catch (e) {
+    return false;
+  }
 }
 
 function checkEqualNumeric(userInput, correctExpr) {
@@ -2105,6 +2132,7 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.formeYax) ok = checkEquationYax(val, ex.reponse);
+  else if (ex.formePuissance2) ok = estPuissanceDe2(val) && checkEqualNumeric(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -2647,6 +2675,7 @@ function toggleToutesReponses() {
 
 function placeholderPour(ex) {
   if (ex.formeYax) return 'y=ax+b';
+  if (ex.formePuissance2) return '2^k';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -2657,6 +2686,9 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.formePuissance2) {
+    return "La réponse doit être écrite <strong>sous la forme 2^k</strong> : par exemple <code>2^(n+1)</code> ou <code>2^(2n)</code> (bouton de puissance du clavier), et non la seule valeur de l'exposant (<code>n+1</code>), ni une autre écriture comme <code>4^n×2</code>.";
+  }
   if (ex.formeFactorisee === 'numerateur') {
     return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
   }
@@ -2705,6 +2737,7 @@ function aideContextuellePour(ex) {
 function necessiteAide(ex) {
   if (ex.formeFactorisee) return true;
   if (ex.formeYax) return true;
+  if (ex.formePuissance2) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
