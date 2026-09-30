@@ -4809,15 +4809,18 @@ de changer ce réglage sans qu'il en reparle.
     (3 fiches) ; sommaires des cahiers 2–10 renumérotés ; « Tous les
     cahiers » : 26 fiches, cahier 1 à 3 fiches ;
     `assets/js/manifeste-fiches.js` (devoirs) mis à jour. Le titre du
-    cahier 1 « Second degré et polynômes » est **inchangé** (question
-    posée à David).
+    cahier 1 « Second degré et polynômes » est **gardé** (décision de
+    David : la fiche 3 conserve une partie sur les polynômes de degré 3).
   - **Firebase** (inventaire en lecture seule avant l'opération, élèves
     réels désormais inscrits : 1ère Gr 1, 1ère Gr 3, 2nde-207) : aucun
     devoir, brouillon ni tentative sur les fiches de Première 4 à 28 ; un
     seul document concerné, `resultats` du compte de test « Nina »
     (classe 1ere-test) sur l'ancien chemin `cahier-2/fiche-06.html`
     (0 question répondue) — ce chemin désigne désormais « Dérivation III » :
-    migration ou suppression soumise à David.
+    **supprimé** avec l'accord de David (contrôle de la classe et du
+    contenu avant suppression, sauvegarde JSON dans le scratchpad de la
+    session) ; nouvelle vérification : plus aucun document ne vise une
+    fiche de Première ≥ 4.
   Script `.claude/scratch/suppr-fiches-4-5.js` (contrôles avant écriture,
   audits `analyse-numeros.js`, `analyse-ambigus.js`, `audit-guillemets.js`).
   Vérifié : `vm.Script` 50/50 ; pour les 26 fiches (chargées une à une) :
