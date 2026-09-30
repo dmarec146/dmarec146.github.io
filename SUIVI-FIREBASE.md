@@ -4496,6 +4496,58 @@ de changer ce réglage sans qu'il en reparle.
   la case, politique `manual`), Première 09 champ texte inchangé ; aucune
   erreur console.
 
+- **Fiche 1 de Première (cahier 1, Forme canonique) — mise aux règles
+  (30/09/2026), 35 → 26 questions, 15 → 10 calculs.** David : « il ne me
+  semble pas que la fiche 1 respecte ces règles du tout ». Exact : elle
+  n'avait eu que la toute première passe (24/09 après-midi, 1.1–1.4 de 6
+  à 4, 1.6–1.9 et 1.14 à 2), antérieure à la règle des 6 automatismes et à
+  la règle de fusion posées le soir même sur la fiche 4. Constat au
+  passage : les fiches 7 à 28 avaient bien été faites (25–26/09, PC perso,
+  commits « Fiche N Premiere : simplifiee en autonomie ») — seule la
+  fiche 6 n'a jamais été réduite (traitée juste après celle-ci).
+  - **Automatismes 1.1–1.3 : 12 → 6 (2+2+2)** — chaque calcul couvre deux
+    familles/niveaux, aucun n'a de gradient justifiant plus. 1.1 : a)
+    (px+q)² entier (classique), b) (p/q·z+r)² (fraction, la difficulté de
+    toute la fiche) ; retirés b) carré d'une différence (doublon) et c)
+    racine (déjà en 1.4 c). 1.2 : un par famille — a) x²−k² (différence de
+    carrés), b) p²v²−2pkv+k² (carré parfait avec coefficient, plus complet
+    que l'ancien c) ; retiré b) (fractions ET radicaux cumulés). 1.3 : un
+    par famille — a) z²=k, b) (pt+q)²=0 ; retirés c) carré nul à radicaux
+    et d) ax²=b à fractions (variantes lourdes des mêmes familles).
+  - 1.4 inchangé (4, déjà gradué).
+  - **1.5 « Formes canoniques » = anciens 1.5 (I) + 1.6 (II) + 1.7 (III)**,
+    6 → 4 : a) A=1, b) A entier positif, c) A entier négatif (signe imposé
+    par le générateur), d) A fractionnaire avec B, C entiers ; retirés
+    l'ancien 1.5 b) (doublon) et l'ancien 1.7 b) (A, B, C fractionnaires et
+    négatifs à la fois, résultat du type −548/735). Picto de niveau : celui
+    des anciens 1.6/1.7 (2 horloges pleines).
+  - **1.6 « Formes canoniques à paramètre » = anciens 1.8 (I) + 1.9 (II)**,
+    4 → 3, familles selon la place de λ : a) λ dans le coefficient de x (A
+    entier), b) λ coefficient de x² (au dénominateur, d'où λ ∈ ℝ*), c) λ
+    dans le coefficient de x ET la constante, A fractionnaire ; retiré
+    l'ancien 1.8 a) (contenu dans c).
+  - **1.7 = anciens 1.10 + 1.11** (même consigne mot pour mot : courbe →
+    forme canonique) et **1.8 = anciens 1.12 + 1.13** (forme canonique →
+    courbe ; a) coefficient dominant entier, 3 figures, b) fractionnaire, 4
+    figures) : un titre par calcul, une sous-question a)/b) par graphique
+    (`blocQCMCourbeVersCanonique`, `blocQCMCanoniqueVersCourbe`, classe
+    `.qcm-sous-question`) ; `paramsGraphiques.g1_7a/7b/8a/8b`,
+    `PANEL_1_8A/8B`, zones `zone-qcm-1-7/8`.
+  - 1.14 → **1.9**, 1.15 → **1.10** (contenu inchangé).
+  Identifiants renumérotés (les résultats déjà enregistrés gardent les
+  anciens) ; un brouillon enregistré avec l'ancienne structure est ignoré
+  (garde-fou existant : longueur de `exercices` différente).
+  Scripts `.claude/scratch/fiche01-html.js`, `fiche01-js.js` (+ blocs
+  `.txt`). **Interruption en cours de travail** (arrêt du PC de David) :
+  rien n'était committé, reprise sur le fichier modifié à moitié, sans
+  perte. Vérifié : `vm.Script` 52/52, 8 générateurs sans doublon, ids ↔
+  table `groupes` cohérents (26 champs, ordre du DOM = ordre du tableau
+  pour la navigation Entrée), 500 tirages auto-cohérents sans échec,
+  saisie de toutes les bonnes réponses dans les vrais champs 26/26,
+  panneau « Voir toutes les réponses » 26/26 sans erreur MathJax, captures
+  (1.5, 1.6, 1.7, 1.8 : un titre, bonnes lettres), « Générer une nouvelle
+  version » OK, aucune erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
