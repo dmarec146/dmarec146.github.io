@@ -4735,6 +4735,42 @@ de changer ce réglage sans qu'il en reparle.
   sur la même formulation. Vérifié : 19,2 px contre 16 px pour le reste du
   titre, bouton « ? » toujours en place.
 
+- **Consignes de forme mises en valeur dans les titres, 52 fiches
+  (30/09/2026).** David : « bien mettre en valeur dès qu'une consigne
+  demande cela (par exemple ... fraction irréductible) », en plus de la
+  police une couleur différente. Choix de David : **toute forme imposée**
+  (pas seulement la simplification), couleur **orange foncé #B45309**.
+  - Règle ajoutée dans les 52 fiches, juste après `.calcul-titre:first-child` :
+    `.calcul-titre .titre-mise-en-valeur { font-size: 1.2em; color: #B45309; }`
+    (celle de la fiche 2, posée plus tôt sans couleur, remplacée).
+  - `<span class="titre-mise-en-valeur">` autour de la seule expression qui
+    impose la forme — jamais le verbe de consigne (Développer,
+    Factoriser...) — dans 52 titres (+ 2.5 de la fiche 2 déjà fait) :
+    fraction irréductible (dont « fraction de π irréductible »), forme
+    simplifiée / une seule fraction simplifiée / simplifier au maximum, sous
+    forme factorisée (dérivées, fiche 12), sans radical / racine carrée au
+    dénominateur (et 11.3 « de manière à ce que les dénominateurs ne
+    comportent pas de radicaux »), sous la forme a√b, 2^a, 2^a3^b, exp(A),
+    ax+by+cz, a(x−α)²+β, y=mx+p, « a≥… ou a≤… », d'une seule puissance (ou
+    d'une fraction), produit de puissances, à l'aide d'une seule
+    puissance, sous (la) forme d'un intervalle (ou d'une réunion / union
+    d'intervalles), par puissances croissantes / selon les puissances de x,
+    en enlevant les fractions au numérateur et au dénominateur (7.8).
+    Liste exacte dans `.claude/scratch/mise-en-valeur.js` (CIBLES).
+  - Non mis en valeur (titres de thème, pas de consigne imposée) : ex.
+    « Écriture décimale et fraction irréductible, cas moins immédiats »
+    (Seconde 11.4), « De la forme canonique à la forme développée »,
+    « Choisir la forme adaptée » ; indices « (on pourra ...) ».
+  - **Au passage** : Première 6.1 affichait « 2^k » en texte brut dans le
+    titre — désormais `\(2^k\)` avec `\(k\in\mathbb{Z}\)`.
+  Vérifié : `vm.Script` 52/52, règle présente une fois dans chacune des 52
+  fiches, 53 expressions balisées ; 8 fiches chargées (Seconde 1, 3,
+  Première 1, 2, 6, 12, 23, 28) : 19,2 px contre 16 px, couleur
+  rgb(180,83,9), formules MathJax rendues à l'intérieur de l'expression,
+  boutons d'aide « ? » présents, aucune erreur ; capture (Seconde 3).
+  **Pour toute nouvelle fiche ou tout nouveau titre** : baliser de la même
+  façon l'expression qui impose la forme de la réponse.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
