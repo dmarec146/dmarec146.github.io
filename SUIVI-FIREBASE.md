@@ -4727,6 +4727,13 @@ de changer ce réglage sans qu'il en reparle.
   la page (le message `eff`/`getComputedStyle` vu dans la console vient
   d'un script injecté par l'outil de capture du navigateur, pas de la
   fiche).
+  Retouche le jour même (David) : texte « sous forme simplifiée
+  **lorsque cela est possible** », mis en valeur par une police plus
+  grande — `<span class="titre-mise-en-valeur">` dans le titre, règle CSS
+  `.calcul-titre .titre-mise-en-valeur { font-size: 1.2em; }` (locale à
+  la fiche 2, à recopier si le procédé sert ailleurs) ; aide « ? » alignée
+  sur la même formulation. Vérifié : 19,2 px contre 16 px pour le reste du
+  titre, bouton « ? » toujours en place.
 
 ## Procédure de reprise sur une autre machine
 
