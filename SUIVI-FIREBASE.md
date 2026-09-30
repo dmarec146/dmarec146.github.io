@@ -4847,6 +4847,18 @@ de changer ce réglage sans qu'il en reparle.
   (réponse acceptée, exposant seul toujours refusé), vrais champs
   MathLive (2^{4n+1} accepté, y compris sans signe ×, exposant seul et
   2^{4n}×2 refusés), fiche complète 18/18, panneau sans erreur MathJax.
+  **4.3 (lecture graphique d'un nombre dérivé) — marge de ±0,2** (même
+  jour). David : −5 accepté mais −5,1 refusé ; « une marge de plus ou
+  moins 0,2 est acceptable [...] les élèves liront ce graphique sur leur
+  téléphone ». Auparavant `checkEqualNumeric` (valeur exacte, les
+  tangentes passant volontairement par des points de grille). Désormais
+  drapeau `margeLecture:0.2` sur 4.3 a/b/c et `checkLectureGraphique`
+  (valeur numérique, bornes incluses ; nombre décimal avec virgule,
+  fraction ou calcul simple ; expression non numérique refusée) ; aide
+  « ? » ajoutée à 4.3 (« une valeur à 0,2 près de la valeur exacte est
+  acceptée »). Vérifié par les vrais champs sur les trois questions :
+  exact, ±0,1, ±0,2 acceptés ; ±0,25 et ±0,3 refusés ; fraction −1/2
+  acceptée.
 
 ## Procédure de reprise sur une autre machine
 

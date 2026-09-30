@@ -1369,15 +1369,17 @@ const generateurs = [
   // Retiree : l'ancienne 6.4 b) g'(0)=0, deuxieme lecture de tangente horizontale (doublon de a).
   {id:"4.3 a)", type:"num", gen: () => {
     const { p } = paramsGraphiques.g6_3;
-    return { texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
+    // margeLecture (30/09/2026, demande de David) : lecture graphique, souvent sur telephone --
+    // toute valeur a 0,2 pres de la valeur exacte est acceptee (voir checkLectureGraphique).
+    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
   }},
   {id:"4.3 b)", type:"num", gen: () => {
     const { p2, slopeNum, m } = paramsGraphiques.g6_3g;
-    return { texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}` };
+    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}` };
   }},
   {id:"4.3 c)", type:"num", gen: () => {
     const { q, d, m } = paramsGraphiques.g6_3;
-    return { texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
+    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
   }},
   // Calcul 4.4 (ex-6.5) - courbe et tableaux (1 item, QCM)
   {id:"4.4", type:"qcm", gen: () => ({ texteLibre:true, enonce:"Quel tableau de variation correspond à une fonction \\(f_1\\), \\(f_2\\) ou \\(f_3\\) dont \\(f'\\) est la dérivée :", bonneReponse: paramsGraphiques.g6_4.lettre })},
@@ -1648,6 +1650,20 @@ function estPuissanceDe2(userInput) {
       exposantOk = false;
     });
     return exposantOk;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Lecture graphique (4.3, 30/09/2026, demande de David) : valeur numerique acceptee a `marge` pres
+// de la valeur exacte (lecture souvent faite sur telephone). Nombre ou calcul simple (-5, -5,1,
+// 3/2, 1,5) ; toute expression non numerique est refusee.
+function checkLectureGraphique(userInput, correctExpr, marge) {
+  try {
+    const u = math.evaluate(normaliserSaisie(String(userInput)));
+    const c = math.evaluate(String(correctExpr));
+    if (typeof u !== 'number' || !isFinite(u) || typeof c !== 'number') return false;
+    return Math.abs(u - c) <= marge + 1e-9;
   } catch (e) {
     return false;
   }
@@ -2133,6 +2149,7 @@ function verifierUne(idx) {
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.formeYax) ok = checkEquationYax(val, ex.reponse);
   else if (ex.formePuissance2) ok = estPuissanceDe2(val) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.margeLecture) ok = checkLectureGraphique(val, ex.reponse, ex.margeLecture);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -2686,6 +2703,9 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.margeLecture) {
+    return `Lire le coefficient directeur de la tangente sur le graphique (en comptant les carreaux entre deux points de la tangente). Une valeur à ${String(ex.margeLecture).replace('.', ',')} près de la valeur exacte est acceptée : par exemple <code>-5</code>, <code>1/2</code> ou <code>0,5</code>.`;
+  }
   if (ex.formePuissance2) {
     return "La réponse doit être écrite <strong>sous la forme 2^k</strong> : par exemple <code>2^(n+1)</code> ou <code>2^(2n)</code> (bouton de puissance du clavier), et non la seule valeur de l'exposant (<code>n+1</code>), ni une autre écriture comme <code>4^n×2</code>.";
   }
@@ -2738,6 +2758,7 @@ function necessiteAide(ex) {
   if (ex.formeFactorisee) return true;
   if (ex.formeYax) return true;
   if (ex.formePuissance2) return true;
+  if (ex.margeLecture) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
