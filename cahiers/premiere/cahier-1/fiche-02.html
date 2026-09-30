@@ -1022,21 +1022,26 @@ function resoudreInequationQuadratique(A, B, C, op) {
   return {type:'intervalles', liste:[{bas:r1,haut:r2,inclusBas:inclus,inclusHaut:inclus}]};
 }
 
+// Section "Quelques automatismes" (2.1-2.2) ramenee de 8 a 6 questions le 30/09/2026 (regle
+// standing de David : 6 au total, reparties selon le vrai gradient de chaque calcul) : 2.1 4 -> 2,
+// 2.2 garde ses 4 (voir genGroupe2_2).
+// 2.1 : deux familles seulement, chacune en double -- a) racine d'un carre parfait (resultat
+// rationnel) ; b) racine a simplifier puis fraction a reduire (ancien c). Retirees : l'ancienne b)
+// (meme famille que a, seul le signe devant la racine changeait) et l'ancienne d) (meme famille
+// que c, seul le radicande changeait).
 function genGroupe2_1() {
   const ka=alea(2,9), Aa=alea(1,20), Ca=aleaParmi([2,3,4,5,6,7]);
-  const kb=alea(2,9), Ab=alea(1,20), Cb=aleaParmi([2,3,4,5,6,7].filter(x=>x!==Ca));
   const qc=aleaParmi(RADICANDS_PETITS), Cc=aleaParmi([2,3,4]), pc=aleaNonNul(-6,6), sgc=aleaParmi(['+','-']);
   const Acc=Cc*pc, Bcc=Cc*Cc*qc;
-  const qd=aleaParmi(RADICANDS_PETITS.filter(x=>x!==qc)), Cd=aleaParmi([2,3,4]), pd=aleaNonNul(-6,6), sgd=aleaParmi(['+','-']);
-  const Acd=Cd*pd, Bcd=Cd*Cd*qd;
   return [
     {id:"2.1 a)", type:"num", enonce:`\\dfrac{${Aa}-\\sqrt{${ka*ka}}}{${Ca}}`, reponse:`(${Aa}-${ka})/${Ca}`},
-    {id:"2.1 b)", type:"num", enonce:`\\dfrac{${Ab}+\\sqrt{${kb*kb}}}{${Cb}}`, reponse:`(${Ab}+${kb})/${Cb}`},
-    {id:"2.1 c)", type:"num", enonce:`\\dfrac{${Acc}${sgc}\\sqrt{${Bcc}}}{${Cc}}`, reponse:`${pc}${sgc}sqrt(${qc})`},
-    {id:"2.1 d)", type:"num", enonce:`\\dfrac{${Acd}${sgd}\\sqrt{${Bcd}}}{${Cd}}`, reponse:`${pd}${sgd}sqrt(${qd})`}
+    {id:"2.1 b)", type:"num", enonce:`\\dfrac{${Acc}${sgc}\\sqrt{${Bcc}}}{${Cc}}`, reponse:`${pc}${sgc}sqrt(${qc})`}
   ];
 }
 
+// 2.2 : 4 questions conservees le 30/09/2026 -- quatre pieges distincts, un par question :
+// a) B^2-4AC classique avec une fraction ; b) carre d'un negatif (-B)^2 ; c) -B^2 (a ne pas
+// confondre avec (-B)^2) ; d) fractions partout, dont (-p/q)^2.
 function genGroupe2_2() {
   // les fractions de l'enonce doivent elles-memes etre irreductibles : sans cette contrainte
   // on affichait des ecritures comme -8/4, qui invitent a simplifier avant meme de calculer
@@ -1286,19 +1291,20 @@ function genererExercices() {
   ];
 }
 
+// Indices recalcules le 30/09/2026 : 2.1 ramene de 4 a 2 questions, tout ce qui suit decale de 2.
 const groupes = {
-  "grille-2-1": [0,1,2,3],
-  "grille-2-2": [4,5,6,7],
-  "grille-2-3": [8,9],
-  "grille-2-4": [10,11,12,13],
-  "grille-2-5": [14,15,16,17],
-  "grille-2-6": [18,19,20],
-  "grille-2-7": [21,22],
-  "grille-2-8": [23,24],
-  "grille-2-9": [25,26,27,28],
-  "grille-2-10": [29,30,31],
-  "grille-2-11": [32],
-  "grille-2-12": [33]
+  "grille-2-1": [0,1],
+  "grille-2-2": [2,3,4,5],
+  "grille-2-3": [6,7],
+  "grille-2-4": [8,9,10,11],
+  "grille-2-5": [12,13,14,15],
+  "grille-2-6": [16,17,18],
+  "grille-2-7": [19,20],
+  "grille-2-8": [21,22],
+  "grille-2-9": [23,24,25,26],
+  "grille-2-10": [27,28,29],
+  "grille-2-11": [30],
+  "grille-2-12": [31]
 };
 const lettresEtendues = ["a","b","c","d"];
 let exercices; // initialise en bas du script

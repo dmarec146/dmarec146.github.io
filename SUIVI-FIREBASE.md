@@ -4594,7 +4594,30 @@ de changer ce réglage sans qu'il en reparle.
   les coches.
 
   **Toutes les fiches de Première (1 à 28) sont désormais passées aux
-  règles de simplification.**
+  règles de simplification.** *(Corrigé le jour même : la fiche 2 avait
+  encore 8 automatismes, voir l'entrée suivante — « passées aux règles »
+  ne garantissait pas que chaque règle ait été vérifiée sur chaque fiche.)*
+
+- **Fiche 2 de Première — automatismes 8 → 6 (30/09/2026), 34 → 32
+  questions.** David : « les automatismes ne respectent pas la règle des 6
+  maximum » (2.1 : 4 + 2.2 : 4 ; la passe du 24/09 sur cette fiche avait
+  précédé la règle des 6, posée le soir même sur la fiche 4). Répartition
+  selon le vrai gradient : **2.1 « Simplifier » 4 → 2** — deux familles
+  seulement, chacune en double : a) racine d'un carré parfait (résultat
+  rationnel), b) racine à simplifier puis fraction à réduire (ancien c) ;
+  retirées l'ancienne b) (même famille que a, seul le signe devant la
+  racine changeait) et l'ancienne d) (même famille que c, seul le
+  radicande changeait). **2.2 « Calculer » garde ses 4** — un piège
+  distinct par question : a) B²−4AC classique avec une fraction, b) carré
+  d'un négatif (−B)², c) −B² (à ne pas confondre avec (−B)²), d) fractions
+  partout dont (−p/q)². Table `groupes` décalée de 2 après 2.1. Vérifié :
+  `vm.Script` 52/52, ids ↔ `groupes` cohérents, 500 tirages
+  auto-cohérents sans échec (intervalles compris), saisie de toutes les
+  bonnes réponses dans les vrais champs 32/32, panneau 32/32 sans erreur
+  MathJax, capture (6 questions dans « Quelques automatismes »),
+  régénération OK, aucune erreur console. Remarque non traitée (pas
+  demandé) : entre les automatismes et 2.3, la fiche n'a pas de titre de
+  section (les autres fiches en ont un, ex. « Changements de forme »).
 
 ## Procédure de reprise sur une autre machine
 
