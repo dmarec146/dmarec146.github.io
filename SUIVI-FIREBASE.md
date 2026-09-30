@@ -4619,6 +4619,32 @@ de changer ce réglage sans qu'il en reparle.
   demandé) : entre les automatismes et 2.3, la fiche n'a pas de titre de
   section (les autres fiches en ont un, ex. « Changements de forme »).
 
+- **Fiche 2 de Première — suite des retours de David (30/09/2026), total
+  inchangé (32).**
+  1. « dans 2.3 mettre 4 exemples et n'en mettre que 2 dans 2.4 ».
+     **2.3 « Premiers discriminants » 2 → 4**, coefficients entiers, une
+     difficulté de plus à chaque question : a) a=1, b) a=−1, c) a entier
+     ≠ ±1 (nouveau), d) terme en x absent `ax²+c` (nouveau, piège b=0 donc
+     Δ=−4ac). **2.4 « Calculs de discriminants » 4 → 2** : a)
+     coefficients fractionnaires, b) radicaux dans a et c (ancien d : le
+     produit ac doit se simplifier) ; retirées les anciennes b) et c),
+     quasi-doublons (fractions + √ devant x, seul le signe de la racine
+     changeait) dont la seule difficulté ajoutée, élever une racine au
+     carré, était triviale. Indices des groupes suivants inchangés (même
+     total 6).
+  2. « dans 2.10, supprimer le (I) dans le titre puisqu'il n'y a qu'un
+     exercice de ce type (à garder en mémoire pour les autres fiches) ».
+     Fait ; **le « (II) » de 2.11 retiré aussi** : même consigne, mais
+     placé dans « Calculs plus avancés » (cas plus dur, gardé séparé) — un
+     « (II) » resté seul n'aurait plus de sens, la séparation en sections
+     suffit à distinguer les deux (signalé à David). Règle enregistrée en
+     mémoire (`feedback_numerotation_titres_calculs`) pour les autres
+     fiches.
+  Vérifié : `vm.Script` 52/52, ids ↔ `groupes` cohérents, 500 tirages
+  auto-cohérents sans échec (2.3 c/d : énoncés et Δ entiers), saisie de
+  toutes les bonnes réponses 32/32, panneau 32/32 sans erreur MathJax,
+  capture de 2.3/2.4, aucune erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
