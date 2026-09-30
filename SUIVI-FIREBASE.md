@@ -4209,9 +4209,14 @@ de changer ce réglage sans qu'il en reparle.
   bord enseignant (je ne peux pas me connecter en enseignant) ; à
   supprimer ensuite avec le même script de ménage. Trois d'entre eux (les
   devoirs à échéance courte : deux « Fiche 3 », un « Sujet blanc —
-  Niveau 1 ») apparaissent dans « Devoirs faits » en « Non rendu » : c'est
+  Niveau 1 ») apparaissaient dans « Devoirs faits » en « Non rendu » : c'était
   voulu (validés APRÈS l'échéance pour tester que ça ne compte pas) ; les
-  autres, avec leurs notes, sont dans « Devoirs en cours ».
+  autres, avec leurs notes, étaient dans « Devoirs en cours ». Vue
+  « Résultats » contrôlée par David, puis **tout supprimé le 30/09/2026 à
+  sa demande** (12 devoirs, 17 `devoirsTentatives`, et 8 `tentatives` de
+  l'ancien modèle écrites par les fiches à widgets pendant les tests —
+  sauvegardes JSON dans le scratchpad de session). `demo-eleve` repart
+  sans aucun devoir ; seul son journal `connexions` est conservé.
 
   **Complément le jour même — confirmation avant de consommer une
   tentative** (suggestion faite à David à l'issue des tests, acceptée) : un
