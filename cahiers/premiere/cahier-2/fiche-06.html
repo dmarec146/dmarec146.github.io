@@ -1274,6 +1274,14 @@ function pointDepuisRacines(k, c, d, r1, r2) {
 // g(x)=f(m*x+n), h(x)=k*f(p*x+q) — seuls m,n,p,q,k et les points d'évaluation changent ; la forme de f' reste fixe
 // (3 formes différentes : 1/x+x, 2x/(3+x^2), sqrt(2x^2+1)), chacune vérifiée séparément par intégration/différences finies.
 let paramsAvances = {};
+// Etat tire au hasard hors du tableau exercices : enregistre avec le brouillon et restaure a la
+// reprise, sinon figures/textes ne correspondraient plus aux questions restaurees (30/09/2026).
+function etatSupplementairePourBrouillon() {
+  return { paramsAvances };
+}
+function restaurerEtatSupplementaire(extra) {
+  if (extra && extra.paramsAvances) paramsAvances = extra.paramsAvances;
+}
 function genererParametresAvances() {
   function ligne(kFixe) {
     const m = aleaNonNul(-3,3), n = alea(-3,3), p = aleaNonNul(-3,3), q = alea(-3,3);
@@ -2241,7 +2249,7 @@ async function enregistrerBrouillonActuel() {
   const bouton = document.getElementById('btn-enregistrer');
   if (bouton) bouton.disabled = true;
   try {
-    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE, etatSupplementairePourBrouillon());
     afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
   } catch (erreur) {
     afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
@@ -3114,6 +3122,7 @@ async function initialiserFiche() {
     && brouillon.exercices.length === exercices.length;
   if (brouillonValide) {
     exercices = brouillon.exercices;
+    restaurerEtatSupplementaire(brouillon.extra);
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
   }
 construireGrilles();

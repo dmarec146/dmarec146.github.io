@@ -4899,6 +4899,38 @@ de changer ce réglage sans qu'il en reparle.
   décimale pour les valeurs finies) ; 8 fiches rechargées + « Générer
   une nouvelle version » sans erreur.
 
+- **Reprise d'un brouillon : figures et textes ne correspondaient plus aux
+  questions (Première 2, 4, 6, 11–15, 30/09/2026).** David, fiche 4 : « en
+  4.3 a), on demande f'(−1) mais la tangente n'est pas tracée (et elle
+  n'est pas horizontale), de même pour f'(1) ». Le graphique et les
+  questions d'un même tirage sont cohérents (vérifié) ; mais à la
+  **reprise d'un brouillon** (mode devoir, « Enregistrer mon avancement »),
+  ces fiches restauraient le tableau `exercices` (énoncés, réponses) sans
+  l'état tiré au hasard à côté (`paramsGraphiques` en fiche 4,
+  `paramsAvances` dans les autres), puis redessinaient graphiques (fiche 4)
+  ou textes d'introduction / titres paramétrés (fiche 2 : « P(x) = x²+bx+… »
+  de 2.6–2.8 ; fiches 6, 11–15 : textes `texte-…`) à partir d'un
+  **nouveau** tirage → questions d'un tirage, figure d'un autre. Les fiches
+  1, 8, 17, 18 (et Seconde 14, 15) avaient déjà le mécanisme
+  (`etatSupplementairePourBrouillon` / `restaurerEtatSupplementaire`,
+  champ `extra` du brouillon, voir suivi.js) : ajouté aux 8 fiches
+  (enregistrement + restauration). **Piège en plus, fiche 4** : les
+  paramètres des QCM 4.5 a/b contenaient des **fonctions** (les trois
+  courbes), perdues à l'enregistrement (JSON) — le dessin aurait planté à
+  la reprise ; `genererParamsQCM3Courbes` renvoie désormais aussi les
+  coefficients (`coeffs`) et le rôle de chaque courbe (`type` F/Fa/Fc), et
+  `reconstruireFonctionsQCM3Courbes` les recrée à la restauration (si
+  impossible — brouillon antérieur — le tirage courant est gardé plutôt
+  que de planter). Vérifié par simulation dans chaque fiche (état passé
+  par JSON comme dans Firestore, nouvelle version générée puis
+  restauration) : texte visible et tracés des courbes identiques à
+  l'origine, alors que le nouveau tirage les avait bien changés ; aucune
+  fonction restante dans l'état des autres fiches (contrôle récursif).
+  Limite : un brouillon enregistré **avant** ce correctif n'a pas cet état
+  (inventaire du jour : brouillons sur Première 1 et 2 seulement) — il se
+  corrige dès que l'élève réenregistre ou génère une nouvelle version.
+  Script `.claude/scratch/etat-brouillon.js`.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

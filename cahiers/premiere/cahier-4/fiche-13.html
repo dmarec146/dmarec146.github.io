@@ -1106,6 +1106,14 @@ function polyQuadFracStr(aF, bF, cF, vr) {
 }
 
 let paramsAvances = {};
+// Etat tire au hasard hors du tableau exercices : enregistre avec le brouillon et restaure a la
+// reprise, sinon figures/textes ne correspondraient plus aux questions restaurees (30/09/2026).
+function etatSupplementairePourBrouillon() {
+  return { paramsAvances };
+}
+function restaurerEtatSupplementaire(extra) {
+  if (extra && extra.paramsAvances) paramsAvances = extra.paramsAvances;
+}
 
 function mettreAJourTextesAvances() {
   const p3 = paramsAvances.g3;
@@ -2126,7 +2134,7 @@ async function enregistrerBrouillonActuel() {
   const bouton = document.getElementById('btn-enregistrer');
   if (bouton) bouton.disabled = true;
   try {
-    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE, etatSupplementairePourBrouillon());
     afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
   } catch (erreur) {
     afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
@@ -2999,6 +3007,7 @@ async function initialiserFiche() {
     && brouillon.exercices.length === exercices.length;
   if (brouillonValide) {
     exercices = brouillon.exercices;
+    restaurerEtatSupplementaire(brouillon.extra);
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
   }
 construireGrilles();

@@ -1229,7 +1229,7 @@ function antideriveeDepuisCoeffsCubiques(cub, C0) {
 }
 
 function genererParamsQCM3Courbes() {
-  let m1, m2, v1, v2, cub, a, b, c, C0, F, Fa, Fc, plageGlobale, xmin, xmax, sens;
+  let m1, m2, v1, v2, cub, cubLeurre, a, b, c, C0, F, Fa, Fc, plageGlobale, xmin, xmax, sens;
   const testPointsDe = (a,b,c) => [a-1, (a+b)/2, (b+c)/2, c+1];
   const h = 1e-4;
   const signeEn = (f, x) => (f(x+h) - f(x-h)) >= 0 ? '+' : '-';
@@ -1257,7 +1257,7 @@ function genererParamsQCM3Courbes() {
 
     // second leurre : memes extremums (m1,m2) mais valeurs v1,v2 permutees -> cubique differente,
     // racines differentes en general, jamais loin du domaine de F (pas de risque d'explosion)
-    const cubLeurre = construireCubiqueDepuisExtremums(m1, m2, v2, v1);
+    cubLeurre = construireCubiqueDepuisExtremums(m1, m2, v2, v1);
     Fc = antideriveeDepuisCoeffsCubiques(cubLeurre, C0);
 
     const testPoints = testPointsDe(a,b,c);
@@ -1270,15 +1270,39 @@ function genererParamsQCM3Courbes() {
     ok = (plageGlobale.ymax - plageGlobale.ymin) <= 16;
   } while (!ok && essais < 80);
 
-  const ordre = melanger([{fn:F, estCorrect:true}, {fn:Fa, estCorrect:false}, {fn:Fc, estCorrect:false}]);
+  const ordre = melanger([{fn:F, type:'F', estCorrect:true}, {fn:Fa, type:'Fa', estCorrect:false}, {fn:Fc, type:'Fc', estCorrect:false}]);
   const bonneReponse = ['a','b','c'][ordre.findIndex(o => o.estCorrect)];
 
   const tableauHTML = genererTableauVariationDerivee(a, m1, v1, b, m2, v2, c);
 
-  return { sens, ordre, plageGlobale, bonneReponse, xmin, xmax, tableauHTML };
+  // coeffs : de quoi reconstruire les trois fonctions apres un brouillon (une fonction ne se
+  // serialise pas -- voir reconstruireFonctionsQCM3Courbes, 30/09/2026)
+  const coeffs = { cub: { k: cub.k, p: cub.p, q: cub.q, C: cub.C }, cubLeurre: { k: cubLeurre.k, p: cubLeurre.p, q: cubLeurre.q, C: cubLeurre.C }, C0 };
+  return { sens, ordre, plageGlobale, bonneReponse, xmin, xmax, tableauHTML, coeffs };
+}
+function reconstruireFonctionsQCM3Courbes(params) {
+  if (!params || !params.coeffs || !Array.isArray(params.ordre)) return false;
+  const F = antideriveeDepuisCoeffsCubiques(params.coeffs.cub, params.coeffs.C0);
+  const fonctions = { F, Fa: x => -0.7*F(x) + 1, Fc: antideriveeDepuisCoeffsCubiques(params.coeffs.cubLeurre, params.coeffs.C0) };
+  params.ordre.forEach(o => { o.fn = fonctions[o.type]; });
+  return params.ordre.every(o => typeof o.fn === 'function');
 }
 
 let paramsGraphiques = {};
+// Etat tire au hasard hors du tableau exercices : enregistre avec le brouillon et restaure a la
+// reprise, sinon figures/textes ne correspondraient plus aux questions restaurees (30/09/2026).
+function etatSupplementairePourBrouillon() {
+  return { paramsGraphiques };
+}
+// Les courbes des QCM 4.5 a/b sont des fonctions, perdues a l'enregistrement : reconstruites a partir
+// de leurs coefficients. Si c'est impossible (brouillon d'avant ce correctif), on garde le tirage courant
+// plutot que de faire planter le dessin.
+function restaurerEtatSupplementaire(extra) {
+  if (!extra || !extra.paramsGraphiques) return;
+  const p = extra.paramsGraphiques;
+  if (!reconstruireFonctionsQCM3Courbes(p.g6_5a) || !reconstruireFonctionsQCM3Courbes(p.g6_5b)) return;
+  paramsGraphiques = p;
+}
 
 function genererParametresGraphiques() {
   // Depuis la fusion 6.3+6.4 (30/09/2026) : pente f'(q) toujours fractionnaire (d^2 non multiple
@@ -2225,7 +2249,7 @@ async function enregistrerBrouillonActuel() {
   const bouton = document.getElementById('btn-enregistrer');
   if (bouton) bouton.disabled = true;
   try {
-    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE, etatSupplementairePourBrouillon());
     afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
   } catch (erreur) {
     afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
@@ -3662,6 +3686,7 @@ async function initialiserFiche() {
     && brouillon.exercices.length === exercices.length;
   if (brouillonValide) {
     exercices = brouillon.exercices;
+    restaurerEtatSupplementaire(brouillon.extra);
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
   }
 construireGrilles();
