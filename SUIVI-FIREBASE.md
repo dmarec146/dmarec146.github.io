@@ -4323,6 +4323,58 @@ de changer ce réglage sans qu'il en reparle.
   de test de David (deux devoirs à 1/2 revenus dans « À faire »,
   cliquables ; le devoir à 2/2 dans « Faits » ; pastille à 2).
 
+- **Claviers de saisie : racine dans une fraction, accolades (30/09/2026)**
+  — deux retours « plus mathématiques » de David.
+
+  1. **Touche √ du clavier simplifié mal placée dans une fraction** (le
+     raccourci tapé `sqrt` marchait, pas la touche). Deux causes distinctes,
+     selon le type de champ :
+     - *Champ texte* (27 fiches de Première, `insererRacine`) : la touche
+       a/b insère `(▢)/(▢)` et sélectionne le ▢ du numérateur ; la touche √
+       reprenait cette sélection comme contenu → `(√(▢)5)/(▢)` après avoir
+       tapé 5. Désormais, si la sélection est exactement un ▢, la racine le
+       remplace et sélectionne son propre ▢ : `(√(5))/(▢)`. Sélection d'un
+       vrai nombre (`3` → `√(3)`) et champ vide (`√(` curseur `)`) inchangés.
+       Les fiches de Seconde (`sqrt(`, fraction `()/()` sans ▢) n'avaient
+       pas le problème.
+     - *Champ mathématique avec clavier maison* (`<math-field>` en mode
+       `off` : ensembles, cercles) : `insererMath`, `insererFractionMath`,
+       `insererRacineMath` et `reculerMath` (11 fiches, dont 4 pour les
+       trois dernières) commençaient par `moveToMathfieldEnd` — chaque
+       touche partait en fin de champ, d'où `\{\frac{▢}{▢}\sqrt5`. Ligne
+       supprimée : insertion (et « ← Suppr. ») au curseur. Le curseur est
+       conservé au clic grâce au `mousedown` → `preventDefault()` déjà en
+       place sur `.clavier-visuel` pour ces champs.
+  2. **Accolades** : le clavier MathLive (bouton ⌨ des champs en mode
+     `manual`, le « clavier MathType » de David) n'a que ( ) et [ ].
+     Nouveau fichier partagé `assets/js/clavier-mathlive.js`, chargé juste
+     après `unpkg.com/mathlive` dans les 52 fiches : part des dispositions
+     normalisées de MathLive et remplace, sur la couche « 123 », la touche
+     intégrale par **{** (Maj : ∅) et **∀** par **}** (Maj : ;) — deux
+     touches hors programme. Si MathLive change et que ces deux touches ne
+     sont pas trouvées, rien n'est modifié (le script MathLive est chargé
+     sans numéro de version). Saisie `\{1;2\}` → lue `{1;2}` → acceptée par
+     `checkEnsemble`.
+     Inventaire au passage (les 52 fiches chargées une à une, réponse
+     attendue commençant par `{`) : aucune question « ensemble » n'utilise en
+     fait le clavier MathLive — Première 01–04, 14, 24 et Seconde 06, 14,
+     15, 17–20 ont un champ mathématique avec clavier maison qui avait déjà
+     { } ; ∅. En revanche **9 fiches à champ texte n'avaient aucune
+     accolade** (Première 08, 09, 10, 15, 20, 21, 22, 25 ; Seconde 12) :
+     nouvelle fonction `groupeEnsembleClavier(idx, ex)` qui ajoute en tête
+     de leur clavier un groupe « Ensemble » { } ; et la même astuce que les
+     autres fiches, uniquement pour ces questions.
+
+  Script `.claude/scratch/clavier-maths.js` (vérifie une occurrence exacte
+  partout avant d'écrire). Vérifié : `vm.Script` 52/52 ; une seule variante
+  de chaque fonction modifiée ; plus aucun `moveToMathfieldEnd`. Tests
+  navigateur par vrais clics : fiche 09 de Première (11 champs texte :
+  fraction + √ au numérateur puis au dénominateur → `(√(5))/(√(2))`,
+  ensemble `{1;2}` au clavier), fiche 01 de Première (champ ensemble :
+  `{` a/b √ 5 → racine dans le numérateur, `;` et « ← Suppr. » au
+  curseur), clavier MathLive avec { } sur les fiches 01 de Première et 14
+  de Seconde, sans erreur console.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

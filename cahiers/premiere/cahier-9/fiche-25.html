@@ -15,6 +15,7 @@ window.MathJax = {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
 <script src="https://unpkg.com/mathlive"></script>
+<script src="../../../assets/js/clavier-mathlive.js"></script>
 <style>
   :root {
     --bleu: #4B46C7;
@@ -1500,6 +1501,15 @@ function insererRacine(idx) {
   const start = input.selectionStart ?? input.value.length;
   const end = input.selectionEnd ?? input.value.length;
   const selection = input.value.slice(start, end);
+  // Emplacement vide ▢ selectionne (numerateur ou denominateur d'une fraction
+  // tout juste inseree) : la racine le remplace et offre son propre ▢ a
+  // remplir -- sinon elle s'inserait a cote, "(√(▢)5)/(▢)".
+  if (selection === '▢') {
+    input.value = input.value.slice(0, start) + '√(▢)' + input.value.slice(end);
+    placerCurseur(input, start + 2, start + 3);
+    reinitialiserStatut(idx);
+    return;
+  }
   const symbole = '√(' + selection + ')';
   input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
   const curseur = selection ? start + symbole.length : start + 2;
@@ -2811,7 +2821,21 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${groupeEnsembleClavier(idx, ex)}${genererClavierPour(idx, ex)}</div>`;
+}
+
+// Reponse attendue sous forme d'ensemble ("{-2;3}", "{}" : voir
+// checkEnsemble) : touches accolades et point-virgule en tete du clavier.
+function groupeEnsembleClavier(idx, ex) {
+  if (!(ex.reponse && String(ex.reponse).trim().startsWith('{'))) return '';
+  return `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire l'ensemble des solutions entre accolades, séparées par un point-virgule. Exemple : {-2;3}, ou {} s'il n'y a aucune solution.</div>`;
 }
 
 function genererClavierPour(idx, ex) {
