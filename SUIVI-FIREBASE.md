@@ -4931,6 +4931,47 @@ de changer ce réglage sans qu'il en reparle.
   corrige dès que l'élève réenregistre ou génère une nouvelle version.
   Script `.claude/scratch/etat-brouillon.js`.
 
+- **Fiche 4 de Première — présentation de 4.3, 4.4, 4.5 (30/09/2026).**
+  David : « Dans 4.3, écrire a) pour f et mettre les questions en dessous
+  du graphique et b) pour g […]. Pour 4.4 : il est écrit de répondre par a
+  b c ou d mais il n'y a aucune de ces lettres dans les propositions,
+  seulement f1, f2 et f3 […]. Idem pour 4.5. […] écrire les choses en
+  LaTeX […] et non f_a ».
+  - **4.3** : deux parties. « a) » en tête du texte de la courbe de \(f\),
+    suivi de sa grille (`grille-4-3a` : 1) \(f'(p)\), 2) \(f'(q)\)) ; puis
+    « b) » courbe de \(g\) et sa grille (`grille-4-3b` : \(g'(p_2)\), seule
+    donc sans repère). Les questions de la partie a) sont repérées 1) et 2)
+    (nouveau champ `repere` d'un exercice, prioritaire sur la lettre
+    automatique de `construireGrilles`) pour ne pas mélanger avec a)/b).
+    Ids : « 4.3 a) 1 », « 4.3 a) 2 », « 4.3 b) » (ordre changé : f'(q)
+    passe avant g'(p2)). Marge de lecture 0,2 inchangée.
+  - **4.4 et 4.5 a/b** : question « Parmi \(f_1\), \(f_2\) et \(f_3\),
+    quelle fonction a pour dérivée \(f'\) ? », on répond par le **nom de
+    la fonction** — `f1`, `f2`, `f3` (touches f₁ f₂ f₃ du clavier, qui
+    remplacent a b c d) ou simplement `1`, `2`, `3` ; `f_1`, `f₁` acceptés
+    (`numeroFonctionQCM`). Une lettre a/b/c tapée par l'élève est refusée ;
+    elle n'est lue que dans la réponse attendue (les paramètres tirés
+    gardent la lettre de position a/b/c, convertie en f1/f2/f3 par les
+    générateurs — et un brouillon antérieur, qui stockait « a », reste
+    corrigé juste). Placeholder « f1, f2 ou f3 », aide « ? » réécrite,
+    réponse affichée \(f_1\) (au lieu de « Réponse a »), plus de « = »
+    après la question (`sansEgal`).
+  - **Noms en LaTeX** : étiquettes des trois courbes de 4.5 en
+    \(f_1\), \(f_2\), \(f_3\) (MathJax, 15 px, noir — au lieu de « f_a »
+    gris 11 px) ; dans les tableaux de variation de 4.4 (SVG, où MathJax ne
+    passe pas), f italique + indice droit décalé (`<tspan dy>`), rendu
+    identique à LaTeX, au lieu des caractères « f₁ ».
+  - **Brouillons** : la validité d'un brouillon exige désormais la même
+    liste d'ids que la fiche (pas seulement le même nombre de questions),
+    sinon un brouillon enregistré avant la réorganisation placerait
+    g'(p2) sous la courbe de f.
+  Vérifié dans le navigateur : ordre graphique f → questions 1) 2) →
+  graphique g → question ; 0 / +0,15 acceptés, +0,3 refusé sur les trois
+  lectures ; QCM : f1, 1, f_{1} acceptés, mauvaise fonction et a/b/c
+  refusés ; 30 tirages : bonne réponse répartie sur f1/f2/f3 et
+  correspondant bien à l'étiquette de la bonne courbe / du bon tableau ;
+  aucune erreur console. Vérificateur de syntaxe : 50 fiches, 0 erreur.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

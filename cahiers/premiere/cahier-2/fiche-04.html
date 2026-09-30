@@ -740,8 +740,8 @@ window.MathJax = {
   }
   .qcm-figure-label {
     text-align: center;
-    font-size: 11px;
-    color: var(--gris);
+    font-size: 15px;
+    color: #222;
     margin-top: 2px;
   }
   .tv-bloc {
@@ -948,8 +948,9 @@ window.MathJax = {
 
 <p class="calcul-titre"><span>Calcul 4.3 — Lecture graphique d'un nombre dérivé.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div id="graphique-4-3"></div>
+<div class="question-grille" id="grille-4-3a"></div>
 <div id="graphique-4-3g"></div>
-<div class="question-grille" id="grille-4-3"></div>
+<div class="question-grille" id="grille-4-3b"></div>
 
 <p class="calcul-titre"><span>Calcul 4.4 — Une courbe, trois tableaux.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div id="graphique-4-4"></div>
@@ -1357,6 +1358,20 @@ function genererParametresGraphiques() {
   paramsGraphiques.g6_5b = genererParamsQCM3Courbes();
 }
 
+// 4.4 / 4.5 (30/09/2026) : numero 1, 2 ou 3 de la fonction designee par une saisie ou une
+// reponse attendue -- « f1 », « f_1 », « f₁ », « 1 ». Avec accepterLettre (reponse attendue
+// seulement, jamais la saisie de l'eleve) : la lettre a/b/c (position, format des parametres et
+// des brouillons anterieurs) vaut 1/2/3. null si rien de reconnaissable.
+function numeroFonctionQCM(s, accepterLettre) {
+  const v = String(s || '').toLowerCase().replace(/[\s_{}()\\]/g, '')
+    .replace(/[₁₂₃]/g, (c) => String('₁₂₃'.indexOf(c) + 1));
+  const m = v.match(/^f?([123])$/);
+  if (m) return Number(m[1]);
+  if (!accepterLettre) return null;
+  const i = ['a', 'b', 'c'].indexOf(v);
+  return i >= 0 ? i + 1 : null;
+}
+
 const generateurs = [
   // Calcul 4.1 - puissances (3 items). Depuis le 30/09/2026 (demande de David), la reponse attendue
   // est l'ecriture 2^k elle-meme -- auparavant seul l'exposant k etait demande, alors que la
@@ -1391,27 +1406,35 @@ const generateurs = [
   // a) tangente horizontale (f'(p)=0, classique) ; b) pente entiere lue sur g (ancien 6.4 a) ;
   // c) pente fractionnaire lue sur f (ancien 6.3 b, tirage force, voir genererParametresGraphiques).
   // Retiree : l'ancienne 6.4 b) g'(0)=0, deuxieme lecture de tangente horizontale (doublon de a).
-  {id:"4.3 a)", type:"num", gen: () => {
+  // Depuis le 30/09/2026 (demande de David) : deux parties, a) courbe de f suivie de ses deux
+  // questions (grille-4-3a, reperees 1) et 2) pour ne pas confondre avec les parties a)/b)), puis
+  // b) courbe de g suivie de sa question (grille-4-3b). Les lettres a)/b) sont dans les textes
+  // d'introduction des figures (construireGraphique6_3 / 6_3g).
+  {id:"4.3 a) 1", type:"num", gen: () => {
     const { p } = paramsGraphiques.g6_3;
     // margeLecture (30/09/2026, demande de David) : lecture graphique, souvent sur telephone --
     // toute valeur a 0,2 pres de la valeur exacte est acceptee (voir checkLectureGraphique).
-    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
+    return { repere:"1", margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
+  }},
+  {id:"4.3 a) 2", type:"num", gen: () => {
+    const { q, d, m } = paramsGraphiques.g6_3;
+    return { repere:"2", margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
   }},
   {id:"4.3 b)", type:"num", gen: () => {
     const { p2, slopeNum, m } = paramsGraphiques.g6_3g;
     return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}` };
   }},
-  {id:"4.3 c)", type:"num", gen: () => {
-    const { q, d, m } = paramsGraphiques.g6_3;
-    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
-  }},
   // Calcul 4.4 (ex-6.5) - courbe et tableaux (1 item, QCM)
-  {id:"4.4", type:"qcm", gen: () => ({ texteLibre:true, enonce:"Quel tableau de variation correspond à une fonction \\(f_1\\), \\(f_2\\) ou \\(f_3\\) dont \\(f'\\) est la dérivée :", bonneReponse: paramsGraphiques.g6_4.lettre })},
+  // Depuis le 30/09/2026 (demande de David) : on repond par le NOM de la fonction (f1, f2 ou f3,
+  // noms portes par les tableaux et les courbes), et non plus par une lettre a/b/c/d qui
+  // n'apparaissait nulle part sur les figures. Les parametres gardent la lettre a/b/c (position),
+  // convertie ici -- voir numeroFonctionQCM, qui accepte aussi les anciens brouillons en a/b/c.
+  {id:"4.4", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_4.lettre, true) })},
   // Calcul 4.5 - un tableau et trois courbes : fusion le 30/09/2026 des anciens 6.6 (I) et 6.7 (II),
   // meme consigne mot pour mot -> une section, sous-questions a) et b) (chacune son tableau et ses
   // trois courbes, la lettre est portee par le texte d'introduction de la figure).
-  {id:"4.5 a)", type:"qcm", gen: () => ({ texteLibre:true, enonce:"\\(f'\\) est la fonction dérivée de :", bonneReponse: paramsGraphiques.g6_5a.bonneReponse })},
-  {id:"4.5 b)", type:"qcm", gen: () => ({ texteLibre:true, enonce:"\\(f'\\) est la fonction dérivée de :", bonneReponse: paramsGraphiques.g6_5b.bonneReponse })},
+  {id:"4.5 a)", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_5a.bonneReponse, true) })},
+  {id:"4.5 b)", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_5b.bonneReponse, true) })},
   // Calcul 4.6 (ex-6.8) - tangente et rayon (7 items : etapes d'un meme probleme guide, pas des exemples -- non reduit, déjà génériques en t : rien à randomiser)
   {id:"4.6 a)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Exprimer \\(OM(t)\\) en fonction de \\(t\\)", reponse:"sqrt(t^2+yt^2)" })},
   {id:"4.6 b)", type:"alg", gen: () => ({ texteLibre:true, enonce:"En déduire une expression de \\(y_t\\) en fonction de \\(t\\)", reponse:"sqrt(1-t^2)" })},
@@ -1433,7 +1456,8 @@ let exercices = genererExercices();
 const groupes = {
   "grille-4-1": [0,1,2],
   "grille-4-2": [3,4],
-  "grille-4-3": [5,6,7],
+  "grille-4-3a": [5,6],
+  "grille-4-3b": [7],
   "grille-4-4": [8],
   "grille-4-5a": [9],
   "grille-4-5b": [10],
@@ -2163,7 +2187,7 @@ function verifierUne(idx) {
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.type === 'cercle') ok = checkCercle(val, ex.cx, ex.cy, ex.r);
   else if (ex.type === 'vraifaux') ok = checkVraiFaux(val, ex.estVrai);
-  else if (ex.type === 'qcm') ok = val.trim().toLowerCase() === ex.bonneReponse.toLowerCase();
+  else if (ex.type === 'qcm') ok = numeroFonctionQCM(val) !== null && numeroFonctionQCM(val) === numeroFonctionQCM(ex.bonneReponse, true);
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
@@ -2577,7 +2601,7 @@ function formaterReponse(ex) {
       return ex.estVrai ? '\\text{Vrai}' : '\\text{Faux}';
     }
     if (ex.type === 'qcm') {
-      return `\\text{Réponse } ${ex.bonneReponse}`;
+      return `f_{${numeroFonctionQCM(ex.bonneReponse, true)}}`;
     }
     if (ex.type === 'vecteur') {
       return `(${jsVersLatex(ex.vx)}\\,;\\,${jsVersLatex(ex.vy)})`;
@@ -2717,6 +2741,7 @@ function toggleToutesReponses() {
 function placeholderPour(ex) {
   if (ex.formeYax) return 'y=ax+b';
   if (ex.formePuissance2) return '2^k';
+  if (ex.type === 'qcm') return 'f1, f2 ou f3';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -2755,7 +2780,7 @@ function aideContextuellePour(ex) {
     return "Écrire simplement <code>vrai</code> ou <code>faux</code>.";
   }
   if (ex.type === 'qcm') {
-    return "Écrire la lettre de la bonne réponse : <code>a</code>, <code>b</code>, <code>c</code> ou <code>d</code>.";
+    return "Écrire le nom de la fonction choisie : <code>f1</code>, <code>f2</code> ou <code>f3</code> (touches du clavier), ou simplement son numéro <code>1</code>, <code>2</code> ou <code>3</code>.";
   }
   if (ex.type === 'intervalle') {
     return "Écrire un intervalle avec des crochets : <code>]-2;5[</code> (bornes exclues) ou <code>[-2;5]</code> (bornes incluses). Pour une réunion de deux intervalles, séparer par « ∪ » : <code>]-∞;1[ ∪ ]3;+∞[</code>. Écrire <code>ℝ</code> si la réponse est l'ensemble des réels, ou <code>∅</code> s'il n'y a aucune solution.";
@@ -2845,7 +2870,8 @@ function construireGrilles() {
       div.className = indices.length === 1 ? 'question question-seule' : 'question';
       div.id = 'q-' + idx;
       // Un groupe reduit a une seule question n'a pas besoin de sa lettre a) : superflu.
-      const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
+      // ex.repere (4.3 a), 30/09/2026) : repere impose, a la place de la lettre automatique.
+      const lettre = ex.repere || (indices.length === 1 ? '' : (lettresEtendues[pos] || ''));
       const typesSansEgal = ['cercle', 'vraifaux', 'ineq', 'intervalle'];
       const enonceContientEgal = typeof ex.enonce === 'string' && /[=<>]|\\leqslant|\\geqslant|\\leq|\\geq|\\ne/.test(ex.enonce);
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
@@ -2948,10 +2974,9 @@ function genererClavierPour(idx, ex) {
   if (ex.type === 'qcm') {
     return `
       <div class="clavier-groupe">
-        <button onclick="inserer(${idx},'a')">a</button>
-        <button onclick="inserer(${idx},'b')">b</button>
-        <button onclick="inserer(${idx},'c')">c</button>
-        <button onclick="inserer(${idx},'d')">d</button>
+        <button onclick="inserer(${idx},'f1')">f₁</button>
+        <button onclick="inserer(${idx},'f2')">f₂</button>
+        <button onclick="inserer(${idx},'f3')">f₃</button>
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
       </div>`;
   }
@@ -3361,7 +3386,7 @@ function construireGraphique6_3() {
     {x0:Math.max(bord1,q-2.2), x1:Math.min(bord2,q+2.2), pente:penteQ, px:q, py:r, couleur:'#e74c3c', label:'T1'}
   ]);
   document.getElementById('graphique-4-3').innerHTML = `
-    <p>Dans le repère ci-dessous, on a représenté le graphe d'une fonction <em>f</em> définie et dérivable sur ℝ ainsi que deux de ses tangentes.</p>
+    <p><span class="q-lettre">a)</span> Dans le repère ci-dessous, on a représenté le graphe d'une fonction \\(f\\) définie et dérivable sur ℝ ainsi que deux de ses tangentes.</p>
     <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
   activerZoomSvg(document.getElementById('graphique-4-3'));
   activerCurseurSvg(document.getElementById('graphique-4-3'));
@@ -3377,7 +3402,7 @@ function construireGraphique6_3g() {
     {x0:Math.max(bord1,p2-2.2), x1:Math.min(bord2,p2+2.2), pente:penteP2, px:p2, py:g(p2), couleur:'#1a9e75', label:'T'}
   ]);
   document.getElementById('graphique-4-3g').innerHTML = `
-    <p>Dans le repère ci-dessous, on a tracé la représentation graphique d'une fonction <em>g</em> définie et dérivable sur ℝ ainsi que l'une de ses tangentes.</p>
+    <p><span class="q-lettre">b)</span> Dans le repère ci-dessous, on a tracé la représentation graphique d'une fonction \\(g\\) définie et dérivable sur ℝ ainsi que l'une de ses tangentes.</p>
     <div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>`;
   activerZoomSvg(document.getElementById('graphique-4-3g'));
   activerCurseurSvg(document.getElementById('graphique-4-3g'));
@@ -3560,7 +3585,7 @@ function construireGraphique6_4() {
   const { r1, r2, k, ordre, xmin, xmax, ymin, ymax } = paramsGraphiques.g6_4;
   const fprime = x => k*(x-r1)*(x-r2);
   const svgDeriv = genererSVGCourbe(fprime, xmin, xmax, ymin, ymax, undefined, 380, 290);
-  const noms = ['f₁','f₂','f₃'];
+  const noms = [1, 2, 3].map(i => `f<tspan dy="4" font-size="10" font-style="normal">${i}</tspan>`);
   const tables = ordre.map((t,i) => genererTableauVariation(noms[i], t.positions, t.sens)).join('');
   let html = `<p>On considère \\(f_1\\), \\(f_2\\) et \\(f_3\\) des fonctions définies et dérivables sur ℝ. La courbe représentative d'une certaine fonction dérivée, notée \\(f'\\), est tracée dans le repère ci-dessous ainsi que trois tableaux de variation.</p>
   <div class="figure-centree"><span class="figure-avec-curseur">${svgDeriv}${boutonCurseurHTML()}</span></div>
@@ -3581,7 +3606,7 @@ function construireGraphiqueQCMCourbe(divId, params, texteIntro, largeur, hauteu
   <div class="qcm-grille-figures">`;
   ['a','b','c'].forEach((lettre, i) => {
     const svg = genererSVGCourbe(ordre[i].fn, xmin, xmax, plageGlobale.ymin, plageGlobale.ymax, undefined, largeur, hauteur);
-    html += `<div><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span><div class="qcm-figure-label">f_${lettre}</div></div>`;
+    html += `<div><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span><div class="qcm-figure-label">\\(f_${i + 1}\\)</div></div>`;
   });
   html += '</div>';
   document.getElementById(divId).innerHTML = html;
@@ -3683,7 +3708,10 @@ async function initialiserFiche() {
   }
   const brouillonValide = brouillon
     && Array.isArray(brouillon.exercices)
-    && brouillon.exercices.length === exercices.length;
+    && brouillon.exercices.length === exercices.length
+    // meme liste de questions (ids) : un brouillon anterieur a une reorganisation de la fiche
+    // (ex. 4.3 reordonne le 30/09/2026) placerait les questions sous la mauvaise figure
+    && brouillon.exercices.every((e, i) => e && e.id === exercices[i].id);
   if (brouillonValide) {
     exercices = brouillon.exercices;
     restaurerEtatSupplementaire(brouillon.extra);
