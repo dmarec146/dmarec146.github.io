@@ -4548,6 +4548,54 @@ de changer ce réglage sans qu'il en reparle.
   (1.5, 1.6, 1.7, 1.8 : un titre, bonnes lettres), « Générer une nouvelle
   version » OK, aucune erreur console.
 
+- **Fiche 6 de Première (cahier 2, Dérivation I) — mise aux règles
+  (30/09/2026), 19 → 18 questions, 8 → 6 calculs.** Jamais réduite jusque-là
+  (seul le correctif du « a) » des questions seules, 25/09).
+  - Automatismes 6.1 + 6.2 : 5 questions, sous le plafond de 6 — inchangés
+    (6.1 : somme, produit, quotient de puissances, gradué ; 6.2 : degré 2
+    puis 3).
+  - **6.3 « Lecture graphique d'un nombre dérivé » = anciens 6.3 (I,
+    courbe de f) + 6.4 (II, courbe de g)**, 4 → 3 : les deux courbes
+    affichées l'une après l'autre sous un seul titre, puis une grille a) b)
+    c) — a) f'(p)=0 (tangente horizontale, classique), b) g'(p₂) (pente
+    entière, ±1 ou ±5), c) f'(q) (pente fractionnaire, ±½ ou ±3/2).
+    Retirée : l'ancienne 6.4 b) g'(0)=0, deuxième lecture de tangente
+    horizontale (doublon de a) ; la tangente horizontale de g n'est plus
+    tracée (« ainsi que l'une de ses tangentes »). **Tirage forcé** : f'(q)
+    était entière pour la moitié du panel `PANEL_6_3` — filtrée pour ne
+    garder que les 4 entrées à pente fractionnaire, sinon le cas délicat
+    pouvait ne jamais sortir (500 tirages : b) toujours entière, c)
+    toujours fractionnaire).
+  - 6.5 → **6.4** « Une courbe, trois tableaux » : inchangé (compétence
+    inverse de 6.5, distincte).
+  - **6.5 « Un tableau et trois courbes » = anciens 6.6 (I) + 6.7 (II)**,
+    même consigne mot pour mot : un titre, sous-questions a) et b), chacune
+    avec son tableau et ses trois courbes (la lettre est portée par le
+    paragraphe d'introduction de la figure, ids `6.5 a)`/`6.5 b)`, grilles
+    `grille-6-5a/5b`).
+  - 6.8 → **6.6** « Tangente et rayon » : 7 items conservés — ce sont les
+    étapes enchaînées d'un même problème guidé (OM(t) → y_t → f'(t) →
+    tangente → vecteurs → orthogonalité), pas 7 exemples ; en couper une
+    casserait le raisonnement.
+  Renommages internes cohérents (jetons temporaires pour éviter les
+  collisions) : `g6_4→g6_3g`, `g6_5→g6_4`, `g6_6/7→g6_5a/5b`,
+  `construireGraphique6_*`, `graphique-6-*`, `PANEL_6_4→PANEL_6_3G`,
+  `PANEL_6_5_RACINES→PANEL_6_4_RACINES`, `figure-6-8→figure-6-6`.
+  Script `.claude/scratch/fiche06.js`. Vérifié : `vm.Script` 52/52, ids ↔
+  `groupes` cohérents (18 champs, ordre DOM = ordre du tableau), 500
+  tirages auto-cohérents sans échec, saisie de toutes les bonnes réponses
+  18/18, panneau « Voir toutes les réponses » 18/18 sans erreur MathJax,
+  captures (6.3 : deux courbes puis a/b/c ; 6.5 : un titre puis a) et b)),
+  « Générer une nouvelle version » OK (6 figures redessinées), aucune
+  erreur console. Piège de test noté : après `setValue()` sur un
+  `<math-field>`, MathLive émet son évènement `input` en différé, ce qui
+  efface le statut affiché par un `verifierTout()` lancé juste après — le
+  score et `saisies` restent justes ; relancer `verifierTout()` pour voir
+  les coches.
+
+  **Toutes les fiches de Première (1 à 28) sont désormais passées aux
+  règles de simplification.**
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
