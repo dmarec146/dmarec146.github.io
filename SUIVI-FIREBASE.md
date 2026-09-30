@@ -4426,6 +4426,47 @@ de changer ce réglage sans qu'il en reparle.
   (`\int_0^{\infty}\!\placeholder{}\,\mathrm{d}x`), { } fonctionnels ;
   aucune erreur console.
 
+- **Cases grisées de ÷ et √, accolades invisibles (30/09/2026)** — retour de
+  David : « le bouton division affiche bien une fraction mais on a perdu le
+  champ grisé au numérateur […] même chose pour racine carrée ». Reproduit
+  par vrais clics (le clavier MathLive et le clavier maison ensembles/cercle
+  de Première 01–04 avaient bien leurs cases) :
+  1. **÷ ajouté par `claviers.js`** (champs mathématiques) : insérait
+     `\frac{#@}{#?}`, qui prend le nombre tapé juste avant comme numérateur
+     (5 ÷ → 5/▢, pas de case au numérateur). Désormais `\frac{#0}{#0}`,
+     comme a/b : deux cases grisées, curseur au numérateur (une sélection
+     éventuelle devient le numérateur). En champ texte, ÷ reste `/`, comme
+     sur les claviers complets.
+  2. **√ des champs mathématiques** (variante `inserer` des 14 fiches
+     Première 14, 24, Seconde 06, 14–23, 25 — défaut antérieur à ces
+     retouches) : `\sqrt{}` + `moveToPreviousChar` insérait une racine
+     vide, sans case. Désormais `\sqrt{#0}` (case grisée sélectionnée,
+     remplacée par le premier chiffre), le reste du mécanisme
+     `boiteRacineOuverte` inchangé (les chiffres vont dans la racine, une
+     autre touche en sort : √ 5 + 1 → `\sqrt5+1`).
+  3. **√ des champs texte de Première** (27 fiches, `insererRacine`) : sur
+     un champ vide (rien de sélectionné), `√()` devient `√(▢)` avec le ▢
+     sélectionné, comme a/b ; sélection d'un nombre inchangée (`3` →
+     `√(3)`).
+  4. **Trouvé en testant, dans les mêmes 14 fiches** : les touches { } des
+     champs mathématiques insèraient `{` brut, que MathLive traite comme un
+     groupe LaTeX invisible — {1;2} s'affichait « 1;2 » (la correction
+     passait quand même, `checkEnsemble` ignorant les accolades, mais
+     l'élève ne voyait pas ce qu'il écrivait ; { puis √ perdait même
+     l'accolade). `inserer` convertit désormais `{`/`}` en `\{`/`\}` pour
+     un `<math-field>`.
+
+  Scripts `.claude/scratch/cases-grisees.js` et `accolades-mf.js`.
+  **Piège rencontré** : les heredocs Bash de cet outil réduisent `\\` à `\`
+  — une première passe avait écrit `'\' + symbole` (erreur de syntaxe dans
+  les 14 fiches), réparée aussitôt avec `String.fromCharCode(92)` ; pour
+  tout script contenant des barres obliques inverses, l'écrire avec l'outil
+  Write, pas un heredoc. Vérifié : `vm.Script` 52/52, une seule variante de
+  chaque fonction touchée ; Seconde 14 par vrais clics (5 ÷ → 5 ▢/▢,
+  √ au numérateur → √▢, puis 3 dans la racine ; {-19;19}, {-√2;√2}, {}
+  affichés avec accolades et acceptés) ; Première 09 champ texte (√ →
+  `√(▢)`, a/b √ 5 → `(√(5))/(▢)`).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

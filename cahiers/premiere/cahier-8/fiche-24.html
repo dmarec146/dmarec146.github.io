@@ -1530,10 +1530,13 @@ const boiteRacineOuverte = {};
 function inserer(idx, symbole) {
   const input = document.getElementById('input-' + idx);
   if (input.tagName === 'MATH-FIELD') {
+    // Accolades d'ensemble : "{" seul ouvre un groupe LaTeX invisible
+    // ("{1;2}" s'affichait "1;2") -- \{ et \} sont les vraies accolades.
+    if (symbole === '{' || symbole === '}') symbole = '\\' + symbole;
     if (symbole === '√') {
       if (boiteRacineOuverte[idx]) input.executeCommand('moveToNextChar');
-      input.insert('\\sqrt{}');
-      input.executeCommand('moveToPreviousChar');
+      // Case grisee a remplir, comme la touche √ du clavier MathLive.
+      input.insert('\\sqrt{#0}');
       boiteRacineOuverte[idx] = true;
     } else if (/^[0-9]$/.test(symbole) && boiteRacineOuverte[idx]) {
       input.insert(symbole);
@@ -1579,10 +1582,11 @@ function insererRacine(idx) {
   const start = input.selectionStart ?? input.value.length;
   const end = input.selectionEnd ?? input.value.length;
   const selection = input.value.slice(start, end);
-  // Emplacement vide ▢ selectionne (numerateur ou denominateur d'une fraction
-  // tout juste inseree) : la racine le remplace et offre son propre ▢ a
-  // remplir -- sinon elle s'inserait a cote, "(√(▢)5)/(▢)".
-  if (selection === '▢') {
+  // Rien de selectionne, ou emplacement vide ▢ selectionne (numerateur ou
+  // denominateur d'une fraction tout juste inseree) : racine avec son
+  // propre ▢ a remplir, comme la touche a/b -- sinon elle s'inserait a cote
+  // du ▢, "(√(▢)5)/(▢)".
+  if (!selection || selection === '▢') {
     input.value = input.value.slice(0, start) + '√(▢)' + input.value.slice(end);
     placerCurseur(input, start + 2, start + 3);
     reinitialiserStatut(idx);
@@ -1590,8 +1594,7 @@ function insererRacine(idx) {
   }
   const symbole = '√(' + selection + ')';
   input.value = input.value.slice(0, start) + symbole + input.value.slice(end);
-  const curseur = selection ? start + symbole.length : start + 2;
-  placerCurseur(input, curseur);
+  placerCurseur(input, start + symbole.length);
   reinitialiserStatut(idx);
 }
 

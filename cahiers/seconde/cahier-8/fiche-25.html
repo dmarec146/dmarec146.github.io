@@ -3648,10 +3648,13 @@ const boiteRacineOuverte = {};
 function inserer(idx, symbole) {
   const input = document.getElementById('input-' + idx);
   if (input.tagName === 'MATH-FIELD') {
+    // Accolades d'ensemble : "{" seul ouvre un groupe LaTeX invisible
+    // ("{1;2}" s'affichait "1;2") -- \{ et \} sont les vraies accolades.
+    if (symbole === '{' || symbole === '}') symbole = '\\' + symbole;
     if (symbole === '√') {
       if (boiteRacineOuverte[idx]) input.executeCommand('moveToNextChar');
-      input.insert('\\sqrt{}');
-      input.executeCommand('moveToPreviousChar');
+      // Case grisee a remplir, comme la touche √ du clavier MathLive.
+      input.insert('\\sqrt{#0}');
       boiteRacineOuverte[idx] = true;
     } else if (/^[0-9]$/.test(symbole) && boiteRacineOuverte[idx]) {
       input.insert(symbole);

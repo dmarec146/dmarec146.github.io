@@ -73,7 +73,11 @@
     { label: '+', texte: '+', latex: '+' },
     { label: '−', texte: '-', latex: '-' },
     { label: '×', texte: '*', latex: '\\times' },
-    { label: '÷', texte: '/', latex: '\\frac{#@}{#?}' },
+    // ÷ en champ mathematique : fraction a deux cases grisees, comme a/b
+    // (retour de David le 30/09/2026 -- la premiere version, '\frac{#@}{#?}',
+    // prenait le nombre tape juste avant comme numerateur, sans case grisee).
+    // Une selection eventuelle devient le numerateur (#0).
+    { label: '÷', texte: '/', latex: '\\frac{#0}{#0}' },
   ];
   const libelle = (b) => b.textContent.trim().replace('-', '−');
   const estOperation = (b) => OPERATIONS.some((op) => op.label === libelle(b)) || libelle(b) === 'a/b';
