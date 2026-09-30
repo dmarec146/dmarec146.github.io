@@ -2309,8 +2309,20 @@ function entoureParParentheses(s) {
   return prof === 0;
 }
 
+// Couples lus en LaTeX brut (valeurDuChampLatex) : convertir fractions, virgules decimales et
+// \left( \right) en ecriture calculable avant de comparer (30/09/2026 -- auparavant une fraction
+// tapee au clavier, \frac{3}{2}, ou une virgule, 1{,}5, faisait refuser une reponse juste).
+function latexNombresVersAscii(s) {
+  let t = String(s).replace(/\\left|\\right/g, '').replace(/\{,\}/g, '.');
+  let avant;
+  do {
+    avant = t;
+    t = t.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)');
+  } while (t !== avant);
+  return t.replace(/\\cdot|\\times/g, '*');
+}
 function checkPaire(userInput, correctA, correctB, vars) {
-  let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g, '');
+  let nettoye = normaliserSaisie(latexNombresVersAscii(userInput)).trim().replace(/\s/g, '');
   if (entoureParParentheses(nettoye)) nettoye = nettoye.slice(1, -1);
   const parties = nettoye.split(';');
   if (parties.length !== 2) return false;
@@ -2333,7 +2345,7 @@ function checkPaire(userInput, correctA, correctB, vars) {
   } catch (e) { return false; }
 }
 function checkPointCoordonnees(userInput, correctA, correctB, vars) {
-  const nettoye = String(userInput).trim();
+  const nettoye = latexNombresVersAscii(userInput).trim();
   const m = nettoye.match(/^\((.*)\)$/);
   if (!m) return false;
   return checkPaire(m[1], correctA, correctB, vars);

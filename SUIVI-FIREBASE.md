@@ -4860,6 +4860,45 @@ de changer ce réglage sans qu'il en reparle.
   exact, ±0,1, ±0,2 acceptés ; ±0,25 et ±0,3 refusés ; fraction −1/2
   acceptée.
 
+- **Marge de ±0,2 étendue aux autres lectures graphiques + couples en
+  LaTeX (30/09/2026).** David : « applique la même marge aux autres
+  lectures graphiques ». Inventaire des 50 fiches (en Première, seule la
+  fiche 4 en avait) ; en Seconde :
+  - **marge ajoutée** (drapeau `margeLecture:0.2` sur le générateur ;
+    aiguillage en tête de `verifierUne`, sauf questions `approx` ou
+    `intervalle` qui gardent leur propre tolérance ;
+    `verifierLectureGraphique` : valeur seule, ensemble {a;b} comparé trié
+    élément par élément, couple (x;y), équation réduite y=mx+p avec m et p
+    comparés et expression affine exigée ; aide « ? » complétée par
+    « Lecture graphique : une valeur à 0,2 près de la valeur exacte est
+    acceptée ») : **14.7 a–d** (images/antécédents sur une courbe),
+    **15.4 a–c** (résoudre graphiquement f(x)=k — seulement quand le
+    tirage donne un ensemble exact ; la variante « valeur approchée »
+    gardait déjà 0,2), **16.4** (équation réduite de droites lues),
+    **18.9** (diagramme en boîte, axe gradué), **21.3** (coordonnées de
+    points), **23.3** (coordonnées de vecteurs) ;
+  - **déjà tolérés** : 15.4 d–f, 15.5, 15.8 b–c (0,2) ; **14.7 e** garde
+    sa tolérance de 0,5 (plus souple, graphique conçu pour elle) ;
+  - **non concernés** : 18.7 (bâtons, effectifs écrits sur le diagramme,
+    calcul de moyenne/médiane exact), 18.8 (pourcentages écrits), 20.5
+    (arbre, valeurs écrites), 15.8 a (calcul exact à partir de la formule).
+  **Défaut trouvé en testant, corrigé** (fiches Seconde 16, 22, 23, 25) :
+  les couples (x;y) y sont lus en LaTeX brut (`valeurDuChampLatex`) et
+  `checkPaire`/`checkPointCoordonnees` ne comprenaient ni `\frac{a}{b}`
+  (toute fraction tapée au clavier MathLive), ni `1{,}5` (virgule), ni
+  `\left( \right)` : une réponse juste comme (−9/2 ; 2) était **refusée**
+  (seul « 3/2 » ou « 1.5 » tapé tel quel passait). Nouvelle fonction
+  `latexNombresVersAscii` appliquée avant la comparaison (et dans la
+  marge de lecture). Fiche 21 non concernée (lecture ascii-math).
+  Scripts `.claude/scratch/marge-lecture-seconde.js`, `paires-latex.js`.
+  Vérifié : `vm.Script` 50/50 ; vrais champs MathLive pour chaque question
+  concernée (exact et ±0,2 acceptés, ±0,3 refusé ; 16.4 : y=mx+p exact,
+  m+0,15/p−0,2 acceptés, m+0,3 ou p+0,3 ou y=x²+1 refusés ; ensembles
+  dans le désordre acceptés ; ensemble vide) ; tous les couples des
+  fiches 16, 22, 23, 25 saisis avec `\frac` → acceptés (et virgule
+  décimale pour les valeurs finies) ; 8 fiches rechargées + « Générer
+  une nouvelle version » sans erreur.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive

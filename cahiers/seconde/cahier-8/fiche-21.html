@@ -2395,7 +2395,7 @@ const generateurs = [
   // une seule figure partagee (contexteFigure) ; consigne commune factorisee dans le contexte
   // (David, 2026-09-22 : "l'enonce est identique, tu peux agencer la question pour ne pas la
   // repeter trois fois"), chaque item reduit au seul nom du point ----------
-  {id:"21.3 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+  {id:"21.3 a)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const pts = tirerPointsDistincts(3, 5);
     ptsRepere20_3 = pts;
     const noms = ['A','B','C'];
@@ -2403,11 +2403,11 @@ const generateurs = [
     const figure = genererSVGRepere(elements);
     return { contexteTexte: "Le repère ci-dessus est orthonormé. Donner les coordonnées de chacun des points suivants.", contexteFigure: figure, enonce: `Point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [] };
   }},
-  {id:"21.3 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+  {id:"21.3 b)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const p = ptsRepere20_3[1];
     return { enonce: `Point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
   }},
-  {id:"21.3 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
+  {id:"21.3 c)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const p = ptsRepere20_3[2];
     return { enonce: `Point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
   }},
@@ -2737,6 +2737,7 @@ function remplirIntrosGroupes() {
 const lettres = ["a","b","c","d","e","f"];
 
 function necessiteAide(ex) {
+  if (ex.margeLecture && ex.type !== 'approx' && ex.type !== 'intervalle') return true;
   if (ex.type === 'ouiNon') return true;
   if (ex.type === 'paire') return true;
   if (ex.comparaison) return true;
@@ -2749,7 +2750,12 @@ function necessiteAide(ex) {
   return false;
 }
 
+// Mention de la marge de lecture ajoutee a l'aide existante (30/09/2026).
 function aideContextuellePour(ex) {
+  const base = aideContextuellePourBase(ex);
+  return (ex.margeLecture && ex.type !== 'approx' && ex.type !== 'intervalle') ? (base ? base + ' ' : '') + "Lecture graphique : une valeur à 0,2 près de la valeur exacte est acceptée." : base;
+}
+function aideContextuellePourBase(ex) {
   if (ex.type === 'ouiNon') {
     return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
   }
@@ -3250,6 +3256,50 @@ function checkEqualNumeric(userInput, correctExpr) {
 // (extension par rapport a la version d'origine de la fiche 6 de Seconde, necessaire ici puisque
 // cette fiche est la premiere ou un ensemble d'antecedents peut legitimement etre vide), et
 // convertit "√" en "sqrt" avant evaluation (necessaire pour les antecedents non entiers) ----------
+// Lectures graphiques (30/09/2026, demande de David -- meme regle qu'en Premiere 4.3) : toute
+// valeur lue a `margeLecture` (0,2) pres de la valeur exacte est acceptee, la lecture se faisant
+// souvent sur telephone. Valeur seule, ensemble {a;b} (compare trie, element par element),
+// coordonnees (x;y) d'un point ou d'un vecteur, equation reduite y=mx+p (m et p compares, expression
+// affine en x exigee). Les questions approchees ou d'intervalle gardent leur propre tolerance.
+function nombreLu(s) {
+  try { const v = math.evaluate(String(s)); return (typeof v === 'number' && isFinite(v)) ? v : null; }
+  catch (e) { return null; }
+}
+function procheLecture(u, c, marge) { return u !== null && c !== null && Math.abs(u - c) <= marge + 1e-9; }
+function verifierLectureGraphique(ex, val) {
+  const marge = ex.margeLecture;
+  if (ex.type === 'paire') {
+    const m = String(val).trim().match(/^\((.*)\)$/);
+    if (!m) return false;
+    let s = normaliserSaisie(m[1]).trim().replace(/\s/g, '');
+    if (typeof entoureParParentheses === 'function' && entoureParParentheses(s)) s = s.slice(1, -1);
+    const parties = s.split(';');
+    if (parties.length !== 2) return false;
+    return procheLecture(nombreLu(parties[0]), nombreLu(ex.pa), marge) && procheLecture(nombreLu(parties[1]), nombreLu(ex.pb), marge);
+  }
+  if (ex.equationReduite) {
+    const m = String(val).replace(/\s/g, '').match(/^y=(.+)$/i);
+    if (!m || /y/i.test(m[1])) return false;
+    let fu, fc;
+    try { fu = math.parse(normaliserSaisie(m[1])).compile(); fc = math.parse(ex.reponse).compile(); } catch (e) { return false; }
+    const val_ = (f, x) => { try { const v = f.evaluate({ x }); return (typeof v === 'number' && isFinite(v)) ? v : null; } catch (e) { return null; } };
+    const u = [0, 1, 2, -3].map((x) => val_(fu, x));
+    if (u.some((v) => v === null)) return false;
+    const pente = u[1] - u[0];
+    if (Math.abs((u[2] - u[1]) - pente) > 1e-9 || Math.abs((u[0] - u[3]) - 3 * pente) > 1e-9) return false;
+    const c0 = val_(fc, 0), c1 = val_(fc, 1);
+    return procheLecture(pente, c1 - c0, marge) && procheLecture(u[0], c0, marge);
+  }
+  if (ex.reponse && String(ex.reponse).trim().startsWith('{')) {
+    const liste = (s) => String(s).replace(/[{}]/g, '').split(';').map((x) => x.trim()).filter((x) => x !== '');
+    const u = liste(normaliserSaisie(String(val))).map(nombreLu), c = liste(ex.reponse).map(nombreLu);
+    if (u.length !== c.length || u.some((v) => v === null) || c.some((v) => v === null)) return false;
+    u.sort((a, b) => a - b); c.sort((a, b) => a - b);
+    return u.every((v, i) => procheLecture(v, c[i], marge));
+  }
+  return procheLecture(nombreLu(normaliserSaisie(String(val))), nombreLu(ex.reponse), marge);
+}
+
 function checkEnsemble(userInput, correctSet) {
   const nettoyerValeur = (s) => convertirRacineUnicode(s).replace(/[∗×·]/g, '*');
   const nettoyerEtSplit = (s) => nettoyerValeur(s).trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
@@ -3513,7 +3563,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
+  if (ex.margeLecture && ex.type !== 'approx' && ex.type !== 'intervalle') ok = verifierLectureGraphique(ex, val);
+  else if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
   else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.comparaison) ok = checkComparaisonFonctions(val, ex.reponse);
