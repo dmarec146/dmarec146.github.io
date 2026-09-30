@@ -4695,6 +4695,39 @@ de changer ce réglage sans qu'il en reparle.
   chargement sans erreur. Scripts `.claude/scratch/fiche03.js`,
   `fiche17.js`.
 
+- **Fiche 2 de Première, 2.5 — racines exigées sous forme simplifiée
+  (30/09/2026).** Question de David : les racines sont-elles forcées
+  entières/rationnelles ? Non — a), b), d) irrationnelles (racine carrée),
+  c) rationnelles, entières seulement par hasard ; David : pas de racines
+  forcées, mais « imposer la valeur simplifiée (lorsque cela est possible)
+  et le dire dans le titre ». Avant, toute écriture équivalente était
+  acceptée, et le corrigé lui-même affichait parfois une forme non
+  simplifiée (« (4−2√7)/2 »).
+  - Titre : « Déterminer les racines de chaque polynôme, **sous forme
+    simplifiée**. » ; aide « ? » dédiée (exemples acceptés/refusés).
+  - `racineSimplifieeStr(P, Q, rad, D)` : écrit (P+Q√rad)/D en retirant le
+    facteur commun à P, Q, D (2−√7, (3+√3)/2, −√2/2) — utilisé par
+    `racinesSurd` (a, b) et pour d) ; c) utilisait déjà des fractions
+    réduites.
+  - `estRacineSimplifiee` / `ensembleRacinesSimplifiees`, appelées pour
+    les exercices marqués `racinesSimplifiees:true` (en plus de
+    `checkEnsemble`) : chaque racine = somme de morceaux, terme élémentaire
+    (c, √k, c√k) ou fraction N/d ; refusés : radicande avec facteur carré
+    (√8), fraction réductible (pgcd de tous les coefficients du numérateur
+    et du dénominateur ≠ 1 : (4−2√7)/2, (6+2√3)/4, −8/10), plusieurs termes
+    rationnels ou de même radicande (1+1−√7, √2+√2), décimaux, coefficient
+    1 ou 0 écrit, produit d'entiers (2*3). (5+√2)/10 et 1/2+√2/10 sont
+    tous deux acceptés.
+  Vérifié : 27 cas unitaires (13 acceptés, 14 refusés, tous comme
+  attendu) ; 500 tirages : chaque réponse attendue acceptée, et sa
+  version « doublée » (numérateur et dénominateur ×2, même valeur)
+  refusée ; vrais champs MathLive : saisie complète 31/31, puis les 4
+  réponses de 2.5 en version non simplifiée → refusées (27/31) ; corrigé
+  et panneau en forme simplifiée, sans erreur MathJax ; aucune erreur de
+  la page (le message `eff`/`getComputedStyle` vu dans la console vient
+  d'un script injecté par l'outil de capture du navigateur, pas de la
+  fiche).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
