@@ -4972,6 +4972,46 @@ de changer ce réglage sans qu'il en reparle.
   correspondant bien à l'étiquette de la bonne courbe / du bon tableau ;
   aucune erreur console. Vérificateur de syntaxe : 50 fiches, 0 erreur.
 
+- **Fiche 5 de Première (Dérivation II) — refonte demandée par David
+  (01/10/2026), 29 → 27 questions, 12 → 9 calculs.**
+  - **5.4** : polynômes de degré 2 à 5 (« privilégier les polynômes de
+    degré 2 à 5 » ; avant : 4, 5, 6) — a) degré 2 entier, b) degré 3 ou 4,
+    c) degré 5 (coefficients fractionnaires en b et c comme avant).
+  - **5.6 « Inverses et quotients »** = fusion des anciens 5.6 (1/u) et 5.7
+    (quotients), 4 exemples : a) k/(affine), b) k/(trinôme), k entier non
+    nul quelconque (plus seulement 1) ; c) quotient de deux affines
+    (ps − qr ≠ 0 imposé : sinon fonction constante) ; d) ax/(x²+b), a et b
+    entiers non nuls quelconques.
+  - **5.7 « Produits »** remplace les anciens 5.8 (quotients à simplifier)
+    et 5.9 (dériver les quotients simplifiés) : a) affine × trinôme
+    (réponse développée attendue mais toute forme égale acceptée),
+    b) affine × √x, c) trinôme × √x (ces deux-là « sur ]0;+∞[ » dans
+    l'énoncé).
+  - **5.8 « Signe de la dérivée »** (ex-5.10) : ajout de e) ax/(x²+b) avec
+    b > 0 (définie sur ℝ) → [−√b ; √b] si a > 0, extérieur sinon. Bornes
+    irrationnelles : la saisie `√(5)` / `sqrt(5)` est acceptée ; la
+    correction affiche √b simplifiée (champs `texBas`/`texHaut` d'un
+    intervalle, prioritaires dans `formaterIntervalleSpec`). 5 exemples :
+    au-delà de la règle des 4, mais c'est l'ajout explicitement demandé.
+    **Bug corrigé au passage en 5.8 d)** f = 1/(Ax²+Bx+C) : le trinôme
+    pouvait s'annuler (A < 0, ou B² > 4AC) → f non définie partout et
+    intervalle attendu faux ; discriminant < 0 désormais imposé.
+  - **5.11 « Dériver puis factoriser » supprimé** (table
+    `FORMES_FACTORISEES` vide), **5.12 → 5.9** (sommes).
+  - **Cadre gris des calculs avancés** : le `<div class="bloc-avance">`
+    manquait (le `</div>` final était orphelin) — ajouté autour de
+    « Calculs plus avancés ».
+  - Brouillons : validité exigeant la même liste d'ids (comme fiche 4).
+  Vérifié : 200 tirages, chaque réponse attendue comparée à la dérivée
+  numérique de f (lue dans l'énoncé) et chaque intervalle de 5.8 au signe
+  numérique de f′ sur [−12 ; 12], 0 écart ; pas de valeur interdite en
+  5.8 d) ; saisies réelles : 5.7 b) forme développée et forme
+  (12x−3)/(2√x) acceptées, réponse incomplète refusée ; 5.8 e) `[-√(5);√(5)]`
+  et `sqrt` acceptés, crochets ouverts refusés ; cadre gris présent
+  (contient 5.9, pas la barre de boutons) ; aucune erreur console ;
+  syntaxe 50 fiches, 0 erreur. Scripts `.claude/scratch/fiche05.js` et
+  `fiche05-bloc.js`.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
