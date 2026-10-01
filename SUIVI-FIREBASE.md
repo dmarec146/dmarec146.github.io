@@ -5065,6 +5065,25 @@ de changer ce réglage sans qu'il en reparle.
     exactes, fraction et image recalculées indépendamment), 0 écart ;
     saisies réelles acceptées (champs texte et math-field) ; aucune
     erreur console. Script `.claude/scratch/fiche05-v3.js` (+ Edit).
+  - **Vérification du corrigé** (question de David : « as-tu bien vérifié
+    le corrigé de ces questions ? » — réponse honnête : jusque-là
+    seulement les valeurs attendues et 3 affichages). Valeurs : toutes
+    justes (8 100 réponses sur 300 tirages, recalculées indépendamment).
+    Mais **affichage maladroit** trouvé et corrigé (pré-existant pour 5.4
+    et 5.5) :
+    - coefficients fractionnaires affichés « −3/4 × x² », « (−30)/7 × x⁴ »
+      → `fracTermAscii` écrit désormais « 3*x^2/4 » (rendu 3x²/4) et un
+      premier terme négatif fractionnaire « -(…) » (rendu −30x⁴/7) ;
+    - nombres a + b√D (5.3 b, 5.5) affichés « −(7/9 − 13/3 × √7) » →
+      `snAscii` écrit terme à terme : −7/9 + 13√7/3 ;
+    - ensembles de 5.2 affichés {(−3)/2 ; −1} → {−3/2 ; −1}.
+    Contrôle : 300 tirages sans plus aucun « × » ni « (−a)/b » dans les
+    corrections (hors sommes 5.9, où le × entre k et x^(k−1) est voulu ;
+    5.6 garde un numérateur négatif, ex. (−98x−35)/(…)², écriture usuelle) ;
+    cycle complet sur 3 fiches générées : chaque correction affichée,
+    retapée dans le vrai champ, est acceptée (27/27 ; sommes saisies comme
+    avec la touche Σ) ; panneau « Voir toutes les réponses » : 27 lignes,
+    0 erreur MathJax.
 
 ## Procédure de reprise sur une autre machine
 

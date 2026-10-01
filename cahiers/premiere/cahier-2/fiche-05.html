@@ -1013,7 +1013,12 @@ function fracTermAscii(fr, v, premier) {
   const magStr = fracStr(mag);
   let corps;
   if (!v) corps = magStr;
-  else corps = (mag.n===1&&mag.d===1) ? v : (magStr+'*'+v);
+  // coefficient fractionnaire ecrit « 3*x^2/4 » (01/10/2026) : la correction affiche alors
+  // 3x²/4 d'un seul tenant, au lieu de « 3/4 × x² » (« 3/4*x^2 »)
+  else if (mag.d > 1) corps = (mag.n===1 ? v : mag.n+'*'+v) + '/' + mag.d;
+  else corps = mag.n===1 ? v : (mag.n+'*'+v);
+  // premier terme negatif fractionnaire : « -(…) », sinon affiche « (-30x^4)/7 » ou « (-7)/9 »
+  if (premier && neg && mag.d > 1) return '-(' + corps + ')';
   return (premier?(neg?'-':''):(neg?'-':'+'))+corps;
 }
 
@@ -1079,19 +1084,18 @@ function snMul(x,y,D){
 function snScale(x, k){ return snMk(fracMul(x.a,k), fracMul(x.b,k)); }
 function snAddFrac(x, k){ return snMk(fracAdd(x.a,k), x.b); }
 function snIsZero(x){ return x.a.n===0 && x.b.n===0; }
-function snAsciiTerm(c, D) {
-  const hasA=c.a.n!==0, hasB=c.b.n!==0;
-  if (!hasA && !hasB) return {signe:1, texte:'0'};
-  if (hasA && !hasB) return {signe:c.a.n<0?-1:1, texte:fracStr(fracAbs(c.a))};
-  if (!hasA && hasB) return {signe:c.b.n<0?-1:1, texte:fracStr(fracAbs(c.b))+'*sqrt('+D+')'};
-  const signe = c.a.n<0?-1:1;
-  const bSigne = signe<0?fracNeg(c.b):c.b;
-  const texte = '('+fracStr(fracAbs(c.a))+(bSigne.n<0?'-':'+')+fracStr(fracAbs(bSigne))+'*sqrt('+D+'))';
-  return {signe, texte};
-}
+// a + b*sqrt(D) ecrit terme a terme (01/10/2026) : la correction affichait « -(7/9 - 13/3 × √7) »
+// (signe moins mis en facteur, « × » apres la fraction) ; desormais -7/9 + 13√7/3.
 function snAscii(c, D) {
-  const {signe, texte} = snAsciiTerm(c, D);
-  return (signe<0?'-':'')+texte;
+  const termes = [];
+  if (c.a.n !== 0) { const m = fracAbs(c.a); termes.push({neg: c.a.n < 0, corps: fracStr(m), frac: m.d > 1}); }
+  if (c.b.n !== 0) {
+    const m = fracAbs(c.b);
+    termes.push({neg: c.b.n < 0, corps: (m.n === 1 ? '' : m.n + '*') + 'sqrt(' + D + ')' + (m.d > 1 ? '/' + m.d : ''), frac: m.d > 1});
+  }
+  if (!termes.length) return '0';
+  return termes.map((t, i) => i > 0 ? (t.neg ? '-' : '+') + t.corps
+    : (t.neg ? (t.frac ? '-(' + t.corps + ')' : '-' + t.corps) : t.corps)).join('');
 }
 
 // ---------- Calcul 5.1 : inequations produit et quotient -> intervalle(s) ----------
@@ -2555,7 +2559,15 @@ function formaterReponse(ex) {
     }
     if (ex.type === 'num') {
       if (ex.reponse && ex.reponse.trim().startsWith('{')) {
-        const elements = ex.reponse.replace(/[{}]/g,'').split(';').map(el => jsVersLatex(el.trim()));
+        // rationnel : signe devant la fraction (-\dfrac{3}{2}, pas \dfrac{-3}{2}) -- 01/10/2026
+        const elements = ex.reponse.replace(/[{}]/g,'').split(';').map(el => {
+          el = el.trim();
+          if (/^-?\d+(\/\d+)?$/.test(el)) {
+            const fr = math.fraction(el);
+            return fr.d === 1 ? String(fr.s * fr.n) : `${fr.s < 0 ? '-' : ''}\\dfrac{${fr.n}}{${fr.d}}`;
+          }
+          return jsVersLatex(el);
+        });
         return '\\left\\{' + elements.join('\\,;\\,') + '\\right\\}';
       }
       // si l'expression contient une racine ou une lettre, ce n'est pas un rationnel pur : afficher tel quel
