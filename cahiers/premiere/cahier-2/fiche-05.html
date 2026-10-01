@@ -845,10 +845,10 @@ window.MathJax = {
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 5.1 — Donner (<span class="titre-mise-en-valeur">sous la forme d'un intervalle</span>) l'ensemble des solutions des inéquations suivantes.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 5.1 — Donner l'ensemble des solutions des inéquations suivantes, <span class="titre-mise-en-valeur">sous la forme d'un intervalle ou d'une réunion d'intervalles</span>.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-5-1"></div>
 
-<p class="calcul-titre"><span>Calcul 5.2 — Simplifier les fractions suivantes.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 5.2 — Résoudre dans ℝ les équations suivantes (ensemble des solutions).</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-5-2"></div>
 
 <p class="calcul-titre"><span id="texte-5-3-titre">Calcul 5.3 — Soit f la fonction définie sur ℝ par <span id="texte-5-3-f">\(f(x)=3x^2-10x-3\)</span>. Calculer f(a) pour les valeurs de a suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
@@ -1094,57 +1094,69 @@ function snAscii(c, D) {
   return (signe<0?'-':'')+texte;
 }
 
-// ---------- Groupe 7.1 : inequations lineaires -> intervalle ----------
+// ---------- Calcul 5.1 : inequations produit et quotient -> intervalle(s) ----------
+// Automatismes diversifies le 01/10/2026 (demande de David : « pas que du calcul numerique
+// mais aussi equations, inequations produits et quotients ») : 5.1 inequations produit et
+// quotient (remplace deux inequations du premier degre), 5.2 equations produit et quotient
+// (remplace la simplification de fractions de puissances), 5.3 calcul numerique inchange.
+function facteurAffine() {
+  // px+q, p dans {±1, ±2, ±3}, q non nul : racine -q/p simple a lire
+  return { p: aleaParmi([1,2,3,-1,-2,-3]), q: aleaNonNul(-9,9) };
+}
+function latexAffine(fa) { return `${fracTermLatex(F(fa.p),'x',true)}${fmtConst(fa.q)}`; }
+function racineAffine(fa) { return F(-fa.q, fa.p); }
+const SYMB_INEQ = {'<':'<','>':'>','<=':'\\leqslant','>=':'\\geqslant'};
+// Ensemble ou le signe de (u)(v) -- ou de u/v -- verifie « sens 0 ». Racines r1 < r2 (valeurs),
+// signe du coefficient dominant du produit : positif a l'exterieur des racines si dominant > 0.
+// inclus1/inclus2 : la borne peut-elle etre atteinte (inegalite large, et pas une valeur interdite).
+function specSigneProduit(dominant, r1, r2, sens, inclus1, inclus2) {
+  const veutPositif = (sens === '>' || sens === '>=');
+  const exterieur = (dominant > 0) === veutPositif;
+  return exterieur
+    ? {type:'intervalles', liste:[{bas:-Infinity, haut:r1, inclusBas:false, inclusHaut:inclus1}, {bas:r2, haut:Infinity, inclusBas:inclus2, inclusHaut:false}]}
+    : {type:'intervalles', liste:[{bas:r1, haut:r2, inclusBas:inclus1, inclusHaut:inclus2}]};
+}
 function genGroupe7_1() {
-  function item(id) {
-    // p*x + q  ◊  r*x + s  (◊ parmi <,>,<=,>=)
-    let p,q,r,s,sens;
-    do {
-      p = aleaNonNul(-9,9,0); q = alea(-9,9);
-      r = aleaNonNul(-9,9,0); s = alea(-9,9);
-    } while (p===r);
-    sens = aleaParmi(['<','>','<=','>=']);
-    const coefX = F(p-r); // (p-r)x ◊ (s-q)
-    const cste = F(s-q);
-    let seuil = fracDiv(cste, coefX); // x ◊(') seuil, sens inverse si coefX<0
-    let sensFinal = sens;
-    if (coefX.n<0) {
-      sensFinal = {'<':'>','>':'<','<=':'>=','>=':'<='}[sens];
-    }
-    const inclus = (sensFinal==='<=' || sensFinal==='>=');
-    let spec;
-    if (sensFinal==='<' || sensFinal==='<=') spec = {type:'intervalles', liste:[{bas:-Infinity,haut:seuil.n/seuil.d,inclusBas:false,inclusHaut:inclus}]};
-    else spec = {type:'intervalles', liste:[{bas:seuil.n/seuil.d,haut:Infinity,inclusBas:inclus,inclusHaut:false}]};
-    const symb = {'<':'<','>':'>','<=':'\\leqslant','>=':'\\geqslant'}[sens];
-    const enonce = `${fracTermLatex(F(p),'x',true)}${fmtConst(q)} ${symb} ${fracTermLatex(F(r),'x',true)}${fmtConst(s)}`;
-    return {id, type:"intervalle", enonce, intervalleSpec: spec};
+  function itemProduit() {
+    let u, v;
+    do { u = facteurAffine(); v = facteurAffine(); } while (racineAffine(u).n * racineAffine(v).d === racineAffine(v).n * racineAffine(u).d);
+    const sens = aleaParmi(['<','>','<=','>=']), large = sens.length === 2;
+    const ru = racineAffine(u), rv = racineAffine(v);
+    const [r1, r2] = [ru.n/ru.d, rv.n/rv.d].sort((a, b) => a - b);
+    const spec = specSigneProduit(u.p*v.p, r1, r2, sens, large, large);
+    return {id:"5.1 a)", type:"intervalle", enonce:`(${latexAffine(u)})(${latexAffine(v)}) ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec};
   }
-  return [item("5.1 a)"), item("5.1 b)")];
+  function itemQuotient() {
+    let u, v;
+    do { u = facteurAffine(); v = facteurAffine(); } while (racineAffine(u).n * racineAffine(v).d === racineAffine(v).n * racineAffine(u).d);
+    const sens = aleaParmi(['<','>','<=','>=']), large = sens.length === 2;
+    const ru = racineAffine(u), rv = racineAffine(v); // rv : valeur interdite, jamais incluse
+    const vu = ru.n/ru.d, vv = rv.n/rv.d;
+    const spec = vu < vv
+      ? specSigneProduit(u.p*v.p, vu, vv, sens, large, false)
+      : specSigneProduit(u.p*v.p, vv, vu, sens, false, large);
+    return {id:"5.1 b)", type:"intervalle", enonce:`\\dfrac{${latexAffine(u)}}{${latexAffine(v)}} ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec};
+  }
+  return [itemProduit(), itemQuotient()];
 }
 
-// ---------- Groupe 7.2 : simplification de fractions de puissances ----------
+// ---------- Calcul 5.2 : equations produit et quotient -> ensemble des solutions ----------
 function genGroupe7_2() {
-  // a) classique : deux bases premieres (2 et 3)
-  function itemA() {
-    // (2^m1*3^n1)/(2^m2*3^n2)
-    const m1=alea(3,7), n1=alea(2,5), m2=alea(2,6), n2=alea(1,4);
-    const enonce = `\\dfrac{2^${m1}\\times 3^${n1}}{2^${m2}\\times 3^${n2}}`;
-    const val = fracMul(fracPow(F(2),m1), fracPow(F(3),n1));
-    const den = fracMul(fracPow(F(2),m2), fracPow(F(3),n2));
-    const reponse = fracDiv(val, den);
-    return {id:"5.2 a)", type:"num", enonce, reponse: fracStr(reponse)};
+  function itemProduit() {
+    let u, v;
+    do { u = facteurAffine(); v = facteurAffine(); } while (racineAffine(u).n * racineAffine(v).d === racineAffine(v).n * racineAffine(u).d);
+    return {id:"5.2 a)", type:"num", enonce:`(${latexAffine(u)})(${latexAffine(v)})=0`, reponse:`{${fracStr(racineAffine(u))};${fracStr(racineAffine(v))}}`};
   }
-  // b) le plus complet : quatre bases composites (12, 10, 15, 8) a decomposer en facteurs premiers
-  function itemC() {
-    // (12^m1*10^n1)/(15^m2*8^n2)
-    const m1=alea(2,4), n1=alea(2,5), m2=alea(1,3), n2=alea(1,3);
-    const enonce = `\\dfrac{12^${m1}\\times 10^${n1}}{15^${m2}\\times 8^${n2}}`;
-    const val = fracMul(fracPow(F(12),m1), fracPow(F(10),n1));
-    const den = fracMul(fracPow(F(15),m2), fracPow(F(8),n2));
-    const reponse = fracDiv(val, den);
-    return {id:"5.2 b)", type:"num", enonce, reponse: fracStr(reponse)};
+  function itemQuotient() {
+    // (px+q)/(rx+s) = k  <=>  px+q = k(rx+s), x != -s/r  ->  x = (ks-q)/(p-kr).
+    // p != kr (equation du premier degre) et ps != qr (sinon le quotient est constant, et la
+    // solution trouvee serait justement la valeur interdite).
+    let u, v, k;
+    do { u = facteurAffine(); v = facteurAffine(); k = aleaNonNul(-5,5); } while (u.p === k*v.p || u.p*v.q === u.q*v.p);
+    const sol = F(k*v.q - u.q, u.p - k*v.p);
+    return {id:"5.2 b)", type:"num", enonce:`\\dfrac{${latexAffine(u)}}{${latexAffine(v)}}=${k}`, reponse:`{${fracStr(sol)}}`};
   }
-  return [itemA(), itemC()];
+  return [itemProduit(), itemQuotient()];
 }
 function genererParametres7_3() {
   const A = aleaNonNul(-5,5), B = aleaNonNul(-12,12), C = aleaNonNul(-12,12);
@@ -1272,13 +1284,14 @@ function genGroupe7_6() {
 
 // ---------- Calcul 5.7 : produits de deux facteurs ----------
 // Remplace le 01/10/2026 les anciens 5.8 (quotients a simplifier) et 5.9 (deriver les quotients
-// simplifies), demande de David : 3 produits de types differents -- a) affine x trinome ;
-// b) affine x racine carree ; c) trinome x racine carree (ces deux-la sur ]0;+inf[).
+// simplifies), demande de David : 3 produits de types differents, une seule racine carree
+// (« un exemple avec racine carree suffit ») -- a) affine x trinome ; b) trinome x trinome ;
+// c) affine x racine carree (sur ]0;+inf[).
 function genGroupe7_7() {
-  function itemAffineTrinome() {
-    const u = genereU(1, [1]), v = genereU(2, [1]);
+  function itemProduitPolynomes(id, degU, degV) {
+    const u = genereU(degU, [1]), v = genereU(degV, [1]);
     const deriv = pAddF(pMulF(pDerivF(u), v), pMulF(u, pDerivF(v)));
-    return {id:"5.7 a)", type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})(${polyLatexDesc(v,'x')})\\)`, reponse: polyAsciiDesc(deriv,'x')};
+    return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})(${polyLatexDesc(v,'x')})\\)`, reponse: polyAsciiDesc(deriv,'x')};
   }
   function itemFoisRacine(id, deg) {
     const u = genereU(deg, [1]);
@@ -1286,7 +1299,7 @@ function genGroupe7_7() {
     const reponse = `(${polyAsciiDesc(pDerivF(u),'x')})*sqrt(x)+(${polyAsciiDesc(u,'x')})/(2*sqrt(x))`;
     return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})\\sqrt{x}\\) sur \\(]0;+\\infty[\\)`, reponse};
   }
-  return [itemAffineTrinome(), itemFoisRacine("5.7 b)", 1), itemFoisRacine("5.7 c)", 2)];
+  return [itemProduitPolynomes("5.7 a)", 1, 2), itemProduitPolynomes("5.7 b)", 2, 2), itemFoisRacine("5.7 c)", 1)];
 }
 
 // racine carree de n en LaTeX, simplifiee (8 -> 2\sqrt{2}, 9 -> 3)
@@ -2866,7 +2879,22 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${groupeEnsembleClavier(idx, ex)}${genererClavierPour(idx, ex)}</div>`;
+}
+
+// Reponse attendue sous forme d'ensemble ("{-2;3}", "{}" : voir
+// checkEnsemble) : touches accolades et point-virgule en tete du clavier
+// (reprise de la fiche 6, 01/10/2026 : equations de 5.2).
+function groupeEnsembleClavier(idx, ex) {
+  if (!(ex.reponse && String(ex.reponse).trim().startsWith('{'))) return '';
+  return `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire l'ensemble des solutions entre accolades, séparées par un point-virgule. Exemple : {-2;3}, ou {} s'il n'y a aucune solution.</div>`;
 }
 
 function genererClavierPour(idx, ex) {

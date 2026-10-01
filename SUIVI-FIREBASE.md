@@ -5012,6 +5012,39 @@ de changer ce réglage sans qu'il en reparle.
   syntaxe 50 fiches, 0 erreur. Scripts `.claude/scratch/fiche05.js` et
   `fiche05-bloc.js`.
 
+- **Fiche 5 de Première — suite des retours de David (01/10/2026), 27
+  questions inchangé.**
+  - 5.8 garde ses **5 exemples** : « on garde en général la règle des 4
+    mais je ferai juste quelques exceptions comme ici » (les exceptions
+    viennent de David uniquement).
+  - **5.7 : une seule racine carrée** (« un exemple avec racine carrée
+    suffit parmi les 3 ») → a) affine × trinôme, b) trinôme × trinôme,
+    c) affine × √x (sur ]0;+∞[). Le trinôme × √x est retiré.
+  - **Automatismes diversifiés** (nouvelle règle, « à partir de cette
+    fiche » : pas que du calcul numérique, aussi équations, inéquations
+    produits et quotients) :
+    - **5.1** (intervalle ou réunion d'intervalles, mis en valeur dans le
+      titre) : a) inéquation produit (px+q)(rx+s) ◊ 0, b) inéquation
+      quotient (px+q)/(rx+s) ◊ 0 (valeur interdite toujours exclue, racine
+      du numérateur incluse si inégalité large) — remplacent deux
+      inéquations du premier degré. p ∈ {±1, ±2, ±3} : racines simples à
+      lire. Construction commune `specSigneProduit`.
+    - **5.2 « Résoudre dans ℝ les équations suivantes (ensemble des
+      solutions) »** : a) équation produit = 0 → {r1;r2}, b) équation
+      quotient (px+q)/(rx+s) = k → {(ks−q)/(p−kr)} (p ≠ kr, ps ≠ qr :
+      sinon quotient constant et « solution » = valeur interdite) —
+      remplacent la simplification de fractions de puissances. Touches
+      { } ; ajoutées au clavier des réponses-ensembles
+      (`groupeEnsembleClavier`, repris de la fiche 6).
+    - 5.3 (f(a), calcul numérique) inchangé. Toujours 6 automatismes.
+  Vérifié : 300 tirages (2 100 questions) — inéquations comparées au signe
+  numérique sur une grille + aux bornes exactes, équations : solutions
+  vérifiées et aucune autre racine (changements de signe), produits 5.7
+  comparés à la dérivée numérique — 0 écart ; saisies réelles acceptées
+  (`]-inf;1[ ou ]8;+inf[`, `{1;-9}` tapé avec les touches { }), aucune
+  erreur console. Scripts `.claude/scratch/fiche05-v2.js` et
+  `fiche05-automatismes-bloc.js`.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
