@@ -5111,6 +5111,54 @@ de changer ce réglage sans qu'il en reparle.
   `.claude/scratch/fiche05-tangentes*.js`, `fiche06-retrait-66.js`,
   `fiche06-nettoyage.js`.
 
+- **Fiche 6 de Première (Dérivation III) — automatismes diversifiés et
+  corrections (01/10/2026), 19 questions, 8 → 10 calculs.** David :
+  « diversifie les automatismes de la fiche 6 et corrige ce que tu as
+  remarqué d'incohérent, inutile et exclu ce qui doit être exclu ».
+  - **Automatismes (6)**, en variant par rapport à la fiche 5 :
+    6.1 a) inéquation du premier degré avec parenthèses k(x+q) ◊ rx+s
+    (coefficients de signe quelconque, coefficient de x négatif dans
+    146 tirages sur 300), b) **inéquation quotient** (la fiche 5 avait le
+    produit ; valeur interdite toujours exclue) ; 6.2 a) **équation du
+    second degré** (racines entières distinctes), b) **équation du premier
+    degré à coefficients fractionnaires** (même numérateur des deux côtés
+    exclu) ; 6.3 **calcul fractionnaire avec priorités**, « sous forme de
+    fraction irréductible » mis en valeur et contrôlé
+    (`estFractionIrreductible`, repris de la fiche 2 ; 4/6 refusé) ;
+    6.4 développer et ordonner (l'ancien 6.2 a, le plus complet). Retirés :
+    « écrire sous la forme ax+by+cz » (3) et deux « développer » (que du
+    calcul littéral). Calculs suivants renumérotés +2 (6.3 → 6.5 …
+    6.8 → 6.10, `texte-6-4/5` → `texte-6-6/7`).
+  - **Tirage exclu** : 6.6/6.7 (ex-6.4/6.5) pouvaient tirer h(x) = f(x)
+    (p = 1, q = 0) — question sans objet ; 0 cas sur 300 tirages depuis.
+  - **Incohérences corrigées** : « Que vaut h′(x) ? = » (plus de « = »
+    après « ? », `sansEgal`) ; fractions négatives écrites −3/2 et non
+    (−3)/2 dans tous les énoncés (`F.fmtLatex`) et les ensembles corrigés ;
+    monômes sans parenthèses inutiles (« 4x », « x² » au lieu de « (4x) »,
+    « (x)² » — `puissanceStr`) ; numérateur de degré 1 sans parenthèses en
+    6.8 a) ; coefficient −1 écrit « − » en 6.9 ; point (−3/2 ; 9) avec un
+    point-virgule en 6.10 a) ; corrections plus lisibles : « 6(2x+5)² » au
+    lieu de « 6 × (2x+5)² » (règle ajoutée à `collerCoefficientLettre`),
+    « −12/(…)⁴ » au lieu de « (−12)/(…)⁴ », « 6(3x+1)/… » au lieu de
+    « −3 × 2(…) » (6.7 a), fraction de 6.9 simplifiée
+    (`normaliserQuotientPoly` : (2a−3)/4 et non (4a−6)/8).
+  - **Code inutile retiré** : `combinaisonLineaire`,
+    `derivProduitPuissances`, `derivQuotientPuissances`,
+    `tangenteSommePuissances`, `ordonneeOriginePuissance`, `pToLatex`,
+    `termePoly`, `pNeg` (plus appelées) et commentaires périmés du tableau
+    des générateurs.
+  - Non modifié : 6.5 « Puissances » d) est un quotient −k/(ax+b)ⁿ
+    (puissance négative) — cohérent avec le titre.
+  Vérifié : 300 tirages — inéquations au signe numérique (grille + bornes
+  exactes), équations (solutions vérifiées, aucune autre racine), 6.3
+  recalculé, 6.4 développé comparé, dérivées 6.5 / h′ 6.6-6.7 / ordonnées
+  6.8 / intersection 6.9 comparées à des calculs numériques indépendants :
+  0 écart ; cycle complet 3 × 19/19 (corrections retapées dans les
+  champs) ; fraction non simplifiée refusée ; panneau 19 lignes sans
+  erreur MathJax ; aucune erreur console. Scripts
+  `.claude/scratch/fiche06-automatismes-bloc.js`, `fiche06-refonte.js`,
+  `fiche06-nettoyage2.js` (+ Edit).
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
