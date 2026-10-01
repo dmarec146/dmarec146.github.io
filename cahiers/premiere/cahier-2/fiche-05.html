@@ -851,7 +851,7 @@ window.MathJax = {
 <p class="calcul-titre"><span>Calcul 5.2 — Résoudre dans ℝ les équations suivantes (ensemble des solutions).</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-5-2"></div>
 
-<p class="calcul-titre"><span id="texte-5-3-titre">Calcul 5.3 — Soit f la fonction définie sur ℝ par <span id="texte-5-3-f">\(f(x)=3x^2-10x-3\)</span>. Calculer f(a) pour les valeurs de a suivantes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 5.3 — Calcul numérique.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-5-3"></div>
 </div>
 
@@ -1116,7 +1116,25 @@ function specSigneProduit(dominant, r1, r2, sens, inclus1, inclus2) {
     ? {type:'intervalles', liste:[{bas:-Infinity, haut:r1, inclusBas:false, inclusHaut:inclus1}, {bas:r2, haut:Infinity, inclusBas:inclus2, inclusHaut:false}]}
     : {type:'intervalles', liste:[{bas:r1, haut:r2, inclusBas:inclus1, inclusHaut:inclus2}]};
 }
+// Reequilibre le jour meme (David : « un exemple d'inequation produit suffit (il y en aura
+// d'autres dans les fiches suivantes). N'oublie pas les inequations de degre 1 avec coeff de
+// signe quelconque ») : a) inequation du premier degre, b) inequation produit.
 function genGroupe7_1() {
+  function itemDegre1() {
+    // p*x + q  ◊  r*x + s, coefficients de signe quelconque : (p-r) < 0 dans environ la moitie
+    // des tirages, d'ou le changement de sens de l'inegalite a la division
+    let p, q, r, s;
+    do { p = aleaNonNul(-9,9); q = alea(-9,9); r = aleaNonNul(-9,9); s = alea(-9,9); } while (p === r);
+    const sens = aleaParmi(['<','>','<=','>=']);
+    const coefX = p - r, seuil = F(s - q, coefX);
+    const sensFinal = coefX < 0 ? {'<':'>','>':'<','<=':'>=','>=':'<='}[sens] : sens;
+    const inclus = sensFinal.length === 2, v = seuil.n/seuil.d;
+    const spec = (sensFinal === '<' || sensFinal === '<=')
+      ? {type:'intervalles', liste:[{bas:-Infinity, haut:v, inclusBas:false, inclusHaut:inclus}]}
+      : {type:'intervalles', liste:[{bas:v, haut:Infinity, inclusBas:inclus, inclusHaut:false}]};
+    const enonce = `${fracTermLatex(F(p),'x',true)}${fmtConst(q)} ${SYMB_INEQ[sens]} ${fracTermLatex(F(r),'x',true)}${fmtConst(s)}`;
+    return {id:"5.1 a)", type:"intervalle", enonce, intervalleSpec: spec};
+  }
   function itemProduit() {
     let u, v;
     do { u = facteurAffine(); v = facteurAffine(); } while (racineAffine(u).n * racineAffine(v).d === racineAffine(v).n * racineAffine(u).d);
@@ -1124,20 +1142,9 @@ function genGroupe7_1() {
     const ru = racineAffine(u), rv = racineAffine(v);
     const [r1, r2] = [ru.n/ru.d, rv.n/rv.d].sort((a, b) => a - b);
     const spec = specSigneProduit(u.p*v.p, r1, r2, sens, large, large);
-    return {id:"5.1 a)", type:"intervalle", enonce:`(${latexAffine(u)})(${latexAffine(v)}) ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec};
+    return {id:"5.1 b)", type:"intervalle", enonce:`(${latexAffine(u)})(${latexAffine(v)}) ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec};
   }
-  function itemQuotient() {
-    let u, v;
-    do { u = facteurAffine(); v = facteurAffine(); } while (racineAffine(u).n * racineAffine(v).d === racineAffine(v).n * racineAffine(u).d);
-    const sens = aleaParmi(['<','>','<=','>=']), large = sens.length === 2;
-    const ru = racineAffine(u), rv = racineAffine(v); // rv : valeur interdite, jamais incluse
-    const vu = ru.n/ru.d, vv = rv.n/rv.d;
-    const spec = vu < vv
-      ? specSigneProduit(u.p*v.p, vu, vv, sens, large, false)
-      : specSigneProduit(u.p*v.p, vv, vu, sens, false, large);
-    return {id:"5.1 b)", type:"intervalle", enonce:`\\dfrac{${latexAffine(u)}}{${latexAffine(v)}} ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec};
-  }
-  return [itemProduit(), itemQuotient()];
+  return [itemDegre1(), itemProduit()];
 }
 
 // ---------- Calcul 5.2 : equations produit et quotient -> ensemble des solutions ----------
@@ -1171,32 +1178,29 @@ function evalQuad7_3(sn, D) {
   res = snAddFrac(res, params7_3.C);
   return res;
 }
+// Calcul 5.3 « Calcul numerique » (01/10/2026) : deux calculs de natures differentes plutot que
+// deux evaluations du meme f -- a) fraction de puissances a simplifier (ancien 5.2 b, bases
+// composites a decomposer), b) image d'un nombre irrationnel (p+sqrt(D))/q par un trinome
+// (ancien 5.3 b). Le trinome est desormais ecrit dans l'enonce de la question et non plus dans
+// le titre : un brouillon restaure retrouve donc toujours le bon f (le titre etait recalcule
+// a partir d'un nouveau tirage).
 function genGroupe7_3() {
-  // a) classique : evaluer en sqrt(D) pur
-  function itemPlainSqrt(id) {
-    const D = aleaParmi(RADICANDS_PETITS);
-    const sn = snMk(F(0), F(1));
-    const res = evalQuad7_3(sn, D);
-    return {id, type:"num", texteLibre:true, enonce:`\\(f(\\sqrt{${D}})\\)`, reponse: snAscii(res, D)};
+  function itemPuissances() {
+    // (12^m1*10^n1)/(15^m2*8^n2), exposants >= 2 (un « 8^1 » s'affichait tel quel)
+    const m1=alea(2,4), n1=alea(2,5), m2=alea(2,3), n2=alea(2,3);
+    const val = fracMul(fracPow(F(12),m1), fracPow(F(10),n1));
+    const den = fracMul(fracPow(F(15),m2), fracPow(F(8),n2));
+    return {id:"5.3 a)", type:"num", texteLibre:true, enonce:`Simplifier \\(\\dfrac{12^${m1}\\times 10^${n1}}{15^${m2}\\times 8^${n2}}\\)`, reponse: fracStr(fracDiv(val, den))};
   }
-  // b) le plus delicat : combinaison lineaire complete (p+sqrt(D))/q
-  function itemLinCombo(id, signe) {
+  function itemImage() {
     const D = aleaParmi(RADICANDS_PETITS);
     const p = aleaNonNul(-4,4);
     const q = aleaParmi([2,3,4]);
-    // a = (p + signe*sqrt(D))/q
-    const sn = snMk(F(p,q), F(signe,q));
-    const res = evalQuad7_3(sn, D);
-    const interieur = signe>0 ? `${p}+\\sqrt{${D}}` : `${p}-\\sqrt{${D}}`;
-    return {id, type:"num", texteLibre:true, enonce:`\\(f\\left(\\dfrac{${interieur}}{${q}}\\right)\\)`, reponse: snAscii(res, D)};
+    const res = evalQuad7_3(snMk(F(p,q), F(1,q)), D);
+    const fLatex = polyLatexDesc([params7_3.C, params7_3.B, params7_3.A], 'x');
+    return {id:"5.3 b)", type:"num", texteLibre:true, enonce:`Avec \\(f(x)=${fLatex}\\), calculer \\(f\\left(\\dfrac{${p}+\\sqrt{${D}}}{${q}}\\right)\\)`, sansEgal:true, reponse: snAscii(res, D)};
   }
-  return [
-    itemPlainSqrt("5.3 a)"),
-    itemLinCombo("5.3 b)", 1)
-  ];
-}
-function texteTitre7_3() {
-  return `\\(f(x)=${polyLatexDesc([params7_3.C, params7_3.B, params7_3.A], 'x')}\\)`;
+  return [itemPuissances(), itemImage()];
 }
 
 // ---------- Groupe 7.4 : derivee de polynome (coefficients fractionnaires) ----------
@@ -2645,8 +2649,6 @@ async function genererNouvelleFiche() {
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
   document.getElementById('toutes-reponses-panneau').classList.remove('visible');
   document.getElementById('btn-toutes-reponses').textContent = 'Voir toutes les réponses';
-  const titreF73 = document.getElementById('texte-5-3-f');
-  if (titreF73) titreF73.textContent = texteTitre7_3();
   if (window.MathJax) MathJax.typesetPromise();
 }
 function toggleToutesReponses() {
@@ -3114,7 +3116,6 @@ construireGrilles();
 attacherEcouteurs();
 attacherEcouteursTactiles();
 definirMode(true);
-document.getElementById('texte-5-3-f').textContent = texteTitre7_3();
   mettreAJourEtatBoutons();
 
   if (brouillonValide && brouillon.saisies) {

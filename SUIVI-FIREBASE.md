@@ -5044,6 +5044,27 @@ de changer ce réglage sans qu'il en reparle.
   (`]-inf;1[ ou ]8;+inf[`, `{1;-9}` tapé avec les touches { }), aucune
   erreur console. Scripts `.claude/scratch/fiche05-v2.js` et
   `fiche05-automatismes-bloc.js`.
+  - **Rééquilibrage le jour même** — David : « un exemple d'inéquation
+    produit suffit (il y en aura d'autres dans les fiches suivantes).
+    N'oublie pas les inéquations de degré 1 avec coeff de signe
+    quelconque. Et on n'abandonne pas complètement le calcul numérique
+    mais il faut diversifier ». Automatismes finaux (6) :
+    - 5.1 a) inéquation du premier degré px+q ◊ rx+s, coefficients de
+      signe quelconque (coefficient de x négatif dans 190 tirages sur
+      400 → changement de sens) ; b) inéquation produit. L'inéquation
+      quotient est retirée.
+    - 5.2 équations produit / quotient = k : inchangé.
+    - **5.3 « Calcul numérique »** : a) simplifier une fraction de
+      puissances (12^m × 10^n)/(15^p × 8^q) (exposants ≥ 2, un « 8¹ »
+      pouvait s'afficher), b) « Avec f(x) = …, calculer
+      f((p+√D)/q) ». Le trinôme est écrit **dans la question** et plus
+      dans le titre : **bug corrigé au passage**, à la reprise d'un
+      brouillon le titre était recalculé à partir d'un nouveau tirage
+      (f affiché ≠ f des réponses attendues).
+    Vérifié : 400 tirages (inéquations au signe numérique + bornes
+    exactes, fraction et image recalculées indépendamment), 0 écart ;
+    saisies réelles acceptées (champs texte et math-field) ; aucune
+    erreur console. Script `.claude/scratch/fiche05-v3.js` (+ Edit).
 
 ## Procédure de reprise sur une autre machine
 
