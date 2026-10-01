@@ -5085,6 +5085,32 @@ de changer ce réglage sans qu'il en reparle.
     avec la touche Σ) ; panneau « Voir toutes les réponses » : 27 lignes,
     0 erreur MathJax.
 
+- **Équations de tangentes déplacées de la fiche 6 vers la fiche 5
+  (01/10/2026).** David : « Je souhaite prendre la section 6.6 dans la
+  fiche 5. Juste avant les calculs avancés. »
+  - **Fiche 5** : nouvelle section « Équations de tangentes », **5.9 « Des
+    équations de tangentes »** (titre et picto de l'ancien 6.6 inchangés),
+    mêmes trois exemples : a) trinôme entier, b) trinôme à coefficients
+    demi-entiers, c) kx/(ax+b). Sommes 5.9 → **5.10** (dans le cadre gris).
+    27 → 30 questions. Générateurs réécrits avec les fractions de la fiche 5
+    (`F(n,d)`, `fracAdd`… — la fiche 6 a un objet `F` différent, d'où pas
+    de copie directe) ; support « y=… » ajouté (n'existait pas en fiche 5) :
+    `checkEquationYax` (le « y= » est exigé), placeholder `y=ax+b`, aide
+    « ? », correction « y=… ». Équation écrite comme les autres réponses
+    de la fiche (pente « 7x/2 », pas « 7/2 × x »).
+  - **Fiche 6** : 6.6 retiré, 6.7 → 6.6 (ordonnées à l'origine, reste seul
+    dans la section « Équations de tangentes »), 6.8 → 6.7, 6.9 → 6.8 ;
+    22 → 19 questions ; fonctions devenues inutiles retirées
+    (`equationReduiteAscii`, `tangenteQuadratique`, `tangenteRationnelle`) ;
+    validité d'un brouillon exigeant la même liste d'ids.
+  Vérifié : fiche 5, 300 tirages comparés à la vraie tangente (dérivée
+  numérique), aucun « × » ni « (−a)/b » dans les corrections ; cycle
+  complet 30/30 (corrections retapées dans les champs), « y= » oublié
+  refusé, panneau 30 lignes sans erreur MathJax. Fiche 6 : cycle 19/19,
+  panneau 19 lignes sans erreur, aucune erreur console. Scripts
+  `.claude/scratch/fiche05-tangentes*.js`, `fiche06-retrait-66.js`,
+  `fiche06-nettoyage.js`.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
