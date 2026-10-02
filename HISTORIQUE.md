@@ -5710,3 +5710,25 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     complet 5 × 22 accepté ; valeur au lieu de la puissance, racine non
     simplifiée et ensemble incomplet refusés ; 0 erreur MathJax (fiche et
     panneau des réponses) ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 2 : racine simplifiée à coefficient négatif en tête
+  (02/10/2026).** Même défaut que celui corrigé dans la fiche 11 :
+  `estRacineSimplifiee` refusait « −9√2 », « −3√2 » saisi dans MathLive,
+  car math.js lit (−9)·√2 (nœud `*` dont le premier argument est un moins
+  unaire, ni reconnu par `terme()` ni retiré par `aplatir()`). Correctif
+  identique à la fiche 11 (3 lignes dans `aplatir`). Seules les fiches 2
+  et 11 contiennent cette fonction : la fiche 11 était déjà corrigée.
+  - Effet constaté : les réponses attendues de 2.5 a)–d) sont toutes
+    écrites constante en tête (« (3-2√3)/2 »), donc aucune n'était refusée ;
+    le défaut touchait l'élève qui écrit le terme en racine d'abord :
+    « (−2√3+3)/2 » était refusé à tort.
+  - Vérifié (fiche ouverte en `file://`, le port 8791 étant occupé par le
+    serveur d'un autre dossier) : « −9sqrt(2) », « −3*sqrt(5) »,
+    « 2−3sqrt(7) », « −3sqrt(2)/2 », saisie MathLive « −3\sqrt{2} »
+    acceptés ; « −sqrt(8) », « −2sqrt(18) », « −1sqrt(2) », « −0sqrt(2) »,
+    « −9*sqrt(4) » et « −3sqrt(2)−3sqrt(2) » refusés. 500 tirages : les
+    4000 racines attendues de 2.5 passent (0 refus, avant comme après) ;
+    les 3000 variantes permutées (racine en tête) passent toutes, contre
+    2406 avant le correctif (594 refusées, toutes à coefficient négatif en
+    tête). Dans le vrai champ de 2.5 a) : « {(−2√3+3)/2;(2√3+3)/2} » et
+    « {3/2−√3;3/2+√3} » acceptés, « √12 » refusé. Vérificateur : 0 erreur.

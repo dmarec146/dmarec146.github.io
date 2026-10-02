@@ -1581,6 +1581,9 @@ function estRacineSimplifiee(expr) {
     n = sansP(n);
     if (addition(n)) { aplatir(n.args[0], acc); aplatir(n.args[1], acc); }
     else if (moinsUnaire(n)) aplatir(n.args[0], acc);
+    // « -9sqrt(2) » est lu (-9)*sqrt(2) : le signe du coefficient est retire comme un moins unaire
+    else if (n.type === 'OperatorNode' && n.op === '*' && n.args.length === 2 && moinsUnaire(sansP(n.args[0])))
+      aplatir(new math.OperatorNode('*', 'multiply', [sansP(n.args[0]).args[0], n.args[1]]), acc);
     else acc.push(n);
     return acc;
   };
