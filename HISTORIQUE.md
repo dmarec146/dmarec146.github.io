@@ -5396,3 +5396,33 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     0 erreur ; rendu contrôlé.
   - Remarqué, non traité (hors automatismes, en attente de la relecture de
     David) : « exp(0) » tiré au hasard dans 8.4 à 8.8.
+
+- **Première fiche 8 : notation e^x et suppression des exp(0)
+  (02/10/2026).** David : « Je pense que dans cette fiche, on doit
+  utiliser la notation e^x plutôt que exp(x). Réécris donc les énoncés et
+  les corrigés. corrige ensuite le défaut de exp(0) ».
+  - **Notation** : fonction `expVersPuissance` (fiche 8 uniquement) qui
+    réécrit \exp(A) et \exp\left(A\right) en e^{A} ; une exponentielle
+    élevée à une puissance devient \left(e^{A}\right)^n (sens de
+    l'exercice conservé, ex. (eˣ)² = 1/e⁶) ; e^{1} s'écrit e (e⁴ et non
+    « (e)⁴ », petite espace dans « 2e\,eˣ »). Appliquée à la fin de
+    `genererExercices` (énoncés et options) et dans `jsVersLatex` (tous les
+    corrigés, y compris le panneau « Voir toutes les réponses » et
+    l'aperçu de saisie). Titre de 8.4 : « sous la forme \(e^{A}\) ».
+    8.4 a) et b) : facteurs séparés par × (sinon « ee⁴ »). Saisie : « e^x »
+    tapé (MathLive, « e » = nombre e pour math.js) et « exp(x) » sont
+    acceptés tous les deux.
+  - **exp(0) supprimé** : exposants nuls exclus du tirage en 8.4 a)-c),
+    8.6 d), 8.7 a), c), d) et 8.8 a) ; résultats e⁰ exclus en 8.4 a)-b).
+  - **Ensemble vide** (nouveau 8.2 b) : le corrigé affichait
+    « {undefined} » → « ∅ » ; « ∅ » tapé est désormais accepté (il ne
+    l'était pas), touche ∅ ajoutée au clavier des ensembles, aide « ? » et
+    astuce du clavier mises à jour.
+  - Vérifié : 2 000 tirages sans « exp », « e⁰ », « e¹ », « ee » ni
+    « (e)^ » dans les énoncés, options et corrigés ; 500 tirages où les
+    énoncés réécrits sont relus et évalués indépendamment (simplifications
+    de 8.4-8.5 en trois points, solutions de 8.6 et 8.8 par substitution) :
+    0 écart ; 0 erreur MathJax sur 30 fiches complètes (énoncés +
+    corrigés) ; cycle complet 6 × 32 accepté (∅ tapé compris) ; « e^x » et
+    « exp(x) » acceptés ; vérificateur de syntaxe : 0 erreur ; rendu
+    contrôlé.
