@@ -36,8 +36,6 @@ les corrections ponctuelles d'une fiche).
 
 - **6 questions au maximum** (tous calculs du bloc confondus), réparties selon
   le vrai gradient de chaque calcul, pas à parts égales par défaut.
-  *Exception décidée par David : fiche 10 de Première, 4 automatismes
-  seulement (des questions doivent y être ajoutées).*
 - **Diversifiés** (règle posée sur la fiche 5 de Première, à appliquer aux
   suivantes) : pas que du calcul numérique, mais aussi équations, inéquations
   produits et quotients. Dans chaque fiche :

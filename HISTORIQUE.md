@@ -5594,6 +5594,6 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   quotient à dénominateur carré), l'équation bicarrée, les puissances de
   10 ; retirés : |ax+b| = c et la moyenne pondérée. 10.2 et 10.3 n'ont
   plus qu'une question (sans lettre, carte pleine largeur ; titre de 10.2
-  au singulier). Exception notée dans `REGLES-FICHES.md` §2. Vérifié :
+  au singulier). Exception ponctuelle, volontairement pas inscrite dans `REGLES-FICHES.md` (David : « je le ferai à la demande de manière exceptionnelle mais pas comme une règle »). Vérifié :
   cycle complet 5 × 18, 0 erreur MathJax, vérificateur : 0 erreur, rendu
   contrôlé.
