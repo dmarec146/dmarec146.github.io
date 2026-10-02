@@ -5359,8 +5359,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   - Vérifié : 600 tirages comparés à un calcul indépendant (énoncé relu :
     inéquations au signe sur une grille + bornes, équations par
     substitution, calculs numériques, développements/factorisations en
-    trois points), 2 000 tirages sans défaut d'affichage ; cycle complet
-    sur 14 tirages (corrections retapées : 448/448) ; fraction non
+    trois points), 2 000 tirages sans défaut d'affichage ; cycles complets
+    (corrections retapées : 224/224 sur les 7 tirages faits après les
+    dernières retouches) ; fraction non
     simplifiée, calcul non effectué et expression développée refusés ;
     0 erreur MathJax, aucun débordement ; vérificateur de syntaxe :
     0 erreur ; rendu contrôlé.
