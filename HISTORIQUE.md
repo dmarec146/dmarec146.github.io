@@ -5732,3 +5732,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     2406 avant le correctif (594 refusées, toutes à coefficient négatif en
     tête). Dans le vrai champ de 2.5 a) : « {(−2√3+3)/2;(2√3+3)/2} » et
     « {3/2−√3;3/2+√3} » acceptés, « √12 » refusé. Vérificateur : 0 erreur.
+
+- **Claviers d'intervalles en symboles ∪, ℝ, ∅ (Première, 02/10/2026).**
+  David : « oui fais le » (application de la règle « réunion ∪ et ensemble
+  vide ∅ en symboles, jamais « ou » / « vide », dans l'aide, les boutons du
+  clavier et les exemples »). Sur les 22 fiches de Première qui avaient
+  encore l'ancien clavier maison des intervalles (1, 5 à 10, 12 à 26) :
+  boutons « ou », « R », « vide » remplacés par « ∪ », « ℝ », « ∅ » ;
+  astuce du clavier « ]-∞;1[ ∪ ]3/2;+∞[ » ; texte de l'aide « ? » des
+  intervalles passé aux symboles sur les 17 fiches qui ne l'avaient pas
+  (fiche 11 : astuce seule, le reste était déjà fait). La saisie lisait
+  déjà ∪, ℝ et ∅ partout (`parseReponseIntervalle` identique), et l'ancienne
+  écriture tapée reste tolérée. Les fiches de Seconde utilisaient déjà les
+  symboles. Vérifié : 30 tirages de la fiche 10, réponses construites avec le
+  bouton ∪ toutes acceptées ; boutons ℝ et ∅ insèrent le symbole, reconnu
+  pour ℝ et ∅, refusé à contre-emploi ; vérificateur : 0 erreur.
