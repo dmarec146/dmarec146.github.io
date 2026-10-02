@@ -66,6 +66,10 @@ les corrections ponctuelles d'une fiche).
     (a²x²−k²)/(ax∓k)=0 (une solution apparente est valeur interdite) ;
     puissances de fractions à exposant négatif (irréductible) + produit de
     deux racines carrées entier.
+  - fiche 10 : inéquation degré 1 à coefficients décimaux + inéquation
+    quotient à dénominateur carré ((ax+b)/(cx+d)² ◊ 0, la valeur interdite
+    peut couper la solution) ; équation bicarrée (4 ou 2 solutions) +
+    |ax+b|=c ; puissances de 10 (résultat entier) + moyenne pondérée.
 - **Seconde** (règles données sur les fiches de Seconde, non rétroactives) :
   - le premier calcul d'automatismes **varie d'une fiche à l'autre et d'un
     tirage à l'autre** : vivier d'une dizaine de modèles, plusieurs modèles
@@ -107,7 +111,7 @@ les corrections ponctuelles d'une fiche).
   (`question-seule`) ; énoncé long : option `pleineLargeur`. Pas de « = »
   ajouté après une phrase ou une question (`sansEgal:true`).
 - **Exponentielle : notation \(e^x\)**, pas \(\exp(x)\), dans les énoncés et
-  les corrigés (choix de David pour les fiches 7, 8 et 9 de Première,
+  les corrigés (choix de David pour les fiches 7 à 10 de Première,
   02/10/2026 ; fonction `expVersPuissance` dans ces fiches). La saisie
   « exp(x) » reste acceptée.
 - Le titre doit correspondre aux réponses acceptées (ex. « vraies ou

@@ -5545,3 +5545,44 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     acceptés (y compris facteurs dans l'autre ordre), formes développées
     refusées ; cycle complet 5 × 28 ; 0 erreur MathJax ; vérificateur :
     0 erreur ; rendu contrôlé.
+
+- **Première fiche 10 (Dérivation et exponentielle II) — refonte
+  (02/10/2026), 37 → 20 questions, 11 → 8 calculs.** David : « 1. applique
+  les règles sur les automatismes et la notation e^x 2. fusionner 10.2,
+  10.3 10.4 et 10.6 en prenant 1 exemple pour chacun. En n'oubliant pas de
+  préciser de factoriser. 3. supprime 10.5, et 10.7 4. 10.8 deux exemples
+  suffisent ».
+  - **Automatismes (6)** à la place des six factorisations : 10.1 a)
+    inéquation du premier degré à coefficients décimaux (dixièmes, signes
+    quelconques), b) quotient à dénominateur carré (ax+b)/(cx+d)² ◊ 0 (la
+    valeur interdite est toujours exclue et peut couper la solution en
+    deux) ; 10.2 a) équation bicarrée, deux familles ((x²−m²)(x²−n²) :
+    quatre solutions ; (x²−m²)(x²+k) : deux), b) |ax+b| = c ; 10.3
+    « Calcul numérique » : a) puissances de 10, résultat entier
+    (exposants ≠ 0 et 1), b) moyenne pondérée de trois notes, résultat
+    entier.
+  - **10.4 « Des dérivées »** (fusion de 10.2 sommes, 10.3 produits, 10.4
+    quotients, 10.6 exponentielle et racine) : un exemple de chaque, titre
+    « lorsque cela est possible, donner la réponse sous forme factorisée
+    (pour un quotient, numérateur factorisé) » ; contrôles : forme
+    factorisée exigée pour le produit (x²+B)e^{px+q}, numérateur factorisé
+    pour Ce^x/(x²+1) et e^{px+q}√x (« Sur ]0;+∞[ » précisé) ; la somme
+    n'en a pas.
+  - Supprimés : 10.5 (dérivée d'un quotient isolé), 10.7 (nombres
+    dérivés). Tangentes (10.5, ex-10.8) : 2 exemples (eᵖˣ⁺ᑫ en 0, x²e^{−x+q}
+    en a). Suite renumérotée : variations 10.6, composées 10.7, sommes 10.8.
+  - **Notation e^x** (énoncés, corrigés, rappel sur la composée), « < »
+    des énoncés en `\lt`, clavier des ensembles et « ∅ » repris de la
+    fiche 9.
+  - **Défauts préexistants corrigés** (tangentes) : corrigés « y=−3e⁰x+e⁰ »
+    (q = 0), ordonnée « 0e^… » (a = 1), pente « 0e^… » (a = 2) — et ces
+    corrigés retapés étaient refusés ; tirages exclus.
+  - Vérifié : 400 tirages comparés à un calcul indépendant (inéquations au
+    signe sur une grille et de part et d'autre des bornes, pôle jamais
+    inclus ; équations par substitution et nombre de racines par
+    changements de signe ; calculs numériques recalculés ; chaque dérivée
+    comparée à la dérivée numérique ; tangentes : pente et ordonnée
+    recalculées sur 600 cas) : 0 écart ; 3 000 tirages sans « e⁰ », « e¹ »,
+    « \exp », « +- », « ^{1} » ; cycle complet 10 × 20 accepté ; formes
+    développées refusées en 10.4 ; 0 erreur MathJax ; vérificateur :
+    0 erreur ; rendu contrôlé.
