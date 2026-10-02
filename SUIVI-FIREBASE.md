@@ -44,10 +44,17 @@ en place mais à ne plus modifier ni utiliser comme base de travail.
 Avant d'agir :
 
 ```bash
+git fetch
 git status
-git log --oneline -5
+git log origin/master..HEAD --oneline   # commits locaux non poussés
+git log HEAD..origin/master --oneline   # commits de GitHub pas encore récupérés
 git branch -a
 ```
+
+Depuis le 02/10/2026, `CLAUDE.md` fait faire ce `git fetch` à chaque
+ouverture de session, puis un `git pull --ff-only` quand la machine est en
+retard et que rien n'est modifié localement (sinon : arrêt et explication).
+Sans `git fetch`, un retard sur GitHub passait inaperçu.
 
 Ne rien écraser (`checkout --`, `reset --hard`, etc.) sans comprendre ce qui
 est déjà là. S'il y a un commit local non poussé ou des branches inhabituelles,
