@@ -5159,6 +5159,21 @@ de changer ce réglage sans qu'il en reparle.
   `.claude/scratch/fiche06-automatismes-bloc.js`, `fiche06-refonte.js`,
   `fiche06-nettoyage2.js` (+ Edit).
 
+- **Règles communes aux deux machines (02/10/2026).** Les règles de
+  rédaction données par David n'existaient que dans la mémoire locale de
+  Claude Code sur PC pro (`C:\Users\David\.claude\…`, hors dépôt) : les
+  sessions sur PC perso ne les voyaient pas. Elles sont désormais dans
+  **`REGLES-FICHES.md`** (racine), signalé dans `CLAUDE.md` et lu à chaque
+  ouverture de session : 4 exemples maximum (exceptions par David),
+  6 automatismes diversifiés, mise en valeur des formes imposées (#3A36A0),
+  pas de « (I) » seul, marge ±0,2 des lectures graphiques, corrigé lisible,
+  liste de vérification, pièges techniques.
+  **Vérificateur de syntaxe** des fiches rangé dans le dépôt :
+  `node outils/verification/verifier-syntaxe-fiches.js` (chemin relatif,
+  fonctionne sur les deux PC ; code de sortie 1 en cas d'erreur).
+  `.claude/scratch/` (scripts ponctuels déjà appliqués, à ne pas relancer)
+  ajouté au `.gitignore` : reste local à chaque machine.
+
 ## Procédure de reprise sur une autre machine
 
 Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
@@ -5186,3 +5201,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
    sont jamais suivis par git, et depuis l'abandon du montage Drive ne
    voyagent plus automatiquement d'une machine à l'autre : à recopier
    manuellement sur chaque nouveau clone, ou à régénérer/retélécharger.
+4. Avant de modifier une fiche : lire `REGLES-FICHES.md` (règles de
+   rédaction de David, communes aux deux machines — la mémoire locale de
+   Claude Code ne voyage pas d'un PC à l'autre). Vérificateur de syntaxe :
+   `node outils/verification/verifier-syntaxe-fiches.js` (aucune
+   dépendance à installer).
