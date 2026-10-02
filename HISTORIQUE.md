@@ -5521,3 +5521,27 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     comprises) ; fraction non simplifiée et calcul non effectué refusés ;
     aucun énoncé affiché brut ; 0 erreur MathJax ; vérificateur : 0
     erreur ; rendu contrôlé.
+
+- **Première fiche 9 : retouches de David (03/10/2026), 34 → 28
+  questions, 10 → 9 calculs.** David : « 1. dans 9.4 : le "alpha ∈ R"
+  doit s'écrire dans l'énoncé du b) et non dans le titre. 2. de même pour
+  le n dans 9.5, uniquement à écrire dans le d) 3. imposer la forme
+  factorisée dans les réponses de 9.6 4. Fusionner 9.6 et 9.7 : deux
+  exemples de produits, deux de quotients. Imposer une forme factorisée
+  pour les produits 5. 9.8 trois exemples uniquement. supprimer l'exemple
+  avec alpha 6. 9.9 supprimer le d) ».
+  - 9.4 b) « …, où α ∈ ℝ » et 9.5 d) « …, où n ∈ ℕ* » ; retirés des titres.
+  - **9.6 « Exponentielles, produits et quotients »** (ancien 9.6 + 9.7) :
+    a) x·e^{px}, b) (x²+Ax+B)e^{px} — dérivée **sous forme factorisée
+    exigée** (mis en valeur dans le titre ; contrôle `estFactorise` et
+    aide « ? » ajoutés, repris de la fiche 8) ; c) 1/(1+e^{px}),
+    d) (Aeˣ+B)/(1+e^{px}). Retirés : (eˣ+A)(B−eˣ), √(Dx)e^{√D x},
+    C/(De^{px}+Ee^{qx}), (x²−e^{qx})/(e^{px}−x).
+  - Tangentes (9.7, ex-9.8) : l'exemple à paramètre α retiré, « Soit
+    α ∈ ℝ » retiré du titre ; 3 exemples. Variations (9.8, ex-9.9) : d)
+    retiré. Composées (ex-9.10) → 9.9.
+  - Vérifié : 300 tirages, chaque dérivée comparée à la dérivée numérique
+    de la fonction (calcul indépendant) : 0 écart ; corrigés des produits
+    acceptés (y compris facteurs dans l'autre ordre), formes développées
+    refusées ; cycle complet 5 × 28 ; 0 erreur MathJax ; vérificateur :
+    0 erreur ; rendu contrôlé.
