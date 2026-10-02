@@ -5807,3 +5807,15 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   textes d'introduction, grilles). Vérifié : 400 tirages recalculés
   indépendamment : 0 écart ; cycle complet 4 × 21 accepté ; 0 erreur
   MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 12 : nouveau 12.5, sommes de termes consécutifs
+  (02/10/2026), 21 → 23 questions.** David : « il manque dans le cœur de la
+  fiche deux exemples sur la somme des termes d'une suite arithmétique ».
+  12.5 « Sommes de termes consécutifs » : a) u₀+u₁+⋯+u_N avec r et u₀
+  donnés (N de 10 à 30) ; b) somme numérique f+(f+r)+(f+2r)+⋯+dernier,
+  termes tous positifs, raison positive ou négative, de 8 à 25 termes
+  (compter les termes est la difficulté). Anciens 12.5 à 12.8 renumérotés
+  12.6 à 12.9. Vérifié : 2 000 tirages comparés à la somme calculée terme à
+  terme : 0 écart ; 300 tirages du reste de la fiche : 0 écart ; cycle
+  complet 4 × 23 accepté ; 0 erreur MathJax ; vérificateur : 0 erreur ;
+  rendu contrôlé.
