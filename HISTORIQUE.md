@@ -5824,3 +5824,45 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   consécutifs. Calculer les sommes suivantes. » ; le a) devient
   « u₀+u₁+⋯+u_N, où (uₙ) est arithmétique de raison r et de premier terme
   u₀=… ». Vérifié : 1 000 tirages, 0 écart.
+
+- **Première fiche 13 (Suites géométriques) : automatismes aux règles,
+  13.8 corrigé, fusions (02/10/2026), 28 → 23 questions.** David : « oui »
+  (même démarche que les fiches 11 et 12).
+  - **Automatismes** (6, nouveau modèle) : 13.1 inéquations a) x/a − x/b
+    ◊ c (signe du coefficient selon a et b, borne calculée exactement),
+    b) produit à facteur commun (ax+b)(cx+d) ◊ (ax+b)(ex+f) ; 13.2
+    équations a) degré 3 à factoriser x³ = m²x ou ax³+bx² = 0, b) second
+    degré à racines rationnelles ; 13.3 calcul numérique en entier ou
+    fraction irréductible (`estFractionIrreductible` reprise de la fiche
+    12) a) (Aᵖ ± Aᵖ⁺¹)/Aᵖ⁻¹, b) (1−rⁿ)/(1−r) avec r = ±p/k. Retirés :
+    développements, factorisations (dont le corrigé non simplifié
+    « (6−5x−6)(6−5x+6) » de 13.2 a), image, antécédent ;
+    `FORMES_FACTORISEES` vidé.
+  - **13.8 corrigé** : « u_K1 = √D, u_K2 = B√D, déterminer la raison »
+    tirait aussi des écarts pairs (q⁴ = 16 : deux raisons, une seule
+    acceptée) ; devient 13.5 a) avec un écart 3 (raison unique).
+  - **Fusions**, énoncés aérés « … si q=… et u_K=… » : 13.4 termes
+    (anciens 13.5, 13.6, 13.7 : u_N depuis u₀, u_N depuis u_K à raison
+    fractionnaire, uₙ en fonction de n, raison √D avec u₀ = ±k/√D) ;
+    13.5 raison et premier terme, réponse en ensemble des raisons
+    possibles (anciens 13.8, 13.9, 13.11 : écart impair, écart pair →
+    {−m;m}, raison σm√D ; u₀ pour un indice pair, identique pour les deux
+    raisons). Problèmes à étapes gardés entiers : 13.6 trois termes
+    consécutifs (ancien 13.10), 13.7 suite auxiliaire (ancien 13.12),
+    avancés 13.8 maximum (ancien 13.13) et 13.9 somme (ancien 13.14,
+    « Combien vaut 2⁹ ? » retiré, raison 2 ou 3). Titres donnés à tous les
+    calculs ; sections « Termes et raison d'une suite géométrique »,
+    « Reconnaître une suite géométrique ».
+  - **Corrigés** : 13.6 b) affiché a × (1/|q|)ᴷ (`correctionLatex`, au
+    lieu d'une grande fraction, et plus de « (4)⁴ ») ; 13.8 a) « −8q²/5 »
+    au lieu de « −8/5 × q² » ; saisie « √2 » sans parenthèses acceptée
+    (`normaliserSaisie`).
+  - Vérifié : 500 tirages recalculés indépendamment (inéquations sur une
+    grille et aux bornes, équations par substitution et nombre de racines,
+    calculs évalués, termes et raisons depuis l'énoncé affiché avec
+    ensemble complet des raisons réelles, problèmes à étapes par
+    itération, maximum par comparaison) : 0 écart ; variété ≥ 42 énoncés
+    par question ; cycle complet 8 × 23 accepté (corrigés affichés
+    retapés) ; fraction non réduite, calcul non effectué et ensemble
+    incomplet refusés ; 0 erreur MathJax ; vérificateur : 0 erreur ;
+    rendu contrôlé.
