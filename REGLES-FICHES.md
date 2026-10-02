@@ -51,6 +51,11 @@ les corrections ponctuelles d'une fiche).
   - fiche 6 : inéquation degré 1 (avec parenthèses) + inéquation quotient ;
     équation du second degré + équation du premier degré à fractions ; calcul
     fractionnaire avec priorités (fraction irréductible) ; développer.
+  - fiche 7 : inéquation degré 1 à membre fractionnaire + inéquation
+    produit (x²+k)(ax+b) (un facteur toujours positif) ; équation
+    (ax+b)²=c² + équation à facteur commun ; produit conjugué avec racine
+    carrée + quotient de puissances à exposant littéral (fraction
+    irréductible).
 - **Seconde** (règles données sur les fiches de Seconde, non rétroactives) :
   - le premier calcul d'automatismes **varie d'une fiche à l'autre et d'un
     tirage à l'autre** : vivier d'une dizaine de modèles, plusieurs modèles

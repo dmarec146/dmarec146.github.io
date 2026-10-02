@@ -5325,3 +5325,42 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     parallèles en la valeur exclue ; 112 et 1 086 énoncés distincts ;
     corrigé retapé dans le vrai champ accepté (12/12), réponse fausse
     refusée ; vérificateur de syntaxe : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 7 (Généralités sur l'exponentielle I) — automatismes
+  aux nouvelles règles et simplifications (02/10/2026), 38 → 32
+  questions, 14 calculs.** David : « 1. cette fiche ne respecte pas encore
+  les nouvelles règles sur les automatismes. 2. Fusionner 7.4 et 7.5 en
+  réécrivant le titre et préciser dans les exemples "développer" ou
+  "factoriser". 3. dans 7.8, deux exemples suffisent. 4. 7.11 une seule
+  question suffit. »
+  - **Automatismes (6)**, en rotation avec les fiches 5 et 6 : 7.1 a)
+    inéquation du premier degré à membre fractionnaire, coefficients de
+    signe quelconque, b) inéquation produit (x²+k)(ax+b) ◊ 0 (un facteur
+    toujours positif ; la fiche 5 avait un produit, la 6 un quotient) ;
+    7.2 a) (ax+b)²=c², b) facteur commun (ax+b)(cx+d)=(ax+b)(ex+f)
+    (solutions distinctes) ; 7.3 « Calcul numérique » : a) produit
+    conjugué (a√b+c)(a√b−c), b) (Bⁿ⁺ᵖ ± Bⁿ)/Bⁿ⁺ᑫ sous forme de fraction
+    irréductible (contrôlée). Retirés : les trois calculs de fractions et
+    les trois puissances 2ⁿ (calcul numérique seul). Ajout de
+    `aleaNonNul` (absente de cette fiche).
+  - **7.4 + 7.5 → 7.5 « Avec des identités remarquables »** : deux
+    « Développer » (carré d'une différence à coefficients, différence de
+    deux carrés qui vaut 4) et deux « Factoriser » (carré à exposants
+    différents, différence de deux carrés) ; forme factorisée exigée sur
+    les deux derniers seulement. Ancien 7.3 → 7.4.
+  - **7.8** : 3 → 2 (gardés le changement X=exp(x) et le changement
+    X=exp(x²) ; « À l'aide de …, résoudre » factorisé → « …, en posant
+    X=… »). **7.11** : une seule question (cosh(2x) en fonction de
+    cosh(x)).
+  - Défauts préexistants corrigés : « exp(1x) », « exp(−1x) » (7.5, 7.6) ;
+    « exp(0) » tiré au hasard (7.4, 7.6, 7.7) ; « = » ajouté après une
+    phrase (« Calculer … = », « est : = », 7.3, 7.5, 7.9, 7.11, 7.14) ;
+    ℝ en LaTeX dans les titres et énoncés.
+  - Vérifié : 600 tirages comparés à un calcul indépendant (énoncé relu :
+    inéquations au signe sur une grille + bornes, équations par
+    substitution, calculs numériques, développements/factorisations en
+    trois points), 2 000 tirages sans défaut d'affichage ; cycle complet
+    sur 14 tirages (corrections retapées : 448/448) ; fraction non
+    simplifiée, calcul non effectué et expression développée refusés ;
+    0 erreur MathJax, aucun débordement ; vérificateur de syntaxe :
+    0 erreur ; rendu contrôlé.
