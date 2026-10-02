@@ -5794,3 +5794,16 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     introductions) ; cycle complet 5 × 23 accepté ; fraction non réduite,
     décimal et ensemble incomplet refusés ; 0 erreur MathJax (fiche et
     panneau) ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 12 : 12.4 et 12.5 fusionnés, 6 exemples (02/10/2026),
+  23 → 21 questions.** David : « fusionner 12.4 et 12.5 en gardant 6
+  exemples en tout » (exception au plafond de 4, décidée par David pour
+  cette fiche, non inscrite dans les règles). Nouveau 12.4 « Termes, raison
+  et premier terme » : a) u_N depuis u₀, b) u_N depuis u₁, c) u_N depuis
+  u_K, d) r depuis deux termes entiers, e) u₀ depuis deux termes entiers,
+  f) u₀ depuis deux termes fractionnaires. Retirés : « u₀ depuis u_K et r »
+  (même calcul que c, à rebours) et « r depuis deux termes fractionnaires »
+  (contenu dans f). Anciens 12.6 à 12.9 renumérotés 12.5 à 12.8 (ids,
+  textes d'introduction, grilles). Vérifié : 400 tirages recalculés
+  indépendamment : 0 écart ; cycle complet 4 × 21 accepté ; 0 erreur
+  MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
