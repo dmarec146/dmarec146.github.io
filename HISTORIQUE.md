@@ -5650,3 +5650,17 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     grille de 4 000 points : 0 écart, jamais atteint au bord ; cycle
     complet accepté, valeur fausse refusée ; 0 erreur MathJax ;
     vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 10, 10.9 : nature de l'extremum non donnée, famille
+  (ax+b)e^{kx²} (02/10/2026).** David : « ne pas dire ce qu'est l'extremum
+  (minimum ou maximum) dans la question. S'autoriser (ax+b)e^(ax^2) ».
+  Titre : « Sur l'intervalle indiqué, f admet un extremum en un unique
+  point intérieur : en donner la valeur » ; items réduits à « f(x)=… sur
+  [α;β] ». Les deux questions tirent deux familles différentes parmi
+  trois : (ax+b)e^{px+q}, trinôme × e^{±x+q}, et la nouvelle (ax+b)e^{kx²}
+  (k ∈ [−3;3]∖{0}), construite avec une racine entière r de f' imposée
+  (a = −2krt, b = (2kr²+1)t, f(r) = t·e^{kr²}), l'autre racine 1/(2kr)
+  hors de l'intervalle. Vérifié : 600 questions, exactement un extremum
+  local intérieur relevé numériquement et égal au corrigé : 0 écart ;
+  familles équilibrées (205/202/193) ; cycle complet accepté, valeur
+  fausse refusée ; vérificateur : 0 erreur.
