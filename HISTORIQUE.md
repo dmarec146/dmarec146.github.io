@@ -5365,3 +5365,34 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     simplifiée, calcul non effectué et expression développée refusés ;
     0 erreur MathJax, aucun débordement ; vérificateur de syntaxe :
     0 erreur ; rendu contrôlé.
+
+- **Première fiche 8 (Généralités sur l'exponentielle II) — automatismes
+  aux nouvelles règles (02/10/2026), 32 questions, 13 → 14 calculs.**
+  David : « fiche 8 : je vais vérifier mais avant toute chose, applique la
+  règle des automatismes sur cette fiche de manière autonome ».
+  - Anciens automatismes : 8.1 quatre factorisations, 8.2 deux fractions
+    de fractions (pas d'inéquation, pas d'équation).
+  - **Nouveaux (6)**, en rotation avec les fiches 5 à 7 : 8.1 a)
+    inéquation du premier degré m(px+q) ◊ n(rx+s) (parenthèses des deux
+    côtés, coefficients de signe quelconque), b) **inéquation quotient
+    comparé à un nombre** (px+q)/(rx+s) ◊ k (la fiche 7 avait un produit ;
+    ensemble construit par point-test dans chaque région, valeur interdite
+    jamais incluse) ; 8.2 a) a/(x+b) = c/(x+d) (solution différente des
+    valeurs interdites, signe devant la fraction), b) second degré à
+    **racine double ou sans solution** ({k} ou {}, environ moitié-moitié) ;
+    8.3 « Calcul numérique » : a) fraction de fractions (ancien 8.2 a,
+    au moins une vraie fraction en haut et en bas : plus de « 3+2 »),
+    b) pourcentage d'un pourcentage (résultat entier). Anciens 8.3 à 8.13
+    → 8.4 à 8.14 (ids renumérotés, conteneurs de figures inchangés) ;
+    `FORMES_FACTORISEES` vidée (plus de « Factoriser ») ; ajout de
+    `aleaNonNul` ; ℝ en LaTeX dans les titres 8.6 et 8.7.
+  - Vérifié : 300 tirages comparés à un calcul indépendant (énoncé relu :
+    inéquations au signe sur une grille et de part et d'autre des bornes,
+    équations par substitution et recherche d'autres racines, absence de
+    solution vérifiée par le signe, fraction et pourcentage recalculés),
+    600 énoncés distincts environ par question ; cycle complet 8 × 32
+    (corrections retapées) accepté ; fraction non simplifiée et mauvais
+    ensemble refusés ; 0 erreur MathJax ; vérificateur de syntaxe :
+    0 erreur ; rendu contrôlé.
+  - Remarqué, non traité (hors automatismes, en attente de la relecture de
+    David) : « exp(0) » tiré au hasard dans 8.4 à 8.8.

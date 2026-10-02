@@ -56,6 +56,11 @@ les corrections ponctuelles d'une fiche).
     (ax+b)²=c² + équation à facteur commun ; produit conjugué avec racine
     carrée + quotient de puissances à exposant littéral (fraction
     irréductible).
+  - fiche 8 : inéquation degré 1 avec parenthèses des deux côtés m(px+q) ◊
+    n(rx+s) + inéquation quotient comparé à un nombre ((px+q)/(rx+s) ◊ k) ;
+    équation a/(x+b)=c/(x+d) + second degré à racine double ou sans
+    solution ({k} ou {}) ; fraction de fractions (irréductible) +
+    pourcentage d'un pourcentage.
 - **Seconde** (règles données sur les fiches de Seconde, non rétroactives) :
   - le premier calcul d'automatismes **varie d'une fiche à l'autre et d'un
     tirage à l'autre** : vivier d'une dizaine de modèles, plusieurs modèles
