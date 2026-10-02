@@ -5747,3 +5747,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   symboles. Vérifié : 30 tirages de la fiche 10, réponses construites avec le
   bouton ∪ toutes acceptées ; boutons ℝ et ∅ insèrent le symbole, reconnu
   pour ℝ et ∅, refusé à contre-emploi ; vérificateur : 0 erreur.
+
+- **Première fiche 11 : énoncés 11.4 à 11.7 aérés (02/10/2026).** David :
+  « mieux gérer l'espacement dans les énoncés 11.4 à 11.7, c'est un peu
+  serré ». « u_3 si u_0=… et u_{n+1}=… » est désormais une seule formule où
+  « si » et « et » sont entourés d'espaces \quad (passe finale du
+  générateur, ids 11.4 à 11.7). Vérifié : 200 tirages, plus aucun « si »/« et »
+  hors formule ; 0 erreur MathJax ; aucune carte ne déborde ; rendu contrôlé.

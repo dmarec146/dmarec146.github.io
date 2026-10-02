@@ -1242,6 +1242,10 @@ function genererExercices() {
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
   ex.forEach(e => { if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt '); });
+  // 11.4 a 11.7 : « u_3 si u_0=… et u_{n+1}=… » en une seule formule, mots espaces par \quad (plus aere)
+  ex.filter(e => /^11\.[4-7] /.test(e.id)).forEach(e => {
+    e.enonce = e.enonce.replace(/\\\) (si|et) \\\(/g, (m, mot) => `\\quad\\text{${mot}}\\quad `);
+  });
   return ex;
 }
 
