@@ -5754,3 +5754,5 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   « si » et « et » sont entourés d'espaces \quad (passe finale du
   générateur, ids 11.4 à 11.7). Vérifié : 200 tirages, plus aucun « si »/« et »
   hors formule ; 0 erreur MathJax ; aucune carte ne déborde ; rendu contrôlé.
+  Retouche le même jour (David : « un peu moins quand même ») : \quad
+  remplacé par un double espace épais \;\; autour de « si » et « et ».
