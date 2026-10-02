@@ -224,7 +224,9 @@ banque d'automatismes) — **ne le modifier qu'à sa demande**.
 - `entoureParParentheses()` avant tout retrait de parenthèses extérieures
   (ne retirer que si elles se correspondent).
 - Un « < » dans une réponse affichée doit être échappé (sinon le panneau
-  « Voir toutes les réponses » se tronque).
+  « Voir toutes les réponses » se tronque) ; dans un énoncé, écrire `\lt` :
+  « <e^{2x} » ou « <x » ouvre une balise HTML et tronque l'énoncé (fiches 7
+  et 8 de Première, 02/10/2026).
 
 **Firebase et pages**
 - `suivi.js` est un module différé : tout code qui l'utilise au chargement

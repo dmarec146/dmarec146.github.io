@@ -5469,3 +5469,25 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     complet 9 × 32 ; 0 erreur MathJax sur 20 fiches complètes ; saisies
     usuelles (x(x+2), exp(2x), sin(x)², 3cos(x)) toujours acceptées ;
     vérificateur de syntaxe : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 7 : 7.4 à 7.7 réduits à 3 exemples ; affichage de
+  7.7 b) (02/10/2026), 32 → 28 questions.** David : « 1. fiche 7 : de 7.4
+  à 7.7 trois exemples à chaque fois suffisent (choisis les bons)
+  2. problème d'affichage en 7.7 b) ».
+  - Retirés : 7.4 a) (produit numérique le plus simple), 7.5 b) (différence
+    de deux carrés toujours égale à 4, déjà supprimée en fiche 8), 7.6 a)
+    (eᵖˣ = e^q, la plus simple), 7.7 a) (eᵖˣ > e^q, la plus simple).
+    Gardés : 7.4 quotient numérique + deux expressions en x ; 7.5 un
+    « Développer » + deux « Factoriser » (forme factorisée exigée sur 7.5 b
+    et c) ; 7.6 e^{x²}=e^{cx}, équation produit, A−B·e^{px−r}=C ; 7.7
+    e^{x²}<e^{cx}, A−B·e^{px+r}⩾C, e^{ax²}>e^{bx+c}.
+  - **7.7 b) tronqué** : « \(e^{x^2}<e^{2x}\) » — inséré en HTML, « <e »
+    ouvre une balise et l'énoncé s'affiche brut. Introduit par le passage
+    à la notation eˣ (avec « <\exp » le problème n'existait pas). Même
+    risque pour « <x » dans les nouvelles inéquations des automatismes des
+    fiches 7 et 8. Correction centrale dans les deux fiches : tout « < »
+    d'un énoncé devient `\lt`. Piège ajouté à `SUIVI-FIREBASE.md` §7.
+  - Vérifié : 15 tirages par fiche, aucun énoncé affiché brut (MathJax
+    appliqué partout), aucun `\lt` hors des formules ; cycle complet
+    15 × 28 (fiche 7) et 15 × 30 (fiche 8) accepté ; 0 erreur MathJax ;
+    vérificateur : 0 erreur ; rendu contrôlé.

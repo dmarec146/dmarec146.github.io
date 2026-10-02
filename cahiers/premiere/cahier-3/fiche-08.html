@@ -1280,7 +1280,8 @@ function genererExercices() {
   }
 
   ex.forEach(e => {
-    if (e.enonce) e.enonce = expVersPuissance(e.enonce);
+    // « < » suivi d'une lettre (« <e^{2x} », « <x ») serait lu comme une balise HTML : \lt
+    if (e.enonce) e.enonce = expVersPuissance(e.enonce).replace(/</g, '\\lt ');
     if (Array.isArray(e.options)) e.options.forEach(o => { o.texte = expVersPuissance(o.texte); });
   });
   return ex;
