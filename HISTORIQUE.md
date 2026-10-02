@@ -5522,7 +5522,7 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     aucun énoncé affiché brut ; 0 erreur MathJax ; vérificateur : 0
     erreur ; rendu contrôlé.
 
-- **Première fiche 9 : retouches de David (03/10/2026), 34 → 28
+- **Première fiche 9 : retouches de David (02/10/2026), 34 → 28
   questions, 10 → 9 calculs.** David : « 1. dans 9.4 : le "alpha ∈ R"
   doit s'écrire dans l'énoncé du b) et non dans le titre. 2. de même pour
   le n dans 9.5, uniquement à écrire dans le d) 3. imposer la forme
