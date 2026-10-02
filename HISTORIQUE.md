@@ -5586,3 +5586,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     « \exp », « +- », « ^{1} » ; cycle complet 10 × 20 accepté ; formes
     développées refusées en 10.4 ; 0 erreur MathJax ; vérificateur :
     0 erreur ; rendu contrôlé.
+
+- **Première fiche 10 : 4 automatismes au lieu de 6 (02/10/2026), 20 → 18
+  questions.** David : « exceptionnellement, garde seulement 4
+  automatismes sur cette fiche car on va ajouter un certain nombre de
+  questions ». Gardés : les deux inéquations (coefficients décimaux,
+  quotient à dénominateur carré), l'équation bicarrée, les puissances de
+  10 ; retirés : |ax+b| = c et la moyenne pondérée. 10.2 et 10.3 n'ont
+  plus qu'une question (sans lettre, carte pleine largeur ; titre de 10.2
+  au singulier). Exception notée dans `REGLES-FICHES.md` §2. Vérifié :
+  cycle complet 5 × 18, 0 erreur MathJax, vérificateur : 0 erreur, rendu
+  contrôlé.

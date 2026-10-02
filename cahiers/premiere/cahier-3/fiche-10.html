@@ -850,7 +850,7 @@ window.MathJax = {
 <p class="calcul-titre"><span>Calcul 10.1 — Donner l'ensemble des solutions des inéquations suivantes, <span class="titre-mise-en-valeur">sous la forme d'un intervalle ou d'une réunion d'intervalles</span>.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-10-1"></div>
 
-<p class="calcul-titre"><span>Calcul 10.2 — Résoudre dans \(\mathbb{R}\) les équations suivantes (ensemble des solutions).</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 10.2 — Résoudre dans \(\mathbb{R}\) l'équation suivante (ensemble des solutions).</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-10-2"></div>
 
 <p class="calcul-titre"><span>Calcul 10.3 — Calcul numérique.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
@@ -1106,15 +1106,7 @@ function genererExercices() {
       enonce = `x^4${termeX2(k - m*m)}${terme0(-k*m*m)}=0`;
       reponse = `{${-m};${m}}`;
     }
-    ex.push({id:"10.2 a)", type:"num", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse});
-  }
-  // b) |ax+b| = c, c > 0 : deux solutions (c-b)/a et (-c-b)/a
-  {
-    const a = aleaNonNul(-4,4), b = aleaNonNul(-8,8), cc = alea(1,9);
-    const s1 = [cc - b, a], s2 = [-cc - b, a];
-    const tri = [s1, s2].sort((u, v) => u[0]/u[1] - v[0]/v[1]);
-    ex.push({id:"10.2 b)", type:"num", texteLibre:true, enonce:`\\(\\left|${fmtLin(a,b,false)}\\right|=${cc}\\)`,
-      reponse:`{${fracStr(tri[0][0], tri[0][1])};${fracStr(tri[1][0], tri[1][1])}}`});
+    ex.push({id:"10.2", type:"num", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse});
   }
 
   // ---------- 10.3 : calcul numerique (deux natures differentes) ----------
@@ -1126,20 +1118,9 @@ function genererExercices() {
       pp = alea(-4,5); q = alea(-4,5); r = alea(-4,5);
       val = a * b / cc * Math.pow(10, pp + q - r);
     } while (!Number.isInteger(Math.round(val * 1e6) / 1e6) || val < 1 || val > 100000 || [pp, q, r].some(e => e === 0 || e === 1) || (a*b) % cc !== 0 || cc === a || cc === b);
-    ex.push({id:"10.3 a)", type:"num", texteLibre:true, sansEgal:true,
+    ex.push({id:"10.3", type:"num", texteLibre:true, sansEgal:true,
       enonce:`Calculer \\(\\dfrac{${a}\\times 10^{${pp}}\\times ${b}\\times 10^{${q}}}{${cc}\\times 10^{${r}}}\\)`,
       reponse: String(Math.round(val))});
-  }
-  // b) moyenne ponderee, resultat entier
-  {
-    let notes, coefs, somme, total;
-    do {
-      notes = [alea(4,20), alea(4,20), alea(4,20)]; coefs = [alea(1,4), alea(1,4), alea(1,4)];
-      somme = notes[0]*coefs[0] + notes[1]*coefs[1] + notes[2]*coefs[2]; total = coefs[0] + coefs[1] + coefs[2];
-    } while (somme % total !== 0 || new Set(notes).size < 3 || new Set(coefs).size < 2);
-    ex.push({id:"10.3 b)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`Calculer la moyenne des notes \\(${notes[0]}\\), \\(${notes[1]}\\) et \\(${notes[2]}\\), affectées des coefficients respectifs \\(${coefs[0]}\\), \\(${coefs[1]}\\) et \\(${coefs[2]}\\)`,
-      reponse: String(somme / total)});
   }
 
   // ---------- 12.3 : dérivées de sommes ----------
@@ -1274,13 +1255,13 @@ function genererExercices() {
 
 const groupes = {
   "grille-10-1": [0,1],
-  "grille-10-2": [2,3],
-  "grille-10-3": [4,5],
-  "grille-10-4": [6,7,8,9],
-  "grille-10-5": [10,11],
-  "grille-10-6": [12],
-  "grille-10-7": [13,14,15,16],
-  "grille-10-8": [17,18,19]
+  "grille-10-2": [2],
+  "grille-10-3": [3],
+  "grille-10-4": [4,5,6,7],
+  "grille-10-5": [8,9],
+  "grille-10-6": [10],
+  "grille-10-7": [11,12,13,14],
+  "grille-10-8": [15,16,17]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 // Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
