@@ -5866,3 +5866,16 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     retapés) ; fraction non réduite, calcul non effectué et ensemble
     incomplet refusés ; 0 erreur MathJax ; vérificateur : 0 erreur ;
     rendu contrôlé.
+
+- **Première fiche 13 : 13.4 et 13.5 fusionnés, 6 exemples (02/10/2026),
+  23 → 21 questions.** David : « de la même manière que la fiche
+  précédente, fusionner 13.4 et 13.5 en six exemples » (exception au
+  plafond de 4, décidée par David, non inscrite dans les règles). Nouveau
+  13.4 « Termes, raison et premier terme » : a) u_N depuis u₀, b) u_N
+  depuis u_K (raison fractionnaire), c) uₙ en fonction de n, d) q pour un
+  écart impair ({q}), e) q pour un écart pair ({−m;m}), f) u₀ (identique
+  pour les deux raisons). Retirés : raison √D avec u₀ = ±k/√D et raison
+  irrationnelle σm√D (les deux exemples les plus techniques). Anciens
+  13.6 à 13.9 renumérotés 13.5 à 13.8. Vérifié : 400 tirages recalculés
+  indépendamment : 0 écart ; cycle complet 5 × 21 accepté ; 0 erreur
+  MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
