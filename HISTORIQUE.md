@@ -5903,3 +5903,21 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     géométrique vérifiée, sommes terme à terme) et 300 tirages du reste :
     0 écart ; cycle complet 6 × 28 accepté (corrigés affichés retapés) ;
     0 erreur MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Les 50 fiches : « Recommencer » efface aussi la couleur des statuts
+  (02/10/2026).** `reinitialiser()` vidait le texte de chaque
+  `statut-idx` sans remettre sa classe à `'q-statut'` : les classes
+  `ok` / `ko` restaient, et une pastille vide vert clair ou rouge clair
+  subsistait à côté des champs déjà corrigés (surtout visible sur les
+  champs texte : ensembles, intervalles). `reinitialiserStatut(idx)` le
+  faisait déjà correctement. Ajout, juste après la ligne qui vide
+  `textContent`, de `document.getElementById('statut-' + idx).className =
+  'q-statut';`. Le corps de `reinitialiser()` varie selon les fiches
+  (8 variantes : widgets tableau de signes / de variations / croisé /
+  programme / schéma d'évolution, `boiteRacineOuverte`…), mais la ligne
+  visée est partout dans le `forEach`, avant tout `return` anticipé :
+  insertion faite par script Node (CRLF conservé), 50 fiches, une ligne
+  chacune. Vérifié : vérificateur 0 erreur ; dans le navigateur (Première
+  13 et 22, Seconde 25), réponses saisies (justes et fausses),
+  `verifierUne` sur chaque question puis `reinitialiser()` : 21, 39 et
+  35 statuts `ok`/`ko` avant, 0 après, aucune erreur console.
