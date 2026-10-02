@@ -165,12 +165,15 @@ banque d'automatismes) — **ne le modifier qu'à sa demande**.
 
 - Diversifier les automatismes des fiches de Première 7 à 26 au fil des
   relectures de David (règle et modèles dans `REGLES-FICHES.md`, §2).
-- **Sur PC perso** : la mémoire locale de Claude Code y contient des règles
-  qui n'existent pas sur PC pro (citées dans `HISTORIQUE.md` :
-  `feedback-consigne-generale-factorisee`,
-  `project-premiere-fiche-randomization`, « règle 3bis », « une droite
-  s'écrit y=mx+p », notes sur les fiches 14 et 19 de Première…) : les
-  relire et verser dans `REGLES-FICHES.md` ce qui n'y figure pas encore.
+- Fiche 17 de Première (probabilités, ex-fiche 19) : erreur console
+  intermittente au chargement (`<svg> attribute width: "NaNex"`, SVG MathJax
+  à dimensions NaN), apparue avec le trait de l'événement contraire dessiné
+  dans l'arbre (`texteEvenementSVG`) ; aucun effet visible constaté, cause
+  non trouvée. **Mis de côté par David (01/09/2026) : n'y revenir que sur
+  sa demande.**
+- Fiche 12 de Première (suites arithmétiques, ex-fiche 14) : un groupe dont
+  la condition sur \(a\) manque dans l'énoncé d'origine est laissé
+  statique, **choix de David** (ne pas inventer de condition).
 - Nettoyage possible des écritures orphelines (`enregistrerTentative()`
   des 14 fiches à widget de Seconde).
 - Idée non demandée : barème réglable devoir par devoir (automatismes).

@@ -5272,3 +5272,30 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   - Reste à faire sur PC perso : verser dans `REGLES-FICHES.md` les règles
     de la mémoire locale de Claude Code sur cette machine, citées dans le
     journal mais absentes de PC pro (voir `SUIVI-FIREBASE.md` §6).
+
+- **Règles de la mémoire de PC perso versées dans `REGLES-FICHES.md`
+  (02/10/2026).** David : « oui fais le maintenant » (tâche de
+  `SUIVI-FIREBASE.md` §6). Relecture des règles conservées dans la mémoire
+  locale de Claude Code sur PC perso ; ajouté ce qui manquait :
+  - §2 automatismes de Seconde : premier calcul varié (vivier de modèles),
+    révisions mêlées sans l'annoncer dès la fiche 14, plus de calcul
+    numérique pur dès la fiche 15 (non rétroactif) ;
+  - §3 : pas de point final en fin de question, jamais la démarche dans
+    l'énoncé, rédiger les idées de David en vraies phrases, polynôme nommé
+    `P(x)=…`, contextes sans sujet sensible, calculs avancés plus difficiles
+    et non contextualisés ;
+  - §4 : précisions sur « y=mx+p » (saisie « y= » exigée, pas d'équation
+    cartésienne avant la fiche droites, « s'il existe » / « aucun »),
+    rigueur des inéquations (intervalles dans toute la fiche, ∪ et ∅ en
+    symboles, système avec accolade, encadrement `a<x<b`), clavier
+    simplifié complet ;
+  - nouveau §4 bis « Conception des tirages aléatoires » : élargir les
+    familles de courbes, variété mesurée et coefficients signés, figures non
+    aplaties (|sin| > 0,5, tous les sites du fichier), graphiques lisibles,
+    banques d'automatismes comme source d'inspiration.
+  Déjà présents (non dupliqués) : règle 3bis (problèmes à étapes), une
+  droite s'écrit y=mx+p, consigne factorisée, 4 exemples au maximum.
+  `SUIVI-FIREBASE.md` §6 : tâche retirée ; ajout des deux points ouverts
+  trouvés dans cette mémoire (erreur NaN de la fiche 17, ex-19, mise de
+  côté par David ; groupe statique de la fiche 12, ex-14, par choix de
+  David).

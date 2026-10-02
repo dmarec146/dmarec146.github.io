@@ -51,6 +51,17 @@ les corrections ponctuelles d'une fiche).
   - fiche 6 : inéquation degré 1 (avec parenthèses) + inéquation quotient ;
     équation du second degré + équation du premier degré à fractions ; calcul
     fractionnaire avec priorités (fraction irréductible) ; développer.
+- **Seconde** (règles données sur les fiches de Seconde, non rétroactives) :
+  - le premier calcul d'automatismes **varie d'une fiche à l'autre et d'un
+    tirage à l'autre** : vivier d'une dizaine de modèles, plusieurs modèles
+    distincts tirés à chaque génération (reproche le plus souvent revenu :
+    « ce sont presque systématiquement les mêmes fiche après fiche ») ;
+  - **à partir de la fiche 14** : des révisions de fiches précédentes sont
+    mêlées aux automatismes, **sans l'annoncer** — titre neutre « Calcul X. »
+    (pas « Révisions mélangées ») ;
+  - **à partir de la fiche 15** : plus de calcul numérique pur dans le
+    premier calcul, remplacé par du calcul littéral (développer, réduire)
+    et des inéquations du premier degré ou produits déjà factorisés.
 
 ## 3. Titres et énoncés
 
@@ -82,6 +93,31 @@ les corrections ponctuelles d'une fiche).
   ajouté après une phrase ou une question (`sansEgal:true`).
 - Le titre doit correspondre aux réponses acceptées (ex. « vraies ou
   fausses ? » si la correction attend vrai/faux).
+- **Pas de point final** à la fin d'une question (énoncé d'item, surtout
+  les énoncés réduits à une citation : « \(d_1\) », « Point \(A\) »). Les
+  consignes de groupe et les paragraphes d'introduction gardent leur point.
+- **Ne jamais indiquer la démarche dans l'énoncé** (« par combinaison »,
+  parenthèse explicative, « à l'aide de… », « en utilisant… ») : seul le
+  format de réponse peut être précisé. Même vigilance dans les titres.
+  Une indication de format ne doit pas non plus révéler la réponse.
+- **Rédiger, pas transcrire** : quand David décrit une idée d'exercice en
+  quelques mots, c'est l'idée, pas l'énoncé — écrire une vraie phrase dans
+  le style de la fiche.
+- **Polynôme ou fonction nommé** : `P(x)=…` défini une fois (titre ou
+  introduction), puis les questions disent \(P\), sans recopier la formule.
+- **Contextes : aucun sujet sensible.** Ne jamais croiser une
+  caractéristique de personne (genre, nationalité/origine, religion, santé,
+  handicap, précarité, difficulté scolaire, absentéisme, substances,
+  orientation) avec un comportement ou une performance, en particulier dans
+  un tableau croisé ou un arbre (les effectifs étant tirés au hasard, la
+  comparaison suggérée n'est pas maîtrisée). Remplacer par une catégorie
+  factuelle et non personnelle (lieu, objet, durée, format, catégorie
+  sportive officielle…). Admis : candidats anonymes A/B/C, cadre/non-cadre,
+  junior/senior, demi-pensionnaire/externe.
+- **Calculs plus avancés** : nettement plus difficiles que tout le cœur de
+  la fiche (quitte à déborder légèrement du programme), **jamais
+  contextualisés** (pas de taxi, de prix…) : soit un calcul combinant
+  plusieurs techniques du cœur, soit une propriété à démontrer.
 
 ## 4. Réponses, corrections, tirages
 
@@ -98,7 +134,25 @@ les corrections ponctuelles d'une fiche).
   Inéquations : intervalle ou réunion d'intervalles ; **l'infini n'est jamais
   inclus** (crochets ouverts).
 - **Une droite s'écrit y=mx+p** (y compris une horizontale : « y=k », pas
-  « donner juste k »).
+  « donner juste k »). « mx+p » seul est un nombre, pas une équation : dès
+  qu'on demande l'équation réduite d'une droite, la saisie doit commencer
+  par « y= » (« 2x-3 » refusé, l'aide « ? » dit pourquoi) ; « mx+p » n'est
+  admis que pour l'expression d'une fonction nommée (\(f(x)=…\)).
+  Pas d'équation cartésienne avant la fiche « Équations de droites » (les
+  systèmes restent permis en tant que systèmes). Point d'intersection :
+  écrire « …, s'il existe », prévoir des cas sans point, réponse « aucun »
+  acceptée seulement dans ce cas.
+- **Inéquations, rigueur d'écriture** (règle de Première, valable aussi en
+  Seconde) : dès qu'une fiche fait résoudre des inéquations, **toute** la
+  fiche répond en intervalles (automatismes compris) ; réunion « ∪ » et
+  ensemble vide « ∅ » en symboles, jamais « ou » / « vide », dans l'aide,
+  les boutons du clavier et les exemples (la correction peut rester
+  tolérante en coulisses) ; un système s'écrit avec une accolade
+  (`\begin{cases}`) ; un encadrement se répond par la double inégalité
+  `a<x<b`.
+- **Clavier simplifié complet** : un clavier maison (intervalles,
+  ensembles, couples) propose tout le vocabulaire du domaine (∪, ∩, ∅, ℝ…)
+  même si la fiche ne s'en sert pas.
 - **Le corrigé affiché doit être lisible et exact** : pas de « 3/4 × x² »
   (écrire 3x²/4), pas de « (−3)/2 » (écrire −3/2), pas de signe moins mis en
   facteur inutilement, pas de parenthèses inutiles (« (4x) », « (x)² »), pas
@@ -111,6 +165,31 @@ les corrections ponctuelles d'une fiche).
   de QCM en double, élément répété dans un ensemble, valeur interdite qui
   serait la solution, dénominateur qui s'annule là où la question suppose
   le contraire.
+
+## 4 bis. Conception des tirages aléatoires
+
+- **Élargir le champ de l'aléatoire** (« c'est très important », redit
+  plusieurs fois) : dès qu'un exercice met en jeu une courbe, tirer parmi
+  **toutes** les familles pertinentes au niveau (affine, parabole, cubique,
+  valeur absolue…), pas seulement la plus simple, avec un poids égal ou
+  supérieur pour les formes moins triviales ; vérifier la correction pour
+  chaque famille.
+- **Variété mesurée, pas jugée à l'œil** : régénérer quelques centaines de
+  fois et compter les énoncés distincts par question (viser une quarantaine) ;
+  au moins deux degrés de liberté par exercice, plages larges, viviers
+  calculés plutôt qu'énumérés à la main. Coefficients **signés** quand le
+  sujet le permet (pas un groupe entier à coefficients toujours positifs).
+- **Figures géométriques jamais aplaties** : la non-colinéarité stricte ne
+  suffit pas — exiger un écart angulaire (|sin| > 0,5 entre deux vecteurs,
+  chaque angle d'un triangle entre 30° et 150°), et corriger **tous** les
+  endroits du fichier qui construisent une figure de ce type, pas seulement
+  celui signalé.
+- **Graphiques lisibles** : contrôler séparément que la courbe reste dans
+  son cadre, que les valeurs à comparer diffèrent assez pour se voir, et,
+  pour une lecture de pente, que le tracé passe par au moins deux nœuds
+  entiers du quadrillage.
+- S'inspirer aussi des banques `automatismes/premiere/banques/*.js`
+  (motifs de génération éprouvés), en adaptant à l'architecture des fiches.
 
 ## 5. Vérification avant de pousser
 
