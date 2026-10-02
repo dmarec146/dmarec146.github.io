@@ -883,7 +883,7 @@ Dans cette fiche, on ne se préoccupera pas (sauf mention du contraire) des ense
 <p class="section-titre">Équations de tangentes</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 6.8 — Des ordonnées à l'origine. Pour les fonctions f définies ci-dessous et pour les réels a suivants, déterminer l'ordonnée à l'origine de la tangente à la courbe de f au point d'abscisse a.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 6.8 — Des ordonnées à l'origine. Pour les fonctions \(f\) définies ci-dessous et pour les réels \(a\) suivants, déterminer l'ordonnée à l'origine de la tangente à la courbe de \(f\) au point d'abscisse \(a\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-6-8"></div>
 
 <div class="bloc-avance">
@@ -1073,17 +1073,6 @@ function joinTermes(termes) {
 function powFrac(base, n) {
   if (n >= 0) { let r = F.of(1); for (let i = 0; i < n; i++) r = F.mul(r, base); return r; }
   let r = F.of(1); for (let i = 0; i < -n; i++) r = F.mul(r, base); return F.div(F.of(1), r);
-}
-function ordonneeOrigineProduit(a1, b1, n1, a2, b2, n2, pt) {
-  const u = F.add(F.mul(a1, pt), b1), v = F.add(F.mul(a2, pt), b2);
-  const un = powFrac(u, n1), vn = powFrac(v, n2);
-  const uprime = F.mul(F.of(n1), F.mul(a1, powFrac(u, n1 - 1)));
-  const vprime = F.mul(F.of(n2), F.mul(a2, powFrac(v, n2 - 1)));
-  const fval = F.mul(un, vn);
-  const dval = F.add(F.mul(uprime, vn), F.mul(un, vprime));
-  const intercept = F.sub(fval, F.mul(pt, dval));
-  const enonce = `f(x)=${puissanceStr(a1.n, b1.n, n1, false)}${puissanceStr(a2.n, b2.n, n2, false)}\\) et \\(a=${F.fmtLatex(pt)}`;
-  return { enonce, pb: F.str(intercept) };
 }
 function ordonneeOrigineQuotient(a1, b1, n1, a2, b2, n2, pt) {
   const u = F.add(F.mul(a1, pt), b1), v = F.add(F.mul(a2, pt), b2);
@@ -1398,33 +1387,37 @@ const generateurs = [
     return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pb };
   }},
   {id:"6.8 b)", type:"num", gen: () => {
-    // a1, a2 choisis multiples du dénominateur de pt pour que u1=a1*pt+b1 et u2=a2*pt+b2 restent des entiers (calcul mental).
+    // f(x)=(ax+b)^n (02/10/2026, David : « une fonction du type (ax+b)^p suffit »).
+    // a multiple du dénominateur de pt pour que u=a*pt+b reste entier (calcul mental), |u| petit car élevé à la puissance n.
     const q = alea(2,3);
     const pNum = aleaNonNul(1,q-1) * (Math.random()<0.5?1:-1);
     const pt = F.of(pNum, q);
-    let m1, m2, a1, a2, b1, b2, u1, u2;
+    const n = alea(3,4);
+    let m, a, b, u;
     do {
-      m1 = aleaNonNul(-2,2); m2 = aleaNonNul(-2,2);
-      a1 = q*m1; a2 = q*m2;
-      b1 = alea(-3,3); b2 = alea(-3,3);
-      u1 = m1*pNum + b1; u2 = m2*pNum + b2;
-    } while (Math.abs(u1) < 1 || Math.abs(u1) > 3 || Math.abs(u2) < 1 || Math.abs(u2) > 3);
-    const { enonce, pb } = ordonneeOrigineProduit(F.of(a1), F.of(b1), 2, F.of(a2), F.of(b2), 2, pt);
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pb };
+      m = aleaNonNul(-2,2); a = q*m; b = aleaNonNul(-3,3);
+      u = m*pNum + b;
+    } while (Math.abs(u) < 1 || Math.abs(u) > 2);
+    // tangente en pt : y = f'(pt)(x-pt)+f(pt), ordonnée à l'origine f(pt) - pt*f'(pt) avec f'(x)=n*a*(ax+b)^(n-1)
+    const intercept = F.sub(powFrac(F.of(u), n), F.mul(pt, F.mul(F.of(n*a), powFrac(F.of(u), n-1))));
+    return { texteLibre:true, enonce:`\\(f(x)=${puissanceStr(a, b, n, false)}\\) et \\(a=${F.fmtLatex(pt)}\\)`, reponse: F.str(intercept) };
   }},
   // Calcul 6.14 - intersection de tangentes (1 item, avance),
   // Calcul 6.11 - intersection de tangentes (inchangee)
   {id:"6.9", type:"alg", gen: () => {
-    const signes = [1,-1,2,-2];
-    let k1n, k2n, n1, n2;
-    do {
-      k1n = signes[alea(0,3)]; k2n = signes[alea(0,3)];
-      n1 = alea(2,3); n2 = alea(2,3);
-    } while (k1n === k2n && n1 === n2); // sinon f=g : tangentes toujours parallèles, réponse dégénérée 0/0
+    // f(x)=k1(mx+p)^2 et g(x)=k2(mx+p)^2, mêmes m et p, k1 != k2 (02/10/2026, demande de David).
+    // Pentes en a : 2*k1*m*(ma+p) et 2*k2*m*(ma+p), égales seulement si ma+p=0 :
+    // les tangentes sont sécantes pour tout a != -p/m, valeur donnée dans l'énoncé.
+    const signes = [1,-1,2,-2,3,-3];
+    let k1n, k2n;
+    do { k1n = signes[alea(0,5)]; k2n = signes[alea(0,5)]; } while (k1n === k2n);
     const k1 = F.of(k1n), k2 = F.of(k2n);
-    const c = F.of(aleaNonNul(-2,2)), d = F.of(alea(-3,3));
-    const reponse = intersectionTangentes(k1, n1, k2, n2, c, d);
-    const enonce = `On définit, pour tout réel \\(x\\), \\(f(x)=${k1.n===1?'':k1.n===-1?'-':F.fmtLatex(k1)}${puissanceStr(c.n,d.n,n1,false)}\\) et \\(g(x)=${k2.n===1?'':k2.n===-1?'-':F.fmtLatex(k2)}${puissanceStr(c.n,d.n,n2,false)}\\). Soit \\(a\\) un réel pour lequel les tangentes \\(T_{f,a}\\) et \\(T_{g,a}\\) sont sécantes (non parallèles). Déterminer l'abscisse du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,a}\\)`;
+    const m = aleaNonNul(-3,3), pc = aleaNonNul(-4,4);
+    const c = F.of(m), d = F.of(pc);
+    const aExclu = F.div(F.of(-pc), F.of(m));
+    const reponse = intersectionTangentes(k1, 2, k2, 2, c, d);
+    const kL = k => k.n===1 ? '' : k.n===-1 ? '-' : F.fmtLatex(k);
+    const enonce = `On définit, pour tout réel \\(x\\), \\(f(x)=${kL(k1)}${puissanceStr(m,pc,2,false)}\\) et \\(g(x)=${kL(k2)}${puissanceStr(m,pc,2,false)}\\). Soit \\(a\\) un réel différent de \\(${F.fmtLatex(aExclu)}\\). Déterminer l'abscisse du point d'intersection des tangentes \\(T_{f,a}\\) et \\(T_{g,a}\\)`;
     return { texteLibre:true, enonce, reponse };
   }},
   // Calcul 6.15 - tangente passant par un point (2 items, avance),

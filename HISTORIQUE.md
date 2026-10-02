@@ -5299,3 +5299,29 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   trouvés dans cette mémoire (erreur NaN de la fiche 17, ex-19, mise de
   côté par David ; groupe statique de la fiche 12, ex-14, par choix de
   David).
+
+- **Première fiche 6 : 6.8 b) et 6.9 refaits (02/10/2026).** David :
+  « dans 6.8 b), une fonction du type (ax+b)^p suffit. Dans 6.9, choisir
+  les deux fonctions du type k(mx+p)^2 avec k différent pour les deux
+  fonctions (positif ou négatif) mais m et p identiques pour les 2 […]
+  calculer les valeurs de a pour lesquelles les tangentes Tf,a et Tg,a ne
+  sont pas parallèles et les donner dans l'énoncé ».
+  - 6.8 b) : \(f(x)=(ax+b)^n\), \(n\in\{3;4\}\), \(a\) multiple du
+    dénominateur du point (fractionnaire) pour que \(ax+b\) y vaille ±1
+    ou ±2 (calcul mental) ; ordonnée à l'origine \(f(x_0)-x_0f'(x_0)\)
+    calculée directement. `ordonneeOrigineProduit`, devenue inutilisée,
+    retirée.
+  - 6.9 : \(f(x)=k_1(mx+p)^2\), \(g(x)=k_2(mx+p)^2\), \(k_1\ne k_2\) parmi
+    ±1, ±2, ±3, \(m\) et \(p\) non nuls. Les pentes en \(a\),
+    \(2k_im(ma+p)\), ne coïncident que si \(ma+p=0\) : l'énoncé dit
+    désormais « Soit \(a\) un réel différent de \(-\frac{p}{m}\) » au lieu
+    de « un réel pour lequel les tangentes sont sécantes ». Intersection
+    en \(x=\frac{a}{2}-\frac{p}{2m}\) (calculée par
+    `intersectionTangentes`, inchangée).
+  - Titre de 6.8 : \(f\) et \(a\) en LaTeX.
+  - Vérifié : 2 000 tirages comparés à un calcul indépendant (énoncé
+    relu, dérivées numériques) — ordonnées à l'origine exactes,
+    intersection exacte en trois valeurs de \(a\), tangentes bien
+    parallèles en la valeur exclue ; 112 et 1 086 énoncés distincts ;
+    corrigé retapé dans le vrai champ accepté (12/12), réponse fausse
+    refusée ; vérificateur de syntaxe : 0 erreur ; rendu contrôlé.
