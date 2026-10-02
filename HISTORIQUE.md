@@ -5819,3 +5819,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   terme : 0 écart ; 300 tirages du reste de la fiche : 0 écart ; cycle
   complet 4 × 23 accepté ; 0 erreur MathJax ; vérificateur : 0 erreur ;
   rendu contrôlé.
+  Retouche le même jour (David : « enlever le a) dans le titre et le
+  mettre dans l'énoncé du a) ») : titre réduit à « Sommes de termes
+  consécutifs. Calculer les sommes suivantes. » ; le a) devient
+  « u₀+u₁+⋯+u_N, où (uₙ) est arithmétique de raison r et de premier terme
+  u₀=… ». Vérifié : 1 000 tirages, 0 écart.
