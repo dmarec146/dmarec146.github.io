@@ -5879,3 +5879,27 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   13.6 à 13.9 renumérotés 13.5 à 13.8. Vérifié : 400 tirages recalculés
   indépendamment : 0 écart ; cycle complet 5 × 21 accepté ; 0 erreur
   MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 13 : suites arithmético-géométriques, sommes, 13.6
+  passé en avancé (02/10/2026), 21 → 28 questions.** David : « avant 13.6
+  (qui est presque général), proposer deux exercices sur des suites
+  arithmético-géométriques […] Trois étapes, déterminer la raison de vₙ,
+  exprimer vₙ en fonction de n, en déduire uₙ […] après 13.6 actuelle :
+  deux exemples de somme des termes d'une suite géométrique ; supprimer
+  13.8 mais mettre le 13.6 actuelle en calculs avancés ».
+  - **13.6 et 13.7** (nouvelle section « Suites arithmético-géométriques ») :
+    u₀ = A, u_{n+1} = a·uₙ + b, vₙ = uₙ − ℓ donnée (ℓ = b/(1−a) entier),
+    a) raison de (vₙ), b) vₙ, c) uₙ ; a entier (±2, ±3) en 13.6,
+    fractionnaire (p/q, |p| < q) en 13.7. Corrigés écrits directement
+    (`correctionLatex`, « −8(−2/3)ⁿ » évité).
+  - **13.8** (section « Somme de termes d'une suite géométrique ») : a)
+    u₀+⋯+u_N avec q et u₀ donnés, b) somme numérique f + fr + fr² + ⋯
+    (compter les termes, raison ±2 ou ±3).
+  - Ancien 13.6 (suite auxiliaire, x à déterminer) → **13.9** en calculs
+    avancés ; ancien 13.7 (maximum) → **13.10** ; ancien 13.8 (somme et
+    premier terme, avancé) supprimé. Les sommes étant du cœur de fiche,
+    elles sont placées en fin de cœur, juste avant les calculs avancés.
+  - Vérifié : 1 000 tirages des nouveaux calculs (suites itérées, vₙ
+    géométrique vérifiée, sommes terme à terme) et 300 tirages du reste :
+    0 écart ; cycle complet 6 × 28 accepté (corrigés affichés retapés) ;
+    0 erreur MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
