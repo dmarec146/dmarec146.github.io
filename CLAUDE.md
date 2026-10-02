@@ -16,8 +16,10 @@ Trois fichiers à la racine du dépôt :
   ajoute une entrée datée **à la fin** (c'est là que va désormais le récit
   détaillé, plus dans `SUIVI-FIREBASE.md`).
 
-(Et `CHANTIERS-FUTURS.md` : backlog de David pour plus tard, à ne modifier
-qu'à sa demande.)
+(Le backlog de David pour plus tard n'est plus un fichier du dépôt : c'est
+l'artefact claude.ai « Chantiers futurs »,
+https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad, à ne modifier qu'à sa
+demande.)
 
 ## À l'ouverture de toute session
 

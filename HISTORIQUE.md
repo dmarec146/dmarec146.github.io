@@ -5921,3 +5921,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   13 et 22, Seconde 25), réponses saisies (justes et fausses),
   `verifierUne` sur chaque question puis `reinitialiser()` : 21, 39 et
   35 statuts `ok`/`ko` avant, 0 après, aucune erreur console.
+
+- **Backlog « Chantiers futurs » passé en artefact (02/10/2026).** David :
+  « je voulais en faire un artefact, pas un .md », puis « supprime le
+  .md ». Contenu repris dans l'artefact claude.ai « Chantiers futurs »
+  (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad, lisible sur les
+  deux PC avec le même compte) ; `CHANTIERS-FUTURS.md` supprimé ; renvois
+  de `CLAUDE.md` et `SUIVI-FIREBASE.md` (§6) mis à jour.
