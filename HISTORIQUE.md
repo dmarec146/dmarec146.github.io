@@ -5597,3 +5597,33 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   au singulier). Exception ponctuelle, volontairement pas inscrite dans `REGLES-FICHES.md` (David : « je le ferai à la demande de manière exceptionnelle mais pas comme une règle »). Vérifié :
   cycle complet 5 × 18, 0 erreur MathJax, vérificateur : 0 erreur, rendu
   contrôlé.
+
+- **Première fiche 10 : dérivée de e^u (02/10/2026), 18 → 24 questions.**
+  David : « On va se concentrer aussi dans cette fiche à la dérivée de e^u
+  […] Cela dépasse légèrement le programme de première ».
+  - **Nouvelle section après 10.4**, « Dérivée de la fonction x ↦ e^{u(x)} » :
+    rappel (u'e^u, exemple e^{x²}, cas du produit P(x)e^{u}) puis
+    **10.5** (forme factorisée exigée, numérateur pour un quotient) :
+    a) e^{trinôme} ; b) e^{k/(x−m)} sur ]m;+∞[ ; c) P de degré 1 et
+    d) P de degré 2 fois e^{u}, u tiré parmi kx², k/x (sur ]0;+∞[) et
+    px+q, deux types différents pour c) et d). Le rappel « composée » de
+    la partie avancée est déplacé dans cette section (plus de doublon).
+  - **10.6 tangentes** (ancien 10.5) en e^{u} : a) e^{trinôme} en a ;
+    b) e^{k/(x−m)} sur ]m;+∞[ ou ]−∞;m[ en a = m ± 1. Tirages sans
+    « e⁰ », sans pente ni ordonnée nulle.
+  - **10.7 variations** (ancien 10.6), 3 QCM P(x)e^{u} dont le signe de f'
+    s'étudie en Première : a) (ax+b)e^{px+q} (f' affine) ; b) trinôme fois
+    e^{±x+q}, construit pour que f' = A(x−r₁)(x−r₂)e^{…} à racines
+    entières ; c) (ax+b)e^{±x²}, tiré pour que le discriminant de f' soit
+    un carré (racines rationnelles). Propositions : le sens vrai sur un
+    intervalle de monotonie, le sens contraire sur un autre, le sens vrai
+    prolongé au-delà d'une racine.
+  - Anciens 10.7 et 10.8 renumérotés 10.8 et 10.9.
+  - Vérifié : 120 tirages comparés à un calcul indépendant (dérivées
+    contre la dérivée numérique, énoncé relu et comparé à la fonction
+    dérivée ; tangentes recalculées depuis l'énoncé ; chaque proposition
+    de QCM testée sur 600 points, exactement une vraie) : 0 écart ; formes
+    attendues acceptées par le contrôle de forme factorisée, forme
+    développée refusée ; cycle complet accepté, réponses fausses et
+    tangente sans « y= » refusées ; 0 erreur MathJax ; vérificateur :
+    0 erreur ; rendu contrôlé.
