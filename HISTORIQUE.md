@@ -5627,3 +5627,26 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     développée refusée ; cycle complet accepté, réponses fausses et
     tangente sans « y= » refusées ; 0 erreur MathJax ; vérificateur :
     0 erreur ; rendu contrôlé.
+
+- **Première fiche 10 : rappel réduit, composées retirées, extremum
+  (02/10/2026), 24 → 22 questions.** David : « dans le rappel de cours,
+  supprime ton exemple, il faut juste la formule générale. 1. 10.8 n'a
+  plus d'intérêt. 2. garde 10.9 3. crée un exercice 10.10 concernant la
+  recherche d'extremum d'une fonction du type P(x)e^u sur un intervalle
+  fermé borné ».
+  - Rappel « Dérivée de e^u » : seulement (e^{u})' = u'e^{u} (exemple
+    e^{x²} et formule du produit retirés).
+  - Ancien 10.8 (dérivées composées e^{kx³}, e^{k√x}, e^{e^{kx²}},
+    Cxe^{px+qx³}) supprimé ; la somme (ancien 10.9) devient **10.8**.
+  - **Nouveau 10.9** (le « 10.10 » demandé, renuméroté), « Extremum sur un
+    intervalle fermé borné », deux questions « Maximum/Minimum de f(x)=…
+    sur [α;β] » : a) (ax+b)e^{px+q}, p ∈ {±1, ±2} divisant a pour un point
+    critique entier ; b) trinôme × e^{±x+q} construit pour que
+    f' = A(x−r₁)(x−r₂)e^{…}, l'intervalle contenant une seule des deux
+    racines. Un seul point critique strictement intérieur, donc l'extremum
+    demandé (maximum si f' passe de + à −) est atteint en ce point ; valeur
+    attendue de la forme k·e^{n}, jamais e⁰.
+  - Vérifié : 600 extremums comparés au maximum/minimum numérique sur une
+    grille de 4 000 points : 0 écart, jamais atteint au bord ; cycle
+    complet accepté, valeur fausse refusée ; 0 erreur MathJax ;
+    vérificateur : 0 erreur ; rendu contrôlé.
