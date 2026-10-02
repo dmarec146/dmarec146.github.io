@@ -5437,3 +5437,35 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   section « Représentation graphique » ne garde que 8.10. Vérifié : 31
   cartes dans l'ordre, cycle complet 5 × 31 accepté, figure de 8.10
   tracée, aucune erreur MathJax ni console ; vérificateur : 0 erreur.
+
+- **Première fiche 8 : 8.5 supprimé ; fiche 7 : notation e^x
+  (02/10/2026).** David : « 1. Supprime la question 8.5 de cette fiche 8
+  2. j'ai aussi changé d'avis sur la fiche 7 : je souhaite aussi utiliser
+  la notation e^x plutôt que exp(x). Réécris la fiche en conséquence ».
+  - **Fiche 8** : 8.5 (« Avec des identités remarquables » : (eᵖˣ+e⁻ᵖˣ)² −
+    (eᵖˣ−e⁻ᵖˣ)², toujours 4) retiré, HTML et générateur ; 8.6 à 8.13 →
+    8.5 à 8.12 ; la section « Propriétés de l'exponentielle » ne garde que
+    8.4. 31 → 30 questions.
+  - **Fiche 7** : `expVersPuissance` reprise de la fiche 8 (énoncés,
+    options, corrigés) ; rappel sur cosh et sinh écrit avec eˣ et e⁻ˣ,
+    \(\cosh\), \(\sinh\) en LaTeX ; règle ajoutée dans les deux fiches :
+    « \left(e\right)^3 » (parenthèses du modèle autour d'un e¹) → e³.
+  - **7.11** (cosh(2x) en fonction de cosh(x)) : la réponse attendue était
+    stockée sous forme développée en exp, et le corrigé affichait
+    2((eˣ+e⁻ˣ)/2)² − 1 → réponse « 2*cosh(x)^2-1 », corrigé 2cosh(x)² − 1 ;
+    `cosh`/`sinh` ajoutées aux fonctions connues ; l'écriture usuelle
+    cosh²(x) est désormais comprise (`normaliserSaisie` : cosh^2(x) →
+    cosh(x)^2, idem sinh, cos, sin, tan) ; la forme développée en eˣ reste
+    acceptée, cosh(x)² ou 2cosh²(x)+1 refusés.
+  - Incident de script corrigé avant tout commit : un `node -e` a
+    transformé « \b » en caractère de contrôle, puis un remplacement par
+    ligne a emporté la déclaration `let s = …` de `normaliserSaisie`
+    (fichier à fins de ligne mélangées) — rétabli, diff contrôlé, fins de
+    ligne uniformisées.
+  - Vérifié : fiche 8, 30 cartes dans l'ordre, cycle complet 5 × 30 ;
+    fiche 7, 1 500 tirages sans « exp », « e⁰ », « e¹ », « ee » ni
+    « (e)^ », 400 tirages où les énoncés réécrits sont recalculés
+    indépendamment (7.4, 7.5, solutions de 7.6 et 7.8) : 0 écart ; cycle
+    complet 9 × 32 ; 0 erreur MathJax sur 20 fiches complètes ; saisies
+    usuelles (x(x+2), exp(2x), sin(x)², 3cos(x)) toujours acceptées ;
+    vérificateur de syntaxe : 0 erreur ; rendu contrôlé.

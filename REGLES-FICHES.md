@@ -101,6 +101,10 @@ les corrections ponctuelles d'une fiche).
 - Un calcul à **une seule question** : pas de lettre a), carte pleine largeur
   (`question-seule`) ; énoncé long : option `pleineLargeur`. Pas de « = »
   ajouté après une phrase ou une question (`sansEgal:true`).
+- **Exponentielle : notation \(e^x\)**, pas \(\exp(x)\), dans les énoncés et
+  les corrigés (choix de David pour les fiches 7 et 8 de Première,
+  02/10/2026 ; fonction `expVersPuissance` dans ces fiches). La saisie
+  « exp(x) » reste acceptée.
 - Le titre doit correspondre aux réponses acceptées (ex. « vraies ou
   fausses ? » si la correction attend vrai/faux).
 - **Pas de point final** à la fin d'une question (énoncé d'item, surtout
