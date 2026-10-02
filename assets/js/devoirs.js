@@ -1,6 +1,6 @@
 // Outil d'attribution des devoirs (tableau-de-bord/devoirs.html), réservé à
-// l'enseignant. Voir SUIVI-FIREBASE.md et l'artifact "Cahier de suivi" pour
-// le contexte complet : choisir une fiche de cahier de calcul, un sujet
+// l'enseignant. Voir SUIVI-FIREBASE.md (§4 « Devoirs ») pour le contexte
+// complet, HISTORIQUE.md pour le détail des chantiers : choisir une fiche de cahier de calcul, un sujet
 // blanc d'automatismes (avec son niveau de difficulté) OU une fiche
 // d'automatismes ciblée sur des thèmes choisis (28/09/2026 -- même
 // document Firestore `type:'automatismes'` que le sujet blanc, distingué

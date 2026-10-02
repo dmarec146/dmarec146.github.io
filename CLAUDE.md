@@ -1,15 +1,23 @@
 # Cahiers interactifs
 
-Avant toute action sur ce projet, lire **`SUIVI-FIREBASE.md`** à la racine
-du dépôt — état des lieux, procédure de reprise sur une autre machine,
-pièges déjà rencontrés. Ce fichier est à jour et se met à jour lui-même ;
-ne pas partir de suppositions sans l'avoir lu.
+Trois fichiers à la racine du dépôt :
 
-Avant de modifier une fiche de calcul, lire aussi **`REGLES-FICHES.md`** :
-règles de rédaction données par David (nombre d'exemples, automatismes,
-titres, corrections, vérifications). Ce fichier est la référence commune aux
-deux machines ; le compléter dès que David donne une nouvelle consigne
-générale.
+- **`SUIVI-FIREBASE.md`** — état actuel du site, procédure, pièges
+  techniques. Court ; **à lire avant toute action**, ne pas partir de
+  suppositions sans l'avoir lu. À tenir à jour quand l'état, la procédure
+  ou un piège change.
+- **`REGLES-FICHES.md`** — règles de rédaction des fiches données par David
+  (nombre d'exemples, automatismes, titres, corrections, vérifications).
+  **À lire aussi à l'ouverture** ; référence commune aux deux machines, à
+  compléter dès que David donne une nouvelle consigne générale.
+- **`HISTORIQUE.md`** — journal détaillé de toutes les modifications et
+  décisions. **Ne pas le lire en entier** : le consulter par recherche
+  quand on a besoin du pourquoi d'une décision. Chaque chantier terminé y
+  ajoute une entrée datée **à la fin** (c'est là que va désormais le récit
+  détaillé, plus dans `SUIVI-FIREBASE.md`).
+
+(Et `CHANTIERS-FUTURS.md` : backlog de David pour plus tard, à ne modifier
+qu'à sa demande.)
 
 ## À l'ouverture de toute session
 
@@ -30,7 +38,8 @@ générale.
    échec du pull), ne rien forcer : s'arrêter et expliquer la situation à
    l'utilisateur.
 3. **Lire ensuite** `SUIVI-FIREBASE.md` et `REGLES-FICHES.md` (dans leur
-   version à jour, d'où l'ordre).
+   version à jour, d'où l'ordre) — pas `HISTORIQUE.md`, consulté seulement
+   au besoin.
 4. Écrire un court message à l'utilisateur confirmant explicitement :
    `SUIVI-FIREBASE.md` et `REGLES-FICHES.md` lus ; état du dépôt par rapport
    à GitHub (à jour, ou mis à jour par `git pull` avec le nombre de commits
