@@ -5426,3 +5426,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     corrigés) ; cycle complet 6 × 32 accepté (∅ tapé compris) ; « e^x » et
     « exp(x) » acceptés ; vérificateur de syntaxe : 0 erreur ; rendu
     contrôlé.
+
+- **Première fiche 8 : 8.11 supprimé (02/10/2026), 32 → 31 questions.**
+  David : « supprimer 8.11 » (QCM « Voici la courbe représentative d'une
+  fonction f » : reconnaître c·eˣ parmi trois expressions). Retirés : le
+  bloc HTML (titre, figure `graphique-8-12`, grille), le générateur, la
+  figure (`construireGraphique10_12` et ses deux appels) et son état
+  sauvegardé avec les brouillons (`paramsGraphiques10_12`). 8.12 → 8.11
+  (somme), 8.13 → 8.12 (produit), 8.14 → 8.13 (simplification ?). La
+  section « Représentation graphique » ne garde que 8.10. Vérifié : 31
+  cartes dans l'ordre, cycle complet 5 × 31 accepté, figure de 8.10
+  tracée, aucune erreur MathJax ni console ; vérificateur : 0 erreur.
