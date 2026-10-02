@@ -5756,3 +5756,41 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   hors formule ; 0 erreur MathJax ; aucune carte ne déborde ; rendu contrôlé.
   Retouche le même jour (David : « un peu moins quand même ») : \quad
   remplacé par un double espace épais \;\; autour de « si » et « et ».
+
+- **Première fiche 12 (Suites arithmétiques) : automatismes aux règles,
+  12.11 corrigé, fusions (02/10/2026), 27 → 23 questions.** David : « fais
+  le » (même démarche que la fiche 11).
+  - **Automatismes** (6, nouveau modèle) : 12.1 inéquations a) encadrement
+    c ◊ ax+b ◊ d (a de signe quelconque), b) quotient (x²−m²)/(x−p) ◊ 0
+    (valeur interdite jamais incluse ni franchie) ; 12.2 équations a)
+    x(x+p) = q (deux solutions entières), b) (ax+b)² = (cx+d)² (deux
+    solutions) ; 12.3 calcul numérique en fraction irréductible a) a/b −
+    c/d × e/f (priorités), b) image d'une fraction par un trinôme, f(p/q).
+    Clavier des ensembles repris de la fiche 10.
+  - **12.11 corrigé** : « uₙ = (3+5an)/2, déterminer a » n'avait aucune
+    condition (réponse 4/5 attendue, sous-entendu « de raison 2 », défaut
+    présent depuis la première version) et était figé ; devient 12.6 c),
+    aléatoire, « a si uₙ = (p+qan)/s et r = R ».
+  - **Fusions**, énoncés autonomes aérés « u_N si r=… et u_K=… » (comme
+    11.4 à 11.7) : 12.4 termes (anciens 12.4, 12.5, 12.6 : u_N depuis u₀,
+    depuis u₁, u₀ depuis u_K, u_N depuis u_K ; premier terme jamais nul) ;
+    12.5 raison et premier terme à partir de deux termes (anciens 12.7,
+    12.8 : r et u₀, termes entiers puis fractionnaires) ; 12.6 paramètre a
+    (anciens 12.9, 12.10, 12.11 ; « u₁ en fonction de a », toujours égal à
+    a, retiré ; 12.6 b élargi : (Ca²+K(n−1))/a).
+  - Problèmes à étapes gardés entiers : 12.7 suite auxiliaire vₙ = uₙ²
+    (plages élargies), 12.8 homographique (avancé ; « 1uₙ » et « 0uₙ »
+    corrigés dans l'énoncé), 12.9 suite définie par une condition (avancé ;
+    généralisé à u_k = T, k ∈ {4,5,6}, r = (2k−4)T/((k−1)(k−3)), seule
+    raison non nulle). Titres donnés à tous les calculs ; sections
+    renommées « Termes et raison d'une suite arithmétique » et « Paramètre
+    et suite auxiliaire ».
+  - Vérifié : 400 tirages recalculés indépendamment (inéquations sur une
+    grille et aux bornes, valeur interdite comprise ; équations par
+    substitution et nombre de racines ; fractions ; termes et raisons depuis
+    l'énoncé affiché ; paramètre a par substitution numérique ; suites
+    auxiliaires par itération ; 12.9 condition vérifiée) : 0 écart ;
+    variété ≥ 70 énoncés par question (problèmes à étapes : 54/165/36
+    introductions) ; cycle complet 5 × 23 accepté ; fraction non réduite,
+    décimal et ensemble incomplet refusés ; 0 erreur MathJax (fiche et
+    panneau) ; vérificateur : 0 erreur ; rendu contrôlé.
