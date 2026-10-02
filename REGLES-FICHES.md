@@ -61,6 +61,11 @@ les corrections ponctuelles d'une fiche).
     équation a/(x+b)=c/(x+d) + second degré à racine double ou sans
     solution ({k} ou {}) ; fraction de fractions (irréductible) +
     pourcentage d'un pourcentage.
+  - fiche 9 : inéquation degré 1 à fractions des deux côtés + inéquation
+    produit de trois facteurs affines ; équation √(ax+b)=c + équation
+    (a²x²−k²)/(ax∓k)=0 (une solution apparente est valeur interdite) ;
+    puissances de fractions à exposant négatif (irréductible) + produit de
+    deux racines carrées entier.
 - **Seconde** (règles données sur les fiches de Seconde, non rétroactives) :
   - le premier calcul d'automatismes **varie d'une fiche à l'autre et d'un
     tirage à l'autre** : vivier d'une dizaine de modèles, plusieurs modèles
@@ -102,7 +107,7 @@ les corrections ponctuelles d'une fiche).
   (`question-seule`) ; énoncé long : option `pleineLargeur`. Pas de « = »
   ajouté après une phrase ou une question (`sansEgal:true`).
 - **Exponentielle : notation \(e^x\)**, pas \(\exp(x)\), dans les énoncés et
-  les corrigés (choix de David pour les fiches 7 et 8 de Première,
+  les corrigés (choix de David pour les fiches 7, 8 et 9 de Première,
   02/10/2026 ; fonction `expVersPuissance` dans ces fiches). La saisie
   « exp(x) » reste acceptée.
 - Le titre doit correspondre aux réponses acceptées (ex. « vraies ou

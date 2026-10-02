@@ -5491,3 +5491,33 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     appliqué partout), aucun `\lt` hors des formules ; cycle complet
     15 × 28 (fiche 7) et 15 × 30 (fiche 8) accepté ; 0 erreur MathJax ;
     vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 9 (Dérivation et exponentielle I) — automatismes aux
+  nouvelles règles et notation e^x (02/10/2026), 34 questions.** David :
+  « applique la règle oui et la notation e^x ».
+  - **Automatismes (6)**, remplaçant fractions en n, puissances 2ᵃ3ᵇ et
+    radicaux en n (que du calcul littéral) ; mêmes trois calculs, donc pas
+    de renumérotation : 9.1 a) inéquation du premier degré avec fractions
+    des deux côtés (ax+b)/p ◊ (cx+d)/q, coefficients de signe quelconque,
+    b) inéquation produit de trois facteurs affines (x−r) ou (r−x),
+    réunion de deux intervalles ; 9.2 a) √(ax+b) = c, b) (a²x²−k²)/(ax∓k)
+    = 0 (une des deux racines du numérateur est valeur interdite, seule
+    l'autre convient ; 38 énoncés distincts après ajout du coefficient a) ;
+    9.3 « Calcul numérique » : a) (a/b)⁻² × (c/d)³ sous forme de fraction
+    irréductible (contrôlée), b) √(ms²) × √(mt²) = mst (calcul effectué
+    exigé). Ensembles construits par point-test, bornes exactes.
+  - **Outils ajoutés** (repris de la fiche 8, absents de cette fiche) :
+    contrôle « fraction irréductible » (`estFractionIrreductible`,
+    vérification, aide « ? »), clavier des ensembles (touches { } ; ∅) et
+    « ∅ » accepté.
+  - **Notation e^x** : `expVersPuissance` (énoncés, options, corrigés),
+    « < » des énoncés en `\lt` ; rappels « Formule admise » réécrits
+    ((e^{ax+b})′ = a·e^{ax+b}, f′(x) = u′(x)·e^{u(x)}).
+  - Vérifié : 400 tirages comparés à un calcul indépendant (énoncé relu :
+    inéquations au signe sur une grille et de part et d'autre des bornes,
+    équations par substitution et valeur interdite contrôlée, calculs
+    numériques recalculés), aucun « exp », « e⁰ », « e¹ », « +- », « 1x »
+    dans les énoncés et corrigés ; cycle complet 6 × 34 accepté (dérivées
+    comprises) ; fraction non simplifiée et calcul non effectué refusés ;
+    aucun énoncé affiché brut ; 0 erreur MathJax ; vérificateur : 0
+    erreur ; rendu contrôlé.
