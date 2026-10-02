@@ -19,3 +19,17 @@ toutes les fiches et les sujets blancs.
 
 Mieux gérer les automatismes en début de fiche. Se créer une banque à partir
 de critères définis.
+
+## 3. Devoir sur une partie de fiche
+
+Pouvoir ne donner en devoir qu'une partie d'une fiche (une sélection de
+calculs), avec un barème adapté en conséquence.
+
+## 4. Barème personnalisé
+
+Pouvoir définir un barème personnalisé au moment de créer un devoir.
+
+## 5. Correction détaillée
+
+Proposer pour les questions une correction détaillée, présentant les étapes
+à suivre, en plus de la seule réponse attendue.
