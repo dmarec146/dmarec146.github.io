@@ -5664,3 +5664,49 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   local intérieur relevé numériquement et égal au corrigé : 0 écart ;
   familles équilibrées (205/202/193) ; cycle complet accepté, valeur
   fausse refusée ; vérificateur : 0 erreur.
+
+- **Première fiche 11 (Généralités sur les suites) : automatismes aux
+  règles, fusions, aide groupée (02/10/2026), 29 → 22 questions.** David :
+  « applique, corrige et fusionne ».
+  - **Automatismes** (6, nouveau modèle de rotation) : 11.1 inéquations
+    (intervalles) a) degré 1 déguisé (x+a)² ◊ (x+b)(x+c), b) produit à
+    factoriser ax²+bx ◊ 0 ; 11.2 équations (ensemble) a) x + k/x = m (deux
+    solutions entières non nulles), b) a(x−b) = c(x+d) à solution
+    fractionnaire ; 11.3 calcul numérique a) une seule puissance
+    A^p×A^q/(A^r)^s, forme contrôlée (`formePuissance`, `estUneSeulePuissance` :
+    la valeur calculée est refusée), b) somme de trois racines à écrire
+    a√b (`formeRacine`, `estRacineSimplifiee` reprise de la fiche 2).
+    Retirés : puissances ×3 (dont 11.1 b), consigne « une seule puissance »
+    mais réponse −256 et écriture « −1⁶ » ambiguë), mise au même
+    dénominateur ×2, carré à développer.
+  - **Fusions** (chaque question porte sa propre suite, « u_k si u_n=… »,
+    consigne commune dans le titre ; anciens paragraphes d'introduction et
+    `paramsAvances` supprimés) : 11.4 termes d'une suite explicite (anciens
+    11.4 + 11.5 ; quatre familles : polynôme, quotient, A×qⁿ, √(an+b)) ;
+    11.5 expressions en fonction de n (anciens 11.6 + 11.7 + 11.8 : u_{n+1},
+    u_n+1, u_{2n+1} d'un trinôme, u_{2n+1} de C(−1)ⁿ/(n+q)) ; 11.6 termes
+    d'une suite récurrente (anciens 11.9 + 11.10 + 11.11, un exemple par
+    famille ; la suite à racine généralisée en u_n = c + dn) ; 11.7
+    récurrence avec paramètre a (anciens 11.12 + 11.13, un exemple chacun,
+    u_{n+1} = aⁿu_n ou a^{n+1}u_n). Avancés : 11.8 (ancien 11.14, « pour
+    tout n ∈ ℕ » corrigé en « n ⩾ 1 » puisque u_1 est donné, u_1 = 1/k
+    avec k ≤ 9) et 11.9 (ancien 11.15, titre complété, énoncés réduits à
+    « u_n=… »). Section « récurrence avec paramètre » fondue dans
+    « Suites définies par récurrence ».
+  - **Bouton « ? » groupé** posé (dernière fiche qui ne l'avait pas) :
+    `texteAideGroupe`/`injecterAideGroupe` repris de la fiche 10, ancienne
+    `construireGrilles` morte supprimée. Clavier des ensembles { } ; ∅ et
+    saisie de ∅ ; clavier et aide des intervalles en symboles ∪, ℝ, ∅.
+  - **Défaut corrigé dans `estRacineSimplifiee`** (copie de la fiche 11) :
+    « −9√2 » était refusé (math.js lit (−9)·√2) ; le signe du coefficient
+    est désormais retiré comme un moins unaire. La fiche 2 a le même défaut
+    (non corrigé ici).
+  - Corrigé de 11.3 a) affiché en puissance (2⁻², pas 1/4).
+  - Vérifié : 400 tirages recalculés depuis l'énoncé affiché (inéquations
+    sur une grille et aux bornes, équations par substitution et nombre de
+    racines, termes et expressions par substitution, récurrences itérées
+    avec a numérique, unicité de n en 11.9) : 0 écart ; variété mesurée sur
+    300 tirages (≥ 28 énoncés distincts par question, 9 pour 11.8) ; cycle
+    complet 5 × 22 accepté ; valeur au lieu de la puissance, racine non
+    simplifiée et ensemble incomplet refusés ; 0 erreur MathJax (fiche et
+    panneau des réponses) ; vérificateur : 0 erreur ; rendu contrôlé.
