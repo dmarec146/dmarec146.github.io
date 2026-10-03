@@ -6100,3 +6100,46 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   « Mode d'emploi du site », lien `assets/docs/guide-eleve.pdf` ouvert dans un
   nouvel onglet (`target="_blank" rel="noopener"`). Vérifié : rendu ordinateur
   et téléphone, PDF servi en `application/pdf`.
+
+- **Mesure de fréquentation anonyme et tableau de bord « Fréquentation »
+  (03/10/2026).** David : statistiques de visites de quiconque (connecté ou
+  non), tableau de bord maison plutôt qu'un service extérieur ; validé :
+  totaux + parties du site + appareils + fiches les plus ouvertes, pas de
+  distinction lycée/maison, mention dans le pied de page, ses visites exclues.
+  - **Comptage** (`assets/js/statistiques.js`, ajouté aux 76 pages publiques,
+    pas au tableau de bord) : une écriture Firestore par page vue, `setDoc`
+    fusionné avec `increment(1)` dans `statistiques/{jour}_{0-4}` (fragment
+    tiré au hasard : une classe entière ne sature pas un document). Champs :
+    `pv`, `visites` (plus de 30 min sans activité), `visiteurs` (premier
+    passage du jour du navigateur), `s_<partie>`, `a_<appareil>` (par visite),
+    `pages.<clé>` + `derniere`. Aucune donnée personnelle : le navigateur ne
+    garde que la date de son dernier passage et l'heure de sa dernière
+    activité (localStorage). Exclus : compte admin (et le navigateur, marqué
+    `stats-exclu`, même déconnecté ensuite), localhost / file:, navigateurs
+    pilotés (`navigator.webdriver`). Sans stockage local : pages vues seules.
+    Réseau du lycée : un élève = sa session Windows = son navigateur, compté à
+    part (l'identifiant réseau du lycée n'est jamais visible du site).
+  - **Règles** (`firestore.rules`, `match /statistiques/{jour}`) : création
+    et mise à jour par tout visiteur, uniquement +1 sur des clés connues
+    (pv +1 exactement, la seule page `derniere` +1, les autres compteurs
+    inchangés ou +1), identifiant `AAAA-MM-JJ_0..4` ; lecture et suppression
+    admin. Testées dans l'émulateur : 29 cas (dont 15 tentatives de triche
+    refusées et 3 règles existantes en non-régression) — test conservé dans
+    `outils/verification/regles-firestore/`. **À publier dans la Console.**
+  - **Tableau de bord** : `tableau-de-bord/frequentation.html` +
+    `assets/js/frequentation.js` (styles `.fr-*` dans
+    `tableau-de-bord.css`) : périodes 7 j / 30 j / depuis la rentrée / tout,
+    tuiles (visiteurs, visites, pages vues, aujourd'hui), barres jour par jour
+    (par semaine au-delà de 62 jours), une seule mesure à la fois au choix,
+    bulle au survol ou au toucher, tableau des chiffres ; parties du site et
+    appareils en barres horizontales ; 15 fiches les plus ouvertes (noms via
+    `manifeste-fiches.js`). Volets « Devoirs / Fréquentation » ajoutés en tête
+    des deux pages (classes `.tdb-nav-*` existantes).
+  - Vérifié de bout en bout contre les émulateurs Firestore + Auth (site
+    servi sous un nom de domaine fictif) : ordinateur anonyme 5 pages (pv,
+    visites, visiteurs, parties, pages exacts), nouvelle visite après 30 min
+    sans nouveau visiteur, téléphone et tablette reconnus, enseignant connecté
+    puis déconnecté jamais compté (seule la page de connexion vue avant de se
+    connecter, dans un navigateur neuf, compte), tableau de bord affiché sans
+    erreur avec 45 jours de données de démonstration, anonyme renvoyé vers la
+    connexion ; 0 erreur JS ; vérificateur des fiches : 0 erreur.

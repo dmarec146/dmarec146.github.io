@@ -64,6 +64,9 @@ depuis la réorganisation du 02/10/2026 »).
     pastille des pages d'entrée), `mes-devoirs.js`, `devoirs.js`
     (tableau de bord enseignant), `manifeste-fiches.js` (liste des fiches
     pour l'attribution, à tenir à jour à la main), `export-cahier.js`.
+  - `assets/js/statistiques.js` (module, chargé par les 76 pages publiques) :
+    mesure de fréquentation anonyme, une écriture Firestore par page vue
+    (voir §3). Pied de page : « Mesure de fréquentation anonyme… ».
   - MathLive (0.110, chargé sans numéro de version depuis unpkg) et MathJax.
 - **Automatismes de Première** : `automatismes/premiere/sujet-blanc.html`
   et `fiche.html` (fiche ciblée par thèmes), moteur partagé
@@ -84,9 +87,13 @@ depuis la réorganisation du 02/10/2026 »).
 - `firestore.rules` : **à republier à la main dans la Console Firebase après
   toute modification** (pas de déploiement automatique ; sinon les
   écritures échouent en silence). Dernière publication : 30/09/2026
-  (`brouillonsAutomatismes`).
-- Collections utiles : `devoirs/{id}` (lecture élève connecté, écriture
-  admin) ; sous `eleves/{uid}` : `brouillons/{ficheId}`,
+  (`brouillonsAutomatismes`). **Règles `statistiques` (03/10/2026) : à
+  publier** — testées dans l'émulateur (`outils/verification/regles-firestore/`,
+  29 cas), à relancer avant toute nouvelle publication.
+- Collections utiles : `statistiques/{AAAA-MM-JJ}_{0-4}` (fréquentation
+  anonyme : compteurs du jour, +1 seulement pour tout visiteur, lecture
+  admin ; enseignant et navigateurs où il s'est connecté exclus) ;
+  `devoirs/{id}` (lecture élève connecté, écriture admin) ; sous `eleves/{uid}` : `brouillons/{ficheId}`,
   `brouillonsAutomatismes/{devoirId}`, `devoirsTentatives` (journal des
   tentatives de devoir), `connexions` (journal d'audit).
   **Orphelines** (plus lues depuis le 29/09/2026) : `resultats`,
@@ -109,8 +116,8 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 4. Devoirs — fonctionnement actuel
 
-- **Attribution** (`tableau-de-bord/devoirs.html`, seule page du tableau de
-  bord enseignant) : fiche de calcul, sujet blanc d'automatismes, ou fiche
+- **Attribution** (`tableau-de-bord/devoirs.html` ; l'autre volet du tableau
+  de bord est `frequentation.html`, statistiques de visites) : fiche de calcul, sujet blanc d'automatismes, ou fiche
   d'automatismes ciblée (`type:'automatismes'`, `cible:'fiche'`, `themes`) ;
   classe, échéance, nombre d'essais ; pour les automatismes niveau, mode
   (fiche/chrono) et durée par question (chrono). Trois panneaux : Attribuer,

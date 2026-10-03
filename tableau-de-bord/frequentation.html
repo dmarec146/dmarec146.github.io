@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Fréquentation — Tableau de bord — Cahiers interactifs</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="../assets/css/tableau-de-bord.css">
+</head>
+<body>
+
+<header class="site-entete">
+  <div class="enveloppe">
+    <a class="site-logo" href="../index.html">
+      <span class="marque">Cahiers <em>interactifs</em></span>
+    </a>
+    <nav class="site-nav">
+      <a href="../index.html">Accueil</a>
+      <a class="nav-vedette" href="../cahiers/index.html">Cahiers de calcul</a>
+      <a class="nav-vedette nav-vedette-vert" href="../automatismes/index.html">Automatismes</a>
+    </nav>
+  </div>
+</header>
+
+<div class="enveloppe">
+  <div class="tdb-cadre">
+    <nav class="tdb-nav-principale" aria-label="Volets du tableau de bord">
+      <a class="tdb-nav-carte" href="devoirs.html">
+        <span class="tdb-nav-carte-icone"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+        <span><span class="tdb-nav-carte-titre">Devoirs</span><span class="tdb-nav-carte-sous">Attribuer, suivre, résultats</span></span>
+      </a>
+      <a class="tdb-nav-carte tdb-nav-actif" href="frequentation.html" aria-current="page">
+        <span class="tdb-nav-carte-icone"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg></span>
+        <span><span class="tdb-nav-carte-titre">Fréquentation</span><span class="tdb-nav-carte-sous">Visites du site, anonymes</span></span>
+      </a>
+    </nav>
+
+    <div class="tdb-entete">
+      <div>
+        <h1>Fréquentation</h1>
+        <p class="tdb-intro">
+          Mesure anonyme de toutes les visites du site, élèves connectés ou
+          non : aucune donnée personnelle, seulement des totaux par jour. Tes
+          propres visites (compte enseignant, et tout navigateur où tu t'es
+          connecté) ne sont pas comptées.
+        </p>
+      </div>
+    </div>
+
+    <p id="fr-chargement" class="tdb-etat">Chargement…</p>
+    <p id="fr-erreur" class="tdb-etat tdb-etat-erreur" hidden></p>
+
+    <div id="fr-contenu" hidden>
+      <div class="fr-choix" role="group" aria-label="Période">
+        <button type="button" class="fr-choix-btn" data-periode="7">7 derniers jours</button>
+        <button type="button" class="fr-choix-btn" data-periode="30">30 derniers jours</button>
+        <button type="button" class="fr-choix-btn" data-periode="rentree">Depuis la rentrée</button>
+        <button type="button" class="fr-choix-btn" data-periode="tout">Tout</button>
+      </div>
+
+      <div class="fr-tuiles">
+        <div class="fr-tuile"><p class="fr-tuile-titre">Visiteurs</p><p class="fr-tuile-valeur" id="fr-t-visiteurs">–</p><p class="fr-tuile-note">navigateurs différents, jour par jour</p></div>
+        <div class="fr-tuile"><p class="fr-tuile-titre">Visites</p><p class="fr-tuile-valeur" id="fr-t-visites">–</p><p class="fr-tuile-note">séances de travail sur le site</p></div>
+        <div class="fr-tuile"><p class="fr-tuile-titre">Pages vues</p><p class="fr-tuile-valeur" id="fr-t-pv">–</p><p class="fr-tuile-note">pages ouvertes ou rechargées</p></div>
+        <div class="fr-tuile fr-tuile-jour"><p class="fr-tuile-titre">Aujourd'hui</p><p class="fr-tuile-valeur" id="fr-t-jour">–</p><p class="fr-tuile-note" id="fr-t-jour-note">visiteurs</p></div>
+      </div>
+
+      <section class="fr-bloc">
+        <div class="fr-bloc-entete">
+          <h2 id="fr-graphique-titre">Jour par jour</h2>
+          <div class="fr-choix fr-choix-petit" role="group" aria-label="Mesure affichée">
+            <button type="button" class="fr-choix-btn" data-mesure="visiteurs">Visiteurs</button>
+            <button type="button" class="fr-choix-btn" data-mesure="visites">Visites</button>
+            <button type="button" class="fr-choix-btn" data-mesure="pv">Pages vues</button>
+          </div>
+        </div>
+        <div id="fr-graphique" class="fr-graphique"></div>
+        <details class="fr-details">
+          <summary>Voir les chiffres en tableau</summary>
+          <table class="tdb-tableau fr-tableau-jours">
+            <thead><tr><th id="fr-col-periode">Jour</th><th>Visiteurs</th><th>Visites</th><th>Pages vues</th></tr></thead>
+            <tbody id="fr-corps-jours"></tbody>
+          </table>
+        </details>
+      </section>
+
+      <div class="fr-deux">
+        <section class="fr-bloc">
+          <h2>Parties du site</h2>
+          <p class="fr-note">en pages vues</p>
+          <div id="fr-parties" class="fr-barres"></div>
+        </section>
+        <section class="fr-bloc">
+          <h2>Appareils</h2>
+          <p class="fr-note">en visites</p>
+          <div id="fr-appareils" class="fr-barres"></div>
+        </section>
+      </div>
+
+      <section class="fr-bloc">
+        <h2>Fiches les plus ouvertes</h2>
+        <p class="fr-note">en pages vues, fiches de calcul seulement</p>
+        <div id="fr-fiches"></div>
+      </section>
+
+      <p class="fr-note fr-lecture">
+        <b>Lire ces chiffres.</b> Un « visiteur » est un navigateur venu ce
+        jour-là : un élève venu trois jours compte trois fois sur la période,
+        et en salle informatique chaque session Windows compte à part. Une
+        « visite » commence après 30 minutes sans activité sur le site. Les
+        navigateurs qui bloquent le stockage ou certains scripts ne sont
+        comptés qu'en pages vues, ou pas du tout : ce sont des ordres de
+        grandeur.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer class="site-pied">
+  Cahiers interactifs — ressources pour le lycée.
+</footer>
+
+<script type="module" src="../assets/js/nav-auth.js"></script>
+<script type="module" src="../assets/js/frequentation.js"></script>
+
+</body>
+</html>

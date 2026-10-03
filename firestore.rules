@@ -23,6 +23,11 @@
 //                                    passages ; nécessaire pour retrouver la meilleure
 //                                    tentative complète d'un devoir
 //   devoirs/{id}                    un devoir attribué par l'enseignant
+//   statistiques/{AAAA-MM-JJ}_{n}   compteurs anonymes de fréquentation d'un jour
+//                                    (fragment n de 0 à 4) -- écrits par tout visiteur,
+//                                    connecté ou non, uniquement par ajout de +1
+//                                    (assets/js/statistiques.js) ; lus par l'enseignant
+//                                    (tableau-de-bord/frequentation.html)
 //
 // Les comptes élèves et le compte enseignant sont créés côté serveur (script
 // outils/creer-comptes, SDK Admin, qui ignore ces règles). L'enseignant est
@@ -121,6 +126,67 @@ service cloud.firestore {
       // attribués ; seul l'enseignant les crée, modifie ou supprime.
       allow read: if request.auth != null;
       allow write: if estAdmin();
+    }
+
+    // ---------- Fréquentation anonyme (03/10/2026) ----------
+    // N'importe quel visiteur (même non connecté) peut seulement AJOUTER 1 à
+    // des compteurs connus ; personne d'autre que l'enseignant ne lit. Une
+    // écriture = une page vue : pv +1, une partie s_* +1, la page pages[derniere]
+    // +1, et éventuellement visites, visiteurs et un appareil a_* +1. Toute
+    // autre clé, toute autre valeur ou tout autre identifiant de document est
+    // refusé. Gonfler les compteurs reste possible (une page vue à la fois),
+    // rien d'autre.
+    function clesStatistiques() {
+      return ['pv', 'visites', 'visiteurs',
+              's_accueil', 's_cahiers', 's_fiches_seconde', 's_fiches_premiere', 's_fiches_terminale',
+              's_automatismes', 's_mes_devoirs', 's_connexion', 's_autres',
+              'a_ordinateur', 'a_tablette', 'a_telephone',
+              'pages', 'derniere'];
+    }
+    // Compteur absent ou égal à 1 (création du document du jour).
+    function unOuAbsent(d, cle) {
+      return !(cle in d) || d[cle] == 1;
+    }
+    // Compteur inchangé ou augmenté de 1 exactement (mise à jour).
+    function memeOuPlusUn(d, a, cle) {
+      return d.get(cle, 0) == a.get(cle, 0) || d.get(cle, 0) == a.get(cle, 0) + 1;
+    }
+    function pageValide(d) {
+      return d.derniere is string && d.derniere.matches('^[a-z0-9-]{1,40}$') && d.pages is map;
+    }
+    function creationStatistiquesValide() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(clesStatistiques())
+        && d.keys().hasAll(['pv', 'pages', 'derniere'])
+        && pageValide(d)
+        && d.pages.keys().hasOnly([d.derniere]) && d.pages[d.derniere] == 1
+        && d.pv == 1
+        && unOuAbsent(d, 'visites') && unOuAbsent(d, 'visiteurs')
+        && unOuAbsent(d, 's_accueil') && unOuAbsent(d, 's_cahiers') && unOuAbsent(d, 's_fiches_seconde')
+        && unOuAbsent(d, 's_fiches_premiere') && unOuAbsent(d, 's_fiches_terminale') && unOuAbsent(d, 's_automatismes')
+        && unOuAbsent(d, 's_mes_devoirs') && unOuAbsent(d, 's_connexion') && unOuAbsent(d, 's_autres')
+        && unOuAbsent(d, 'a_ordinateur') && unOuAbsent(d, 'a_tablette') && unOuAbsent(d, 'a_telephone');
+    }
+    function miseAJourStatistiquesValide() {
+      let d = request.resource.data;
+      let a = resource.data;
+      return d.keys().hasOnly(clesStatistiques())
+        && pageValide(d)
+        && d.pv == a.pv + 1
+        && d.pages.diff(a.pages).affectedKeys().hasOnly([d.derniere])
+        && d.pages[d.derniere] == a.pages.get(d.derniere, 0) + 1
+        && memeOuPlusUn(d, a, 'visites') && memeOuPlusUn(d, a, 'visiteurs')
+        && memeOuPlusUn(d, a, 's_accueil') && memeOuPlusUn(d, a, 's_cahiers') && memeOuPlusUn(d, a, 's_fiches_seconde')
+        && memeOuPlusUn(d, a, 's_fiches_premiere') && memeOuPlusUn(d, a, 's_fiches_terminale') && memeOuPlusUn(d, a, 's_automatismes')
+        && memeOuPlusUn(d, a, 's_mes_devoirs') && memeOuPlusUn(d, a, 's_connexion') && memeOuPlusUn(d, a, 's_autres')
+        && memeOuPlusUn(d, a, 'a_ordinateur') && memeOuPlusUn(d, a, 'a_tablette') && memeOuPlusUn(d, a, 'a_telephone');
+    }
+
+    match /statistiques/{jour} {
+      allow read: if estAdmin();
+      allow create: if jour.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-4]$') && creationStatistiquesValide();
+      allow update: if jour.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-4]$') && miseAJourStatistiquesValide();
+      allow delete: if estAdmin();
     }
   }
 }
