@@ -6143,3 +6143,5 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     connecter, dans un navigateur neuf, compte), tableau de bord affiché sans
     erreur avec 45 jours de données de démonstration, anonyme renvoyé vers la
     connexion ; 0 erreur JS ; vérificateur des fiches : 0 erreur.
+  - Règles `statistiques` publiées par David dans la Console Firebase
+    (03/10/2026), puis code fusionné sur `master`.
