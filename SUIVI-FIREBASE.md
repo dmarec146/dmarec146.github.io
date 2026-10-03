@@ -171,9 +171,11 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 6. Pistes ouvertes / à faire
 
-Backlog de David pour après le travail sur les fiches :
-**`CHANTIERS-FUTURS.md`** (moteur robuste pour les plages de l'aléatoire,
-banque d'automatismes) — **ne le modifier qu'à sa demande**.
+Backlog de David pour après le travail sur les fiches : l'artefact
+**« Chantiers futurs »** (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad :
+plages de l'aléatoire, banque d'automatismes, devoirs partiels, barème
+personnalisé, correction détaillée), qui remplace `CHANTIERS-FUTURS.md`
+depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
 - Diversifier les automatismes des fiches de Première 7 à 26 au fil des
   relectures de David (règle et modèles dans `REGLES-FICHES.md`, §2).

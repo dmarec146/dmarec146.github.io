@@ -5922,6 +5922,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   `verifierUne` sur chaque question puis `reinitialiser()` : 21, 39 et
   35 statuts `ok`/`ko` avant, 0 après, aucune erreur console.
 
+- **Backlog « Chantiers futurs » passé en artefact (02/10/2026).** David :
+  « je voulais en faire un artefact, pas un .md », puis « supprime le
+  .md ». Contenu repris dans l'artefact claude.ai « Chantiers futurs »
+  (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad, lisible sur les
+  deux PC avec le même compte) ; `CHANTIERS-FUTURS.md` supprimé ; renvois
+  de `CLAUDE.md` et `SUIVI-FIREBASE.md` (§6) mis à jour.
+
 - **Première fiche 14 (Calcul de sommes I) : automatismes aux règles
   (03/10/2026), 30 questions inchangées.** David : « oui les
   automatismes » (même démarche que les fiches 10 à 13 ; seul le bloc
@@ -6145,3 +6152,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     connexion ; 0 erreur JS ; vérificateur des fiches : 0 erreur.
   - Règles `statistiques` publiées par David dans la Console Firebase
     (03/10/2026), puis code fusionné sur `master`.
+- **Fusion du commit local du 02/10 (03/10/2026).** Le commit « Chantiers
+  futurs : backlog déplacé dans un artefact » (27d6694, PC de David, jamais
+  poussé) divergeait de `master` après le travail de la session cloud du
+  03/10. Poussé par David sur une branche `recup-chantiers`, fusionné dans
+  `master` (commit de fusion) : seul conflit, la fin de `HISTORIQUE.md`
+  (les deux côtés y ajoutaient des entrées), résolu en gardant tout, entrée
+  du 02/10 avant celles du 03/10. `SUIVI-FIREBASE.md` fusionné sans conflit.
