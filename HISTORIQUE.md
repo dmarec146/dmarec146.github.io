@@ -5956,3 +5956,53 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     lignes, 0 erreur MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
     Contrôle fait dans un conteneur sans accès aux CDN (MathJax, MathLive
     et math.js servis en local) : seules les polices MathLive manquaient.
+
+- **Premières fiches 15 (Calcul de sommes II) et 16 (Calcul de produits) :
+  automatismes aux règles (03/10/2026).** David : « travaille les fiches 15
+  et 16 de la même manière que 14 » (seul le bloc « Quelques automatismes »
+  est refait ; le reste des fiches n'a pas été relu).
+  - **Un troisième calcul d'automatismes** : ces deux fiches n'en avaient que
+    deux (5 et 6 questions) ; elles passent à 15.1 inéquations, 15.2
+    équations, 15.3 calcul numérique (6 questions, comme les fiches 10 à 14).
+    Les calculs suivants sont **renumérotés** (+1) : fiche 15, 15.3-15.13 →
+    15.4-15.14 ; fiche 16, 16.3-16.12 → 16.4-16.13 (titres, ids de
+    questions, `grille-N-…`, `texte-N-…`, `groupes`). Fiche 15 : 5 → 6
+    questions d'automatismes, donc 34 → 35 questions et tous les indices
+    suivants décalés de 1 dans `groupes` ; fiche 16 : 31 questions, indices
+    inchangés. Les brouillons déjà enregistrés sur ces deux fiches ne
+    correspondent plus aux nouveaux ids (ils sont écartés au chargement).
+  - **Fiche 15** : 15.1 a) premier degré déguisé (x + a)² − (x + b)² ◊ c
+    (différence de deux carrés), b) quotients a/(x − b) ◊ c/(x − d) (deux
+    valeurs interdites, jamais incluses ni traversées) ; 15.2 a) valeur
+    absolue |ax + b| = cx + d (une solution est parfois rejetée), b)
+    (x + a)/(x + b) = (x + c)/(x + d) (le terme en x² disparaît, une
+    solution fractionnaire ; valeur interdite jamais solution) ; 15.3 a)
+    puissances à exposant négatif A⁻ᵐ ± B⁻ⁿ, b) quotient de décimaux
+    (p × q)/r (un chiffre après la virgule).
+  - **Fiche 16** : 16.1 a) premier degré déguisé (x + a)(x − b) ◊
+    (x − c)(x + d), b) quotient à dénominateur produit (ax + b)/((x − c)(x − d))
+    ◊ 0 ; 16.2 a) degré 3 par regroupement x³ − ax² − k²x + ak² = 0
+    (trois solutions), b) |ax + b| = |cx + d| (expressions non
+    proportionnelles) ; 16.3 a) produit de facteurs 1 ± 1/k (3 à 5 facteurs,
+    il se télescope), b) (c√n + p)² + (c√n − p)² = 2c²n + 2p² (entier).
+    Retirés : calculs de puissances / fraction / racine (16.1) et carrés à
+    développer (16.2) pour la fiche 16 ; développements et fractions à
+    paramètre x pour la fiche 15.
+  - **Outils repris de la fiche 14** (absents de 15 et 16) :
+    `estFractionIrreductible` + option `fractionIrreductible` (contrôle de
+    la forme, aide « ? »), clavier des ensembles { } ; (groupe
+    `groupeEnsembleClavier`). Fiche 16 : `aleaNonNul`, `fracToStr` et
+    `fmtLin` recopiés (la fiche ne les avait pas).
+  - Vérifié (fiches 15 et 16) : 600 tirages recalculés indépendamment par
+    fiche (inéquations sur une grille au huitième près, sur les rationnels
+    de dénominateur ≤ 7 et autour des bornes à 1e-6, valeurs interdites
+    exclues ; équations par recherche exhaustive des rationnels de
+    dénominateur ≤ 7 sur [−80 ; 80] ; calculs évalués depuis l'énoncé
+    affiché ; fractions irréductibles) : 0 écart ; variété (énoncés
+    distincts sur 600 tirages) 583 / 596 / 569 / 588 / 237 / 564 (fiche 15)
+    et 597 / 595 / 48 / 575 / 42 / 438 (fiche 16) ; ids, lettres, groupes
+    et titres de toutes les questions contrôlés (aucune incohérence) ;
+    cycle complet 12 × 6 = 72 corrigés retapés par fiche, tous acceptés ;
+    refusés : fraction non réduite, décimal, mauvais entier, ensemble avec
+    une valeur fausse ; panneau « Voir toutes les réponses » : 35 et 31
+    lignes, 0 erreur MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
