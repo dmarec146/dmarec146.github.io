@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cahiers interactifs — Guide de l'élève</title>
+<link rel="stylesheet" href="polices/polices.css">
+<style>
+  :root {
+    --bleu: #4B46C7; --bleu-fonce: #322E9A; --bleu-clair: #D9D9FF; --bleu-pale: #EEEEFF;
+    --vert: #1D9E75; --vert-fonce: #137556; --vert-clair: #E1F5EE;
+    --rouge: #E24B4A; --rouge-clair: #FCEBEB;
+    --ambre: #D97706; --ambre-fonce: #A85A04; --ambre-clair: #FEF3E2;
+    --gris: #5F5E5A; --gris-clair: #F1EFE8; --encre: #1F1E2E; --trait: #E4E2DA;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Inter', 'Liberation Sans', sans-serif; color: var(--encre); font-size: 10.2pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: #fff; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .contenu { padding: 15mm 15mm 16mm; }
+  h1, h2, h3 { font-family: 'Source Serif 4', Georgia, serif; margin: 0; line-height: 1.15; }
+  p { margin: 0 0 6pt; }
+  code, .k { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.92em; background: var(--gris-clair); border: 1px solid var(--trait); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+
+  /* ---------- en-tete de section ---------- */
+  .bandeau { display: flex; align-items: center; gap: 12px; padding: 12mm 15mm 7mm; color: #fff; position: relative; }
+  .bandeau .num { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.55); display: flex; align-items: center; justify-content: center; font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 18pt; flex: none; }
+  .bandeau h2 { font-size: 22pt; color: #fff; }
+  .bandeau .sur { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; opacity: .85; margin-bottom: 2px; }
+  .bandeau .suite { margin-left: auto; font-size: 8.5pt; font-weight: 600; opacity: .85; }
+  .bleu .bandeau { background: linear-gradient(120deg, var(--bleu-fonce), var(--bleu) 70%); }
+  .vert .bandeau { background: linear-gradient(120deg, var(--vert-fonce), var(--vert) 70%); }
+  .ambre .bandeau { background: linear-gradient(120deg, var(--ambre-fonce), var(--ambre) 70%); }
+  .gris .bandeau { background: linear-gradient(120deg, #3c3b38, var(--gris) 70%); }
+  .bandeau::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 10px; background: #fff; border-radius: 10px 10px 0 0; }
+
+  h3 { font-size: 13pt; margin: 0 0 5pt; display: flex; align-items: center; gap: 7px; }
+  h3 .pastille { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .bleu h3 { color: var(--bleu-fonce); } .bleu h3 .pastille { background: var(--bleu); }
+  .vert h3 { color: var(--vert-fonce); } .vert h3 .pastille { background: var(--vert); }
+  .ambre h3 { color: var(--ambre-fonce); } .ambre h3 .pastille { background: var(--ambre); }
+  .gris h3 { color: #3c3b38; } .gris h3 .pastille { background: var(--gris); }
+  section { margin-bottom: 9pt; }
+
+  .capture { border: 1px solid var(--trait); border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(40,36,120,.08); }
+  .capture img { display: block; width: 100%; }
+  .legende { font-size: 8pt; color: var(--gris); font-style: italic; margin-top: 3pt; }
+  .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .deux-un { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12pt; align-items: start; }
+  .un-deux { display: grid; grid-template-columns: 1fr 1.35fr; gap: 12pt; align-items: start; }
+  .trois { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+
+  /* encadres */
+  .encadre { border-radius: 9px; padding: 8pt 10pt; margin: 6pt 0; font-size: 9.6pt; }
+  .encadre .titre { font-weight: 700; margin-bottom: 2pt; display: flex; align-items: center; gap: 6px; }
+  .astuce { background: var(--bleu-pale); border-left: 4px solid var(--bleu); }
+  .astuce .titre { color: var(--bleu-fonce); }
+  .attention { background: var(--rouge-clair); border-left: 4px solid var(--rouge); }
+  .attention .titre { color: #B23A2E; }
+  .bon { background: var(--vert-clair); border-left: 4px solid var(--vert); }
+  .bon .titre { color: var(--vert-fonce); }
+  .devoirbox { background: var(--ambre-clair); border-left: 4px solid var(--ambre); }
+  .devoirbox .titre { color: var(--ambre-fonce); }
+
+  /* tableaux de boutons */
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 9.3pt; }
+  td, th { padding: 5pt 7pt; vertical-align: top; border-bottom: 1px solid var(--trait); text-align: left; }
+  th { font-size: 8pt; text-transform: uppercase; letter-spacing: .06em; color: var(--gris); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .tab { border: 1px solid var(--trait); border-radius: 9px; overflow: hidden; }
+  .tab td:first-child { width: 36%; }
+  .btn { display: inline-block; border: 1.5px solid var(--bleu); color: var(--bleu); border-radius: 6px; padding: 1.5pt 6pt; font-size: 8.6pt; font-weight: 600; background: #fff; white-space: nowrap; font-family: Georgia, 'Liberation Serif', serif; }
+  .btn.plein { background: var(--bleu); color: #fff; }
+  .btn.vert { border-color: var(--vert); color: var(--vert); } .btn.vert.plein { background: var(--vert); color: #fff; }
+  .btn.pdf { border-color: #f3c9c8; color: var(--rouge); }
+  .btn.gris { border-color: #ccc; color: var(--gris); }
+  .btn.inactif { opacity: .45; }
+  .ico { display: inline-flex; width: 22px; height: 22px; border: 1.5px solid #ccc; border-radius: 5px; align-items: center; justify-content: center; font-size: 12px; color: var(--gris); background: #fff; vertical-align: middle; }
+  .aide-ico { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--bleu); background: var(--bleu-clair); color: var(--bleu); font-weight: 700; font-size: 9px; align-items: center; justify-content: center; vertical-align: middle; }
+  .ok { color: var(--vert); font-weight: 700; } .ko { color: var(--rouge); font-weight: 700; }
+
+  /* etapes numerotees */
+  .etapes { counter-reset: e; list-style: none; padding: 0; margin: 0; }
+  .etapes li { counter-increment: e; position: relative; padding-left: 26px; margin-bottom: 5pt; }
+  .etapes li::before { content: counter(e); position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 8.5pt; display: flex; align-items: center; justify-content: center; }
+  .bleu .etapes li::before { background: var(--bleu); } .vert .etapes li::before { background: var(--vert); } .ambre .etapes li::before { background: var(--ambre); } .gris .etapes li::before { background: var(--gris); }
+  ul.puces { margin: 0 0 6pt; padding-left: 14px; } ul.puces li { margin-bottom: 2.5pt; }
+
+  /* pied de page */
+  .pied { position: absolute; left: 15mm; right: 15mm; bottom: 7mm; display: flex; justify-content: space-between; font-size: 7.6pt; color: #9a988f; border-top: 1px solid var(--trait); padding-top: 4pt; }
+
+  /* ---------- couverture (fond clair) ---------- */
+  .couv { background: linear-gradient(165deg, #FFFFFF 0%, #F6F5FF 50%, #F1FAF6 100%); color: var(--encre); }
+  .couv::before { content: ''; position: absolute; width: 150mm; height: 150mm; border-radius: 50%; right: -55mm; top: -60mm; background: radial-gradient(circle, rgba(75,70,199,.13), rgba(75,70,199,0) 70%); }
+  .couv::after { content: ''; position: absolute; width: 120mm; height: 120mm; border-radius: 50%; left: -50mm; bottom: -45mm; background: radial-gradient(circle, rgba(29,158,117,.12), rgba(29,158,117,0) 70%); }
+  .couv > * { position: relative; z-index: 1; }
+  .couv .haut { padding: 26mm 18mm 0; }
+  .couv .marque { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: 9pt; color: var(--bleu); }
+  .couv .marque .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--bleu); color: #fff; font-family: 'Source Serif 4', serif; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 14pt; letter-spacing: 0; }
+  .couv h1 { font-size: 42pt; margin-top: 14mm; color: var(--encre); letter-spacing: -.01em; }
+  .couv h1 em { font-style: normal; color: var(--bleu); }
+  .couv .filet-couv { width: 30mm; height: 4px; border-radius: 2px; background: var(--bleu); margin-top: 6mm; }
+  .couv .sous { font-size: 13.5pt; margin-top: 6mm; max-width: 150mm; color: var(--gris); line-height: 1.45; }
+  .couv .tuiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7mm; padding: 0 18mm; position: absolute; left: 0; right: 0; top: 118mm; }
+  a.tuile { display: block; text-decoration: none; }
+  .tuile { background: #fff; color: var(--encre); border: 1px solid var(--trait); border-radius: 14px; padding: 7mm 7mm 6mm; box-shadow: 0 8px 24px rgba(40,36,120,.10); position: relative; overflow: hidden; }
+  .tuile::before { content: ''; position: absolute; left: 0; top: 0; right: 0; height: 6px; }
+  .tuile.b::before { background: var(--bleu); } .tuile.v::before { background: var(--vert); } .tuile.a::before { background: var(--ambre); }
+  .tuile .icone { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 4mm; }
+  .tuile.b .icone { background: var(--bleu-clair); color: var(--bleu); } .tuile.v .icone { background: var(--vert-clair); color: var(--vert); } .tuile.a .icone { background: var(--ambre-clair); color: var(--ambre); }
+  .tuile h2 { font-size: 14.5pt; margin-bottom: 2.5mm; }
+  .tuile p { font-size: 9pt; color: var(--gris); margin: 0; }
+  .tuile .pages { margin-top: 4mm; font-size: 8pt; font-weight: 700; letter-spacing: .05em; }
+  .tuile.b .pages { color: var(--bleu); } .tuile.v .pages { color: var(--vert); } .tuile.a .pages { color: var(--ambre); }
+  .couv .bas { position: absolute; left: 18mm; right: 18mm; bottom: 12mm; display: flex; justify-content: space-between; align-items: flex-end; }
+  .couv .adresse { background: var(--bleu-clair); color: var(--bleu-fonce); border-radius: 30px; padding: 3mm 6mm; font-weight: 700; font-size: 11pt; }
+  .couv .calc { font-size: 9pt; color: var(--gris); text-align: right; max-width: 80mm; }
+  .couv .sommaire { position: absolute; left: 18mm; right: 18mm; top: 199mm; background: #fff; border: 1px solid var(--trait); border-radius: 14px; padding: 6mm 8mm; display: grid; grid-template-columns: 1fr 1fr; gap: 1.8mm 10mm; font-size: 9.5pt; box-shadow: 0 6px 18px rgba(40,36,120,.06); }
+  .couv .sommaire .t { grid-column: 1 / -1; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 8pt; color: var(--gris); margin-bottom: 1mm; }
+  .couv .sommaire a { color: var(--encre); text-decoration: none; }
+  .couv .sommaire a b { display: inline-block; width: 7mm; color: var(--bleu); }
+  .couv .sommaire .note { grid-column: 1 / -1; font-size: 7.6pt; color: #9a988f; margin-top: 1mm; }
+
+  /* ---------- maquettes (devoirs) ---------- */
+  .maquette { border: 1px solid var(--trait); border-radius: 10px; background: #FAFAF7; padding: 8pt; }
+  .cloche { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid var(--bleu); color: var(--bleu); border-radius: 30px; padding: 5px 14px 5px 10px; font-family: Georgia, serif; font-weight: 700; position: relative; }
+  .cloche .badge { position: absolute; top: -7px; right: -8px; background: var(--rouge); color: #fff; font-family: Inter, sans-serif; font-size: 8pt; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .colonnes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7pt; }
+  .colonne { background: #fff; border: 1px solid var(--trait); border-radius: 9px; padding: 7pt; }
+  .colonne .t { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 11pt; margin-bottom: 4pt; display: flex; align-items: center; gap: 6px; }
+  .colonne .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .item { border: 1px solid var(--trait); border-radius: 7px; padding: 5pt 6pt; font-size: 8.2pt; margin-bottom: 4pt; background: #fff; }
+  .item b { display: block; font-size: 8.8pt; color: var(--encre); margin-bottom: 1pt; }
+  .item span { color: var(--gris); }
+  .colonne .expl { font-size: 8.2pt; color: var(--gris); margin-top: 3pt; }
+
+  /* frise du devoir */
+  .frise { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 4pt 0 2pt; position: relative; }
+  .frise .pas { text-align: center; padding: 0 4pt; position: relative; }
+  .frise .pas .rond { width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 4pt; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; position: relative; z-index: 1; }
+  .frise .pas:not(:last-child)::after { content: ''; position: absolute; top: 17px; left: 50%; width: 100%; height: 3px; background: var(--ambre-clair); z-index: 0; }
+  .frise .pas b { display: block; font-size: 9.5pt; margin-bottom: 1pt; }
+  .frise .pas span { font-size: 8.2pt; color: var(--gris); display: block; line-height: 1.3; }
+
+  .syntaxe td:first-child { width: 28%; font-weight: 600; }
+  .syntaxe td:nth-child(2) { width: 30%; }
+  .petit { font-size: 8.6pt; color: var(--gris); }
+  .colle { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<!-- =============================== COUVERTURE =============================== -->
+<div id="p1" class="page couv">
+  <div class="haut">
+    <div class="marque"><span class="logo">C</span>Cahiers interactifs</div>
+    <h1>Guide <em>de l'élève</em></h1>
+    <div class="filet-couv"></div>
+    <p class="sous">Tout ce qu'il faut savoir pour travailler sur le site : les fiches de calcul, les fiches d'automatismes et les devoirs donnés par ton professeur.</p>
+  </div>
+  <div class="tuiles">
+    <a class="tuile b" href="#p3">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+      <h2>Fiches de calcul</h2>
+      <p>S'entraîner en autonomie, à son rythme, avec correction immédiate et nouvelles versions à volonté.</p>
+      <div class="pages">PAGES 3 À 6</div>
+    </a>
+    <a class="tuile v" href="#p7">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></div>
+      <h2>Automatismes</h2>
+      <p>Des séries de 10 questions à choix multiple, en mode fiche ou chronométré, pour préparer l'épreuve anticipée de Première.</p>
+      <div class="pages">PAGES 7 ET 8</div>
+    </a>
+    <a class="tuile a" href="#p9">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div>
+      <h2>Devoirs</h2>
+      <p>Enregistrer, valider, tentatives, échéance : comment rendre un devoir sans mauvaise surprise.</p>
+      <div class="pages">PAGES 9 ET 10</div>
+    </a>
+  </div>
+  <div class="sommaire">
+    <div class="t">Sommaire</div>
+    <a href="#p2"><b>2</b>Bien démarrer : le site et la connexion</a>
+    <a href="#p7"><b>7</b>Automatismes : niveaux, mode fiche</a>
+    <a href="#p3"><b>3</b>Fiches de calcul : la page, le mode de vérification</a>
+    <a href="#p8"><b>8</b>Automatismes : le mode chrono</a>
+    <a href="#p4"><b>4</b>Fiches de calcul : répondre, l'aide</a>
+    <a href="#p9"><b>9</b>Devoirs : où les trouver, Mes devoirs</a>
+    <a href="#p5"><b>5</b>Fiches de calcul : les claviers</a>
+    <a href="#p10"><b>10</b>Devoirs : enregistrer, valider, tentatives</a>
+    <a href="#p6"><b>6</b>Fiches de calcul : les boutons du bas de page</a>
+    <a href="#p11"><b>11</b>Mémo : raccourcis, écritures, en cas de souci</a>
+    <span class="note">Dans la version numérique, clique sur une ligne (ou sur une tuile) pour aller directement à la page.</span>
+  </div>
+  <div class="bas">
+    <div class="adresse">dmarec146.github.io</div>
+    <div class="calc">Calculatrice interdite : tous les calculs se font à la main. Le site fonctionne sur ordinateur, tablette et téléphone.</div>
+  </div>
+</div>
+
+<!-- =============================== BIEN DEMARRER =============================== -->
+<div id="p2" class="page gris">
+  <div class="bandeau"><div class="num">1</div><div><div class="sur">Pour commencer</div><h2>Bien démarrer</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="deux-un">
+      <div>
+        <h3><span class="pastille"></span>Le site</h3>
+        <p>Depuis la page d'accueil, deux grandes entrées :</p>
+        <ul class="puces">
+          <li><b style="color:var(--bleu)">Cahiers de calcul</b> : les fiches de calcul, rangées par niveau (Seconde, Première, Terminale) puis par cahier. Chaque cahier a son <span class="btn">⌂ Sommaire</span>.</li>
+          <li><b style="color:var(--vert)">Automatismes</b> : les séries de questions à choix multiple (QCM) pour préparer la première partie de l'épreuve anticipée de mathématiques de Première.</li>
+        </ul>
+        <p>En haut à droite, l'<b>icône de profil</b> sert à se connecter puis à se déconnecter.</p>
+      </div>
+      <div><div class="capture"><img src="img/accueil.png"></div><div class="legende">La page d'accueil du site.</div></div>
+    </section>
+
+    <section class="un-deux">
+      <div><div class="capture"><img src="img/connexion.png"></div><div class="legende">La page de connexion.</div></div>
+      <div>
+        <h3><span class="pastille"></span>Se connecter</h3>
+        <ol class="etapes">
+          <li>Clique sur l'<b>icône de profil</b>, en haut à droite.</li>
+          <li>Tape l'<b>identifiant</b> et le <b>mot de passe</b> donnés par ton professeur (le bouton <span class="k">Afficher</span> montre ce que tu tapes).</li>
+          <li>Clique sur <span class="btn plein">Se connecter</span>.</li>
+        </ol>
+        <p>Pour te <b>déconnecter</b>, clique de nouveau sur l'icône de profil : son info-bulle indique « Se déconnecter » suivi de ton identifiant.</p>
+        <div class="encadre attention"><div class="titre">⚠ Poste partagé (CDI, salle info, ordinateur familial)</div>La connexion reste ouverte tant que tu ne te déconnectes pas, même si tu fermes la page. Pense à te déconnecter avant de partir.</div>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Connecté ou pas : qu'est-ce qui change ?</h3>
+      <div class="trois">
+        <div class="encadre astuce" style="margin:0"><div class="titre">Sans connexion</div>Toutes les fiches et tous les automatismes sont utilisables librement. Rien n'est enregistré.</div>
+        <div class="encadre astuce" style="margin:0"><div class="titre">Connecté, hors devoir</div>Exactement pareil : tu t'entraînes librement, avec la correction immédiate. Rien n'est envoyé au professeur.</div>
+        <div class="encadre devoirbox" style="margin:0"><div class="titre">Connecté, en devoir</div>Seul le travail fait dans le cadre d'un <b>devoir</b> est suivi par ton professeur. Voir les pages 9 et 10.</div>
+      </div>
+    </section>
+
+    <div class="encadre bon"><div class="titre">✓ Bon réflexe</div>Le site s'utilise sur ordinateur, tablette ou téléphone. Sur ordinateur, le clavier physique est le plus rapide ; sur tablette et téléphone, utilise les claviers intégrés aux fiches (page 5).</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>2</span></div>
+</div>
+
+<!-- =============================== FICHES DE CALCUL 1 =============================== -->
+<div id="p3" class="page bleu">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Fiches de calcul · 1/4</div><h2>La page d'une fiche</h2></div><div class="suite">En autonomie</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <div class="capture" style="width:86%;margin:0 auto"><img src="img/fiche-haut.png"></div>
+      <div class="legende">Le haut d'une fiche : navigation, titre, rappel « calculatrice interdite » et choix du mode de vérification.</div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>La barre de navigation</h3>
+        <div class="tab"><table>
+          <tr><td><span class="btn plein">⌂ Sommaire</span></td><td>Revenir à la liste des fiches du cahier.</td></tr>
+          <tr><td><span class="btn">← Fiche précédente</span><br><span class="btn" style="margin-top:3pt">Fiche suivante →</span></td><td>Passer directement à la fiche voisine (grisé s'il n'y en a pas).</td></tr>
+          <tr><td><span class="btn pdf">Exporter en PDF</span></td><td>Imprimer ou enregistrer la fiche <b>vierge</b> (sans tes réponses) pour la faire sur papier.</td></tr>
+        </table></div>
+        <p class="petit" style="margin-top:4pt">La même barre se trouve aussi tout en bas de la fiche.</p>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Vérifier chaque réponse</h3>
+        <p>Avant de commencer, choisis comment tu veux être corrigé :</p>
+        <div class="encadre astuce"><div class="titre"><span class="btn plein">Au fur et à mesure</span></div>Chaque réponse est corrigée dès que tu appuies sur <span class="k">Entrée</span>, puis le curseur passe à la question suivante. C'est le mode par défaut.</div>
+        <div class="encadre astuce"><div class="titre"><span class="btn gris">Tout à la fin</span></div><span class="k">Entrée</span> passe à la question suivante <b>sans corriger</b>. Tu corriges tout d'un coup à la fin avec le bouton <span class="btn plein">Corrigé des erreurs</span>, en bas de la fiche. Idéal pour s'entraîner comme en contrôle.</div>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Comment une fiche est organisée</h3>
+      <div class="trois">
+        <div class="encadre" style="background:var(--bleu-clair);margin:0"><div class="titre" style="color:var(--bleu-fonce)">Quelques automatismes</div>Le premier bloc, sur fond bleuté : six questions variées (inéquations, équations, calcul numérique) à réussir rapidement.</div>
+        <div class="encadre" style="background:#fff;border:1px solid var(--trait);margin:0"><div class="titre" style="color:var(--bleu-fonce)">Le cœur de la fiche</div>Les calculs du chapitre, regroupés par thème. Chaque <b style="color:#A31515">Calcul</b> a son titre, et ses questions a), b), c)…</div>
+        <div class="encadre" style="background:var(--gris-clair);margin:0"><div class="titre" style="color:#3c3b38">Calculs plus avancés</div>Le dernier bloc, sur fond gris : des calculs nettement plus difficiles, pour aller plus loin.</div>
+      </div>
+      <p class="petit" style="margin-top:5pt">Dans un titre, la partie écrite <b style="color:#3A36A0">en bleu foncé</b> impose la forme de la réponse (« sous forme de fraction irréductible », « sous la forme d'un intervalle »…) : elle est vérifiée.</p>
+      <div class="encadre astuce" style="margin-top:5pt"><div class="titre">Les pictogrammes à droite des titres</div>Ils indiquent le <b>temps à prévoir</b> pour chaque calcul, selon sa longueur et sa technicité : plus il y a de pictogrammes foncés, plus il faut de temps. Leur forme dit dans quelle partie de la fiche on se trouve :
+        des <b>bateaux</b> <svg width="9" height="11" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="9" height="11" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg> pour les calculs généraux (les automatismes),
+        des <b>horloges</b> <svg width="11" height="11" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="11" height="11" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="11" height="11" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg> pour la partie principale,
+        des <b>roues crantées</b> <svg width="11" height="11" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="11" height="11" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg> pour les calculs plus avancés.</div>
+    </section>
+
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>3</span></div>
+</div>
+
+<!-- =============================== FICHES DE CALCUL 2 =============================== -->
+<div id="p4" class="page bleu">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Fiches de calcul · 2/4</div><h2>Répondre et se faire aider</h2></div><div class="suite">En autonomie</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <h3><span class="pastille"></span>Répondre à une question</h3>
+      <div class="capture"><img src="img/questions-corrigees.png"></div>
+      <div class="legende">En mode « au fur et à mesure » : une réponse juste devient verte, une réponse fausse devient rouge.</div>
+      <ol class="etapes" style="margin-top:5pt">
+        <li>Clique dans la case « réponse » et tape ta réponse (au clavier, ou avec le clavier <span class="ico">⌨</span> de la question : page 5).</li>
+        <li>Appuie sur <span class="k">Entrée</span> : la réponse est vérifiée (<span class="ok">✓ correct</span> ou <span class="ko">✗ à revoir</span>) et le curseur saute à la question suivante.</li>
+        <li>Une réponse rouge ? Corrige-la directement dans la case et appuie de nouveau sur <span class="k">Entrée</span>.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Le bouton d'aide <span class="aide-ico">?</span></h3>
+      <p>À droite du titre d'un calcul, le <span class="aide-ico">?</span> explique <b>comment écrire la réponse</b> attendue (format, symboles, exemples). Il ne donne jamais la méthode ni le résultat. Avant que tu tapes, le texte gris de la case montre aussi un modèle : <code>]a;b[</code> pour un intervalle, « réponse » sinon.</p>
+      <div class="capture"><img src="img/aide.png"></div>
+      <div class="legende">Exemple : l'aide d'un calcul où l'on donne un ensemble de solutions.</div>
+    </section>
+
+    <section class="encadre attention" style="padding:9pt 11pt">
+        <div class="titre" style="font-size:11pt">Pourquoi ma réponse est-elle refusée ?</div>
+        <ul class="puces">
+          <li><b>La forme est imposée</b> : <code>4/6</code> est refusé si l'on demande une fraction irréductible (<code>2/3</code>), un calcul non effectué aussi (<code>12-7</code> au lieu de <code>5</code>).</li>
+          <li><b>Le format n'est pas le bon</b> : un intervalle s'écrit avec des crochets, un ensemble avec des accolades. Clique sur <span class="aide-ico">?</span>.</li>
+          <li><b>Une solution manque</b> dans un ensemble ou une réunion d'intervalles.</li>
+          <li>Sinon, toute écriture équivalente est acceptée : <code>2x+1</code> ou <code>1+2x</code>, <code>1,5</code> ou <code>3/2</code> (quand aucune forme n'est imposée).</li>
+        </ul>
+    </section>
+
+    <div class="encadre bon"><div class="titre">✓ Lis bien le titre du calcul</div>La partie écrite <b style="color:#3A36A0">en bleu foncé</b> dans le titre (« sous forme de fraction irréductible », « sous la forme d'un intervalle »…) est la forme attendue : c'est la première chose à vérifier quand une réponse juste est refusée.</div>
+    <div class="encadre bon"><div class="titre">✓ Les nombres changent à chaque fois</div>Chaque fiche est générée au hasard : deux élèves n'ont pas les mêmes nombres, et tu peux refaire une fiche autant de fois que tu veux avec de nouvelles valeurs (bouton <span class="btn">Générer une nouvelle version</span>, page 6).</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>4</span></div>
+</div>
+
+<!-- =============================== FICHES DE CALCUL CLAVIERS =============================== -->
+<div id="p5" class="page bleu">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Fiches de calcul · 3/4</div><h2>Les claviers</h2></div><div class="suite">Ordinateur, tablette, téléphone</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <p>À droite de chaque case, le bouton <span class="ico">⌨</span> ouvre (ou ferme) un clavier avec tous les symboles utiles. Il en existe deux, selon la question. Sur ordinateur, tu peux aussi tout taper avec ton clavier habituel.</p>
+    </section>
+    <section class="deux-un">
+      <div>
+        <h3><span class="pastille"></span>Le clavier simplifié</h3>
+        <p>Il s'ouvre juste sous la question, pour les réponses écrites en texte : intervalles, ensembles de solutions, couples…</p>
+        <ul class="puces">
+          <li>les <b>chiffres</b> et la virgule</li>
+          <li>les <b>opérations</b> <code>+</code> <code>−</code> <code>×</code> <code>÷</code> et les parenthèses</li>
+          <li><code>x²</code>, <code>x³</code>, <code>xⁿ</code>, la racine <code>√</code> et la fraction <code>a/b</code> (elle place des cases <code>▢</code> à compléter)</li>
+          <li>selon la question : les <b>crochets</b>, <code>+∞</code>, <code>−∞</code>, la réunion <code>∪</code>, <code>ℝ</code>, l'ensemble vide <code>∅</code>, les <b>accolades</b> <code>{ }</code> et le point-virgule <code>;</code></li>
+          <li><span class="k" style="color:var(--rouge)">Effacer</span> vide la case, <span class="k" style="color:var(--rouge)">← Suppr.</span> efface le dernier caractère.</li>
+        </ul>
+        <p>En bas du clavier, une <b>astuce</b> rappelle le format attendu.</p>
+        <div class="encadre astuce"><div class="titre">Sur tablette et téléphone</div>Une touche <span class="btn plein">✓ Valider</span> apparaît en haut du clavier simplifié : elle remplace la touche <span class="k">Entrée</span> (vérifier et passer à la question suivante).</div>
+      </div>
+      <div><div class="capture" style="max-width:62mm;margin:0 auto"><img src="img/clavier-simplifie.png"></div><div class="legende" style="text-align:center">Le clavier simplifié d'une équation.</div></div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Le clavier mathématique</h3>
+      <p>Pour les autres réponses (expressions, fractions, racines…), la case est une case « mathématique » : ce que tu tapes s'affiche directement comme une formule. Son clavier s'ouvre en bas de l'écran, avec des onglets : <code>123</code> (chiffres et opérations), <code>∞≠∈</code> (symboles), <code>abc</code> (lettres), <code>αβγ</code> (lettres grecques), et des touches pour le carré, les puissances, la racine carrée, les accolades… La touche <span class="k">↵</span> valide la réponse, comme <span class="k">Entrée</span>.</p>
+      <div class="capture" style="width:86%;margin:0 auto"><img src="img/clavier-mathlive-crop.png"></div>
+      <div class="legende" style="text-align:center">Le clavier mathématique, ouvert en bas de l'écran.</div>
+    </section>
+
+    <section>
+      <div class="encadre astuce"><div class="titre">Taper vite dans une case mathématique (au clavier de l'ordinateur)</div>
+        <code>/</code> crée une fraction · <code>^</code> met en exposant · <code>sqrt</code> écrit une racine √ · <code>pi</code> écrit π · les flèches <span class="k">←</span> <span class="k">→</span> permettent de sortir d'une fraction, d'un exposant ou d'une racine.</div>
+    </section>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>5</span></div>
+</div>
+
+<!-- =============================== FICHES DE CALCUL 3 =============================== -->
+<div id="p6" class="page bleu">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Fiches de calcul · 4/4</div><h2>Les boutons du bas de page</h2></div><div class="suite">En autonomie</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <div class="capture" style="width:84%;margin:0 auto"><img src="img/barre-bas.png"></div>
+      <div class="legende">En bas de la fiche, après un clic sur « Corrigé des erreurs » puis sur « Voir la correction des erreurs ».</div>
+    </section>
+
+    <section>
+      <div class="tab"><table>
+        <tr><th>Bouton</th><th>Ce qu'il fait</th></tr>
+        <tr><td><span class="btn">Recommencer</span></td><td>Efface toutes tes réponses mais <b>garde les mêmes énoncés</b> : pour refaire la même fiche sans regarder.</td></tr>
+        <tr><td><span class="btn">Générer une nouvelle version</span></td><td>Crée une <b>nouvelle fiche</b> du même type, avec d'autres nombres. Tes réponses actuelles sont effacées.</td></tr>
+        <tr><td><span class="btn plein">Corrigé des erreurs</span></td><td>Corrige toutes les réponses d'un coup et affiche ton score (par exemple « 2 / 30 bonnes réponses »). Le bouton <span class="btn">Voir la correction des erreurs</span> affiche alors la réponse attendue <b>pour chaque question fausse</b> (un second clic sur <span class="btn">Masquer la correction</span> la cache). Les questions laissées vides ne sont pas listées.</td></tr>
+        <tr><td><span class="btn">Voir toutes les réponses</span></td><td>Affiche la liste complète des réponses de la fiche, question par question. Un second clic (<span class="btn">Masquer toutes les réponses</span>) la cache.</td></tr>
+      </table></div>
+    </section>
+
+    <section>
+        <h3><span class="pastille"></span>Une bonne méthode de travail</h3>
+        <ol class="etapes" style="columns:2;column-gap:16pt">
+          <li>Fais la fiche en entier, au brouillon puis dans les cases, <b>sans</b> regarder les réponses.</li>
+          <li>Corrige-toi : au fur et à mesure, ou avec <span class="btn plein">Corrigé des erreurs</span>.</li>
+          <li>Reprends chaque erreur avant de regarder la réponse attendue : souvent, c'est une étourderie ou une forme non respectée.</li>
+          <li>Refais une <span class="btn">nouvelle version</span> quelques jours plus tard pour vérifier que c'est acquis.</li>
+        </ol>
+    </section>
+
+    <div class="encadre attention"><div class="titre">⚠ En entraînement libre, rien n'est enregistré</div>Si tu fermes la page ou cliques sur un autre lien, tes réponses sont perdues. Le bouton <span class="btn">Enregistrer mon avancement</span> n'apparaît que pour un <b>devoir</b> (page 10).</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>6</span></div>
+</div>
+
+<!-- =============================== AUTOMATISMES 1 =============================== -->
+<div id="p7" class="page vert">
+  <div class="bandeau"><div class="num">3</div><div><div class="sur">Automatismes · 1/2</div><h2>Fiches d'automatismes</h2></div><div class="suite">QCM · 10 questions</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Trois façons de s'entraîner</h3>
+        <p>Dans <b style="color:var(--vert)">Automatismes → Première</b> :</p>
+        <ul class="puces">
+          <li><b>Travailler un thème précis</b> : pourcentages, calcul numérique, développer et factoriser, lectures graphiques… 10 questions sur ce seul thème.</li>
+          <li><b>Fiche d'automatismes</b> : deux thèmes tirés au sort, 10 questions.</li>
+          <li><b>Sujet blanc</b> : 10 questions sur tout le programme, comme le jour de l'épreuve anticipée de Première.</li>
+        </ul>
+        <p>Chaque question propose <b>quatre réponses</b> (a, b, c, d) : une seule est juste. <b>Sans calculatrice.</b></p>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Le niveau de difficulté</h3>
+        <div class="tab"><table>
+          <tr><td><span class="btn vert">★ Niveau 1</span></td><td>Les bases : une seule étape de calcul, des nombres simples.</td></tr>
+          <tr><td><span class="btn vert plein">★★ Niveau 2</span></td><td>Le niveau de l'épreuve anticipée de Première : questions calquées sur les sujets officiels.</td></tr>
+          <tr><td><span class="btn vert">★★★ Niveau 3</span></td><td>Bien plus difficile : plusieurs étapes, des pièges.</td></tr>
+        </table></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="capture" style="width:64%;margin:0 auto"><img src="img/auto-panneaux.png"></div>
+      <div class="legende">En haut de la page : le mode de travail, le niveau, et les thèmes de la série.</div>
+    </section>
+
+    <section class="deux-un">
+      <div>
+        <h3><span class="pastille"></span>Le mode fiche</h3>
+        <p>Les 10 questions sont affichées en même temps : tu réponds dans l'ordre que tu veux, à ton rythme.</p>
+        <ol class="etapes">
+          <li><b>Clique sur une réponse</b> pour la choisir (elle se colore en bleu). Tu peux changer d'avis tant que la correction n'est pas affichée.</li>
+          <li>Quand tu as tout fait, clique sur <span class="btn vert plein">Voir toutes les réponses</span> : chaque carte devient verte ou rouge, avec la bonne réponse et une <b>explication</b>. Ton score s'affiche dès que tu as répondu à toutes les questions.</li>
+        </ol>
+        <p>Les figures ont une petite <b>loupe</b> en haut à droite : clique dessus pour l'agrandir (<span class="k">Échap</span> pour fermer).</p>
+      </div>
+      <div><div class="capture"><img src="img/auto-carte-corrigee.png"></div><div class="legende">Une question corrigée, avec son explication.</div></div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Les boutons du bas de page</h3>
+      <div class="tab"><table>
+        <tr><td><span class="btn vert plein">Voir toutes les réponses</span></td><td>Corrige la série et affiche les explications. Devient <span class="btn vert">Masquer les réponses</span>.</td></tr>
+        <tr><td><span class="btn vert">Recommencer</span></td><td>Efface tes choix et refait la <b>même</b> série.</td></tr>
+        <tr><td><span class="btn vert">Nouvelle fiche (mêmes thèmes)</span></td><td>Nouvelles questions sur les mêmes thèmes (fiche à deux thèmes).</td></tr>
+        <tr><td><span class="btn vert">Nouvelle fiche</span> / <span class="btn vert">Nouveau sujet blanc</span></td><td>Nouvelle série complète (autres thèmes, ou autre sujet blanc).</td></tr>
+      </table></div>
+    </section>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>7</span></div>
+</div>
+
+<!-- =============================== AUTOMATISMES 2 =============================== -->
+<div id="p8" class="page vert">
+  <div class="bandeau"><div class="num">3</div><div><div class="sur">Automatismes · 2/2</div><h2>Le mode chrono ⏱</h2></div><div class="suite">Épreuve anticipée</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="deux-un">
+      <div>
+        <h3><span class="pastille"></span>Le principe</h3>
+        <p>Clique sur <span class="btn vert">Mode chrono ⏱</span> : <b>une seule question à l'écran</b>, avec un minuteur, et la correction <b>seulement à la fin</b>. C'est le meilleur entraînement pour l'épreuve anticipée de Première.</p>
+        <p>Avant de démarrer, choisis le niveau et le <b>temps par question</b> : 1 min, 1 min 30, <b>2 min (recommandé)</b>, 3 min ou sans limite. Puis clique sur <span class="btn vert plein">Démarrer</span>.</p>
+      </div>
+      <div><div class="capture"><img src="img/chrono-intro.png"></div><div class="legende">L'écran avant le départ.</div></div>
+    </section>
+
+    <section>
+      <div class="capture" style="width:76%;margin:0 auto"><img src="img/chrono-question.png"></div>
+      <div class="legende">Pendant la série : la barre de progression, le numéro de la question, le temps restant.</div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Pendant la série</h3>
+        <ul class="puces">
+          <li>Clique sur une réponse, puis sur <span class="btn vert plein">Valider →</span>. <b>Une réponse validée ne peut plus être changée.</b></li>
+          <li><span class="btn vert">Passer sans répondre</span> met la question de côté.</li>
+          <li>Quand le temps d'une question est écoulé, on passe <b>automatiquement</b> à la suivante.</li>
+          <li>En haut, la barre de progression montre les questions faites et la question en cours.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>À la fin de la série</h3>
+        <ul class="puces">
+          <li>S'il reste des questions sans réponse et du temps, tu peux cliquer sur <span class="btn vert plein">Reprendre les questions sans réponse</span>. <b>Le chrono continue de tourner</b> sur cet écran.</li>
+          <li><span class="btn vert">Terminer le sujet</span> arrête la série et affiche ton score et ton temps total.</li>
+          <li><span class="btn vert">Voir la correction détaillée</span> affiche chaque question avec la bonne réponse et l'explication.</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="encadre bon"><div class="titre">✓ Conseil pour l'épreuve anticipée de Première</div>Fais d'abord toutes les questions qui te semblent rapides en passant les autres, puis reviens sur celles que tu as passées. C'est exactement ce que permet le bouton « Reprendre les questions sans réponse ».</div>
+    <div class="encadre astuce"><div class="titre">Mode fiche ou mode chrono ?</div>Le <b>mode fiche</b> pour apprendre (on prend son temps, on lit les explications), le <b>mode chrono</b> pour se tester dans les conditions de l'épreuve anticipée de Première. Tu peux passer de l'un à l'autre à tout moment en haut de la page.</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>8</span></div>
+</div>
+
+<!-- =============================== DEVOIRS 1 =============================== -->
+<div id="p9" class="page ambre">
+  <div class="bandeau"><div class="num">4</div><div><div class="sur">Devoirs · 1/2</div><h2>Trouver ses devoirs</h2></div><div class="suite">Connexion obligatoire</div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <h3><span class="pastille"></span>Qu'est-ce qu'un devoir ?</h3>
+      <p>Ton professeur peut te donner une <b>fiche de calcul</b>, une <b>fiche d'automatismes</b> ou un <b>sujet blanc</b> à faire avant une date limite (l'<b>échéance</b>), avec un nombre de <b>tentatives</b> autorisées. Seul le travail fait dans le cadre d'un devoir est transmis à ton professeur : c'est ta <b>meilleure note obtenue avant l'échéance</b> qui est retenue.</p>
+    </section>
+
+    <section class="un-deux" style="align-items:center">
+      <div class="maquette" style="text-align:center;padding:16pt 8pt">
+        <span class="cloche"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Devoirs<span class="badge">2</span></span>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Le bloc « Devoirs »</h3>
+        <p>Une fois connecté, si ton professeur t'a donné des devoirs, ce bloc apparaît sur les pages d'accueil du site. La <b style="color:var(--rouge)">pastille rouge</b> compte les devoirs encore à rendre (à faire et enregistrés). Clique dessus pour ouvrir la page <b>Mes devoirs</b>.</p>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>La page « Mes devoirs »</h3>
+      <p>Tes devoirs y sont rangés en trois colonnes. Clique sur un devoir à faire ou enregistré pour l'ouvrir directement.</p>
+        <div class="colonnes">
+          <div class="colonne"><div class="t"><i style="background:var(--ambre)"></i>À faire</div>
+            <div class="item"><b>Sommes</b><span>À rendre avant le 10/10 18:00 — 3 tentatives restantes</span></div>
+            <div class="expl">Pas encore commencé, ou déjà rendu avec des tentatives restantes (ta meilleure note s'affiche).</div></div>
+          <div class="colonne"><div class="t"><i style="background:var(--bleu)"></i>Enregistrés</div>
+            <div class="item"><b>Sujet blanc n°2</b><span>Enregistré le 05/10 17:42 — à terminer et valider avant le 12/10 18:00</span></div>
+            <div class="expl">Commencé et enregistré, mais <b>pas encore validé</b> : il ne compte pas encore !</div></div>
+          <div class="colonne"><div class="t"><i style="background:var(--vert)"></i>Faits</div>
+            <div class="item"><b>Produits</b><span>24 / 31 — 2 tentatives</span></div>
+            <div class="expl">Tentatives épuisées ou échéance passée : ta meilleure note est retenue (« Non rendu » si aucune validation).</div></div>
+        </div>
+      <p class="petit" style="margin-top:4pt">Exemple d'illustration : les titres, dates et notes dépendent de tes devoirs.</p>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Le parcours d'un devoir</h3>
+      <div class="frise">
+        <div class="pas"><div class="rond" style="background:var(--ambre)">1</div><b>J'ouvre</b><span>depuis le bloc « Devoirs » ou la page Mes devoirs</span></div>
+        <div class="pas"><div class="rond" style="background:var(--ambre)">2</div><b>Je travaille</b><span>sans correction ; je peux <b>enregistrer</b> et reprendre plus tard</span></div>
+        <div class="pas"><div class="rond" style="background:var(--ambre)">3</div><b>Je valide</b><span>c'est ce qui compte une <b>tentative</b> et envoie ma note</span></div>
+        <div class="pas"><div class="rond" style="background:var(--vert)">✓</div><b>Je me corrige</b><span>note, correction, et nouvelle tentative si je veux</span></div>
+      </div>
+    </section>
+
+    <div class="encadre devoirbox"><div class="titre">★ La règle d'or</div>Un devoir n'est rendu que lorsque tu as cliqué sur <span class="btn plein">Valider ma fiche</span> (ou <span class="btn plein">Valider ma série</span>, ou <span class="btn plein">Terminer le sujet</span> en mode chrono) <b>avant l'échéance</b>. Enregistrer ne suffit pas.</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>9</span></div>
+</div>
+
+<!-- =============================== DEVOIRS 2 =============================== -->
+<div id="p10" class="page ambre">
+  <div class="bandeau"><div class="num">4</div><div><div class="sur">Devoirs · 2/2</div><h2>Enregistrer, valider, recommencer</h2></div><div class="suite">Connexion obligatoire</div></div>
+  <div class="contenu" style="padding-top:7mm">
+    <section>
+      <div class="capture"><img src="img/devoir-barre.png"></div>
+      <div class="legende">Une fiche de calcul ouverte en devoir : les boutons changent, et un bandeau rappelle le devoir, les tentatives utilisées et l'échéance.</div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Pendant le devoir</h3>
+        <ul class="puces">
+          <li><b>Aucune correction</b> n'apparaît : les cases ne deviennent ni vertes ni rouges, et <span class="btn inactif">Voir toutes les réponses</span> est grisé. <span class="k">Entrée</span> passe simplement à la question suivante.</li>
+          <li>Le choix du mode, <span class="btn">Recommencer</span> et <span class="btn">Corrigé des erreurs</span> disparaissent.</li>
+          <li>Les petites bulles <span class="aide-ico" style="background:#B23A2E;border-color:#B23A2E;color:#fff">?</span> sur les boutons rappellent leur rôle (survole-les).</li>
+        </ul>
+        <h3 style="margin-top:6pt"><span class="pastille"></span>Enregistrer son avancement</h3>
+        <p>Le bouton <span class="btn">Enregistrer mon avancement</span> sauvegarde ta fiche <b>exactement</b> telle qu'elle est (mêmes nombres, réponses déjà tapées). Tu la retrouves en rouvrant le devoir, même sur un autre appareil : « Brouillon repris depuis ta dernière sauvegarde ». <b>Enregistrer ne compte pas de tentative et ne rend pas le devoir.</b></p>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Valider sa fiche</h3>
+        <p>Au clic sur <span class="btn plein">Valider ma fiche</span>, une fenêtre te demande de confirmer, en te disant combien de tentatives il te restera :</p>
+        <div class="capture" style="max-width:68mm;margin:0 auto 4pt"><img src="img/devoir-confirmation.png"></div>
+        <p>Après confirmation : la tentative est comptée, ta <b>note</b> s'affiche avec la correction des erreurs, et <span class="btn">Voir toutes les réponses</span> se débloque. <span class="btn plein inactif">Valider ma fiche</span> se grise : on ne valide pas deux fois la même fiche.</p>
+      </div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Une nouvelle tentative</h3>
+        <p>Pour améliorer ta note, clique sur <span class="btn">Générer une nouvelle version</span> : après confirmation, une <b>nouvelle fiche</b> (autres nombres) remplace l'ancienne. Ta <b>meilleure note</b> est toujours celle retenue : une tentative moins bonne ne te fait rien perdre.</p>
+        <p class="petit">Tentatives épuisées : une fenêtre te le signale et la fiche redevient un entraînement libre. Validation après l'échéance : rien n'est compté.</p>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Automatismes et sujets blancs en devoir</h3>
+        <ul class="puces">
+          <li>Le <b>niveau, le mode</b> (fiche ou chrono), la durée et les thèmes sont <b>imposés</b> par ton professeur ; les tentatives utilisées sont rappelées en haut.</li>
+          <li><b>Mode fiche</b> : <span class="btn vert">Enregistrer mon avancement</span> puis <span class="btn vert plein">Valider ma série</span>.</li>
+          <li><b>Mode chrono</b> : la série se fait d'une traite (pas d'enregistrement) ; <span class="btn vert">Terminer le sujet</span> vaut validation.</li>
+          <li>La correction s'affiche une fois la série validée.</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="encadre devoirbox"><div class="titre">✔ Avant l'échéance, vérifie que…</div>
+      <div>☐ J'ai bien cliqué sur <b>Valider</b> (pas seulement sur Enregistrer).</div>
+      <div>☐ Le devoir n'est plus dans la colonne <b>Enregistrés</b> de Mes devoirs.</div>
+      <div>☐ Je me suis déconnecté si j'étais sur un poste partagé.</div>
+    </div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>10</span></div>
+</div>
+
+<!-- =============================== MEMO =============================== -->
+<div id="p11" class="page gris">
+  <div class="bandeau"><div class="num">✓</div><div><div class="sur">À garder sous la main</div><h2>Mémo : raccourcis et écritures</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="deux" style="grid-template-columns:0.85fr 1.3fr">
+      <div>
+        <h3><span class="pastille"></span>Raccourcis clavier</h3>
+        <div class="tab"><table>
+          <tr><td><span class="k">Entrée</span></td><td>Vérifie la réponse (mode « au fur et à mesure ») et passe à la question suivante.</td></tr>
+          <tr><td><span class="k">Échap</span></td><td>Ferme une fenêtre (message de devoir, figure agrandie).</td></tr>
+          <tr><td><span class="ico">⌨</span></td><td>Ouvre ou ferme le clavier de la question.</td></tr>
+          <tr><td><span class="aide-ico">?</span></td><td>Montre comment écrire la réponse d'un calcul.</td></tr>
+          <tr><td><span class="btn plein">✓ Valider</span> · <span class="k">↵</span></td><td>Sur tablette et téléphone, remplacent la touche <span class="k">Entrée</span>.</td></tr>
+        </table></div>
+        <h3 style="margin-top:9pt"><span class="pastille"></span>Dans le clavier mathématique</h3>
+        <div class="tab"><table>
+          <tr><td>taper <code>/</code></td><td>crée une fraction ; les flèches <span class="k">→</span> font sortir du numérateur ou du dénominateur.</td></tr>
+          <tr><td>taper <code>^</code></td><td>met en exposant ; <span class="k">→</span> pour redescendre.</td></tr>
+          <tr><td>taper <code>sqrt</code></td><td>insère une racine carrée √.</td></tr>
+          <tr><td>taper <code>pi</code></td><td>insère π.</td></tr>
+        </table></div>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Écrire ses réponses</h3>
+        <div class="tab syntaxe"><table>
+          <tr><th>Pour écrire…</th><th>Tape</th><th>Remarque</th></tr>
+          <tr><td>une fraction</td><td><code>3/4</code></td><td>bouton <code>a/b</code></td></tr>
+          <tr><td>une puissance</td><td><code>x^2</code>, <code>2^n</code></td><td>boutons <code>x²</code>, <code>xⁿ</code></td></tr>
+          <tr><td>une racine carrée</td><td><code>√5</code> ou <code>sqrt(5)</code></td><td>bouton <code>√</code></td></tr>
+          <tr><td>un nombre décimal</td><td><code>1,5</code> ou <code>1.5</code></td><td>les deux sont acceptés</td></tr>
+          <tr><td>un produit</td><td><code>2x</code>, <code>3(x+1)</code></td><td>le × est facultatif</td></tr>
+          <tr><td>un intervalle</td><td><code>]-2;5]</code></td><td>point-virgule, l'infini toujours exclu : <code>[3;+∞[</code></td></tr>
+          <tr><td>une réunion</td><td><code>]-∞;1[</code> <code>∪</code> <code>]3;+∞[</code></td><td>bouton <code>∪</code></td></tr>
+          <tr><td>tous les réels / rien</td><td><code>ℝ</code> · <code>∅</code></td><td>boutons du clavier</td></tr>
+          <tr><td>un ensemble de solutions</td><td><code>{-2;3}</code></td><td><code>{}</code> s'il n'y en a aucune</td></tr>
+          <tr><td>une solution unique</td><td><code>{2}</code> ou <code>2</code></td><td></td></tr>
+          <tr><td>une inégalité</td><td><code>x&gt;=1</code></td><td><code>&gt;=</code> pour ≥, <code>&lt;=</code> pour ≤</td></tr>
+        </table></div>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>En cas de souci</h3>
+      <div class="deux">
+        <div class="tab"><table>
+          <tr><td><b>Je ne vois pas « Enregistrer » ni « Valider »</b></td><td>Tu n'es pas connecté, ou cette fiche n'est pas (ou plus) un devoir pour toi.</td></tr>
+          <tr><td><b>« Voir toutes les réponses » est grisé</b></td><td>En devoir, il se débloque après la validation.</td></tr>
+          <tr><td><b>« Échec de l'enregistrement »</b></td><td>Vérifie ta connexion internet et réessaie.</td></tr>
+        </table></div>
+        <div class="tab"><table>
+          <tr><td><b>Ma réponse juste est refusée</b></td><td>Relis la partie bleu foncé du titre (forme imposée) et le <span class="aide-ico">?</span>.</td></tr>
+          <tr><td><b>La page n'affiche pas les formules</b></td><td>Recharge la page ; vérifie ta connexion internet.</td></tr>
+          <tr><td><b>Mot de passe oublié</b></td><td>Demande-le à ton professeur.</td></tr>
+        </table></div>
+      </div>
+    </section>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'élève</span><span>11</span></div>
+</div>
+
+</body>
+</html>

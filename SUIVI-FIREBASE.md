@@ -68,6 +68,10 @@ depuis la réorganisation du 02/10/2026 »).
 - **Automatismes de Première** : `automatismes/premiere/sujet-blanc.html`
   et `fiche.html` (fiche ciblée par thèmes), moteur partagé
   `automatismes/assets/moteur.js`, banques dans `automatismes/premiere/banques/`.
+- **Guide de l'élève** (PDF de 11 pages, mode d'emploi des fiches, des
+  automatismes et des devoirs) : `assets/docs/guide-eleve.pdf` ; source HTML,
+  captures et scripts de génération dans `outils/guide-eleve/` (voir son
+  `README.md`). Pas encore lié depuis le site.
 
 ## 3. Firebase (projet `cahiers-interactifs`)
 
@@ -163,6 +167,8 @@ Backlog de David pour après le travail sur les fiches :
 **`CHANTIERS-FUTURS.md`** (moteur robuste pour les plages de l'aléatoire,
 banque d'automatismes) — **ne le modifier qu'à sa demande**.
 
+- Mettre le guide de l'élève (`assets/docs/guide-eleve.pdf`) en
+  téléchargement sur le site : où et comment, à décider par David.
 - Diversifier les automatismes des fiches de Première 7 à 26 au fil des
   relectures de David (règle et modèles dans `REGLES-FICHES.md`, §2).
 - Fiche 17 de Première (probabilités, ex-fiche 19) : erreur console

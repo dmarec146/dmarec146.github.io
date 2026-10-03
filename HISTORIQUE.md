@@ -6056,3 +6056,37 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   centrage réels sur la tablette de David sont à confirmer (valeur 36 px
   unique, répétée dans les 50 fiches ; un éventuel décalage vertical se
   corrigerait par un `padding-top` / `padding-bottom` sur ce bouton).
+
+- **Guide de l'élève en PDF (03/10/2026).** David : « un pdf, clair,
+  esthétique, coloré (mêmes teintes et couleurs que le site), moderne que je
+  distribuerai aux élèves comme tutoriel d'utilisation des fiches et
+  automatismes », trois parties (fiches de calcul en autonomie, automatismes,
+  devoirs), boutons de bas de page, claviers, raccourcis, et pour les devoirs
+  la validation et l'enregistrement. Puis, après une première version :
+  « épreuve anticipée de Première » partout, niveau Terminale ajouté,
+  couverture sur fond clair et sommaire cliquable, bouton de connexion
+  visible sur la capture de l'accueil, explication des pictogrammes (bateaux :
+  calculs généraux ; horloges : partie principale ; roues crantées : calculs
+  plus avancés ; nombre de pictogrammes foncés = temps à prévoir). Version
+  retenue « pour le moment ».
+  - **Fichiers** : `assets/docs/guide-eleve.pdf` (11 pages A4, 2,3 Mo,
+    polices incorporées, 13 liens internes sur la couverture) ;
+    `outils/guide-eleve/` : `guide-eleve.html` (source, une `div.page` par
+    page), `img/` (14 captures réelles), `polices/` (Inter, Source Serif 4,
+    OFL), `captures.js`, `pdf.js`, `README.md`. Pas encore lié depuis le
+    site (emplacement à décider par David).
+  - **Contenu vérifié dans le code** : libellés des boutons, comportement
+    d'Entrée selon le mode, Recommencer / Générer / Corrigé des erreurs / Voir
+    toutes les réponses, claviers (simplifié, MathLive), automatismes
+    (niveaux, modes, chrono, reprise), devoirs (Enregistrer, Valider avec
+    confirmation, tentatives, meilleure note, échéance, Mes devoirs).
+  - **Captures** : site servi en local, MathJax / MathLive / math.js /
+    Firebase servis depuis npm (CDN inaccessibles depuis le conteneur cloud).
+    Mode devoir simulé localement (état élève connecté + devoir fictif
+    « Sommes — fiche 14 »), aucune connexion réelle ; « Mes devoirs » et le
+    bloc « Devoirs » sont des maquettes HTML signalées comme illustrations.
+  - **Deux incohérences du site relevées, non corrigées** : en mode « Tout à
+    la fin », le texte renvoie à un bouton « Vérifier mes réponses » qui
+    s'appelle « Corrigé des erreurs » (le guide utilise le vrai libellé) ; la
+    page Automatismes annonce un sujet blanc « noté sur 6 », la page du sujet
+    blanc « sur 5 points » (le guide ne donne pas de barème).
