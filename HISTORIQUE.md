@@ -6090,3 +6090,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     s'appelle « Corrigé des erreurs » (le guide utilise le vrai libellé) ; la
     page Automatismes annonce un sujet blanc « noté sur 6 », la page du sujet
     blanc « sur 5 points » (le guide ne donne pas de barème).
+
+- **Accueil : carte « Guide de l'élève » (03/10/2026).** David, parmi les
+  emplacements proposés (pied de page, carte sur l'accueil, icône dans
+  l'en-tête, liens contextuels) : une carte comme celles de l'accueil, « après
+  tous ceux existants ». Nouvelle section « Guide de l'élève » en fin de
+  `index.html`, après Automatismes : une carte `bento-carte--large2` (style
+  par défaut, aucune règle CSS ajoutée), étiquette « PDF · 11 pages », titre
+  « Mode d'emploi du site », lien `assets/docs/guide-eleve.pdf` ouvert dans un
+  nouvel onglet (`target="_blank" rel="noopener"`). Vérifié : rendu ordinateur
+  et téléphone, PDF servi en `application/pdf`.

@@ -5,8 +5,8 @@ d'automatismes, devoirs (11 pages A4, couverture avec sommaire cliquable).
 
 - **PDF à mettre en téléchargement** : `assets/docs/guide-eleve.pdf`
   (adresse publique une fois sur `master` :
-  `https://dmarec146.github.io/assets/docs/guide-eleve.pdf`). Aucune page du
-  site n'y renvoie encore.
+  `https://dmarec146.github.io/assets/docs/guide-eleve.pdf`), lié depuis la
+  page d'accueil (carte « Guide de l'élève »).
 - **Source** : `guide-eleve.html` (une `<div class="page">` par page A4,
   couleurs du site), avec `img/` (captures réelles du site) et `polices/`
   (Inter et Source Serif 4, licence SIL Open Font License, servies en local).
