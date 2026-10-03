@@ -6039,3 +6039,20 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   0 erreur. **La valeur 28 px est une estimation, non vérifiée sur une vraie
   tablette** : à ajuster (une seule valeur dans la requête, à reporter dans les
   50 fiches) selon le retour de David.
+
+- **Les 50 fiches : icône ⌨ centrée et presque aussi grande que le cadre sur
+  tablette (03/10/2026).** David : après le passage à 28 px, « reste à la
+  centrer correctement et encore plus grande (presque aussi grande que le
+  cadre qui l'entoure) ». La requête tablette de `.q-clavier-btn`
+  (`pointer: coarse`, au moins 700 × 600 px) passe de `font-size: 28px` à
+  `font-size: 36px` et le bouton devient `display: inline-flex;
+  align-items: center; justify-content: center` (avec `line-height: 1` et
+  `padding: 0`, déjà en place) : le glyphe est centré par le conteneur au
+  lieu de dépendre de la ligne de texte. Mesuré sur capture (Chromium, iPad
+  simulé, ×2) : dessin de 32 px de large dans le cadre de 40 × 40 px, centre
+  décalé de moins de 0,5 px (x et y) ; iPhone et ordinateur inchangés
+  (17 px, `display` normal). Vérificateur : 0 erreur. **Mesure faite avec la
+  police emoji de Chromium sous Linux, pas celle d'iPadOS** : la taille et le
+  centrage réels sur la tablette de David sont à confirmer (valeur 36 px
+  unique, répétée dans les 50 fiches ; un éventuel décalage vertical se
+  corrigerait par un `padding-top` / `padding-bottom` sur ce bouton).
