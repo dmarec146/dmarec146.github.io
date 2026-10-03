@@ -6023,3 +6023,19 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   caractère avec sa police emoji dans tous les cas) : si l'icône est encore
   différente sur la tablette de David, repli prévu = SVG calqué sur
   l'icône du bureau, à partir d'une capture des deux icônes.
+
+- **Les 50 fiches : icône ⌨ plus grande sur tablette (03/10/2026).** David :
+  après le passage en présentation texte (entrée précédente), l'icône est la
+  même que sur les autres appareils mais « de taille bien trop petite dans le
+  cadre » sur tablette (les polices d'iPadOS dessinent le glyphe plus petit).
+  Ajout, après la règle `.q-clavier-btn:hover` des 50 fiches, d'une requête
+  `@media (pointer: coarse) and (min-width: 700px) and (min-height: 600px)`
+  qui met `.q-clavier-btn` à `font-size: 28px; line-height: 1; padding: 0`
+  (17 px ailleurs) : cible les tablettes tactiles en portrait comme en
+  paysage, pas les téléphones (moins de 700 px de large, ou moins de 600 px de
+  haut en paysage) ni les ordinateurs. Vérifié dans Chromium (appareils
+  simulés) : 28 px sur iPad portrait et paysage, 17 px sur iPhone portrait et
+  paysage et sur ordinateur, bouton toujours de 40 × 40 px, vérificateur :
+  0 erreur. **La valeur 28 px est une estimation, non vérifiée sur une vraie
+  tablette** : à ajuster (une seule valeur dans la requête, à reporter dans les
+  50 fiches) selon le retour de David.
