@@ -5921,3 +5921,38 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   13 et 22, Seconde 25), réponses saisies (justes et fausses),
   `verifierUne` sur chaque question puis `reinitialiser()` : 21, 39 et
   35 statuts `ok`/`ko` avant, 0 après, aucune erreur console.
+
+- **Première fiche 14 (Calcul de sommes I) : automatismes aux règles
+  (03/10/2026), 30 questions inchangées.** David : « oui les
+  automatismes » (même démarche que les fiches 10 à 13 ; seul le bloc
+  « Quelques automatismes » est touché, la suite de la fiche n'a pas
+  encore été relue).
+  - **Automatismes** (6, nouveau modèle de rotation) : 14.1 inéquations
+    (intervalles) a) degré 1 avec parenthèses a + b(x − c) ◊ dx + e
+    (coefficients de signe quelconque, le coefficient de x change de signe
+    selon b − d), b) produit avec un carré (x − a)²(bx + c) ◊ 0 (la racine
+    double ne change pas le signe : en strict, le point a est exclu et la
+    réponse est une réunion ; tirages à solution isolée exclus) ; 14.2
+    équations (ensemble) a) √(x + k) = x − m, une seule solution (l'autre
+    racine du carré est parasite), b) (x + p)/(x + q) = x − r, deux
+    solutions entières (la valeur interdite −q n'en est jamais une) ;
+    14.3 calcul numérique en entier ou fraction irréductible a) somme de
+    3 à 6 fractions 1/(k(k + s)) (s = 1 ou 2, qui se télescopent), b)
+    |p − √n| + |q − √n| avec p < √n < q, résultat entier q − p. Retirés :
+    simplifications en a√b, quantité conjuguée (sans contrôle de la forme
+    de la réponse), fractions à paramètre m.
+  - **Outils repris de la fiche 13** (la fiche 14 ne les avait pas) :
+    `estFractionIrreductible` et l'option `fractionIrreductible` (contrôle
+    de la forme, aide « ? » dédiée), clavier des ensembles { } ; (groupe
+    `groupeEnsembleClavier`) sur les champs à réponse en ensemble.
+  - Vérifié : 600 tirages recalculés indépendamment (inéquations sur une
+    grille au huitième près et aux bornes, équations par substitution sur
+    les entiers de −100 à 100, sommes et valeurs absolues évaluées depuis
+    l'énoncé affiché, fractions irréductibles) : 0 écart ; variété
+    (énoncés distincts sur 600 tirages) 600 / 557 / 75 / 305 / 48 / 484 ;
+    cycle complet 12 × 6 = 72 corrigés retapés, tous acceptés ; refusés :
+    fraction non réduite (14/180), décimal, ensemble incomplet, solution
+    parasite ajoutée à 14.2 a) ; panneau « Voir toutes les réponses » : 30
+    lignes, 0 erreur MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
+    Contrôle fait dans un conteneur sans accès aux CDN (MathJax, MathLive
+    et math.js servis en local) : seules les polices MathLive manquaient.

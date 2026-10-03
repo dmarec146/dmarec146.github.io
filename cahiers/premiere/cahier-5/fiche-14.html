@@ -847,13 +847,13 @@ window.MathJax = {
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 14.1 — Quelques simplifications. Écrire <span class="titre-mise-en-valeur">sous la forme \(a\sqrt{b}\)</span>, avec \(a\in\mathbb{Z}\) et \(b\in\mathbb{N}\), les nombres suivants.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 14.1 — Donner l'ensemble des solutions des inéquations suivantes, <span class="titre-mise-en-valeur">sous la forme d'un intervalle ou d'une réunion d'intervalles</span>.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-14-1"></div>
 
-<p class="calcul-titre"><span>Calcul 14.2 — Avec la quantité conjuguée. Écrire <span class="titre-mise-en-valeur">sans radical au dénominateur</span> les nombres suivants.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 14.2 — Résoudre dans \(\mathbb{R}\) les équations suivantes (ensemble des solutions).</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-14-2"></div>
 
-<p class="calcul-titre"><span>Calcul 14.3 — Quelques fractions. Soit \(m\in\mathbb{R}\) différent de \(-1\), \(0\) et \(1\). Effectuer les calculs suivants.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 14.3 — Calcul numérique. Donner les résultats <span class="titre-mise-en-valeur">sous forme d'entier ou de fraction irréductible</span>.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-14-3"></div>
 </div>
 
@@ -1089,38 +1089,91 @@ function genererExercices() {
   const ex = [];
   paramsAvances = {};
 
-  // ---------- 16.1 : simplifications de racines ----------
+  // ---------- 14.1 : inequations (03/10/2026, automatismes diversifies) ----------
+  const OPS14 = ['<','>','\\leqslant ','\\geqslant '];
+  const estLarge14 = op => op.trim() === '\\leqslant' || op.trim() === '\\geqslant';
+  const vrai14 = (op, v) => op === '<' ? v < 0 : op === '>' ? v > 0 : op.trim() === '\\leqslant' ? v <= 0 : v >= 0;
+  // intervalles ou g(x) op 0, pour g continue dont les seuls zeros sont dans « racines »
+  const parSigne = (racines, g, op) => {
+    const large = estLarge14(op), pts = [...new Set(racines)].sort((u, v) => u - v);
+    const bornes = [-Infinity, ...pts, Infinity], liste = [];
+    for (let i = 0; i + 1 < bornes.length; i++) {
+      const lo = bornes[i], hi = bornes[i+1];
+      const t = !isFinite(lo) ? hi - 1 : !isFinite(hi) ? lo + 1 : (lo + hi) / 2;
+      if (!vrai14(op, g(t))) continue;
+      const dernier = liste[liste.length - 1];
+      if (dernier && dernier.haut === lo && large) dernier.haut = hi;
+      else liste.push({bas:lo, haut:hi});
+    }
+    liste.forEach(iv => { iv.inclusBas = large && isFinite(iv.bas); iv.inclusHaut = large && isFinite(iv.haut); });
+    return liste;
+  };
+  // vrai si une racine serait une solution isolee (op large, signe contraire des deux cotes) : le resultat ne serait pas un intervalle
+  const racineIsolee = (racines, g, op) => {
+    if (!estLarge14(op)) return false;
+    const pts = [...new Set(racines)].sort((u, v) => u - v);
+    return pts.some((r, i) => {
+      const gauche = i === 0 ? r - 1 : (pts[i-1] + r) / 2, droite = i === pts.length - 1 ? r + 1 : (r + pts[i+1]) / 2;
+      return !vrai14(op, g(gauche)) && !vrai14(op, g(droite));
+    });
+  };
+  // a) premier degre avec parentheses : a + b(x - c) op dx + e (coefficients de signe quelconque)
   {
-    const D = pickSQ();
-    let A,C,B; do { A=alea(2,5); C=alea(2,5); B=alea(2,10); } while (C*A===B);
-    ex.push({id:"14.1 a)", type:"alg", texteLibre:true, enonce:`\\(${C}\\sqrt{${A*A*D}}-${B}\\sqrt{${D}}\\)`, reponse:`${coefPrefixe(C*A-B)}sqrt(${D})`});
+    let a, b, c, d, e;
+    do { a = aleaNonNul(-9,9); b = aleaNonNul(-5,5); c = aleaNonNul(-6,6); d = aleaNonNul(-5,5); e = aleaNonNul(-9,9); } while (b === d);
+    const op = OPS14[alea(0,3)];
+    const k = b - d, k0 = a - b*c - e;   // a + b(x-c) - (dx+e) = kx + k0
+    ex.push({id:"14.1 a)", type:"intervalle", texteLibre:true,
+      enonce:`\\(${a}${b>0?'+':'-'}${Math.abs(b)===1?'':Math.abs(b)}(x${c>0?'-':'+'}${Math.abs(c)})${op}${coefPrefixeL(d)}x${e>0?'+':'-'}${Math.abs(e)}\\)`,
+      intervalleSpec:{type:'intervalles', liste: parSigne([-k0 / k], x => k*x + k0, op)}});
   }
+  // b) produit avec un carre : (x - a)^2 (bx + c) op 0 (la racine double ne change pas le signe)
   {
-    const primes=[2,3,5,7];
-    let P,Q; do { P=primes[alea(0,3)]; Q=primes[alea(0,3)]; } while (P===Q);
-    const E=P+Q;
-    ex.push({id:"14.1 b)", type:"alg", texteLibre:true, enonce:`\\(${E}-(\\sqrt{${P}}-\\sqrt{${Q}})^2\\)`, reponse:`2*sqrt(${P*Q})`});
+    let a, b, c, op, racines, g;
+    do {
+      a = aleaNonNul(-6,6); b = aleaNonNul(-4,4); c = aleaNonNul(-8,8); op = OPS14[alea(0,3)];
+      racines = [a, -c / b]; g = x => (x - a) * (x - a) * (b*x + c);
+    } while (-c / b === a || racineIsolee(racines, g, op));
+    ex.push({id:"14.1 b)", type:"intervalle", texteLibre:true,
+      enonce:`\\((x${a>0?'-':'+'}${Math.abs(a)})^2(${fmtLin(b,c,false)})${op}0\\)`,
+      intervalleSpec:{type:'intervalles', liste: parSigne(racines, g, op)}});
   }
 
-  // ---------- 16.2 : quantite conjuguee ----------
+  // ---------- 14.2 : equations (ensemble des solutions) ----------
+  // a) racine carree egale a une expression : sqrt(x + k) = x - m, une seule solution (l'autre racine du carre est parasite)
   {
-    let P,Q; do { P=pickSQ(); Q=pickSQ(); } while (P<=Q || pgcd(P-Q,2)!==1 || pgcd(P+Q,P-Q)!==1);
-    ex.push({id:"14.2 a)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{\\sqrt{${P}}-\\sqrt{${Q}}}{\\sqrt{${P}}+\\sqrt{${Q}}}\\)`, reponse:`(${P+Q}-2*sqrt(${P*Q}))/${P-Q}`});
+    const m = alea(-6,8), p = alea(2,6), r1 = m + p, r2 = m + 1 - p, k = m*m - r1*r2;   // (x-m)^2 = x+k
+    ex.push({id:"14.2 a)", type:"num", texteLibre:true,
+      enonce:`\\(\\sqrt{x${k>0?'+'+k:k<0?String(k):''}}=x${m>0?'-'+m:m<0?'+'+(-m):''}\\)`, reponse:`{${r1}}`});
   }
+  // b) quotient egal a un polynome : (x + p)/(x + q) = x - r, deux solutions entieres (la valeur interdite -q n'en est jamais une)
   {
-    const P = pickSQ();
-    let A,B; do { A=alea(1,4); B=alea(2,5); } while (B*B<=P || pgcd(pgcd(B-A,P-A*B),B*B-P)!==1);
-    ex.push({id:"14.2 b)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{\\sqrt{${P}}-${A}}{${B}-\\sqrt{${P}}}\\)`, reponse:`(${fmtLin(B-A,P-A*B,true,`sqrt(${P})`)})/${B*B-P}`});
+    let p, q, r, s1, s2;
+    do { q = aleaNonNul(-5,5); r = aleaNonNul(-4,4); s1 = alea(-6,6); s2 = r + 1 - q - s1; p = -r*q - s1*s2; }
+    while (s1 === s2 || s1 === -q || s2 === -q || p === q || Math.abs(p) > 30);
+    ex.push({id:"14.2 b)", type:"num", texteLibre:true,
+      enonce:`\\(\\dfrac{${fmtLin(1,p,false)}}{${fmtLin(1,q,false)}}=x${r>0?'-'+r:'+'+(-r)}\\)`, reponse:`{${Math.min(s1,s2)};${Math.max(s1,s2)}}`});
   }
 
-  // ---------- 16.3 : fractions avec parametre m (denominateurs fixes) ----------
+  // ---------- 14.3 : calcul numerique (entier ou fraction irreductible) ----------
+  // a) somme de fractions 1/(k(k+s)), 3 ou 4 termes consecutifs
   {
-    const A = aleaNonNul(-4,4), B = aleaNonNul(1,5);
-    ex.push({id:"14.3 a)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{${fmtLin(1,A,false,'m')}}{m}-\\dfrac{${B}}{m+1}\\)`, reponse:`(${polyQuadStr(1,1+A-B,A,true,'m')})/(m*(m+1))`});
+    const s = alea(1,2), k0 = s === 1 ? alea(1,9) : alea(1,6), nb = s === 1 ? alea(3,6) : alea(3,4);
+    let S = math.fraction(0), termes = [];
+    for (let i = 0; i < nb; i++) {
+      const k = k0 + i;
+      S = math.add(S, math.fraction(1, k*(k+s)));
+      termes.push(`\\dfrac{1}{${k}\\times ${k+s}}`);
+    }
+    ex.push({id:"14.3 a)", type:"num", fractionIrreductible:true, enonce: termes.join('+'), reponse: fracToStr(S)});
   }
+  // b) valeurs absolues d'irrationnels : |p - sqrt(n)| + |q - sqrt(n)| avec p < sqrt(n) < q, resultat entier q - p
   {
-    const A = aleaNonNul(2,6), B = aleaNonNul(-5,5);
-    ex.push({id:"14.3 b)", type:"alg", texteLibre:true, enonce:`\\(\\dfrac{${A}m}{m^2-1}-\\dfrac{${fmtLin(1,B,false,'m')}}{m(m+1)}\\)`, reponse:`(${polyQuadStr(A-1,-(B-1),B,true,'m')})/(m*(m+1)*(m-1))`});
+    const p = alea(1,8), n = alea(p*p + 1, (p+1)*(p+1) - 1), q = p + 1 + alea(0,2);
+    const terme = v => alea(0,1) === 0 ? `\\left|${v}-\\sqrt{${n}}\\right|` : `\\left|\\sqrt{${n}}-${v}\\right|`;
+    const t1 = terme(p), t2 = terme(q);
+    ex.push({id:"14.3 b)", type:"num", fractionIrreductible:true,
+      enonce: alea(0,1) === 0 ? `${t1}+${t2}` : `${t2}+${t1}`, reponse: String(q - p)});
   }
 
   // ---------- 16.4 : sommes d'entiers consecutifs ----------
@@ -1399,6 +1452,55 @@ function normaliserSaisie(str) {
   // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
   s = s.replace(/\)([a-zA-Z])/g, ')*$1');
   return s;
+}
+
+// Un calcul numerique (sans variable) doit etre une forme finale deja evaluee - pas un
+// calcul encore a faire. Sans ce controle, taper "144-72" validait "12^2-8*9" puisque
+// l'expression s'evalue a la bonne valeur, sans que l'eleve ait vraiment calcule.
+// Une consigne "sous forme de fraction irreductible" n'etait controlee que par l'egalite
+// numerique : 4/6 passait pour 2/3, de meme qu'une ecriture decimale ou le calcul non effectue.
+// On controle donc aussi la FORME : un entier, ou un quotient de deux entiers premiers entre eux.
+// facteurSymbolique ('pi' pour les angles en radians) exige en plus la presence de ce symbole.
+function estFractionIrreductible(userInput, facteurSymbolique) {
+  try {
+    const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
+    const estDivision = (n) => n.type === 'OperatorNode' && n.op === '/';
+    const valeurEntiere = (n) => {
+      const v = n.evaluate();
+      return (typeof v === 'number' && Number.isInteger(v)) ? v : null;
+    };
+    let noeud = math.parse(normaliserSaisie(userInput));
+    if (facteurSymbolique) {
+      // on remplace le symbole par 1 pour se ramener au cas numerique, apres avoir verifie
+      // qu'il figure bien dans la reponse : un angle en radians doit s'exprimer avec pi
+      let present = false;
+      noeud = noeud.transform((n) => {
+        if (n.type === 'SymbolNode' && n.name === facteurSymbolique) { present = true; return new math.ConstantNode(1); }
+        return n;
+      });
+      if (!present) return false;
+    }
+    noeud = sansParentheses(noeud);
+    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
+    // ecriture "fraction en facteur" : (5/12)*pi devient (5/12)*1 apres substitution
+    if (noeud.type === 'OperatorNode' && noeud.op === '*') {
+      const membres = noeud.args.map(sansParentheses);
+      const divisions = membres.filter(estDivision);
+      if (divisions.length === 1 && membres.filter((m) => !estDivision(m)).every((m) => valeurEntiere(m) === 1)) {
+        noeud = divisions[0];
+      }
+    }
+    if (!estDivision(noeud)) return valeurEntiere(noeud) !== null;
+    const num = valeurEntiere(sansParentheses(noeud.args[0]));
+    let denNoeud = sansParentheses(noeud.args[1]);
+    if (moinsUnaire(denNoeud)) denNoeud = sansParentheses(denNoeud.args[0]);
+    const den = valeurEntiere(denNoeud);
+    if (num === null || den === null || den === 0) return false;
+    return pgcd(num, den) === 1;
+  } catch(e) {
+    return false;
+  }
 }
 
 // Un calcul numerique (sans variable) doit etre une forme finale deja evaluee - pas un
@@ -1935,6 +2037,7 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
     div.classList.add(ok ? 'correct' : 'incorrect');
@@ -2482,6 +2585,11 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.fractionIrreductible) {
+    return ex.facteurSymbolique === 'pi'
+      ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
+      : "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>, ni un calcul comme <code>1/2+1/6</code>. Si le résultat est un entier, l'écrire tel quel.";
+  }
   if (ex.type === 'ineq') {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
@@ -2519,6 +2627,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.fractionIrreductible) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
@@ -2682,8 +2791,23 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${groupeEnsembleClavier(idx, ex)}${genererClavierPour(idx, ex)}</div>`;
 }
+
+// Reponse attendue sous forme d'ensemble ("{-2;3}", "{}" : voir
+// checkEnsemble) : touches accolades et point-virgule en tete du clavier.
+function groupeEnsembleClavier(idx, ex) {
+  if (!(ex.reponse && String(ex.reponse).trim().startsWith('{'))) return '';
+  return `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire l'ensemble des solutions entre accolades, séparées par un point-virgule. Exemple : {-2;3}, ou {} s'il n'y a aucune solution.</div>`;
+}
+
 
 function genererClavierPour(idx, ex) {
   if (ex.type === 'vraifaux') {
