@@ -185,9 +185,6 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   dans l'arbre (`texteEvenementSVG`) ; aucun effet visible constaté, cause
   non trouvée. **Mis de côté par David (01/09/2026) : n'y revenir que sur
   sa demande.**
-- Fiche 12 de Première (suites arithmétiques, ex-fiche 14) : un groupe dont
-  la condition sur \(a\) manque dans l'énoncé d'origine est laissé
-  statique, **choix de David** (ne pas inventer de condition).
 - Nettoyage possible des écritures orphelines (`enregistrerTentative()`
   des 14 fiches à widget de Seconde).
 - Idée non demandée : barème réglable devoir par devoir (automatismes).

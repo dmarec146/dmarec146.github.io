@@ -6159,3 +6159,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   `master` (commit de fusion) : seul conflit, la fin de `HISTORIQUE.md`
   (les deux côtés y ajoutaient des entrées), résolu en gardant tout, entrée
   du 02/10 avant celles du 03/10. `SUIVI-FIREBASE.md` fusionné sans conflit.
+
+- **SUIVI-FIREBASE §6 : ligne périmée retirée (03/10/2026).** La ligne
+  « Fiche 12 de Première : un groupe dont la condition sur a manque est
+  laissé statique, choix de David » ne valait plus depuis le 02/10/2026
+  (12.11 corrigé avec la condition « r = R » et rendu aléatoire, devenu
+  12.6 c, avec l'accord de David). Retirée à sa demande.
