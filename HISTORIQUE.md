@@ -6006,3 +6006,20 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     refusés : fraction non réduite, décimal, mauvais entier, ensemble avec
     une valeur fausse ; panneau « Voir toutes les réponses » : 35 et 31
     lignes, 0 erreur MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Les 50 fiches : icône ⌨ forcée en glyphe de texte (03/10/2026).** David :
+  sur tablette, l'icône du clavier à côté des champs ne convient pas, le
+  clavier lui-même fonctionne ; il veut la même icône que sur téléphone et
+  ordinateur (une image SVG tentée dans une session précédente ne lui
+  convenait pas — aucun SVG de ce genre n'est dans le dépôt, ni dans son
+  historique). Cause probable : le bouton `.q-clavier-btn` affiche le
+  caractère Unicode U+2328 (`&#9000;`), que les polices d'iPadOS peuvent
+  dessiner en emoji coloré. Correctif minimal, sans image : `&#9000;`
+  devient `&#9000;&#xFE0E;` (sélecteur de variante « présentation texte »,
+  128 occurrences dans les 50 fiches) et la règle `.q-clavier-btn` reçoit
+  `font-variant-emoji: text`. Vérifié : 50 règles CSS posées, caractère et
+  propriété relus dans le navigateur (iPad simulé), vérificateur : 0 erreur.
+  **Non vérifié sur une vraie tablette** (Chromium sous Linux dessine ce
+  caractère avec sa police emoji dans tous les cas) : si l'icône est encore
+  différente sur la tablette de David, repli prévu = SVG calqué sur
+  l'icône du bureau, à partir d'une capture des deux icônes.
