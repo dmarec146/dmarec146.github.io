@@ -205,7 +205,12 @@ async function main() {
   console.log('Contient les mots de passe en clair : a supprimer une fois imprime.');
 }
 
-main().catch((erreur) => {
-  console.error(erreur);
-  process.exit(1);
-});
+// Importable (generer-etiquettes-individuelles.js reutilise la lecture du CSV) sans lancer la generation du PDF.
+if (require.main === module) {
+  main().catch((erreur) => {
+    console.error(erreur);
+    process.exit(1);
+  });
+}
+
+module.exports = { lireCsvComptes };

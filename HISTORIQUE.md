@@ -6295,3 +6295,15 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   suppression d'un devoir à 2 tentatives (la tentative d'un autre devoir est
   restée) ; « Tout supprimer » annulé : 4 devoirs, 5 tentatives annoncées, rien
   effacé.
+
+- **Étiquettes PNG individuelles pour les élèves (04/10/2026).** Demande de
+  David : communiquer leurs identifiants par message aux élèves qui n'ont pas
+  encore reçu leur compte, sans modifier aucun identifiant. Nouvel outil
+  `outils/etiquettes/generer-etiquettes-individuelles.js` (dépendance
+  `@napi-rs/canvas`) : relit les `comptes-crees-*.csv` et écrit un PNG par
+  élève dans `individuelles/<classe>/` (dossier ignoré par Git).
+  `generer-etiquettes.js` exporte maintenant `lireCsvComptes` (sans changer
+  son usage en ligne de commande). Rapprochement identifiants/classes fait en
+  lecture seule dans Firestore : 75 comptes d'élèves réels (2nde-207 : 21,
+  1ere-Gr 3 : 26, 1ere-Gr 1 : 27, hors classe : 1), 75 PNG générés ; les comptes
+  de test n'ont pas d'étiquette. Aucun compte modifié.
