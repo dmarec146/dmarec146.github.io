@@ -22,6 +22,9 @@
 //                                    séparé de resultats/{ficheId} qui fusionne tous les
 //                                    passages ; nécessaire pour retrouver la meilleure
 //                                    tentative complète d'un devoir
+//   eleves/{uid}/devoirsMasques/{devoirId} devoir "fait" que l'élève a retiré de sa liste
+//                                    (/mes-devoirs/) -- simple masquage : le devoir, les
+//                                    tentatives et les résultats de l'enseignant ne bougent pas
 //   devoirs/{id}                    un devoir attribué par l'enseignant
 //   statistiques/{AAAA-MM-JJ}_{n}   compteurs anonymes de fréquentation d'un jour
 //                                    (fragment n de 0 à 4) -- écrits par tout visiteur,
@@ -118,6 +121,19 @@ service cloud.firestore {
         allow create: if estProprietaire(uid);
         allow update: if false;
         allow delete: if estAdmin();
+      }
+
+      match /devoirsMasques/{devoirId} {
+        // L'élève retire un devoir fait de SA liste (04/10/2026) : il crée
+        // un marqueur (rien d'autre que la date) et peut le supprimer ;
+        // ni le devoir (écriture admin), ni ses tentatives (suppression
+        // admin) ne sont touchés, l'enseignant garde tous les résultats.
+        allow read: if estProprietaire(uid) || estAdmin();
+        allow create: if estProprietaire(uid)
+          && request.resource.data.keys().hasOnly(['masqueLe'])
+          && request.resource.data.masqueLe == request.time;
+        allow update: if false;
+        allow delete: if estProprietaire(uid) || estAdmin();
       }
     }
 

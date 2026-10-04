@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, getDocs, collection, deleteDoc, updateDoc, increment, deleteField } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, deleteDoc, updateDoc, increment, deleteField, serverTimestamp } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 
 const env = await initializeTestEnvironment({
@@ -59,6 +59,28 @@ console.log('Règles existantes (non-régression)');
 await cas('élève : écrit son brouillon', true, setDoc(doc(eleve, 'eleves/eleve1/brouillons/f1'), { a: 1 }));
 await cas('élève : ne lit pas les brouillons d\'un autre', false, getDoc(doc(eleve, 'eleves/autre/brouillons/f1')));
 await cas('anonyme : ne lit pas les devoirs', false, getDoc(doc(anonyme, 'devoirs/d1')));
+
+console.log('Devoirs retirés de la liste de l\'élève (devoirsMasques)');
+const eleve2 = env.authenticatedContext('eleve2').firestore();
+const cheminMasque = (u, d) => `eleves/${u}/devoirsMasques/${d}`;
+await cas('élève : marque un devoir comme retiré', true, setDoc(doc(eleve, cheminMasque('eleve1', 'dev1')), { masqueLe: serverTimestamp() }));
+await cas('élève : relit son marqueur', true, getDoc(doc(eleve, cheminMasque('eleve1', 'dev1'))));
+await cas('élève : liste ses marqueurs', true, getDocs(collection(eleve, 'eleves/eleve1/devoirsMasques')));
+await cas('élève : rétablit (supprime) son marqueur', true, deleteDoc(doc(eleve, cheminMasque('eleve1', 'dev1'))));
+await cas('élève : marqueur chez un autre élève refusé', false, setDoc(doc(eleve, cheminMasque('eleve2', 'dev1')), { masqueLe: serverTimestamp() }));
+await cas('élève : ne lit pas les marqueurs d\'un autre', false, getDoc(doc(eleve, cheminMasque('eleve2', 'dev1'))));
+await cas('élève : marqueur avec un champ en plus refusé', false, setDoc(doc(eleve, cheminMasque('eleve1', 'dev2')), { masqueLe: serverTimestamp(), autre: 1 }));
+await cas('élève : marqueur avec une date falsifiée refusé', false, setDoc(doc(eleve, cheminMasque('eleve1', 'dev2')), { masqueLe: new Date('2020-01-01') }));
+await cas('élève : marqueur vide refusé', false, setDoc(doc(eleve, cheminMasque('eleve1', 'dev2')), {}));
+await cas('anonyme : marqueur refusé', false, setDoc(doc(anonyme, cheminMasque('eleve1', 'dev3')), { masqueLe: serverTimestamp() }));
+await cas('enseignant : lit un marqueur', true, getDoc(doc(prof, cheminMasque('eleve1', 'dev1'))));
+await setDoc(doc(eleve, cheminMasque('eleve1', 'dev4')), { masqueLe: serverTimestamp() });
+await cas('élève : modification d\'un marqueur refusée', false, updateDoc(doc(eleve, cheminMasque('eleve1', 'dev4')), { masqueLe: serverTimestamp() }));
+await cas('enseignant : supprime un marqueur', true, deleteDoc(doc(prof, cheminMasque('eleve1', 'dev4'))));
+console.log('Les tentatives restent intactes (le retrait n\'est qu\'un masquage)');
+await cas('élève : ne supprime pas une tentative de devoir', false, deleteDoc(doc(eleve, 'eleves/eleve1/devoirsTentatives/t1')));
+await cas('élève : ne modifie pas un devoir', false, setDoc(doc(eleve, 'devoirs/dev1'), { titre: 'x' }));
+await cas('élève : ne supprime pas un devoir', false, deleteDoc(doc(eleve, 'devoirs/dev1')));
 
 console.log(`\n${ok} réussis, ${ko} échecs`);
 await env.cleanup();

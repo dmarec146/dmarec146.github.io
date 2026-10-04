@@ -106,6 +106,10 @@ depuis la réorganisation du 02/10/2026 »).
   `devoirs/{id}` (lecture élève connecté, écriture admin) ; sous `eleves/{uid}` : `brouillons/{ficheId}`,
   `brouillonsAutomatismes/{devoirId}`, `devoirsTentatives` (journal des
   tentatives de devoir), `connexions` (journal d'audit).
+  `devoirsMasques/{devoirId}` (04/10/2026 : devoir fait que l'élève a retiré de
+  sa liste `/mes-devoirs/` ; marqueur `{masqueLe}`, **règle à publier** avant
+  l'envoi du code — sans elle, la lecture échoue sans casser la page et le
+  bouton « Supprimer » affiche « Suppression impossible »).
   **Orphelines** (plus lues depuis le 29/09/2026) : `resultats`,
   `automatismes`, `tentatives` — `enregistrerTentative()` écrit encore dans
   `tentatives` depuis 14 fiches à widget de Seconde (nettoyage possible,
@@ -144,6 +148,10 @@ depuis la réorganisation du 02/10/2026 »).
   **À faire** (ouvert, sans brouillon, avec la meilleure note si déjà
   rendu), **Faits** (essais épuisés ou échéance passée). Les brouillons
   orphelins sont supprimés.
+  Depuis le 04/10/2026, chaque devoir **fait** a un bouton « Supprimer »
+  (confirmation, puis « Tout supprimer » en tête de colonne) : il retire le
+  devoir de la liste de l'élève (`devoirsMasques`), sans toucher au devoir ni
+  aux tentatives — l'enseignant garde les résultats.
 - **Sur une fiche de calcul en devoir** : Enregistrer (reprise exacte, ne
   compte pas), Valider (compte une tentative, après confirmation dans une
   fenêtre de style « Devoir »), Recommencer masqué, « Générer une nouvelle

@@ -6252,3 +6252,31 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     (« courbe 1 »), Première 19 (courbes (a) à (d), réponses en lettres) étaient déjà
     cohérentes ; les banques d'automatismes ne sont pas concernées. Règles
     ajoutées à `REGLES-FICHES.md` (§4).
+
+- **/mes-devoirs/ : l'élève peut supprimer les devoirs faits de sa liste
+  (04/10/2026).** Demande de David (dernière section du tableau de bord
+  élève, « s'il le souhaite »).
+  - **Choix** : « supprimer » = **retirer de la liste de l'élève**, pas
+    effacer. Les règles Firestore interdisent à l'élève de supprimer un
+    devoir (écriture admin) ou une tentative (suppression admin), et c'est
+    voulu : les tentatives alimentent les résultats de l'enseignant. Le
+    bouton écrit un marqueur `eleves/{uid}/devoirsMasques/{devoirId}`
+    (`{masqueLe: serverTimestamp()}`), que `chargerDevoirsEleve()` retire de
+    la colonne « Faits » (seulement : un devoir redevenu ouvert par une
+    échéance repoussée réapparaît dans « À faire »). La confirmation le dit :
+    « Ton enseignant conserve tes résultats. »
+  - **Interface** : bouton « Supprimer » sur chaque devoir fait, en deux temps
+    (« Confirmer » / « Annuler », pas de fenêtre du navigateur) ; « Tout
+    supprimer » en tête de colonne s'il y a plus d'un devoir fait ; échec
+    d'écriture → « Suppression impossible pour le moment. ».
+  - **Règle Firestore ajoutée** (`firestore.rules`, **à republier à la main**) :
+    `devoirsMasques/{devoirId}` — lecture propriétaire/admin ; création par le
+    propriétaire avec le seul champ `masqueLe` égal à l'heure du serveur ;
+    pas de modification ; suppression propriétaire ou admin. 16 cas ajoutés à
+    `outils/verification/regles-firestore/test-regles.mjs` (marqueur chez un
+    autre élève, champ en plus, date falsifiée, anonyme, et non-régression :
+    l'élève ne supprime ni tentative ni devoir).
+  - **Robustesse** : la lecture des marqueurs est facultative (`catch` → liste
+    vide) : tant que la règle n'est pas publiée, `/mes-devoirs/` fonctionne
+    comme avant. Les marqueurs dont le devoir a disparu sont supprimés au
+    chargement (comme les brouillons orphelins).
