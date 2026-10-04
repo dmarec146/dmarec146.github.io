@@ -6667,3 +6667,41 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     troisième (P(B), P(A∩B)). Vérifié : a = 1/2 annule a/(1+2a)−a², pas
     d'autre racine dans ]0;1[ ; 1/2 et 0,5 acceptés, −1 et 2 refusés ;
     cycle complet 6 × 48 accepté ; 0 erreur MathJax ; vérificateur : 0 erreur.
+
+- **Première fiche 15 (Droites du plan) : refonte, zoom et curseur sur le
+  graphique (04/10/2026), 38 → 36 questions, 19 → 14 calculs.** David :
+  « fais le. garde 15.6 mais applique au graphique le zoom et curseur ».
+  - **Automatismes (15.1 à 15.3, 6 questions)** : inéquations (a : deux
+    fractions affines ; b : ax²−b ◊ 0, bornes ±p/q), équations (a : second
+    degré, deux racines, racine double ou ∅ ; b : équation à radicaux),
+    calcul numérique (a : produit de fractions moins une fraction, fraction
+    irréductible ; b : somme de radicaux, forme simplifiée a√b/c). Bornes et
+    ensembles solutions construits par signe, jamais la valeur interdite.
+  - **Fusions** : 15.4 (équations de droites : ex-15.3, 15.4, 15.5, énoncés
+    autonomes « Déterminer … de la droite (d) passant par … »), 15.6 (points
+    d'une droite et parallèle : ex-15.7, 15.8), 15.7 (droites à paramètre t :
+    ex-15.9, 15.10), 15.8 (intersections : ex-15.11 à 15.13). 15.5 =
+    ex-15.6 (détermination graphique, conservée), 15.9 = ex-15.14
+    (droite-parabole), 15.10 = ex-15.15 (droite-cercle), 15.11 à 15.14 =
+    ex-15.16 à 15.19 (avancés). Tous les calculs ont un vrai titre.
+  - **Zoom au clic et curseur de coordonnées sur le graphique de 15.5**,
+    portés de la fiche 4 de Première (`activerZoomSvg`, `activerCurseurSvg`,
+    bouton curseur, fenêtre de zoom, CSS). Repère -4..4 sans marge
+    (`data-marge="0"`), pas 1. Adaptation : la figure n'a pas de courbe
+    (`<path>`), donc au doigt le repère est libre, aimanté au quart du pas
+    en x et en y (dans la fiche 4 il suit la courbe). Étiquette (d₁)
+    remontée au-dessus de la droite.
+  - **Contrôles de forme** : `estFractionIrreductible` (fiche 14) et
+    `estRacineSimplifiee` (fiche 11) importés ; le corrigé de 15.3 b est
+    écrit « −5√7/4 » (radical au numérateur, seule forme acceptée par le
+    contrôle). Ensemble vide `{}` géré (saisie ∅, clavier, corrigé).
+  - Corrections : 15.7 a/b : composantes du vecteur non proportionnelles
+    (sinon le vecteur s'annulait pour une valeur de t) ; 15.14 : f ≠ g
+    exclu (tangentes confondues) ; énoncé 15.12 : « my » au lieu de
+    « m × y » ; corrigé des équations réduites sans « × » devant x.
+  - Vérifié : 400 tirages recalculés indépendamment (ensembles solutions
+    sur grille, racines par discriminant, droites vérifiant les points et
+    vecteurs donnés, intersections vérifiant les deux équations, points de
+    parabole et cercle, tangentes) : 0 écart ; cycle complet 10 × 36
+    accepté ; mauvaises réponses refusées ; zoom et curseur essayés dans le
+    navigateur ; 0 erreur MathJax ; vérificateur : 0 erreur.
