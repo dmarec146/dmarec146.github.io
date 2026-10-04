@@ -6510,3 +6510,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   l'ancien modèle, aucun devoir rattaché ; supprimés avec le profil et le
   compte de connexion. La classe `1ere-test` a disparu de la liste, qui est
   calculée à partir des classes des comptes existants.
+- **Suppression du compte de test `l.testeur` (04/10/2026).** Sur la demande
+  de David, pour que la liste d'attribution ne propose plus que ses classes
+  réelles, « Hors classe » et `demo-eleve`. Même sauvegarde JSON que pour
+  `n.testeuse` (inventaire préalable : 9 connexions, 47 tentatives de l'ancien
+  modèle, aucun devoir rattaché). Classes restantes : `1ere-Gr 3` (26),
+  `1ere-Gr 1` (27), `2nde-207` (21), `1ere-demo` (1), hors classe (1).
