@@ -179,7 +179,7 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
 - Diversifier les automatismes des fiches de Première 7 à 26 au fil des
   relectures de David (règle et modèles dans `REGLES-FICHES.md`, §2).
-- Fiche 17 de Première (probabilités, ex-fiche 19) : erreur console
+- Fiche 14 de Première (probabilités, ex-fiche 17 puis 19) : erreur console
   intermittente au chargement (`<svg> attribute width: "NaNex"`, SVG MathJax
   à dimensions NaN), apparue avec le trait de l'événement contraire dessiné
   dans l'arbre (`texteEvenementSVG`) ; aucun effet visible constaté, cause

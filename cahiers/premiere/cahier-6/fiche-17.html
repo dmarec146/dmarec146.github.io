@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Fiche 17 — Probabilités (Première) — interactif</title>
+<title>Fiche 17 — Coordonnées des vecteurs (Première) — interactif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script type="module" src="../../../assets/js/suivi.js"></script>
 <script>
@@ -306,6 +306,7 @@ window.MathJax = {
   }
   .question.correct { border-color: var(--vert); background: var(--vert-clair); }
   .question.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
+  .q-lettre:empty { display: none; }
   .q-lettre { font-weight: bold; min-width: 16px; font-family: Georgia, serif; font-size: 14px; }
   .q-enonce { font-size: 15px; flex: 1 1 auto; min-width: 140px; }
   .q-qcm-options {
@@ -646,12 +647,9 @@ window.MathJax = {
       grid-template-columns: 1fr 1fr;
       gap: 14px 20px;
     }
-    /* section a une seule question (ex. 19.20, 19.23) : inutile de reserver une colonne vide a
-       cote -- la carte prend toute la largeur (David, 2026-09-22, porte depuis la fiche 19 de
-       Seconde). */
-    .question-pleine-largeur { grid-column: 1 / -1; }
-    .question-pleine-largeur .q-mathfield { max-width: 340px; }
     .q-input { width: 150px; flex: 0 0 150px; }
+    .question-seule { grid-column: 1 / -1; }
+    .question-seule .q-mathfield { max-width: 340px; }
     .barre-controle { flex-direction: row; flex-wrap: wrap; align-items: center; }
     .btn-principal, .btn-secondaire { width: auto; }
     .mode-label { width: auto; margin-right: 4px; }
@@ -693,47 +691,6 @@ window.MathJax = {
   .figure-centree svg.qcm-svg {
     max-width: 220px;
   }
-  /* ---------- Arbres en grand + zoom au clic -- porte depuis la fiche 19 de Seconde (David,
-     2026-09-22 : "les arbres exactement comme en Seconde, avec zoom"). ---------- */
-  .svg-police-manuel { font-family: 'Cambria Math', Cambria, Georgia, serif; }
-  svg.svg-agrandissable { cursor: zoom-in; }
-  svg.svg-agrandissable:hover { outline: 2px solid var(--bleu-clair); outline-offset: 2px; }
-  .modal-svg-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 20, 25, 0.8);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    cursor: zoom-out;
-  }
-  .modal-svg-overlay.ouvert { display: flex; }
-  .modal-svg-contenu {
-    position: relative;
-    background: white;
-    border-radius: 10px;
-    padding: 32px 14px 14px;
-    width: min(96vw, 800px);
-    max-height: 94vh;
-    overflow: auto;
-    cursor: default;
-  }
-  .modal-svg-contenu svg { display: block; margin: 0 auto; width: 100%; height: auto; }
-  .modal-svg-fermer {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    background: none;
-    border: none;
-    font-size: 22px;
-    line-height: 1;
-    color: var(--gris);
-    cursor: pointer;
-    padding: 4px 8px;
-  }
-  .modal-svg-fermer:hover { color: var(--rouge); }
   .qcm-options {
     display: flex;
     flex-direction: column;
@@ -920,18 +877,11 @@ window.MathJax = {
 
 <body>
 
-<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
-  <div class="modal-svg-contenu">
-    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
-    <div id="modal-svg-contenu-interieur"></div>
-  </div>
-</div>
-
-<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 6</a></p>
+<p class="fil-ariane"><a href="../../../index.html">Accueil</a><span class="separateur">/</span><a href="../../index.html">Tous les cahiers</a><span class="separateur">/</span><a href="index.html">Première — Cahier 7</a></p>
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
+  <a class="nav-btn" href="fiche-16.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
@@ -939,8 +889,8 @@ window.MathJax = {
 <div class="entete">
   <div class="badge">17</div>
   <div class="entete-texte">
-    <h1>Probabilités</h1>
-    <p class="cahier-repere">Première — Cahier 6</p>
+    <h1>Coordonnées des vecteurs</h1>
+    <p class="cahier-repere">Première — Cahier 7</p>
   </div>
 </div>
 <div class="filet"></div>
@@ -954,120 +904,89 @@ window.MathJax = {
   <span class="mode-explication" id="mode-explication"></span>
 </div>
 
+<div class="remarque-generale"><strong>Remarque</strong>
+Toutes les coordonnées sont exprimées dans un repère orthonormé du plan.</div>
+
 <div class="bloc-general">
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 17.1 — Calculer :</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 17.1 — Des inéquations. Déterminer, <span class="titre-mise-en-valeur">sous la forme d'un intervalle</span>, l'ensemble des solutions dans \(\mathbb{R}\) des inéquations suivantes.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-17-1"></div>
 
-<p class="calcul-titre"><span>Calcul 17.2 — Soient \(p\) et \(a\) des nombres réels. Simplifier les expressions :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 17.2 — Des factorisations. Factoriser les expressions suivantes en utilisant les identités remarquables.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg></span></p>
 <div class="question-grille" id="grille-17-2"></div>
 </div>
 
-<p class="section-titre">Calculs de probabilités</p>
+<p class="section-titre">Calcul de coordonnées</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 17.3 — Avec un tableau de probabilités.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p>On donne le tableau de probabilités suivant :</p><table id="table-17-4" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
-<p>Calculer les probabilités suivantes. On donnera les résultats sous forme décimale.</p>
+<p class="calcul-titre"><span>Calcul 17.3 — Calculer et simplifier les coordonnées du vecteur \(\overrightarrow{AB}\), dans chacun des cas suivants.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-17-3"></div>
 
-<p class="calcul-titre"><span>Calcul 17.4 — Avec un tableau d'effectifs.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p>On donne le tableau d'effectifs suivant :</p><table id="table-17-5" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
-<p>Calculer les probabilités suivantes. On donnera les résultats sous forme de fraction irréductible.</p>
+<p class="calcul-titre"><span>Calcul 17.4</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-17-4">On considère les points \(A(1;-2)\), \(B(8;-5)\) et \(C(6;0)\), ainsi que le point \(D(x;y)\) vérifiant \(\overrightarrow{AB}=\overrightarrow{DC}\). Calculer les coordonnées de :</p>
 <div class="question-grille" id="grille-17-4"></div>
 
-<p class="section-titre">Avec des probabilités conditionnelles</p>
-<div class="section-barre"></div>
-
-<p class="calcul-titre"><span id="titre-17-6">Calcul 17.5 — On considère deux événements \(A\) et \(B\) tels que \(P(\overline{A})=0{,}3\) et \(P(\overline{A}\cap B)=0{,}15\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 17.5</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-17-5">On considère les points \(A(3;-2)\), \(B(1;-3)\) et \(C(0;8)\). En utilisant la même méthode que dans l'exercice précédent, déterminer dans chacun des cas suivants les coordonnées du point \(D\) vérifiant :</p>
 <div class="question-grille" id="grille-17-5"></div>
 
-<p class="calcul-titre"><span>Calcul 17.6 — Avec un tableau dans un cas concret.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-17-7">On a interrogé 500 personnes sur leurs loisirs. Les choix proposés étaient le ski et la randonnée. Parmi les personnes interrogées, 125 personnes font du ski, un cinquième des skieurs font aussi de la randonnée et 300 personnes ne font ni ski ni randonnée.</p>
-<p>On note <em>R</em> : « la personne fait de la randonnée » et <em>S</em> : « la personne fait du ski ». Calculer les probabilités suivantes. On donnera les résultats sous forme de fraction irréductible.</p>
+<p class="calcul-titre"><span>Calcul 17.6</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Dans chaque cas, déterminer la valeur de \(\alpha\) telle que le vecteur \(\overrightarrow{AB}\) soit égal au vecteur \(\vec{u}\begin{pmatrix}0\\-1\end{pmatrix}\).</p>
 <div class="question-grille" id="grille-17-6"></div>
 
-<p class="calcul-titre"><span>Calcul 17.7 — Soit \(n\in\mathbb{N}^*\). On donne le tableau d'effectifs suivant :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table style="border-collapse:collapse;margin:12px auto;font-size:16px;">
-<tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>A</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>\(\overline{A}\)</em></td></tr>
-<tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>B</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n^2\)</td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(2n+2n^2\)</td></tr>
-<tr><td style="border:1px solid #999;padding:5px 10px;text-align:center;"><em>\(\overline{B}\)</em></td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n\)</td><td style="border:1px solid #999;padding:5px 10px;text-align:center;">\(n+n^2\)</td></tr>
-</table>
-<p>Calculer les probabilités suivantes. On s'efforcera de simplifier le plus possible les résultats.</p>
+<p class="calcul-titre"><span>Calcul 17.7</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-17-7"></div>
 
-<p class="calcul-titre"><span>Calcul 17.8 — Avec un arbre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="arbre-17-9"></div>
-<p>Calculer :</p>
-<div class="question-grille" id="grille-17-8"></div>
-
-<p class="calcul-titre"><span id="titre-17-10">Calcul 17.9 — Avec des probabilités conditionnelles (I). On donne \(P(A)=0{,}45\) et \(P_A(B)=0{,}6\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-17-9"></div>
-
-<p class="calcul-titre"><span id="titre-17-11">Calcul 17.10 — Avec des probabilités conditionnelles (II). On donne \(P(A)=0{,}05\) ainsi que \(P(B)=0{,}1\) et \(P_A(B)=0{,}8\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-17-10"></div>
-
-<p class="calcul-titre"><span>Calcul 17.11 — Avec un arbre dans un cas concret.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p id="texte-17-12">On a interrogé un grand nombre de personnes sur leurs habitudes musicales. 30% de la population interrogée est composée de mineurs. 20% des mineurs écoutent de la musique en streaming alors que 55% des majeurs écoutent de la musique en streaming.</p>
-<p>On note <em>J</em> : « la personne interrogée est mineure » et <em>S</em> : « la personne écoute de la musique en streaming ». On interroge une personne au hasard. Calculer les probabilités suivantes. On donnera les réponses sous forme de fraction irréductible.</p>
-<div class="question-grille" id="grille-17-11"></div>
-
-<p class="calcul-titre"><span id="titre-17-13">Calcul 17.12 — On considère \(A\) et \(B\) deux événements indépendants tels que \(P(A)=0{,}8\) et \(P(B)=0{,}2\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-17-12"></div>
-
-<p class="calcul-titre"><span>Calcul 17.13 — On considère l'arbre pondéré suivant.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="arbre-17-14"></div>
-<p>Calculer les probabilités suivantes. On donnera les résultats sous forme décimale.</p>
-<div class="question-grille" id="grille-17-13"></div>
-
-<p class="calcul-titre"><span id="titre-17-15">Calcul 17.14 — On considère \(A\) et \(B\) deux événements indépendants tels que \(P(A)=0{,}75\) et \(P(A\cap B)=0{,}36\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div class="question-grille" id="grille-17-14"></div>
-
-<p class="calcul-titre"><span>Calcul 17.15 — Soit \(x&gt;0\). On considère l'arbre pondéré :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="arbre-17-16"></div>
-<p>Calculer :</p>
-<div class="question-grille" id="grille-17-15"></div>
-
-<p class="section-titre">Variables aléatoires</p>
+<p class="section-titre">Somme de vecteurs</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 17.16 — Une loi de probabilité incomplète.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<p>On donne la loi de probabilité d'une variable aléatoire \(X\) :</p><table id="table-17-17" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
-<p>Calculer :</p>
-<div class="question-grille" id="grille-17-16"></div>
+<p class="calcul-titre"><span>Calcul 17.8</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p id="texte-17-8">On considère les points \(A(-5;3)\) et \(B(4;-8)\) et les vecteurs \(\vec{u}\begin{pmatrix}4\\-6\end{pmatrix}\) et \(\vec{v}\begin{pmatrix}-1\\-1\end{pmatrix}\).</p>
+<div class="question-grille" id="grille-17-8"></div>
 
-<p class="calcul-titre"><span>Calcul 17.17 — On donne la loi de probabilité d'une variable aléatoire \(X\) :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-17-18" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
-<p>Calculer :</p>
-<div class="question-grille" id="grille-17-17"></div>
+<p class="calcul-titre"><span>Calcul 17.9</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p>Dans chacun des cas suivants, déterminer les coordonnées du point \(M\) vérifiant \(\overrightarrow{MA}+\overrightarrow{MB}+\overrightarrow{MC}=\vec{0}\).</p>
+<div class="question-grille" id="grille-17-9"></div>
 
-<p class="calcul-titre"><span>Calcul 17.18 — On donne la loi de probabilité d'une variable aléatoire \(X\) :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-17-19" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
-<p>Calculer, sous forme de fraction irréductible :</p>
-<div class="question-grille" id="grille-17-18"></div>
+<p class="section-titre">Norme de vecteur</p>
+<div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 17.19 — On donne la loi de probabilité d'une variable aléatoire \(X\) :</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p><table id="table-17-20" style="border-collapse:collapse;margin:12px auto;font-size:16px;"></table>
-<div class="question-grille" id="grille-17-19"></div>
+<p class="calcul-titre"><span>Calcul 17.10 — Calculer dans chacun des cas la norme du vecteur \(\overrightarrow{AB}\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-10"></div>
+
+<p class="section-titre">Colinéarité</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 17.11 — Dans chacun des cas, quelle est la bonne affirmation ?</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-11"></div>
+
+<p class="calcul-titre"><span>Calcul 17.12 — Pour les vecteurs \(\vec{u}\) et \(\vec{v}\) suivants, déterminer le réel \(\lambda\) tel que \(\vec{u}=\lambda\vec{v}\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-12"></div>
+
+<p class="section-titre">Milieu d'un segment</p>
+<div class="section-barre"></div>
+
+<p class="calcul-titre"><span>Calcul 17.13 — Calculer dans chacun des cas les coordonnées du vecteur \(\overrightarrow{AI}\), où \(I\) est le milieu du segment \([AB]\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<div class="question-grille" id="grille-17-13"></div>
 
 <div class="bloc-avance">
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 17.20 — Avec un arbre.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<div id="arbre-17-21"></div>
-<p>Calculer :</p>
-<div class="question-grille" id="grille-17-20"></div>
+<p class="calcul-titre"><span>Calcul 17.14 — Ménélienne d'un triangle.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>Soit \(ABC\) un triangle et soient \(A'\), \(B'\) et \(C'\) des points appartenant respectivement aux droites \((BC)\), \((CA)\) et \((AB)\), et tous distincts de \(A\), \(B\) et \(C\).</p>
+<p>La situation est représentée ci-dessous.</p>
+<div id="graphique-17-19"></div>
+<p>On note \(p\), \(q\) et \(r\) les réels vérifiant \(\overrightarrow{A'B}=p\overrightarrow{A'C}\), \(\overrightarrow{B'C}=q\overrightarrow{B'A}\) et \(\overrightarrow{C'A}=r\overrightarrow{C'B}\).</p>
+<p>On se place dans le repère \(\left(A,\overrightarrow{AB},\overrightarrow{AC}\right)\).</p>
+<div class="question-grille" id="grille-17-14"></div>
 
-<p class="calcul-titre"><span>Calcul 17.21 — Une variable aléatoire uniforme.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<p>On considère une variable aléatoire \(X\) qui peut prendre les valeurs \(1,2,\ldots,n\) et telle que, pour tout entier \(i\in\{1,2,\ldots,n\}\), on ait \(P(X=i)=\dfrac{1}{n}\). Calculer :</p>
-<div class="question-grille" id="grille-17-21"></div>
-
-<p class="calcul-titre"><span>Calcul 17.22</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<p>On considère une variable aléatoire \(X\) qui peut prendre les valeurs \(1,a,a^2,a^3,\ldots,a^n\) et telle que, pour tout entier \(i\in\{0,1,2,\ldots,n\}\), on ait \(P(X=a^i)=\dfrac{1}{n+1}\).</p>
-<div class="question-grille" id="grille-17-22"></div>
-
-<p class="calcul-titre"><span>Calcul 17.23 — Soit \(x\in\,]0;1[\) et soit \(X\) une variable aléatoire prenant les valeurs \(1\) et \(x\), telle que \(P(X=1)=x\).</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#ddd"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<p>Calculer :</p>
-<div class="question-grille" id="grille-17-23"></div>
+<p class="calcul-titre"><span>Calcul 17.15 — Déterminant d'un couple de vecteurs.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p>Dans un repère orthonormé, on considère deux vecteurs \(\vec{u}\) et \(\vec{v}\) de coordonnées respectives \(\begin{pmatrix}a\\b\end{pmatrix}\) et \(\begin{pmatrix}c\\d\end{pmatrix}\).</p>
+<div class="rappel-formule">Le déterminant du couple \((\vec{u},\vec{v})\) est défini par \[\det(\vec{u},\vec{v})=\det\left(\begin{pmatrix}a\\b\end{pmatrix},\begin{pmatrix}c\\d\end{pmatrix}\right)=ad-bc.\] On admet que deux vecteurs \(\vec{u}\) et \(\vec{v}\) sont colinéaires si, et seulement si, \(\det(\vec{u},\vec{v})=0\).</div>
+<div class="question-grille" id="grille-17-15"></div>
 </div>
 
 <div class="barre-controle">
@@ -1108,7 +1027,7 @@ window.MathJax = {
 
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
-  <span class="nav-btn nav-btn-disabled">&larr; Fiche précédente</span>
+  <a class="nav-btn" href="fiche-16.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
 </div>
@@ -1162,298 +1081,367 @@ function restaurerApresImpression() {
 }
 window.addEventListener('afterprint', restaurerApresImpression);
 function exporterPDF() { preparerPourImpression(); window.print(); }
-function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
-function fracStr(n, d) { if (d < 0) { n = -n; d = -d; } const g = pgcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; }
-function fracToStr(f) { f = math.fraction(f); const n = f.s * f.n, d = f.d; return d === 1 ? String(n) : `${n}/${d}`; }
-function coefPrefixe(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}*`; }
-function coefPrefixeL(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}`; }
-function decLatexFromFrac(num, den) {
-  const decimals = Math.round(Math.log10(den));
-  let s = (num / den).toFixed(decimals);
-  if (s.includes('.')) { s = s.replace(/0+$/, '').replace(/\.$/, ''); }
-  return s.replace('.', '{,}');
+function aleaNonNul(min, max) { let v; do { v = alea(min, max); } while (v === 0); return v; }
+
+function fracStr(n, d) { const f = math.fraction(n, d); return f.d === 1 ? String((f.s < 0 ? -1 : 1) * f.n) : `${f.s < 0 ? '-' : ''}${f.n}/${f.d}`; }
+function fracToStr(f) { f = math.fraction(f); return f.d === 1 ? String((f.s < 0 ? -1 : 1) * f.n) : `${f.s < 0 ? '-' : ''}${f.n}/${f.d}`; }
+function coefPrefixe(f) {
+  f = math.fraction(f);
+  if (f.n === 1 && f.d === 1) return f.s < 0 ? '-' : '';
+  return fracToStr(f) + '*';
+}
+// nombre rationnel en LaTeX (fraction empilee), pour les coordonnees affichees dans les enonces
+function fracL(f) {
+  f = math.fraction(f);
+  if (f.d === 1) return (f.s < 0 && f.n !== 0 ? '-' : '') + f.n;
+  return (f.s < 0 ? '-' : '') + `\\dfrac{${f.n}}{${f.d}}`;
+}
+function coefPrefixeL(f) {
+  f = math.fraction(f);
+  if (f.n === 1 && f.d === 1) return f.s < 0 ? '-' : '';
+  if (f.d === 1) return (f.s < 0 ? '-' : '') + f.n;
+  return (f.s < 0 ? '-' : '') + `\\dfrac{${f.n}}{${f.d}}`;
+}
+// terme signe "+coef" / "-coef" (chaine ascii), omet le coefficient si |coef|=1
+function signedFracTerm(coefF, factorStr) {
+  coefF = math.fraction(coefF);
+  if (coefF.n === 0) return '';
+  const neg = coefF.s < 0;
+  const abs = math.abs(coefF);
+  const body = (abs.n === 1 && abs.d === 1) ? (factorStr || '1') : (fracToStr(abs) + (factorStr ? '*' + factorStr : ''));
+  return (neg ? '-' : '+') + body;
+}
+function signedFracTermLatex(coefF, factorStrLatex) {
+  coefF = math.fraction(coefF);
+  if (coefF.n === 0) return '';
+  const neg = coefF.s < 0;
+  const abs = math.abs(coefF);
+  let body;
+  if (abs.n === 1 && abs.d === 1) body = factorStrLatex || '1';
+  else if (abs.d === 1) body = String(abs.n) + factorStrLatex;
+  else body = `\\dfrac{${abs.n}}{${abs.d}}` + factorStrLatex;
+  return (neg ? '-' : '+') + body;
+}
+function joinSigned(parts) {
+  const s = parts.filter(p => p !== '').join('');
+  return s.startsWith('+') ? s.slice(1) : (s === '' ? '0' : s);
+}
+// polynome quadratique c2 v^2 + c1 v + c0 (Fractions ou entiers) en ascii propre
+function polyQuadStr(c2, c1, c0, v) {
+  v = v || 'x';
+  return joinSigned([signedFracTerm(c2, v+'^2'), signedFracTerm(c1, v), signedFracTerm(c0, '')]);
+}
+// extrait le plus grand facteur carre parfait de n (entier positif) : coef*sqrt(radicand)=sqrt(n)
+function simplifierRacine(n) {
+  let coef = 1, radicand = n;
+  for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--) {
+    if (radicand % (k*k) === 0) { coef *= k; radicand /= (k*k); break; }
+  }
+  return { coef, radicand };
+}
+function surdTerm(coefF, radicand) {
+  coefF = math.fraction(coefF);
+  if (radicand === 1) return fracToStr(coefF);
+  const neg = coefF.s < 0;
+  const abs = math.abs(coefF);
+  const absStr = (abs.n === 1 && abs.d === 1) ? '' : (fracToStr(abs).includes('/') ? `(${fracToStr(abs)})*` : fracToStr(abs) + '*');
+  return (neg ? '-' : '') + absStr + `sqrt(${radicand})`;
 }
 
-let paramsAvances = {};
-
+let contexte22 = {};
 function genererExercices() {
+  contexte22 = {};
   const ex = [];
+  // Calcul 17.1 - inequations (6 items)
+  (function() {
+    function numify(k) { return (typeof k === 'number') ? k : Number(k.valueOf ? k.valueOf() : k); }
+    function specGT(k) { k = numify(k); return {type:'intervalles', liste:[{bas:k,haut:Infinity,inclusBas:false,inclusHaut:false}]}; }
+    function specGE(k) { k = numify(k); return {type:'intervalles', liste:[{bas:k,haut:Infinity,inclusBas:true,inclusHaut:false}]}; }
+    function specLT(k) { k = numify(k); return {type:'intervalles', liste:[{bas:-Infinity,haut:k,inclusBas:false,inclusHaut:false}]}; }
+    function specLE(k) { k = numify(k); return {type:'intervalles', liste:[{bas:-Infinity,haut:k,inclusBas:false,inclusHaut:true}]}; }
+    const A1 = alea(1,5), K1 = alea(-4,6);
+    const A2 = alea(1,4), K2 = aleaNonNul(-4,6);
+    ex.push({id:"17.1 a)", type:"intervalle", texteLibre:true, enonce:`\\(${coefPrefixeL(-A2)}x${A2*K2>=0?'+':''}${A2*K2}\\geqslant 0\\)`, intervalleSpec: specLE(K2)});
+    const A3 = alea(1,4), B3 = alea(-6,6), K3 = alea(-6,6);
+    const P4 = alea(1,6), Q4 = alea(1,6), R4 = alea(1,6);
+    ex.push({id:"17.1 b)", type:"intervalle", texteLibre:true, enonce:`\\(${P4}-${coefPrefixeL(Q4)}x<${coefPrefixeL(R4)}x\\)`, intervalleSpec: specGT(math.fraction(P4,Q4+R4))});
+    const P5 = alea(2,5), R5 = alea(1,P5-1), B5 = alea(-6,6);
+    const seuil5 = math.divide(math.fraction(B5,P5), math.subtract(math.fraction(1,R5), math.fraction(1,P5)));
+    const coefR5 = R5===1 ? 'x' : `\\dfrac{1}{${R5}}x`;
+    const S6 = math.fraction(alea(1,4), alea(2,3)), T6 = alea(3,8), U6 = alea(2,6), V6 = math.fraction(alea(1,6), alea(2,6));
+    const seuil6 = math.divide(math.subtract(S6, V6), math.add(math.multiply(S6,T6), U6));
+    ex.push({id:"17.1 c)", type:"intervalle", texteLibre:true, enonce:`\\(${coefPrefixeL(S6)}(${T6}x-1)<-${U6}x-${coefPrefixeL(V6)}\\)`, intervalleSpec: specLT(seuil6)});
+  })();
+  // Calcul 17.2 - factorisations (6 items)
+  (function() {
+    const K1 = alea(2,5);
+    const K2 = alea(2,6);
+    const K3 = alea(2,4);
+    ex.push({id:"17.2 a)", type:"alg", texteLibre:true, enonce:`\\(x^2-${coefPrefixeL(math.fraction(2,K3))}x+\\dfrac{1}{${K3*K3}}\\)`, reponse:`(${K3}*x-1)^2/${K3*K3}`});
+    const M4 = alea(1,4), K4 = alea(1,4);
+    ex.push({id:"17.2 b)", type:"alg", texteLibre:true, enonce:`\\((x+${M4})^2+${2*K4}(x+${M4})+${K4*K4}\\)`, reponse:`(x+${M4+K4})^2`});
+    let A5; do { A5 = alea(3,7); } while (A5 % 2 === 0);
+    ex.push({id:"17.2 c)", type:"alg", texteLibre:true, enonce:`\\((1-${A5}x)^2-(1+x)^2\\)`, reponse:`${2*(A5+1)}*x*(${(A5-1)/2}*x-1)`});
+    const P6 = alea(2,6), Q6 = alea(1,4), R6 = alea(1,4), S6b = alea(1,4);
+    const f1c0 = P6-R6, f1c1 = -(Q6+S6b), f2c0 = P6+R6, f2c1 = S6b-Q6;
+  })();
+  // Calcul 17.3 - coordonnees du vecteur AB (3 items)
+  (function() {
+    const Ax1=alea(-8,8), Ay1=alea(-8,8), Bx1=alea(-8,8), By1=alea(-8,8);
+    // fractions affichees irreductibles et non entieres (evite « 4/4 », « 2/4 »)
+    const irr = () => { let n, d; do { n = alea(1,4); d = alea(2,5); } while (math.gcd(n,d) !== 1); return [n,d]; };
+    const [n1,d1] = irr(), [n2,d2] = irr(), [Ay2n,Ay2d] = irr(), [Bx2n,Bx2d] = irr(), [By2n,By2d] = irr();
+    const Ax2 = math.add(math.fraction(n1,d1), math.fraction(n2,d2));
+    const Ay2 = math.fraction(Ay2n,Ay2d), Bx2 = math.fraction(Bx2n,Bx2d), By2 = math.fraction(By2n,By2d);
+    ex.push({id:"17.3 a)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${n1}}{${d1}}+\\dfrac{${n2}}{${d2}};\\dfrac{${Ay2n}}{${Ay2d}}\\right)\\) et \\(B\\left(\\dfrac{${Bx2n}}{${Bx2d}};\\dfrac{${By2n}}{${By2d}}\\right)\\)`, pa: fracToStr(math.subtract(Bx2,Ax2)), pb: fracToStr(math.subtract(By2,Ay2))});
+    // item statique (radicaux) : conserve la structure d'origine, trop fragile pour generaliser sans risque
+    ex.push({id:"17.3 b)", type:"paire", texteLibre:true, enonce:"Avec \\(A\\left(1+\\sqrt{2};\\dfrac{1}{\\sqrt{5}}\\right)\\) et \\(B\\left(\\sqrt{8};\\sqrt{5}\\right)\\)", pa:"sqrt(2)-1", pb:"4*sqrt(5)/5"});
+  })();
+  // Calcul 17.4 - avec parametre n (1 item)
+  (function() {
+    const k = alea(2,5);
+    ex.push({id:"17.3 c)", type:"paire", texteLibre:true, enonce:`Avec \\(A(${k}\\times 2^n;1-3^{2(n+1)})\\) et \\(B(${k}\\times 2^{n+1};(1-3^n)(1+3^n))\\), où \\(n\\in\\mathbb{N}\\)`, pa:`${k}*2^n`, pb:"8*9^n", vars:["n"]});
+  })();
+  // Calcul 17.5 - avec parametre alpha (mise a l'echelle globale des identites originales)
+  (function() {
+    const k1 = aleaNonNul(-4,4);
+    const A1a = joinSigned([signedFracTermLatex(-k1,''), signedFracTermLatex(-k1,'\\alpha^2')]);
+    const A2a = joinSigned([signedFracTermLatex(2*k1,'\\alpha')]);
+    const B1a = joinSigned([signedFracTermLatex(-2*k1,'\\alpha')]);
+    const k2 = aleaNonNul(-4,4);
+    const k3 = aleaNonNul(-4,4);
+    ex.push({id:"17.3 d)", type:"paire", texteLibre:true, enonce:`Avec \\(A(${coefPrefixeL(k3)}\\alpha(\\alpha-1);${coefPrefixeL(k3)}(\\alpha-1)^2)\\) et \\(B(${coefPrefixeL(k3)}\\alpha^2;${coefPrefixeL(k3)}(\\alpha+1)^2)\\)`, pa: `${k3}*a`, pb: `${4*k3}*a`, vars:["a"]});
+    const k4 = aleaNonNul(-4,4);
+  })();
+  // Calcul 17.6 - points ABCD, D verifiant AB=DC (3 items)
+  (function() {
+    const A=[alea(-8,8),alea(-8,8)], B=[alea(-8,8),alea(-8,8)], C=[alea(-8,8),alea(-8,8)];
+    const AB=[B[0]-A[0],B[1]-A[1]];
+    const D=[C[0]-AB[0],C[1]-AB[1]];
+    contexte22.g6 = {A,B,C};
+    ex.push({id:"17.4 a)", type:"paire", texteLibre:true, enonce:"\\(\\overrightarrow{AB}\\)", pa: fracToStr(AB[0]), pb: fracToStr(AB[1])});
+    ex.push({id:"17.4 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"En déduire les coordonnées de \\(D\\)", pa: fracToStr(D[0]), pb: fracToStr(D[1])});
+  })();
+  // Calcul 17.7 - points ABC, D defini par diverses relations vectorielles (4 items)
+  (function() {
+    const A=[alea(-6,6),alea(-6,6)], B=[alea(-6,6),alea(-6,6)], C=[alea(-6,6),alea(-6,6)];
+    contexte22.g7 = {A,B,C};
+    function sub(p,q){ return [q[0]-p[0], q[1]-p[1]]; }
+    function add(...vs){ return vs.reduce((a,b)=>[math.add(a[0],b[0]), math.add(a[1],b[1])]); }
+    function scl(k,v){ return [math.multiply(k,v[0]), math.multiply(k,v[1])]; }
+    const kA = aleaNonNul(-3,3);
+    const Da = add(C, scl(kA, sub(A,B)));
+    ex.push({id:"17.5 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(${coefPrefixeL(kA)}\\overrightarrow{AB}=\\overrightarrow{CD}\\)`, pa: fracToStr(Da[0]), pb: fracToStr(Da[1])});
+    const kB = aleaNonNul(-3,3);
+    const Db = add(A, scl(kB, sub(B,C)));
+    const sC = math.fraction(aleaNonNul(-3,3), alea(1,3)), tC = aleaNonNul(-3,3);
+    const Dc = add(B, scl(sC, sub(A,C)), scl(tC, sub(A,B)));
+    ex.push({id:"17.5 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(\\overrightarrow{BD}=${coefPrefixeL(sC)}\\overrightarrow{AC}${tC>=0?'+':''}${coefPrefixeL(tC)}\\overrightarrow{AB}\\)`, pa: fracToStr(Dc[0]), pb: fracToStr(Dc[1])});
+    let pD, qD; do { pD = alea(1,4); qD = math.fraction(aleaNonNul(-3,3), alea(2,4)); } while (math.fraction(math.subtract(pD,qD)).n === 0);
+    const rD = aleaNonNul(-4,4);
+    // p*(D-A) = q*(D-B) + r*(C-A)  =>  D = (p*A - q*B + r*(C-A)) / (p-q)
+    const rhsD = add(scl(pD,A), scl(math.multiply(-1,qD),B), scl(rD, sub(A,C)));
+    const Dd = scl(math.divide(1, math.subtract(pD,qD)), rhsD);
+    ex.push({id:"17.5 c)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(${coefPrefixeL(pD)}\\overrightarrow{AD}=${coefPrefixeL(qD)}\\overrightarrow{BD}${rD>=0?'+':''}${coefPrefixeL(rD)}\\overrightarrow{AC}\\)`, pa: fracToStr(Dd[0]), pb: fracToStr(Dd[1])});
+  })();
+  // Calcul 17.8 - valeur de alpha telle que AB=u=(0,-1) (substitution kα)
+  (function() {
+    const k1 = aleaNonNul(-3,3);
+    const k2 = aleaNonNul(-3,3);
+    ex.push({id:"17.6 a)", type:"num", texteLibre:true, enonce:`Avec \\(A(2(${coefPrefixeL(k2)}\\alpha+1);${coefPrefixeL(k2)}\\alpha+2)\\) et \\(B(${coefPrefixeL(-k2)}\\alpha+11;2\\times ${coefPrefixeL(k2)}\\alpha-2)\\)`, reponse: fracToStr(math.fraction(3,k2))});
+    const k3 = aleaNonNul(-3,3);
+    ex.push({id:"17.6 b)", type:"num", texteLibre:true, enonce:`Avec \\(A\\left(-\\dfrac{1}{2};\\dfrac{15}{16}\\right)\\) et \\(B\\left(2\\times ${coefPrefixeL(k3)}\\alpha;${coefPrefixeL(k3)}\\alpha\\left(${coefPrefixeL(k3)}\\alpha+\\dfrac{1}{2}\\right)\\right)\\)`, reponse: fracToStr(math.fraction(-1,4*k3))});
+  })();
+  // Calcul 17.9 - couple (alpha,beta) tel que AB=0 (1 item)
+  (function() {
+    const r1=alea(-4,4), r2=alea(-4,4), r3=alea(-4,4), r4=alea(-4,4);
+    const beta = math.fraction((r2-r4)-2*(r1-r3), 8);
+    const alphaV = math.add(math.multiply(3,beta), math.fraction(r1-r3));
+    ex.push({id:"17.7", type:"paire", texteLibre:true, enonce:`Déterminer la valeur du couple de réels \\((\\alpha,\\beta)\\) tel que \\(\\overrightarrow{AB}=\\vec{0}\\). Avec \\(A(2\\alpha+\\beta${r1===0?'':(r1>0?'+':'')+r1};-\\alpha-2\\beta${r2===0?'':(r2>0?'+':'')+r2})\\) et \\(B(3\\alpha-2\\beta${r3===0?'':(r3>0?'+':'')+r3};\\alpha${r4===0?'':(r4>0?'+':'')+r4})\\)`, pa: fracToStr(alphaV), pb: fracToStr(beta)});
+  })();
+  // Calcul 17.10 - somme de vecteurs (2 items)
+  (function() {
+    const A=[alea(-8,8),alea(-8,8)], B=[alea(-8,8),alea(-8,8)];
+    const AB=[B[0]-A[0],B[1]-A[1]];
+    ex.push({id:"17.8 a)", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées de \\(\\overrightarrow{AB}\\)", pa: fracToStr(AB[0]), pb: fracToStr(AB[1])});
+    let u,v,det;
+    do { u=[alea(-6,6),alea(-6,6)]; v=[alea(-6,6),alea(-6,6)]; det=u[0]*v[1]-u[1]*v[0]; } while (det===0 || u[0]===0 || u[1]===0 || v[0]===0 || v[1]===0);
+    contexte22.g10 = {A,B,u,v};
+    const alphaV = math.fraction(AB[0]*v[1]-AB[1]*v[0], det);
+    const betaV = math.fraction(u[0]*AB[1]-u[1]*AB[0], det);
+    ex.push({id:"17.8 b)", type:"paire", texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{AB}\\) sous la forme \\(\\alpha\\vec{u}+\\beta\\vec{v}\\), où \\(\\alpha\\) et \\(\\beta\\) sont à déterminer", pa: fracToStr(alphaV), pb: fracToStr(betaV)});
+  })();
+  // Calcul 17.11 - point M tel que MA+MB+MC=0 (centroide, 1 item)
+  (function() {
+    const A=[alea(-8,8),alea(-8,8)], B=[alea(-8,8),alea(-8,8)], C=[alea(-8,8),alea(-8,8)];
+    const Mx = math.fraction(A[0]+B[0]+C[0], 3), My = math.fraction(A[1]+B[1]+C[1], 3);
+    ex.push({id:"17.9 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(A(${A[0]};${A[1]})\\), \\(B(${B[0]};${B[1]})\\) et \\(C(${C[0]};${C[1]})\\)`, pa: fracToStr(Mx), pb: fracToStr(My)});
+  })();
+  // Calcul 17.12 - point M avec alpha (mise a l'echelle globale, 1 item)
+  (function() {
+    const k = aleaNonNul(-4,4);
+    ex.push({id:"17.9 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(A(${coefPrefixeL(k)}\\alpha;${coefPrefixeL(k)}(\\alpha+2))\\), \\(B(${coefPrefixeL(k)}(\\alpha^2+1);${coefPrefixeL(2*k)}\\alpha)\\) et \\(C(${coefPrefixeL(-3*k)}\\alpha;0)\\), où \\(\\alpha\\in\\mathbb{R}\\)`, pa: `${k}*(a-1)^2/3`, pb: joinSigned([signedFracTerm(k,'a'), signedFracTerm(math.fraction(2*k,3),'')]), vars:["a"]});
+  })();
+  // Calcul 17.13 - norme de vecteur (4 items)
+  (function() {
+    let p1,q1; do { p1=aleaNonNul(-6,6); q1=aleaNonNul(-6,6); } while (p1*p1+q1*q1 === 0);
+    const A1=[alea(-6,6),alea(-6,6)]; const B1=[A1[0]+p1,A1[1]+q1];
+    const s1 = simplifierRacine(p1*p1+q1*q1);
+    const p2=aleaNonNul(-6,6), q2=aleaNonNul(-6,6), d2=alea(2,5);
+    const A2=[alea(-4,4),alea(-4,4)]; const B2=[math.add(A2[0],math.fraction(p2,d2)), math.add(A2[1],math.fraction(q2,d2))];
+    const s2 = simplifierRacine(p2*p2+q2*q2);
+    ex.push({id:"17.10 a)", type:"num", texteLibre:true, enonce:`Avec \\(A\\left(${A2[0]};${A2[1]}\\right)\\) et \\(B\\left(${fracL(B2[0])};${fracL(B2[1])}\\right)\\)`, reponse: surdTerm(math.fraction(s2.coef,d2), s2.radicand)});
+    const POOL_D = [2,3,5,6,7,10,11];
+    let D1,D2; do { D1=POOL_D[alea(0,POOL_D.length-1)]; D2=POOL_D[alea(0,POOL_D.length-1)]; } while (D1===D2);
+    const s3 = simplifierRacine(2*(D1+D2));
+    ex.push({id:"17.10 b)", type:"num", texteLibre:true, enonce:`Avec \\(A(\\sqrt{${D1}};\\sqrt{${D1}})\\) et \\(B(\\sqrt{${D2}};-\\sqrt{${D2}})\\)`, reponse: surdTerm(s3.coef, s3.radicand)});
+    const k4 = alea(2,4);
+  })();
+  // Calcul 17.14 - norme avec alpha (mise a l'echelle globale, 4 items)
+  (function() {
+    const k1 = alea(1,4);
+    ex.push({id:"17.10 c)", type:"alg", texteLibre:true, enonce:`Avec \\(A(${k1};${coefPrefixeL(-k1)}\\alpha^2)\\) et \\(B(${coefPrefixeL(k1)}\\alpha^2;${k1})\\), où \\(\\alpha\\geqslant 1\\)`, reponse: `${k1}*sqrt(2)*sqrt(lam^4+1)`});
+    const k2 = alea(1,4);
+    const k3 = [1,3][alea(0,1)];
+    ex.push({id:"17.10 d)", type:"alg", texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${coefPrefixeL(k3)}\\sqrt{\\alpha^2-1}}{2};-\\dfrac{${k3}}{2}\\right)\\) et \\(B\\left(\\dfrac{${k3}}{2};\\dfrac{${coefPrefixeL(k3)}\\sqrt{\\alpha^2-1}}{2}\\right)\\), où \\(\\alpha\\geqslant 1\\)`, reponse: `${k3}*sqrt(2)*lam/2`});
+    const k4 = alea(1,4);
+  })();
+  // Calcul 17.15 - colinearite (3 items, QCM parallele/secant)
+  (function() {
+    const lettres15 = ['a)','b)'];
+    lettres15.forEach(l => {
+      let A,B,AB;
+      do { A=[alea(-6,6),alea(-6,6)]; B=[alea(-6,6),alea(-6,6)]; AB=[B[0]-A[0],B[1]-A[1]]; } while (AB[0]===0 && AB[1]===0);
+      const estParallele = alea(0,1)===0;
+      const C=[alea(-6,6),alea(-6,6)];
+      let D;
+      if (estParallele) {
+        const m = aleaNonNul(-3,3);
+        D = [C[0]+m*AB[0], C[1]+m*AB[1]];
+      } else {
+        let CD;
+        do { CD = [alea(-6,6),alea(-6,6)]; } while (CD[0]*AB[1]-CD[1]*AB[0] === 0);
+        D = [C[0]+CD[0], C[1]+CD[1]];
+      }
+      ex.push({id:`17.11 ${l}`, type:"qcm", texteLibre:true, enonce:`Avec \\(A(${A[0]};${A[1]})\\), \\(B(${B[0]};${B[1]})\\), \\(C(${C[0]};${C[1]})\\) et \\(D(${D[0]};${D[1]})\\).`, bonneReponse: estParallele?'a':'b', options:[{lettre:"a",texte:"Les droites \\((AB)\\) et \\((CD)\\) sont parallèles",texteLibreOption:true},{lettre:"b",texte:"Les droites \\((AB)\\) et \\((CD)\\) sont sécantes",texteLibreOption:true}]});
+    });
+  })();
+  // Calcul 17.16 - lambda tel que u=lambda*v (identites figees, non randomisables sans perdre le deguisement algebrique)
+  ex.push({id:"17.12 a)", type:"num", texteLibre:true, enonce:"Avec \\(\\vec{u}\\begin{pmatrix}(\\alpha-\\dfrac{1}{2})^2-\\dfrac{1}{4}\\\\\\dfrac{1+\\alpha}{1-\\alpha^2}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}-\\alpha(\\alpha-1)\\\\\\dfrac{1}{\\alpha-1}\\end{pmatrix}\\)", reponse:"-1"});
+  ex.push({id:"17.12 b)", type:"alg", texteLibre:true, enonce:"Avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{\\alpha^n-\\alpha^{n+1}}{\\alpha-1}\\\\\\dfrac{\\alpha^n+\\alpha^{n+1}}{\\alpha+1}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}-\\alpha^{n+1}\\\\\\alpha^{n+1}\\end{pmatrix}\\)", reponse:"1/lam"});
+  // Calcul 17.17 - milieu I (4 items)
+  (function() {
+    const A1=[alea(-8,8),alea(-8,8)], B1=[alea(-8,8),alea(-8,8)];
+    const AI1=[math.fraction(B1[0]-A1[0],2), math.fraction(B1[1]-A1[1],2)];
+    const n2=alea(1,5), d2=alea(2,4), A2y=alea(-6,6);
+    const A2=[math.fraction(n2,d2), A2y]; const B2=[math.add(A2[0],alea(1,4)), alea(-6,6)];
+    const AI2=[math.divide(math.subtract(B2[0],A2[0]),2), math.fraction(B2[1]-A2[1],2)];
+    ex.push({id:"17.13 a)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(${fracL(A2[0])};${A2[1]}\\right)\\) et \\(B\\left(${fracL(B2[0])};${B2[1]}\\right)\\)`, pa: fracToStr(AI2[0]), pb: fracToStr(AI2[1])});
+    const POOL_D17 = [2,3,5,6,7]; const D3 = POOL_D17[alea(0,POOL_D17.length-1)];
+    const m3=alea(-6,6), p3=alea(-6,6);
+    // A(m3, sqrt(D3)), B(-sqrt(D3), p3) -> AI = ((-sqrt(D3)-m3)/2, (p3-sqrt(D3))/2)
+    const AI3x_rat = math.fraction(-m3,2), AI3y_rat = math.fraction(p3,2);
+    ex.push({id:"17.13 b)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(${m3};\\sqrt{${D3}}\\right)\\) et \\(B\\left(-\\sqrt{${D3}};${p3}\\right)\\)`, pa: joinSigned([signedFracTerm(AI3x_rat,''), signedFracTerm(math.fraction(-1,2), `sqrt(${D3})`)]), pb: joinSigned([signedFracTerm(AI3y_rat,''), signedFracTerm(math.fraction(-1,2), `sqrt(${D3})`)])});
+    const k4b = alea(1,4);
+    const k4bpref = k4b===1 ? '' : `${k4b}\\times `;
+  })();
+  // Calcul 17.18 - milieu I avec alpha (mise a l'echelle globale, 4 items)
+  (function() {
+    const k1 = [1,3][alea(0,1)];
+    ex.push({id:"17.13 c)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(${2*k1}\\alpha-${2*k1};\\dfrac{${k1}}{4}\\alpha+${2*k1}\\right)\\) et \\(B\\left(${4*k1}\\alpha;\\dfrac{${3*k1}}{4}\\alpha-${6*k1}\\right)\\)`, pa: `${k1}*(a+1)`, pb: `${k1}*(a/4-4)`, vars:["a"]});
+    const k2 = alea(1,4);
+    const k3 = alea(1,4);
+    ex.push({id:"17.13 d)", type:"paire", texteLibre:true, enonce:`Avec \\(A(${k3}+${coefPrefixeL(3*k3)}\\sqrt{\\alpha};-${coefPrefixeL(k3)}\\sqrt{\\alpha})\\) et \\(B(${k3}+${coefPrefixeL(k3)}\\sqrt{\\alpha};${coefPrefixeL(3*k3)}\\sqrt{\\alpha})\\), où \\(\\alpha\\geqslant 0\\)`, pa: `-${k3}*sqrt(a)`, pb: `${2*k3}*sqrt(a)`, vars:["a"]});
+    const k4 = alea(1,4);
+    const k4pref = k4===1 ? '' : `${k4}\\times `;
+  })();
+  // Calcul 17.19 - menelienne : relations purement symboliques en p,q,r, non randomisables (theoreme formel)
+  ex.push({id:"17.14 a)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{A'B}\\) en fonction de \\(p\\) et de \\(\\overrightarrow{BC}\\) (donner le coefficient de \\(\\overrightarrow{BC}\\))", reponse:"p/(1-p)"});
+  ex.push({id:"17.14 b)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{B'A}\\) en fonction de \\(q\\) et de \\(\\overrightarrow{AC}\\) (donner le coefficient de \\(\\overrightarrow{AC}\\))", reponse:"1/(q-1)"});
+  ex.push({id:"17.14 c)", type:"num", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{C'A}\\) en fonction de \\(r\\) et de \\(\\overrightarrow{AB}\\) (donner le coefficient de \\(\\overrightarrow{AB}\\), utiliser \\(b\\) pour désigner \\(r\\))", reponse:"b/(1-b)"});
+  ex.push({id:"17.14 d)", type:"paire", texteLibre:true, enonce:"Donner les coordonnées de \\(\\overrightarrow{B'C'}\\), en fonction de \\(q\\) et \\(r\\) (utiliser \\(b\\) pour désigner \\(r\\))", pa:"b/(b-1)", pb:"1/(q-1)", vars:["b","q"]});
+  ex.push({id:"17.14 e)", type:"paire", texteLibre:true, enonce:"Donner les coordonnées de \\(\\overrightarrow{A'B'}\\), en fonction de \\(p\\) et \\(q\\)", pa:"1/(p-1)", pb:"-(p*q-1)/((p-1)*(q-1))", vars:["p","q"]});
+  ex.push({id:"17.14 f)", type:"num", texteLibre:true, enonce:"Supposons que \\(pqr=1\\). Exprimer le vecteur \\(r(p-1)\\overrightarrow{A'B'}\\) en fonction de \\(r\\) et de \\(\\overrightarrow{B'C'}\\) (donner le coefficient de \\(\\overrightarrow{B'C'}\\), utiliser \\(b\\) pour désigner \\(r\\))", reponse:"b-1"});
+  // Calcul 17.20 - determinant d'un couple de vecteurs (5 items, avance)
+  (function() {
+    const P1=alea(-3,3),Q1=alea(-4,4),P2=alea(-3,3),Q2=alea(-4,4),P3=alea(-3,3),Q3=alea(-4,4),P4=alea(-3,3),Q4=alea(-4,4);
+    const c2 = P1*P4-P2*P3, c1 = P1*Q4+Q1*P4-P2*Q3-Q2*P3, c0 = Q1*Q4-Q2*Q3;
+    ex.push({id:"17.15 a)", type:"alg", texteLibre:true, enonce:`Si \\(\\vec{u}\\begin{pmatrix}${joinSigned([signedFracTermLatex(P1,'\\alpha'),signedFracTermLatex(Q1,'')])}\\\\${joinSigned([signedFracTermLatex(P2,'\\alpha'),signedFracTermLatex(Q2,'')])}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${joinSigned([signedFracTermLatex(P3,'\\alpha'),signedFracTermLatex(Q3,'')])}\\\\${joinSigned([signedFracTermLatex(P4,'\\alpha'),signedFracTermLatex(Q4,'')])}\\end{pmatrix}\\) alors \\(\\det(\\vec{u},\\vec{v})=\\)`, reponse: polyQuadStr(c2,c1,c0,'lam')});
 
-  // ---------- 19.1 : calculs de base ----------
-  {
-    const Ai = alea(1, 9), Bi = alea(1, 9);
-    ex.push({id:"17.1 a)", type: "num", enonce: `${decLatexFromFrac(Ai,10)}\\times ${decLatexFromFrac(Bi,100)}`, reponse: fracStr(Ai * Bi, 1000)});
+    const p2b = alea(1,4);
+    const R2=alea(-3,3),S2=alea(-3,3),T2=alea(-3,3),U2=alea(-3,3);
+    // u=(1/(a+p2b), R2*a+S2), v=(1/a, T2*a+U2) ; det = (T2 a+U2)/(a+p2b) - (R2 a+S2)/a
+    // = [a(T2 a+U2) - (a+p2b)(R2 a+S2)] / [a(a+p2b)]
+    const nc2 = T2 - R2, nc1 = U2 - R2*p2b - S2, nc0 = -S2*p2b;
 
-    let Ci, Di;
-    do { Ci = alea(1, 50); Di = alea(1, 50); } while (Ci + Di >= 100);
+    let p3c, q3c; do { p3c = aleaNonNul(-3,3); q3c = aleaNonNul(-3,3); } while (p3c === q3c);
+    ex.push({id:"17.15 b)", type:"alg", texteLibre:true, enonce:`Si \\(\\vec{u}\\begin{pmatrix}1\\\\-\\dfrac{1}{\\alpha${p3c>=0?'+':''}${p3c}}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}1\\\\-\\dfrac{1}{\\alpha${q3c>=0?'+':''}${q3c}}\\end{pmatrix}\\) alors \\(\\det(\\vec{u},\\vec{v})=\\)`, reponse: `${q3c-p3c}/((lam${p3c>=0?'+':''}${p3c})*(lam${q3c>=0?'+':''}${q3c}))`});
 
-    const N1 = alea(2, 40), D1 = alea(2, 40), N2 = alea(2, 40), D2 = alea(2, 40);
-    ex.push({id:"17.1 b)", type: "num", enonce: `\\dfrac{${N1}}{${D1}}\\times \\dfrac{${N2}}{${D2}}`, reponse: fracStr(N1 * N2, D1 * D2)});
-  }
+    const POOL_R = [1,2,3,-1,-2,-3,1/2,-1/2,3/2,-3/2];
+    function pickR() { return math.fraction(POOL_R[alea(0,POOL_R.length-1)]); }
+    let r1d, r2d; do { r1d = pickR(); r2d = pickR(); } while (math.fraction(math.subtract(r1d,r2d)).n === 0);
+    const kD = alea(1,3);
+    // u=(p*a+q, -a+S), v=(-kD*a, a-1) ; det=A(a-r1)(a-r2) avec A=p+kD (car R=-1 fixe), on fixe A=1
+    const pD = 1 + kD;
+    const qD = math.multiply(-1, math.multiply(r1d, r2d));
+    const Bcoef = math.multiply(-1, math.add(r1d, r2d));
+    const Sd = math.divide(math.add(math.subtract(Bcoef, qD), pD), kD);
+    ex.push({id:"17.15 c)", type:"num", texteLibre:true, enonce:`Valeurs de \\(\\alpha\\) pour lesquelles \\(\\vec{u}\\) et \\(\\vec{v}\\) sont colinéaires, avec \\(\\vec{u}\\begin{pmatrix}${pD}\\alpha${signedFracTermLatex(qD,'')}\\\\-\\alpha${signedFracTermLatex(Sd,'')}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(-kD)}\\alpha\\\\\\alpha-1\\end{pmatrix}\\)`, reponse: `{${fracToStr(r1d)};${fracToStr(r2d)}}`});
 
-  // ---------- 19.2 : calculs de base ----------
-  {
-    const Ai = alea(1, 9), Ci = 10 - Ai, Bi = alea(1, 9), Di = alea(1, 9);
-    ex.push({id:"17.1 c)", type: "num", enonce: `${decLatexFromFrac(Ai,10)}\\times ${decLatexFromFrac(Bi,10)}+${decLatexFromFrac(Ci,10)}\\times ${decLatexFromFrac(Di,10)}`, reponse: fracStr(Ai * Bi + Ci * Di, 100)});
-
-    const V1 = alea(-10, 10), V2 = alea(-10, 10), V3 = alea(-10, 10);
-    const termes = [[V1, 6], [V2, 3], [V3, 2]].map(([v, den]) => (v < 0 ? '-' : '+') + Math.abs(v) + `\\times \\dfrac{1}{${den}}`);
-    const enonce2b = termes.join('').replace(/^\+/, '');
-    ex.push({id:"17.1 d)", type: "num", enonce: enonce2b, reponse: fracStr(V1 + 2 * V2 + 3 * V3, 6)});
-  }
-
-  // ---------- 19.3 : avec parametres p et a ----------
-  {
-    const Ai = alea(5, 95), Bi = alea(5, 95);
-    const coefStr = fracStr(Ai - Bi, 100);
-    const reponse3a = coefStr.startsWith('-') ? `${fracStr(Bi,100)}-${coefStr.slice(1)}*p` : `${fracStr(Bi,100)}+${coefStr}*p`;
-    ex.push({id:"17.2 a)", type: "alg", texteLibre: true, enonce: `\\(p\\times ${decLatexFromFrac(Ai,100)}+(1-p)\\times ${decLatexFromFrac(Bi,100)}\\)`, reponse: reponse3a});
-
-    const K = alea(1, 4);
-    ex.push({id:"17.2 b)", type: "alg", texteLibre: true, enonce: `\\(-a(${K}-a)+(${K*K}-a^2)\\)`, reponse: `${K*K}-${coefPrefixe(K)}a`});
-  }
-
-  // ---------- 19.4 : tableau de probabilites ----------
-  {
-    let pAB, pAnB, pnAB, pnAnB;
-    do {
-      pAB = alea(10, 50); pAnB = alea(5, 30); pnAB = alea(5, 30);
-      pnAnB = 100 - pAB - pAnB - pnAB;
-    } while (pnAnB < 5 || pnAnB > 60);
-    const colA = pAB + pnAB, rowB = pAB + pAnB, colAbar = pAnB + pnAnB;
-    ex.push({id:"17.3 a)", type: "num", texteLibre: true, enonce: "\\(P(\\overline{A})\\)", reponse: fracStr(colAbar, 100)});
-    ex.push({id:"17.3 b)", type: "num", texteLibre: true, enonce: "\\(P(A∪B)\\)", reponse: fracStr(colA + rowB - pAB, 100)});
-    ex.push({id:"17.3 c)", type: "num", texteLibre: true, enonce: "\\(P(\\overline{A}∩B)\\)", reponse: fracStr(pAnB, 100)});
-    paramsAvances.g4 = {pAB, pAnB, pnAB, pnAnB};
-  }
-
-  // ---------- 19.5 : tableau d'effectifs ----------
-  {
-    const nAB = alea(30, 250), nAnB = alea(30, 250), nnAB = alea(30, 250), nnAnB = alea(30, 250);
-    const rowB = nAB + nAnB, rowBbar = nnAB + nnAnB, colA = nAB + nnAB, colAbar = nAnB + nnAnB, N = rowB + rowBbar;
-    ex.push({id:"17.4 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(B)\\)", reponse: fracStr(rowB, N)});
-    ex.push({id:"17.4 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(A∩B)\\)", reponse: fracStr(nAB, N)});
-    ex.push({id:"17.4 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(\\overline{A}∩\\overline{B})\\)", reponse: fracStr(nnAnB, N)});
-    paramsAvances.g5 = {nAB, nAnB, nnAB, nnAnB, rowB, rowBbar, colA, colAbar, N};
-  }
-
-  // ---------- 19.6 : deux evenements ----------
-  {
-    const q = alea(10, 60), r = alea(5, q - 5);
-    ex.push({id:"17.5 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∪B)\\)", reponse: fracStr(100 - q + r, 100)});
-    ex.push({id:"17.5 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A)\\)", reponse: fracStr(100 - q, 100)});
-    paramsAvances.g6 = {q, r};
-  }
-
-  // ---------- 19.7 : probleme concret ski/rando ----------
-  {
-    const Dw = [3, 4, 5, 6][alea(0, 3)];
-    const N7 = alea(10, 30) * 20;
-    const sMult = alea(3, 8);
-    const S7 = Dw * sMult, nBoth7 = sMult;
-    const nNeither7 = Math.round((N7 - S7) * (alea(40, 70) / 100));
-    const nRandoOnly7 = N7 - nNeither7 - S7;
-    const nRandoTotal7 = nRandoOnly7 + nBoth7;
-    ex.push({id:"17.6 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "la probabilité que la personne fasse du ski et de la randonnée", reponse: fracStr(nBoth7, N7)});
-    ex.push({id:"17.6 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(S∪R)\\)", reponse: fracStr(S7 + nRandoOnly7, N7)});
-    ex.push({id:"17.6 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P_R(S)\\)", reponse: fracStr(nBoth7, nRandoTotal7)});
-    paramsAvances.g7 = {N7, S7, Dw, nNeither7};
-  }
-
-  // ---------- 19.8 : tableau avec n (fixe) ----------
-  ex.push({id:"17.7 a)", type: "alg", texteLibre: true, enonce: "\\(P_A(B)\\)", reponse: "n/(n+1)"});
-  ex.push({id:"17.7 b)", type: "alg", texteLibre: true, enonce: "\\(P_B(A)\\)", reponse: "n/(3*n+2)"});
-
-  // ---------- 19.9 : arbre ----------
-  {
-    const dC = [2, 3, 4][alea(0, 2)], nC = alea(1, dC - 1);
-    const pC = math.fraction(nC, dC), pCbar = math.subtract(1, pC);
-    const dQ1 = [2, 3, 4][alea(0, 2)], nQ1 = alea(1, dQ1 - 1), q1 = math.fraction(nQ1, dQ1);
-    const dQ2 = [2, 3, 4][alea(0, 2)], nQ2 = alea(1, dQ2 - 1), q2 = math.fraction(nQ2, dQ2);
-    const q1bar = math.subtract(1, q1), q2bar = math.subtract(1, q2);
-    const pD = math.add(math.multiply(pC, q1), math.multiply(pCbar, q2));
-    const pDbar = math.subtract(1, pD);
-    const pCandDbar = math.multiply(pC, q1bar);
-    const pCgivenD = math.divide(math.multiply(pC, q1), pD);
-    ex.push({id:"17.8 a)", type: "num", texteLibre: true, enonce: "\\(P(C∩\\overline{D})\\)", reponse: fracToStr(pCandDbar)});
-    ex.push({id:"17.8 b)", type: "num", texteLibre: true, enonce: "\\(P(D)\\)", reponse: fracToStr(pD)});
-    ex.push({id:"17.8 c)", type: "num", texteLibre: true, enonce: "\\(P_D(C)\\)", reponse: fracToStr(pCgivenD)});
-    paramsAvances.g9 = {pC, pCbar, q1, q1bar, q2, q2bar};
-  }
-
-  // ---------- 19.10 : probabilites conditionnelles I ----------
-  {
-    const p = alea(10, 80), q = alea(10, 90);
-    ex.push({id:"17.9 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(\\overline{A})\\)", reponse: fracStr(100 - p, 100)});
-    ex.push({id:"17.9 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∩B)\\)", reponse: fracStr(p * q, 10000)});
-    paramsAvances.g10 = {p, q};
-  }
-
-  // ---------- 19.11 : probabilites conditionnelles II ----------
-  {
-    const p = alea(5, 20), r = alea(50, 90);
-    const pABnum = p * r;
-    const q0 = alea(Math.ceil(pABnum / 100) + 1, 95);
-    ex.push({id:"17.10 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P_B(A)\\)", reponse: fracStr(pABnum, q0 * 100)});
-    ex.push({id:"17.10 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∪B)\\)", reponse: fracStr(100 * p + 100 * q0 - pABnum, 10000)});
-    paramsAvances.g11 = {p, q0, r};
-  }
-
-  // ---------- 19.12 : probleme concret musique ----------
-  {
-    const m = alea(15, 45), sMin = alea(10, 40), sMaj = alea(40, 80);
-    const pS = m * sMin + (100 - m) * sMaj;
-    ex.push({id:"17.11 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(J∩S)\\)", reponse: fracStr(m * sMin, 10000)});
-    ex.push({id:"17.11 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "la probabilité que la personne interrogée écoute de la musique en streaming", reponse: fracStr(pS, 10000)});
-    ex.push({id:"17.11 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P_S(J)\\)", reponse: fracStr(m * sMin, pS)});
-    paramsAvances.g12 = {m, sMin, sMaj};
-  }
-
-  // ---------- 19.13 : evenements independants ----------
-  {
-    const p = alea(20, 90), q = alea(10, 50);
-    ex.push({id:"17.12 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∩B)\\)", reponse: fracStr(p * q, 10000)});
-    ex.push({id:"17.12 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∪B)\\)", reponse: fracStr(100 * p + 100 * q - p * q, 10000)});
-    paramsAvances.g13 = {p, q};
-  }
-
-  // ---------- 19.14 : arbre a 3 branches ----------
-  {
-    let p1, p2, p3;
-    do { p1 = alea(10, 70); p2 = alea(10, 70); p3 = 100 - p1 - p2; } while (p3 < 5 || p3 > 70);
-    const q1 = alea(10, 90), q2 = alea(10, 90), q3 = alea(10, 90);
-    const pD14 = p1 * q1 + p2 * q2 + p3 * q3;
-    ex.push({id:"17.13 a)", type: "num", texteLibre: true, enonce: "\\(P(C)\\)", reponse: fracStr(p3, 100)});
-    ex.push({id:"17.13 b)", type: "num", texteLibre: true, enonce: "\\(P(D)\\)", reponse: fracStr(pD14, 10000)});
-    ex.push({id:"17.13 c)", type: "num", texteLibre: true, enonce: "\\(P_D(A)\\)", reponse: fracStr(p1 * q1, pD14)});
-    paramsAvances.g14 = {p1, p2, p3, q1, q2, q3};
-  }
-
-  // ---------- 19.15 : evenements independants ----------
-  {
-    const p = alea(30, 90), q = alea(20, 80);
-    ex.push({id:"17.14 a)", type: "num", texteLibre: true, enonce: "Calculer \\(P(B)\\)", reponse: fracStr(q, 100)});
-    ex.push({id:"17.14 b)", type: "num", texteLibre: true, enonce: "Calculer \\(P(A∩\\overline{B})\\)", reponse: fracStr(100 * p - p * q, 10000)});
-    paramsAvances.g15 = {p, q};
-  }
-
-  // ---------- 19.16 : arbre avec parametre x ----------
-  {
-    const K = alea(2, 4);
-    const fracs = [[1, 2], [1, 3], [1, 4], [2, 3], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5]];
-    const [Fp, Fq] = fracs[alea(0, fracs.length - 1)];
-    const [Gp, Gq] = fracs[alea(0, fracs.length - 1)];
-    const C1 = Fp * Gq, C2 = Gp * Fq, A16 = C2, B16 = C1 + C2 * (K - 1), D16 = Fq * Gq;
-    ex.push({id:"17.15 a)", type: "alg", texteLibre: true, enonce: "\\(P(A∩B)\\)", reponse: `${Fp}/(${Fq}*(x+${K}))`});
-    ex.push({id:"17.15 b)", type: "alg", texteLibre: true, enonce: "\\(P(B)\\)", reponse: `(${B16}+${coefPrefixe(A16)}x)/(${D16}*(x+${K}))`});
-    ex.push({id:"17.15 c)", type: "alg", texteLibre: true, enonce: "\\(P_B(A)\\)", reponse: `${C1}/(${B16}+${coefPrefixe(A16)}x)`});
-    paramsAvances.g16 = {K, Fp, Fq, Gp, Gq};
-  }
-
-  // ---------- 19.17 : loi de probabilite incomplete ----------
-  {
-    let v = [];
-    do {
-      v = [alea(3,25), alea(3,25), alea(3,25), alea(3,25), alea(3,25)];
-    } while (v.reduce((a,b)=>a+b,0) >= 95);
-    const sum5 = v.reduce((a,b)=>a+b,0);
-    const missing = 100 - sum5;
-    ex.push({id:"17.16 a)", type: "num", texteLibre: true, enonce: "\\(P(X=5)\\)", reponse: fracStr(missing, 100)});
-    ex.push({id:"17.16 b)", type: "num", texteLibre: true, enonce: "\\(P(X≤4)\\)", reponse: fracStr(v[0]+v[1]+v[2]+v[3], 100)});
-    paramsAvances.g17 = {v, missing};
-  }
-
-  // ---------- 19.18 : esperance et variance ----------
-  {
-    let p0, p1v, p2v, p3v;
-    do {
-      p0 = alea(5, 40); p1v = alea(5, 40); p2v = alea(5, 40);
-      p3v = 100 - p0 - p1v - p2v;
-    } while (p3v < 5 || p3v > 60);
-    const EX = 0*p0 + 1*p1v + 2*p2v + 3*p3v; // out of 100
-    const EX2 = 0*p0 + 1*p1v + 4*p2v + 9*p3v; // out of 100
-    // V(X) = E(X^2) - E(X)^2, exact via fractions (percent/100)
-    const EXf = math.fraction(EX, 100), EX2f = math.fraction(EX2, 100);
-    const VXf = math.subtract(EX2f, math.multiply(EXf, EXf));
-    ex.push({id:"17.17 a)", type: "num", texteLibre: true, enonce: "\\(E(X)\\)", reponse: fracToStr(EXf)});
-    ex.push({id:"17.17 b)", type: "num", texteLibre: true, enonce: "\\(V(X)\\)", reponse: fracToStr(VXf)});
-    paramsAvances.g18 = {p0, p1v, p2v, p3v};
-  }
-
-  // ---------- 19.19 : loi cumulative ----------
-  {
-    const Dtot = [20, 24, 28, 30, 36][alea(0, 4)];
-    let n = [];
-    do {
-      let rest = Dtot, parts = [];
-      for (let i = 0; i < 5; i++) { const maxV = Math.max(1, rest - (5 - i)); const v2 = alea(1, Math.max(1, Math.min(maxV, Math.floor(Dtot/3)))); parts.push(v2); rest -= v2; }
-      parts.push(rest);
-      n = parts;
-    } while (n.some(x => x < 1) || n[5] < 1);
-    let cum = 0; const C = n.map(x => (cum += x));
-    ex.push({id:"17.18 a)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(X=3)\\)", reponse: fracStr(n[2], Dtot)});
-    ex.push({id:"17.18 b)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: "\\(P(X=4)\\)", reponse: fracStr(n[3], Dtot)});
-    paramsAvances.g19 = {n, C, Dtot};
-  }
-
-  // ---------- 19.20 : E(X+m) ----------
-  {
-    const xs = [-2, -1, 0, 1, alea(3, 6)];
-    let pr;
-    do {
-      const a1 = alea(5, 40), a2 = alea(5, 40), a3 = alea(5, 40), a4 = alea(5, 40);
-      const a5 = 100 - a1 - a2 - a3 - a4;
-      pr = [a1, a2, a3, a4, a5];
-    } while (pr[4] < 5 || pr[4] > 50);
-    const EX20 = xs.reduce((s, x, i) => s + x * pr[i], 0); // out of 100
-    ex.push({id:"17.19", type: "num", texteLibre: true, enonce: "Déterminer \\(m\\) pour que \\(E(X+m)=0\\)", reponse: fracStr(-EX20, 100)});
-    paramsAvances.g20 = {xs, pr};
-  }
-
-  // ---------- 19.21 : arbre avec parametre a (fixe) ----------
-  ex.push({id:"17.20 a)", type: "alg", texteLibre: true, enonce: "\\(P(B)\\)", reponse: "a*(1-a)*(1+2*a)"});
-  ex.push({id:"17.20 b)", type: "alg", texteLibre: true, enonce: "\\(P_B(A)\\)", reponse: "a/(1+2*a)"});
-
-  // ---------- 19.22 : variable aleatoire uniforme (fixe) ----------
-  ex.push({id:"17.21 a)", type: "alg", texteLibre: true, enonce: "\\(E(X)\\)", reponse: "(n+1)/2"});
-  ex.push({id:"17.21 b)", type: "alg", texteLibre: true, enonce: "\\(V(X)\\)", reponse: "(n-1)*(n+1)/12"});
-
-  // ---------- 19.23 : variable aleatoire geometrique (fixe) ----------
-  ex.push({id:"17.22", type: "alg", texteLibre: true, enonce: "Calculer \\(E(X)\\)", reponse: "(1-a^(n+1))/((n+1)*(1-a))"});
-
-  // ---------- 19.24 : variable aleatoire a 2 valeurs (fixe) ----------
-  ex.push({id:"17.23 a)", type: "alg", texteLibre: true, enonce: "\\(E(X)\\)", reponse: "-x^2+2*x"});
-  ex.push({id:"17.23 b)", type: "alg", texteLibre: true, enonce: "\\(V(X)\\)", reponse: "x*(1-x)^3"});
+    let r1e, r2e; do { r1e = math.fraction(alea(-3,3),alea(1,2)); r2e = math.fraction(alea(-3,3),alea(1,2)); } while (math.fraction(math.subtract(r1e,r2e)).n === 0 || math.fraction(math.multiply(math.add(1,r1e),math.add(1,r2e))).n === 0);
+    const Ae = math.divide(math.fraction(-4), math.multiply(math.add(1,r1e), math.add(1,r2e)));
+    const Pe = math.add(Ae,1);
+    const Qe = math.add(math.multiply(Ae, math.multiply(r1e,r2e)), 1);
+    ex.push({id:"17.15 d)", type:"num", texteLibre:true, enonce:`Valeurs de \\(\\alpha\\) pour lesquelles \\(\\vec{u}\\) et \\(\\vec{v}\\) sont colinéaires, avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{${coefPrefixeL(Pe)}\\alpha${signedFracTermLatex(Qe,'')}}{\\alpha-1}\\\\\\dfrac{1}{\\alpha+1}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\alpha-1\\\\1\\end{pmatrix}\\)`, reponse: `{${fracToStr(r1e)};${fracToStr(r2e)}}`});
+  })();
 
   return ex;
 }
+function mettreAJourTextesAvances() {
+  const g6 = contexte22.g6;
+  const t6 = document.getElementById('texte-17-4');
+  if (g6 && t6) t6.innerHTML = `On considère les points \\(A(${g6.A[0]};${g6.A[1]})\\), \\(B(${g6.B[0]};${g6.B[1]})\\) et \\(C(${g6.C[0]};${g6.C[1]})\\), ainsi que le point \\(D(x;y)\\) vérifiant \\(\\overrightarrow{AB}=\\overrightarrow{DC}\\). Calculer les coordonnées de :`;
+  const g7 = contexte22.g7;
+  const t7 = document.getElementById('texte-17-5');
+  if (g7 && t7) t7.innerHTML = `On considère les points \\(A(${g7.A[0]};${g7.A[1]})\\), \\(B(${g7.B[0]};${g7.B[1]})\\) et \\(C(${g7.C[0]};${g7.C[1]})\\). En utilisant la même méthode que dans l'exercice précédent, déterminer dans chacun des cas suivants les coordonnées du point \\(D\\) vérifiant :`;
+  const g10 = contexte22.g10;
+  const t10 = document.getElementById('texte-17-8');
+  if (g10 && t10) t10.innerHTML = `On considère les points \\(A(${g10.A[0]};${g10.A[1]})\\) et \\(B(${g10.B[0]};${g10.B[1]})\\) et les vecteurs \\(\\vec{u}\\begin{pmatrix}${g10.u[0]}\\\\${g10.u[1]}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${g10.v[0]}\\\\${g10.v[1]}\\end{pmatrix}\\).`;
+}
+// Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
+// Table declarative, cle = identifiant complet ou prefixe de groupe. La valeur 'numerateur'
+// restreint l'exigence au numerateur du quotient obtenu. Tout exercice absent de cette table
+// est volontairement hors exigence (consigne souple, simplification, question preparatoire).
+const FORMES_FACTORISEES = { '17.2': true };
+function marquerFormesFactorisees(liste) {
+  return liste.map(function (ex) {
+    const id = String(ex.id).trim();
+    const groupe = id.replace(/\s*[a-z]\)\s*$/, '').trim();
+    const portee = Object.prototype.hasOwnProperty.call(FORMES_FACTORISEES, id)
+      ? FORMES_FACTORISEES[id]
+      : FORMES_FACTORISEES[groupe];
+    return portee ? Object.assign({}, ex, { formeFactorisee: portee }) : ex;
+  });
+}
 
-let exercices = genererExercices();
+let exercices = marquerFormesFactorisees(genererExercices());
 
 const groupes = {
-  "grille-17-1": [0,1,2,3],
-  "grille-17-2": [4,5],
-  "grille-17-3": [6,7,8],
-  "grille-17-4": [9,10,11],
-  "grille-17-5": [12,13],
-  "grille-17-6": [14,15,16],
-  "grille-17-7": [17,18],
-  "grille-17-8": [19,20,21],
-  "grille-17-9": [22,23],
-  "grille-17-10": [24,25],
-  "grille-17-11": [26,27,28],
-  "grille-17-12": [29,30],
-  "grille-17-13": [31,32,33],
-  "grille-17-14": [34,35],
-  "grille-17-15": [36,37,38],
-  "grille-17-16": [39,40],
-  "grille-17-17": [41,42],
-  "grille-17-18": [43,44],
-  "grille-17-19": [45],
-  "grille-17-20": [46,47],
-  "grille-17-21": [48,49],
-  "grille-17-22": [50],
-  "grille-17-23": [51,52]
+  "grille-17-1": [0,1,2],
+  "grille-17-2": [3,4,5],
+  "grille-17-3": [6,7,8,9],
+  "grille-17-4": [10,11],
+  "grille-17-5": [12,13,14],
+  "grille-17-6": [15,16],
+  "grille-17-7": [17],
+  "grille-17-8": [18,19],
+  "grille-17-9": [20,21],
+  "grille-17-10": [22,23,24,25],
+  "grille-17-11": [26,27],
+  "grille-17-12": [28,29],
+  "grille-17-13": [30,31,32,33],
+  "grille-17-14": [34,35,36,37,38,39],
+  "grille-17-15": [40,41,42,43]
 };
 const lettresEtendues = ["a","b","c","d","e","f"];
 
@@ -1613,47 +1601,34 @@ function normaliserSaisie(str) {
   return s;
 }
 
-// Une consigne "sous forme de fraction irreductible" n'etait controlee que par l'egalite
-// numerique : 4/6 passait pour 2/3, de meme qu'une ecriture decimale ou le calcul non effectue.
-// On controle donc aussi la FORME : un entier, ou un quotient de deux entiers premiers entre eux.
-// facteurSymbolique ('pi' pour les angles en radians) exige en plus la presence de ce symbole.
-function estFractionIrreductible(userInput, facteurSymbolique) {
+// Une consigne "Factoriser" n'etait controlee que par l'egalite numerique : repondre x^2-64
+// a « factoriser x^2-64 » etait donc accepte, la question passant pour sa propre reponse.
+// On controle aussi la FORME : la racine de l'arbre doit etre un produit ou une puissance.
+// portee vaut 'numerateur' quand la consigne ne demande de factoriser que le numerateur
+// du quotient obtenu (« calculer f'(x) puis factoriser le numerateur »).
+function estFactorise(userInput, portee) {
   try {
     const sansParentheses = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
-    const moinsUnaire = (n) => n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1;
-    const estDivision = (n) => n.type === 'OperatorNode' && n.op === '/';
-    const valeurEntiere = (n) => {
-      const v = n.evaluate();
-      return (typeof v === 'number' && Number.isInteger(v)) ? v : null;
+    // un noeud est constant si son evaluation aboutit sans variable libre
+    const estConstant = (n) => { try { n.evaluate(); return true; } catch(e) { return false; } };
+    const estProduit = (n) => {
+      n = sansParentheses(n);
+      if (n.type !== 'OperatorNode') return false;
+      if (n.op === '*' || n.op === '^') return true;
+      if (n.op === '-' && n.args.length === 1) return estProduit(n.args[0]); // -(x-3)(x+3)
+      // un produit divise par une constante reste une forme factorisee : (3x-1)^2/9
+      if (n.op === '/' && estConstant(n.args[1])) return estProduit(n.args[0]);
+      return false; // somme, difference, quotient par une expression : rien n'est factorise
     };
-    let noeud = math.parse(normaliserSaisie(userInput));
-    if (facteurSymbolique) {
-      // on remplace le symbole par 1 pour se ramener au cas numerique, apres avoir verifie
-      // qu'il figure bien dans la reponse : un angle en radians doit s'exprimer avec pi
-      let present = false;
-      noeud = noeud.transform((n) => {
-        if (n.type === 'SymbolNode' && n.name === facteurSymbolique) { present = true; return new math.ConstantNode(1); }
-        return n;
-      });
-      if (!present) return false;
-    }
-    noeud = sansParentheses(noeud);
-    while (moinsUnaire(noeud)) noeud = sansParentheses(noeud.args[0]);
-    // ecriture "fraction en facteur" : (5/12)*pi devient (5/12)*1 apres substitution
-    if (noeud.type === 'OperatorNode' && noeud.op === '*') {
-      const membres = noeud.args.map(sansParentheses);
-      const divisions = membres.filter(estDivision);
-      if (divisions.length === 1 && membres.filter((m) => !estDivision(m)).every((m) => valeurEntiere(m) === 1)) {
-        noeud = divisions[0];
+    let noeud = sansParentheses(math.parse(normaliserSaisie(userInput)));
+    if (portee === 'numerateur') {
+      while (noeud.type === 'OperatorNode' && noeud.op === '-' && noeud.args.length === 1) {
+        noeud = sansParentheses(noeud.args[0]);
       }
+      if (!(noeud.type === 'OperatorNode' && noeud.op === '/')) return false;
+      return estProduit(noeud.args[0]);
     }
-    if (!estDivision(noeud)) return valeurEntiere(noeud) !== null;
-    const num = valeurEntiere(sansParentheses(noeud.args[0]));
-    let denNoeud = sansParentheses(noeud.args[1]);
-    if (moinsUnaire(denNoeud)) denNoeud = sansParentheses(denNoeud.args[0]);
-    const den = valeurEntiere(denNoeud);
-    if (num === null || den === null || den === 0) return false;
-    return pgcd(num, den) === 1;
+    return estProduit(noeud);
   } catch(e) {
     return false;
   }
@@ -1873,6 +1848,12 @@ function checkVecteur(userInput, correctX, correctY, vars) {
   } catch(e) { return false; }
 }
 
+function checkPointCoordonnees(userInput, correctA, correctB, vars) {
+  const nettoye = String(userInput).trim();
+  const m = nettoye.match(/^\((.*)\)$/);
+  if (!m) return false;
+  return checkPaire(m[1], correctA, correctB, vars);
+}
 function checkPaire(userInput, correctA, correctB, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
   if (entoureParParentheses(nettoye)) {
@@ -2013,6 +1994,8 @@ function valeurDuChamp(el) {
   if (el.tagName === 'MATH-FIELD') {
     let v = el.getValue('ascii-math').trim();
     // normaliser les lettres grecques residuelles vers la convention interne (alpha/lambda -> lam, beta -> bet)
+    // lookbehind/lookahead sur lettre (pas \b) : \b echoue quand la lettre grecque est collee a un chiffre
+    // (ex. "6lambda", produit naturellement par MathLive quand un coefficient est glue au symbole sans *)
     v = v.replace(/(?<![a-zA-Z])alpha(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])lambda(?![a-zA-Z])/g, 'lam').replace(/(?<![a-zA-Z])beta(?![a-zA-Z])/g, 'bet');
     // normaliser l'indice y_t (saisi via MathLive) vers la convention interne yt
     v = v.replace(/\by_t\b/g, 'yt').replace(/\by_\{t\}/g, 'yt');
@@ -2171,12 +2154,13 @@ function verifierUne(idx) {
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
+  else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
-  else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
     div.classList.add(ok ? 'correct' : 'incorrect');
@@ -2245,26 +2229,12 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') fermerModaleDevoir();
 });
 
-// Etat auxiliaire de rendu (courbes/QCM, voir plus haut dans le fichier) :
-// non lu par verifierUne (qui se contente de exercices[idx]), mais
-// necessaire pour reafficher exactement le meme rendu a la reprise d'un
-// brouillon plutot que d'en regenerer un nouveau, incoherent avec la
-// reponse deja enregistree. Voir le commentaire au-dessus de
-// enregistrerBrouillon dans assets/js/suivi.js.
-function etatSupplementairePourBrouillon() {
-  return { paramsAvances };
-}
-function restaurerEtatSupplementaire(extra) {
-  if (!extra) return;
-  if (extra.paramsAvances !== undefined) paramsAvances = extra.paramsAvances;
-}
-
 async function enregistrerBrouillonActuel() {
   if (!window.enregistrerBrouillon) return;
   const bouton = document.getElementById('btn-enregistrer');
   if (bouton) bouton.disabled = true;
   try {
-    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE, etatSupplementairePourBrouillon());
+    await window.enregistrerBrouillon(FICHE_ID, exercices, saisies, PASSE_ACTUELLE);
     afficherEtatSuivi('Avancement enregistré — tu pourras reprendre cette fiche plus tard.');
   } catch (erreur) {
     afficherEtatSuivi("Échec de l'enregistrement (connexion internet ?).");
@@ -2456,25 +2426,6 @@ function convertirSqrt(s) {
   }
   return s;
 }
-function convertirExposant(s) {
-  let result = '';
-  for (let i = 0; i < s.length; i++) {
-    if (s[i] === '^' && s[i+1] === '(') {
-      let depth = 1, j = i + 2;
-      while (j < s.length && depth > 0) {
-        if (s[j] === '(') depth++;
-        else if (s[j] === ')') depth--;
-        j++;
-      }
-      const inner = s.slice(i+2, j-1);
-      result += '^{' + inner + '}';
-      i = j - 1;
-    } else {
-      result += s[i];
-    }
-  }
-  return result;
-}
 // certaines variables du site (m, t, b, g, h, N, ...) coincident avec des unites physiques connues
 // de math.js (metre, tonne, bit, gramme, heure, newton...) : math.js les evalue/typeset alors comme
 // des unites (rendu droit "\mathrm{m}") plutot que comme de simples variables. On les protege avant
@@ -2594,6 +2545,9 @@ function formaterReponse(ex) {
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
     }
+    if (ex.type === 'paire') {
+      return `\\left(${jsVersLatex(ex.pa)}\\,;\\,${jsVersLatex(ex.pb)}\\right)`;
+    }
     if (ex.type === 'alg') {
       return jsVersLatex(ex.reponse);
     }
@@ -2682,21 +2636,18 @@ async function genererNouvelleFiche() {
     if (!confirmation) return;
   }
   PASSE_ACTUELLE = genererIdPasse();
-  exercices = genererExercices();
+  exercices = marquerFormesFactorisees(genererExercices());
   saisies = {};
   ficheValidee = false;
   mettreAJourEtatBoutons();
   if (window.supprimerBrouillon) window.supprimerBrouillon(FICHE_ID);
   const zoneEtatGnf = document.getElementById('suivi-etat');
   if (zoneEtatGnf) zoneEtatGnf.hidden = true;
+  mettreAJourTextesAvances();
   construireGrilles();
   attacherEcouteurs();
   attacherEcouteursTactiles();
-  mettreAJourTextesAvances();
-  construireArbre19_9();
-  construireArbre19_14();
-  construireArbre19_16();
-  activerZoomSvg(document.body);
+  construireGraphique22_19();
   document.getElementById('score-panneau').classList.remove('visible');
   document.getElementById('correction-panneau').classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
@@ -2725,6 +2676,7 @@ function toggleToutesReponses() {
 }
 
 function placeholderPour(ex) {
+  if (ex.formePoint) return '(x;y)';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -2734,10 +2686,14 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
-  if (ex.fractionIrreductible) {
-    return ex.facteurSymbolique === 'pi'
-      ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
-      : "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>, ni un calcul comme <code>1/2+1/6</code>. Si le résultat est un entier, l'écrire tel quel.";
+  if (ex.formeFactorisee === 'numerateur') {
+    return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
+  }
+  if (ex.formeFactorisee) {
+    return "La réponse doit être un produit de facteurs : par exemple <code>(x+2)(x-2)</code>, <code>(x+5)^2</code> ou <code>x(3x+1)</code>. Une expression développée n'est pas acceptée, même si elle est égale.";
+  }
+  if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) {
+    return "Écrire la réponse sous forme d'un vecteur exprimé avec les points de l'énoncé, par exemple <code>2AB</code>, <code>-AB+3AC</code> ou <code>1/2AB</code> (utiliser <code>*</code> pour une multiplication explicite si besoin).";
   }
   if (ex.type === 'ineq') {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
@@ -2763,6 +2719,9 @@ function aideContextuellePour(ex) {
   if (ex.type === 'somme') {
     return "Écrire directement <code>sum(k,1,n,expr)</code> au clavier pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le symbole &Sigma; du clavier virtuel (Maj + touche <code>+</code>) fonctionne aussi si besoin.";
   }
+  if (ex.formePoint) {
+    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code>.";
+  }
   if (ex.type === 'paire') {
     return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
   }
@@ -2776,8 +2735,9 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
-  if (ex.fractionIrreductible) return true;
+  if (ex.formeFactorisee) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
+  if (ex.type === 'texte' && ex.reponse && /[A-Z]{2}/.test(ex.reponse)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
@@ -2834,25 +2794,20 @@ function construireGrilles() {
     const grille = document.getElementById(gridId);
     grille.innerHTML = '';
     injecterAideGroupe(gridId, indices);
-    // une seule question dans la section : pas de lettre (rien a distinguer) et la carte prend
-    // toute la largeur plutot que de laisser une colonne vide a cote (David, 2026-09-22, porte
-    // depuis la fiche 19 de Seconde).
-    const seul = indices.length === 1;
     indices.forEach((idx, pos) => {
       const ex = exercices[idx];
       const div = document.createElement('div');
-      div.className = seul ? 'question question-pleine-largeur' : 'question';
+      div.className = indices.length === 1 ? 'question question-seule' : 'question';
       div.id = 'q-' + idx;
-      const lettre = lettresEtendues[pos] || '';
+      const lettre = indices.length === 1 ? '' : (lettresEtendues[pos] || '');
       const suffixe = ex.avecEgal ? ' =' : '';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options-wrapper${ex.optionsSurUneLigne ? ' q-qcm-options-wrapper--scroll' : ''}"><div class="q-qcm-options${ex.optionsSurUneLigne ? ' q-qcm-options--scroll' : ''}">${ex.options.map(o =>
             `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
           ).join('')}</div></div>`
         : '';
-      const lettreHtml = seul ? '' : `<span class="q-lettre">${lettre})</span>`;
       div.innerHTML = `
-        ${lettreHtml}
+        <span class="q-lettre">${lettre ? lettre + ')' : ''}</span>
         <span class="q-enonce">${ex.texteLibre ? ex.enonce : '\\(' + ex.enonce + '\\)'}${suffixe}</span>
         ${blocOptionsQCM}
         ${champReponsePour(idx, ex)}
@@ -2930,7 +2885,21 @@ function champReponsePour(idx, ex) {
   return `
     <input type="text" class="q-input" id="input-${idx}" placeholder="${placeholderPour(ex)}" autocomplete="off">
     <button class="q-clavier-btn" onclick="toggleClavier(${idx})" title="Clavier symboles">&#9000;&#xFE0E;</button>
-    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${genererClavierPour(idx, ex)}</div>`;
+    <div class="clavier-visuel" id="clavier-${idx}">${boutonValiderTactileHTML(idx)}${groupeEnsembleClavier(idx, ex)}${genererClavierPour(idx, ex)}</div>`;
+}
+
+// Reponse attendue sous forme d'ensemble ("{-2;3}", "{}" : voir
+// checkEnsemble) : touches accolades et point-virgule en tete du clavier.
+function groupeEnsembleClavier(idx, ex) {
+  if (!(ex.reponse && String(ex.reponse).trim().startsWith('{'))) return '';
+  return `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Ensemble</span>
+        <button onclick="inserer(${idx},'{')">{</button>
+        <button onclick="inserer(${idx},'}')">}</button>
+        <button onclick="inserer(${idx},';')">;</button>
+      </div>
+      <div class="clavier-apercu">Astuce : écrire l'ensemble des solutions entre accolades, séparées par un point-virgule. Exemple : {-2;3}, ou {} s'il n'y a aucune solution.</div>`;
 }
 
 function genererClavierPour(idx, ex) {
@@ -3043,15 +3012,21 @@ function genererClavierPour(idx, ex) {
       <div class="clavier-groupe">
         <span class="clavier-label">Fraction / lettres</span>
         <button class="touche-large" onclick="insererFraction(${idx})">a/b</button>
-        <button class="touche-large" onclick="inserer(${idx},'x')">x</button>
-        <button class="touche-large" onclick="inserer(${idx},'lam')">λ</button>
+        ${(() => {
+          const glyphes = { lam: 'λ', bet: 'β' };
+          const lettresBase = ['x', 'lam'];
+          const lettresVars = (ex.vars || []).filter(v => !lettresBase.includes(v));
+          return [...lettresBase, ...lettresVars].map(v =>
+            `<button class="touche-large" onclick="inserer(${idx},'${v}')">${glyphes[v] || v}</button>`
+          ).join('\n        ');
+        })()}
         ${ex.avecSomme ? `<button class="touche-large" onclick="insererSomme(${idx})">&Sigma;</button>` : ''}
       </div>
       <div class="clavier-groupe">
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">${ex.avecSomme ? 'Astuce : le bouton &Sigma; insère &laquo; sum(k,1,n,...) &raquo; — compléter avec le terme général en fonction de k et x.' : 'Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ'}</div>`;
+      <div class="clavier-apercu">${ex.avecSomme ? 'Astuce : le bouton &Sigma; insère &laquo; sum(k,1,n,...) &raquo; — compléter avec le terme général en fonction de k et x.' : (ex.vars && ex.vars.length ? `Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine. Utiliser la lettre ${ex.vars.map(v => `« ${({lam:'λ',bet:'β'})[v] || v} »`).join(' / ')} pour le réel introduit par l'énoncé, même s'il y est noté avec une autre lettre (par exemple α).` : 'Astuce : « x^2 » = x², le bouton a/b insère une fraction avec des cases ▢ à compléter, le bouton √ insère directement le symbole racine, « lam » = λ')}</div>`;
 }
 
 function labelFormeCanonique(a, alpha, beta) {
@@ -3064,267 +3039,39 @@ function labelFormeCanonique(a, alpha, beta) {
   return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
 }
 
-function texteEvenementSVG(x, y, label) {
-  const suffixe = '&#772;';
-  if (!label.endsWith(suffixe)) return `<text x="${x}" y="${y}">${label}</text>`;
-  const lettre = label.slice(0, -suffixe.length);
-  // barre dessinee manuellement (plutot que de compter sur le macron combinant de la police, trop court/fin
-  // pour bien se lire) : depasse legerement la lettre de part et d'autre pour une meilleure lisibilite
-  return `<text x="${x}" y="${y}">${lettre}</text><line x1="${x-1.5}" y1="${y-11}" x2="${x+10.5}" y2="${y-11}" stroke="#1a1a1a" stroke-width="1.1"/>`;
-}
-
-// etiquette de probabilite (decimale ou fraction n/d), decalee PERPENDICULAIREMENT a la branche
-// (xa,ya)->(xb,yb) plutot que verticalement -- un decalage seulement vertical ne degageait pas
-// assez la ligne sur les branches pentues (arbre a 3 branches initiales, 19.14), la ligne finissait
-// par traverser le denominateur (bug signale le 2026-09-22, David : "les ponderations ne sont pas
-// du tout correctement affichees"). dir<0 : etiquette du cote "au-dessus" (svg y plus petit).
-function probaLabelSVG(xa, ya, xb, yb, proba, fontSize, dir) {
-  if (!proba) return '';
-  const cx = (xa + xb) / 2, cy = (ya + yb) / 2;
-  const dx = xb - xa, dy = yb - ya;
-  const long = Math.hypot(dx, dy) || 1;
-  let perpX = -dy / long, perpY = dx / long;
-  if ((dir < 0 && perpY > 0) || (dir >= 0 && perpY < 0)) { perpX = -perpX; perpY = -perpY; }
-  const m = /^(-?)([^/]+)\/(.+)$/.exec(proba);
-  if (m) {
-    let den = m[3];
-    if (entoureParParentheses(den)) den = den.slice(1, -1);
-    const num = m[1] + m[2];
-    // rendu en vrai LaTeX (MathJax, via foreignObject) plutot qu'un num/barre/denominateur dessine
-    // a la main en <text> SVG -- illisible, surtout une fois zoome (bug signale le 2026-09-22,
-    // David : "les fractions pas du tout... ce n'est pas affiche en LaTeX"). Le foreignObject vit
-    // dans les memes coordonnees que le reste du SVG, donc suit le redimensionnement responsive
-    // (max-width + viewBox) sans calcul separe. Typeset differe : voir MathJax.typesetPromise()
-    // appele juste apres l'insertion dans le DOM (construireArbre19_X).
-    const recul = fontSize * 1.35;
-    const centreX = cx + perpX * recul, centreY = cy + perpY * recul;
-    const w = fontSize * 3.6, h = fontSize * 2.6;
-    const fsLatex = Math.round(fontSize * 1.25);
-    return `<foreignObject x="${(centreX - w / 2).toFixed(1)}" y="${(centreY - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}">`
-      + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fsLatex}px;color:#333;">\\(\\dfrac{${num}}{${den}}\\)</div>`
-      + `</foreignObject>`;
-  }
-  const recul = fontSize * 0.95;
-  const x = cx + perpX * recul, y = cy + perpY * recul + fontSize * 0.3;
-  return `<text x="${x}" y="${y}" text-anchor="middle" font-style="italic" font-size="${fontSize}">${proba}</text>`;
-}
-
-// fleche (ligne raccourcie + pointe triangulaire) -- repris tel quel de la fiche 19 de Seconde
-// (David, 2026-09-22 : "les arbres exactement comme en Seconde"). reculDepart (optionnel) : recule
-// le DEBUT du trait le long du segment, pour les branches qui repartent d'un noeud de niveau 1 sans
-// traverser sa lettre.
-function ligneAvecFleche(xa, ya, xb, yb, reculDepart) {
-  reculDepart = reculDepart || 0;
-  const dx = xb - xa, dy = yb - ya;
-  const long = Math.hypot(dx, dy);
-  const ux = dx / long, uy = dy / long;
-  const debutX = xa + ux * reculDepart, debutY = ya + uy * reculDepart;
-  const taille = 7, demiLargeur = 3;
-  const finLigneX = xb - ux * taille, finLigneY = yb - uy * taille;
-  const perpX = -uy, perpY = ux;
-  const p1x = finLigneX + perpX * demiLargeur, p1y = finLigneY + perpY * demiLargeur;
-  const p2x = finLigneX - perpX * demiLargeur, p2y = finLigneY - perpY * demiLargeur;
-  return `<line x1="${debutX.toFixed(1)}" y1="${debutY.toFixed(1)}" x2="${finLigneX.toFixed(1)}" y2="${finLigneY.toFixed(1)}" stroke="#333" stroke-width="1.3"/>`
-    + `<polygon points="${xb.toFixed(1)},${yb.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}" fill="#333"/>`;
-}
-
-function genererSVGArbre(niveau1, niveau2, largeur, hauteur) {
-  // agrandi et fleches ajoutees le 2026-09-22 (porte depuis la fiche 19 de Seconde) : l'arbre
-  // n'est dessine qu'une seule fois par groupe, autant en profiter pour la lisibilite plutot que
-  // garder la taille/le style penses a l'origine pour une carte de question etroite. class
-  // "qcm-svg svg-grande-figure svg-police-manuel" + activerZoomSvg (voir plus bas) : zoom au clic.
-  largeur = largeur || 380; hauteur = hauteur || 300;
-  const n1 = niveau1.length;
-  const x0 = 20, xm = largeur*0.44, xf = largeur-70;
-  // marge de 25% en haut/bas, branches reparties uniformement entre les deux -- se reduit a la
-  // repartition 0,25/0,75 de la fiche de Seconde quand n1=2.
-  const marge = 0.25;
-  const yPositions1 = [];
-  for (let i=0;i<n1;i++) yPositions1.push(n1 === 1 ? hauteur/2 : hauteur*(marge + i*(1-2*marge)/(n1-1)));
-  const ecartBase = n1 === 1 ? hauteur*0.18 : (hauteur*(1-2*marge)/(n1-1)) * 0.36;
-  // max-width en style inline (pas la classe svg-grande-figure, pensee pour un autre type de
-  // figure et qui, combinee au "width:100%" de .qcm-svg, etirait l'arbre a la largeur entiere de
-  // la carte -- 804px de large a l'ecran au lieu d'une taille raisonnable) : c'est exactement le
-  // mecanisme utilise par les arbres de la fiche 19 de Seconde (voir svgArbrePondere, meme largeur
-  // de 380px). Bug signale le 2026-09-22 (David : "les arbres sont enormes").
-  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}" font-family="Georgia, serif" font-size="13" xmlns="http://www.w3.org/2000/svg" class="qcm-svg svg-police-manuel" style="max-width:380px;">`;
-  svg += `<circle cx="${x0}" cy="${hauteur/2}" r="2" fill="#333"/>`;
-  niveau1.forEach((br1, i) => {
-    const y1 = yPositions1[i];
-    svg += ligneAvecFleche(x0, hauteur/2, xm, y1);
-    const dir1 = y1 > hauteur/2 ? 1 : -1;
-    svg += probaLabelSVG(x0, hauteur/2, xm, y1, br1.proba, 13, dir1);
-    svg += texteEvenementSVG(xm+8, y1+5, br1.label);
-    const br2list = niveau2[i];
-    const n2 = br2list.length;
-    const ecart = ecartBase;
-    const yPositions2 = [];
-    for (let j=0;j<n2;j++) yPositions2.push(y1 - ecart*(n2-1)/2 + ecart*j);
-    br2list.forEach((br2, j) => {
-      const y2 = yPositions2[j];
-      svg += ligneAvecFleche(xm+22, y1, xf, y2);
-      const dir2 = y2 > y1 ? 1 : -1;
-      svg += probaLabelSVG(xm+22, y1, xf, y2, br2.proba, 11, dir2);
-      svg += texteEvenementSVG(xf+8, y2+5, br2.label);
-    });
+function construireGraphique22_19() {
+  const largeur = 280, hauteur = 320;
+  const marge = 20;
+  const A = [40, 260+marge], B = [110, 80+marge], C = [230, 260+marge];
+  // A' sur [BC], B' sur [AC] choisis librement ; C' calcule comme intersection de (A'B') avec (AB) pour garantir l'alignement
+  const AprimeReal = [B[0]+0.35*(C[0]-B[0]), B[1]+0.35*(C[1]-B[1])];
+  const BprimeReal = [A[0]+0.65*(C[0]-A[0]), A[1]+0.65*(C[1]-A[1])];
+  const dABx = B[0]-A[0], dABy = B[1]-A[1];
+  const dApBpx = BprimeReal[0]-AprimeReal[0], dApBpy = BprimeReal[1]-AprimeReal[1];
+  const denom = dABx*(-dApBpy) - dABy*(-dApBpx);
+  const rhsX = AprimeReal[0]-A[0], rhsY = AprimeReal[1]-A[1];
+  const t = (rhsX*(-dApBpy) - rhsY*(-dApBpx)) / denom;
+  const CprimeReal = [A[0]+t*dABx, A[1]+t*dABy];
+  let svg = `<svg width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}">`;
+  // cotes du triangle
+  svg += `<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" stroke="#333" stroke-width="1.5"/>`;
+  svg += `<line x1="${B[0]}" y1="${B[1]}" x2="${C[0]}" y2="${C[1]}" stroke="#333" stroke-width="1.5"/>`;
+  svg += `<line x1="${A[0]}" y1="${A[1]}" x2="${C[0]}" y2="${C[1]}" stroke="#333" stroke-width="1.5"/>`;
+  // droite (AB) prolongee jusqu'a C'
+  svg += `<line x1="${A[0]}" y1="${A[1]}" x2="${CprimeReal[0]}" y2="${CprimeReal[1]}" stroke="#333" stroke-width="1"/>`;
+  // menelienne pointillee passant par A', B', C'
+  svg += `<line x1="${CprimeReal[0]}" y1="${CprimeReal[1]}" x2="${BprimeReal[0]}" y2="${BprimeReal[1]}" stroke="#888" stroke-width="1.3" stroke-dasharray="4,3"/>`;
+  // points
+  const pts = [[A,'A',-14,14],[B,'B',-16,-6],[C,'C',6,14],[AprimeReal,"A'",6,-4],[BprimeReal,"B'",4,16],[CprimeReal,"C'",6,-4]];
+  pts.forEach(([p,nom,dx,dy]) => {
+    svg += `<circle cx="${p[0]}" cy="${p[1]}" r="2.8" fill="#222"/>`;
+    svg += `<text x="${p[0]+dx}" y="${p[1]+dy}" font-size="13" font-style="italic">${nom}</text>`;
   });
   svg += '</svg>';
-  return `<div class="figure-centree">${svg}</div>`;
+  document.getElementById('graphique-17-19').innerHTML = `<div class="figure-centree">${svg}</div>`;
 }
 
-// ---------- Agrandissement des graphiques au clic -- repris tel quel de la fiche 19 de Seconde
-// (David, 2026-09-22), sans la partie "curseur" (fonctionnalite absente de cette fiche). ----------
-function activerZoomSvg(container) {
-  if (!container) return;
-  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
-    svg.classList.add('svg-agrandissable');
-    svg.setAttribute('tabindex', '0');
-    svg.setAttribute('role', 'button');
-    svg.setAttribute('aria-label', 'Agrandir ce graphique');
-    svg.addEventListener('click', () => ouvrirModalSvg(svg));
-    svg.addEventListener('keydown', (evt) => {
-      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
-    });
-  });
-}
-function ouvrirModalSvg(svg) {
-  const interieur = document.getElementById('modal-svg-contenu-interieur');
-  interieur.innerHTML = '';
-  const clone = svg.cloneNode(true);
-  clone.classList.remove('svg-agrandissable', 'qcm-svg');
-  clone.removeAttribute('style');
-  clone.removeAttribute('width');
-  clone.removeAttribute('height');
-  interieur.appendChild(clone);
-  document.getElementById('modal-svg-overlay').classList.add('ouvert');
-}
-function fermerModalSvg(evt, force) {
-  if (force || evt.target.id === 'modal-svg-overlay') {
-    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
-  }
-}
-document.addEventListener('keydown', (evt) => {
-  if (evt.key === 'Escape') fermerModalSvg(null, true);
-});
-
-function decPlainFromFrac(num, den) {
-  const decimals = Math.round(Math.log10(den));
-  let s = (num / den).toFixed(decimals);
-  if (s.includes('.')) { s = s.replace(/0+$/, '').replace(/\.$/, ''); }
-  return s.replace('.', ',');
-}
-
-const MOT_FRACTION = {3:'tiers', 4:'quart', 5:'cinquième', 6:'sixième'};
-// cases agrandies le 2026-09-22 (David : "les tableaux restent relativement petits" a cote des
-// arbres, desormais bien dimensionnes) -- police et marges augmentees, plus le meme changement de
-// taille de police sur l'element <table> lui-meme (voir le style inline "font-size:16px" ajoute a
-// chaque <table id="table-19-X">).
-const styleTd = 'border:1px solid #999;padding:8px 16px;text-align:center;';
-
-function mettreAJourTextesAvances() {
-  const g4 = paramsAvances.g4;
-  document.getElementById('table-17-4').innerHTML = `
-    <tr><td style="${styleTd}"></td><td style="${styleTd}"><em>A</em></td><td style="${styleTd}"><em>\\(\\overline{A}\\)</em></td></tr>
-    <tr><td style="${styleTd}"><em>B</em></td><td style="${styleTd}">${decPlainFromFrac(g4.pAB,100)}</td><td style="${styleTd}">${decPlainFromFrac(g4.pAnB,100)}</td></tr>
-    <tr><td style="${styleTd}"><em>\\(\\overline{B}\\)</em></td><td style="${styleTd}">${decPlainFromFrac(g4.pnAB,100)}</td><td style="${styleTd}">${decPlainFromFrac(g4.pnAnB,100)}</td></tr>`;
-
-  const g5 = paramsAvances.g5;
-  document.getElementById('table-17-5').innerHTML = `
-    <tr><td style="${styleTd}"></td><td style="${styleTd}"><em>A</em></td><td style="${styleTd}"><em>\\(\\overline{A}\\)</em></td><td style="${styleTd}">Total</td></tr>
-    <tr><td style="${styleTd}"><em>B</em></td><td style="${styleTd}">${g5.nAB}</td><td style="${styleTd}">${g5.nAnB}</td><td style="${styleTd}">${g5.rowB}</td></tr>
-    <tr><td style="${styleTd}"><em>\\(\\overline{B}\\)</em></td><td style="${styleTd}">${g5.nnAB}</td><td style="${styleTd}">${g5.nnAnB}</td><td style="${styleTd}">${g5.rowBbar}</td></tr>
-    <tr><td style="${styleTd}">Total</td><td style="${styleTd}">${g5.colA}</td><td style="${styleTd}">${g5.colAbar}</td><td style="${styleTd}">${g5.N}</td></tr>`;
-
-  const g6 = paramsAvances.g6;
-  document.getElementById('titre-17-6').textContent = `Calcul 17.5 — On considère deux événements \\(A\\) et \\(B\\) tels que \\(P(\\overline{A})=${decPlainFromFrac(g6.q,100).replace(',','{,}')}\\) et \\(P(\\overline{A}\\cap B)=${decPlainFromFrac(g6.r,100).replace(',','{,}')}\\).`;
-
-  const g7 = paramsAvances.g7;
-  document.getElementById('texte-17-7').textContent = `On a interrogé ${g7.N7} personnes sur leurs loisirs. Les choix proposés étaient le ski et la randonnée. Parmi les personnes interrogées, ${g7.S7} personnes font du ski, un ${MOT_FRACTION[g7.Dw]} des skieurs font aussi de la randonnée et ${g7.nNeither7} personnes ne font ni ski ni randonnée.`;
-
-  const g10 = paramsAvances.g10;
-  document.getElementById('titre-17-10').textContent = `Calcul 17.9 — Avec des probabilités conditionnelles (I). On donne \\(P(A)=${decPlainFromFrac(g10.p,100).replace(',','{,}')}\\) et \\(P_A(B)=${decPlainFromFrac(g10.q,100).replace(',','{,}')}\\).`;
-
-  const g11 = paramsAvances.g11;
-  document.getElementById('titre-17-11').textContent = `Calcul 17.10 — Avec des probabilités conditionnelles (II). On donne \\(P(A)=${decPlainFromFrac(g11.p,100).replace(',','{,}')}\\) ainsi que \\(P(B)=${decPlainFromFrac(g11.q0,100).replace(',','{,}')}\\) et \\(P_A(B)=${decPlainFromFrac(g11.r,100).replace(',','{,}')}\\).`;
-
-  const g12 = paramsAvances.g12;
-  document.getElementById('texte-17-12').textContent = `On a interrogé un grand nombre de personnes sur leurs habitudes musicales. ${g12.m}% de la population interrogée est composée de mineurs. ${g12.sMin}% des mineurs écoutent de la musique en streaming alors que ${g12.sMaj}% des majeurs écoutent de la musique en streaming.`;
-
-  const g13 = paramsAvances.g13;
-  document.getElementById('titre-17-13').textContent = `Calcul 17.12 — On considère \\(A\\) et \\(B\\) deux événements indépendants tels que \\(P(A)=${decPlainFromFrac(g13.p,100).replace(',','{,}')}\\) et \\(P(B)=${decPlainFromFrac(g13.q,100).replace(',','{,}')}\\).`;
-
-  const g15 = paramsAvances.g15;
-  document.getElementById('titre-17-15').textContent = `Calcul 17.14 — On considère \\(A\\) et \\(B\\) deux événements indépendants tels que \\(P(A)=${decPlainFromFrac(g15.p,100).replace(',','{,}')}\\) et \\(P(A\\cap B)=${decPlainFromFrac(g15.p*g15.q,10000).replace(',','{,}')}\\).`;
-
-  const g17 = paramsAvances.g17;
-  document.getElementById('table-17-17').innerHTML = `
-    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">1</td><td style="${styleTd}">2</td><td style="${styleTd}">3</td><td style="${styleTd}">4</td><td style="${styleTd}">5</td><td style="${styleTd}">6</td></tr>
-    <tr><td style="${styleTd}">P(X=x_i)</td><td style="${styleTd}">${decPlainFromFrac(g17.v[0],100)}</td><td style="${styleTd}">${decPlainFromFrac(g17.v[1],100)}</td><td style="${styleTd}">${decPlainFromFrac(g17.v[2],100)}</td><td style="${styleTd}">${decPlainFromFrac(g17.v[3],100)}</td><td style="${styleTd}">?</td><td style="${styleTd}">${decPlainFromFrac(g17.v[4],100)}</td></tr>`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-17')]);
-
-  const g18 = paramsAvances.g18;
-  document.getElementById('table-17-18').innerHTML = `
-    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">0</td><td style="${styleTd}">1</td><td style="${styleTd}">2</td><td style="${styleTd}">3</td></tr>
-    <tr><td style="${styleTd}">P(X=x_i)</td><td style="${styleTd}">${fracStr(g18.p0,100)}</td><td style="${styleTd}">${fracStr(g18.p1v,100)}</td><td style="${styleTd}">${fracStr(g18.p2v,100)}</td><td style="${styleTd}">${fracStr(g18.p3v,100)}</td></tr>`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-18')]);
-
-  const g19 = paramsAvances.g19;
-  document.getElementById('table-17-19').innerHTML = `
-    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">1</td><td style="${styleTd}">2</td><td style="${styleTd}">3</td><td style="${styleTd}">4</td><td style="${styleTd}">5</td><td style="${styleTd}">6</td></tr>
-    <tr><td style="${styleTd}">P(X≤x_i)</td><td style="${styleTd}">${fracStr(g19.C[0],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[1],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[2],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[3],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[4],g19.Dtot)}</td><td style="${styleTd}">${fracStr(g19.C[5],g19.Dtot)}</td></tr>`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-19')]);
-
-  const g20 = paramsAvances.g20;
-  document.getElementById('table-17-20').innerHTML = `
-    <tr><td style="${styleTd}">\\(x_i\\)</td><td style="${styleTd}">${g20.xs[0]}</td><td style="${styleTd}">${g20.xs[1]}</td><td style="${styleTd}">${g20.xs[2]}</td><td style="${styleTd}">${g20.xs[3]}</td><td style="${styleTd}">${g20.xs[4]}</td></tr>
-    <tr><td style="${styleTd}">P(X=x_i)</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[0],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[1],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[2],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[3],100)}</td><td style="${styleTd}">${decPlainFromFrac(g20.pr[4],100)}</td></tr>`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('table-17-20')]);
-}
-
-function construireArbre19_9() {
-  const g = paramsAvances.g9;
-  const niveau1 = [{label:'C', proba:fracToStr(g.pC)}, {label:'C&#772;', proba:fracToStr(g.pCbar)}];
-  const niveau2 = [
-    [{label:'D', proba:fracToStr(g.q1)}, {label:'D&#772;', proba:fracToStr(g.q1bar)}],
-    [{label:'D', proba:fracToStr(g.q2)}, {label:'D&#772;', proba:fracToStr(g.q2bar)}],
-  ];
-  document.getElementById('arbre-17-9').innerHTML = `<p>On donne l'arbre pondéré :</p>${genererSVGArbre(niveau1, niveau2)}`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-9')]);
-}
-
-function construireArbre19_14() {
-  const g = paramsAvances.g14;
-  const niveau1 = [{label:'A', proba:decPlainFromFrac(g.p1,100)}, {label:'B', proba:decPlainFromFrac(g.p2,100)}, {label:'C', proba:decPlainFromFrac(g.p3,100)}];
-  const niveau2 = [
-    [{label:'D', proba:decPlainFromFrac(g.q1,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q1,100)}],
-    [{label:'D', proba:decPlainFromFrac(g.q2,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q2,100)}],
-    [{label:'D', proba:decPlainFromFrac(g.q3,100)}, {label:'D&#772;', proba:decPlainFromFrac(100-g.q3,100)}],
-  ];
-  document.getElementById('arbre-17-14').innerHTML = `${genererSVGArbre(niveau1, niveau2, 380, 340)}`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-14')]);
-}
-
-function construireArbre19_16() {
-  const g = paramsAvances.g16;
-  const niveau1 = [{label:'A', proba:`1/(${g.K}+x)`}, {label:'A&#772;', proba:''}];
-  const niveau2 = [
-    [{label:'B', proba:fracStr(g.Fp,g.Fq)}, {label:'B&#772;', proba:fracStr(g.Fq-g.Fp,g.Fq)}],
-    [{label:'B', proba:fracStr(g.Gp,g.Gq)}, {label:'B&#772;', proba:fracStr(g.Gq-g.Gp,g.Gq)}],
-  ];
-  document.getElementById('arbre-17-16').innerHTML = `${genererSVGArbre(niveau1, niveau2)}`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-16')]);
-}
-
-function construireArbre19_21() {
-  const niveau1 = [{label:'A', proba:'a&#178;'}, {label:'A&#772;', proba:'1-a&#178;'}];
-  const niveau2 = [
-    [{label:'B', proba:'1-a'}, {label:'B&#772;', proba:'a'}],
-    [{label:'B', proba:'a'}, {label:'B&#772;', proba:'1-a'}],
-  ];
-  document.getElementById('arbre-17-21').innerHTML = `<p>Soit \\(a\\in\\,]0;1[\\). On donne l'arbre pondéré ci-dessous :</p>${genererSVGArbre(niveau1, niveau2)}`;
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('arbre-17-21')]);
-}
-
+mettreAJourTextesAvances();
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
 // sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
 // et les reponses deja saisies plutot que d'en tirer de nouvelles.
@@ -3404,15 +3151,9 @@ async function initialiserFiche() {
   if (brouillonValide) {
     exercices = brouillon.exercices;
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
-    restaurerEtatSupplementaire(brouillon.extra);
   }
 construireGrilles();
-mettreAJourTextesAvances();
-construireArbre19_9();
-construireArbre19_14();
-construireArbre19_16();
-construireArbre19_21();
-activerZoomSvg(document.body);
+construireGraphique22_19();
 attacherEcouteurs();
 attacherEcouteursTactiles();
 definirMode(true);

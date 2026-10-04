@@ -6165,3 +6165,47 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   laissé statique, choix de David » ne valait plus depuis le 02/10/2026
   (12.11 corrigé avec la condition « r = R » et rendu aléatoire, devenu
   12.6 c, avec l'accord de David). Retirée à sa demande.
+
+- **Première : le cahier « Sommes et produits » passe après « Produit
+  scalaire » (04/10/2026).** Demande de David : « décaler le cahier 5 de
+  première après le cahier 9 (produit scalaire) ».
+  ⚠️ **Correspondance ancien → nouveau.** Cahiers : 6 → 5, 7 → 6, 8 → 7,
+  9 → 8, 5 → 9 (1 à 4 et 10 inchangés). Fiches : 17 → 14, 18 → 15, 19 →
+  16, 20 → 17, 21 → 18, 22 → 19, 23 → 20, 24 → 21, 14 → 22, 15 → 23,
+  16 → 24 (1 à 13 et 25-26 inchangées). Nouvel ordre : 5 Probabilités
+  (fiche 14), 6 Géométrie plane et vecteurs (15-17), 7 Trigonométrie
+  (18-19), 8 Produit scalaire (20-21), 9 Sommes et produits (22-24).
+  Toutes les entrées de ce fichier antérieures à celle-ci parlent des
+  anciens numéros (« fiche 17 » = probabilités = l'actuelle 14 ;
+  « fiche 14 » = sommes I = l'actuelle 22 ; etc.). Les fiches des
+  cahiers 1 à 4 et 10 ne changent pas.
+  - **Firebase** (inventaire en lecture seule avant l'opération, 78
+    élèves, 6 devoirs) : aucun brouillon, aucune tentative ni aucun devoir
+    ne vise une fiche de Première 14 à 24 ; les six devoirs portent sur
+    les fiches 1 et 2 de Première, deux fiches de Seconde ou les
+    automatismes. Aucune migration nécessaire, rien écrit en base.
+  - Même méthode que la renumérotation du 30/09 (script Node, remplacements
+    ciblés par contexte, `git mv` par dossiers d'attente) : dans chaque
+    fiche, titre de page, pastille, titres « Calcul N.k », identifiants
+    d'exercices (`id:"N.k a)"`), identifiants DOM (`grille-`, `texte-`,
+    `titre-`, `table-`, `arbre-`, `graphique-`, flèches…-N-k), liens
+    précédent/suivant ; dans chaque sommaire : titre, fil d'Ariane, h1,
+    liens vers le cahier précédent/suivant, numéros des fiches ;
+    `assets/js/manifeste-fiches.js` (devoirs) ; page « Tous les cahiers »
+    (cartes réordonnées). Les liens des cahiers 4 et 10 et les jonctions
+    entre fiches 13/14 et 24/25 n'ont pas eu à changer (aucun lien de
+    fiche ne traverse un cahier).
+  - Vérifié : audit de cohérence des 11 fiches et 5 sommaires (numéros du
+    titre, de la pastille, des ids, des titres « Calcul » ; table
+    `groupes` ↔ grilles du HTML ; liens de navigation) : 0 problème ;
+    aucun reste d'ancien numéro (deux faux positifs : coordonnées SVG) ;
+    chaque fiche chargée dans le navigateur : ids tous préfixés du nouveau
+    numéro, tous les groupes présents et remplis, tous les identifiants
+    DOM littéraux appelés par le code existants, 0 erreur MathJax, 0
+    erreur console ; page « Tous les cahiers » : les 10 cartes de Première
+    (étiquette, nom, nombre de fiches) cohérentes avec leur sommaire ;
+    manifeste : 26 fiches, numéros 1 à 26, titres identiques à ceux des
+    fiches ; vérificateur de syntaxe : 0 erreur.
+  - Non modifiés (cosmétique) : le script de captures du guide de l'élève
+    (`outils/guide-eleve/captures.js`) nomme un devoir fictif « Sommes —
+    fiche 14 » (devenue 22) ; le PDF déjà généré n'est pas affecté.

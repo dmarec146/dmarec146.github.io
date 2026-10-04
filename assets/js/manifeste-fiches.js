@@ -26,26 +26,26 @@ export const MANIFESTE_CAHIERS = [
     { href: 'fiche-12.html', numero: 12, nom: 'Suites arithmétiques' },
     { href: 'fiche-13.html', numero: 13, nom: 'Suites géométriques' },
   ]},
-  { niveau: 'premiere', cahier: 'cahier-5', titreCahier: 'Cahier 5 — Sommes et produits', fiches: [
-    { href: 'fiche-14.html', numero: 14, nom: 'Calcul de sommes I' },
-    { href: 'fiche-15.html', numero: 15, nom: 'Calcul de sommes II' },
-    { href: 'fiche-16.html', numero: 16, nom: 'Calcul de produits' },
+  { niveau: 'premiere', cahier: 'cahier-5', titreCahier: 'Cahier 5 — Probabilités', fiches: [
+    { href: 'fiche-14.html', numero: 14, nom: 'Probabilités' },
   ]},
-  { niveau: 'premiere', cahier: 'cahier-6', titreCahier: 'Cahier 6 — Probabilités', fiches: [
-    { href: 'fiche-17.html', numero: 17, nom: 'Probabilités' },
+  { niveau: 'premiere', cahier: 'cahier-6', titreCahier: 'Cahier 6 — Géométrie plane et vecteurs', fiches: [
+    { href: 'fiche-15.html', numero: 15, nom: 'Droites du plan' },
+    { href: 'fiche-16.html', numero: 16, nom: 'Généralités sur les vecteurs' },
+    { href: 'fiche-17.html', numero: 17, nom: 'Coordonnées des vecteurs' },
   ]},
-  { niveau: 'premiere', cahier: 'cahier-7', titreCahier: 'Cahier 7 — Géométrie plane et vecteurs', fiches: [
-    { href: 'fiche-18.html', numero: 18, nom: 'Droites du plan' },
-    { href: 'fiche-19.html', numero: 19, nom: 'Généralités sur les vecteurs' },
-    { href: 'fiche-20.html', numero: 20, nom: 'Coordonnées des vecteurs' },
+  { niveau: 'premiere', cahier: 'cahier-7', titreCahier: 'Cahier 7 — Trigonométrie', fiches: [
+    { href: 'fiche-18.html', numero: 18, nom: 'Fonctions trigonométriques I' },
+    { href: 'fiche-19.html', numero: 19, nom: 'Fonctions trigonométriques II' },
   ]},
-  { niveau: 'premiere', cahier: 'cahier-8', titreCahier: 'Cahier 8 — Trigonométrie', fiches: [
-    { href: 'fiche-21.html', numero: 21, nom: 'Fonctions trigonométriques I' },
-    { href: 'fiche-22.html', numero: 22, nom: 'Fonctions trigonométriques II' },
+  { niveau: 'premiere', cahier: 'cahier-8', titreCahier: 'Cahier 8 — Produit scalaire', fiches: [
+    { href: 'fiche-20.html', numero: 20, nom: 'Produit scalaire I' },
+    { href: 'fiche-21.html', numero: 21, nom: 'Produit scalaire II' },
   ]},
-  { niveau: 'premiere', cahier: 'cahier-9', titreCahier: 'Cahier 9 — Produit scalaire', fiches: [
-    { href: 'fiche-23.html', numero: 23, nom: 'Produit scalaire I' },
-    { href: 'fiche-24.html', numero: 24, nom: 'Produit scalaire II' },
+  { niveau: 'premiere', cahier: 'cahier-9', titreCahier: 'Cahier 9 — Sommes et produits', fiches: [
+    { href: 'fiche-22.html', numero: 22, nom: 'Calcul de sommes I' },
+    { href: 'fiche-23.html', numero: 23, nom: 'Calcul de sommes II' },
+    { href: 'fiche-24.html', numero: 24, nom: 'Calcul de produits' },
   ]},
   { niveau: 'premiere', cahier: 'cahier-10', titreCahier: 'Cahier 10 — Logique et théorie des ensembles', fiches: [
     { href: 'fiche-25.html', numero: 25, nom: 'Logique' },
