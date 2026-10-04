@@ -32,7 +32,8 @@
   let minuterie = null;
 
   function numeroDeTitre(el) {
-    const m = /Calcul\s+(\d+\.\d+)/.exec(el.textContent || '');
+    // « Calcul 9.4 — … » ; la fiche 25 de Premiere dit « Entraînement 25.3 — … » : tout mot avant le numero.
+    const m = /^\s*[A-Za-zÀ-ÿ]+\s+(\d+\.\d+)/.exec(el.textContent || '');
     return m ? m[1] : null;
   }
 
@@ -214,7 +215,7 @@
         if (!num) return;
         const premier = el.querySelector('span');
         const texte = ((premier || el).textContent || '').replace(/\s+/g, ' ').trim();
-        resultat.push({ num, section, titre: texte.replace(/^Calcul\s+\d+\.\d+\s*[—–-]\s*/, '') });
+        resultat.push({ num, section, titre: texte.replace(/^[A-Za-zÀ-ÿ]+\s+\d+\.\d+\s*[—–-]\s*/, '') });
       });
       return resultat;
     },

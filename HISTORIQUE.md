@@ -6402,3 +6402,27 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   lecture seule dans Firestore : 75 comptes d'élèves réels (2nde-207 : 21,
   1ere-Gr 3 : 26, 1ere-Gr 1 : 27, hors classe : 1), 75 PNG générés ; les comptes
   de test n'ont pas d'étiquette. Aucun compte modifié.
+
+- **Devoirs partiels : câblage des 50 fiches (04/10/2026).** Suite des trois
+  pilotes, sur l'accord de David (« il faut l'étendre à l'ensemble des
+  fiches »).
+  - **Contrôle préalable, en lecture seule, sur les 50 fiches** (chaque fiche
+    chargée dans une iframe, module injecté sans rien modifier, trois jeux de
+    calculs masqués — premier, dernier, deux au milieu — puis comparaison du
+    nombre de questions et de titres visibles avec ce qu'il fallait) :
+    49 fiches conformes d'emblée. Seule Première 25 échouait : ses calculs
+    s'intitulent « Entraînement 25.3 — … » au lieu de « Calcul 25.3 — … », le
+    module ne reconnaissait que « Calcul ». Corrigé dans `devoir-partiel.js`
+    (tout mot avant le numéro, aussi pour le libellé du formulaire) puis
+    revérifié sur les fiches 25, 26, Première 14 (23 calculs) et Seconde 8.
+    Piège de méthode : `exercices` est un `let` de la fiche, invisible comme
+    propriété de `window` — le lire par `eval` dans l'iframe.
+  - **Câblage** des 47 fiches restantes par `cabler-fiche.js` (une dizaine de
+    retouches par fiche, chacune exactement une occurrence ; 47 sur 47). Les
+    fiches de Seconde à widgets reçoivent la balise avant
+    `widgets-saisie.js` sans conflit. Vérificateur de syntaxe : 50 fiches,
+    0 erreur.
+  - **Contrôle fonctionnel** sur les 50 : avec un calcul retenu, `verifierTout`
+    affiche « x / nombre de questions retenues », « Voir toutes les réponses »
+    ne liste que ces questions, `toutesLesReponsesSontSaisies` et
+    `allerChampSuivant` s'exécutent sans erreur.

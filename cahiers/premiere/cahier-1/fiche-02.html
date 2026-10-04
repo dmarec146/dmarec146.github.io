@@ -16,6 +16,7 @@ window.MathJax = {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
 <script src="https://unpkg.com/mathlive"></script>
 <script src="../../../assets/js/claviers.js"></script>
+<script src="../../../assets/js/devoir-partiel.js"></script>
 <style>
   :root {
     --bleu: #4B46C7;
@@ -2053,7 +2054,7 @@ function mettreAJourInfoDevoir() {
   if (devoirTermine) {
     zone.textContent = `Devoir « ${devoirTermine.titre} » : tu as utilisé tes ${devoirTermine.nbEssaisMax} tentatives — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`;
   } else {
-    zone.textContent = `Devoir « ${etatDevoir.titre} » — ${etatDevoir.essaisUtilises} / ${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}, à rendre avant le ${formaterEcheanceDevoir(etatDevoir.echeance)}.`;
+    zone.textContent = `Devoir « ${etatDevoir.titre} » — ${etatDevoir.essaisUtilises} / ${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}, à rendre avant le ${formaterEcheanceDevoir(etatDevoir.echeance)}.` + DevoirPartiel.phrase();
   }
 }
 
@@ -2069,6 +2070,7 @@ function mettreAJourInfoDevoir() {
 function passerEnEntrainementLibre(garderBandeau = true) {
   devoirTermine = garderBandeau ? etatDevoir : null;
   etatDevoir = null;
+  DevoirPartiel.retirer(); // devoir sur une partie de fiche : tous les calculs reviennent
   const panneauMode = document.getElementById('mode-panneau');
   const boutonVerifier = document.getElementById('btn-verifier');
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
@@ -2239,7 +2241,10 @@ async function validerFicheActuelle() {
       return;
     }
 
-    const reponses = Object.values(saisies);
+    // Devoir sur une partie de fiche : seules les reponses des calculs retenus
+    // comptent, et le total est le nombre de questions retenues.
+    const reponses = Object.values(saisies).filter((s) => DevoirPartiel.retenuParId(s.id));
+    const totalRetenu = DevoirPartiel.compter(exercices);
     const idsReussis = reponses.filter((s) => s.correct).map((s) => s.id);
     // Reponse vide = aucune valeur non vide, meme imbriquee (30/09/2026) : un
     // widget jamais touche (tableau de signes, de variations, croise...)
@@ -2248,8 +2253,8 @@ async function validerFicheActuelle() {
     // de bord enseignant sur 7 fiches de Seconde.
     const nonVide = (v) => (v !== null && typeof v === 'object') ? Object.values(v).some(nonVide) : (typeof v === 'string' ? v.trim() !== '' : v !== null && v !== undefined);
     const nbRepondues = reponses.filter((s) => nonVide(s.valeur)).length;
-    await window.validerFiche(FICHE_ID, idsReussis, exercices.length, nbRepondues);
-    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${exercices.length} bonnes réponses.`);
+    await window.validerFiche(FICHE_ID, idsReussis, totalRetenu, nbRepondues);
+    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${totalRetenu} bonnes réponses.`);
 
     // etatDevoir.essaisUtilises (30/09/2026) : incremente desormais apres
     // TOUTE validation reussie, pas seulement celle qui epuise le quota --
@@ -2284,7 +2289,7 @@ async function validerFicheActuelle() {
 let modeImmediat = true;
 
 function toutesLesReponsesSontSaisies() {
-  return exercices.every((ex, idx) => valeurDuChamp(document.getElementById('input-' + idx)) !== '');
+  return exercices.every((ex, idx) => !DevoirPartiel.retenu(ex) || valeurDuChamp(document.getElementById('input-' + idx)) !== '');
 }
 
 function attacherEcouteurs() {
@@ -2328,7 +2333,9 @@ function attacherEcouteurs() {
 }
 
 function allerChampSuivant(idxActuel) {
-  const idxSuivant = idxActuel + 1;
+  let idxSuivant = idxActuel + 1;
+  // Devoir sur une partie de fiche : saute les questions des calculs masques.
+  while (idxSuivant < exercices.length && !DevoirPartiel.retenu(exercices[idxSuivant])) idxSuivant++;
   if (idxSuivant < exercices.length) {
     const champSuivant = document.getElementById('input-' + idxSuivant);
     champSuivant.focus();
@@ -2521,13 +2528,14 @@ function verifierTout() {
   let repondues = 0;
   const erreurs = [];
   exercices.forEach((ex, idx) => {
+    if (!DevoirPartiel.retenu(ex)) return; // calcul masque (devoir sur une partie de fiche)
     const ok = verifierUne(idx);
     if (ok !== null) repondues++;
     if (ok) score++;
     else if (ok === false) erreurs.push(idx);
   });
   document.getElementById('score-panneau').classList.add('visible');
-  document.getElementById('score-chiffre').textContent = score + ' / ' + exercices.length;
+  document.getElementById('score-chiffre').textContent = score + ' / ' + DevoirPartiel.compter(exercices);
   const correctionDiv = document.getElementById('correction-panneau');
   if (erreurs.length === 0) {
     correctionDiv.innerHTML = '<p style="color:var(--vert);font-weight:bold;">Toutes les réponses saisies sont correctes.</p>';
@@ -2604,7 +2612,7 @@ function toggleToutesReponses() {
   const panel = document.getElementById('toutes-reponses-panneau');
   const estOuvert = panel.classList.contains('visible');
   if (!estOuvert) {
-    panel.innerHTML = exercices.map(ex => {
+    panel.innerHTML = DevoirPartiel.exercicesRetenus(exercices).map(ex => {
       const reponseFormatee = formaterReponse(ex);
       return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse : \\(${reponseFormatee}\\)</div>`;
     }).join('');
@@ -3072,7 +3080,9 @@ async function initialiserFiche() {
   // l'eleve decouvrir le blocage seulement en cliquant.
   if (eleveConnecte && window.verifierEtatDevoir) {
     try {
-      etatDevoir = await window.verifierEtatDevoir(FICHE_ID);
+      // 2e argument : devoir ouvert explicitement depuis /mes-devoirs/
+      // (?devoir=<id>), voir suivi.js -- absent, le plus proche de son echeance.
+      etatDevoir = await window.verifierEtatDevoir(FICHE_ID, new URLSearchParams(window.location.search).get('devoir'));
     } catch (erreur) {
       etatDevoir = null;
     }
@@ -3088,6 +3098,11 @@ async function initialiserFiche() {
       etatDevoir = null;
     }
   }
+
+  // Devoir sur une partie de fiche (04/10/2026) : masque les calculs non
+  // retenus (voir assets/js/devoir-partiel.js) tant que le devoir est actif ;
+  // sans effet pour un devoir sur la fiche entiere (etatDevoir.calculs nul).
+  if (etatDevoir) DevoirPartiel.appliquer(etatDevoir.calculs, exercices);
 
 // Panneau de mode, "Corrige des erreurs", "Enregistrer"/"Valider" :
   // corriges ici APRES avoir su si un devoir est actif -- l'ENSEMBLE de ces

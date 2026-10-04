@@ -58,12 +58,11 @@ depuis la réorganisation du 02/10/2026 »).
     sur une PARTIE d'une fiche — masque les calculs non retenus, compte les
     questions retenues. `window.DevoirPartiel` sert aussi de **marqueur
     « fiche câblée »** : le formulaire d'attribution n'offre le choix des
-    calculs que si la fiche, chargée dans une iframe, l'expose. Câblées à
-    ce jour (pilotes) : Première 1 et 9, Seconde cahier 2 fiche 8. Les 47
-    autres n'acceptent encore que le devoir sur la fiche entière
-    (`outils/devoir-partiel/cabler-fiche.js` les câble par script ; essai à
-    blanc concluant sur les 48 fiches restantes, câblage en masse en
-    attente du feu vert de David).
+    calculs que si la fiche, chargée dans une iframe, l'expose. **Les 50
+    fiches sont câblées** (04/10/2026, par `outils/devoir-partiel/cabler-fiche.js`).
+    Reconnaît « Calcul 9.4 » comme « Entraînement 25.3 » (tout mot avant le
+    numéro). Une **nouvelle fiche** doit être câblée (relancer le script sur
+    elle : il refuse tout motif qui ne se trouve pas exactement une fois).
   - `assets/js/widgets-saisie.js` (script classique, 04/10/2026) : aides de
     saisie des 14 fiches de Seconde à widgets (cahier 2 fiche 8, cahier 3
     fiches 9-10, cahier 5 fiches 14-17, cahier 6 fiches 18-19, cahier 7
