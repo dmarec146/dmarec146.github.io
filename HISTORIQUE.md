@@ -6630,3 +6630,21 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   (le « Calculer » est dans chaque question). Vérifié : 300 tirages
   recalculés : 0 écart ; réponses affichées retapées acceptées ; 0 erreur
   MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
+
+- **Première fiche 14 : tableau de probabilités rétabli en 14.4
+  (04/10/2026), 44 → 47 questions, 17 → 18 calculs.** David : « avant
+  14.4, rajoute le tableau précédent avec les probabilités ». Le tableau de
+  probabilités décimales (ancien 14.3 d'origine, retiré à la fusion avec le
+  tableau d'effectifs) revient comme **nouveau 14.4** : P(Ā), P(A∪B),
+  P(Ā∩B), résultats « sous forme décimale », cellules en LaTeX. **Tous les
+  calculs suivants sont décalés de 1** (ids, titres, grilles, tableaux,
+  arbres, groupes) : 14.5 tableau d'effectifs, 14.6 probabilités
+  conditionnelles et indépendance (« On sait que … Calculer … »), 14.7 et
+  14.8 arbres, 14.9 et 14.10 cas concrets, 14.11 tableau avec n, 14.12
+  arbre avec x, 14.13 loi avec une probabilité inconnue, 14.14 lois
+  cumulées, 14.15 à 14.18 les avancés (arbre avec a, uniforme, progression
+  géométrique, deux valeurs). Les entrées du 04/10 ci-dessus parlent des
+  numéros d'avant ce décalage. Vérifié : 400 tirages recalculés
+  indépendamment : 0 écart ; cycle complet 8 × 47 accepté ; tableaux,
+  textes et arbres tous construits ; 0 erreur MathJax ; vérificateur : 0
+  erreur ; rendu contrôlé.
