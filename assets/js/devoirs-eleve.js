@@ -79,7 +79,11 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
     if (!tentativesParDevoir.has(x.devoirId)) tentativesParDevoir.set(x.devoirId, []);
     tentativesParDevoir.get(x.devoirId).push(x);
   }
-  const brouillonParFiche = new Map(instBrouillonsFiches.docs.map((b) => [b.data().ficheId, b]));
+  // Brouillons de fiche : un par fiche pour un devoir sur la fiche entiere
+  // (cle historique, sans devoirId), un PAR DEVOIR pour un devoir sur une
+  // partie de fiche (champ devoirId, voir cleBrouillon dans suivi.js).
+  const brouillonParFiche = new Map(instBrouillonsFiches.docs.filter((b) => !b.data().devoirId).map((b) => [b.data().ficheId, b]));
+  const brouillonParDevoirPartiel = new Map(instBrouillonsFiches.docs.filter((b) => b.data().devoirId).map((b) => [b.data().devoirId, b]));
   const brouillonParDevoir = new Map(instBrouillonsAuto.docs.map((b) => [b.id, b]));
   const brouillonsUtiles = new Set();
 
@@ -99,7 +103,10 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
     for (const t of avantEcheance) { if (!meilleure || t.score > meilleure.score) meilleure = t; }
     const derniereActivite = tentatives.reduce((max, t) => Math.max(max, millis(t.horodatage)), 0);
 
-    const brouillon = dv.type === 'fiche' ? brouillonParFiche.get(dv.ficheId) : brouillonParDevoir.get(dv.id);
+    const partiel = Array.isArray(dv.calculs) && dv.calculs.length > 0;
+    const brouillon = dv.type === 'fiche'
+      ? (partiel ? brouillonParDevoirPartiel.get(dv.id) : brouillonParFiche.get(dv.ficheId))
+      : brouillonParDevoir.get(dv.id);
     const enregistre = ouvert && !!brouillon;
     if (enregistre) brouillonsUtiles.add(brouillon.ref.path);
 

@@ -51,6 +51,28 @@ function idFiche(ficheId) {
   return encodeURIComponent(ficheId);
 }
 
+// Devoir retenu pour chaque fiche ouverte (renseigne par verifierEtatDevoir,
+// 04/10/2026) : une fiche peut avoir plusieurs devoirs en meme temps (surtout
+// depuis les devoirs sur une partie de fiche), et c'est la page qui choisit
+// lequel elle affiche (lien ?devoir=<id> depuis /mes-devoirs/, sinon le plus
+// proche de son echeance). Brouillon et tentative doivent ensuite porter sur
+// CE devoir-la, pas sur un second choix recalcule plus tard -- d'ou cette
+// memoire au lieu d'un parametre ajoute a chaque appel dans les 50 fiches.
+const devoirChoisiParFiche = new Map();
+
+// Brouillon d'une fiche : un document par fiche (inchange pour un devoir sur
+// la fiche entiere ou hors devoir), mais un document PAR DEVOIR pour un devoir
+// partiel -- deux devoirs sur des calculs differents de la meme fiche ne
+// doivent pas se partager (et s'ecraser) un seul brouillon.
+function devoirPartielDe(ficheId) {
+  const devoir = devoirChoisiParFiche.get(ficheId);
+  return devoir && Array.isArray(devoir.calculs) && devoir.calculs.length > 0 ? devoir : null;
+}
+function cleBrouillon(ficheId) {
+  const partiel = devoirPartielDe(ficheId);
+  return partiel ? `${idFiche(ficheId)}~${partiel.id}` : idFiche(ficheId);
+}
+
 // Pour les fiches passees au nouveau modele : permet de n'afficher les
 // boutons Enregistrer/Valider (et de conditionner ce qu'ils debloquent) que
 // pour un eleve reellement connecte -- le site reste utilisable sans compte,
@@ -120,6 +142,10 @@ export async function enregistrerBrouillon(ficheId, exercices, saisies, passe, e
   if (!utilisateurCourant) return;
   try {
     const donnees = { ficheId, exercices, saisies, passe, horodatage: serverTimestamp() };
+    // devoirId : seulement pour un devoir partiel (voir cleBrouillon) -- sert
+    // a /mes-devoirs/ pour rattacher ce brouillon a SON devoir.
+    const partiel = devoirPartielDe(ficheId);
+    if (partiel) donnees.devoirId = partiel.id;
     if (extra !== undefined) donnees.extra = extra;
     // setDoc() refuse tout champ explicitement `undefined`, meme imbrique
     // profondement (une fiche a exercices ou etat auxiliaire genere
@@ -134,7 +160,7 @@ export async function enregistrerBrouillon(ficheId, exercices, saisies, passe, e
     donnees.exercices = JSON.parse(JSON.stringify(donnees.exercices));
     donnees.saisies = JSON.parse(JSON.stringify(donnees.saisies));
     if (donnees.extra !== undefined) donnees.extra = JSON.parse(JSON.stringify(donnees.extra));
-    await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)), donnees);
+    await setDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', cleBrouillon(ficheId)), donnees);
   } catch (erreur) {
     console.warn('Suivi : enregistrement du brouillon impossible.', erreur);
     // Chaque fiche affiche explicitement un message de succes/echec a
@@ -155,7 +181,7 @@ export async function chargerBrouillon(ficheId) {
   await authPrete;
   if (!utilisateurCourant) return null;
   try {
-    const instantane = await getDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)));
+    const instantane = await getDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', cleBrouillon(ficheId)));
     return instantane.exists() ? instantane.data() : null;
   } catch (erreur) {
     console.warn('Suivi : lecture du brouillon impossible.', erreur);
@@ -168,7 +194,7 @@ export async function chargerBrouillon(ficheId) {
 export async function supprimerBrouillon(ficheId) {
   if (!utilisateurCourant) return;
   try {
-    await deleteDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', idFiche(ficheId)));
+    await deleteDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', cleBrouillon(ficheId)));
   } catch (erreur) {
     console.warn('Suivi : suppression du brouillon impossible.', erreur);
   }
@@ -279,7 +305,14 @@ async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisI
   try {
     const classe = await classeEleve();
     if (!classe) return;
-    const choix = await choisirDevoirActif(await devoirsPour(ficheId, classe));
+    // Le devoir retenu par verifierEtatDevoir pour cette page (voir
+    // devoirChoisiParFiche), pas un nouveau choix : c'est celui que l'eleve
+    // a sous les yeux. Sans memoire (appel direct depuis la console), choix
+    // habituel parmi les devoirs de la fiche.
+    let candidats = await devoirsPour(ficheId, classe);
+    const memorise = devoirChoisiParFiche.get(ficheId);
+    if (memorise) candidats = candidats.filter((d) => d.id === memorise.id);
+    const choix = await choisirDevoirActif(candidats);
     if (!choix || choix.essaisUtilises >= choix.devoir.nbEssaisMax) return;
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
       devoirId: choix.devoir.id,
@@ -299,16 +332,30 @@ async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisI
 // normal), sinon {titre, nbEssaisMax, essaisUtilises, echeance (ms), bloque}
 // pour le devoir choisi par choisirDevoirActif. Passee l'echeance, plus
 // aucun devoir actif : entrainement libre.
-export async function verifierEtatDevoir(ficheId) {
+//
+// `devoirId` (optionnel, 04/10/2026) : le devoir que l'eleve a explicitement
+// ouvert (lien ?devoir=<id> depuis /mes-devoirs/). Indispensable des qu'une
+// fiche porte plusieurs devoirs (devoirs sur des calculs differents) : sans
+// lui, seul le plus proche de son echeance serait accessible. Ignore s'il ne
+// correspond a aucun devoir applicable a cet eleve pour cette fiche (lien
+// perime, devoir supprime) : choix habituel dans ce cas.
+// Renvoie aussi `id` et `calculs` (liste de numeros de calculs d'un devoir
+// partiel, null pour la fiche entiere) -- voir assets/js/devoir-partiel.js.
+export async function verifierEtatDevoir(ficheId, devoirId) {
   await authPrete;
   if (!utilisateurCourant) return null;
   try {
     const classe = await classeEleve();
     if (!classe) return null;
-    const choix = await choisirDevoirActif(await devoirsPour(ficheId, classe));
-    if (!choix) return null;
+    let candidats = await devoirsPour(ficheId, classe);
+    if (devoirId && candidats.some((d) => d.id === devoirId)) candidats = candidats.filter((d) => d.id === devoirId);
+    const choix = await choisirDevoirActif(candidats);
+    if (!choix) { devoirChoisiParFiche.delete(ficheId); return null; }
     const { devoir, essaisUtilises } = choix;
+    devoirChoisiParFiche.set(ficheId, { id: devoir.id, calculs: Array.isArray(devoir.calculs) ? devoir.calculs : null });
     return {
+      id: devoir.id,
+      calculs: Array.isArray(devoir.calculs) && devoir.calculs.length > 0 ? devoir.calculs : null,
       titre: devoir.titre,
       nbEssaisMax: devoir.nbEssaisMax,
       essaisUtilises,

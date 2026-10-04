@@ -54,6 +54,16 @@ depuis la réorganisation du 02/10/2026 »).
 - Fichiers partagés :
   - `assets/js/suivi.js` (module, donc **différé**) : tout le suivi Firebase
     des devoirs (brouillons, validations, tentatives, verrouillages).
+  - `assets/js/devoir-partiel.js` (script classique, 04/10/2026) : devoir
+    sur une PARTIE d'une fiche — masque les calculs non retenus, compte les
+    questions retenues. `window.DevoirPartiel` sert aussi de **marqueur
+    « fiche câblée »** : le formulaire d'attribution n'offre le choix des
+    calculs que si la fiche, chargée dans une iframe, l'expose. Câblées à
+    ce jour (pilotes) : Première 1 et 9, Seconde cahier 2 fiche 8. Les 47
+    autres n'acceptent encore que le devoir sur la fiche entière
+    (`outils/devoir-partiel/cabler-fiche.js` les câble par script ; essai à
+    blanc concluant sur les 48 fiches restantes, câblage en masse en
+    attente du feu vert de David).
   - `assets/js/widgets-saisie.js` (script classique, 04/10/2026) : aides de
     saisie des 14 fiches de Seconde à widgets (cahier 2 fiche 8, cahier 3
     fiches 9-10, cahier 5 fiches 14-17, cahier 6 fiches 18-19, cahier 7
@@ -178,6 +188,24 @@ depuis la réorganisation du 02/10/2026 »).
   la même cible (`choisirDevoirActif()` : le plus proche de son échéance
   parmi les ouverts) ; côté automatismes, tout se fait **par id de
   devoir** (`...ParId`).
+- **Devoir sur une partie de fiche** (04/10/2026) : champ facultatif
+  `calculs` (numéros, ex. `["9.4","9.6"]`) et `calculsTitres` (tableau
+  plat de chaînes ≤ 100 caractères : Firestore refuse les tableaux
+  imbriqués). Le formulaire lit la liste des calculs dans la fiche
+  elle-même (titres construits en JavaScript compris), avec « tout cocher »
+  par section ; rien de coché = fiche entière. Les calculs non retenus sont
+  **masqués** pour l'élève (classe `devoir-partiel-masque`, réappliquée
+  par un `MutationObserver` après chaque reconstruction de grille) ; la
+  note est « bonnes réponses / questions retenues » ; le bandeau le dit.
+  Sélection **verrouillée dès qu'une tentative existe** (formulaire en
+  modification). Une fiche s'ouvre sur un devoir précis par
+  `?devoir=<id>` (lien de `/mes-devoirs/`) : indispensable quand une
+  fiche porte plusieurs devoirs ; sans paramètre, le plus proche de son
+  échéance. Brouillon d'un devoir partiel : clé
+  `<ficheId encodé>~<devoirId>` + champ `devoirId` (un par devoir) ; devoir
+  entier : clé historique. Essais épuisés : `retirer()`, toute la fiche
+  redevient visible (entraînement libre). Aucune modification de
+  `firestore.rules`.
 
 ## 5. Comptes
 
@@ -277,6 +305,22 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   connecter sous un autre compte déconnecte les autres onglets.
 - CSS : un `display` en classe ou en ligne l'emporte sur l'attribut
   `hidden` — piloter `style.display` ou prévoir `[hidden]` explicite.
+- Devoir partiel : la sélection est faite **par numéro de calcul**
+  (`"9.4"`), pas par position. Renuméroter une fiche pendant un devoir
+  partiel déplace silencieusement la sélection (si plus aucun numéro ne
+  correspond, la fiche reste entière et la console avertit). Les titres
+  retenus sont gardés dans `calculsTitres` pour permettre un contrôle,
+  non implémenté. Un devoir qui change de type en modification doit
+  nettoyer ses champs avec `deleteField()` (`calculs`, `calculsTitres`,
+  `ficheId`…).
+- Fiche câblée = `<script src=".../devoir-partiel.js">` après
+  `claviers.js` + une dizaine de retouches (bandeau, validation et total,
+  « tout saisi », champ suivant, vérifier tout, toutes les réponses,
+  `verifierEtatDevoir(FICHE_ID, ?devoir)`, `appliquer`, `retirer`) : voir
+  `outils/devoir-partiel/cabler-fiche.js`.
+  Une fiche non câblée ignore `?devoir` et le champ `calculs` : si un
+  devoir partiel y était attribué par un autre moyen, l'élève verrait la
+  fiche entière notée sur toutes les questions.
 
 **Scripts et outils (Windows)**
 - Scripts contenant des antislashs (LaTeX) : les écrire dans un fichier

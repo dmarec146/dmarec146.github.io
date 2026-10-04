@@ -73,6 +73,9 @@ const champDuree = document.getElementById('dev-champ-duree');
 const selectDuree = document.getElementById('dev-duree');
 const champThemes = document.getElementById('dev-champ-themes');
 const listeThemes = document.getElementById('dev-themes-liste');
+const champCalculs = document.getElementById('dev-champ-calculs');
+const listeCalculs = document.getElementById('dev-calculs-liste');
+const etatCalculs = document.getElementById('dev-calculs-etat');
 const selectClasse = document.getElementById('dev-classe');
 const champEleves = document.getElementById('dev-champ-eleves');
 const listeEleves = document.getElementById('dev-eleves-liste');
@@ -180,6 +183,8 @@ boutonAttribuer.addEventListener('click', () => {
   const allaitFermer = !panneauAttribuer.hidden;
   basculerPanneau(PANNEAUX[0]);
   if (allaitFermer && devoirEnEdition) annulerEdition();
+  // Ouverture du panneau : lit (une fois) les calculs de la fiche affichee.
+  if (!allaitFermer && !devoirEnEdition) mettreAJourChampCalculs();
 });
 boutonEnCours.addEventListener('click', () => {
   if (devoirEnEdition) annulerEdition();
@@ -300,6 +305,210 @@ function remplirListeThemes(selectionnes) {
   }
 }
 
+// ---------- Devoir sur une partie de fiche (04/10/2026) ----------
+// Pour une fiche "cablee" (qui charge assets/js/devoir-partiel.js), le
+// formulaire propose les calculs de la fiche a cocher ; rien de coche (ou
+// tout coche) = la fiche entiere, comportement habituel. La liste n'est pas
+// tenue a la main : elle est lue dans la fiche elle-meme, chargee dans une
+// iframe hors ecran (titres construits en JavaScript compris), ce qui sert
+// aussi de test "fiche cablee ?" (presence de window.DevoirPartiel) -- une
+// fiche pas encore cablee ne propose pas le choix, plutot que de laisser
+// creer un devoir "partiel" qu'elle ferait faire en entier sans rien dire.
+let calculsFiche = null;       // [{num, section, titre}] de la fiche choisie, ou null
+let ficheCalculsLue = null;    // ficheId pour lequel calculsFiche est a jour
+let jetonCalculs = 0;          // ignore une lecture rendue obsolete par un nouveau choix
+let lectureCalculsEnCours = false;
+let lectureCalculsEnEchec = false;
+
+const attendre = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Charge la fiche dans une iframe hors ecran, attend qu'elle ait construit ses
+// grilles et compose ses formules, puis renvoie DevoirPartiel.listeCalculs()
+// (null si la fiche n'est pas cablee). L'iframe est toujours retiree.
+function lireCalculsDeLaFiche(ficheId) {
+  return new Promise((resolve, reject) => {
+    const cadre = document.createElement('iframe');
+    cadre.setAttribute('aria-hidden', 'true');
+    cadre.tabIndex = -1;
+    cadre.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;height:900px;border:0;opacity:0;pointer-events:none;';
+    const fin = (valeur, erreur) => {
+      clearTimeout(delai);
+      cadre.remove();
+      if (erreur) reject(erreur); else resolve(valeur);
+    };
+    const delai = setTimeout(() => fin(null, new Error('delai depasse')), 30000);
+    cadre.addEventListener('load', async () => {
+      try {
+        const fenetre = cadre.contentWindow;
+        if (!fenetre.DevoirPartiel) { fin(null); return; }
+        const debut = Date.now();
+        while (fenetre.document.querySelectorAll('.question').length === 0 && Date.now() - debut < 20000) await attendre(150);
+        if (fenetre.MathJax && fenetre.MathJax.typesetPromise) {
+          try { await fenetre.MathJax.typesetPromise(); } catch (e) { /* titres lisibles meme sans composition */ }
+        }
+        fin(fenetre.DevoirPartiel.listeCalculs());
+      } catch (erreur) {
+        fin(null, erreur);
+      }
+    });
+    cadre.src = ficheId;
+    document.body.appendChild(cadre);
+  });
+}
+
+function nbCalculsCoches() {
+  return listeCalculs.querySelectorAll('input[value]:checked').length;
+}
+
+function mettreAJourResumeCalculs() {
+  if (!calculsFiche) return;
+  const n = nbCalculsCoches();
+  etatCalculs.textContent = n === 0
+    ? 'Aucun calcul coché : le devoir porte sur la fiche entière. Coche des calculs pour ne donner qu\'une partie de la fiche.'
+    : `${n} calcul${n > 1 ? 's' : ''} retenu${n > 1 ? 's' : ''} sur ${calculsFiche.length} : les autres seront masqués pour les élèves et la note sera « bonnes réponses / questions retenues ».`;
+  if (listeCalculs.querySelector('input:disabled')) {
+    etatCalculs.textContent += ' Sélection verrouillée : des élèves ont déjà fait des tentatives sur ce devoir.';
+  }
+}
+
+function remplirListeCalculs(calculs, preselection, verrouille) {
+  listeCalculs.innerHTML = '';
+  const parSection = new Map();
+  for (const calcul of calculs) {
+    if (!parSection.has(calcul.section)) parSection.set(calcul.section, []);
+    parSection.get(calcul.section).push(calcul);
+  }
+  for (const [section, items] of parSection) {
+    const entete = document.createElement('label');
+    entete.className = 'dev-eleve-ligne dev-calculs-section';
+    const caseSection = document.createElement('input');
+    caseSection.type = 'checkbox';
+    caseSection.disabled = !!verrouille;
+    entete.append(caseSection, document.createTextNode(section || 'Calculs'));
+    listeCalculs.appendChild(entete);
+
+    const cases = items.map((calcul) => {
+      const ligne = document.createElement('label');
+      ligne.className = 'dev-eleve-ligne dev-calculs-ligne';
+      ligne.title = calcul.titre;
+      const case_ = document.createElement('input');
+      case_.type = 'checkbox';
+      case_.value = calcul.num;
+      case_.dataset.titre = calcul.titre;
+      case_.checked = !!(preselection && preselection.includes(calcul.num));
+      case_.disabled = !!verrouille;
+      const texte = document.createElement('span');
+      const numero = document.createElement('span');
+      numero.className = 'dev-calculs-num';
+      numero.textContent = `Calcul ${calcul.num}`;
+      const titre = calcul.titre.length > 130 ? `${calcul.titre.slice(0, 127)}…` : calcul.titre;
+      texte.append(numero, document.createTextNode(titre ? ` — ${titre}` : ''));
+      ligne.append(case_, texte);
+      listeCalculs.appendChild(ligne);
+      return case_;
+    });
+
+    const majSection = () => {
+      const n = cases.filter((c) => c.checked).length;
+      caseSection.checked = n === cases.length;
+      caseSection.indeterminate = n > 0 && n < cases.length;
+    };
+    caseSection.addEventListener('change', () => {
+      cases.forEach((c) => { c.checked = caseSection.checked; });
+      caseSection.indeterminate = false;
+      mettreAJourResumeCalculs();
+    });
+    cases.forEach((c) => c.addEventListener('change', () => { majSection(); mettreAJourResumeCalculs(); }));
+    majSection();
+  }
+  mettreAJourResumeCalculs();
+}
+
+// (Re)lit les calculs de la fiche choisie et remplit la liste. `forcer` :
+// relire meme si la fiche n'a pas change (edition d'un devoir existant, avec sa
+// selection `preselection` et un eventuel verrouillage).
+async function mettreAJourChampCalculs({ preselection = null, verrouille = false, forcer = false } = {}) {
+  const ficheId = selectFiche.value;
+  if (selectType.value !== 'fiche' || !ficheId) {
+    jetonCalculs++;
+    champCalculs.hidden = true;
+    calculsFiche = null;
+    ficheCalculsLue = null;
+    lectureCalculsEnCours = false;
+    return;
+  }
+  champCalculs.hidden = false;
+  // Rien a lire tant que le panneau d'attribution est ferme (charger une
+  // fiche entiere dans une iframe a chaque creation de devoir serait du
+  // gaspillage) ; la lecture se fait a l'ouverture du panneau.
+  if (!forcer && panneauAttribuer.hidden) return;
+  if (!forcer && ficheCalculsLue === ficheId) return;
+
+  const jeton = ++jetonCalculs;
+  calculsFiche = null;
+  ficheCalculsLue = null;
+  lectureCalculsEnEchec = false;
+  lectureCalculsEnCours = true;
+  listeCalculs.hidden = true;
+  listeCalculs.innerHTML = '';
+  etatCalculs.textContent = 'Lecture des calculs de la fiche…';
+  try {
+    const calculs = await lireCalculsDeLaFiche(ficheId);
+    if (jeton !== jetonCalculs) return;
+    ficheCalculsLue = ficheId;
+    if (!calculs) {
+      etatCalculs.textContent = 'Le choix des calculs n\'est pas encore disponible pour cette fiche : le devoir portera sur la fiche entière.';
+    } else if (calculs.length === 0) {
+      etatCalculs.textContent = 'Aucun calcul repéré dans cette fiche : le devoir portera sur la fiche entière.';
+    } else {
+      calculsFiche = calculs;
+      listeCalculs.hidden = false;
+      remplirListeCalculs(calculs, preselection, verrouille);
+    }
+  } catch (erreur) {
+    if (jeton !== jetonCalculs) return;
+    console.warn('Devoirs : lecture des calculs de la fiche impossible.', erreur);
+    lectureCalculsEnEchec = true;
+    etatCalculs.textContent = 'Lecture des calculs de la fiche impossible. Re-sélectionne la fiche pour réessayer.';
+  } finally {
+    if (jeton === jetonCalculs) lectureCalculsEnCours = false;
+  }
+}
+
+// Selection courante : { calculs, calculsTitres } pour un devoir partiel, ou
+// null pour la fiche entiere (rien de coche, tout coche, ou fiche non cablee).
+function selectionCalculs() {
+  if (!calculsFiche) return null;
+  const cochees = [...listeCalculs.querySelectorAll('input[value]:checked')];
+  if (cochees.length === 0 || cochees.length === calculsFiche.length) return null;
+  return {
+    calculs: cochees.map((c) => c.value),
+    calculsTitres: cochees.map((c) => (c.dataset.titre || '').slice(0, 100)),
+  };
+}
+
+// Phrase ajoutee au titre du devoir : "9.4 et 9.6", "9.1, 9.2 et 9.5".
+function phraseCalculs(calculs) {
+  const liste = calculs.length > 1 ? `${calculs.slice(0, -1).join(', ')} et ${calculs[calculs.length - 1]}` : calculs[0];
+  return `calcul${calculs.length > 1 ? 's' : ''} ${liste}`;
+}
+
+// Des eleves ont-ils deja fait au moins une tentative sur ce devoir ? Alors la
+// selection de calculs n'est plus modifiable : les notes deja enregistrees
+// (x / nombre de questions retenues) ne seraient plus sur la meme base. Meme
+// parcours des eleves concernes que la vue "Resultats" (afficherResultats).
+async function devoirADesTentatives(devoir) {
+  const eleves = devoir.classe === CLASSE_HORS_CLASSE
+    ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) =>
+        !d.data().classe && (!Array.isArray(devoir.eleves) || devoir.eleves.includes(d.id)))
+    : (await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)))).docs;
+  const comptes = await Promise.all(eleves.map(async (e) => (await getDocs(query(
+    collection(db, 'eleves', e.id, 'devoirsTentatives'),
+    where('devoirId', '==', devoir.id)
+  ))).size));
+  return comptes.some((n) => n > 0);
+}
+
 // Affiche/masque la case a cocher selon la classe choisie, et la peuple a la
 // demande (jamais utile hors "Hors classe"). Appelee au changement de classe
 // ET au changement de type (qui repeuple entierement le select classe, voir
@@ -361,7 +570,14 @@ selectType.addEventListener('change', () => {
   mettreAJourChampDuree();
   remplirSelectClasse();
   mettreAJourChampEleves();
+  // Aussi appele apres chaque formulaire.reset() (creation, annulation) :
+  // oublier la fiche deja lue force une liste de calculs neuve, ni cochee ni
+  // verrouillee par l'edition precedente.
+  ficheCalculsLue = null;
+  mettreAJourChampCalculs();
 });
+
+selectFiche.addEventListener('change', () => mettreAJourChampCalculs());
 
 selectMode.addEventListener('change', mettreAJourChampDuree);
 
@@ -452,6 +668,20 @@ function modifierDevoir(devoir) {
   fermerTousLesPanneaux();
   ouvrirPanneau(PANNEAUX[0]);
   panneauAttribuer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Devoir de fiche : relit les calculs de la fiche avec la selection du
+  // devoir. Verrouillee (cases grisees) des qu'un eleve a deja fait une
+  // tentative, partiel ou non -- sinon les notes deja enregistrees ne
+  // seraient plus sur la meme base ; en cas de doute (lecture impossible),
+  // par prudence, verrouillee aussi.
+  if (devoir.type === 'fiche') {
+    (async () => {
+      let verrouille = false;
+      try { verrouille = await devoirADesTentatives(devoir); } catch (erreur) { verrouille = true; }
+      if (devoirEnEdition !== devoir) return;
+      await mettreAJourChampCalculs({ preselection: Array.isArray(devoir.calculs) ? devoir.calculs : null, verrouille, forcer: true });
+    })();
+  }
 }
 
 function annulerEdition() {
@@ -503,8 +733,28 @@ formulaire.addEventListener('submit', async (evenement) => {
     if (!niveau) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir un niveau.'); return; }
   } else {
     const ficheId = selectFiche.value;
-    donnees = { type: 'fiche', ficheId, titre: ficheTitreDepuisId(ficheId) };
     if (!ficheId) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir une fiche.'); return; }
+    // Pas de soumission pendant la lecture des calculs : une selection encore
+    // vide serait prise pour "fiche entiere" (et effacerait celle d'un devoir
+    // partiel en cours de modification).
+    if (lectureCalculsEnCours) {
+      afficherEtat(zoneErreurFormulaire, 'Lecture des calculs de la fiche en cours — réessayer dans un instant.');
+      return;
+    }
+    donnees = { type: 'fiche', ficheId, titre: ficheTitreDepuisId(ficheId) };
+    let selection = selectionCalculs();
+    // Lecture des calculs impossible pendant la modification d'un devoir
+    // partiel de la MEME fiche : on garde sa selection plutot que de
+    // l'effacer sans le dire.
+    if (!selection && !calculsFiche && devoirEnEdition && devoirEnEdition.ficheId === ficheId
+      && Array.isArray(devoirEnEdition.calculs) && devoirEnEdition.calculs.length > 0) {
+      selection = { calculs: devoirEnEdition.calculs, calculsTitres: devoirEnEdition.calculsTitres || [] };
+    }
+    if (selection) {
+      donnees.calculs = selection.calculs;
+      donnees.calculsTitres = selection.calculsTitres;
+      donnees.titre += ` — ${phraseCalculs(selection.calculs)}`;
+    }
   }
 
   if (!classe || !echeance || !nbEssaisMax || nbEssaisMax < 1) {
@@ -549,6 +799,8 @@ formulaire.addEventListener('submit', async (evenement) => {
         eleves: eleves ?? deleteField(),
         duree: donnees.duree ?? deleteField(),
         themes: donnees.themes ?? deleteField(),
+        calculs: donnees.calculs ?? deleteField(),
+        calculsTitres: donnees.calculsTitres ?? deleteField(),
       });
       annulerEdition();
       afficherEtat(zoneConfirmation, 'Devoir modifié.');

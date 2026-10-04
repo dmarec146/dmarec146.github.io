@@ -33,7 +33,10 @@ function formaterDate(millis) {
 // devoir en cours : sujet-blanc.html (cible absente ou 'sujet-blanc') ou
 // fiche.html (cible 'fiche').
 function lienPour(devoir) {
-  if (devoir.type === 'fiche') return devoir.ficheId;
+  // ?devoir=<id> (04/10/2026) : la fiche s'ouvre sur CE devoir -- necessaire
+  // des qu'une fiche porte plusieurs devoirs (devoirs sur des calculs
+  // differents) ; une fiche qui ne lit pas le parametre l'ignore.
+  if (devoir.type === 'fiche') return `${devoir.ficheId}?devoir=${encodeURIComponent(devoir.id)}`;
   return devoir.cible === 'fiche' ? '/automatismes/premiere/fiche.html' : '/automatismes/premiere/sujet-blanc.html';
 }
 

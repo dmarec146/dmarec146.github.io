@@ -6210,6 +6210,101 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     (`outils/guide-eleve/captures.js`) nomme un devoir fictif « Sommes —
     fiche 14 » (devenue 22) ; le PDF déjà généré n'est pas affecté.
 
+- **Devoir sujet blanc de 1ere-Gr 1 : `ficheId` résiduel et tentatives de
+  fiche rattachées à tort (04/10/2026).** En préparant le devoir sur une
+  partie de fiche, inventaire en lecture seule des devoirs : le devoir
+  `b725KZd9xnPEDC7cljhf` (sujet blanc niveau 2, mode fiche, `1ere-Gr 1`,
+  échéance 04/10 20h30) était de type `automatismes` mais portait encore
+  `ficheId` = Première fiche 1, et 5 tentatives de **fiche** (35 questions,
+  ancien format, toutes du 29/09) lui étaient rattachées.
+  - **Cause** : le devoir avait été créé pour la fiche 1 puis transformé en
+    sujet blanc via « Modifier » ; `updateDoc` ne retire pas `ficheId`
+    (`devoirs.js` ne fait `deleteField()` que pour `eleves`, `duree` et
+    `themes`). Conséquences : (1) `devoirsPour()` ne filtre pas par type, donc
+    ouvrir la fiche 1 de Première en `1ere-Gr 1` appliquait ce devoir
+    (aucune tentative de ce genre depuis le 29/09) ; (2) les 5 tentatives de
+    fiche comptaient dans les essais du sujet blanc et faussaient la
+    « meilleure tentative » (score brut) : `p.fonya` (3 tentatives de fiche,
+    0 de sujet blanc) était bloqué à 3/3, `s.chowdhury` (2 de fiche) n'avait
+    plus qu'un essai.
+  - **Correction, avec l'accord de David** : sauvegarde JSON du devoir et de
+    ses 22 tentatives (`.claude/scratch/sauvegarde-devoir-b725-2026-10-04T05-41-50-821Z.json`,
+    local, non suivi) puis `deleteField()` sur `ficheId` et suppression des
+    5 tentatives de fiche (3 de `p.fonya`, 2 de `s.chowdhury`), avec
+    vérification avant chaque suppression. Après coup : devoir sans
+    `ficheId`, 17 tentatives de sujet blanc restantes, aucune avec
+    `ficheId`, type, classe et échéance inchangés.
+  - **Non corrigé (proposé à David)** : `devoirs.js` doit ajouter
+    `ficheId` (et `niveau`, `mode`, `cible` dans l'autre sens) aux champs
+    passés à `deleteField()` quand un devoir change de type ; et/ou
+    `devoirsPour()` doit ignorer les devoirs qui ne sont pas de type
+    `fiche`. Modification de fichiers partagés : à faire après la clôture
+    des sujets blancs et sur « pousse tout » de David.
+
+- **Devoir sur une partie de fiche : conception et trois fiches pilotes
+  (04/10/2026).** Demande de David (brief du 04/10) : attribuer une fiche en
+  ne retenant que certains calculs ; note = bonnes réponses / questions
+  retenues ; calculs non retenus masqués pour l'élève ; devoir sans
+  sélection inchangé.
+  - **Modèle** : champs facultatifs `calculs` (numéros de calculs, ex.
+    `["9.4","9.6"]`) et `calculsTitres` (tableau plat de chaînes ≤ 100
+    caractères — Firestore refuse les tableaux imbriqués) sur
+    `devoirs/{id}` ; le titre du devoir reçoit « — calcul(s) 9.4 et 9.6 ».
+    Correspondance **par numéro de calcul** (préfixe des ids « 9.4 a) »),
+    jamais par position. `firestore.rules` inchangé.
+  - **Fichiers** : nouveau `assets/js/devoir-partiel.js` (script classique,
+    `window.DevoirPartiel` : `appliquer`, `retirer`, `retenu`,
+    `retenuParId`, `exercicesRetenus`, `compter`, `phrase`, `listeCalculs`) ;
+    `suivi.js` (`verifierEtatDevoir(ficheId, devoirId)` renvoie aussi `id`
+    et `calculs`, devoir choisi mémorisé pour que brouillon et tentative
+    aillent au même devoir, clé de brouillon `<ficheId>~<devoirId>` + champ
+    `devoirId` pour un devoir partiel) ; `devoirs.js` + `devoirs.html` +
+    `devoirs.css` (liste des calculs, « tout cocher » par section, résumé,
+    verrouillage une fois qu'une tentative existe, `deleteField()` en
+    modification) ; `devoirs-eleve.js` (brouillons d'un devoir partiel
+    rangés par `devoirId`, pour « Enregistrés ») ; `mes-devoirs.js` (lien
+    `…?devoir=<id>`).
+  - **Choix** : le formulaire lit les calculs dans la fiche chargée dans
+    une iframe hors écran (titres construits en JavaScript compris : 1.7 et
+    1.8 de Première 1) et n'offre le choix que si la fiche expose
+    `DevoirPartiel` (marqueur « fiche câblée ») ; masquage par classe CSS
+    `devoir-partiel-masque` + `MutationObserver` (les grilles sont
+    reconstruites à chaque nouvelle version) ; si aucun exercice ne
+    correspond aux numéros du devoir (fiche renumérotée), la fiche reste
+    entière et la console avertit (mieux que tout cacher). Essais épuisés :
+    `retirer()`, fiche entière en entraînement libre.
+  - **Pilotes câblés** : Première 1 (calculs 1.7-1.8 construits en JS),
+    Première 9, Seconde cahier 2 fiche 8 (widgets, tableau de signes).
+    Vérificateur de syntaxe : 50 fiches, 0 erreur.
+  - **Tests (comptes jetables, connexion par jeton personnalisé, supprimés
+    ensuite)** : formulaire → document Firestore → lien de `/mes-devoirs/`
+    → masquage (9.4 + 9.6 : 8 questions sur 28 ; 1.2 + 1.7 + 1.8 : 6 sur 26 ;
+    8.2 + 8.5 + 8.6 : 10 sur 33) ; total de la tentative = questions retenues
+    (8, 6, 10) ; masquage conservé après reconstruction des zones ;
+    brouillon rangé par devoir et restauré ; deux devoirs sur la même fiche
+    (entier + partiel) : chacun s'ouvre avec `?devoir=`, sans paramètre le
+    plus proche de l'échéance ; essais épuisés → fiche entière visible ;
+    modification d'un devoir avec tentatives → cases verrouillées, sans
+    tentative → libres. Le test 4/8 → 3/8 observé en route venait de
+    l'injection de la réponse dans MathLive (saisie différée), pas du code.
+  - **Script de câblage** `outils/devoir-partiel/cabler-fiche.js` : applique
+    les retouches (script, bandeau, entraînement libre, validation et total,
+    « tout saisi », champ suivant, vérifier tout, toutes les réponses,
+    `verifierEtatDevoir`, `appliquer`) avec une variante par gabarit, chaque
+    motif devant trouver exactement une occurrence. Essai à blanc sur les 48
+    fiches restantes : 48 conformes. **Pas de câblage en masse sans le feu
+    vert de David** ; avant, contrôle fiche par fiche de la structure du DOM
+    (le masquage suppose `.section-titre`, `.calcul-titre` et grilles
+    frères, vérifié sur les 50 fiches pendant la conception ; seul cas
+    ambigu : un rappel de formule entre deux calculs, Première 19, traité).
+  - **Nettoyage** : 4 devoirs de test, compte élève `z.essai` (+ 4
+    tentatives) et compte enseignant jetable supprimés ; `n.testeuse` et
+    les vrais devoirs non touchés.
+  - **Reste** (en attente de David) : les deux correctifs annoncés plus haut
+    (`devoirs.js` / `devoirsPour()`), après 20h30 ; le câblage des autres
+    fiches ; un contrôle de renumérotation via `calculsTitres` (non
+    implémenté).
+
 - **Retours de David après ses essais en mode devoir : widgets de Seconde et
   QCM de Première 1 (04/10/2026).** Quatre défauts relevés, tous traités.
   - **1. « Valider ce tableau » ne montrait rien en devoir** (fiche 8 de
