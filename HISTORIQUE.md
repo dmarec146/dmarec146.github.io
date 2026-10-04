@@ -6426,3 +6426,36 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     affiche « x / nombre de questions retenues », « Voir toutes les réponses »
     ne liste que ces questions, `toutesLesReponsesSontSaisies` et
     `allerChampSuivant` s'exécutent sans erreur.
+
+- **Devoirs partiels : test de bout en bout sur trois fiches câblées
+  (04/10/2026).** Demande de David avant tout envoi : fiches variées, plusieurs
+  réponses par fiche. Élève et devoirs jetables (classe `1ere-test`),
+  connexion par jeton, tout supprimé ensuite.
+  - **Seconde 15** (calculs 15.2, 15.4, 15.7 : expressions, valeurs
+    approchées, intervalles, ensemble, **tableaux de variations**) : 12 questions
+    sur 27 ; avancement enregistré avec 7 réponses (4 justes, 2 fausses, un
+    widget à moitié rempli), rechargement : brouillon repris à l'identique,
+    masquage conservé ; validation → tentative **6 / 12**, 10 réponses ;
+    brouillon supprimé.
+  - **Première 19** (19.4, 19.8, 19.9, 19.14 : valeurs trigonométriques, QCM,
+    QCM sur courbes, formule rappelée) : 11 questions sur 39, rappel de
+    formule du calcul masqué (19.5) caché, ceux des calculs retenus visibles ;
+    tentative 1 : **6 / 11**, 9 réponses ; « Générer une nouvelle version » :
+    masquage conservé, saisies vidées ; tentative 2 (tout juste) : **11 / 11** ;
+    tentative 3 (2 réponses) : 2 / 11, fenêtre « dernière tentative », fiche
+    entière (39 questions) en entraînement libre.
+  - **Seconde 22** (22.3 oui/non, 22.5 vecteurs, 22.7 paires, 22.8
+    combinaison) : 11 questions sur 27, tentative **5 / 11**, 9 réponses.
+  - **Contrôles croisés** : pour chaque tentative, score, total et nombre de
+    réponses stockés dans `devoirsTentatives` = ce que la fiche calculait sur
+    les seuls calculs retenus. `/mes-devoirs/` : « Meilleure note : 6 / 12 »,
+    « 11 / 11 — 3 tentatives » (rangé dans « Faits »). Vue Résultats de
+    l'enseignant : 11 / 11 (0 non-réponse), 6 / 12 (2), 5 / 11 (2).
+  - **Artefacts de test, pas des défauts** : les réponses de la combinaison
+    22.8 et des valeurs approchées 15.4 a) sont jugées fausses parce que mon
+    injection (LaTeX / format de liste) n'est pas lue comme un élève la
+    taperait.
+  - **Non couvert** : les 44 autres fiches (contrôlées par le masquage et les
+    fonctions modifiées, pas par une validation réelle), les appareils tactiles.
+  - Le devoir `Xh7g2N6XAJSn5FbJfGmf` (classe `1ere-demo`, calcul 1.4,
+    créé par David à 07:20) est un reste de ses propres essais : laissé en place.
