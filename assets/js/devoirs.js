@@ -781,12 +781,45 @@ boutonRetourResultats.addEventListener('click', () => {
   vueListe.hidden = false;
 });
 
+// Suppression d'un devoir (04/10/2026, demande de David) : le devoir ET toutes
+// les tentatives des eleves (eleves/{uid}/devoirsTentatives) -- plus rien ne
+// reste d'un devoir supprime. Tous les eleves sont parcourus, pas seulement la
+// classe visee (un eleve a pu changer de classe). Les brouillons et les
+// marqueurs "retire de ma liste" de l'eleve ne sont pas supprimables par
+// l'enseignant (regles) : l'eleve les efface lui-meme au prochain chargement
+// de /mes-devoirs/ (devoirs-eleve.js).
+async function tentativesDesDevoirs(devoirIds) {
+  const ids = new Set(devoirIds);
+  const eleves = await getDocs(collection(db, 'eleves'));
+  const parEleve = await Promise.all(eleves.docs.map(async (e) =>
+    (await getDocs(collection(db, 'eleves', e.id, 'devoirsTentatives'))).docs.filter((t) => ids.has(t.data().devoirId))));
+  return parEleve.flat();
+}
+
+// Tentatives d'abord, devoir ensuite : en cas d'echec en cours de route le
+// devoir existe encore et la suppression peut etre relancee.
+async function supprimerDevoirsEtTentatives(devoirIds, tentatives) {
+  await Promise.all(tentatives.map((t) => deleteDoc(t.ref)));
+  await Promise.all(devoirIds.map((id) => deleteDoc(doc(db, 'devoirs', id))));
+}
+
+const phraseTentatives = (n) => (n > 0 ? ` ainsi que les ${n} tentative${n > 1 ? 's' : ''} des élèves` : '');
+
 async function supprimerDevoir(devoirId, bouton) {
-  if (!confirm('Supprimer ce devoir ? Cette action est définitive.')) return;
   bouton.disabled = true;
+  let tentatives;
+  try {
+    tentatives = await tentativesDesDevoirs([devoirId]);
+  } catch (erreur) {
+    console.error(erreur);
+    bouton.disabled = false;
+    afficherEtat(zoneErreurFormulaire, 'Échec de la suppression — réessayer.');
+    return;
+  }
+  if (!confirm(`Supprimer ce devoir${phraseTentatives(tentatives.length)} ? Cette action est définitive.`)) { bouton.disabled = false; return; }
   masquer(zoneConfirmation);
   try {
-    await deleteDoc(doc(db, 'devoirs', devoirId));
+    await supprimerDevoirsEtTentatives([devoirId], tentatives);
     await chargerListeDevoirs();
   } catch (erreur) {
     console.error(erreur);
@@ -805,10 +838,12 @@ async function supprimerDevoir(devoirId, bouton) {
 boutonSupprimerTousFaits.addEventListener('click', async () => {
   const n = devoirsFaitsActuels.length;
   if (n === 0) return;
-  if (!confirm(`Supprimer les ${n} devoir${n > 1 ? 's' : ''} faits ? Cette action est définitive.`)) return;
   boutonSupprimerTousFaits.disabled = true;
   try {
-    await Promise.all(devoirsFaitsActuels.map((d) => deleteDoc(doc(db, 'devoirs', d.id))));
+    const ids = devoirsFaitsActuels.map((d) => d.id);
+    const tentatives = await tentativesDesDevoirs(ids);
+    if (!confirm(`Supprimer les ${n} devoir${n > 1 ? 's' : ''} faits${phraseTentatives(tentatives.length)} ? Cette action est définitive.`)) return;
+    await supprimerDevoirsEtTentatives(ids, tentatives);
     await chargerListeDevoirs();
   } catch (erreur) {
     console.error(erreur);

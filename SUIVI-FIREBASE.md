@@ -138,6 +138,11 @@ depuis la réorganisation du 02/10/2026 »).
   Devoirs en cours, Devoirs faits (« Modifier », « Supprimer », « Tout
   supprimer » pour les faits, « Résultats » par élève : meilleure tentative
   avant l'échéance, horodatage serveur, essais, non-réponses).
+  **Supprimer un devoir (ou « Tout supprimer ») efface aussi toutes ses
+  tentatives** chez tous les élèves (04/10/2026) ; le message de confirmation
+  donne le nombre de tentatives. Brouillons et marqueurs « retiré de ma liste »
+  ne sont pas supprimables par l'enseignant (règles) : l'élève les nettoie lui-même
+  au chargement de `/mes-devoirs/`.
 - Classes : `2nde-207`, `1ere-Gr 1`, `1ere-Gr 3` (groupes de spécialité,
   format `1ere-Gr N`), comptes de test `1ere-demo`, `1ere-test`,
   `2nde-test`. Élève **hors classe** (sans champ `classe`) : sentinelle

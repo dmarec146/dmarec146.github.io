@@ -6280,3 +6280,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     vide) : tant que la règle n'est pas publiée, `/mes-devoirs/` fonctionne
     comme avant. Les marqueurs dont le devoir a disparu sont supprimés au
     chargement (comme les brouillons orphelins).
+
+- **Supprimer un devoir supprime aussi ses tentatives (04/10/2026).**
+  Question de David : un devoir supprimé n'apparaît plus côté élève (vrai : la
+  liste part des devoirs de la classe), mais ses tentatives restaient en base,
+  invisibles. Décision de David : « autant tout supprimer, y compris les
+  tentatives d'un élève ». `devoirs.js` : `tentativesDesDevoirs()` parcourt
+  les tentatives de **tous** les élèves (un élève a pu changer de classe),
+  `supprimerDevoirsEtTentatives()` efface les tentatives puis le devoir (en
+  cas d'échec le devoir existe encore et on peut relancer). La confirmation
+  annonce le nombre de tentatives, pour « Supprimer » comme pour « Tout
+  supprimer ». Aucune règle à changer (suppression des tentatives déjà permise
+  à l'enseignant). Testé sur la base réelle avec des données jetables :
+  suppression d'un devoir à 2 tentatives (la tentative d'un autre devoir est
+  restée) ; « Tout supprimer » annulé : 4 devoirs, 5 tentatives annoncées, rien
+  effacé.
