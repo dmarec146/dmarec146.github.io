@@ -96,10 +96,11 @@ depuis la réorganisation du 02/10/2026 »).
   déconnecter sur poste partagé).
 - `firestore.rules` : **à republier à la main dans la Console Firebase après
   toute modification** (pas de déploiement automatique ; sinon les
-  écritures échouent en silence). Dernière publication : 03/10/2026
-  (`statistiques`, fréquentation anonyme) — testées au préalable dans
-  l'émulateur (`outils/verification/regles-firestore/`, 29 cas), test à
-  relancer avant toute nouvelle publication.
+  écritures échouent en silence). Dernière publication : 04/10/2026
+  (`devoirsMasques`, devoirs faits retirés de la liste de l'élève ; avant :
+  `statistiques`, 03/10/2026) — testées au préalable dans l'émulateur
+  (`outils/verification/regles-firestore/`, 45 cas), test à relancer avant
+  toute nouvelle publication.
 - Collections utiles : `statistiques/{AAAA-MM-JJ}_{0-4}` (fréquentation
   anonyme : compteurs du jour, +1 seulement pour tout visiteur, lecture
   admin ; enseignant et navigateurs où il s'est connecté exclus) ;
