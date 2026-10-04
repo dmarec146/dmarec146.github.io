@@ -6545,3 +6545,62 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     « Rétablir » (messages d'erreur si aucun réglage individuel, puis retrait) ;
     modification classique d'un devoir à dérogation : la dérogation est
     conservée.
+
+- **Première : numéro de cahier oublié dans l'en-tête des fiches
+  déplacées (04/10/2026).** La renumérotation du jour avait laissé
+  « Première — Cahier N » (fil d'Ariane et repère de l'en-tête, 2 mentions
+  par fiche) à l'ancien numéro dans les 11 fiches 14 à 24 : détecté en
+  ouvrant la fiche 14 (« Cahier 6 » au lieu de « Cahier 5 »). Corrigé :
+  cahier 5 (fiche 14), 6 (15-17), 7 (18-19), 8 (20-21), 9 (22-24).
+  L'audit du matin ne contrôlait pas cette mention.
+
+- **Première fiche 14 (Probabilités, ex-17) : automatismes aux règles,
+  fusions, tableaux de lois en LaTeX (04/10/2026), 53 → 38 questions,
+  23 → 15 calculs.** David : « fais le. Dans les tableaux de loi de
+  probabilités, il faut du LaTeX ».
+  - **Automatismes** (6, nouveau modèle) : 14.1 inéquations a) premier
+    degré, chaque membre écrit tel quel ou en p(x+q) ; b) produit ou
+    quotient de deux facteurs affines ◊ 0 (valeur interdite jamais incluse
+    ni franchie) ; 14.2 équations a) second degré (deux solutions, solution
+    double ou aucune, ∅, à raison de 50 / 25 / 25 %), b) premier degré à
+    fractions (x+a)/b ± x/c = d ; 14.3 calcul numérique en entier ou
+    fraction irréductible a) somme de produits de décimaux, b) somme de
+    fractions pondérées (type espérance). Clavier des ensembles { } ; ∅,
+    saisie de ∅ et corrigé « ∅ » (au lieu de « {undefined} ») pour {}.
+    Retirés : produits de fractions, développement d'un produit, les deux
+    simplifications littérales en p et a.
+  - **Fusions** (énoncés autonomes « P(…) si … » comme en fiches 11 à 13) :
+    14.4 tableau d'effectifs (anciens 14.3 et 14.4 : P(B), P(A∩B), P(A∪B),
+    P(Ā∩B̄) ; le tableau de probabilités décimales disparaît) ; 14.5
+    probabilités conditionnelles et indépendance (anciens 14.5, 14.9,
+    14.10, 14.12, 14.14 : P(A∩B) depuis P_A(B), P_B(A) depuis trois
+    données, P(A∪B) et P(B) pour des événements indépendants) ; 14.6 arbre
+    pondéré dont le modèle est tiré au hasard (deux branches fractionnaires
+    ou trois branches décimales — anciens 14.8 et 14.13), résultats en
+    fraction irréductible (l'ancien 14.13 demandait « sous forme
+    décimale » pour P_D(A) = 341/623, impossible) ; 14.7 cas concret dont
+    le contexte (ski ou musique) est tiré au hasard (anciens 14.6 et 14.11) ;
+    14.10 loi avec une probabilité inconnue (anciens 14.16, 14.17, 14.19 :
+    la probabilité manquante, P(X ⩽ x), E(X), V(X) ; la valeur de m pour
+    E(X+m)=0 disparaît) ; 14.11 loi donnée par P(X ⩽ xᵢ) (ancien 14.18).
+    Gardés : 14.8 tableau avec n (coefficients désormais tirés au hasard),
+    14.9 arbre avec x, et les avancés 14.12 (arbre avec a), 14.13
+    (uniforme), 14.14 (progression géométrique, titre ajouté) et 14.15
+    (deux valeurs). Plus de suffixe « (I)/(II) ». Sections : « Calculs de
+    probabilités », « Arbres pondérés et cas concrets », « Probabilités
+    avec un paramètre », « Variables aléatoires », « Calculs plus avancés ».
+  - **LaTeX dans les tableaux** : toutes les cellules des tableaux
+    d'effectifs et de lois en LaTeX (x_i, P(X=x_i), P(X ⩽ x_i), décimaux
+    0{,}12, fractions, signes), et `\cap`, `\cup`, `\leqslant` à la place des
+    symboles Unicode dans les énoncés.
+  - Les calculs restent compatibles avec le devoir sur une partie de fiche
+    (essai : calculs 14.4 et 14.6 retenus → 7 questions comptées, les
+    autres masqués avec leurs tableaux, arbres et textes).
+  - Vérifié : 400 tirages recalculés indépendamment depuis les données
+    (inéquations sur une grille et aux bornes ; équations par discriminant
+    et substitution ; calculs évalués ; tableaux, arbres, cas concrets,
+    lois, paramètres) : 0 écart ; variété ≥ 34 énoncés par question tirée ;
+    les deux modèles d'arbre et les deux contextes concrets tirés à parts
+    égales ; cycle complet 8 × 38 accepté ; fraction non réduite, décimal et
+    intervalle faux refusés ; 0 erreur MathJax (fiche, panneau des
+    réponses, tableaux) ; vérificateur : 0 erreur ; rendu contrôlé.
