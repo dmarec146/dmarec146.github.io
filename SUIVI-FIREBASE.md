@@ -54,6 +54,16 @@ depuis la réorganisation du 02/10/2026 »).
 - Fichiers partagés :
   - `assets/js/suivi.js` (module, donc **différé**) : tout le suivi Firebase
     des devoirs (brouillons, validations, tentatives, verrouillages).
+  - `assets/js/widgets-saisie.js` (script classique, 04/10/2026) : aides de
+    saisie des 14 fiches de Seconde à widgets (cahier 2 fiche 8, cahier 3
+    fiches 9-10, cahier 5 fiches 14-17, cahier 6 fiches 18-19, cahier 7
+    fiche 20, cahier 8 fiches 21-23 et 25) — message « Réponse enregistrée »
+    après « Valider ce tableau » (surtout utile en devoir, où rien d'autre ne
+    s'affiche), passage à la question suivante, envoi du focus sur un widget
+    depuis le champ précédent (enveloppe `allerChampSuivant`, qui plantait
+    sur `input-N` absent), pavé numérique sur les champs du widget. Aucune
+    autre retouche des fiches que la balise `<script>`. Une nouvelle fiche à
+    widget doit l'inclure.
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique

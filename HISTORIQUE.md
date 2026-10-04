@@ -6209,3 +6209,46 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   - Non modifiés (cosmétique) : le script de captures du guide de l'élève
     (`outils/guide-eleve/captures.js`) nomme un devoir fictif « Sommes —
     fiche 14 » (devenue 22) ; le PDF déjà généré n'est pas affecté.
+
+- **Retours de David après ses essais en mode devoir : widgets de Seconde et
+  QCM de Première 1 (04/10/2026).** Quatre défauts relevés, tous traités.
+  - **1. « Valider ce tableau » ne montrait rien en devoir** (fiche 8 de
+    Seconde, tableau de signes) : un élève en devoir ne voit ni couleur ni
+    statut avant la validation de la fiche, et le clic ne déplaçait pas le
+    focus. Désormais un message « ✓ Réponse enregistrée » apparaît à côté du
+    bouton (« Remplis toutes les cases avant de valider. » si le widget est
+    incomplet) et, si le widget est complet, la fiche passe à la question
+    suivante comme avec la touche Entrée. Le message disparaît à la
+    modification suivante.
+  - **2. Entrée dans un champ placé avant un widget ne faisait rien** :
+    `allerChampSuivant()` cherche `input-N`, absent pour un widget
+    (`focus()` sur `null`, exception silencieuse), et le clavier ouvert
+    restait affiché. Le script partagé enveloppe cette fonction : si la
+    question suivante est un widget (en sautant les calculs masqués d'un
+    devoir partiel), il ferme les claviers ouverts (maison et MathLive) et
+    donne le focus au premier champ du widget.
+  - **3. Pas de clavier numérique sur les widgets** (cas confirmé pour les
+    cinq types : signes, variations, croisé, programme, schéma d'évolution) :
+    un bouton clavier à côté de « Valider » ouvre un pavé (chiffres, virgule,
+    −, a/b, %, ×, √, parenthèses, ⌫, Effacer) qui écrit dans le dernier champ
+    du widget où se trouvait le curseur et déclenche l'événement `input` de
+    la fiche (sauvegarde du brouillon, effacement du statut).
+  - **Mise en œuvre** : un seul fichier, `assets/js/widgets-saisie.js`,
+    branché par une balise `<script>` dans les 14 fiches concernées (aucune
+    autre modification de ces fiches). Testé : fiche 8 de Seconde (pavé,
+    saisie « 7/2 », ⌫, passage depuis 8.4 c), message en mode devoir simulé,
+    message incomplet/complet, effacement à la modification, fermeture du
+    clavier précédent) et un widget de chacun des quatre autres types
+    (fiches 9, 10, 14, 15 de Seconde) ; console sans erreur. Vérificateur
+    de syntaxe : 50 fiches, 0 erreur.
+  - **4. QCM aux figures numérotées et réponses en lettres** : seule la fiche
+    1 de Première (calcul 1.8 a/b, forme canonique → courbe) était dans ce
+    cas (« figure 1 » à « figure 4 », réponse a à d, avec une note
+    « a = figure 1… »). La réponse attendue est maintenant le numéro de la
+    figure (1 à 4) ; « figure 2 » est accepté, ainsi que les anciennes
+    lettres (brouillons déjà enregistrés) ; placeholder, aide « ? » et
+    corrigé (« Figure 3 ») suivent, la note est supprimée. Contrôle des
+    autres fiches : Première 4 (f1, f2, f3 → réponse « f1 »), Première 8
+    (« courbe 1 »), Première 19 (courbes (a) à (d), réponses en lettres) étaient déjà
+    cohérentes ; les banques d'automatismes ne sont pas concernées. Règles
+    ajoutées à `REGLES-FICHES.md` (§4).

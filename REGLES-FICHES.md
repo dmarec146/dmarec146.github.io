@@ -176,6 +176,17 @@ les corrections ponctuelles d'une fiche).
 - **Clavier simplifié complet** : un clavier maison (intervalles,
   ensembles, couples) propose tout le vocabulaire du domaine (∪, ∩, ∅, ℝ…)
   même si la fiche ne s'en sert pas.
+- **QCM sur des figures ou des courbes : la réponse porte le nom de
+  l'étiquette.** Courbes notées \(f_1\), \(f_2\), \(f_3\) → réponse
+  « f1 » ; figures notées « figure 1 » → réponse « 1 » ; jamais des figures
+  numérotées avec une réponse en lettres a, b, c. Placeholder, aide « ? »,
+  touches du clavier et corrigé suivent la même notation (et les anciennes
+  lettres restent acceptées pour les brouillons déjà enregistrés).
+- **Widgets de Seconde** (tableau de signes, de variations, croisé, de
+  programme, schéma d'évolution) : toute fiche qui en contient charge
+  `assets/js/widgets-saisie.js` après `claviers.js` — « Réponse enregistrée »
+  et passage à la question suivante au clic sur « Valider », passage d'un
+  champ ordinaire vers un widget, clavier numérique sur les champs du widget.
 - **Le corrigé affiché doit être lisible et exact** : pas de « 3/4 × x² »
   (écrire 3x²/4), pas de « (−3)/2 » (écrire −3/2), pas de signe moins mis en
   facteur inutilement, pas de parenthèses inutiles (« (4x) », « (x)² »), pas

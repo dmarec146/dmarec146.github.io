@@ -2033,7 +2033,7 @@ function verifierUne(idx) {
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.type === 'cercle') ok = checkCercle(val, ex.cx, ex.cy, ex.r);
   else if (ex.type === 'vraifaux') ok = checkVraiFaux(val, ex.estVrai);
-  else if (ex.type === 'qcm') ok = val.trim().toLowerCase() === ex.bonneReponse.toLowerCase();
+  else if (ex.type === 'qcm') ok = estQCMFigure(ex) ? (numeroFigureQCM(val) !== null && numeroFigureQCM(val) === numeroFigureQCM(ex.bonneReponse)) : val.trim().toLowerCase() === ex.bonneReponse.toLowerCase();
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
@@ -2427,6 +2427,7 @@ function formaterReponse(ex) {
       return ex.estVrai ? '\\text{Vrai}' : '\\text{Faux}';
     }
     if (ex.type === 'qcm') {
+      if (estQCMFigure(ex)) return `\\text{Figure } ${numeroFigureQCM(ex.bonneReponse)}`;
       return `\\text{Réponse } ${ex.bonneReponse}`;
     }
     if (ex.type === 'intervalle') {
@@ -2576,6 +2577,7 @@ function aideContextuellePour(ex) {
     return "Écrire simplement <code>vrai</code> ou <code>faux</code>.";
   }
   if (ex.type === 'qcm') {
+    if (estQCMFigure(ex)) return "Écrire le numéro de la bonne figure : <code>1</code>, <code>2</code>, <code>3</code> ou <code>4</code>.";
     return "Écrire la lettre de la bonne réponse : <code>a</code>, <code>b</code>, <code>c</code> ou <code>d</code>.";
   }
   if (ex.type === 'intervalle') {
@@ -3190,6 +3192,17 @@ function texteFonctionQuadratique(p,q,r,v) {
   return termeP+fmtLin(q,v)+fmtConst(r);
 }
 
+// Reponse du QCM 1.8 (figures "figure 1" a "figure 4") : le numero de la figure -- 04/10/2026, les
+// figures etaient numerotees mais la reponse attendue etait une lettre. Accepte aussi « figure 2 » et,
+// pour un brouillon enregistre avant ce changement, les anciennes lettres a-d.
+const estQCMFigure = (ex) => /^1\.8 /.test(ex.id);
+function numeroFigureQCM(s) {
+  const t = String(s).trim().toLowerCase().replace(/^figure\s*/, '');
+  if (/^[1-4]$/.test(t)) return t;
+  const i = 'abcd'.indexOf(t);
+  return t.length === 1 && i >= 0 ? String(i + 1) : null;
+}
+
 function genererCandidats(p,q,r,nbCandidats) {
   const a=p, alpha=-q/(2*p), beta=r-q*q/(4*p);
   const base = [
@@ -3198,7 +3211,7 @@ function genererCandidats(p,q,r,nbCandidats) {
     {a, alpha:-alpha, beta, estCorrect:false},
     {a, alpha, beta:-beta, estCorrect:false}
   ].slice(0, nbCandidats);
-  const lettres = ['a','b','c','d'];
+  const lettres = ['1','2','3','4']; // numero de la figure (voir numeroFigureQCM)
   const variantes = melanger(base);
   const bonneReponse = lettres[variantes.findIndex(v=>v.estCorrect)];
   return {p,q,r,variantes,bonneReponse};
@@ -3274,7 +3287,7 @@ function blocQCMCourbeVersCanonique(id, lettre, params) {
 function blocQCMCanoniqueVersCourbe(id, lettre, nomFonction, variable, params) {
   const idx = exercices.findIndex(e => e.id === id);
   const {p,q,r,variantes} = params;
-  const lettresFigures = ['a','b','c','d'].slice(0, variantes.length);
+  const numerosFigures = ['1','2','3','4'].slice(0, variantes.length);
   let html = `<div class="qcm-bloc">
   <p class="qcm-sous-question"><span class="q-lettre">${lettre})</span>\\(${nomFonction}(${variable})=${texteFonctionQuadratique(p,q,r,variable)}\\)</p>
   <div class="qcm-grille-figures">`;
@@ -3284,10 +3297,9 @@ function blocQCMCanoniqueVersCourbe(id, lettre, nomFonction, variable, params) {
   html += `</div>
   <div class="question" id="q-${idx}">
     <span class="q-lettre">Réponse&nbsp;:</span>
-    <input type="text" class="q-input" id="input-${idx}" placeholder="${lettresFigures.slice(0,-1).join(', ')} ou ${lettresFigures[lettresFigures.length-1]}" autocomplete="off" style="max-width:100px;">
+    <input type="text" class="q-input" id="input-${idx}" placeholder="${numerosFigures.slice(0,-1).join(', ')} ou ${numerosFigures[numerosFigures.length-1]}" autocomplete="off" style="max-width:100px;">
     <span class="q-statut" id="statut-${idx}"></span>
   </div>
-  <p style="font-size:12px;color:var(--gris);">(${lettresFigures.map((l,i) => `${l} = figure ${i+1}`).join(', ')})</p>
   </div>`;
   return html;
 }
