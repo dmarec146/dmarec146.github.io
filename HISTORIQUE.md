@@ -6619,3 +6619,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   400 tirages recalculés indépendamment : 0 écart ; cycle complet 8 × 44
   accepté ; fraction non réduite, décimal et intervalle faux refusés ; ∅
   accepté et affiché ; 0 erreur MathJax ; vérificateur : 0 erreur.
+
+- **Première fiche 14, 14.5 : énoncés « On sait que … Calculer … »
+  (04/10/2026).** David : « dans 14.5, pour chaque exercice, écrire plutôt :
+  On sait que ….. Calculer …. ». Chaque question devient une phrase
+  autonome, par exemple « On sait que P(A)=0,65 et P_A(B)=0,37. Calculer
+  P(A∩B) » ou « On sait que A et B sont indépendants, que P(A)=… et
+  P(B)=…. Calculer P(A∪B) » ; le titre ne garde que « Probabilités
+  conditionnelles et indépendance. A et B désignent deux événements. »
+  (le « Calculer » est dans chaque question). Vérifié : 300 tirages
+  recalculés : 0 écart ; réponses affichées retapées acceptées ; 0 erreur
+  MathJax ; vérificateur : 0 erreur ; rendu contrôlé.
