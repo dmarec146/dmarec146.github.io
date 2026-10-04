@@ -154,8 +154,10 @@ depuis la réorganisation du 02/10/2026 »).
   ne sont pas supprimables par l'enseignant (règles) : l'élève les nettoie lui-même
   au chargement de `/mes-devoirs/`.
 - Classes : `2nde-207`, `1ere-Gr 1`, `1ere-Gr 3` (groupes de spécialité,
-  format `1ere-Gr N`), comptes de test `1ere-demo`, `1ere-test`,
-  `2nde-test`. Élève **hors classe** (sans champ `classe`) : sentinelle
+  format `1ere-Gr N`), comptes de test `1ere-demo` (`demo-eleve`) et
+  `2nde-test` (`l.testeur`). **La liste « Classe » du formulaire d'attribution
+  est construite à partir des classes présentes chez les élèves** : une classe
+  de test disparaît de la liste quand son dernier compte est supprimé. Élève **hors classe** (sans champ `classe`) : sentinelle
   `"hors-classe"` côté client uniquement, ciblage individuel possible par
   le champ `eleves` (tableau d'uid) du devoir.
 - **Côté élève** : bloc « Devoirs » + pastille sur les 4 pages d'entrée ;
@@ -213,8 +215,7 @@ depuis la réorganisation du 02/10/2026 »).
   `e.marec` (hors classe, compte réel).
 - Comptes de test : `demo-eleve` (classe `1ere-demo`, utilisé par David
   pour ses essais — vidé de ses devoirs et tentatives le 30/09/2026, seul
-  son journal `connexions` est conservé), `l.testeur` (`2nde-test`),
-  `n.testeuse` (`1ere-test`) — identifiants dans
+  son journal `connexions` est conservé), `l.testeur` (`2nde-test`) — identifiants dans
   `outils/creer-comptes/comptes-crees-*.csv` (non suivis par Git).
 - **Tests avec connexion** : Claude ne saisit jamais de mot de passe sur un
   service d'authentification ; David se connecte lui-même dans le

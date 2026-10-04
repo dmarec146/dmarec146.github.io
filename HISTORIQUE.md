@@ -6501,3 +6501,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     pourrait côtoyer un nouveau (notamment `mes-devoirs.js` qui importe
     `masquerDevoirs` de `devoirs-eleve.js`) : page `/mes-devoirs/` en erreur le
     temps du rafraîchissement.
+
+- **Suppression du compte de test `n.testeuse` (04/10/2026).** Demande de
+  David (ses essais se feront sur `demo-eleve`, et il ne veut plus de classe
+  `1ere-test` dans la liste d'attribution). Inventaire en lecture seule et
+  sauvegarde JSON (`.claude/scratch/sauvegarde-comptes-test-*.json`, local)
+  avant suppression : 1 brouillon, 8 connexions, 1 résultat, 65 tentatives de
+  l'ancien modèle, aucun devoir rattaché ; supprimés avec le profil et le
+  compte de connexion. La classe `1ere-test` a disparu de la liste, qui est
+  calculée à partir des classes des comptes existants.
