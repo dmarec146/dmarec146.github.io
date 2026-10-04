@@ -6477,3 +6477,27 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     qu'un vrai devoir de la fiche voisine s'affiche ; via le formulaire, un
     devoir fiche → sujet blanc perd son `ficheId`, un sujet blanc → fiche perd
     `niveau`, `mode` et `cible`.
+
+- **Vérifications avant envoi, pendant les sujets blancs (04/10/2026, 12h30).**
+  Deux sujets blancs réels (1ere-Gr 1 et 1ere-Gr 3) restaient ouverts jusqu'à
+  20h30. Avant de décider de l'envoi du lot (devoirs partiels, suppression
+  côté élève, correctifs), vérifications sur élève et enseignant jetables :
+  - **Modification de la seule échéance** (formulaire enseignant) sur un
+    devoir de fiche entière, un devoir partiel à sélection verrouillée (une
+    tentative existe) et un sujet blanc : « Devoir modifié. » ; pour la
+    fiche entière et le sujet blanc, seul le champ `echeance` change ; pour le
+    partiel, `calculs` est conservé (le titre et `calculsTitres` sont
+    réécrits à partir de la fiche, sans effet sur les élèves).
+  - **Sujet blanc sous le code actuel** : `automatismes/` n'a aucune
+    différence avec GitHub ; seules les fonctions de `suivi.js` propres aux
+    fiches changent (`verifierEtatDevoir`, brouillons de fiche,
+    `devoirsPour`), celles des automatismes (`…AutomatismeParId`, brouillons
+    d'automatismes, `enregistrerTentativeSujetBlancSiDevoir`) sont intactes.
+    Parcours réel : devoir trouvé (0/3), 5 réponses enregistrées puis reprises
+    après rechargement, validation (« 5 questions sans réponse »), tentative
+    stockée (10 questions, 5 répondues), brouillon supprimé.
+  - Risque résiduel d'un envoi en cours de journée : fenêtre de cache de
+    GitHub Pages (quelques minutes) pendant laquelle un fichier JS ancien
+    pourrait côtoyer un nouveau (notamment `mes-devoirs.js` qui importe
+    `masquerDevoirs` de `devoirs-eleve.js`) : page `/mes-devoirs/` en erreur le
+    temps du rafraîchissement.
