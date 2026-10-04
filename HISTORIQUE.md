@@ -6648,3 +6648,22 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   indépendamment : 0 écart ; cycle complet 8 × 47 accepté ; tableaux,
   textes et arbres tous construits ; 0 erreur MathJax ; vérificateur : 0
   erreur ; rendu contrôlé.
+
+- **Première fiche 14 : arbres (14.12, 14.15) et question d'équation
+  (04/10/2026), 47 → 48 questions.** David : « 1. Dans 14.12, la
+  pondération de la branche A doit être légèrement élevée, on ne voit pas
+  le x. 2. Dans 14.15 : les valeurs de l'arbre ne sont pas affichées en
+  LaTeX ! 3. dans 14.15 c), ajouter une question du type "déterminer la
+  valeur de a telle que P() = ", pour obtenir une équation de degré 2. »
+  - `probaLabelSVG` : une étiquette de fraction à dénominateur large
+    (« 4+x ») est écartée de la branche proportionnellement à sa largeur
+    (le trait traversait le x) ; nouvelle écriture « $… » (LaTeX direct),
+    utilisée pour les pondérations de l'arbre de 14.15 (a², 1−a², 1−a, a).
+  - **14.15 c)** : « Déterminer la valeur de a telle que P_B(A)=P(A) » :
+    a/(1+2a) = a² donne 2a²+a−1=0, soit (2a−1)(a+1)=0, d'où a = 1/2 (l'autre
+    racine, −1, est hors de ]0;1[). Choix : une égalité entre deux
+    probabilités plutôt qu'une valeur numérique, car toute valeur numérique
+    donne sur cet arbre une équation du premier degré (P_B(A), P_A(B)) ou du
+    troisième (P(B), P(A∩B)). Vérifié : a = 1/2 annule a/(1+2a)−a², pas
+    d'autre racine dans ]0;1[ ; 1/2 et 0,5 acceptés, −1 et 2 refusés ;
+    cycle complet 6 × 48 accepté ; 0 erreur MathJax ; vérificateur : 0 erreur.
