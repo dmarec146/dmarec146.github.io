@@ -6459,3 +6459,21 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     fonctions modifiées, pas par une validation réelle), les appareils tactiles.
   - Le devoir `Xh7g2N6XAJSn5FbJfGmf` (classe `1ere-demo`, calcul 1.4,
     créé par David à 07:20) est un reste de ses propres essais : laissé en place.
+
+- **Deux correctifs annoncés après l'affaire du devoir b725 (04/10/2026).**
+  Suite du « ficheId résiduel » (voir l'entrée sur le sujet blanc de
+  1ere-Gr 1) : la cause (un devoir de fiche transformé en sujet blanc via
+  « Modifier » gardait son `ficheId`) et son effet (le devoir s'appliquait
+  aussi à la fiche) sont maintenant traités à la source.
+  - **`devoirs.js`** : en modification, `ficheId`, `niveau`, `mode` et `cible`
+    passent par `deleteField()` quand ils ne s'appliquent plus au nouveau type
+    (`updateDoc` n'efface jamais un champ absent du payload).
+  - **`suivi.js`** : `devoirsPour()` ne retient que les devoirs de type
+    `fiche` (un devoir sans type est une fiche, ancien format) ; les 5 devoirs
+    de la base ont tous un type.
+  - **Tests** (élève et enseignant jetables, 4 devoirs jetables en `1ere-test`,
+    supprimés ensuite) : un sujet blanc portant un `ficheId` résiduel
+    n'apparaît plus sur la fiche (pas de bandeau, pas de mode devoir) alors
+    qu'un vrai devoir de la fiche voisine s'affiche ; via le formulaire, un
+    devoir fiche → sujet blanc perd son `ficheId`, un sujet blanc → fiche perd
+    `niveau`, `mode` et `cible`.

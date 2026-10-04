@@ -794,6 +794,10 @@ formulaire.addEventListener('submit', async (evenement) => {
       // fiche, ou une fiche ciblee a sujet blanc, laisserait une valeur
       // perimee en base (un `updateDoc` fusionne, il n'efface jamais un
       // champ absent du payload).
+      // 04/10/2026 : meme principe pour les champs propres a un TYPE de devoir --
+      // ficheId (fiche), niveau / mode / cible (automatismes). Un devoir de
+      // fiche transforme en sujet blanc gardait son ficheId (cas du devoir b725
+      // de 1ere-Gr 1 : il s'appliquait en plus a la fiche, voir HISTORIQUE).
       await updateDoc(doc(db, 'devoirs', devoirEnEdition.id), {
         ...donnees, classe, echeance, nbEssaisMax,
         eleves: eleves ?? deleteField(),
@@ -801,6 +805,10 @@ formulaire.addEventListener('submit', async (evenement) => {
         themes: donnees.themes ?? deleteField(),
         calculs: donnees.calculs ?? deleteField(),
         calculsTitres: donnees.calculsTitres ?? deleteField(),
+        ficheId: donnees.ficheId ?? deleteField(),
+        niveau: donnees.niveau ?? deleteField(),
+        mode: donnees.mode ?? deleteField(),
+        cible: donnees.cible ?? deleteField(),
       });
       annulerEdition();
       afficherEtat(zoneConfirmation, 'Devoir modifié.');

@@ -248,13 +248,19 @@ function applicablePourEleve(devoir) {
 
 // Requete brute (sans filtre d'echeance) : partagee entre
 // enregistrerTentativeDevoirSiApplicable et verifierEtatDevoir ci-dessous.
+// Seuls les devoirs de type "fiche" concernent une fiche de calcul (04/10/2026) :
+// un devoir d'automatismes portant un ficheId residuel (ancien devoir de fiche
+// modifie en sujet blanc) s'y appliquait a tort. Un devoir sans type est une
+// fiche (ancien format).
 async function devoirsPour(ficheId, classe) {
   const instantane = await getDocs(query(
     collection(db, 'devoirs'),
     where('ficheId', '==', ficheId),
     where('classe', '==', classe)
   ));
-  return instantane.docs.map((d) => ({ id: d.id, ...d.data() })).filter(applicablePourEleve);
+  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }))
+    .filter((d) => (d.type ?? 'fiche') === 'fiche')
+    .filter(applicablePourEleve);
 }
 
 // Nombre de tentatives DEJA enregistrees par l'eleve courant pour ce devoir
