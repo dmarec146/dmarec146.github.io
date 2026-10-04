@@ -6604,3 +6604,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     égales ; cycle complet 8 × 38 accepté ; fraction non réduite, décimal et
     intervalle faux refusés ; 0 erreur MathJax (fiche, panneau des
     réponses, tableaux) ; vérificateur : 0 erreur ; rendu contrôlé.
+  Retouche le même jour (David : « montre les deux contextes. Cette fiche
+  est plus longue mais est seule dans son cahier ») : les deux modèles
+  d'arbre et les deux contextes concrets, tirés au hasard dans la première
+  version, deviennent quatre calculs distincts, tous visibles à chaque
+  version : **14.6** arbre à deux branches (fractions), **14.7** arbre à
+  trois branches (décimaux), **14.8** cas concret avec un tableau (ski),
+  **14.9** cas concret avec un arbre (musique), 3 questions chacun. La
+  suite est renumérotée : 14.10 tableau avec n, 14.11 arbre avec x, 14.12
+  loi avec une probabilité inconnue, 14.13 lois cumulées, 14.14 arbre
+  avec a, 14.15 uniforme, 14.16 progression géométrique, 14.17 deux
+  valeurs. **Au total 44 questions, 17 calculs** (53 / 23 à l'origine). Le
+  numéro de cahier de l'en-tête est corrigé dans la même passe. Vérifié :
+  400 tirages recalculés indépendamment : 0 écart ; cycle complet 8 × 44
+  accepté ; fraction non réduite, décimal et intervalle faux refusés ; ∅
+  accepté et affiché ; 0 erreur MathJax ; vérificateur : 0 erreur.
