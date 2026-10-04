@@ -30,6 +30,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { FICHES_PLATES } from './manifeste-fiches.js';
+import { appliquerDerogation, echeanceMaxMillis, nbDerogations } from './derogations.js';
 
 // Meme sentinelle que suivi.js (classeEleve()) : un eleve cree sans classe
 // (voir outils/creer-comptes) n'a AUCUN champ classe sur son document
@@ -79,6 +80,12 @@ const etatCalculs = document.getElementById('dev-calculs-etat');
 const selectClasse = document.getElementById('dev-classe');
 const champEleves = document.getElementById('dev-champ-eleves');
 const listeEleves = document.getElementById('dev-eleves-liste');
+const blocIndividuel = document.getElementById('dev-bloc-individuel');
+const caseIndividuel = document.getElementById('dev-case-individuel');
+const aideIndividuel = document.getElementById('dev-individuel-aide');
+const listeIndividuel = document.getElementById('dev-individuel-liste');
+const actionsIndividuel = document.getElementById('dev-individuel-actions');
+const boutonRetablir = document.getElementById('dev-bouton-retablir');
 const champEcheance = document.getElementById('dev-echeance');
 const champEssais = document.getElementById('dev-essais');
 const boutonSoumettre = document.getElementById('dev-bouton-soumettre');
@@ -497,11 +504,17 @@ function phraseCalculs(calculs) {
 // selection de calculs n'est plus modifiable : les notes deja enregistrees
 // (x / nombre de questions retenues) ne seraient plus sur la meme base. Meme
 // parcours des eleves concernes que la vue "Resultats" (afficherResultats).
-async function devoirADesTentatives(devoir) {
-  const eleves = devoir.classe === CLASSE_HORS_CLASSE
+// Eleves concernes par un devoir (documents eleves/{uid}) : la classe, ou, pour
+// "Hors classe", les eleves sans classe restreints a devoir.eleves si present.
+async function elevesDuDevoir(devoir) {
+  return devoir.classe === CLASSE_HORS_CLASSE
     ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) =>
         !d.data().classe && (!Array.isArray(devoir.eleves) || devoir.eleves.includes(d.id)))
     : (await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)))).docs;
+}
+
+async function devoirADesTentatives(devoir) {
+  const eleves = await elevesDuDevoir(devoir);
   const comptes = await Promise.all(eleves.map(async (e) => (await getDocs(query(
     collection(db, 'eleves', e.id, 'devoirsTentatives'),
     where('devoirId', '==', devoir.id)
@@ -624,6 +637,114 @@ function dateLocalePourChamp(millis) {
   return d.toISOString().slice(0, 16);
 }
 
+// ---- Modification individuelle (04/10/2026) -----------------------------------
+// Option de l'edition d'un devoir : au lieu de modifier le devoir pour toute la
+// classe, enregistrer une echeance et/ou un nombre d'essais propres a certains
+// eleves (devoir.derogations[uid], voir derogations.js). Jamais par defaut :
+// la case est decochee a chaque ouverture de l'edition.
+const formatDateCourte = (t) => (t && t.toMillis ? new Date(t.toMillis()).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
+
+function remplirListeIndividuel(devoir, eleves) {
+  listeIndividuel.innerHTML = '';
+  if (eleves.length === 0) { listeIndividuel.textContent = 'Aucun élève dans cette classe.'; return; }
+  for (const eleve of eleves) {
+    const ligne = document.createElement('label');
+    ligne.className = 'dev-eleve-ligne';
+    const case_ = document.createElement('input');
+    case_.type = 'checkbox';
+    case_.value = eleve.uid;
+    const texte = document.createElement('span');
+    texte.textContent = nomAffiche(eleve);
+    const d = devoir.derogations && devoir.derogations[eleve.uid];
+    if (d) {
+      const detail = document.createElement('span');
+      detail.className = 'dev-individuel-derogation';
+      detail.textContent = ` — échéance ${formatDateCourte(d.echeance)}, ${d.nbEssaisMax} essai${d.nbEssaisMax > 1 ? 's' : ''}`;
+      texte.appendChild(detail);
+    }
+    ligne.append(case_, texte);
+    listeIndividuel.appendChild(ligne);
+  }
+}
+
+async function basculerModeIndividuel() {
+  const actif = caseIndividuel.checked;
+  formulaire.classList.toggle('dev-mode-individuel', actif);
+  formulaire.noValidate = actif; // les champs masques (fiche, classe...) ne doivent pas bloquer l'envoi
+  aideIndividuel.hidden = !actif;
+  listeIndividuel.hidden = !actif;
+  actionsIndividuel.hidden = !actif;
+  boutonSoumettre.textContent = actif ? 'Enregistrer pour les élèves cochés' : 'Enregistrer les modifications';
+  masquer(zoneErreurFormulaire);
+  if (!actif || !devoirEnEdition) return;
+  const devoir = devoirEnEdition;
+  listeIndividuel.textContent = 'Chargement des élèves…';
+  try {
+    const eleves = (await elevesDuDevoir(devoir)).map((d) => ({ uid: d.id, ...d.data() }))
+      .sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b)));
+    if (devoirEnEdition !== devoir) return;
+    remplirListeIndividuel(devoir, eleves);
+  } catch (erreur) {
+    console.error(erreur);
+    listeIndividuel.textContent = 'Impossible de charger les élèves — réessayer.';
+  }
+}
+caseIndividuel.addEventListener('change', basculerModeIndividuel);
+
+function reinitialiserModeIndividuel() {
+  blocIndividuel.hidden = true;
+  caseIndividuel.checked = false;
+  formulaire.classList.remove('dev-mode-individuel');
+  formulaire.noValidate = false;
+  aideIndividuel.hidden = true;
+  listeIndividuel.hidden = true;
+  listeIndividuel.innerHTML = '';
+  actionsIndividuel.hidden = true;
+}
+
+async function enregistrerDerogations(echeance, nbEssaisMax) {
+  const uids = [...listeIndividuel.querySelectorAll('input:checked')].map((c) => c.value);
+  if (uids.length === 0) { afficherEtat(zoneErreurFormulaire, 'Merci de cocher au moins un élève.'); return; }
+  if (!echeance || !nbEssaisMax || nbEssaisMax < 1) { afficherEtat(zoneErreurFormulaire, "Merci de compléter l'échéance et le nombre d'essais."); return; }
+  if (echeance.getTime() <= Date.now()) { afficherEtat(zoneErreurFormulaire, "L'échéance doit être dans le futur."); return; }
+  boutonSoumettre.disabled = true;
+  try {
+    const maj = {};
+    for (const uid of uids) maj[`derogations.${uid}`] = { echeance, nbEssaisMax };
+    await updateDoc(doc(db, 'devoirs', devoirEnEdition.id), maj);
+    annulerEdition();
+    afficherEtat(zoneConfirmation, `Échéance et essais enregistrés pour ${uids.length} élève${uids.length > 1 ? 's' : ''} (les autres gardent les réglages du devoir).`);
+    await chargerListeDevoirs();
+  } catch (erreur) {
+    console.error(erreur);
+    afficherEtat(zoneErreurFormulaire, "Échec de l'enregistrement — réessayer.");
+  } finally {
+    boutonSoumettre.disabled = false;
+  }
+}
+
+boutonRetablir.addEventListener('click', async () => {
+  const devoir = devoirEnEdition;
+  if (!devoir) return;
+  const uids = [...listeIndividuel.querySelectorAll('input:checked')].map((c) => c.value).filter((u) => devoir.derogations && devoir.derogations[u]);
+  if (uids.length === 0) { afficherEtat(zoneErreurFormulaire, 'Aucun des élèves cochés n\'a de réglage individuel à rétablir.'); return; }
+  if (!confirm(`Rétablir l'échéance et les essais du devoir pour ${uids.length} élève${uids.length > 1 ? 's' : ''} ?`)) return;
+  boutonRetablir.disabled = true;
+  try {
+    const maj = {};
+    for (const uid of uids) maj[`derogations.${uid}`] = deleteField();
+    await updateDoc(doc(db, 'devoirs', devoir.id), maj);
+    annulerEdition();
+    afficherEtat(zoneConfirmation, `Réglages du devoir rétablis pour ${uids.length} élève${uids.length > 1 ? 's' : ''}.`);
+    await chargerListeDevoirs();
+  } catch (erreur) {
+    console.error(erreur);
+    afficherEtat(zoneErreurFormulaire, 'Échec du rétablissement — réessayer.');
+  } finally {
+    boutonRetablir.disabled = false;
+  }
+});
+
 // Ouvre le panneau d'attribution pre-rempli avec les valeurs d'un devoir
 // existant (voir le bouton "Modifier" dans chargerListeDevoirs) : le
 // formulaire est le MEME qu'a la creation, seule la soumission change
@@ -664,6 +785,8 @@ function modifierDevoir(devoir) {
   titreFormulaire.textContent = 'Modifier ce devoir';
   boutonSoumettre.textContent = 'Enregistrer les modifications';
   boutonAnnulerEdition.hidden = false;
+  reinitialiserModeIndividuel();
+  blocIndividuel.hidden = false; // option, decochee par defaut
 
   fermerTousLesPanneaux();
   ouvrirPanneau(PANNEAUX[0]);
@@ -687,6 +810,7 @@ function modifierDevoir(devoir) {
 function annulerEdition() {
   devoirEnEdition = null;
   formulaire.reset();
+  reinitialiserModeIndividuel();
   selectType.dispatchEvent(new Event('change'));
   titreFormulaire.textContent = 'Attribuer un nouveau devoir';
   boutonSoumettre.textContent = 'Attribuer ce devoir';
@@ -705,6 +829,9 @@ formulaire.addEventListener('submit', async (evenement) => {
   const classe = selectClasse.value;
   const echeance = champEcheance.value ? new Date(champEcheance.value) : null;
   const nbEssaisMax = parseInt(champEssais.value, 10);
+
+  // Modification individuelle (voir plus haut) : ne touche pas au devoir lui-meme.
+  if (devoirEnEdition && caseIndividuel.checked) { await enregistrerDerogations(echeance, nbEssaisMax); return; }
 
   let donnees;
   if (estTypeAutomatismes(type)) {
@@ -856,6 +983,13 @@ function construireLigneDevoir(devoir) {
   const celluleEcheance = document.createElement('td');
   const echeanceMillis = devoir.echeance?.toMillis ? devoir.echeance.toMillis() : 0;
   celluleEcheance.textContent = echeanceMillis ? new Date(echeanceMillis).toLocaleString('fr-FR') : '—';
+  const nbDer = nbDerogations(devoir);
+  if (nbDer > 0) {
+    const mention = document.createElement('div');
+    mention.className = 'dev-derogations';
+    mention.textContent = `+ ${nbDer} élève${nbDer > 1 ? 's' : ''} avec échéance / essais individuels`;
+    celluleEcheance.appendChild(mention);
+  }
 
   const celluleEssais = document.createElement('td');
   celluleEssais.textContent = String(devoir.nbEssaisMax ?? '—');
@@ -919,11 +1053,13 @@ async function chargerListeDevoirs() {
   // "En cours" triee par echeance la plus proche (ce qui presse en premier,
   // comme /mes-devoirs/ cote eleve) ; "Faits" triee par echeance la plus
   // recente (ce qui vient de se terminer en premier).
+  // Un devoir dont la date de classe est passee mais dont un eleve a une
+  // echeance individuelle encore a venir reste "en cours".
   const enCours = devoirs
-    .filter((d) => (d.echeance?.toMillis ? d.echeance.toMillis() : 0) > maintenant)
+    .filter((d) => echeanceMaxMillis(d) > maintenant)
     .sort((a, b) => (a.echeance?.toMillis() || 0) - (b.echeance?.toMillis() || 0));
   const faits = devoirs
-    .filter((d) => (d.echeance?.toMillis ? d.echeance.toMillis() : 0) <= maintenant)
+    .filter((d) => echeanceMaxMillis(d) <= maintenant)
     .sort((a, b) => (b.echeance?.toMillis() || 0) - (a.echeance?.toMillis() || 0));
 
   remplirTableauDevoirs(corpsEnCours, tableauEnCours, listeVideEnCours, titreEnCours, 'Devoirs en cours', enCours, "Aucun devoir en cours pour l'instant.");
@@ -973,7 +1109,10 @@ async function afficherResultats(devoir) {
     ));
     const tentatives = instantaneTentatives.docs.map((d) => d.data());
     const avecMillis = tentatives.map((t) => ({ ...t, millis: t.horodatage?.toMillis ? t.horodatage.toMillis() : 0 }));
-    const avantEcheance = avecMillis.filter((t) => t.millis > 0 && t.millis <= echeanceMillis);
+    // Echeance et essais de CET eleve (derogation individuelle eventuelle).
+    const reglages = appliquerDerogation(devoir, eleve.uid);
+    const echeanceEleve = reglages.echeance?.toMillis ? reglages.echeance.toMillis() : 0;
+    const avantEcheance = avecMillis.filter((t) => t.millis > 0 && t.millis <= echeanceEleve);
 
     let meilleure = null;
     for (const t of avantEcheance) {
@@ -981,7 +1120,7 @@ async function afficherResultats(devoir) {
     }
     const derniereActivite = avecMillis.reduce((max, t) => Math.max(max, t.millis), 0);
 
-    return { eleve, rendu: avantEcheance.length > 0, meilleure, nbEssais: avantEcheance.length, derniereActivite };
+    return { eleve, rendu: avantEcheance.length > 0, meilleure, nbEssais: avantEcheance.length, derniereActivite, reglages };
   }));
 
   for (const ligneDonnees of lignes) {
@@ -989,6 +1128,12 @@ async function afficherResultats(devoir) {
 
     const celluleNom = document.createElement('td');
     celluleNom.textContent = nomAffiche(ligneDonnees.eleve);
+    if (ligneDonnees.reglages.derogation) {
+      const marque = document.createElement('div');
+      marque.className = 'dev-derogations';
+      marque.textContent = `échéance individuelle : ${formatDateCourte(ligneDonnees.reglages.echeance)}`;
+      celluleNom.appendChild(marque);
+    }
 
     const celluleRendu = document.createElement('td');
     const badge = document.createElement('span');
@@ -1024,7 +1169,7 @@ async function afficherResultats(devoir) {
     }
 
     const celluleEssais = document.createElement('td');
-    celluleEssais.textContent = `${ligneDonnees.nbEssais} / ${devoir.nbEssaisMax}`;
+    celluleEssais.textContent = `${ligneDonnees.nbEssais} / ${ligneDonnees.reglages.nbEssaisMax}`;
 
     const celluleDate = document.createElement('td');
     celluleDate.textContent = ligneDonnees.derniereActivite

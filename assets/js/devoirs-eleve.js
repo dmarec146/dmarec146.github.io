@@ -21,6 +21,7 @@
 // mais pas termine a la date limite ne doit plus apparaitre nulle part.
 
 import { db } from './firebase-config.js';
+import { appliquerDerogation } from './derogations.js';
 import {
   collection,
   deleteDoc,
@@ -70,7 +71,7 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
   // Ciblage individuel d'un devoir "Hors classe" (voir devoirs.js) : un
   // devoir dont `eleves` existe ne concerne que les uid qu'il liste.
   const devoirs = instDevoirs.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
+    .map((d) => appliquerDerogation({ id: d.id, ...d.data() }, uid)) // echeance / essais propres a l'eleve
     .filter((d) => !Array.isArray(d.eleves) || d.eleves.includes(uid));
 
   const tentativesParDevoir = new Map();

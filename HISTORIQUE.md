@@ -6516,3 +6516,32 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   `n.testeuse` (inventaire préalable : 9 connexions, 47 tentatives de l'ancien
   modèle, aucun devoir rattaché). Classes restantes : `1ere-Gr 3` (26),
   `1ere-Gr 1` (27), `2nde-207` (21), `1ere-demo` (1), hors classe (1).
+
+- **Modification individuelle d'un devoir : échéance et essais par élève
+  (04/10/2026).** Demande de David : en cliquant sur « Modifier », pouvoir
+  choisir des élèves de la classe (jamais par défaut) plutôt que modifier pour
+  toute la classe. Décision (question posée) : échéance et nombre d'essais
+  seulement, sur le MÊME devoir (pas de copie de devoir), pour garder un seul
+  jeu de résultats ; cas typique : prolonger pour des absents.
+  - **Modèle** : `derogations.<uid> = { echeance, nbEssaisMax }` sur
+    `devoirs/{id}`. Nouveau module `derogations.js`. Appliqué côté élève
+    (`suivi.js` : quatre lectures de devoirs ; `devoirs-eleve.js`) et côté
+    enseignant (classement en cours / faits par échéance maximale, mention
+    dans la liste, vue Résultats par élève).
+  - **Interface** : bloc « Modifier l'échéance et le nombre d'essais pour
+    certains élèves seulement » dans l'édition (décoché à chaque ouverture) ;
+    coché : les champs de classe sont masqués, la liste des élèves apparaît
+    (avec leur réglage individuel actuel), échéance et essais s'appliquent aux
+    élèves cochés ; bouton « Rétablir les réglages du devoir pour les élèves
+    cochés ». `devoirADesTentatives` réutilise le nouvel `elevesDuDevoir`.
+  - **Tests** (3 élèves, un enseignant et 2 devoirs jetables en `1ere-test`,
+    supprimés ensuite) : option décochée par défaut ; erreur sans élève coché ;
+    enregistrement pour un seul élève (le devoir lui-même inchangé) ;
+    `/mes-devoirs/` : l'élève concerné voit sa date et ses essais (fiche et
+    sujet blanc), un autre garde ceux de la classe (devoir échu, « Non
+    rendu ») ; l'élève concerné valide après la date de la classe (« il t'en
+    restera 4 ») ; Résultats : « Rendu, 1 / 5, échéance individuelle » contre
+    « 0 / 2 » pour les autres ; devoir échu pour la classe resté « en cours » ;
+    « Rétablir » (messages d'erreur si aucun réglage individuel, puis retrait) ;
+    modification classique d'un devoir à dérogation : la dérogation est
+    conservée.

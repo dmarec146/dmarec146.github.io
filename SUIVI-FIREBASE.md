@@ -207,6 +207,23 @@ depuis la réorganisation du 02/10/2026 »).
   entier : clé historique. Essais épuisés : `retirer()`, toute la fiche
   redevient visible (entraînement libre). Aucune modification de
   `firestore.rules`.
+- **Échéance / essais individuels** (04/10/2026) : en modification d'un devoir,
+  case « Modifier l'échéance et le nombre d'essais pour certains élèves
+  seulement » (décochée par défaut) → liste des élèves de la classe ; le
+  devoir reste UN seul devoir et porte `derogations: { <uid>: { echeance,
+  nbEssaisMax } }`. `assets/js/derogations.js` (`appliquerDerogation`,
+  `echeanceMaxMillis`) est le point unique : appliqué dans `suivi.js`
+  (fiches : `devoirsPour` ; automatismes : `devoirAutomatismeActif`, état par
+  id, enregistrement de la tentative), `devoirs-eleve.js` (`/mes-devoirs/`) et
+  la vue Résultats (meilleure tentative avant l'échéance DE L'ÉLÈVE, essais
+  « x / ses essais », mention « échéance individuelle »). La liste « en cours /
+  faits » classe un devoir par son échéance la plus lointaine (dérogations
+  comprises) : un devoir échu pour la classe mais pas pour un élève reste « en
+  cours » (attention à « Tout supprimer » des devoirs faits). « Rétablir les
+  réglages du devoir » retire la dérogation des élèves cochés. Les élèves
+  peuvent lire la table des dérogations (identifiants opaques) : sans enjeu.
+  Aucune modification de `firestore.rules`. Ne concerne que l'échéance et le
+  nombre d'essais (pas la fiche, les calculs, le niveau).
 
 ## 5. Comptes
 

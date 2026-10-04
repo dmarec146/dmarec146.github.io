@@ -19,6 +19,7 @@
 //   commentaire au-dessus de enregistrerBrouillon pour le detail.
 
 import { auth, db } from './firebase-config.js';
+import { appliquerDerogation } from './derogations.js';
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -258,7 +259,8 @@ async function devoirsPour(ficheId, classe) {
     where('ficheId', '==', ficheId),
     where('classe', '==', classe)
   ));
-  return instantane.docs.map((d) => ({ id: d.id, ...d.data() }))
+  // Derogation individuelle (echeance / essais propres a cet eleve, voir derogations.js).
+  return instantane.docs.map((d) => appliquerDerogation({ id: d.id, ...d.data() }, utilisateurCourant?.uid))
     .filter((d) => (d.type ?? 'fiche') === 'fiche')
     .filter(applicablePourEleve);
 }
@@ -428,7 +430,7 @@ async function enregistrerTentativeAutomatismeParId(devoirId, score, totalExerci
   try {
     const instantane = await getDoc(doc(db, 'devoirs', devoirId));
     if (!instantane.exists()) return;
-    const devoir = instantane.data();
+    const devoir = appliquerDerogation(instantane.data(), utilisateurCourant.uid);
     // Echeance passee (page ouverte avant, serie terminee apres) : plus rien
     // n'est ecrit (30/09/2026), comme pour les fiches de calcul -- une
     // tentative hors delai ne compte de toute facon pas dans la note.
@@ -455,7 +457,7 @@ export async function verifierEtatDevoirAutomatismeParId(devoirId) {
   try {
     const instantane = await getDoc(doc(db, 'devoirs', devoirId));
     if (!instantane.exists()) return null;
-    const devoir = instantane.data();
+    const devoir = appliquerDerogation(instantane.data(), utilisateurCourant.uid);
     const essaisUtilises = await nbEssaisUtilises(devoirId);
     return {
       id: devoirId,
@@ -498,7 +500,7 @@ export async function devoirAutomatismeActif(cible) {
       where('classe', '==', classe)
     ));
     const choix = await choisirDevoirActif(instantane.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
+      .map((d) => appliquerDerogation({ id: d.id, ...d.data() }, utilisateurCourant.uid))
       .filter(applicablePourEleve)
       .filter((d) => (d.cible || CIBLE_AUTOMATISMES_DEFAUT) === cible));
     if (!choix) return null;
