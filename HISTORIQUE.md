@@ -6970,3 +6970,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   distinct de la réponse. Vérifié : 12 tirages × 2 questions (bonne réponse
   acceptée, fraction d'origine et fausse réponse refusées), 0 erreur
   MathJax.
+
+- **Barème en points de la fiche 1 de Première (05/10/2026).** David : barème
+  des fiches 1 à 15 (sauf 9, déjà fait), une fiche à la fois, présenté avant
+  de passer à la suivante. Fiche 1 : base 20 points, bonus 8,25 points (1.9 et
+  1.10 = calculs avancés). Fichier `outils/bareme/fiche-01.json`, bloc généré
+  par `appliquer-bareme.js 01`. Nouvel outil `outils/bareme/cabler-fiche.js NN`
+  : pose dans une fiche les accroches du barème (balise, `Bareme.definir`,
+  fin de devoir, validation, score, affichage), mêmes que les fiches pilotes.
+  Vérifié : page sans erreur MathJax, rien hors devoir, pastilles et note en
+  devoir, contrôle de cohérence des fichiers sans écart.

@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const FICHES = {
+  '01': 'cahiers/premiere/cahier-1/fiche-01.html',
   '02': 'cahiers/premiere/cahier-1/fiche-02.html',
   '09': 'cahiers/premiere/cahier-3/fiche-09.html',
 };
