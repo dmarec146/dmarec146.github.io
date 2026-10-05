@@ -6929,3 +6929,30 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   fiches, 375 px) et 25 tirages sur chacune des fiches 14, 16, 21, 22 et Seconde 9 : aucun débordement ;
   aucun rognage effectif ; 50 fiches : 0 erreur de syntaxe. Limite : un énoncé de la fiche 16 (q-46)
   dépasse de 10 px *dans son bloc* sans élargir la page. Phase `debordement` ajoutée au banc.
+
+- **Première fiches 2, 3 et 4 : coefficient 1, exposants 1, démarche
+  (05/10/2026).** Relecture des fiches 1 à 4 demandée par David (fiche 1
+  laissée telle quelle) ; seules les corrections ci-dessous ont été faites,
+  les automatismes de ces fiches n'ont pas été refondus.
+  - **Fiche 2** : un coefficient 1 ne s'écrit plus (« 1x », « 1/1 x² »,
+    « 0t »). 2.9 a) (A=1), 2.9 c) (membre de droite : « -t^2<t-2 »,
+    « -t^2<-1 » quand le coefficient est nul), 2.10 a) (A=1 : « x² » au lieu
+    de « \dfrac{1}{1}x² »), 2.10 b) (« +1x »), 2.11, et les en-têtes de 2.7
+    et 2.8 (coefficients ±1). Nouvelles fonctions `coefTete` et
+    `coefFracLatex`. Balayage de 600 tirages (énoncés et en-têtes) : plus
+    aucun motif « 1x », « 0x », « 1/1 », « +- ».
+  - **Fiche 3** : 3.2 a) et b) n'écrivent plus un exposant 1 (« 12 » au lieu
+    de « 12^{1} ») et 3.2 a) ne tire plus d'exposant 0 (facteur sans
+    intérêt) ; 3.6 et 3.7 : coefficient ±1 devant x² et x non écrit
+    (`fmtCubiqueLatex`, `fmtConst3`). 3.6 et 3.7 **non fusionnés** (consigne
+    de David). Vérifié : 500 tirages, valeur de 3.2 a) et b) recalculée
+    depuis l'énoncé affiché : 0 écart.
+  - **Fiche 4** : 4.2, la démarche « en factorisant par n² / n³ » est
+    retirée des énoncés et le titre « Factorisations dans des fractions »
+    devient « Simplifier les expressions suivantes. ». **Point ouvert** : la
+    réponse attendue est l'écriture en 1/n (« (2-1/n+3/n²)/(2+2/n+3/n²) »),
+    mais le contrôle accepte toute forme équivalente, y compris la fraction
+    d'origine recopiée (vérifié) ; sans l'indication, la consigne ne dit pas
+    quelle forme est attendue. À trancher avec David.
+  - Vérifié : cycle complet des calculs touchés accepté, mauvaise réponse
+    refusée, 0 erreur MathJax, vérificateur : 0 erreur.

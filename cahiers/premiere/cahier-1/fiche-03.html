@@ -1050,9 +1050,11 @@ function genGroupe3_1() {
 }
 
 function genGroupe3_2() {
+  // exposant 1 : jamais ecrit (« 12 » et non « 12^{1} »)
+  function pw(b, e) { return e===1 ? String(b) : b + '^{' + e + '}'; }
   function fracPowInt(base, exp) { return exp>=0 ? F(Math.pow(base,exp),1) : F(1,Math.pow(base,-exp)); }
   // a) arithmetique pure : 6^e1 * 2^e2 / (4^e3 * 12^e4) = 2^(e1+e2-2e3-2e4) * 3^(e1-e4)
-  const e1=alea(-3,3), e2=alea(-3,3), e3=alea(-2,2), e4=alea(-2,2);
+  const e1=aleaNonNul(-3,3), e2=aleaNonNul(-3,3), e3=aleaNonNul(-2,2), e4=aleaNonNul(-2,2);
   const p2 = e1+e2-2*e3-2*e4, p3 = e1-e4;
   const valA = fracMul(fracPowInt(2,p2), fracPowInt(3,p3));
   // b) (A^n * C0^expC) / (B^n * D0^expD)
@@ -1066,8 +1068,8 @@ function genGroupe3_2() {
   const rd = aleaParmi([2,3]);
   const coefD = rd*rd*rd*rd - rd*rd + 1;
   return [
-    {id:"3.2 a)", type:"num", enonce:`\\dfrac{6^{${e1}}\\times 2^{${e2}}}{4^{${e3}}\\times 12^{${e4}}}`, reponse:fracStr(valA)},
-    {id:"3.2 b)", type:"alg", enonce:`\\dfrac{${Ab}^n\\times ${C0}^{${expC}}}{${Bb}^n\\times ${D0}^{${expD}}}`, reponse:`(${ratioAB.n}/${ratioAB.d})^n*(${fracStr(ratioCD)})`},
+    {id:"3.2 a)", type:"num", enonce:`\\dfrac{${pw(6,e1)}\\times ${pw(2,e2)}}{${pw(4,e3)}\\times ${pw(12,e4)}}`, reponse:fracStr(valA)},
+    {id:"3.2 b)", type:"alg", enonce:`\\dfrac{${Ab}^n\\times ${pw(C0,expC)}}{${Bb}^n\\times ${pw(D0,expD)}}`, reponse:`(${ratioAB.n}/${ratioAB.d})^n*(${fracStr(ratioCD)})`},
     {id:"3.2 c)", type:"alg", enonce:`${ac}^{n+2}-${ac}^{n+1}-${kc}\\times ${ac}^n+${ac}^{n-1}`, reponse:`(${fracStr(coefC)})*${ac}^n`},
     {id:"3.2 d)", type:"alg", enonce:`\\dfrac{${rd**4}^{n+1}+(-${rd*rd})^{2n+1}+(-${rd})^{4n}}{${rd**3}^n}`, reponse:`${coefD}*${rd}^n`}
   ];
@@ -1215,7 +1217,7 @@ function developperCubique(A, r0, r1, r2) {
 function fmtCubiqueLatex(A, c2, c1, c0, v) {
   const Astr = (A.n===1&&A.d===1) ? '' : (A.n===-1&&A.d===1?'-':(A.d===1?String(A.n):`\\dfrac{${A.n}}{${A.d}}`));
   const fmtNum = (c) => c.d===1 ? fmtConst(c.n) : (sgn(c.n)+`\\dfrac{${Math.abs(c.n)}}{${c.d}}`);
-  const fmtTerme = (c, suffix) => c.n===0 ? '' : fmtNum(c)+suffix;
+  const fmtTerme = (c, suffix) => c.n===0 ? '' : ((suffix && c.d===1 && Math.abs(c.n)===1) ? (c.n<0 ? '-' : '+') + suffix : fmtNum(c)+suffix);
   return `${Astr}${v}^3${fmtTerme(c2, v+'^2')}${fmtTerme(c1, v)}${fmtTerme(c0, '')}`;
 }
 function fmtRacineAscii(r, v) {
@@ -1276,7 +1278,7 @@ function genGroupe3_7() {
   ];
 }
 
-function fmtConst3(v, suffix) { if(v===0) return ''; return sgn(v)+Math.abs(v)+suffix; }
+function fmtConst3(v, suffix) { if(v===0) return ''; return sgn(v)+(Math.abs(v)===1 ? '' : Math.abs(v))+suffix; }
 
 function unBiquadratique() {
   const Y1 = alea(1,8);

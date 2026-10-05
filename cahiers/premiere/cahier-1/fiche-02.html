@@ -1014,6 +1014,10 @@ function melanger(arr){
 const RADICANDS_PETITS = [2,3,5,6,7];
 const PAIRES_COPREMIERES = [[2,3],[2,5],[2,7],[3,4],[3,5],[3,7],[4,5],[4,7],[5,6],[5,7],[3,2],[5,2],[5,3],[5,4],[7,2],[7,3],[7,4],[7,5]];
 function sgn(v){ return v>=0? '+':'-'; }
+// coefficient entier non nul devant une lettre, en tete de terme : 1 -> rien, -1 -> « - » (jamais « 1x »)
+function coefTete(k){ return k===1 ? '' : (k===-1 ? '-' : String(k)); }
+// coefficient fractionnaire strictement positif devant une lettre : 1 (ou 1/1) -> rien
+function coefFracLatex(fr){ return (fr.n===1 && fr.d===1) ? '' : (fr.d===1 ? String(fr.n) : `\\dfrac{${fr.n}}{${fr.d}}`); }
 function fmtLin(coef, v){ if(coef===0) return ''; const a=Math.abs(coef); return sgn(coef)+(a===1?'':a)+v; }
 function fmtConst(c){ if(c===0) return ''; return sgn(c)+Math.abs(c); }
 
@@ -1242,9 +1246,9 @@ function genGroupe2_9() {
   const [Kp,Kq]=aleaParmi(PAIRES_COPREMIERES);
   const Kd = F(Kq+Kp, Kq); // = 1 + Kp/Kq > 1
   return [
-    {id:"2.9 a)", type:"intervalle", enonce:`${Aa}x^2${fmtLin(Ba,'x')}${fmtConst(Ca)}>0`, intervalleSpec: specA},
+    {id:"2.9 a)", type:"intervalle", enonce:`${coefTete(Aa)}x^2${fmtLin(Ba,'x')}${fmtConst(Ca)}>0`, intervalleSpec: specA},
     {id:"2.9 b)", type:"intervalle", enonce:`y^2${fmtLin(Bb,'y')}\\leqslant ${-Cb}`, intervalleSpec: specB},
-    {id:"2.9 c)", type:"intervalle", enonce:`-t^2<${coefTc}t${fmtConst(constRHSc)}`, intervalleSpec: specC},
+    {id:"2.9 c)", type:"intervalle", enonce:`-t^2<${coefTc===0 ? String(constRHSc) : coefTete(coefTc)+'t'+fmtConst(constRHSc)}`, intervalleSpec: specC},
     {id:"2.9 d)", type:"intervalle", enonce:`v-\\dfrac{${Kd.n}}{${Kd.d}}\\geqslant v^2`, intervalleSpec:{type:'vide'}}
   ];
 }
@@ -1264,9 +1268,9 @@ function genGroupe2_10() {
   const Ba12=alea(1,6), Ca12=-alea(1,9);
   return [
     {id:"2.10 a)", type:"intervalle", texteLibre:true,
-      enonce:`Avec \\(P(x)=\\dfrac{${Ac12.n}}{${Ac12.d}}x^2${fmtLin(Bc12,'x')}+\\dfrac{a}{${dc12}}\\)`,
+      enonce:`Avec \\(P(x)=${coefFracLatex(Ac12)}x^2${fmtLin(Bc12,'x')}+\\dfrac{a}{${dc12}}\\)`,
       intervalleSpec:{type:'intervalles', liste:[{bas:boundC12,haut:Infinity,inclusBas:true,inclusHaut:true}]}},
-    {id:"2.10 b)", type:"texte", texteLibre:true, enonce:`Avec \\(P(x)=ax^2+${Ba12}x${fmtConst(Ca12)}\\)`, reponse:"aucune"}
+    {id:"2.10 b)", type:"texte", texteLibre:true, enonce:`Avec \\(P(x)=ax^2${fmtLin(Ba12,'x')}${fmtConst(Ca12)}\\)`, reponse:"aucune"}
   ];
 }
 
@@ -1289,7 +1293,7 @@ function genGroupe2_11() {
   const kC2=aleaParmi([2,3,4,5,6]); // coeff de a dans la constante (a/kC2)
   const borneSup13 = (4*(Afixe13.n/Afixe13.d)/kC2) / (kLin2.n*kLin2.n/(kLin2.d*kLin2.d));
   return {id:"2.11", type:"intervalle", texteLibre:true,
-    enonce:`Avec \\(P(x)=\\dfrac{${Afixe13.n}}{${Afixe13.d}}x^2${fmtFracLinLatex(kLin2,'ax')}+\\dfrac{a}{${kC2}}\\)`,
+    enonce:`Avec \\(P(x)=${coefFracLatex(Afixe13)}x^2${fmtFracLinLatex(kLin2,'ax')}+\\dfrac{a}{${kC2}}\\)`,
     intervalleSpec:{type:'intervalles', liste:[{bas:0,haut:borneSup13,inclusBas:true,inclusHaut:true}]}};
 }
 
@@ -1318,9 +1322,9 @@ function mettreAJourTextesAvances() {
   const e7 = document.getElementById('entete-2-6');
   if (e7) e7.textContent = `Calcul 2.6 — Un polynôme à paramètre. Soit b ∈ ℝ, on considère le polynôme P défini par \\(P(x) = x^2+bx+${paramsAvances.g7.C7}\\).`;
   const e8 = document.getElementById('entete-2-7');
-  if (e8) e8.textContent = `Calcul 2.7 — Un deuxième polynôme à paramètre. Soit a ∈ ℝ*, on considère le polynôme P défini par \\(P(x) = ax^2${paramsAvances.g8.B8>=0?'+':'-'}${Math.abs(paramsAvances.g8.B8)}x${paramsAvances.g8.C8>=0?'+':'-'}${Math.abs(paramsAvances.g8.C8)}\\).`;
+  if (e8) e8.textContent = `Calcul 2.7 — Un deuxième polynôme à paramètre. Soit a ∈ ℝ*, on considère le polynôme P défini par \\(P(x) = ax^2${fmtLin(paramsAvances.g8.B8,'x')}${paramsAvances.g8.C8>=0?'+':'-'}${Math.abs(paramsAvances.g8.C8)}\\).`;
   const e9 = document.getElementById('entete-2-8');
-  if (e9) e9.textContent = `Calcul 2.8 — Un troisième polynôme à paramètre. Soit c ∈ ℝ, on considère le polynôme P défini par \\(P(x) = ${paramsAvances.g9.A9}x^2${paramsAvances.g9.B9>=0?'+':'-'}${Math.abs(paramsAvances.g9.B9)}x+c\\).`;
+  if (e9) e9.textContent = `Calcul 2.8 — Un troisième polynôme à paramètre. Soit c ∈ ℝ, on considère le polynôme P défini par \\(P(x) = ${coefTete(paramsAvances.g9.A9)}x^2${fmtLin(paramsAvances.g9.B9,'x')}+c\\).`;
 }
 
 function genererExercices() {
