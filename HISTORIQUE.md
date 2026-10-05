@@ -6986,3 +6986,19 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   b) 0,75, c) 1,5. Base 21 points, bonus 7. **Pas une règle générale** : les automatismes
   ne sont pas tous à 0,5 dans les autres fiches (certains se compliquent), David décide
   au cas par cas.
+
+- **Première fiche 3 : 3.5 d) supprimé, deux défauts du corrigé de 3.8, barème
+  (05/10/2026), 25 → 24 questions.** David : « supprime la question 3.5 d) ».
+  3.5 passe à 3 questions (a, b, c) ; groupes 3.6 à 3.8 décalés d'un rang.
+  - **3.8 a) et b)** : le corrigé affichait du bruit de calcul
+    (« √2,9999999999999996 ») ; le radicande est maintenant arrondi.
+  - **3.8 d)** : un ensemble vide s'affichait « {undefined} » ; le corrigé
+    montre désormais « ∅ » (la saisie de ∅ était déjà acceptée).
+  - **Barème** (`outils/bareme/fiche-03.json`, outil `cabler-fiche.js`) : base
+    18,25 points, bonus 6,75 (3.8 = calculs avancés). Retouches de David :
+    3.2 b) 0,5 ; 3.6 a) 0,5 ; 3.6 c) 1. Le total de base n'est pas entier :
+    **à revoir avec David** (règle du README).
+  - Vérifié : 40 tirages de 3.8 sans bruit ni « undefined », cycle complet
+    8 × 24 accepté (ensembles saisis en `\{…\}` et ∅), 0 erreur MathJax,
+    vérificateur : 0 erreur, contrôle des barèmes : questions tirées toutes
+    pointées.
