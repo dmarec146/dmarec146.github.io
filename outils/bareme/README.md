@@ -41,3 +41,22 @@ et le total en tête de fiche (jamais la catégorie ni l'explication).
 Le barème est attaché à la **position** de la question. Si le générateur tire des cas plus ou
 moins difficiles pour une même position, les points ne suivent pas : resserrer les plages de
 l'aléatoire (chantier « moteur robuste ») ou faire dépendre les points des paramètres tirés.
+
+## Contrôle de cohérence (obligatoire avant commit et avant publication)
+
+Le barème est lié aux identifiants de questions : modifier une fiche à barème (ajouter, supprimer,
+renuméroter une question) le désynchronise sans signal. Deux volets, voir aussi `CLAUDE.md` :
+
+- `node outils/bareme/controle-bareme.js` : repère les fiches à barème, vérifie qu'elles sont
+  déclarées dans `appliquer-bareme.js` et que leur bloc `Bareme.definir` est celui de `fiche-NN.json`
+  (code de sortie 2 en cas d'écart) ; écrit `fiches-a-bareme.json`.
+- `controle.html` (serveur statique, `/outils/bareme/controle.html`) puis `Controle.lancer()` : génère
+  chaque fiche 300 fois et compare les questions **réellement tirées** aux points (« sans points » =
+  question ajoutée ou renumérotée ; « points sans question » = question supprimée ou renumérotée).
+  Une question rare (moins de 10 % des tirages) est signalée à titre indicatif, sans être un écart.
+
+Essais de détection faits le 05/10/2026 : question retirée du barème, identifiant fantôme, point
+modifié dans le JSON : les trois sont signalés.
+
+Après une modification de la fiche : mettre à jour `fiche-NN.json`, `node outils/bareme/appliquer-bareme.js NN`,
+puis relancer les deux volets.

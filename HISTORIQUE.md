@@ -6883,3 +6883,21 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   `]-∞;+∞]`, `[-∞;+∞[` refusés ; 50 fiches : 0 erreur de syntaxe. L'audit des claviers n'a plus
   de point ouvert (restent hors audit : débordements horizontaux sur téléphone de Première 14,
   16, 22).
+
+- **Contrôle de cohérence des barèmes (05/10/2026).** Question de David : si la fiche 9 est modifiée
+  plus tard, le barème suit-il ? Non : il est fixé dans la fiche, lié aux identifiants de questions
+  (question ajoutée = ignorée sans erreur, renumérotée = points sur la mauvaise question). Idées
+  écartées par David : « générer un barème » à chaque attribution de devoir (trop lourd) ; alerte
+  dans la console du navigateur. **Retenu** : barème par fiche, mis à jour par Claude quand il
+  modifie la fiche, avec un contrôle **silencieux sauf écart**, déclenché seulement avant un commit
+  qui touche une fiche à barème et avant tout « pousse tout », jamais à chaque message ; en cas
+  d'écart, alerte unique et barème corrigé proposé. **Mis en place** : `outils/bareme/controle-bareme.js`
+  (fiches à barème, déclaration dans `appliquer-bareme.js`, bloc identique à `fiche-NN.json`, code 2 si
+  écart) ; `outils/bareme/controle.html` (300 tirages par fiche, questions sans points / points sans
+  question) ; `Bareme.ids()` dans `bareme.js` ; consigne dans `CLAUDE.md` (lu à chaque ouverture, donc
+  valable sur les deux machines) et rappels dans les READMEs, `REGLES-FICHES.md`, `SUIVI-FIREBASE.md`.
+  **Vérifié** : fiches 2 (31 questions) et 9 (28) cohérentes en 3 s ; détection d'une question
+  retirée, d'un identifiant fantôme et d'un JSON modifié, puis retour à l'état initial. Non couvert :
+  une fiche modifiée à la main sans passer par Claude (relancer le contrôle sur demande). Idée
+  « barème attaché au devoir avec éditeur dans le tableau de bord » : non retenue, restée en
+  discussion (voir « Chantiers futurs » si David la veut un jour).

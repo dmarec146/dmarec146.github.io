@@ -198,7 +198,9 @@ les corrections ponctuelles d'une fiche).
   « Total : N points (+ M points de calculs avancés) » en tête, jamais la catégorie ni une
   explication. Points de 0,5 à 2 par quart de point ; le temps compte peu ; les calculs
   avancés sont un bonus (bonne réponse ajoutée au score et au total, sinon hors barème).
-  Règles, catégories et justifications : `outils/bareme/README.md`.
+  Règles, catégories et justifications : `outils/bareme/README.md`. **Toute modification d'une fiche à
+  barème** (question ajoutée, supprimée, renumérotée, type changé) **impose de mettre à jour son barème**
+  et de passer le contrôle `outils/bareme/controle-bareme.js` + `controle.html` (voir `CLAUDE.md`).
 - **Le corrigé affiché doit être lisible et exact** : pas de « 3/4 × x² »
   (écrire 3x²/4), pas de « (−3)/2 » (écrire −3/2), pas de signe moins mis en
   facteur inutilement, pas de parenthèses inutiles (« (4x) », « (x)² »), pas

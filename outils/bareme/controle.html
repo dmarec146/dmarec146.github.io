@@ -1,0 +1,76 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Contrôle des barèmes</title>
+<body style="font:14px system-ui; max-width:900px; margin:20px">
+<h1 style="font-size:18px">Contrôle des barèmes</h1>
+<p>Pour chaque fiche à barème (liste : <code>fiches-a-bareme.json</code>, écrite par <code>controle-bareme.js</code>), la fiche est générée
+<span id="n"></span> fois dans un cadre ; les questions réellement tirées sont comparées aux points du barème.
+Lancer : <code>Controle.lancer()</code> dans la console de la page, puis lire <code>CONTROLE_FIN</code> et <code>Controle.resume()</code>.</p>
+<pre id="sortie">En attente.</pre>
+<iframe id="f" style="width:1000px;height:300px;border:1px solid #999"></iframe>
+<script>
+const NB_TIRAGES = 300;
+document.getElementById('n').textContent = NB_TIRAGES;
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function charger(url) {
+  const f = document.getElementById('f');
+  f.src = 'about:blank'; await dormir(50);
+  await new Promise((res) => { f.onload = res; f.src = url; });
+  for (let i = 0; i < 80; i++) {
+    const w = f.contentWindow;
+    try { if (w.eval('typeof exercices !== "undefined" && exercices.length && typeof genererExercices === "function"') && w.Bareme) break; } catch (e) {}
+    await dormir(250);
+  }
+  await dormir(500);
+  return f.contentWindow;
+}
+
+// Compare les questions tirees aux points. `w` : fenetre d'une fiche chargee (reutilisable pour un essai).
+function verifier(w, nbTirages) {
+  const gen = w.eval('genererExercices');
+  const tirees = {};
+  for (let i = 0; i < (nbTirages || NB_TIRAGES); i++) {
+    let ex; try { ex = gen(); } catch (e) { continue; }
+    new Set(ex.map((e) => e.id)).forEach((id) => { tirees[id] = (tirees[id] || 0) + 1; });
+  }
+  const avecPoints = new Set(w.Bareme.ids());
+  const sansPoints = Object.keys(tirees).filter((id) => !avecPoints.has(id));
+  const orphelins = [...avecPoints].filter((id) => !tirees[id]);
+  return {
+    actif: w.Bareme.actif(), questionsTirees: Object.keys(tirees).length, questionsAvecPoints: avecPoints.size,
+    sansPoints, orphelins,
+    rares: Object.entries(tirees).filter(([id, n]) => n < (nbTirages || NB_TIRAGES) * 0.1 && avecPoints.has(id)).map(([id, n]) => id + ' (' + n + ')'),
+  };
+}
+
+const Controle = { resultats: {}, verifier };
+Controle.resume = () => {
+  const lignes = [];
+  for (const [f, r] of Object.entries(Controle.resultats)) {
+    if (r.erreur) { lignes.push('ERREUR ' + f + ' : ' + r.erreur); continue; }
+    const ok = r.actif && !r.sansPoints.length && !r.orphelins.length;
+    lignes.push((ok ? 'OK     ' : 'ECART  ') + f + ' : ' + r.questionsTirees + ' questions tirées, ' + r.questionsAvecPoints + ' avec points'
+      + (r.actif ? '' : ' | BAREME INACTIF')
+      + (r.sansPoints.length ? ' | SANS POINTS : ' + r.sansPoints.join(', ') : '')
+      + (r.orphelins.length ? ' | POINTS SANS QUESTION (jamais tirée en ' + NB_TIRAGES + ' tirages) : ' + r.orphelins.join(', ') : '')
+      + (r.rares.length ? ' | (rares, normal : ' + r.rares.join(', ') + ')' : ''));
+  }
+  return lignes.join('\n') || '(aucune fiche)';
+};
+Controle.lancer = async () => {
+  window.CONTROLE_FIN = false; Controle.resultats = {};
+  let liste;
+  try { liste = await (await fetch('fiches-a-bareme.json', { cache: 'no-store' })).json(); }
+  catch (e) { Controle.resultats['fiches-a-bareme.json'] = { erreur: 'introuvable : lancer d\'abord node outils/bareme/controle-bareme.js' }; window.CONTROLE_FIN = true; return; }
+  for (const u of liste) {
+    try { Controle.resultats[u] = verifier(await charger(u)); }
+    catch (e) { Controle.resultats[u] = { erreur: String(e) }; }
+    document.getElementById('sortie').textContent = Controle.resume();
+  }
+  window.CONTROLE_FIN = true;
+  document.getElementById('sortie').textContent = Controle.resume();
+};
+window.Controle = Controle; window.CONTROLE_FIN = true;
+</script>
+</body>

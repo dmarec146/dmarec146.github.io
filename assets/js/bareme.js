@@ -161,6 +161,8 @@
       }
     },
     points(id) { return POINTS ? POINTS[id] : undefined; },
+    // Identifiants des questions qui ont des points (controle de coherence : outils/bareme/controle.html).
+    ids() { return POINTS ? Object.keys(POINTS) : []; },
     calculer,
     format,
     // « x / y » prêt à afficher (panneau de score de la fiche)

@@ -85,7 +85,9 @@ depuis la réorganisation du 02/10/2026 »).
     `Bareme.definir` dans la fiche. `suivi.js` (`validerFiche`) enregistre alors
     `score` et `totalExercices` en points plus `nbQuestions` (colonne
     Non-réponses du tableau de bord) ; `mes-devoirs.js` et `devoirs.js`
-    affichent les quarts de point (9,25 / 24,5).
+    affichent les quarts de point (9,25 / 24,5). **Contrôle de cohérence obligatoire** avant
+    commit et publication (fiche modifiée = barème désynchronisé sans signal) :
+    `outils/bareme/controle-bareme.js` + `controle.html`, consigne dans `CLAUDE.md`.
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique
