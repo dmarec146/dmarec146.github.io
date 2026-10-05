@@ -309,7 +309,7 @@ async function choisirDevoirActif(devoirs) {
 // devoirs visant cette fiche, y compris ceux deja echus). Rien n'est ecrit
 // si ce devoir est deja epuise : seconde ligne de defense si le blocage
 // cote fiche est contourne (ex. appel direct depuis la console).
-async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues) {
+async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues, bareme) {
   try {
     const classe = await classeEleve();
     if (!classe) return;
@@ -325,9 +325,12 @@ async function enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisI
     await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'devoirsTentatives'), {
       devoirId: choix.devoir.id,
       ficheId,
-      score: exercicesReussisIds.length,
+      // Fiche a bareme (assets/js/bareme.js) : score et total en POINTS, et nbQuestions
+      // (questions comptees, pour la colonne Non-reponses) ; sinon un point par bonne reponse.
+      score: bareme ? bareme.score : exercicesReussisIds.length,
       totalExercices,
       nbRepondues,
+      ...(bareme ? { nbQuestions: bareme.nbQuestions } : {}),
       horodatage: serverTimestamp(),
     });
   } catch (erreur) {
@@ -385,9 +388,9 @@ export async function verifierEtatDevoir(ficheId, devoirId) {
 // jour -- seule la tentative de devoir (si applicable) est encore
 // enregistree. Supprime aussi le brouillon en cours : une fois validee, la
 // fiche n'est plus "en cours" a reprendre.
-export async function validerFiche(ficheId, exercicesReussisIds, totalExercices, nbRepondues) {
+export async function validerFiche(ficheId, exercicesReussisIds, totalExercices, nbRepondues, bareme) {
   if (!utilisateurCourant) return;
-  await enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues);
+  await enregistrerTentativeDevoirSiApplicable(ficheId, exercicesReussisIds, totalExercices, nbRepondues, bareme);
   await supprimerBrouillon(ficheId);
 }
 

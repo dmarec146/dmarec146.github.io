@@ -6705,3 +6705,36 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     parabole et cercle, tangentes) : 0 écart ; cycle complet 10 × 36
     accepté ; mauvaises réponses refusées ; zoom et curseur essayés dans le
     navigateur ; 0 erreur MathJax ; vérificateur : 0 erreur.
+
+- **Barème en points : fiches pilotes Première 2 et 9 (05/10/2026).** Chantier
+  « Barème personnalisé » lancé sur deux fiches, sur les règles de David.
+  - **Règles** (voir `outils/bareme/README.md`) : 0,5 à 2 points par question,
+    par quart de point ; le temps compte peu ; catégories A à E (automatisme,
+    formule, enchaînement, initiative, avancé = bonus) avec leurs bandes ;
+    automatismes à 1 point seulement pour les plus délicats ; totaux de base
+    entiers (fiche 2 : 24, bonus 7 ; fiche 9 : 23, bonus 7). Barèmes d'abord
+    calculés avec des notes difficulté / longueur / méthode (poids 45/15/40), puis
+    abandonnés pour des bandes par catégorie après les remarques de David
+    (9.6 ≤ 1, 9.7 c) et 9.8 c) proches de a), inéquations classiques ≤ 1, énoncés à
+    paramètres mieux valorisés que les inéquations).
+  - **Présentation élève** : une pastille de points par question et « Total : N
+    points » en tête de fiche, sans catégorie, infobulle ni explication ;
+    pas de sous-total par calcul. L'encart est placé avant le bloc des calculs
+    (un devoir partiel masque le bloc entier) et indique le total des calculs
+    retenus. Téléphone : pastille en fin de ligne, aucun défilement horizontal.
+  - **Note** : `Bareme.calculer` (score et total en points ; bonus : bonne
+    réponse ajoutée aux deux, sinon hors barème ; `nbQuestions` = questions de
+    base retenues + avancées traitées). Utilisé à la validation d'un devoir et
+    dans le panneau de score du mode libre. `suivi.js` : `validerFiche` accepte un
+    objet barème (5e paramètre) ; `mes-devoirs.js` et `devoirs.js` affichent les
+    quarts de point ; Non-réponses = `nbQuestions − nbRepondues`.
+  - **Tests** (élève et enseignant jetables, supprimés) : fiche 9 en devoir, 9
+    bonnes réponses de base, un avancé juste, un avancé faux, un avancé vide →
+    tentative **9,25 / 24,5** (23 de base + 1,5 de bonus), 26 questions, 12
+    répondues, 14 non-réponses affichées à l'enseignant ; `/mes-devoirs/` « 9,25 /
+    24,5 » ; mode libre « 3 / 24,5 » ; devoir partiel sur la fiche 2 (calculs 2.6 et
+    2.10) : total 3 points ; vérificateur de syntaxe : 50 fiches, 0 erreur.
+  - **Limite** : le barème suit la position de la question, pas le tirage ; une
+    même position peut tirer un cas plus ou moins difficile (ex. 2.9 a).
+  - **Non fait** (chantier) : barème des 48 autres fiches ; automatismes à 12
+    questions ; arrondi éventuel de la note de l'élève.

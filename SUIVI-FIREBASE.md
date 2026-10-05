@@ -73,6 +73,18 @@ depuis la réorganisation du 02/10/2026 »).
     sur `input-N` absent), pavé numérique sur les champs du widget. Aucune
     autre retouche des fiches que la balise `<script>`. Une nouvelle fiche à
     widget doit l'inclure.
+  - `assets/js/bareme.js` (script classique, 05/10/2026) : **barème en points**
+    des fiches de calcul, pilotes Première 2 et 9 (les 48 autres n'ont pas de
+    `Bareme.definir`, donc inchangées). Affiche la note de chaque question et
+    « Total : N points » en tête (rien d'autre pour l'élève) ; `Bareme.calculer`
+    donne la note pondérée, les calculs avancés étant un **bonus** (bonne réponse :
+    ajoutée au score et au total ; fausse ou absente : hors barème). Données,
+    catégories A à E et justifications (pour l'enseignant seulement) dans
+    `outils/bareme/`, voir son README ; `appliquer-bareme.js NN` régénère
+    `Bareme.definir` dans la fiche. `suivi.js` (`validerFiche`) enregistre alors
+    `score` et `totalExercices` en points plus `nbQuestions` (colonne
+    Non-réponses du tableau de bord) ; `mes-devoirs.js` et `devoirs.js`
+    affichent les quarts de point (9,25 / 24,5).
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique

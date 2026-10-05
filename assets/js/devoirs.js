@@ -1146,7 +1146,7 @@ async function afficherResultats(devoir) {
     // 3.499999999996) -- sans effet sur les scores entiers des fiches de calcul.
     const celluleNote = document.createElement('td');
     celluleNote.textContent = ligneDonnees.meilleure
-      ? `${(Math.round(ligneDonnees.meilleure.score * 10) / 10).toLocaleString('fr-FR')} / ${ligneDonnees.meilleure.totalExercices}`
+      ? `${(Math.round(ligneDonnees.meilleure.score * 100) / 100).toLocaleString('fr-FR')} / ${(Math.round(ligneDonnees.meilleure.totalExercices * 100) / 100).toLocaleString('fr-FR')}`
       : '—';
 
     // Non-reponses = cases/questions laissees vides par l'eleve sur SA
@@ -1160,7 +1160,7 @@ async function afficherResultats(devoir) {
     const celluleNonReponses = document.createElement('td');
     if (!ligneDonnees.meilleure) {
       celluleNonReponses.textContent = '—';
-    } else if (devoir.type === 'fiche') {
+    } else if (devoir.type === 'fiche' && typeof ligneDonnees.meilleure.nbQuestions !== 'number') {
       celluleNonReponses.textContent = String(ligneDonnees.meilleure.totalExercices - ligneDonnees.meilleure.nbRepondues);
     } else if (typeof ligneDonnees.meilleure.nbQuestions === 'number') {
       celluleNonReponses.textContent = String(ligneDonnees.meilleure.nbQuestions - ligneDonnees.meilleure.nbRepondues);

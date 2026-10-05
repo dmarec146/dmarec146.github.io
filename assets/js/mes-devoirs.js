@@ -47,7 +47,9 @@ function titreDevoir(devoir) {
 const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
 
 function note(d) {
-  return `${(Math.round(d.meilleure.score * 10) / 10).toLocaleString('fr-FR')} / ${d.meilleure.totalExercices}`;
+  // Au centieme : les notes d'une fiche a bareme sont des quarts de point (17,25).
+  const f = (x) => (Math.round(x * 100) / 100).toLocaleString('fr-FR');
+  return `${f(d.meilleure.score)} / ${f(d.meilleure.totalExercices)}`;
 }
 
 // Bouton de suppression en deux temps (« Supprimer » puis « Confirmer / Annuler ») :

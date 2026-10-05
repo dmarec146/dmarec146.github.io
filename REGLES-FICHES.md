@@ -187,6 +187,11 @@ les corrections ponctuelles d'une fiche).
   `assets/js/widgets-saisie.js` après `claviers.js` — « Réponse enregistrée »
   et passage à la question suivante au clic sur « Valider », passage d'un
   champ ordinaire vers un widget, clavier numérique sur les champs du widget.
+- **Barème en points** (fiches pilotes Première 2 et 9, 05/10/2026) : l'élève ne voit que
+  les points de chaque question et le total en tête, jamais la catégorie ni une
+  explication. Points de 0,5 à 2 par quart de point ; le temps compte peu ; les calculs
+  avancés sont un bonus (bonne réponse ajoutée au score et au total, sinon hors barème).
+  Règles, catégories et justifications : `outils/bareme/README.md`.
 - **Le corrigé affiché doit être lisible et exact** : pas de « 3/4 × x² »
   (écrire 3x²/4), pas de « (−3)/2 » (écrire −3/2), pas de signe moins mis en
   facteur inutilement, pas de parenthèses inutiles (« (4x) », « (x)² »), pas
