@@ -7014,3 +7014,11 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Barème de la fiche 5 de Première (05/10/2026).** Base 22 points, bonus 6,75 (5.10, calculs
   avancés). Automatismes 5.1 et 5.2 à 0,5, 5.3 b) 0,75 ; retouches de David : 5.9 b) et c) à 1,
   5.8 b) à 1, 5.5 b) à 0,75. Fichier `outils/bareme/fiche-05.json`.
+
+- **Barème de la fiche 5 de Seconde (Identités remarquables) (05/10/2026).** Premier barème
+  hors Première. Base 20 points, bonus 8 (5.7, calculs avancés). Les 12 automatismes
+  (5.1 à 5.3) à 0,5 ; calcul littéral mieux doté (5.4 : 1, 1, 1, 1,25 après +0,25 demandé
+  par David ; 5.5 et 5.6 de 0,75 à 1,25). Fichier `outils/bareme/fiche-S05.json` (préfixe S =
+  Seconde) ; `cabler-fiche.js S05` et `appliquer-bareme.js S05` ; `controle-bareme.js` lit
+  désormais les clés S05. Vérifié : 30 questions tirées toutes pointées, rien hors devoir,
+  0 erreur MathJax.

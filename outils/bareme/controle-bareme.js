@@ -37,7 +37,7 @@ for (const f of fiches(path.join(racine, 'cahiers'), [])) {
 // table FICHES d'appliquer-bareme.js (numero -> chemin)
 const appliquer = fs.readFileSync(path.join(__dirname, 'appliquer-bareme.js'), 'utf8');
 const declarees = {};
-for (const m of appliquer.matchAll(/'(\d+)':\s*'([^']+)'/g)) declarees[m[2]] = m[1];
+for (const m of appliquer.matchAll(/'(S?\d+)':\s*'([^']+)'/g)) declarees[m[2]] = m[1];
 
 const ecarts = [];
 const liste = [];

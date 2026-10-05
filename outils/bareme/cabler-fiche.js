@@ -12,11 +12,13 @@ const fs = require('fs');
 const path = require('path');
 const R = (s, ...v) => String.raw(s, ...v).replace(/§/g, '`').replace(/¤/g, '$');   // § = accent grave, ¤ = dollar
 
-const num = process.argv[2];
-if (!/^\d\d$/.test(num || '')) { console.error('Usage : node cabler-fiche.js NN'); process.exit(1); }
+const num = process.argv[2];   // « 05 » = Premiere, « S05 » = Seconde
+if (!/^S?\d\d$/.test(num || '')) { console.error('Usage : node cabler-fiche.js NN (Premiere) ou SNN (Seconde)'); process.exit(1); }
+const niveau = num.startsWith('S') ? 'seconde' : 'premiere';
+const numero = num.replace('S', '');
 const racine = path.join(__dirname, '..', '..');
-const dossiers = fs.readdirSync(path.join(racine, 'cahiers', 'premiere')).filter((d) => d.startsWith('cahier-'));
-const trouve = dossiers.map((d) => path.join('cahiers', 'premiere', d, `fiche-${num}.html`)).find((f) => fs.existsSync(path.join(racine, f)));
+const dossiers = fs.readdirSync(path.join(racine, 'cahiers', niveau)).filter((d) => d.startsWith('cahier-'));
+const trouve = dossiers.map((d) => path.join('cahiers', niveau, d, `fiche-${numero}.html`)).find((f) => fs.existsSync(path.join(racine, f)));
 if (!trouve) { console.error('fiche introuvable : ' + num); process.exit(1); }
 const fichier = path.join(racine, trouve);
 const brut = fs.readFileSync(fichier, 'utf8');
