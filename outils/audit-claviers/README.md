@@ -1,7 +1,7 @@
 # Audit des claviers de saisie (05/10/2026)
 
-Banc d'essai à rejouer **après toute mise à jour de MathLive** (chargé sans numéro de version
-depuis unpkg : ses comportements peuvent changer sans prévenir) ou toute retouche de
+Banc d'essai à rejouer **avant tout changement de version de MathLive** (épinglé à 0.111.0 depuis
+le 05/10/2026 : ses comportements changent d'une version à l'autre) ou après toute retouche de
 `assets/js/claviers.js` ou des fonctions `inserer*` des fiches.
 
 ## Lancer

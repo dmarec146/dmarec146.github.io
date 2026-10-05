@@ -13,7 +13,7 @@
   // --- 1. Accolades sur le clavier MathLive ---------------------------------
   //
   // Plutot que de redefinir toute la disposition "123" (fragile d'une version
-  // de MathLive a l'autre, le script est charge sans numero de version), on
+  // de MathLive a l'autre ; la version est epinglee depuis le 05/10/2026), on
   // part des dispositions normalisees fournies par MathLive lui-meme, et sur
   // la couche "123" : l'integrale (avec ses bornes, inchangee) prend la place
   // du "i" des nombres complexes (hors programme de Seconde/Premiere), puis

@@ -6825,3 +6825,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     flèche) ; (2) une réponse longue dépasse la largeur du champ et son dernier crochet est
     rogné au repos ; (3) MathLive non épinglé ; (4) `]-∞;+∞[` est refusé là où ℝ est
     attendu (Première 2.12).
+
+- **MathLive épinglé à 0.111.0 (05/10/2026).** Suite de l'audit des claviers : les 50 fiches
+  chargeaient `https://unpkg.com/mathlive` sans numéro, donc toujours la dernière version
+  publiée (cause de la perte silencieuse de `smart-fence` et `virtual-keyboard-mode`).
+  Remplacé par `https://unpkg.com/mathlive@0.111.0` (une ligne par fiche, script exact-une-fois
+  partout ; l'adresse redirige vers `mathlive@0.111.0/mathlive.min.js`). Vérifié : version
+  chargée 0.111.0 sur 4 fiches (Première 2, 3, 9, Seconde 14), banc d'essai sans écart, aucune
+  erreur JavaScript, 50 fiches : 0 erreur de syntaxe. Changer de version = modifier le numéro
+  dans les 50 fiches après un passage du banc `outils/audit-claviers/`. math.js (12.4.0) et
+  MathJax (3.2.2) étaient déjà épinglés.

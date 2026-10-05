@@ -99,7 +99,9 @@ depuis la réorganisation du 02/10/2026 »).
   - `assets/js/statistiques.js` (module, chargé par les 76 pages publiques) :
     mesure de fréquentation anonyme, une écriture Firestore par page vue
     (voir §3). Pied de page : « Mesure de fréquentation anonyme… ».
-  - MathLive (0.110, chargé sans numéro de version depuis unpkg) et MathJax.
+  - MathLive **épinglé à 0.111.0** (`unpkg.com/mathlive@0.111.0`, 05/10/2026 ; avant : sans
+    numéro, donc toujours la dernière version) et MathJax. Pour changer de version : modifier
+    le numéro dans les 50 fiches, relancer `outils/audit-claviers/`, puis publier.
 - **Automatismes de Première** : `automatismes/premiere/sujet-blanc.html`
   et `fiche.html` (fiche ciblée par thèmes), moteur partagé
   `automatismes/assets/moteur.js`, banques dans `automatismes/premiere/banques/`.
@@ -328,8 +330,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   (`saisies[idx].latex`) et le restaurent par `setValue(latex, {format:'latex'})`
   (ancien brouillon sans `latex` : comportement d'avant). Tester la frappe
   physique avec l'action `key` de l'outil `computer` (vrais `keydown`), pas
-  `type` (insertion de texte seulement). **MathLive est chargé sans version** : relancer
-  le banc après toute mise à jour. Hors champs à séparateur, les champs
+  `type` (insertion de texte seulement). **MathLive est épinglé à 0.111.0** : relancer
+  le banc avant de changer de version. Hors champs à séparateur, les champs
   algébriques gardent la fermeture automatique des parenthèses (comportement
   d'origine, aucun retour).
 - Tests : injecter du LaTeX (`setValue(latex, {format:'latex'})`) ;
