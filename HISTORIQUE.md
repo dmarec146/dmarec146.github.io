@@ -7033,3 +7033,7 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   réduite (64 % → 40 %), le rendu avec Edge débordait de 42 px sur le pied de page.
   PDF régénéré avec `playwright-core` et le navigateur Edge (`channel: 'msedge'`) faute de
   `playwright` complet sur cette machine ; mêmes réglages que `outils/guide-eleve/pdf.js`.
+
+- **Barème de la fiche 6 de Première (05/10/2026).** Base 14 points, bonus 5,5 (6.9 et 6.10,
+  calculs avancés). Automatismes 6.1 à 6.3 à 0,5, 6.4 à 0,75 ; 6.6 a) et 6.7 a) à 1,5
+  (dériver une composée sans connaître f). Fichier `outils/bareme/fiche-06.json`.
