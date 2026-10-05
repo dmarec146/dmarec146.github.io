@@ -7087,3 +7087,36 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   avancés). Points de David : 15.3 b) 0,5 ; 15.4 d) 1 ; 15.5 à 0,75 par question ; 15.6 c) 1 ; puis
   15.2 a) 0,75 pour un total entier. Fichier `outils/bareme/fiche-15.json`. Avec cette fiche, les
   barèmes des fiches 1 à 15 de Première sont posés (la 9 l'était déjà).
+
+- **Première fiche 16 (Généralités sur les vecteurs) : refonte (05/10/2026), 55 → 43 questions,
+  19 → 18 calculs.** David : « fiche 16 », puis réductions à deux questions des anciens 16.6, 16.9,
+  16.12 et 16.14.
+  - **Deux réponses attendues fausses corrigées** : ancien 16.10 c) (nouveau 16.8 d)) — le
+    coefficient k du calcul n'apparaissait pas dans l'énoncé (« ½(…) − ½… » au lieu de
+    « k(…) − k… ») : la bonne réponse était refusée à chaque tirage ; ancien 16.6 a) (nouveau
+    16.7 a)) — l'énoncé affichait « (B − α) » alors que la réponse était calculée pour
+    « B(1 − α) » (faux dans 86 tirages sur 150). Tirage dégénéré exclu : ancien 16.14 d)
+    (nouveau 16.13 b)) donnait « AB = 0·CD » dans 15 % des tirages.
+  - **Automatismes** (16.1 à 16.3, modèle de Première) : (x+p)²−(x+q)² ◊ c (premier degré après
+    développement) et k/x ◊ m (inverse, valeur interdite 0) ; a/x + b/(x+c) = d (même
+    dénominateur, deux racines entières) et x²−2kx+k² = m² (carré à reconnaître) ; fraction avec
+    parenthèses (fraction irréductible contrôlée) et (a ± c√n)² sous la forme p + q√n (forme
+    contrôlée). Remplacent les développements et les fractions en q (titres qui donnaient la
+    démarche, « −1(…) » affiché, corrigé non simplifié).
+  - **Fusions et réductions** : 16.7 Équations vectorielles = anciens 16.6 a) + 16.11 a)
+    (2 questions, réponses en ensemble) ; 16.8 Simplifications = anciens 16.7 a), d) + 16.10 b),
+    c) ; 16.10 = ancien 16.9 a), c) ; 16.11 = ancien 16.12 a), b) ; 16.13 = ancien 16.14 b), d).
+    Renumérotation : ancien 16.3→16.4, 16.4→16.5, 16.5→16.6, 16.8→16.9, 16.13→16.12,
+    16.15→16.14, 16.16→16.15, 16.17→16.16, 16.18→16.17, 16.19→16.18 (table
+    `RENUMEROTATION_16` en fin de générateur). Titres ajoutés : 16.5 « Vecteurs sur un
+    quadrillage », 16.6 « Une somme de vecteurs », 16.10 « Décomposer un vecteur », 16.11
+    « Décomposer avec un paramètre », 16.15 « Trois points alignés », 16.16 « Colinéarité avec un
+    paramètre ». Plages élargies pour 16.7 (24 → 58 et 13 → 35 énoncés distincts).
+  - **Brouillon** : les vecteurs de la figure 16.5 et les données de 16.14 et 16.15 sont
+    désormais enregistrés avec le brouillon (`etatSupplementairePourBrouillon`) ; avant, la
+    reprise redessinait une figure différente des questions.
+  - Vérifié : 300 tirages recalculés indépendamment (intervalles sur grille, racines par
+    substitution et comptage, valeurs numériques, combinaisons vectorielles sur points
+    aléatoires, unicité de α) : 0 écart ; cycle complet 8 × 43 accepté, mauvaises formes
+    refusées ; brouillon restauré à l'identique (200 essais) ; 0 erreur MathJax ;
+    vérificateur : 0 erreur.
