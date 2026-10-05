@@ -1782,6 +1782,7 @@ function parseReponseIntervalle(str) {
   const parties = str.split(/ou|∪|u(?![a-z])/);
   const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
   if (intervalles.length === 0) return null;
+  if (intervalles.length === 1 && intervalles[0].bas === -Infinity && intervalles[0].haut === Infinity && !intervalles[0].inclusBas && !intervalles[0].inclusHaut) return {type:'tout'}; // ]-∞;+∞[ = ℝ
   return {type:'intervalles', liste: intervalles};
 }
 

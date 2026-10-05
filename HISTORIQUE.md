@@ -6868,3 +6868,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   causé par ce changement (Première 14, 16, 22 débordent déjà : un tableau et des énoncés MathJax,
   non traités). Banc : phase `largeur`. Reste ouvert : `]-∞;+∞[` refusé là où ℝ est attendu
   (Première 2.12).
+
+- **]-∞;+∞[ accepté pour ℝ (05/10/2026).** Dernier point ouvert de l'audit, à la demande de David :
+  `parseReponseIntervalle` lisait `]-∞;+∞[` comme un intervalle ordinaire, jamais égal au
+  type « tout » (seule la fiche 2 de Première le tire, question 2.12, mais 41 fiches ont la
+  fonction). Règle ajoutée (3 variantes de la fonction, 28 + 11 + 2 fiches) : **un seul
+  intervalle, non borné des deux côtés, avec les deux crochets ouverts, est lu « tout »** ;
+  `]-∞;+∞]` et `[-∞;+∞[` restent refusés (notation incorrecte : ma première version les
+  acceptait, repéré à l'essai en conditions réelles). Au passage, les 39 variantes qui ne
+  reconnaissaient pas « rr » ni « o/ » (ce qu'écrivent les touches ℝ et ∅ d'un champ
+  mathématique, même défaut que l'ensemble vide) les reconnaissent maintenant. **Vérifié** :
+  banc `reels` (24 claviers d'intervalles, saisie par les touches puis correction : `]-∞;+∞[`,
+  ℝ, ∅, `]-∞;1[`) ; fiche 2, question 2.12 tirée : `]-∞;+∞[` et ℝ acceptés, `]-∞;1[`,
+  `]-∞;+∞]`, `[-∞;+∞[` refusés ; 50 fiches : 0 erreur de syntaxe. L'audit des claviers n'a plus
+  de point ouvert (restent hors audit : débordements horizontaux sur téléphone de Première 14,
+  16, 22).

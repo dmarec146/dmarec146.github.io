@@ -224,11 +224,43 @@ async function testerLargeur(w) {
 A.testerLargeur = testerLargeur;
 A.largeurIframe = (px) => { document.getElementById('f').style.width = px + 'px'; };
 
+
+// ---- Reponses « ℝ » et « ensemble vide » saisies par les touches du clavier d'intervalles, puis corrigees ----
+function testerReels(w) {
+  const ex = w.eval('exercices'); const vus = new Set(); const sorties = [];
+  const cI = w.eval('typeof checkIntervalle === "function" ? checkIntervalle : null');
+  if (!cI) return [{ absente: true }];
+  const un = { type: 'intervalles', liste: [{ bas: -Infinity, haut: 1, inclusBas: false, inclusHaut: false }] };
+  const deux = { type: 'intervalles', liste: [{ bas: -Infinity, haut: 1, inclusBas: false, inclusHaut: false }, { bas: 3, haut: Infinity, inclusBas: false, inclusHaut: false }] };
+  ex.forEach((e, idx) => {
+    const el = w.document.getElementById('input-' + idx), kb = w.document.getElementById('clavier-' + idx);
+    if (!el || !kb) return;
+    const mf = el.tagName === 'MATH-FIELD';
+    const bs = [...kb.querySelectorAll('button')].map((b) => norm(b.textContent));
+    if (!(bs.includes(']') && bs.includes('[') && bs.includes(';') && (bs.includes('∞') || bs.includes('+∞')))) return;
+    const sig = el.tagName + '|' + bs.join('|'); if (vus.has(sig)) return; vus.add(sig);
+    const clic = (l) => { const b = [...kb.querySelectorAll('button')].find((x) => norm(x.textContent) === l); if (!b) throw new Error('ABSENTE ' + l); b.click(); };
+    const saisir = (seq) => { if (mf) { el.setValue(''); el.focus(); } else { el.value = ''; el.focus(); } for (const t of seq) { if (t.startsWith('=')) { if (mf) el.insert(t.slice(1), { focus: true }); else { clic(t.slice(1)); } } else clic(t); } return w.valeurDuChamp(el); };
+    const inf = mf ? ['−', '∞'] : ['−∞'], pinf = mf ? ['+', '∞'] : ['+∞'];
+    const r = { id: e.id, tag: el.tagName, essais: {} };
+    try {
+      const vR = saisir([']', ...inf, ';', ...pinf, '[']);
+      r.essais['"]-∞;+∞[" lu ' + vR] = { tout: !!cI(vR, { type: 'tout' }), refuseSiIntervalle: !cI(vR, un) && !cI(vR, deux) };
+      if (bs.includes('ℝ') || bs.includes('R')) { const v = saisir([bs.includes('ℝ') ? 'ℝ' : 'R']); r.essais['ℝ lu ' + v] = { tout: !!cI(v, { type: 'tout' }) }; }
+      if (bs.includes('∅')) { const v = saisir(['∅']); r.essais['∅ lu ' + v] = { vide: !!cI(v, { type: 'vide' }) }; }
+      const v1 = saisir([']', ...inf, ';', mf ? '=1' : '=1', '[']); r.essais[']-∞;1[ lu ' + v1] = { ordinaire: !!cI(v1, un), refuseSiTout: !cI(v1, { type: 'tout' }) };
+    } catch (err) { r.saute = err.message; }
+    sorties.push(r);
+  });
+  return sorties;
+}
+A.testerReels = testerReels;
+
 // ---- Pilote : A.audit('ecran' | 'fumee' | 'fleches' | 'inventaire') puis lire window.AUDIT[phase] une fois AUDIT_FIN vrai ------
 window.AUDIT = {}; window.AUDIT_FIN = true;
 A.audit = async (phase) => {
   window.AUDIT[phase] = {}; window.AUDIT_FIN = false;
-  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), largeur: (w) => A.testerLargeur(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
+  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), largeur: (w) => A.testerLargeur(w), reels: (w) => A.testerReels(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
   for (const u of A.FICHES) {
     const cle = u.replace('/cahiers/', '').replace('.html', '');
     try { const w = await A.charger(u); window.AUDIT[phase][cle] = await f(w); } catch (e) { window.AUDIT[phase][cle] = { erreur: String(e) }; }

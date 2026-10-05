@@ -1340,11 +1340,12 @@ function parseUnIntervalle(str) {
 }
 function parseReponseIntervalle(str) {
   str = normaliserSaisie(str).trim().toLowerCase().replace(/\s/g, '');
-  if (str === 'r' || str === 'ir' || str === 'reel' || str === 'reels' || str === 'ℝ') return { type: 'tout' };
-  if (str === 'vide' || str === 'empty' || str === '∅' || str === 'aucun' || str === 'aucune') return { type: 'vide' };
+  if (str === 'r' || str === 'ir' || str === 'rr' || str === 'reel' || str === 'reels' || str === 'ℝ') return { type: 'tout' };
+  if (str === 'vide' || str === 'empty' || str === '∅' || str === 'o/' || str === 'aucun' || str === 'aucune') return { type: 'vide' };
   const parties = str.split(/ou|∪|u(?![a-z])/);
   const intervalles = parties.map(parseUnIntervalle).filter(x => x !== null);
   if (intervalles.length === 0) return null;
+  if (intervalles.length === 1 && intervalles[0].bas === -Infinity && intervalles[0].haut === Infinity && !intervalles[0].inclusBas && !intervalles[0].inclusHaut) return { type: 'tout' }; // ]-∞;+∞[ = ℝ
   return { type: 'intervalles', liste: intervalles };
 }
 // tolerance optionnelle (par defaut quasi-exacte) : les bornes issues d'une lecture graphique
