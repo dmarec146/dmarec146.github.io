@@ -23,6 +23,7 @@ const FICHES = {
   '09': 'cahiers/premiere/cahier-3/fiche-09.html',
   '10': 'cahiers/premiere/cahier-3/fiche-10.html',
   '11': 'cahiers/premiere/cahier-4/fiche-11.html',
+  '12': 'cahiers/premiere/cahier-4/fiche-12.html',
   'S05': 'cahiers/seconde/cahier-1/fiche-05.html',
 };
 
