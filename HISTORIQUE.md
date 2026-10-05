@@ -7022,3 +7022,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Seconde) ; `cabler-fiche.js S05` et `appliquer-bareme.js S05` ; `controle-bareme.js` lit
   désormais les clés S05. Vérifié : 30 questions tirées toutes pointées, rien hors devoir,
   0 erreur MathJax.
+
+- **Guide de l'élève (PDF) adapté aux barèmes (05/10/2026).** Page 9 (Devoirs 1/2) : nouvelle
+  section « Le barème : des points sur chaque question » (pastille de points sur chaque
+  question et total en tête, visibles dans un devoir seulement ; note en points ; **calculs
+  plus avancés = bonus** : une bonne réponse s'ajoute à la note et au total, une réponse
+  fausse ou absente ne change rien, sans pénalité ; hors devoir, pas de points). Page 3 : le
+  bloc « Calculs plus avancés » renvoie à cette section. Page 9, colonne « Faits » : la
+  meilleure note est en points quand la fiche a un barème. Page 7 : capture des panneaux
+  réduite (64 % → 40 %), le rendu avec Edge débordait de 42 px sur le pied de page.
+  PDF régénéré avec `playwright-core` et le navigateur Edge (`channel: 'msedge'`) faute de
+  `playwright` complet sur cette machine ; mêmes réglages que `outils/guide-eleve/pdf.js`.
