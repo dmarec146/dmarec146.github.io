@@ -6980,3 +6980,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   fin de devoir, validation, score, affichage), mêmes que les fiches pilotes.
   Vérifié : page sans erreur MathJax, rien hors devoir, pastilles et note en
   devoir, contrôle de cohérence des fichiers sans écart.
+
+- **Barème de la fiche 2 de Première retouché (05/10/2026).** David : automatismes
+  (2.1, 2.2) tous à 0,5 ; 2.3 tous à 0,5 ; 2.5 tous à 0,75 ; 2.4 a) à 1 ; 2.6 a) 0,5,
+  b) 0,75, c) 1,5. Base 21 points, bonus 7. **Pas une règle générale** : les automatismes
+  ne sont pas tous à 0,5 dans les autres fiches (certains se compliquent), David décide
+  au cas par cas.
