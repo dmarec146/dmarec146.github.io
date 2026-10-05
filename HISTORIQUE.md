@@ -7156,3 +7156,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   calculs avancés). Points de David : 16.1 b) 0,5 ; 16.7 a) 0,5 ; 16.10 a) et b) 0,5 ; 16.11 a)
   et b) 1 ; puis 16.5 b) 1 pour un total entier. Fichier `outils/bareme/fiche-16.json`, câblage
   par `cabler-fiche.js 16`. Contrôle : 36 questions tirées, toutes pointées.
+
+- **Première fiche 16 : 16.15 b) supprimé, barème régénéré (05/10/2026), 36 → 35 questions.**
+  David : « 16.15 supprimer b) et regénérer le barème ». 16.15 (colinéarité avec un paramètre)
+  garde une seule question (ancien 16.17 a)), introduction mise au singulier. Barème : 16.15 à
+  1,5 ; base 22 points inchangée, bonus 11 → 9. Contrôle : 35 questions tirées, toutes pointées.
