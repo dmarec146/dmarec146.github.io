@@ -175,7 +175,11 @@ les corrections ponctuelles d'une fiche).
   `a<x<b`.
 - **Clavier simplifié complet** : un clavier maison (intervalles,
   ensembles, couples) propose tout le vocabulaire du domaine (∪, ∩, ∅, ℝ…)
-  même si la fiche ne s'en sert pas.
+  même si la fiche ne s'en sert pas. **Tout ce que le clavier écrit doit être accepté par le
+  correcteur** (ex. la touche ∅ pour une réponse « ensemble vide »), et chaque réponse
+  doit pouvoir être saisie **aussi bien au clavier physique qu'à l'écran** (crochets,
+  accolades, fractions, racines) ; relancer `outils/audit-claviers/` après toute
+  retouche d'un clavier, d'une fonction `inserer*` ou une mise à jour de MathLive.
 - **QCM sur des figures ou des courbes : la réponse porte le nom de
   l'étiquette.** Courbes notées \(f_1\), \(f_2\), \(f_3\) → réponse
   « f1 » ; figures notées « figure 1 » → réponse « 1 » ; jamais des figures

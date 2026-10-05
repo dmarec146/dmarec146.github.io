@@ -1380,10 +1380,16 @@ function checkEncadrement(userInput, bas, haut) {
 }
 
 function checkEnsemble(userInput, correctSet) {
-  userInput = normaliserSaisie(userInput);
   const nettoyerEtSplit = (s) => s.trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
-  const userVals = nettoyerEtSplit(userInput);
+  const estVide = (s) => {
+    const n = s.trim().toLowerCase().replace(/\s/g,'');
+    // "o/" : export ascii-math d'un champ mathlive quand l'eleve clique sur le symbole ∅
+    return n === '' || n === '{}' || n === '∅' || n === 'o/' || n === 'vide' || n === 'aucune' || n === 'aucunesolution';
+  };
   const correctVals = nettoyerEtSplit(correctSet);
+  if (estVide(userInput)) return correctVals.length === 0;
+  userInput = normaliserSaisie(userInput);
+  const userVals = nettoyerEtSplit(userInput);
   if (userVals.length !== correctVals.length) return false;
   try {
     const uNums = userVals.map(s => math.evaluate(s)).sort((a,b)=>a-b);

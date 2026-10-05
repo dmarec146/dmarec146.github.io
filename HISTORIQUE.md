@@ -6780,3 +6780,48 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   - **Observation non traitée** : une réponse longue (réunion d'intervalles) dépasse la
     largeur du champ (142 px pour 130 px visibles) et le dernier crochet est rogné au
     repos ; élargir les champs d'intervalle serait un chantier d'affichage séparé.
+
+- **Audit des claviers de saisie (05/10/2026).** David : « le problème de la racine au
+  numérateur était déjà réglé ; un audit des claviers est nécessaire — y a-t-il le même
+  problème avec les accolades ? ». Oui, et l'audit a **corrigé le diagnostic de la même
+  journée** : la cause principale du « crochet pas pris en compte » n'était pas la
+  fraction mais la **fermeture automatique** de MathLive (`smart-fence="off"` ignoré
+  par la version 0.111, comme `virtual-keyboard-mode` en septembre), qui ajoutait un
+  « ] » en trop (]-2;5[ lu ]-2;5[]) ; la sortie de fraction n'était qu'un défaut secondaire.
+  - **Méthode** : banc d'essai `outils/audit-claviers/` (les 50 fiches chargées une à
+    une dans une iframe) ; frappe physique avec l'action `key` (vrais `keydown`) — l'action
+    `type` n'émet que du texte inséré et masquait tous ces défauts, d'où la fausse
+    piste du matin ; inventaire : 891 champs mathématiques avec clavier MathLive, 77 avec
+    clavier maison (13 fiches), 30 couples/triplets, 489 champs texte ; 2 variantes de
+    `inserer`, 2 de `insererRacine`, 2 de `insererFraction`.
+  - **Corrigé (`claviers.js`, section 4)** : `smartFence = false` sur les champs à séparateur ;
+    sortie de fraction/racine avant « [ », « ] », « ; » ; « } » et « ) » sortent seulement
+    si rien n'est ouvert dans la branche (« {1/2} » donnait une accolade en trop, « (3;1/2) »
+    la parenthèse dans le dénominateur) ; « / » juste après un « ] » d'ouverture (]3/2;5[ :
+    le « ] » entrait dans le numérateur) ; enveloppe de `inserer` en plus de `insererMath`
+    (claviers à chiffres : Première 12 et 19, Seconde 6, 14, 15, 17 à 20 et 25 : un « ; » ou « } »
+    après une fraction restait dans le dénominateur) ; faute dans mon premier jet : `'\cup'` (le « \c » JS
+    vaut « c ») ne reconnaissait pas la touche ∪ ; critère de champ élargi (touche « ; »
+    sur le clavier, car le placeholder dépend du type : Seconde 25 a `\{a\}`).
+  - **Brouillon** : l'ancien aller-retour par ascii-math perdait le dernier crochet de 6
+    saisies sur 13 (]-∞;3/2[, [1;+∞[, ]-∞;1[∪]3;+∞[…) ; le LaTeX mémorisé les restitue
+    toutes à l'identique.
+  - **Défaut trouvé au passage (correcteur)** : la touche ∅ du clavier d'ensembles donnait
+    une réponse refusée à la question « ensemble vide » (Première 3, 3.8 d), 35 % des
+    tirages) : `checkEnsemble` n'acceptait que « {} ». Les 18 fiches qui avaient cette
+    variante reprennent celle des fiches 12, 14, 15… (`estVide` : « ∅ », « o/ », « {} »,
+    « vide »). « {∅} » reste refusé (ce n'est pas l'ensemble vide). Seules les fiches 3, 8, 14,
+    15 de Première et 14, 25 de Seconde peuvent tirer cette réponse ; les autres étaient
+    latentes.
+  - **Contrôles** : 13 séquences de clics sur chaque clavier maison à champ « ; » : 120 OK,
+    0 écart (88 sautées : touche absente du clavier) ; chaque touche de chaque clavier cliquée,
+    aucune erreur JavaScript, `+ − × ÷` présents sur les 87 claviers texte et les 15
+    claviers mathématiques ; frappe physique : `{3}`, `{-2;3}`, `{}`, `{1/2;3/4}`,
+    `]-2;5[`, `]3/2;5/2]`, `[1;+2[`, `(3;1/2)`, `(1;(1+2)/3)`…, et la réponse de 2.5
+    `{(-1-3sqrt(7))/2;(-1+3sqrt(7))/2}` acceptée ; touche « ) » du clavier MathLive ; touches
+    { } du clavier MathLive présentes (Maj : ∅ et ;) ; 50 fiches : 0 erreur de syntaxe.
+  - **Non traité (observations)** : (1) après un « a/b » ou « ÷ » à l'écran, rien ne permet
+    d'aller du numérateur au dénominateur sans la souris ou la touche Tab (le clavier n'a pas de
+    flèche) ; (2) une réponse longue dépasse la largeur du champ et son dernier crochet est
+    rogné au repos ; (3) MathLive non épinglé ; (4) `]-∞;+∞[` est refusé là où ℝ est
+    attendu (Première 2.12).

@@ -307,16 +307,31 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 - `valeurDuChamp` lit un `<math-field>` en ascii-math ; pour réécrire une
   saisie : `setValue(v, {format:'ascii-math'})`, jamais `.value =` (lu
   comme du LaTeX : `sqrt(6)` → « s q r t(6) »).
-- **Crochets d'intervalle (05/10/2026)** : l'ascii-math **perd les crochets
-  isolés** (« ] », « [ » d'un intervalle) quand on réécrit une saisie. Les
-  brouillons mémorisent donc aussi le LaTeX du champ (`saisies[idx].latex`,
-  `getValue('latex')`) et le restaurent par `setValue(latex, {format:'latex'})` ;
-  un brouillon ancien sans `latex` retombe sur l'ascii-math (crochets perdus,
-  accepté). De plus, un crochet ou un « ; » tapé alors que le curseur est dans
-  un dénominateur ou sous une racine y reste enfermé : `claviers.js` (section 3)
-  sort du modèle (`moveAfterParent`) avant « [ », « ] » et « ; » dans les champs
-  d'intervalle (placeholder contenant « ; »), au clavier physique (`keydown` et
-  `beforeinput`) comme au clavier à l'écran (`insererMath` enveloppé).
+- **Claviers et champs à séparateur (05/10/2026, audit complet, voir
+  `outils/audit-claviers/`)** : MathLive 0.111 **ignore les attributs**
+  `smart-fence="off"` (comme `virtual-keyboard-mode`) : la propriété `smartFence`
+  reste vraie. Conséquences au clavier physique : « [ » ajoutait une paire « [ ] »
+  (]-2;5[ lu ]-2;5[], un « ] » en trop) et « { » une paire « { } » (accolade en
+  trop après une fraction). `claviers.js` (section 4) force `smartFence = false`
+  sur les champs à séparateur (touche « ; » sur leur clavier maison, ou placeholder
+  contenant « ; » : couples, ensembles, intervalles). Autres défauts corrigés dans
+  cette section : (1) après une fraction ou sous une racine, « [ », « ] » et « ; »
+  entraient dans le dénominateur ou la racine → sortie du modèle
+  (`moveAfterParent`) avant ces caractères, « } » et « ) » seulement si aucune
+  accolade / parenthèse n'est ouverte dans la branche (`moveToGroupStart` +
+  `getValue(début, curseur)`) ; valable au clavier physique (`keydown`,
+  `beforeinput`) et à l'écran (`insererMath` **et** `inserer` enveloppées ;
+  la variante `inserer` remet `boiteRacineOuverte[idx]` à faux) ; (2) « / » tapé
+  juste après un « ] » d'ouverture (]3/2;5[) prenait le « ] » dans le numérateur →
+  numérateur construit à la main. **L'ascii-math perd les crochets isolés** quand
+  on réécrit une saisie : les brouillons mémorisent aussi le LaTeX du champ
+  (`saisies[idx].latex`) et le restaurent par `setValue(latex, {format:'latex'})`
+  (ancien brouillon sans `latex` : comportement d'avant). Tester la frappe
+  physique avec l'action `key` de l'outil `computer` (vrais `keydown`), pas
+  `type` (insertion de texte seulement). **MathLive est chargé sans version** : relancer
+  le banc après toute mise à jour. Hors champs à séparateur, les champs
+  algébriques gardent la fermeture automatique des parenthèses (comportement
+  d'origine, aucun retour).
 - Tests : injecter du LaTeX (`setValue(latex, {format:'latex'})`) ;
   `\displaystyle\sum` et `\left\{…\right\}` ne se relisent pas (sommes :
   `\sum_{k=1}^{n}…` comme la touche Σ ; ensembles : `\lbrace…\rbrace`) ;

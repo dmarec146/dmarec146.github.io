@@ -1,0 +1,165 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Audit claviers</title>
+<body style="font:14px system-ui">
+<p id="etat">Harnais d'audit des claviers.</p>
+<iframe id="f" style="width:1000px;height:700px;border:1px solid #999"></iframe>
+<script>
+const FICHES = [
+'premiere/cahier-1/fiche-01','premiere/cahier-1/fiche-02','premiere/cahier-1/fiche-03','premiere/cahier-2/fiche-04','premiere/cahier-2/fiche-05','premiere/cahier-2/fiche-06',
+'premiere/cahier-3/fiche-07','premiere/cahier-3/fiche-08','premiere/cahier-3/fiche-09','premiere/cahier-3/fiche-10','premiere/cahier-4/fiche-11','premiere/cahier-4/fiche-12','premiere/cahier-4/fiche-13',
+'premiere/cahier-5/fiche-14','premiere/cahier-6/fiche-15','premiere/cahier-6/fiche-16','premiere/cahier-6/fiche-17','premiere/cahier-7/fiche-18','premiere/cahier-7/fiche-19',
+'premiere/cahier-8/fiche-20','premiere/cahier-8/fiche-21','premiere/cahier-9/fiche-22','premiere/cahier-9/fiche-23','premiere/cahier-9/fiche-24','premiere/cahier-10/fiche-25','premiere/cahier-10/fiche-26',
+'seconde/cahier-1/fiche-01','seconde/cahier-1/fiche-02','seconde/cahier-1/fiche-03','seconde/cahier-1/fiche-04','seconde/cahier-1/fiche-05','seconde/cahier-2/fiche-06','seconde/cahier-2/fiche-07','seconde/cahier-2/fiche-08',
+'seconde/cahier-3/fiche-09','seconde/cahier-3/fiche-10','seconde/cahier-4/fiche-11','seconde/cahier-4/fiche-12','seconde/cahier-4/fiche-13','seconde/cahier-5/fiche-14','seconde/cahier-5/fiche-15','seconde/cahier-5/fiche-16','seconde/cahier-5/fiche-17',
+'seconde/cahier-6/fiche-18','seconde/cahier-6/fiche-19','seconde/cahier-7/fiche-20','seconde/cahier-8/fiche-21','seconde/cahier-8/fiche-22','seconde/cahier-8/fiche-23','seconde/cahier-8/fiche-25'
+].map((s) => '/cahiers/' + s + '.html');
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); };
+
+async function charger(url) {
+  const f = document.getElementById('f');
+  f.src = 'about:blank'; await dormir(50);
+  await new Promise((res) => { f.onload = res; f.src = url; });
+  for (let i = 0; i < 60; i++) {
+    const w = f.contentWindow;
+    try { if (w.eval('typeof exercices !== "undefined" && exercices.length') && w.document.querySelector('[id^="input-"]')) break; } catch (e) {}
+    await dormir(250);
+  }
+  await dormir(2000);
+  return f.contentWindow;
+}
+
+const NOMS = ['inserer', 'insererMath', 'insererFractionMath', 'insererRacineMath', 'reculerMath', 'insererRacine', 'insererFraction', 'insererFonction', 'reculer', 'effacer', 'effacerMath'];
+
+function inventaireFiche(w) {
+  const fns = {};
+  NOMS.forEach((n) => { try { fns[n] = w.eval('typeof ' + n + ' === "function" ? ' + n + '.toString() : null'); } catch (e) { fns[n] = null; } });
+  const fnHash = {}; Object.keys(fns).forEach((n) => { fnHash[n] = fns[n] ? hash(fns[n]) : null; });
+  const ex = w.eval('exercices');
+  const champs = [];
+  ex.forEach((e, idx) => {
+    const el = w.document.getElementById('input-' + idx);
+    if (!el) { champs.push({ idx, id: e.id, type: e.type || '', absent: true }); return; }
+    const kb = w.document.getElementById('clavier-' + idx);
+    const touches = kb ? [...kb.querySelectorAll('button')].map((b) => (b.getAttribute('onclick') || '(addEventListener)').replace(/\(\d+\s*,?/, '(IDX,').replace(/\(IDX,\)/, '(IDX)') + ' [' + b.textContent.trim() + ']') : [];
+    champs.push({ idx, id: e.id, type: e.type || '', rep: String(e.reponse || '').slice(0, 40), tag: el.tagName, ph: el.getAttribute('placeholder') || '', vkm: el.getAttribute('virtual-keyboard-mode') || '', sf: el.getAttribute('smart-fence') || '', kb: !!kb, touches });
+  });
+  return { fnHash, champs };
+}
+// ---- Claviers a l'ecran des champs mathematiques a separateur --------------------------------
+const norm = (t) => t.trim().replace('-', '−');
+const SEQUENCES = [
+  ['{-2;3}', ['{', '−', '=2', ';', '=3', '}'], '{-2;3}'],
+  ['{1/2}', ['{', 'FRAC', '=1', 'TAB', '=2', '}'], '{(1)/(2)}'],
+  ['{√5}', ['{', '√', '=5', '}'], '{sqrt(5)}'],
+  ['{-√2;√2}', ['{', '−', '√', '=2', ';', '√', '=2', '}'], '{-sqrt(2);sqrt(2)}'],
+  ['{-1/2;3/4}', ['{', '−', 'FRAC', '=1', 'TAB', '=2', ';', 'FRAC', '=3', 'TAB', '=4', '}'], '{-(1)/(2);(3)/(4)}'],
+  ['{1;2;3}', ['{', '=1', ';', '=2', ';', '=3', '}'], '{1;2;3}'],
+  ['{}', ['{', '}'], '{}'],
+  [']-∞;3/2[', [']', '−', '∞', ';', 'FRAC', '=3', 'TAB', '=2', '['], ']-oo;(3)/(2)['],
+  [']3/2;5[', [']', 'FRAC', '=3', 'TAB', '=2', ';', '=5', '['], '](3)/(2);5['],
+  ['[1;+∞[', ['[', '=1', ';', '+', '∞', '['], '[1;+oo['],
+  [']-∞;1[∪]3;+∞[', [']', '−', '∞', ';', '=1', '[', '∪', ']', '=3', ';', '+', '∞', '['], ']-oo;1[∪]3;+oo['],
+  [']-∞;1/2[∪]3/2;+∞[', [']', '−', '∞', ';', 'FRAC', '=1', 'TAB', '=2', '[', '∪', ']', 'FRAC', '=3', 'TAB', '=2', ';', '+', '∞', '['], ']-oo;(1)/(2)[∪](3)/(2);+oo['],
+  [']-√3;√3[', [']', '−', '√', '=3', ';', '√', '=3', '['], ']-sqrt(3);sqrt(3)['],
+];
+function essaiClavier(w, idx, seq) {
+  const mf = w.document.getElementById('input-' + idx);
+  const kb = w.document.getElementById('clavier-' + idx);
+  const clic = (l) => {
+    const cible = l === 'FRAC' ? ['a/b', '÷'] : [l];
+    const b = [...kb.querySelectorAll('button')].find((x) => cible.includes(norm(x.textContent)));
+    if (!b) throw new Error('ABSENTE:' + l);
+    b.click();
+  };
+  mf.setValue(''); mf.focus();
+  try {
+    for (const t of seq) {
+      if (t === 'TAB') mf.executeCommand('moveToNextPlaceholder');
+      else if (t.startsWith('=')) mf.insert(t.slice(1), { focus: true });
+      else clic(t);
+    }
+  } catch (e) { return { saute: e.message }; }
+  return { lu: w.valeurDuChamp(mf), latex: mf.getValue('latex') };
+}
+function testerClaviersEcran(w) {
+  const ex = w.eval('exercices');
+  const sorties = []; const vus = new Set();
+  ex.forEach((e, idx) => {
+    const mf = w.document.getElementById('input-' + idx), kb = w.document.getElementById('clavier-' + idx);
+    if (!mf || mf.tagName !== 'MATH-FIELD' || !kb || ![...kb.querySelectorAll('button')].some((b) => norm(b.textContent) === ';')) return;
+    const sig = [...kb.querySelectorAll('button')].map((b) => norm(b.textContent)).join('|');
+    if (vus.has(sig)) return; vus.add(sig);
+    const r = { idx, id: e.id, ph: mf.getAttribute('placeholder'), touches: sig, fences: mf.smartFence, essais: [] };
+    for (const [nom, seq, attendu] of SEQUENCES) {
+      const res = essaiClavier(w, idx, seq);
+      if (res.saute) { r.essais.push([nom, 'saute ' + res.saute]); continue; }
+      r.essais.push([nom, res.lu === attendu ? 'OK' : 'KO lu=' + res.lu + ' latex=' + res.latex]);
+    }
+    sorties.push(r);
+  });
+  return sorties;
+}
+// ---- Fumee : chaque touche de chaque clavier, champ vide ---------------------------------------
+function fumeeFiche(w) {
+  const erreurs = [];
+  w.addEventListener('error', (e) => erreurs.push(String(e.message)));
+  const ex = w.eval('exercices'); const vus = new Set(); const touches = [];
+  ex.forEach((e, idx) => {
+    const el = w.document.getElementById('input-' + idx), kb = w.document.getElementById('clavier-' + idx);
+    if (!el || !kb) return;
+    const boutons = [...kb.querySelectorAll('button')];
+    const sig = el.tagName + '|' + boutons.map((b) => norm(b.textContent)).join('|');
+    if (vus.has(sig)) return; vus.add(sig);
+    boutons.forEach((b) => {
+      const l = norm(b.textContent);
+      if (/Valider|Effacer|Suppr/.test(l)) return;
+      if (el.tagName === 'MATH-FIELD') { el.setValue(''); el.focus(); } else { el.value = ''; el.focus(); }
+      let res;
+      try { b.click(); res = el.tagName === 'MATH-FIELD' ? el.getValue('latex') : el.value; } catch (err) { res = 'EXC ' + err.message; }
+      touches.push({ tag: el.tagName, ph: /;/.test(el.getAttribute('placeholder') || ''), etiquette: l, res });
+    });
+  });
+  return { touches, erreurs };
+}
+// ---- Cas particuliers : ensemble vide, R : la saisie par les touches est-elle acceptee ? --------
+function testerCasParticuliers(w) {
+  const ex = w.eval('exercices'); const sorties = [];
+  ex.forEach((e, idx) => {
+    const el = w.document.getElementById('input-' + idx), kb = w.document.getElementById('clavier-' + idx);
+    if (!el || !kb) return;
+    const rep = String(e.reponse || '').trim(); const spec = e.intervalleSpec || {};
+    let cas = null;
+    if (rep === '{}' || spec.type === 'vide') cas = { nom: 'vide', essais: [['∅'], ['{', '}'], ['{', '∅', '}']] };
+    else if (spec.type === 'tout') cas = { nom: 'tout', essais: [['ℝ'], [']', '−∞', ';', '+∞', '['], [']', '−', '∞', ';', '+', '∞', '[']] };
+    if (!cas) return;
+    const res = [];
+    for (const seq of cas.essais) {
+      const boutons = [...kb.querySelectorAll('button')];
+      const trouves = seq.map((l) => boutons.find((b) => norm(b.textContent) === l || (l === 'ℝ' && norm(b.textContent) === 'R')));
+      if (trouves.some((b) => !b)) { res.push(seq.join(' ') + ' : touche absente'); continue; }
+      if (el.tagName === 'MATH-FIELD') { el.setValue(''); el.focus(); } else { el.value = ''; el.focus(); }
+      trouves.forEach((b) => b.click());
+      let ok; try { ok = w.eval('verifierUne(' + idx + ')'); } catch (err) { ok = 'EXC ' + err.message; }
+      res.push(seq.join(' ') + ' -> ' + (ok === true ? 'OK' : 'REFUSE') + ' [' + w.valeurDuChamp(el) + ']');
+    }
+    sorties.push({ id: e.id, tag: el.tagName, cas: cas.nom, res });
+  });
+  return sorties;
+}
+window.A = { FICHES, charger, inventaireFiche, dormir, hash, testerClaviersEcran, essaiClavier, SEQUENCES, norm, fumeeFiche, testerCasParticuliers };
+
+// ---- Pilote : A.audit('ecran' | 'fumee' | 'inventaire') puis lire window.AUDIT[phase] une fois AUDIT_FIN vrai ------
+window.AUDIT = {}; window.AUDIT_FIN = true;
+A.audit = async (phase) => {
+  window.AUDIT[phase] = {}; window.AUDIT_FIN = false;
+  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
+  for (const u of A.FICHES) {
+    const cle = u.replace('/cahiers/', '').replace('.html', '');
+    try { const w = await A.charger(u); window.AUDIT[phase][cle] = f(w); } catch (e) { window.AUDIT[phase][cle] = { erreur: String(e) }; }
+  }
+  window.AUDIT_FIN = true;
+};
+</script>
+</body>

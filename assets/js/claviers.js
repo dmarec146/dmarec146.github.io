@@ -221,21 +221,69 @@
   document.addEventListener('DOMContentLoaded', planifier);
 })();
 
-// --- 3. Sortie d'une fraction ou d'une racine avant « [ », « ] » et « ; » ---------------
+// --- 4. Champs a SEPARATEUR (intervalles, ensembles, couples) : saisie au clavier -------------
 //
-// 05/10/2026, retour de David (fiche 2 de Premiere). Dans un champ mathematique, apres une
-// fraction (bouton a/b ou ÷) le curseur reste au DENOMINATEUR, et dans une racine sous le
-// radical : un « [ » tape pour finir l'intervalle ]2 ; 7/2[ entrait dans le denominateur
-// (\frac{7}{[2}), un « ; » apres √3 dans la racine (\sqrt{3;}). La reponse etait lue
-// fausse et l'affichage incomprehensible. Dans les champs a SEPARATEUR (placeholder avec « ; » :
-// intervalles et ensembles), ces caracteres sortent donc d'abord de la fraction ou de la
-// racine. Sans effet a la racine du champ, et jamais hors de ces champs (les parentheses des
-// autres champs ne sont pas touchees).
+// 05/10/2026, retour de David (fiche 2 de Premiere : « [ » tape au clavier non pris en compte,
+// affichage cassé, crochet disparu au retour sur la fiche), puis audit des claviers. Deux
+// defauts de MathLive 0.111 dans les champs dont le placeholder contient « ; » :
+//
+// a) FERMETURE AUTOMATIQUE. L'attribut smart-fence="off" ecrit dans les fiches n'est pas pris en
+//    compte par cette version (la propriete smartFence reste vraie, comme virtual-keyboard-mode) :
+//    taper « [ » ajoutait une paire « [ ] » (la reponse ]-2;5[ etait lue ]-2;5[] , un « ] » en
+//    trop) et « { » une paire « { } ». On force donc la propriete smartFence = false.
+//
+// b) SORTIE DE LA FRACTION OU DE LA RACINE. Apres une fraction (bouton a/b ou ÷, ou « / ») le
+//    curseur reste au DENOMINATEUR, et dans une racine sous le radical : un « [ », « ; » ou « } »
+//    tape ensuite entrait dans le denominateur (\frac{7}{[2}, \frac{1}{2\rbrace}) ou sous la
+//    racine, la reponse etait lue fausse. Ces caracteres sortent donc d'abord de la fraction ou
+//    de la racine : « [ », « ] » et « ; » toujours ; « } » et « ) » seulement si aucune
+//    accolade / parenthese n'est ouverte dans la branche courante (« (1/(2))... » garde ses
+//    parentheses). Sans effet a la racine du champ.
 (function () {
   const SEPARATEURS = ['[', ']', ';'];
-  const TOUCHES_CLAVIER = ['[', ']', ';', '\cup', '\cap'];
+  const FERMANTS = { '}': ['{', '}'], ')': ['(', ')'] };
+  // Touches du clavier a l'ecran (argument de insererMath) : meme regle.
+  const TOUCHES_TOUJOURS = ['[', ']', ';', '\\cup', '\\cap'];
+  const TOUCHES_FERMANTES = { '\\}': '}', '}': '}' };
 
-  const champASeparateurs = (mf) => !!mf && mf.tagName === 'MATH-FIELD' && /;/.test(mf.getAttribute('placeholder') || '');
+  // Champ a separateur : placeholder avec « ; » ((x;y), {a;b}, ]a;b[) ou, a defaut (le placeholder
+  // depend du type de question), clavier maison rattache au champ muni d'une touche « ; ».
+  function champASeparateurs(mf) {
+    if (!mf || mf.tagName !== 'MATH-FIELD') return false;
+    if (/;/.test(mf.getAttribute('placeholder') || '')) return true;
+    const clavier = document.getElementById('clavier-' + String(mf.id).replace('input-', ''));
+    return !!clavier && [...clavier.querySelectorAll('button')].some((b) => b.textContent.trim() === ';');
+  }
+
+  function reglerFences() {
+    document.querySelectorAll('math-field').forEach((mf) => {
+      if (champASeparateurs(mf) && mf.smartFence !== false) {
+        try { mf.smartFence = false; } catch (erreur) { /* version de MathLive sans cette propriete */ }
+      }
+    });
+  }
+
+  // Contenu de la branche courante (numerateur, denominateur, sous la racine) avant le curseur.
+  function contenuAvantCurseur(mf) {
+    const p = mf.position;
+    try {
+      mf.executeCommand('moveToGroupStart');
+      return mf.getValue(mf.position, p, 'latex');
+    } catch (erreur) {
+      return '';
+    } finally {
+      mf.position = p;
+    }
+  }
+
+  function nombre(texte, motif) { return (texte.match(motif) || []).length; }
+
+  // Vrai si le caractere fermant ne ferme rien dans la branche courante (donc : il sort).
+  function fermantSansOuvrant(mf, car) {
+    const branche = contenuAvantCurseur(mf);
+    if (car === ')') return nombre(branche, /\(/g) - nombre(branche, /\)/g) <= 0;
+    return nombre(branche, /\\lbrace|\\\{/g) - nombre(branche, /\\rbrace|\\\}/g) <= 0;
+  }
 
   function sortirDuModele(mf) {
     try {
@@ -247,33 +295,81 @@
     } catch (erreur) { /* version de MathLive sans cette commande : comportement inchange */ }
   }
 
+  function avantCaractere(mf, car) {
+    if (!champASeparateurs(mf)) return;
+    if (SEPARATEURS.includes(car)) sortirDuModele(mf);
+    else if (FERMANTS[car] && fermantSansOuvrant(mf, car)) sortirDuModele(mf);
+  }
+
   // Clavier physique : avant que MathLive n'insere le caractere (phase de capture, sur le document).
   document.addEventListener('keydown', (evenement) => {
-    if (evenement.isComposing || !SEPARATEURS.includes(evenement.key)) return;
-    const mf = evenement.target;
-    if (champASeparateurs(mf)) sortirDuModele(mf);
+    if (evenement.isComposing || evenement.key.length !== 1) return;
+    avantCaractere(evenement.target, evenement.key);
   }, true);
-  // Saisie sans keydown fiable (AltGr sur AZERTY, clavier mobile, dictée) : même sortie sur beforeinput.
-  document.addEventListener('beforeinput', (evenement) => {
-    if (evenement.isComposing || evenement.inputType !== 'insertText' || !SEPARATEURS.includes(evenement.data)) return;
+  // « / » tape juste apres un « ] » d'ouverture (]3/2;5[) : MathLive prend le « ] » pour la fin d'un
+  // groupe et le met dans le numerateur (\frac{]3}{2}). Le numerateur est donc construit a la main :
+  // seulement l'operande qui suit le « ] », le curseur arrive au denominateur.
+  document.addEventListener('keydown', (evenement) => {
+    if (evenement.isComposing || evenement.key !== '/' || evenement.ctrlKey || evenement.metaKey) return;
     const mf = evenement.target;
-    if (champASeparateurs(mf)) sortirDuModele(mf);
+    if (!champASeparateurs(mf)) return;
+    const operande = contenuAvantCurseur(mf).match(/\](\d+(?:[.,]\d+)?|[a-zA-Z])$/);
+    if (!operande) return;
+    evenement.preventDefault();
+    evenement.stopPropagation();
+    try {
+      for (let i = 0; i < operande[1].length; i++) mf.executeCommand('extendSelectionBackward');
+      mf.insert('\\frac{#@}{#?}', { focus: true });
+    } catch (erreur) { /* version de MathLive differente : comportement d'origine perdu pour ce cas seulement */ }
+  }, true);
+  // Saisie sans keydown fiable (clavier mobile, dictee) : meme sortie sur beforeinput.
+  document.addEventListener('beforeinput', (evenement) => {
+    if (evenement.isComposing || evenement.inputType !== 'insertText' || !evenement.data || evenement.data.length !== 1) return;
+    avantCaractere(evenement.target, evenement.data);
   }, true);
 
-  // Touches du clavier a l'ecran de la fiche (insererMath, definie par chaque fiche).
-  function envelopperInsererMath() {
-    const origine = window.insererMath;
+  // Touches du clavier a l'ecran : chaque fiche definit insererMath (claviers maison des champs
+  // mathematiques de Premiere) et/ou inserer (claviers simplifies, qui gerent aussi les champs
+  // mathematiques) ; les deux sont enveloppees.
+  function envelopper(nom) {
+    const origine = window[nom];
     if (typeof origine !== 'function' || origine.__sortie) return;
     const enveloppe = function (idx, texte) {
-      if (TOUCHES_CLAVIER.includes(texte)) {
-        const mf = document.getElementById('input-' + idx);
-        if (champASeparateurs(mf)) sortirDuModele(mf);
+      const mf = document.getElementById('input-' + idx);
+      if (champASeparateurs(mf)
+        && (TOUCHES_TOUJOURS.includes(texte) || (TOUCHES_FERMANTES[texte] && fermantSansOuvrant(mf, TOUCHES_FERMANTES[texte])))) {
+        sortirDuModele(mf);
+        // Variante « inserer » : la fiche garde en memoire que la racine est ouverte et ferait un
+        // deplacement de trop ; on la declare refermee.
+        try { if (typeof boiteRacineOuverte === 'object') boiteRacineOuverte[idx] = false; } catch (erreur) { /* absente */ }
       }
       return origine.apply(this, arguments);
     };
     enveloppe.__sortie = true;
-    window.insererMath = enveloppe;
+    window[nom] = enveloppe;
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', envelopperInsererMath);
-  else envelopperInsererMath();
+
+  function demarrer() {
+    envelopper('insererMath');
+    envelopper('inserer');
+    reglerFences();
+  }
+  if (window.customElements && customElements.whenDefined) {
+    customElements.whenDefined('math-field').then(() => requestAnimationFrame(reglerFences)).catch(() => {});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
+  // Champs (re)generes apres coup (nouvelle fiche, brouillon, devoir).
+  let fencePlanifie = false;
+  new MutationObserver((mutations) => {
+    if (fencePlanifie) return;
+    for (const m of mutations) {
+      for (const n of m.addedNodes) {
+        if (n.nodeType === 1 && (n.tagName === 'MATH-FIELD' || n.querySelector('math-field'))) {
+          fencePlanifie = true;
+          requestAnimationFrame(() => { fencePlanifie = false; reglerFences(); });
+          return;
+        }
+      }
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
 })();
