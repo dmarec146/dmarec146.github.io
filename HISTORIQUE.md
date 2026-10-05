@@ -7010,3 +7010,7 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   0,5 (rien de compliqué) ; 4.3, 4.4 et 4.5 à 1 point chaque question (il faut avoir compris
   la tangente et le coefficient directeur) ; puis 4.1 c) à 1 pour un total entier. Base 9
   points, bonus 11 (4.6, problème guidé, calculs avancés). Fichier `outils/bareme/fiche-04.json`.
+
+- **Barème de la fiche 5 de Première (05/10/2026).** Base 22 points, bonus 6,75 (5.10, calculs
+  avancés). Automatismes 5.1 et 5.2 à 0,5, 5.3 b) 0,75 ; retouches de David : 5.9 b) et c) à 1,
+  5.8 b) à 1, 5.5 b) à 0,75. Fichier `outils/bareme/fiche-05.json`.
