@@ -7045,3 +7045,15 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Barème de la fiche 8 de Première (05/10/2026).** Base 22 points, bonus 5 (8.10 à 8.12,
   calculs avancés). Points de David : 8.1 b) 0,75 ; 8.2 a) 0,75 ; 8.3 a) 0,5 ; 8.4 à 0,5 par
   question ; 8.5 à 1 par question ; 8.6 à 0,5 par question. Fichier `outils/bareme/fiche-08.json`.
+
+- **Première fiche 10 : exposants fractionnaires lisibles, barème (05/10/2026).** David : l'expression
+  de 10.6 b) (« e^{1/(x+2)} », fraction en exposant) est difficilement lisible. Tout exposant
+  contenant une fraction s'écrit maintenant `\exp\left(\dfrac{a}{b}\right)` (grandes parenthèses,
+  fraction pleine taille), dans les énoncés et les corrigés (10.5 b), c), d), 10.6 b)) ; les autres
+  exposants restent en e^{…} (règle de la notation e^x conservée). `expVersPuissance` traite aussi
+  les e^{\frac…} écrits directement par un générateur. Conséquence corrigée : `estFactorise`
+  refusait un numérateur réduit à un facteur unique saisi « exp(1/x) » (FunctionNode) ; il est
+  maintenant accepté.
+  **Barème** (`outils/bareme/fiche-10.json`) : base 16 points, bonus 8,5 (10.8 et 10.9, calculs
+  avancés), validé par David.
+  Vérifié : 160 corrigés retapés acceptés, mauvaise réponse refusée, 0 erreur MathJax.
