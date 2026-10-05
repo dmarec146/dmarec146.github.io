@@ -7139,3 +7139,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   16.16 → 16.15, 16.17 → 16.16, 16.18 → 16.17 ; grilles, textes (`texte-16-13`, `texte-16-14`),
   `RENUMEROTATION_16` et `groupes` mis à jour. Vérifié : 5 × 41 corrigés acceptés, brouillon
   restauré à l'identique (100 essais), 0 erreur MathJax, vérificateur : 0 erreur.
+
+- **Première fiche 16 : 16.16 (propriété du milieu) réduit à une question (05/10/2026), 41 → 38
+  questions.** David : « 16.16 un exemple suffit ». Gardée : la simplification tirée au hasard
+  (ancien 16.18 d), la plus complète, réponse kMN) ; retirées : MA+MB en fonction de MI, BC en
+  fonction de IJ, −kAB−IA+BI. Le milieu J de [AC] ne servant plus, l'introduction ne mentionne
+  que I. Vérifié : 300 tirages recalculés avec I milieu de [AB] (0 écart), corrigé accepté.
