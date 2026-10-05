@@ -200,9 +200,62 @@
   }
 
   let planifie = false;
+  // --- Touche → : passer a la case suivante d'une fraction ou sortir d'une racine -------------
+  //
+  // Apres a/b (ou ÷) ou √ sur un clavier a l'ecran, rien ne permettait d'aller du numerateur au
+  // denominateur, ni de sortir de la racine, sans souris ni clavier physique (audit du 05/10/2026).
+  // Champ mathematique : fleche droite de MathLive (numerateur -> denominateur -> apres la
+  // fraction ; sous la racine -> apres la racine). Champ texte : fractions « (▢)/(▢) » ou
+  // « ()/() » et racines « √(▢) », « sqrt() » : case ▢ suivante, sinon apres la parenthese fermante.
+  function allerADroite(idx) {
+    const champ = document.getElementById('input-' + idx);
+    if (!champ) return;
+    champ.focus();
+    if (champ.tagName === 'MATH-FIELD') {
+      champ.executeCommand('moveToNextChar');
+      // variante « inserer » des fiches : elle garde en memoire que la racine est ouverte
+      try { if (typeof boiteRacineOuverte === 'object') boiteRacineOuverte[idx] = false; } catch (erreur) { /* absente */ }
+      return;
+    }
+    const valeur = champ.value;
+    const fin = champ.selectionEnd == null ? valeur.length : champ.selectionEnd;
+    const reste = valeur.slice(fin);
+    // Un niveau a la fois (comme la fleche d'un champ mathematique) : « )/(▢ » est le passage du
+    // numerateur au denominateur ; « )) » commence par sortir de la racine.
+    let m = reste.match(/^\)\/\(▢/);
+    if (m) { champ.setSelectionRange(fin + m[0].length - 1, fin + m[0].length); return; }
+    m = reste.match(/^\)\/\(/);
+    if (m) { champ.setSelectionRange(fin + m[0].length, fin + m[0].length); return; }
+    const i = reste.indexOf(')');
+    const p = i >= 0 ? fin + i + 1 : Math.min(fin + 1, valeur.length);
+    champ.setSelectionRange(p, p);
+  }
+
+  function ajouterFleche(clavier) {
+    if (clavier.querySelector('[data-fleche]')) return;
+    const idx = clavier.id.replace('clavier-', '');
+    const champ = document.getElementById('input-' + idx);
+    const boutons = [...clavier.querySelectorAll('.clavier-groupe button')];
+    const a = (l) => boutons.some((b) => libelle(b) === l);
+    const mathematique = !!champ && champ.tagName === 'MATH-FIELD';
+    // Seulement les claviers qui font des fractions ou des racines (÷ n'en fait une que dans un champ mathematique).
+    if (!(a('a/b') || a('√') || (mathematique && a('÷')))) return;
+    // Place : apres « ← Suppr. » ; a defaut (claviers sans cette touche), apres la derniere de √, a/b, ÷.
+    const suppr = boutons.find((b) => /Suppr/.test(b.textContent))
+      || [...boutons].reverse().find((b) => ['√', 'a/b', '÷'].includes(libelle(b)));
+    if (!suppr) return;
+    const touche = document.createElement('button');
+    touche.type = 'button';
+    touche.textContent = '→';
+    touche.title = 'Passer à la case suivante (numérateur → dénominateur, sortie de la racine)';
+    touche.setAttribute('data-fleche', '1');
+    touche.addEventListener('click', () => allerADroite(idx));
+    suppr.after(touche);
+  }
+
   function completerClaviers() {
     planifie = false;
-    document.querySelectorAll('.clavier-visuel[id^="clavier-"]').forEach(completerClavier);
+    document.querySelectorAll('.clavier-visuel[id^="clavier-"]').forEach((c) => { completerClavier(c); ajouterFleche(c); });
     reglerPolitiqueClavier();
   }
   function planifier() {

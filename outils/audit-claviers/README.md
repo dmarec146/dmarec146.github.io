@@ -8,14 +8,15 @@ le 05/10/2026 : ses comportements changent d'une version à l'autre) ou après t
 
 1. Démarrer le serveur statique (`preview_start site-statique`, port 8791).
 2. Ouvrir `http://localhost:8791/outils/audit-claviers/index.html`.
-3. Dans la console de la page : `A.audit('ecran')`, `A.audit('fumee')` ou
-   `A.audit('inventaire')`, puis attendre `AUDIT_FIN === true` (≈ 2 min 30 : les 50 fiches sont
+3. Dans la console de la page : `A.audit('ecran')`, `A.audit('fumee')`,
+   `A.audit('fleches')` ou `A.audit('inventaire')`, puis attendre `AUDIT_FIN === true` (≈ 2 min 30 : les 50 fiches sont
    chargées une à une dans l'iframe) et lire `AUDIT[phase]`.
 
 | Phase | Ce qu'elle fait | Résultat attendu |
 |---|---|---|
 | `ecran` | Pour chaque clavier maison d'un champ mathématique à touche « ; » (intervalles, ensembles, couples), 13 séquences de clics (`{-2;3}`, `{1/2}`, `]-∞;1/2[∪]3/2;+∞[`, `]-√3;√3[`…) | tous `OK` ; `saute` seulement si une touche n'existe pas sur ce clavier |
 | `fumee` | Clique chaque touche de chaque clavier (champ vide) et note le résultat ; erreurs JavaScript | aucune erreur ; une même touche donne le même résultat d'une fiche à l'autre (variantes connues : `(▢)/(▢)` ou `()/()`, `√(▢)` ou `sqrt()`, `∅` ou `\emptyset`) |
+| `fleches` | Touche → : fractions et racines remplies au clavier à l'écran (`a/b 1 → 2 → + 3`, `√ 5 → + 1`, racine au numérateur), champs mathématiques et champs texte | tous `OK` ; aucune « anomalie » (clavier à fraction/racine sans →) |
 | `inventaire` | Types de champs, claviers, touches, variantes de `inserer*` | 7 types de champs ; 2 variantes de `inserer`, `insererRacine` et `insererFraction` |
 
 ## Ce que le banc ne fait pas : la frappe physique

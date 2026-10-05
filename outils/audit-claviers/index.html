@@ -150,11 +150,64 @@ function testerCasParticuliers(w) {
 }
 window.A = { FICHES, charger, inventaireFiche, dormir, hash, testerClaviersEcran, essaiClavier, SEQUENCES, norm, fumeeFiche, testerCasParticuliers };
 
-// ---- Pilote : A.audit('ecran' | 'fumee' | 'inventaire') puis lire window.AUDIT[phase] une fois AUDIT_FIN vrai ------
+
+// ---- Touche → : fractions et racines remplies au clavier a l'ecran -----------------------------------
+const SEQ_FLECHE = {
+  MF: [
+    ['a/b 1 → 2 → + 3', ['FRAC', '=1', 'FL', '=2', 'FL', '+', '=3'], ['(1)/(2)+3']],
+    ['√ 5 → + 1', ['√', '=5', 'FL', '+', '=1'], ['sqrt(5)+1']],
+    ['a/b √2 → → 3 → + 1', ['FRAC', '√', '=2', 'FL', 'FL', '=3', 'FL', '+', '=1'], ['(sqrt(2))/(3)+1']],
+  ],
+  TXT: [
+    ['a/b 1 → 2 → + 3', ['a/b', '1', 'FL', '2', 'FL', '+', '3'], ['(1)/(2)+3']],
+    ['√ 5 → + 1', ['√', '5', 'FL', '+', '1'], ['√(5)+1', 'sqrt(5)+1', '√5+1']],
+    ['a/b √2 → → 3 → + 1', ['a/b', '√', '2', 'FL', 'FL', '3', 'FL', '+', '1'], ['(√(2))/(3)+1', '(sqrt(2))/(3)+1', '(√2)/(3)+1']],
+  ],
+};
+function testerFleches(w) {
+  const ex = w.eval('exercices'); const vus = new Set(); const sorties = [];
+  ex.forEach((e, idx) => {
+    const el = w.document.getElementById('input-' + idx), kb = w.document.getElementById('clavier-' + idx);
+    if (!el || !kb) return;
+    const boutons = [...kb.querySelectorAll('button')];
+    const sig = el.tagName + '|' + boutons.map((b) => norm(b.textContent)).join('|');
+    if (vus.has(sig)) return; vus.add(sig);
+    const a = (l) => boutons.some((b) => norm(b.textContent) === l);
+    const mf = el.tagName === 'MATH-FIELD';
+    const faitFraction = a('a/b') || a('√') || (mf && a('÷'));
+    const aFleche = a('→');
+    if (faitFraction !== aFleche) { sorties.push({ idx, id: e.id, tag: el.tagName, anomalie: faitFraction ? 'fraction/racine mais pas de →' : '→ sans fraction ni racine', sig }); return; }
+    if (!aFleche) return;
+    const r = { idx, id: e.id, tag: el.tagName, essais: [] };
+    for (const [nom, seq, attendus] of SEQ_FLECHE[mf ? 'MF' : 'TXT']) {
+      if (mf) { el.setValue(''); el.focus(); } else { el.value = ''; el.focus(); }
+      let saute = null;
+      for (const t of seq) {
+        try {
+          if (t.startsWith('=')) el.insert(t.slice(1), { focus: true });
+          else {
+            const cible = t === 'FL' ? ['→'] : (t === 'FRAC' ? ['a/b', '÷'] : [t]);
+            const b = [...kb.querySelectorAll('button')].find((x) => cible.includes(norm(x.textContent)));
+            if (!b) { saute = 'ABSENTE:' + t; break; }
+            b.click();
+          }
+        } catch (err) { saute = 'EXC ' + err.message; break; }
+      }
+      if (saute) { r.essais.push([nom, 'saute ' + saute]); continue; }
+      const lu = w.valeurDuChamp(el).replace(/\s/g, '');
+      r.essais.push([nom, attendus.includes(lu) ? 'OK' : 'KO lu=' + lu]);
+    }
+    sorties.push(r);
+  });
+  return sorties;
+}
+A.testerFleches = testerFleches;
+
+// ---- Pilote : A.audit('ecran' | 'fumee' | 'fleches' | 'inventaire') puis lire window.AUDIT[phase] une fois AUDIT_FIN vrai ------
 window.AUDIT = {}; window.AUDIT_FIN = true;
 A.audit = async (phase) => {
   window.AUDIT[phase] = {}; window.AUDIT_FIN = false;
-  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
+  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
   for (const u of A.FICHES) {
     const cle = u.replace('/cahiers/', '').replace('.html', '');
     try { const w = await A.charger(u); window.AUDIT[phase][cle] = f(w); } catch (e) { window.AUDIT[phase][cle] = { erreur: String(e) }; }

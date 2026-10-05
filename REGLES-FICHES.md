@@ -179,7 +179,9 @@ les corrections ponctuelles d'une fiche).
   correcteur** (ex. la touche ∅ pour une réponse « ensemble vide »), et chaque réponse
   doit pouvoir être saisie **aussi bien au clavier physique qu'à l'écran** (crochets,
   accolades, fractions, racines) ; relancer `outils/audit-claviers/` après toute
-  retouche d'un clavier, d'une fonction `inserer*` ou une mise à jour de MathLive.
+  retouche d'un clavier, d'une fonction `inserer*` ou une mise à jour de MathLive. **Tout
+  clavier qui propose a/b ou √ propose aussi la touche → ** (case suivante : numérateur →
+  dénominateur, sortie de la racine), ajoutée automatiquement par `claviers.js`.
 - **QCM sur des figures ou des courbes : la réponse porte le nom de
   l'étiquette.** Courbes notées \(f_1\), \(f_2\), \(f_3\) → réponse
   « f1 » ; figures notées « figure 1 » → réponse « 1 » ; jamais des figures

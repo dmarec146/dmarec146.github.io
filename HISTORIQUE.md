@@ -6835,3 +6835,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   erreur JavaScript, 50 fiches : 0 erreur de syntaxe. Changer de version = modifier le numéro
   dans les 50 fiches après un passage du banc `outils/audit-claviers/`. math.js (12.4.0) et
   MathJax (3.2.2) étaient déjà épinglés.
+
+- **Touche → sur les claviers à l'écran (05/10/2026).** Point « non traité » de l'audit, à la
+  demande de David : après a/b, ÷ ou √ rien ne permettait d'aller du numérateur au
+  dénominateur (ni de sortir de la racine) sans souris ni clavier physique, gênant surtout sur
+  tablette. `claviers.js` ajoute une touche **→** après « ← Suppr. » (à défaut, après √, a/b ou ÷)
+  sur les claviers qui font des fractions ou des racines. Champ mathématique : `moveToNextChar`
+  (numérateur → dénominateur → après la fraction ; sous la racine → après la racine) ; champ
+  texte : sélectionne la case ▢ du dénominateur quand le texte suivant commence par « )/(▢ »,
+  place le curseur après « )/( » dans la variante « ()/() », sinon sort d'un niveau de
+  parenthèse. Une pression = un niveau dans les deux cas (d'abord une version qui sautait de la
+  racine au dénominateur en champ texte, corrigée). Banc `outils/audit-claviers` : phase
+  `fleches` ; **80 claviers munis de la touche, 222 essais OK, 0 écart**, aucun clavier à
+  fraction/racine sans → ; essai à la souris sur la fiche 2 (a/b, 3, →, 4 → 3/4, focus conservé) ;
+  50 fiches : 0 erreur de syntaxe. Un défaut de mon banc (nettoyage qui supprimait le « s » de
+  sqrt) a produit de faux KO avant correction.

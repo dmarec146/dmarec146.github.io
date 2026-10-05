@@ -333,7 +333,11 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   `type` (insertion de texte seulement). **MathLive est épinglé à 0.111.0** : relancer
   le banc avant de changer de version. Hors champs à séparateur, les champs
   algébriques gardent la fermeture automatique des parenthèses (comportement
-  d'origine, aucun retour).
+  d'origine, aucun retour). **Touche → (05/10/2026)** : `claviers.js` l'ajoute après « ← Suppr. »
+  sur tout clavier à écran muni de a/b, √ (ou ÷ en champ mathématique) : champ mathématique =
+  flèche droite de MathLive (`moveToNextChar`, qui remet `boiteRacineOuverte[idx]` à faux) ; champ
+  texte = case ▢ du dénominateur (« )/(▢ »), sinon sortie d'un niveau de parenthèse ;
+  une pression = un niveau, dans les deux types de champ.
 - Tests : injecter du LaTeX (`setValue(latex, {format:'latex'})`) ;
   `\displaystyle\sum` et `\left\{…\right\}` ne se relisent pas (sommes :
   `\sum_{k=1}^{n}…` comme la touche Σ ; ensembles : `\lbrace…\rbrace`) ;
