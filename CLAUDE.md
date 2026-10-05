@@ -50,23 +50,3 @@ demande.)
    **Ce message doit refléter l'état réel constaté**, pas une formule
    automatique — si quelque chose ne va pas (par exemple GitHub
    injoignable), le dire clairement plutôt que de rassurer à tort.
-
-## Fiches à barème (contrôle obligatoire)
-
-Les fiches qui contiennent `Bareme.definir(` ont un barème en points **fixé dans la fiche**, lié aux
-identifiants de questions (« 9.6 a) »). Une question ajoutée, supprimée ou renumérotée le désynchronise
-**sans aucun signal** (voir `outils/bareme/README.md`). David ne modifie les fiches que par Claude :
-c'est donc à Claude de le vérifier, **sans le lui demander à chaque message** :
-
-- **Quand** : (1) avant de commiter une modification qui touche une fiche à barème (ou `assets/js/bareme.js`) ;
-  (2) **avant d'exécuter tout « pousse tout »**, même si aucune fiche à barème n'a été touchée dans
-  la session (dernière barrière).
-- **Comment** : `node outils/bareme/controle-bareme.js` (blocs cohérents avec `fiche-NN.json`), puis,
-  dans le navigateur, `http://localhost:8791/outils/bareme/controle.html` et `Controle.lancer()`
-  (génère chaque fiche 300 fois : questions sans points, points sans question). ~ 5 secondes.
-- **Si tout est cohérent : ne rien dire.** S'il y a un écart : **alerter une seule fois** (au moment du
-  commit ou du push, pas à chaque message) et **proposer directement le barème corrigé** (points des
-  questions nouvelles ou déplacées d'après `outils/bareme/README.md`, ce qui change par rapport à
-  l'ancien) ; ne pas publier tant que David n'a pas validé et que le contrôle n'est pas au vert.
-- Une fiche qu'on branche au barème doit être ajoutée à la table `FICHES` de `appliquer-bareme.js`
-  (le contrôle le signale sinon).

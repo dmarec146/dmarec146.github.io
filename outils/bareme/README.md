@@ -42,10 +42,12 @@ Le barème est attaché à la **position** de la question. Si le générateur ti
 moins difficiles pour une même position, les points ne suivent pas : resserrer les plages de
 l'aléatoire (chantier « moteur robuste ») ou faire dépendre les points des paramètres tirés.
 
-## Contrôle de cohérence (obligatoire avant commit et avant publication)
+## Contrôle de cohérence (à la demande de David, aucun déclenchement automatique)
 
 Le barème est lié aux identifiants de questions : modifier une fiche à barème (ajouter, supprimer,
-renuméroter une question) le désynchronise sans signal. Deux volets, voir aussi `CLAUDE.md` :
+renuméroter une question) le désynchronise sans signal. **Décision de David (05/10/2026) : pas de
+contrôle automatique ; il fait attention aux modifications de fiches à barème et demande le contrôle
+quand il le souhaite.** Deux volets :
 
 - `node outils/bareme/controle-bareme.js` : repère les fiches à barème, vérifie qu'elles sont
   déclarées dans `appliquer-bareme.js` et que leur bloc `Bareme.definir` est celui de `fiche-NN.json`
@@ -58,5 +60,5 @@ renuméroter une question) le désynchronise sans signal. Deux volets, voir auss
 Essais de détection faits le 05/10/2026 : question retirée du barème, identifiant fantôme, point
 modifié dans le JSON : les trois sont signalés.
 
-Après une modification de la fiche : mettre à jour `fiche-NN.json`, `node outils/bareme/appliquer-bareme.js NN`,
+Après une modification d'une fiche à barème : mettre à jour `fiche-NN.json`, `node outils/bareme/appliquer-bareme.js NN`,
 puis relancer les deux volets.

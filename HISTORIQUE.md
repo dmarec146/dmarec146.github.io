@@ -6901,3 +6901,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   une fiche modifiée à la main sans passer par Claude (relancer le contrôle sur demande). Idée
   « barème attaché au devoir avec éditeur dans le tableau de bord » : non retenue, restée en
   discussion (voir « Chantiers futurs » si David la veut un jour).
+
+- **Contrôle des barèmes : points de contrôle automatiques retirés (05/10/2026).** David n'en veut
+  pas (ni avant chaque commit touchant une fiche à barème, ni avant chaque push) : « je ferai
+  attention, on se base là-dessus pour le moment ». La section « Fiches à barème (contrôle
+  obligatoire) » de `CLAUDE.md` et les rappels de `REGLES-FICHES.md` et `SUIVI-FIREBASE.md` sont
+  supprimés ; **Claude ne lance plus ce contrôle de lui-même**. Les outils restent disponibles à la
+  demande (`outils/bareme/controle-bareme.js`, `controle.html`, `Bareme.ids()`). Risque connu et
+  accepté : une fiche à barème modifiée (question ajoutée, supprimée, renumérotée) se désynchronise
+  sans signal.
