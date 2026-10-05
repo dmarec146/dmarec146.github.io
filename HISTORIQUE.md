@@ -7120,3 +7120,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     aléatoires, unicité de α) : 0 écart ; cycle complet 8 × 43 accepté, mauvaises formes
     refusées ; brouillon restauré à l'identique (200 essais) ; 0 erreur MathJax ;
     vérificateur : 0 erreur.
+
+- **Première fiche 16 : titres de 16.10 et 16.11 (05/10/2026).** David : 16.10 a) « incompréhensible
+  d'après le titre ». « Décomposer un vecteur » (terme inventé à la refonte) remplacé par
+  « Relation de Chasles. A, B et C désignent trois points du plan. Écrire u sous la forme
+  aAB + bAC » (forme mise en valeur) ; 16.11 : « … sous la forme kAB, où k dépend de α ».
