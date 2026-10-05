@@ -7066,3 +7066,6 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   changent pas. Le correctif de `estFactorise` (facteur unique `exp(...)` accepté) est conservé.
   Vérifié : 167 énoncés à exposant fractionnaire au nouveau format, aucun ancien format ni
   « \exp » restant, 160 corrigés retapés acceptés, 0 erreur MathJax.
+
+- **Barème de la fiche 11 de Première (05/10/2026).** Base 14 points, bonus 5 (11.8 et 11.9, calculs
+  avancés). Points de David : 11.1 a) 0,75 ; 11.6 a) 0,5. Fichier `outils/bareme/fiche-11.json`.
