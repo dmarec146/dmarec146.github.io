@@ -7073,3 +7073,7 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Barème de la fiche 12 de Première (05/10/2026).** Base 17 points, bonus 6,5 (12.8 et 12.9, calculs
   avancés). Points de David : 12.1 a) 0,75 et b) 1 ; 12.7 a) 1,5 et b) 1,25 (+0,25 chacune).
   Fichier `outils/bareme/fiche-12.json`.
+
+- **Barème de la fiche 13 de Première (05/10/2026).** Base 21 points, bonus 9,75 (13.9 et 13.10, calculs
+  avancés). Points de David : 13.1 a) 0,5 et b) 1,25 ; 13.3 b) 0,5 ; 13.6 c) 0,75 ; 13.7 c) 1.
+  Fichier `outils/bareme/fiche-13.json`.
