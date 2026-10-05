@@ -7145,3 +7145,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   (ancien 16.18 d), la plus complète, réponse kMN) ; retirées : MA+MB en fonction de MI, BC en
   fonction de IJ, −kAB−IA+BI. Le milieu J de [AC] ne servant plus, l'introduction ne mentionne
   que I. Vérifié : 300 tirages recalculés avec I milieu de [AB] (0 écart), corrigé accepté.
+
+- **Première fiche 16 : 16.12 b) et 16.15 b) supprimés (05/10/2026), 38 → 36 questions.** David :
+  « 16.15 supprimer b). 16.12 supprimer b). » 16.12 (colinéarité sur la figure) garde
+  u + ½v (→ AB) et v + u + ½w (→ EF) ; le vecteur p de la figure, qui ne servait qu'à la question
+  retirée, est effacé (CD reste comme réponse possible du QCM). 16.15 (colinéarité avec un
+  paramètre) garde les anciens a) et c). Vérifié : 5 × 36 corrigés acceptés, 0 erreur MathJax.
