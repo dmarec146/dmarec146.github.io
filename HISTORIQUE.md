@@ -6910,3 +6910,22 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   demande (`outils/bareme/controle-bareme.js`, `controle.html`, `Bareme.ids()`). Risque connu et
   accepté : une fiche à barème modifiée (question ajoutée, supprimée, renumérotée) se désynchronise
   sans signal.
+
+- **Débordements horizontaux sur téléphone (05/10/2026).** À la demande de David : Première 14, 16
+  et 22 faisaient défiler la page horizontalement à 375 px. **Causes** : fiche 14, tableaux de lois
+  et d'effectifs (7 colonnes, police 16 px, marges de 16 px, styles inline) ; fiche 16, longues
+  formules MathJax vectorielles dans un énoncé (395 px) ; fiche 22, formule d'une aide (333 px dans
+  303). **Correctif** : section 6 de `claviers.js` (CSS injecté, écrans de 560 px au plus, aucun effet
+  sur ordinateur), règle générale car les énoncés sont tirés au hasard : tableaux compacts et
+  défilant dans leur cadre s'ils dépassent ; formule SVG réduite à la largeur de son bloc ;
+  `.q-enonce` autorisé à rétrécir. **Fausses pistes** : `overflow-x: auto` sur `mjx-container` ne
+  s'applique pas aux formules « inline » (et `inline-block` les décalerait du texte) ; sur
+  `.q-enonce` il faisait apparaître des barres verticales parasites ; avec `overflow-y: hidden` le test
+  de rognage a révélé que **7 fiches** (formules en bloc des sommes, Première 7, 9, 10, 17, 18, 19,
+  22) étaient rognées de 14 px : règles retirées. **Cas rares trouvés par le test multi-tirages** (un
+  tirage sur quatre) : un tableau d'achats dans un énoncé de Seconde 9 (375 px) et, à Première 21,
+  le texte d'accessibilité caché de MathJax dont la largeur (calculée avant la réduction) faisait
+  défiler la page : règles ajoutées. **Vérifié** : banc `debordement` (4 tirages par fiche, 50
+  fiches, 375 px) et 25 tirages sur chacune des fiches 14, 16, 21, 22 et Seconde 9 : aucun débordement ;
+  aucun rognage effectif ; 50 fiches : 0 erreur de syntaxe. Limite : un énoncé de la fiche 16 (q-46)
+  dépasse de 10 px *dans son bloc* sans élargir la page. Phase `debordement` ajoutée au banc.

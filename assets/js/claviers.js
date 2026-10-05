@@ -501,3 +501,34 @@
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+// --- 6. Mise en page telephone : tableaux et formules plus larges que l'ecran -----------------------
+//
+// 05/10/2026 (audit des claviers, puis demande de David). Sur telephone (375 px) la page de Premiere
+// 14, 16 et 22 depassait l'ecran et se mettait a defiler horizontalement : tableaux de lois et
+// d'effectifs de la fiche 14 (7 colonnes, cases de 16 px de marge et police de 16 px ; styles inline),
+// longues formules MathJax d'un enonce (fiche 16, 395 px) ou d'une aide (fiche 22). Les enonces etant
+// tires au hasard, la regle est generale (ecrans de 560 px au plus), pas propre a une fiche :
+//   - tableau « table-… » : cases et police reduites ; s'il depasse encore, il defile dans son propre
+//     cadre (la page ne defile plus) ;
+//   - formule MathJax (svg exterieur) : elle se reduit a la largeur de son bloc (proportions gardees) ;
+//   - l'enonce (flex) peut retrecir au lieu d'elargir la page.
+//   - texte d'accessibilite cache de MathJax (mjx-assistive-mml) : invisible mais sa largeur, calculee
+//     avant la reduction de la formule, faisait defiler la page (Premiere 21, tirage rare) : largeur limitee ;
+//   - tableau place dans un enonce (Seconde 9, tableau d'achats, 375 px) : defile dans son propre cadre.
+// PAS de propriete overflow sur les formules ni sur l'enonce : l'essai du 05/10/2026 rognait de 14 px les
+// formules affichees en bloc (sommes) et de 6 px des enonces de la fiche 22 de Premiere. Le style est
+// injecte ici car les fiches ont chacune leur CSS ; les ordinateurs ne sont pas concernes.
+(function () {
+  const s = document.createElement('style');
+  s.id = 'mise-en-page-telephone';
+  s.textContent = '@media (max-width: 560px) {'
+    + ' table[id^="table-"] { display: block; width: fit-content; max-width: 100%; overflow-x: auto; padding-bottom: 4px; font-size: 13px !important; }'
+    + ' table[id^="table-"] td { padding: 5px 8px !important; }'
+    + ' .q-enonce { min-width: 0; max-width: 100%; }'
+    + ' mjx-container > svg { max-width: 100%; height: auto; }'
+    + ' mjx-assistive-mml { max-width: 100% !important; }'
+    + ' .q-enonce table { display: block; width: fit-content; max-width: 100%; overflow-x: auto; padding-bottom: 4px; }'
+    + ' }';
+  (document.head || document.documentElement).appendChild(s);
+})();

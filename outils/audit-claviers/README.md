@@ -9,7 +9,7 @@ le 05/10/2026 : ses comportements changent d'une version à l'autre) ou après t
 1. Démarrer le serveur statique (`preview_start site-statique`, port 8791).
 2. Ouvrir `http://localhost:8791/outils/audit-claviers/index.html`.
 3. Dans la console de la page : `A.audit('ecran')`, `A.audit('fumee')`,
-   `A.audit('fleches')`, `A.audit('largeur')`, `A.audit('reels')` ou `A.audit('inventaire')`, puis attendre `AUDIT_FIN === true` (≈ 2 min 30 : les 50 fiches sont
+   `A.audit('fleches')`, `A.audit('largeur')`, `A.audit('reels')`, `A.audit('debordement')` ou `A.audit('inventaire')`, puis attendre `AUDIT_FIN === true` (≈ 2 min 30 : les 50 fiches sont
    chargées une à une dans l'iframe) et lire `AUDIT[phase]`.
 
 | Phase | Ce qu'elle fait | Résultat attendu |
@@ -19,6 +19,7 @@ le 05/10/2026 : ses comportements changent d'une version à l'autre) ou après t
 | `fleches` | Touche → : fractions et racines remplies au clavier à l'écran (`a/b 1 → 2 → + 3`, `√ 5 → + 1`, racine au numérateur), champs mathématiques et champs texte | tous `OK` ; aucune « anomalie » (clavier à fraction/racine sans →) |
 | `largeur` | Met une réponse longue dans un champ mathématique ordinaire et dans un champ à séparateur, attend 2,5 s, mesure le rognage ; débordement de la page. À lancer avec `A.largeurIframe(1000)` (ordinateur) puis `A.largeurIframe(375)` (téléphone) | aucun champ rogné avec une réponse **réaliste** (une réponse volontairement énorme ne tient pas à 375 px, même à 12 px) ; les débordements de page de Première 14, 16 et 22 sont antérieurs (tableau, énoncés MathJax) |
 | `reels` | Sur chaque clavier d'intervalles : `]-∞;+∞[`, ℝ, ∅ puis `]-∞;1[` saisis par les touches et passés à `checkIntervalle` | tous `OK` (ℝ et `]-∞;+∞[` acceptés pour « tout », refusés pour un intervalle ordinaire, et inversement) |
+| `debordement` | Page à 375 px (`A.largeurIframe(375)`) : largeur de la page sur 4 tirages par fiche, éléments qui dépassent, formules rognées | aucune page plus large que l'écran ; aucun rognage (les énoncés sont aléatoires : un seul tirage ne suffit pas, des cas rares existent) |
 | `inventaire` | Types de champs, claviers, touches, variantes de `inserer*` | 7 types de champs ; 2 variantes de `inserer`, `insererRacine` et `insererFraction` |
 
 ## Ce que le banc ne fait pas : la frappe physique

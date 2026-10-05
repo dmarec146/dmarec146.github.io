@@ -346,7 +346,11 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   sur sa propre ligne (`q-mathfield-long`, `flex: 1 1 calc(100% - 64px)`), puis réduit sa police
   jusqu'à 12 px (téléphone) ; rien n'est modifié pendant la frappe. Limite MathLive : `setValue('')`
   n'émet pas d'événement `input`, un champ vidé par programme garde sa mise en page jusqu'à la
-  sortie du champ.
+  sortie du champ. **Téléphone (05/10/2026)** : `claviers.js` (section 6, écrans ≤ 560 px) évite que la page
+  défile horizontalement : tableaux `table-…` (police 13 px, cases compactes, défilement dans leur cadre),
+  tableaux dans un énoncé (idem), formule MathJax (svg extérieur) réduite à la largeur de son bloc,
+  `mjx-assistive-mml` (texte d'accessibilité caché) limité en largeur. **Ne jamais mettre `overflow` sur
+  `mjx-container` ni `.q-enonce`** : rognage de 14 px des formules en bloc (sommes).
 - Tests : injecter du LaTeX (`setValue(latex, {format:'latex'})`) ;
   `\displaystyle\sum` et `\left\{…\right\}` ne se relisent pas (sommes :
   `\sum_{k=1}^{n}…` comme la touche Σ ; ensembles : `\lbrace…\rbrace`) ;

@@ -256,11 +256,30 @@ function testerReels(w) {
 }
 A.testerReels = testerReels;
 
+
+// ---- Debordement horizontal de la page (telephone) : A.largeurIframe(375), puis A.audit('debordement') ----
+async function testerDebordement(w, nbTirages) {
+  const mesure = () => {
+    const r = w.document.documentElement; const L = w.innerWidth;
+    const hors = [...w.document.querySelectorAll('body *')].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.right > L + 1; });
+    const racines = hors.filter((e) => !hors.includes(e.parentElement)).slice(0, 3).map((e) => e.tagName + '#' + e.id + '.' + String(e.className).slice(0, 20));
+    const coupes = [...w.document.querySelectorAll('.q-enonce, mjx-container')].filter((e) => e.scrollHeight > e.clientHeight + 6).length;
+    return { page: r.scrollWidth, fenetre: L, deborde: r.scrollWidth > L + 1, racines, coupes };
+  };
+  const res = [mesure()];
+  for (let i = 0; i < (nbTirages || 4); i++) {
+    try { await w.genererNouvelleFiche(); } catch (e) { break; }
+    await dormir(1300); res.push(mesure());
+  }
+  return { mesures: res, debordements: res.filter((m) => m.deborde).length, max: Math.max(...res.map((m) => m.page)) };
+}
+A.testerDebordement = testerDebordement;
+
 // ---- Pilote : A.audit('ecran' | 'fumee' | 'fleches' | 'inventaire') puis lire window.AUDIT[phase] une fois AUDIT_FIN vrai ------
 window.AUDIT = {}; window.AUDIT_FIN = true;
 A.audit = async (phase) => {
   window.AUDIT[phase] = {}; window.AUDIT_FIN = false;
-  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), largeur: (w) => A.testerLargeur(w), reels: (w) => A.testerReels(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
+  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), largeur: (w) => A.testerLargeur(w), reels: (w) => A.testerReels(w), debordement: (w) => A.testerDebordement(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
   for (const u of A.FICHES) {
     const cle = u.replace('/cahiers/', '').replace('.html', '');
     try { const w = await A.charger(u); window.AUDIT[phase][cle] = await f(w); } catch (e) { window.AUDIT[phase][cle] = { erreur: String(e) }; }
