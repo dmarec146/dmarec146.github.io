@@ -7002,3 +7002,6 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     8 × 24 accepté (ensembles saisis en `\{…\}` et ∅), 0 erreur MathJax,
     vérificateur : 0 erreur, contrôle des barèmes : questions tirées toutes
     pointées.
+
+- **Barème de la fiche 3 de Première : total de base entier (05/10/2026).** David : première
+  option proposée. 3.5 a) 1, 3.2 c) 1, 3.6 a) 0,75. Base 19 points, bonus 6,75.
