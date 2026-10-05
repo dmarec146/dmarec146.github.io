@@ -7132,3 +7132,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   monte de 2 px par rapport à a, c, e (mesuré). Correctif : classe `q-qcm-lettre-haute`
   (`padding-top: 4px`, la boîte reste de 20 px grâce à `box-sizing: border-box`) posée par le
   gabarit des options sur b, d, f, h, k, l. Mêmes CSS et gabarit dans les 26 fiches concernées.
+
+- **Première fiche 16 : calcul 16.13 supprimé (05/10/2026), 43 → 41 questions, 18 → 17 calculs.**
+  David : « supprimer 16.13 » (« Un vecteur en fonction d'un autre », anciens 16.14 b) et d)).
+  16.14 → 16.13 (Point particulier d'un triangle), 16.15 → 16.14 (Trois points alignés), avancés
+  16.16 → 16.15, 16.17 → 16.16, 16.18 → 16.17 ; grilles, textes (`texte-16-13`, `texte-16-14`),
+  `RENUMEROTATION_16` et `groupes` mis à jour. Vérifié : 5 × 41 corrigés acceptés, brouillon
+  restauré à l'identique (100 essais), 0 erreur MathJax, vérificateur : 0 erreur.
