@@ -6956,3 +6956,17 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     quelle forme est attendue. À trancher avec David.
   - Vérifié : cycle complet des calculs touchés accepté, mauvaise réponse
     refusée, 0 erreur MathJax, vérificateur : 0 erreur.
+
+- **Première fiche 4, 4.2 : forme attendue contrôlée (05/10/2026).** Suite du
+  point ouvert de l'entrée précédente ; David : « oui fais ce que tu
+  proposes ». Titre : « Réécrire chaque fraction <mise en valeur>avec
+  uniquement des termes constants ou de la forme \(\dfrac{a}{n^k}\)</mise en
+  valeur>, au numérateur comme au dénominateur. » (la forme, pas la
+  démarche). Nouveau contrôle `estFormeUnSurN` (drapeau `formeUnSurN`) :
+  chaque « n » doit être seul (n, n^k, c·n^k) au dénominateur d'une
+  division ; l'égalité numérique est vérifiée à part. Refusés : la fraction
+  d'origine, « (2-1/n)/(2+2n) », « n/n^2 » ; acceptés : la forme en 1/n et
+  ses multiples (« (4-2/n+6/n²)/… »). Aide « ? » ajoutée avec un exemple
+  distinct de la réponse. Vérifié : 12 tirages × 2 questions (bonne réponse
+  acceptée, fraction d'origine et fausse réponse refusées), 0 erreur
+  MathJax.
