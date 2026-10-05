@@ -2495,12 +2495,12 @@ function expVersPuissance(tex) {
       j++;
     }
     const brut = expVersPuissance(tex.slice(debut, j)).trim();
-    // exposant contenant une fraction : un e^{...} avec une fraction en exposant est illisible (05/10/2026,
-    // David) -> écriture exp(...) avec grandes parenthèses et fraction pleine taille ; sinon e^{...}
+    // exposant contenant une fraction : la fraction est agrandie par \textstyle (taille de texte au lieu de
+    // taille d'exposant), nettement plus lisible (05/10/2026, David) ; la notation reste e^{...}
     const fraction = /\\d?frac/.test(brut);
-    const arg = fraction ? brut.replace(/\\frac/g, '\\dfrac') : brut.replace(/\\dfrac/g, '\\frac');
+    const arg = fraction ? '\\textstyle ' + brut.replace(/\\dfrac/g, '\\frac') : brut.replace(/\\dfrac/g, '\\frac');
     const fin = j + (gauche ? 7 : 1);
-    const puissance = arg === '1' ? 'e' : (fraction ? `\\exp\\left(${arg}\\right)` : `e^{${arg}}`);
+    const puissance = arg === '1' ? 'e' : `e^{${arg}}`;
     out += (tex[fin] === '^' && puissance !== 'e') ? `\\left(${puissance}\\right)` : puissance;
     if (puissance === 'e' && /^([a-zA-Z]|\\exp)/.test(tex.slice(fin))) out += '\\,';
     i = fin;
@@ -2508,7 +2508,7 @@ function expVersPuissance(tex) {
   // parentheses ecrites dans un enonce autour d'un e^1 : « \left(e\right)^3 » -> « e^3 »
   out = out.replace(/\\left\(e\\right\)\^/g, 'e^');
   // « e^{\frac{a}{b}} » ecrit directement par un generateur : meme traitement que ci-dessus
-  // (exposant fractionnaire illisible -> \exp\left(\dfrac{a}{b}\right))
+  // (exposant fractionnaire illisible -> e^{\textstyle\frac{a}{b}})
   let res = '', k = 0;
   while (k < out.length) {
     const m = /(?<![a-zA-Z\\])e\^\{/.exec(out.slice(k));
@@ -2518,7 +2518,7 @@ function expVersPuissance(tex) {
     while (j < out.length && prof > 0) { if (out[j] === '{') prof++; else if (out[j] === '}') prof--; j++; }
     const contenu = out.slice(ouvre, j - 1);
     res += out.slice(k, debut);
-    res += /\\d?frac/.test(contenu) ? `\\exp\\left(${contenu.replace(/\\frac/g, '\\dfrac')}\\right)` : out.slice(debut, j);
+    res += (/\\d?frac/.test(contenu) && !/^\\textstyle/.test(contenu)) ? `e^{\\textstyle ${contenu.replace(/\\dfrac/g, '\\frac')}}` : out.slice(debut, j);
     k = j;
   }
   return res;

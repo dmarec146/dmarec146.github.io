@@ -7057,3 +7057,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   **Barème** (`outils/bareme/fiche-10.json`) : base 16 points, bonus 8,5 (10.8 et 10.9, calculs
   avancés), validé par David.
   Vérifié : 160 corrigés retapés acceptés, mauvaise réponse refusée, 0 erreur MathJax.
+
+- **Première fiche 10 : exposant fractionnaire, retour à e^{…} (05/10/2026).** David : la notation
+  exp(…) de l'entrée précédente ne convient pas, il veut e^ avec une fraction en exposant
+  légèrement agrandie. Retenu : `e^{\textstyle\frac{a}{b}}` (la fraction passe de la taille
+  d'exposant à la taille de texte ; `\dfrac` en exposant, testé, est trop grand). Dans
+  `expVersPuissance`, les deux passes produisent ce format ; les exposants sans fraction ne
+  changent pas. Le correctif de `estFactorise` (facteur unique `exp(...)` accepté) est conservé.
+  Vérifié : 167 énoncés à exposant fractionnaire au nouveau format, aucun ancien format ni
+  « \exp » restant, 160 corrigés retapés acceptés, 0 erreur MathJax.
