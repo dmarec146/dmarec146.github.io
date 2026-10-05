@@ -2,18 +2,25 @@
 // Chaque question porte un nombre de points (de 0,5 à 2, par quart de point) ; l'élève ne
 // voit que ce nombre sur chaque question et le total de la fiche en tête de page.
 //
+// Le barème ne concerne QUE LES DEVOIRS : la fiche l'affiche (afficher(true)) quand un devoir
+// est actif pour l'élève connecté, et le retire en entraînement libre (visiteur anonyme, élève
+// connecté hors devoir, devoir terminé). Hors devoir, la fiche se comporte comme avant.
+//
 // Les calculs avancés sont un BONUS : une bonne réponse s'ajoute au score ET au total
 // (la note ne dépasse jamais 100 %) ; une mauvaise réponse ou une absence de réponse reste
 // hors barème, sans pénalité. Voir calculer().
 //
 // Script classique, chargé après devoir-partiel.js ; la fiche déclare ensuite ses données :
 //   Bareme.definir({ points: { "2.1 a)": 0.5, ... }, bonus: ["2.10 a)", ...] });
-// Une fiche sans définir() n'est pas concernée (actif() vaut faux).
+// puis appelle Bareme.afficher(!!etatDevoir) quand elle sait si un devoir est actif.
+// Une fiche sans definir() n'est pas concernée (actif() vaut faux).
 (function () {
   'use strict';
 
   let POINTS = null;
   let BONUS = new Set();
+  let VISIBLE = false;
+  let observateur = null;
 
   const arrondi = (n) => Math.round(n * 100) / 100;
   const format = (n) => arrondi(n).toLocaleString('fr-FR');
@@ -50,11 +57,21 @@
     return { score: arrondi(score), total: arrondi(total), nbQuestions };
   }
 
-  // Total de base de la fiche (hors bonus), pour l'en-tête : calculs retenus seulement.
-  function totalBase(exercices) {
-    let t = 0;
-    exercices.forEach((ex) => { if (retenue(ex) && typeof POINTS[ex.id] === 'number' && !BONUS.has(ex.id)) t += POINTS[ex.id]; });
-    return arrondi(t);
+  // Total de base (hors bonus) et points de calculs avancés possibles, calculs retenus seulement.
+  function totaux(exercices) {
+    let base = 0, bonus = 0;
+    exercices.forEach((ex) => {
+      if (!retenue(ex) || typeof POINTS[ex.id] !== 'number') return;
+      if (BONUS.has(ex.id)) bonus += POINTS[ex.id]; else base += POINTS[ex.id];
+    });
+    return { base: arrondi(base), bonus: arrondi(bonus) };
+  }
+
+  function texteTotal(exercices) {
+    const { base, bonus } = totaux(exercices);
+    const avances = bonus > 0 ? '+ ' + format(bonus) + ' ' + pluriel(bonus) + ' de calculs avancés' : '';
+    if (base === 0 && bonus > 0) return avances;
+    return 'Total : ' + format(base) + ' ' + pluriel(base) + (avances ? ' (' + avances + ')' : '');
   }
 
   function style() {
@@ -76,7 +93,7 @@
   }
 
   function poser() {
-    if (!POINTS || typeof exercices === 'undefined') return;
+    if (!POINTS || !VISIBLE || typeof exercices === 'undefined') return;
     style();
     exercices.forEach((e, i) => {
       const p = POINTS[e.id];
@@ -96,10 +113,14 @@
       ban = document.createElement('div'); ban.id = 'bareme-bandeau'; ban.className = 'bareme-bandeau';
       premier.parentNode.insertBefore(ban, premier);
     }
-    if (ban) {
-      const t = totalBase(exercices);
-      mettre(ban, 'Total : ' + format(t) + ' ' + pluriel(t));
-    }
+    if (ban) mettre(ban, texteTotal(exercices));
+  }
+
+  function retirer() {
+    document.querySelectorAll('.bareme-pastille').forEach((e) => e.remove());
+    document.querySelectorAll('.bareme-rel').forEach((e) => e.classList.remove('bareme-rel'));
+    const ban = document.getElementById('bareme-bandeau');
+    if (ban) ban.remove();
   }
 
   let minuterie = null;
@@ -108,22 +129,28 @@
     minuterie = setTimeout(() => { minuterie = null; poser(); }, 60);
   }
 
-  function demarrer() {
-    if (!POINTS) return;
-    poser();
-    // les grilles sont reconstruites (nouvelle version, reprise d'un brouillon) et un devoir
-    // partiel masque des calculs après coup : on repose pastilles et total.
-    if (window.MutationObserver) new MutationObserver(planifier).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-  }
-
   window.Bareme = {
     definir(donnees) {
       POINTS = donnees.points || {};
       BONUS = new Set(donnees.bonus || []);
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer);
-      else demarrer();
     },
     actif() { return !!POINTS; },
+    // Vrai quand le barème est affiché et compte (devoir actif).
+    visible() { return !!POINTS && VISIBLE; },
+    // true : pastilles + total, et reprise à chaque reconstruction des grilles ; false : tout retiré.
+    afficher(oui) {
+      VISIBLE = !!oui && !!POINTS;
+      if (VISIBLE) {
+        poser();
+        // grilles reconstruites (nouvelle version, brouillon) et calculs masqués après coup par un devoir partiel
+        if (!observateur && window.MutationObserver) {
+          observateur = new MutationObserver(planifier);
+          observateur.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+        }
+      } else {
+        retirer();
+      }
+    },
     points(id) { return POINTS ? POINTS[id] : undefined; },
     calculer,
     format,

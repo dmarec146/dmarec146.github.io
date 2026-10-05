@@ -75,8 +75,9 @@ depuis la réorganisation du 02/10/2026 »).
     widget doit l'inclure.
   - `assets/js/bareme.js` (script classique, 05/10/2026) : **barème en points**
     des fiches de calcul, pilotes Première 2 et 9 (les 48 autres n'ont pas de
-    `Bareme.definir`, donc inchangées). Affiche la note de chaque question et
-    « Total : N points » en tête (rien d'autre pour l'élève) ; `Bareme.calculer`
+    `Bareme.definir`, donc inchangées). **Uniquement dans un devoir** : affiche la note de chaque question et
+    « Total : N points (+ M points de calculs avancés) » en tête (rien d'autre pour
+    l'élève), et rien en entraînement libre ; `Bareme.calculer`
     donne la note pondérée, les calculs avancés étant un **bonus** (bonne réponse :
     ajoutée au score et au total ; fausse ou absente : hors barème). Données,
     catégories A à E et justifications (pour l'enseignant seulement) dans

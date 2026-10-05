@@ -2070,6 +2070,7 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   devoirTermine = garderBandeau ? etatDevoir : null;
   etatDevoir = null;
   DevoirPartiel.retirer(); // devoir sur une partie de fiche : tous les calculs reviennent
+  if (window.Bareme) Bareme.afficher(false); // plus de barème hors devoir
   const panneauMode = document.getElementById('mode-panneau');
   const boutonVerifier = document.getElementById('btn-verifier');
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
@@ -2254,7 +2255,7 @@ async function validerFicheActuelle() {
     const nonVide = (v) => (v !== null && typeof v === 'object') ? Object.values(v).some(nonVide) : (typeof v === 'string' ? v.trim() !== '' : v !== null && v !== undefined);
     const nbRepondues = reponses.filter((s) => nonVide(s.valeur)).length;
     // Barème en points (assets/js/bareme.js) : note pondérée, calculs avancés en bonus.
-    const bareme = window.Bareme && Bareme.actif() ? Bareme.calculer(exercices, saisies) : null;
+    const bareme = window.Bareme && Bareme.visible() ? Bareme.calculer(exercices, saisies) : null;
     await window.validerFiche(FICHE_ID, idsReussis, bareme ? bareme.total : totalRetenu, nbRepondues, bareme || undefined);
     afficherEtatSuivi(bareme
       ? `Fiche validée : ${Bareme.format(bareme.score)} / ${Bareme.format(bareme.total)} points.`
@@ -2593,7 +2594,7 @@ function verifierTout() {
     else if (ok === false) erreurs.push(idx);
   });
   document.getElementById('score-panneau').classList.add('visible');
-  document.getElementById('score-chiffre').textContent = (window.Bareme && Bareme.actif())
+  document.getElementById('score-chiffre').textContent = (window.Bareme && Bareme.visible())
     ? Bareme.libelleScore(exercices, saisies)
     : score + ' / ' + DevoirPartiel.compter(exercices);
   const correctionDiv = document.getElementById('correction-panneau');
@@ -3086,6 +3087,8 @@ async function initialiserFiche() {
   // retenus (voir assets/js/devoir-partiel.js) tant que le devoir est actif ;
   // sans effet pour un devoir sur la fiche entiere (etatDevoir.calculs nul).
   if (etatDevoir) DevoirPartiel.appliquer(etatDevoir.calculs, exercices);
+  // Barème en points : uniquement dans un devoir (assets/js/bareme.js) ; entraînement libre : rien.
+  if (window.Bareme) Bareme.afficher(!!etatDevoir);
 
 // Panneau de mode, "Corrige des erreurs", "Enregistrer"/"Valider" :
   // corriges ici APRES avoir su si un devoir est actif -- l'ENSEMBLE de ces

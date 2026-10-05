@@ -22,8 +22,11 @@ et le total en tête de fiche (jamais la catégorie ni l'explication).
 
 ## Mise en œuvre
 
-- `assets/js/bareme.js` : affichage (pastille de points par question, « Total : N points » en
-  tête) et calcul de la note (`Bareme.calculer`).
+- `assets/js/bareme.js` : affichage (pastille de points par question, encart « Total : N
+  points (+ M points de calculs avancés) » en tête) et calcul de la note (`Bareme.calculer`).
+  **Le barème ne concerne que les devoirs** : la fiche appelle `Bareme.afficher(!!etatDevoir)` ;
+  visiteur anonyme, élève connecté hors devoir ou devoir terminé (entraînement libre) : rien
+  n'est affiché et la fiche compte comme avant.
 - Chaque fiche contient `Bareme.definir({...})` : **généré** par `node appliquer-bareme.js NN`
   à partir de `fiche-NN.json` (à relancer après toute modification des points ;
   `--verif` signale un écart sans écrire).

@@ -6717,15 +6717,16 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     abandonnés pour des bandes par catégorie après les remarques de David
     (9.6 ≤ 1, 9.7 c) et 9.8 c) proches de a), inéquations classiques ≤ 1, énoncés à
     paramètres mieux valorisés que les inéquations).
-  - **Présentation élève** : une pastille de points par question et « Total : N
+  - **Présentation élève** (affichée d'abord partout, restreinte aux devoirs dans l'entrée
+    suivante) : une pastille de points par question et « Total : N
     points » en tête de fiche, sans catégorie, infobulle ni explication ;
     pas de sous-total par calcul. L'encart est placé avant le bloc des calculs
     (un devoir partiel masque le bloc entier) et indique le total des calculs
     retenus. Téléphone : pastille en fin de ligne, aucun défilement horizontal.
   - **Note** : `Bareme.calculer` (score et total en points ; bonus : bonne
     réponse ajoutée aux deux, sinon hors barème ; `nbQuestions` = questions de
-    base retenues + avancées traitées). Utilisé à la validation d'un devoir et
-    dans le panneau de score du mode libre. `suivi.js` : `validerFiche` accepte un
+    base retenues + avancées traitées). Utilisé à la validation d'un devoir (le
+    panneau de score du mode libre n'est plus concerné : voir l'entrée suivante). `suivi.js` : `validerFiche` accepte un
     objet barème (5e paramètre) ; `mes-devoirs.js` et `devoirs.js` affichent les
     quarts de point ; Non-réponses = `nbQuestions − nbRepondues`.
   - **Tests** (élève et enseignant jetables, supprimés) : fiche 9 en devoir, 9
@@ -6738,3 +6739,21 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     même position peut tirer un cas plus ou moins difficile (ex. 2.9 a).
   - **Non fait** (chantier) : barème des 48 autres fiches ; automatismes à 12
     questions ; arrondi éventuel de la note de l'élève.
+
+- **Barème : uniquement dans les devoirs, encart avec les calculs avancés
+  (05/10/2026).** Deux précisions de David sur les fiches pilotes.
+  - **Encart de tête** : « Total : 23 points (+ 7 points de calculs avancés) » (base,
+    puis les avancés possibles entre parenthèses) ; en devoir partiel, sur les seuls
+    calculs retenus ; si seuls des calculs avancés sont retenus, « + N points de calculs
+    avancés ».
+  - **Aucun barème hors devoir** : ma première version l'affichait aussi en
+    entraînement libre (anonyme ou connecté hors devoir) et pondérait le panneau de score
+    du mode libre ; corrigé à la demande de David. `Bareme.afficher(!!etatDevoir)` est appelé
+    par la fiche une fois le devoir connu (`initialiserFiche`), et `afficher(false)` à la fin des
+    essais (`passerEnEntrainementLibre`) ; `Bareme.visible()` (et non `actif()`) décide du
+    calcul pondéré et du panneau de score.
+  - **Tests** (élèves jetables, supprimés) : visiteur anonyme en mode libre : aucune
+    pastille, aucun encart, panneau « 3 / 28 » comme avant ; élève connecté sur une fiche
+    sans devoir : rien ; avec un devoir : 28 pastilles et l'encart complet, retirés par
+    `passerEnEntrainementLibre()` ; validation : tentative enregistrée « 3 / 24,5 » (25
+    questions) ; 50 fiches : 0 erreur de syntaxe.
