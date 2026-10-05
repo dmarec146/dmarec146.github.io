@@ -7151,3 +7151,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   u + ½v (→ AB) et v + u + ½w (→ EF) ; le vecteur p de la figure, qui ne servait qu'à la question
   retirée, est effacé (CD reste comme réponse possible du QCM). 16.15 (colinéarité avec un
   paramètre) garde les anciens a) et c). Vérifié : 5 × 36 corrigés acceptés, 0 erreur MathJax.
+
+- **Barème de la fiche 16 de Première (05/10/2026).** Base 22 points, bonus 11 (16.15 à 16.17,
+  calculs avancés). Points de David : 16.1 b) 0,5 ; 16.7 a) 0,5 ; 16.10 a) et b) 0,5 ; 16.11 a)
+  et b) 1 ; puis 16.5 b) 1 pour un total entier. Fichier `outils/bareme/fiche-16.json`, câblage
+  par `cabler-fiche.js 16`. Contrôle : 36 questions tirées, toutes pointées.
