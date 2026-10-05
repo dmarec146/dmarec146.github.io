@@ -7125,3 +7125,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   d'après le titre ». « Décomposer un vecteur » (terme inventé à la refonte) remplacé par
   « Relation de Chasles. A, B et C désignent trois points du plan. Écrire u sous la forme
   aAB + bAC » (forme mise en valeur) ; 16.11 : « … sous la forme kAB, où k dépend de α ».
+
+- **Lettres des QCM centrées dans leur cercle (05/10/2026), 26 fiches de Première.** David : « dans
+  les QCM, le b n'est jamais bien centré dans le cercle ». Cause : la boîte de la police (Georgia
+  italique 12,5 px) est centrée, pas le dessin de la lettre ; une lettre à jambage montant (b, d)
+  monte de 2 px par rapport à a, c, e (mesuré). Correctif : classe `q-qcm-lettre-haute`
+  (`padding-top: 4px`, la boîte reste de 20 px grâce à `box-sizing: border-box`) posée par le
+  gabarit des options sur b, d, f, h, k, l. Mêmes CSS et gabarit dans les 26 fiches concernées.

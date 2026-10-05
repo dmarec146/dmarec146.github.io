@@ -347,6 +347,9 @@ Bareme.definir({"points":{"12.1 a)":0.75,"12.1 b)":1,"12.2 a)":0.5,"12.2 b)":0.7
     font-family: Georgia, serif;
     flex-shrink: 0;
   }
+  /* lettre a jambage montant (b, d...) : la boite de la police la place 2 px trop haut ;
+     decalee pour etre centree dans le cercle comme a, c, e (05/10/2026, David) */
+  .q-qcm-lettre-haute { padding-top: 4px; }
   .q-input {
     font-family: 'Courier New', monospace;
     font-size: 16px; /* >=16px : évite le zoom auto iOS au focus */
@@ -2708,7 +2711,7 @@ function construireGrilles() {
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal || ex.sansEgal) ? '' : ' =';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options">${ex.options.map(o =>
-            `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
+            `<span class="q-qcm-option"><span class="q-qcm-lettre${/^[bdfhkl]$/.test(o.lettre) ? ' q-qcm-lettre-haute' : ''}">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
           ).join('')}</div>`
         : '';
       div.innerHTML = `

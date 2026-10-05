@@ -342,6 +342,9 @@ Bareme.definir({"points":{"1.1 a)":0.5,"1.1 b)":0.75,"1.2 a)":0.5,"1.2 b)":0.75,
     font-family: Georgia, serif;
     flex-shrink: 0;
   }
+  /* lettre a jambage montant (b, d...) : la boite de la police la place 2 px trop haut ;
+     decalee pour etre centree dans le cercle comme a, c, e (05/10/2026, David) */
+  .q-qcm-lettre-haute { padding-top: 4px; }
   .q-input {
     font-family: 'Courier New', monospace;
     font-size: 16px; /* >=16px : évite le zoom auto iOS au focus */
@@ -2702,7 +2705,7 @@ function construireGrilles() {
       const suffixe = (typesSansEgal.includes(ex.type) || enonceContientEgal) ? '' : ' =';
       const blocOptionsQCM = (ex.type === 'qcm' && Array.isArray(ex.options))
         ? `<div class="q-qcm-options">${ex.options.map(o =>
-            `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
+            `<span class="q-qcm-option"><span class="q-qcm-lettre${/^[bdfhkl]$/.test(o.lettre) ? ' q-qcm-lettre-haute' : ''}">${o.lettre}</span><span>${o.texteLibreOption ? o.texte : '\\(' + o.texte + '\\)'}</span></span>`
           ).join('')}</div>`
         : '';
       div.innerHTML = `
@@ -3303,7 +3306,7 @@ function blocQCMCourbeVersCanonique(id, lettre, params) {
   return `<div class="qcm-bloc">
   <p class="qcm-sous-question"><span class="q-lettre">${lettre})</span></p>
   <div class="figure-centree"><span class="figure-avec-curseur">${courbe}${boutonCurseurHTML()}</span></div>
-  <div class="q-qcm-options">${options.map(o => `<span class="q-qcm-option"><span class="q-qcm-lettre">${o.lettre}</span><span>\\(${o.texte}\\)</span></span>`).join('')}</div>
+  <div class="q-qcm-options">${options.map(o => `<span class="q-qcm-option"><span class="q-qcm-lettre${/^[bdfhkl]$/.test(o.lettre) ? ' q-qcm-lettre-haute' : ''}">${o.lettre}</span><span>\\(${o.texte}\\)</span></span>`).join('')}</div>
   <div class="question" id="q-${idx}">
     <span class="q-lettre">Réponse&nbsp;:</span>
     <input type="text" class="q-input" id="input-${idx}" placeholder="a, b, c ou d" autocomplete="off" style="max-width:100px;">
