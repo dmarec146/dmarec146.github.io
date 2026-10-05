@@ -7041,3 +7041,7 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Barème de la fiche 7 de Première (05/10/2026).** Base 19 points, bonus 11,5 (7.10 à 7.14,
   calculs avancés). Retouches de David : 7.2 a) 0,75 et b) 1 ; 7.4 c) 0,75 ; 7.8 a) 1,25 et
   b) 1,5 ; 7.9 1,5 ; puis 7.3 b) à 0,5 pour un total entier. Fichier `outils/bareme/fiche-07.json`.
+
+- **Barème de la fiche 8 de Première (05/10/2026).** Base 22 points, bonus 5 (8.10 à 8.12,
+  calculs avancés). Points de David : 8.1 b) 0,75 ; 8.2 a) 0,75 ; 8.3 a) 0,5 ; 8.4 à 0,5 par
+  question ; 8.5 à 1 par question ; 8.6 à 0,5 par question. Fichier `outils/bareme/fiche-08.json`.
