@@ -6850,3 +6850,21 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   fraction/racine sans → ; essai à la souris sur la fiche 2 (a/b, 3, →, 4 → 3/4, focus conservé) ;
   50 fiches : 0 erreur de syntaxe. Un défaut de mon banc (nettoyage qui supprimait le « s » de
   sqrt) a produit de faux KO avant correction.
+
+- **Dernier crochet rogné dans les champs longs (05/10/2026).** Point « non traité » de l'audit,
+  à la demande de David : une réponse longue (réunion d'intervalles, fractions à radicaux) dépassait
+  la largeur fixe du champ (265 px de contenu pour 190 visibles) et son dernier caractère était
+  rogné au repos. `claviers.js` (section 5) : au repos, un champ qui déborde passe sur sa propre
+  ligne (les lignes de question sont en `flex-wrap` ; la touche ⌨ reste à droite), puis, si cela ne
+  suffit pas (téléphone), réduit sa police jusqu'à 12 px. Mesure sur `.ML__content` (scrollWidth >
+  clientWidth). Rien ne change pendant la frappe ; à la sortie du champ la mise en page s'ajuste.
+  **Premiers essais** : la mesure tombait parfois avant que MathLive ait dessiné le champ (aucun
+  réessai) et avant le chargement des polices : réessais pendant 3 s et nouvelle mesure au
+  chargement et à `document.fonts.ready`. **Vérifié** : 50 fiches à 1000 px (champs rognés : aucun
+  une fois l'attente suffisante ; les échecs observés par séries venaient d'un banc trop pressé,
+  rejoués OK) ; à 375 px, 18 champs avec des réponses réalistes sur 12 fiches : aucun rogné, police
+  réduite à 13–15 px pour 3 ; scénario réel (frappe, clic ailleurs) : champ rogné en cours de saisie,
+  entièrement visible à la sortie ; ⌨ toujours à droite. Pas de débordement horizontal de la page
+  causé par ce changement (Première 14, 16, 22 débordent déjà : un tableau et des énoncés MathJax,
+  non traités). Banc : phase `largeur`. Reste ouvert : `]-∞;+∞[` refusé là où ℝ est attendu
+  (Première 2.12).

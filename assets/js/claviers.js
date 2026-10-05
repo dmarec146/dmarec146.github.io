@@ -426,3 +426,78 @@
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+// --- 5. Champs mathematiques : reponse longue entierement visible au repos -------------------------
+//
+// 05/10/2026 (audit des claviers). Un <math-field> a une largeur fixe : une reponse longue (reunion
+// d'intervalles, fraction a radicaux...) deborde et son dernier caractere (le crochet fermant)
+// est rogne quand le champ n'a pas le focus (relu apres un enregistrement, ou apres la frappe).
+// Au repos, un champ qui deborde :
+//   1. passe sur sa propre ligne, sur toute la largeur (les lignes de question sont en flex-wrap ;
+//      la touche ⌨ reste a sa droite) ;
+//   2. si cela ne suffit pas (telephone), reduit sa police par pas de 1 px, jusqu'a 12 px.
+// Rien n'est modifie pendant la frappe (le champ defile deja jusqu'au curseur) ; un champ qui
+// ne deborde plus (reponse effacee ou raccourcie) retrouve sa taille normale.
+(function () {
+  const CHAMP = 'math-field.q-mathfield';
+
+  function style() {
+    if (document.getElementById('champ-long-style')) return;
+    const s = document.createElement('style');
+    s.id = 'champ-long-style';
+    s.textContent = '.q-mathfield.q-mathfield-long { flex: 1 1 calc(100% - 64px); min-width: 0; }';
+    document.head.appendChild(s);
+  }
+
+  const contenu = (mf) => (mf.shadowRoot ? mf.shadowRoot.querySelector('.ML__content') : null);
+  const deborde = (c) => c.scrollWidth > c.clientWidth + 1;
+
+  // essai : numero de la tentative (MathLive dessine le champ apres coup : contenu absent ou de largeur
+  // nulle tant qu'il n'est pas pret, on reessaie pendant environ 3 s).
+  function ajuster(mf, essai) {
+    if (mf.hasFocus && mf.hasFocus()) return;
+    const c = contenu(mf);
+    if (!c || !c.clientWidth) {
+      if ((essai || 0) < 10) setTimeout(() => ajuster(mf, (essai || 0) + 1), 300);
+      return;
+    }
+    style();
+    mf.classList.remove('q-mathfield-long');
+    mf.style.fontSize = '';
+    if (!deborde(c)) return;
+    mf.classList.add('q-mathfield-long');
+    let taille = parseFloat(getComputedStyle(mf).fontSize) || 17;
+    while (deborde(c) && taille > 12) {
+      taille -= 1;
+      mf.style.fontSize = taille + 'px';
+    }
+  }
+
+  const enAttente = new Set();
+  function planifier(mf) {
+    if (enAttente.has(mf)) return;
+    enAttente.add(mf);
+    // MathLive emet « input » en differe apres setValue et dessine apres un court instant.
+    setTimeout(() => requestAnimationFrame(() => { enAttente.delete(mf); ajuster(mf); }), 150);
+  }
+
+  const estChamp = (n) => n instanceof Element && n.matches(CHAMP);
+  document.addEventListener('focusout', (e) => { if (estChamp(e.target)) planifier(e.target); }, true);
+  // setValue (restauration d'un brouillon, vidage) : « input » alors que le champ n'a pas le focus
+  document.addEventListener('input', (e) => { if (estChamp(e.target) && !(e.target.hasFocus && e.target.hasFocus())) planifier(e.target); }, true);
+  window.addEventListener('resize', () => document.querySelectorAll(CHAMP).forEach(planifier));
+  // Les polices de MathLive arrivent apres coup et changent les largeurs : nouvelle mesure.
+  const toutRemesurer = () => document.querySelectorAll(CHAMP).forEach(planifier);
+  window.addEventListener('load', toutRemesurer);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(toutRemesurer);
+
+  new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const n of m.addedNodes) {
+        if (n.nodeType !== 1) continue;
+        if (estChamp(n)) planifier(n);
+        else n.querySelectorAll && n.querySelectorAll(CHAMP).forEach(planifier);
+      }
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
+})();

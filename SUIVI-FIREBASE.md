@@ -337,7 +337,13 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   sur tout clavier à écran muni de a/b, √ (ou ÷ en champ mathématique) : champ mathématique =
   flèche droite de MathLive (`moveToNextChar`, qui remet `boiteRacineOuverte[idx]` à faux) ; champ
   texte = case ▢ du dénominateur (« )/(▢ »), sinon sortie d'un niveau de parenthèse ;
-  une pression = un niveau, dans les deux types de champ.
+  une pression = un niveau, dans les deux types de champ. **Réponse longue (05/10/2026)** :
+  `claviers.js` (section 5) mesure chaque `math-field.q-mathfield` **au repos** (focusout, setValue,
+  chargement, redimensionnement, polices chargées ; réessais pendant 3 s) : s'il déborde, il passe
+  sur sa propre ligne (`q-mathfield-long`, `flex: 1 1 calc(100% - 64px)`), puis réduit sa police
+  jusqu'à 12 px (téléphone) ; rien n'est modifié pendant la frappe. Limite MathLive : `setValue('')`
+  n'émet pas d'événement `input`, un champ vidé par programme garde sa mise en page jusqu'à la
+  sortie du champ.
 - Tests : injecter du LaTeX (`setValue(latex, {format:'latex'})`) ;
   `\displaystyle\sum` et `\left\{…\right\}` ne se relisent pas (sommes :
   `\sum_{k=1}^{n}…` comme la touche Σ ; ensembles : `\lbrace…\rbrace`) ;

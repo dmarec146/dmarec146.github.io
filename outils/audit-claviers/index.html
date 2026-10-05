@@ -203,14 +203,35 @@ function testerFleches(w) {
 }
 A.testerFleches = testerFleches;
 
+
+// ---- Largeur : une reponse longue reste entierement visible au repos, sans deborder de la page ---------
+async function testerLargeur(w) {
+  const champs = [...w.document.querySelectorAll('math-field.q-mathfield')];
+  const choix = [champs.find((m) => !/;/.test(m.getAttribute('placeholder') || '')), champs.find((m) => /;/.test(m.getAttribute('placeholder') || ''))].filter(Boolean);
+  const longs = ['\\frac{49}{25}z^{2}+\\frac{42}{5}z+9+\\frac{49}{25}z^{2}+\\frac{42}{5}z+9+\\frac{49}{25}z^{2}', ']-\\infty;\\frac{-3-\\sqrt{5}}{2}[\\cup]\\frac{-3+\\sqrt5}{2};+\\infty['];
+  const res = [];
+  for (const [i, m] of choix.entries()) {
+    m.setValue(/;/.test(m.getAttribute('placeholder') || '') ? longs[1] : longs[0], { format: 'latex' });
+  }
+  await dormir(2500);
+  for (const m of choix) {
+    const c = m.shadowRoot.querySelector('.ML__content');
+    res.push({ id: m.id, ph: m.getAttribute('placeholder'), long: m.classList.contains('q-mathfield-long'), police: m.style.fontSize || '', coupe: c.scrollWidth > c.clientWidth + 1, largeur: Math.round(m.getBoundingClientRect().width) });
+  }
+  const racine = w.document.documentElement;
+  return { champs: res, debordePage: racine.scrollWidth > w.innerWidth + 1, largeurPage: racine.scrollWidth, fenetre: w.innerWidth };
+}
+A.testerLargeur = testerLargeur;
+A.largeurIframe = (px) => { document.getElementById('f').style.width = px + 'px'; };
+
 // ---- Pilote : A.audit('ecran' | 'fumee' | 'fleches' | 'inventaire') puis lire window.AUDIT[phase] une fois AUDIT_FIN vrai ------
 window.AUDIT = {}; window.AUDIT_FIN = true;
 A.audit = async (phase) => {
   window.AUDIT[phase] = {}; window.AUDIT_FIN = false;
-  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
+  const f = { ecran: (w) => A.testerClaviersEcran(w), fumee: (w) => A.fumeeFiche(w), fleches: (w) => A.testerFleches(w), largeur: (w) => A.testerLargeur(w), inventaire: (w) => A.inventaireFiche(w) }[phase];
   for (const u of A.FICHES) {
     const cle = u.replace('/cahiers/', '').replace('.html', '');
-    try { const w = await A.charger(u); window.AUDIT[phase][cle] = f(w); } catch (e) { window.AUDIT[phase][cle] = { erreur: String(e) }; }
+    try { const w = await A.charger(u); window.AUDIT[phase][cle] = await f(w); } catch (e) { window.AUDIT[phase][cle] = { erreur: String(e) }; }
   }
   window.AUDIT_FIN = true;
 };
