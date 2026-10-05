@@ -7082,3 +7082,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   avancés). Points de David : 14.4 c) 0,5 ; 14.5 d) 0,5 ; 14.6 à 0,75 par question ; 14.13 a) 0,5 ;
   14.14 à 0,75 par question ; puis 14.9 b), 14.9 c) et 14.10 c) à 0,75 pour un total entier.
   Fichier `outils/bareme/fiche-14.json`.
+
+- **Barème de la fiche 15 de Première (05/10/2026).** Base 24 points, bonus 15 (15.11 à 15.14, calculs
+  avancés). Points de David : 15.3 b) 0,5 ; 15.4 d) 1 ; 15.5 à 0,75 par question ; 15.6 c) 1 ; puis
+  15.2 a) 0,75 pour un total entier. Fichier `outils/bareme/fiche-15.json`. Avec cette fiche, les
+  barèmes des fiches 1 à 15 de Première sont posés (la 9 l'était déjà).
