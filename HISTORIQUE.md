@@ -7005,3 +7005,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 
 - **Barème de la fiche 3 de Première : total de base entier (05/10/2026).** David : première
   option proposée. 3.5 a) 1, 3.2 c) 1, 3.6 a) 0,75. Base 19 points, bonus 6,75.
+
+- **Barème de la fiche 4 de Première (05/10/2026).** David : automatismes 4.1 et 4.2 à
+  0,5 (rien de compliqué) ; 4.3, 4.4 et 4.5 à 1 point chaque question (il faut avoir compris
+  la tangente et le coefficient directeur) ; puis 4.1 c) à 1 pour un total entier. Base 9
+  points, bonus 11 (4.6, problème guidé, calculs avancés). Fichier `outils/bareme/fiche-04.json`.
