@@ -307,6 +307,16 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 - `valeurDuChamp` lit un `<math-field>` en ascii-math ; pour réécrire une
   saisie : `setValue(v, {format:'ascii-math'})`, jamais `.value =` (lu
   comme du LaTeX : `sqrt(6)` → « s q r t(6) »).
+- **Crochets d'intervalle (05/10/2026)** : l'ascii-math **perd les crochets
+  isolés** (« ] », « [ » d'un intervalle) quand on réécrit une saisie. Les
+  brouillons mémorisent donc aussi le LaTeX du champ (`saisies[idx].latex`,
+  `getValue('latex')`) et le restaurent par `setValue(latex, {format:'latex'})` ;
+  un brouillon ancien sans `latex` retombe sur l'ascii-math (crochets perdus,
+  accepté). De plus, un crochet ou un « ; » tapé alors que le curseur est dans
+  un dénominateur ou sous une racine y reste enfermé : `claviers.js` (section 3)
+  sort du modèle (`moveAfterParent`) avant « [ », « ] » et « ; » dans les champs
+  d'intervalle (placeholder contenant « ; »), au clavier physique (`keydown` et
+  `beforeinput`) comme au clavier à l'écran (`insererMath` enveloppé).
 - Tests : injecter du LaTeX (`setValue(latex, {format:'latex'})`) ;
   `\displaystyle\sum` et `\left\{…\right\}` ne se relisent pas (sommes :
   `\sum_{k=1}^{n}…` comme la touche Σ ; ensembles : `\lbrace…\rbrace`) ;

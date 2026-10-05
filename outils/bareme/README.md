@@ -26,7 +26,8 @@ et le total en tête de fiche (jamais la catégorie ni l'explication).
   points (+ M points de calculs avancés) » en tête) et calcul de la note (`Bareme.calculer`).
   **Le barème ne concerne que les devoirs** : la fiche appelle `Bareme.afficher(!!etatDevoir)` ;
   visiteur anonyme, élève connecté hors devoir ou devoir terminé (entraînement libre) : rien
-  n'est affiché et la fiche compte comme avant.
+  n'est affiché et la fiche compte comme avant. En devoir, le panneau de score n'écrit plus
+  « bonnes réponses » après la note (`<span id="score-suffixe">` masqué par `afficher(true)`).
 - Chaque fiche contient `Bareme.definir({...})` : **généré** par `node appliquer-bareme.js NN`
   à partir de `fiche-NN.json` (à relancer après toute modification des points ;
   `--verif` signale un écart sans écrire).

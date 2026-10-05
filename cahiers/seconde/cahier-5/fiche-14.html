@@ -2676,6 +2676,8 @@ function verifierUne(idx) {
     statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
   }
   saisies[idx] = { id: ex.id, valeur: val, correct: ok };
+  // LaTeX du champ mathématique : l'ascii-math perd les crochets isolés (intervalles) au rechargement.
+  if (input.tagName === 'MATH-FIELD') saisies[idx].latex = input.getValue('latex');
   if (window.enregistrerTentative) window.enregistrerTentative(FICHE_ID, ex.id, ok, PASSE_ACTUELLE, exercices.length);
   return ok;
 }
@@ -3220,7 +3222,10 @@ async function initialiserFiche() {
       } else if (typeof saisie.valeur === 'string') {
         const input = document.getElementById('input-' + idx);
         if (input) {
-          if (input.tagName === 'MATH-FIELD') input.setValue(saisie.valeur, { format: 'ascii-math' });
+          if (input.tagName === 'MATH-FIELD') {
+          if (typeof saisie.latex === 'string') input.setValue(saisie.latex, { format: 'latex' });
+          else input.setValue(saisie.valeur, { format: 'ascii-math' });
+        }
           else input.value = saisie.valeur;
           verifierUne(Number(idx));
         }

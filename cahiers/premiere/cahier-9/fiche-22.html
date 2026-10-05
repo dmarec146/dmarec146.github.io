@@ -2053,6 +2053,8 @@ function verifierUne(idx) {
     statut.className = 'q-statut ' + (ok ? 'ok' : 'ko');
   }
   saisies[idx] = { id: ex.id, valeur: val, correct: ok };
+  // LaTeX du champ mathématique : l'ascii-math perd les crochets isolés (intervalles) au rechargement.
+  if (input.tagName === 'MATH-FIELD') saisies[idx].latex = input.getValue('latex');
   return ok;
 }
 
@@ -3053,7 +3055,10 @@ definirMode(true);
       const saisie = brouillon.saisies[idx];
       const input = document.getElementById('input-' + idx);
       if (input && saisie && typeof saisie.valeur === 'string') {
-        if (input.tagName === 'MATH-FIELD') input.setValue(saisie.valeur, { format: 'ascii-math' });
+        if (input.tagName === 'MATH-FIELD') {
+          if (typeof saisie.latex === 'string') input.setValue(saisie.latex, { format: 'latex' });
+          else input.setValue(saisie.valeur, { format: 'ascii-math' });
+        }
         else input.value = saisie.valeur;
         verifierUne(Number(idx));
       }

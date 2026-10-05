@@ -95,6 +95,7 @@
   function poser() {
     if (!POINTS || !VISIBLE || typeof exercices === 'undefined') return;
     style();
+    suffixeScore(true);
     exercices.forEach((e, i) => {
       const p = POINTS[e.id];
       if (typeof p !== 'number') return;
@@ -116,7 +117,15 @@
     if (ban) mettre(ban, texteTotal(exercices));
   }
 
+  // Panneau de score : en devoir, la note est en points (« 9,25 / 24,5 ») et le mot « bonnes réponses »
+  // n'a plus de sens ; hors devoir, il reste (la fiche l'écrit dans <span id="score-suffixe">).
+  function suffixeScore(masquer) {
+    const s = document.getElementById('score-suffixe');
+    if (s) s.hidden = masquer;
+  }
+
   function retirer() {
+    suffixeScore(false);
     document.querySelectorAll('.bareme-pastille').forEach((e) => e.remove());
     document.querySelectorAll('.bareme-rel').forEach((e) => e.classList.remove('bareme-rel'));
     const ban = document.getElementById('bareme-bandeau');

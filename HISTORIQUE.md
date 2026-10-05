@@ -6757,3 +6757,26 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     sans devoir : rien ; avec un devoir : 28 pastilles et l'encart complet, retirés par
     `passerEnEntrainementLibre()` ; validation : tentative enregistrée « 3 / 24,5 » (25
     questions) ; 50 fiches : 0 erreur de syntaxe.
+
+- **Crochets d'intervalle perdus, « bonnes réponses » en devoir (05/10/2026).** Deux
+  retours de David après son test en ligne.
+  - **Démo** : devoir de `demo-eleve` supprimé (le test en ligne a fonctionné).
+  - **« bonnes réponses »** : en devoir avec barème (fiches 2 et 9), le panneau de score
+    n'affiche plus que la note (« 9,25 / 24,5 ») ; le mot reste hors devoir.
+    `<span id="score-suffixe">` dans les deux fiches, masqué par `Bareme.afficher(true)`.
+  - **Crochet tapé au clavier, fiche 2** : frappé après une fraction (réponse du type
+    « ]2 ; 7/2 [ »), le « [ » restait dans le dénominateur (`\frac{7}{[2}`) : affichage
+    cassé et réponse fausse. `claviers.js` sort maintenant de la fraction/racine avant
+    « [ », « ] » et « ; » dans les champs d'intervalle (clavier physique, `beforeinput`,
+    clavier à l'écran). Hypothèse non vérifiée : AltGr de l'AZERTY ; couverte par
+    `beforeinput`.
+  - **Crochet disparu au retour sur la fiche** : l'ascii-math ne relit pas un crochet
+    isolé. Les 50 fiches mémorisent désormais le LaTeX dans le brouillon (`saisies[idx].latex`)
+    et le restaurent tel quel ; anciens brouillons : comportement d'avant.
+  - **Tests** (élève et devoir jetables, supprimés) : frappe réelle de « ]-2;5[ », réponses
+    LaTeX « [1;+\infty[ » et « ]-\infty;\frac{3}{2}[\cup]4;+\infty[ » : enregistrement du
+    brouillon, rechargement, trois champs identiques ; crochet tapé dans un dénominateur et
+    sous une racine : le crochet sort du modèle ; 50 fiches : 0 erreur de syntaxe.
+  - **Observation non traitée** : une réponse longue (réunion d'intervalles) dépasse la
+    largeur du champ (142 px pour 130 px visibles) et le dernier crochet est rogné au
+    repos ; élargir les champs d'intervalle serait un chantier d'affichage séparé.

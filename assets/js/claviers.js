@@ -220,3 +220,60 @@
   }).observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener('DOMContentLoaded', planifier);
 })();
+
+// --- 3. Sortie d'une fraction ou d'une racine avant « [ », « ] » et « ; » ---------------
+//
+// 05/10/2026, retour de David (fiche 2 de Premiere). Dans un champ mathematique, apres une
+// fraction (bouton a/b ou ÷) le curseur reste au DENOMINATEUR, et dans une racine sous le
+// radical : un « [ » tape pour finir l'intervalle ]2 ; 7/2[ entrait dans le denominateur
+// (\frac{7}{[2}), un « ; » apres √3 dans la racine (\sqrt{3;}). La reponse etait lue
+// fausse et l'affichage incomprehensible. Dans les champs a SEPARATEUR (placeholder avec « ; » :
+// intervalles et ensembles), ces caracteres sortent donc d'abord de la fraction ou de la
+// racine. Sans effet a la racine du champ, et jamais hors de ces champs (les parentheses des
+// autres champs ne sont pas touchees).
+(function () {
+  const SEPARATEURS = ['[', ']', ';'];
+  const TOUCHES_CLAVIER = ['[', ']', ';', '\cup', '\cap'];
+
+  const champASeparateurs = (mf) => !!mf && mf.tagName === 'MATH-FIELD' && /;/.test(mf.getAttribute('placeholder') || '');
+
+  function sortirDuModele(mf) {
+    try {
+      for (let i = 0; i < 6; i++) {
+        const avant = mf.position;
+        mf.executeCommand('moveAfterParent');
+        if (mf.position === avant) break;   // a la racine : rien a quitter
+      }
+    } catch (erreur) { /* version de MathLive sans cette commande : comportement inchange */ }
+  }
+
+  // Clavier physique : avant que MathLive n'insere le caractere (phase de capture, sur le document).
+  document.addEventListener('keydown', (evenement) => {
+    if (evenement.isComposing || !SEPARATEURS.includes(evenement.key)) return;
+    const mf = evenement.target;
+    if (champASeparateurs(mf)) sortirDuModele(mf);
+  }, true);
+  // Saisie sans keydown fiable (AltGr sur AZERTY, clavier mobile, dictée) : même sortie sur beforeinput.
+  document.addEventListener('beforeinput', (evenement) => {
+    if (evenement.isComposing || evenement.inputType !== 'insertText' || !SEPARATEURS.includes(evenement.data)) return;
+    const mf = evenement.target;
+    if (champASeparateurs(mf)) sortirDuModele(mf);
+  }, true);
+
+  // Touches du clavier a l'ecran de la fiche (insererMath, definie par chaque fiche).
+  function envelopperInsererMath() {
+    const origine = window.insererMath;
+    if (typeof origine !== 'function' || origine.__sortie) return;
+    const enveloppe = function (idx, texte) {
+      if (TOUCHES_CLAVIER.includes(texte)) {
+        const mf = document.getElementById('input-' + idx);
+        if (champASeparateurs(mf)) sortirDuModele(mf);
+      }
+      return origine.apply(this, arguments);
+    };
+    enveloppe.__sortie = true;
+    window.insererMath = enveloppe;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', envelopperInsererMath);
+  else envelopperInsererMath();
+})();
