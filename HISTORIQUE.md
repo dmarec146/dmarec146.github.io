@@ -7295,3 +7295,45 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   modifiés : 17.1 a) 0,5 ; 17.1 b) 0,5 ; 17.2 a) 0,75 ; 17.4 b) 0,5 ; 17.5 b) 0,75 ; 17.5 c) 1 ; 17.5 d) 1 ;
   17.6 b) 1,25 ; 17.6 c) 1,5 ; 17.9 a) 0,5 ; 17.9 b) 1 ; 17.12 a) 0,5 ; puis 17.11 b) 1,25 (option 3
   choisie pour obtenir un total de base entier : 26,5 → 26). Contrôle de cohérence : fichiers cohérents.
+
+- **Première fiche 18 (Fonctions trigonométriques I) : revue et corrections (06/10/2026), 31 questions inchangées.**
+  Revue contre REGLES-FICHES.md (calculs vérifiés indépendamment : 18.4, 18.5, 18.8 sur 7 200 tirages,
+  18.10 et 18.11 sur 4 000, corrigés retapés 930/930 avant corrections). Corrections demandées par David
+  (« corrige tout ce que tu as relevé ») :
+  - **Rendu** : « cos » et « sin » des énoncés 18.4 et 18.5 s'affichaient en italique (code LaTeX sans
+    `\`) → `\cos`, `\sin`.
+  - **Automatismes (règle de diversité)** : les six questions n'étaient que des conversions d'angles et des
+    sommes de fractions de π. Nouveau 18.1 : inéquation du 1er degré avec parenthèses des deux côtés
+    m(px+q) ◊ n(rx+s) (|m|,|n| ≥ 2) + inéquation produit (ax+b)(cx+d) ◊ 0, réponse en intervalle ;
+    18.2 : équation k₁/(x+b)=k₂/(x+d) + valeur absolue |ax+b|=c, réponse en ensemble (clavier
+    d'ensemble `groupeEnsembleClavier` repris de la fiche 17) ; 18.3 : conversions (a) radians → degrés,
+    (b) degrés → radians en fraction de π irréductible, angles tirés dans ]0 ; 2π[ avec dénominateurs
+    2 à 20 (22,5° compris en b) ; le rappel de la formule de conversion passe devant 18.3. Les sommes de
+    fractions de π sont retirées. Ids 18.1 à 18.3 a/b inchangés mais **contenu entièrement nouveau**
+    (un devoir en cours sur cette fiche changerait de questions).
+  - **Formes imposées** (`formeValeur`, `estValeurSimplifiee`, `estRacineSimplifiee` reprise de la
+    fiche 17) : 18.4, 18.5, 18.8, 18.10, 18.11 « sous forme simplifiée » (0, entier, fraction irréductible,
+    racine simplifiée ; `√2/2` accepté, `√8/4`, `1/√2`, `2√2/4` refusés ; « (1/2)√3 » accepté) ; titres
+    avec la partie imposée en bleu. 18.3 b) : fraction de π irréductible contrôlée (titre « sous la forme d'une
+    fraction de π irréductible »). Le zéro est accepté (cos(3π/2)).
+  - **Unité** : « 75° » (ou ^\circ, « deg ») accepté en 18.3 a) (`uniteDegre`), aide complétée.
+  - **Intervalles à point-virgule** : options de 18.7 b), 18.9 b), énoncés 18.10 et 18.11.
+  - **18.6** : consigne commune (« Dans chaque cas… Quelle est l'affirmation juste ? ») dite une fois dans
+    l'introduction ; questions « Fonction cos, avec 0 ≤ t₁ < t₂ ≤ π/2 »… (plus de « Même question pour sin »).
+  - **Titres** : 18.9 « Parité et périodicité de la tangente », 18.11 « Avec la tangente ».
+  - **18.9 b)** : `tan(x)`, `-tan(x)`, « tan x », `\tan(x)` tolérés (`tolereTan`, `checkTanTolerant`) ;
+    trois familles de questions : tan(x ± nπ), tan(nπ − x), tan(−x ± nπ), n de 1 à 9 (45 énoncés).
+  - **Variété** (600 tirages) : 18.1 a/b 600, 18.2 a/b 586/496, 18.3 93/96, 18.4 32 (au lieu de 16 : deux cos et
+    deux sin dans un ordre tiré), 18.5 117-122, 18.9 b 45 (au lieu de 8), 18.10 48/110, 18.11 a 80,
+    b 28 (au lieu de 4), c 76 (au lieu de 4). 18.8 reste à 14 : tableau fini des angles remarquables.
+    18.5 ne tire plus d'angle déjà dans [0 ; 2π[. 18.10/18.11 : x dans un quadrant tiré (signe des
+    réponses variable), réponses toujours réduites (`surdFrac`), signe devant la fraction dans les énoncés.
+  - **Corrigés** : signe moins devant la fraction même avec un numérateur à accolades emboîtées
+    (`signeDevantFraction` : « −√2/2 » et non « (−√2)/2 » ; l'ancien motif ne traitait que « −4 »).
+    Constaté aussi dans la fiche 17 (même motif) : non corrigé, à faire si David le demande.
+  - Code mort supprimé (variables inutilisées de 18.3, commentaires d'anciens numéros).
+  Vérifié : 31 questions, 11 groupes, 0 erreur MathJax ; calcul indépendant des nouvelles questions
+  (inéquations testées sur des points et aux bornes avec inclusion, équations par substitution,
+  conversions, périodicité) 1 000 à 10 200 tirages sans écart ; cycle complet 30 × 31 = 930 réponses
+  acceptées (intervalles et ensembles saisis au clavier texte) ; écritures non simplifiées refusées (22
+  cas) ; audit des claviers d'intervalles (`reels`) OK ; captures des sections modifiées.
