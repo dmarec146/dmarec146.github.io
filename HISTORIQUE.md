@@ -7370,3 +7370,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   centaines, ex. −143π/6, 121π/6, 113π/3). Vérifié : valeurs recalculées sur 3 200 tirages sans écart,
   amplitudes mesurées (c et d : de 8,0π à 41,8π), 570 énoncés distincts par question, cycle complet 48
   réponses acceptées.
+
+- **Première fiche 18, 18.7 : plus aucun rappel de formule (06/10/2026).** David : « 18.7 aucun rappel de
+  formule ». Le rappel « On pourra utiliser la formule cos²(x)+sin²(x)=1 » est retiré (la formule fait partie
+  de ce que l'élève doit connaître ; consigne déjà dite : rien qui indique la démarche). Aucun autre
+  changement ; les rappels de définition (conversion en 18.3, mesure principale en 18.4, tangente avant
+  18.10) sont conservés.
