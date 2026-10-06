@@ -7200,3 +7200,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     comme une seule variable : 17.8 b) et 17.13 e) refusaient la bonne réponse).
   - Vérifié : cycle 8 × 43 accepté, réponses sans parenthèses refusées, mauvaises réponses
     refusées, 0 erreur MathJax.
+
+- **Multiplication écrite × dans tous les claviers (06/10/2026), 50 fiches.** David : la touche * (ou ×)
+  doit afficher le symbole × comme dans les corrigés, et non un point. Cause : la touche × du clavier
+  MathLive insère `\cdot` (le × n'est qu'en Maj), et `*` tapé donne `*` dans un champ mathématique.
+  Correctif dans `assets/js/claviers.js` (chargé par les 50 fiches) :
+  - clavier MathLive : touche × = `\times` (le point passe en Maj) ;
+  - champ mathématique : `*` tapé (clavier du PC, collé) devient `\times` ; touche × des claviers
+    simplifiés = `\times` ;
+  - champ texte : `*` tapé ou inséré par une touche devient « × » ; `valeurDuChamp` remet « * » à
+    la lecture (les correcteurs lisaient déjà ×, ceinture et bretelles) ; un brouillon repris avec
+    « * » affiche « × » au focus.
+  Vérifié par frappe réelle (3*4 → 3×4 dans un champ mathématique, ]-3*2;4[ → ]-3×2;4[ dans un
+  champ texte) et cycles complets : fiche 17 de Première (215 questions), fiche 12 de Première
+  (92), fiche 5 de Seconde (120) : 0 refus, 0 erreur MathJax. Pages d'automatismes non traitées
+  (elles ne chargent pas `claviers.js`).

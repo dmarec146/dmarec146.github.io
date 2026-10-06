@@ -44,10 +44,18 @@
     const lignes = numerique && numerique.layers && numerique.layers[0] && numerique.layers[0].rows;
     if (!Array.isArray(lignes)) return;
 
+    // Touche « × » : MathLive y met un point (\cdot, le × n'etant qu'en Maj) ; elle ecrit desormais
+    // le symbole × des corriges, le point passant en Maj (06/10/2026, demande de David).
+    let change = false;
+    for (const ligne of lignes) {
+      const i = ligne.findIndex((t) => t && typeof t === 'object' && t.latex === '\\cdot');
+      if (i >= 0) { ligne[i] = Object.assign({}, ligne[i], { latex: '\\times', shift: { latex: '\\cdot' } }); change = true; break; }
+    }
+
     const integrale = trouverTouche(lignes, '\\int');
     const pourTout = trouverTouche(lignes, '\\forall');
     const imaginaire = trouverTouche(lignes, '\\imaginaryI');
-    if (!integrale || !pourTout || !imaginaire) return;
+    if (!integrale || !pourTout || !imaginaire) { if (change) clavier.layouts = dispositions; return; }
 
     imaginaire.ligne[imaginaire.i] = integrale.ligne[integrale.i];
     integrale.ligne[integrale.i] = { label: '{', insert: '\\{', tooltip: 'Accolade ouvrante', shift: { label: '∅', insert: '\\emptyset' } };
@@ -531,4 +539,77 @@
     + ' .q-enonce table { display: block; width: fit-content; max-width: 100%; overflow-x: auto; padding-bottom: 4px; }'
     + ' }';
   (document.head || document.documentElement).appendChild(s);
+})();
+
+// --- 5. Multiplication ecrite « × » ---------------------------------------------------------------
+//
+// 06/10/2026, demande de David : « * » (clavier du PC) et la touche × des claviers a l'ecran doivent
+// afficher le symbole ×, comme les corriges, et non un point ou un asterisque. Les correcteurs des
+// 50 fiches lisent deja « × » comme une multiplication (normaliserSaisie) ; par prudence, la valeur
+// lue dans un champ texte est de toute facon remise en « * » (valeurDuChamp enveloppee).
+//   - champ mathematique : « * » tape devient \times (la touche × du clavier MathLive : section 1) ;
+//   - champ texte : « * » tape, colle ou insere par une touche devient « × ».
+(function () {
+  const estTexte = (el) => !!el && el.tagName === 'INPUT' && /^input-/.test(el.id || '');
+  const estMath = (el) => !!el && el.tagName === 'MATH-FIELD';
+  function insererAvecFois(mf, texte) {
+    texte.split('*').forEach((morceau, k) => {
+      if (k) mf.executeCommand(['insert', '\\times']);
+      if (morceau) mf.executeCommand(['typedText', morceau]);
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.isComposing || e.key !== '*' || e.ctrlKey || e.metaKey || e.altKey || !estMath(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.target.executeCommand(['insert', '\\times']);
+  }, true);
+  document.addEventListener('beforeinput', (e) => {
+    if (e.isComposing || typeof e.data !== 'string' || !e.data.includes('*')) return;
+    const el = e.target;
+    if (estMath(el)) { e.preventDefault(); e.stopPropagation(); insererAvecFois(el, e.data); return; }
+    if (estTexte(el)) {
+      e.preventDefault();
+      const debut = el.selectionStart ?? el.value.length, fin = el.selectionEnd ?? el.value.length;
+      el.setRangeText(e.data.replace(/\*/g, '×'), debut, fin, 'end');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, true);
+  // brouillon repris (valeur enregistree avec « * ») : affiche « × » des que le champ est repris
+  document.addEventListener('focusin', (e) => {
+    if (estTexte(e.target) && e.target.value.includes('*')) e.target.value = e.target.value.replace(/\*/g, '×');
+  });
+
+  // Touches des claviers de chaque fiche (inserer, insererMath ; insererFonction passe par inserer).
+  function envelopperInsertion(nom) {
+    const origine = window[nom];
+    if (typeof origine !== 'function' || origine.__fois) return;
+    const enveloppe = function (idx, texte) {
+      const champ = document.getElementById('input-' + idx);
+      const args = [...arguments];
+      if (typeof texte === 'string' && texte.includes('*') && !texte.includes('\\')) {
+        if (estTexte(champ)) args[1] = texte.replace(/\*/g, '×');
+        else if (estMath(champ)) args[1] = texte.replace(/\*/g, '\\times ');
+      } else if (texte === '\\cdot' && estMath(champ)) args[1] = '\\times';
+      return origine.apply(this, args);
+    };
+    enveloppe.__fois = true;
+    window[nom] = enveloppe;
+  }
+  function envelopperLecture() {
+    const origine = window.valeurDuChamp;
+    if (typeof origine !== 'function' || origine.__fois) return;
+    const enveloppe = function (el) {
+      const v = origine.apply(this, arguments);
+      return (estTexte(el) && typeof v === 'string') ? v.replace(/×/g, '*') : v;
+    };
+    enveloppe.__fois = true;
+    window.valeurDuChamp = enveloppe;
+  }
+  function demarrer() {
+    envelopperInsertion('inserer');
+    envelopperInsertion('insererMath');
+    envelopperLecture();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
 })();
