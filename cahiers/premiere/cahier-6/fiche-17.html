@@ -1289,7 +1289,7 @@ function genererExercices() {
     const r1=alea(-4,4), r2=alea(-4,4), r3=alea(-4,4), r4=alea(-4,4);
     const beta = math.fraction((r2-r4)-2*(r1-r3), 8);
     const alphaV = math.add(math.multiply(3,beta), math.fraction(r1-r3));
-    ex.push({id:"17.7", type:"paire", texteLibre:true, enonce:`Avec \\(A(2\\alpha+\\beta${r1===0?'':(r1>0?'+':'')+r1};-\\alpha-2\\beta${r2===0?'':(r2>0?'+':'')+r2})\\) et \\(B(3\\alpha-2\\beta${r3===0?'':(r3>0?'+':'')+r3};\\alpha${r4===0?'':(r4>0?'+':'')+r4})\\) : couple \\((\\alpha;\\beta)\\) tel que \\(\\overrightarrow{AB}=\\vec{0}\\)`, pa: fracToStr(alphaV), pb: fracToStr(beta)});
+    ex.push({id:"17.7", type:"paire", couple:true, texteLibre:true, enonce:`Avec \\(A(2\\alpha+\\beta${r1===0?'':(r1>0?'+':'')+r1};-\\alpha-2\\beta${r2===0?'':(r2>0?'+':'')+r2})\\) et \\(B(3\\alpha-2\\beta${r3===0?'':(r3>0?'+':'')+r3};\\alpha${r4===0?'':(r4>0?'+':'')+r4})\\) : couple \\((\\alpha;\\beta)\\) tel que \\(\\overrightarrow{AB}=\\vec{0}\\)`, pa: fracToStr(alphaV), pb: fracToStr(beta)});
   })();
   // Calcul 17.10 - somme de vecteurs (2 items)
   (function() {
@@ -1301,7 +1301,7 @@ function genererExercices() {
     contexte22.g10 = {A,B,u,v};
     const alphaV = math.fraction(AB[0]*v[1]-AB[1]*v[0], det);
     const betaV = math.fraction(u[0]*AB[1]-u[1]*AB[0], det);
-    ex.push({id:"17.8 b)", type:"paire", texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{AB}\\) sous la forme \\(\\alpha\\vec{u}+\\beta\\vec{v}\\), où \\(\\alpha\\) et \\(\\beta\\) sont à déterminer", pa: fracToStr(alphaV), pb: fracToStr(betaV)});
+    ex.push({id:"17.8 b)", type:"paire", couple:true, texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{AB}\\) sous la forme \\(\\alpha\\vec{u}+\\beta\\vec{v}\\), où \\(\\alpha\\) et \\(\\beta\\) sont à déterminer", pa: fracToStr(alphaV), pb: fracToStr(betaV)});
   })();
   // Calcul 17.11 - point M tel que MA+MB+MC=0 (centroide, 1 item)
   (function() {
@@ -1644,6 +1644,11 @@ function normaliserSaisie(str) {
   // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
   // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
   s = s.replace(/\)([a-zA-Z])/g, ')*$1');
+  // meme chose pour une fraction suivie d'une parenthese : « (1)/(3)(x-1)^2 » vaut (1/3)(x-1)^2, pas 1/(3(x-1)^2)
+  s = s.replace(/\)\(/g, ')*(');
+  // produit implicite ecrit avec une espace par MathLive (« p q ») : expliciter avant que les
+  // correcteurs ne suppriment les espaces (« pq » serait lu comme une seule variable)
+  s = s.replace(/([a-zA-Z0-9_)]+)\s+(?=[a-zA-Z(])/g, (m, t) => FONCTIONS_CONNUES.has(t) ? t : t + '*');
   return s;
 }
 
@@ -2319,8 +2324,8 @@ function verifierUne(idx) {
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
-  else if (ex.type === 'paire' && ex.formePoint) ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
-  else if (ex.type === 'paire') ok = checkPaire(val, ex.pa, ex.pb, ex.vars);
+  // coordonnees d'un point ou d'un vecteur, couple : parentheses exigees (06/10/2026, David)
+  else if (ex.type === 'paire') ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
@@ -2867,7 +2872,7 @@ function toggleToutesReponses() {
 }
 
 function placeholderPour(ex) {
-  if (ex.formePoint) return '(x;y)';
+  if (ex.type === 'paire') return '(x;y)';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -2917,10 +2922,13 @@ function aideContextuellePour(ex) {
     return "Écrire directement <code>sum(k,1,n,expr)</code> au clavier pour représenter &Sigma;, où <code>k</code> est l'indice, <code>1</code> et <code>n</code> les bornes, et <code>expr</code> le terme général en fonction de <code>k</code> (et <code>x</code> si besoin). Le symbole &Sigma; du clavier virtuel (Maj + touche <code>+</code>) fonctionne aussi si besoin.";
   }
   if (ex.formePoint) {
-    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code>.";
+    return "Donner les coordonnées du point sous la forme <code>(x;y)</code>, parenthèses incluses : par exemple <code>(3;-2)</code>. Sur le clavier ⌨ de l'écran, le point-virgule s'obtient avec la touche ⇧ puis la touche <code>}</code>.";
+  }
+  if (ex.type === 'paire' && ex.couple) {
+    return "Écrire le couple entre parenthèses, les deux valeurs séparées par un point-virgule : par exemple <code>(2;-1)</code>. Une réponse sans parenthèses n'est pas acceptée. Sur le clavier ⌨ de l'écran, le point-virgule s'obtient avec la touche ⇧ puis la touche <code>}</code>.";
   }
   if (ex.type === 'paire') {
-    return "Donner les deux valeurs demandées séparées par un point-virgule, dans l'ordre indiqué par l'énoncé.";
+    return "Écrire les coordonnées du vecteur entre parenthèses, séparées par un point-virgule : par exemple <code>(3;-2)</code>. Une réponse sans parenthèses n'est pas acceptée. Le clavier ⌨ de l'écran insère puissances, fractions et racines ; le point-virgule s'obtient avec la touche ⇧ puis la touche <code>}</code>.";
   }
   if (ex.type === 'eqcart') {
     return "Donner une équation cartésienne sous la forme <code>a;b;c</code> (les coefficients de <code>ax+by+c=0</code>, séparés par des points-virgules). Toute équation proportionnelle à la réponse attendue est acceptée.";
@@ -3016,7 +3024,7 @@ function construireGrilles() {
   }
 }
 
-const TYPES_MATHFIELD = ['num', 'alg', 'somme'];
+const TYPES_MATHFIELD = ['num', 'alg', 'somme', 'paire'];   // paire : champ mathematique (puissances, fractions, racines), 06/10/2026
 
 function utiliseMathfield(ex) {
   if (!TYPES_MATHFIELD.includes(ex.type)) return false;

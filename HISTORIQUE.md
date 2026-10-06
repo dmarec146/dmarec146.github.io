@@ -7184,3 +7184,19 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     coordonnées, valeurs de α) : 0 écart ; cycle complet 8 × 43 accepté avec α tapé dans les
     champs de couples ; mauvaises réponses refusées ; brouillon restauré (50 essais) ; 0 erreur
     MathJax ; vérificateur : 0 erreur.
+
+- **Première fiche 17 : coordonnées saisies dans un champ mathématique, parenthèses exigées
+  (06/10/2026).** David : en 17.4 c), « la touche ^ (sur PC) ou le bouton xⁿ du clavier n'affiche pas
+  de champ pour une puissance mais juste le symbole ^ », et l'aide doit imposer les parenthèses
+  (« nomenclature mathématique exigée »), à vérifier dans toute la fiche.
+  - Toutes les réponses de type couple (coordonnées de vecteur ou de point, couples (α;β)) passent
+    d'un champ texte à un champ MathLive (`TYPES_MATHFIELD` + 'paire') : ^, fractions, racines et α
+    s'écrivent en mathématiques.
+  - Parenthèses exigées pour toutes ces réponses (`checkPointCoordonnees`) ; aides réécrites
+    (vecteur, point, couple) avec le point-virgule du clavier de l'écran (⇧ puis }) ; texte grisé
+    « (x;y) » partout.
+  - `normaliserSaisie` : « )( » et le produit implicite écrit avec une espace par MathLive (« p q »)
+    deviennent des produits explicites (sinon « (1)/(3)(α−1)² » se lisait 1/(3(α−1)²) et « pq »
+    comme une seule variable : 17.8 b) et 17.13 e) refusaient la bonne réponse).
+  - Vérifié : cycle 8 × 43 accepté, réponses sans parenthèses refusées, mauvaises réponses
+    refusées, 0 erreur MathJax.
