@@ -7337,3 +7337,28 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   conversions, périodicité) 1 000 à 10 200 tirages sans écart ; cycle complet 30 × 31 = 930 réponses
   acceptées (intervalles et ensembles saisis au clavier texte) ; écritures non simplifiées refusées (22
   cas) ; audit des claviers d'intervalles (`reels`) OK ; captures des sections modifiées.
+
+- **Première fiche 18 : mesure principale, 18.10 dans le cœur (06/10/2026), 35 questions, 12 calculs.**
+  Demandes de David après la revue :
+  - le rappel de conversion radians/degrés est **dans** le calcul 18.3 (après son titre) ;
+  - **nouvelle section « Mesure principale d'un angle » (calcul 18.4)** avant les valeurs particulières :
+    4 questions du plus simple au plus délicat, réponse en fraction de π irréductible dans ]−π ; π] :
+    a) angle entre π et 2π (un seul tour), b) négatif au-delà de −π, c) plusieurs tours (|p/q| entre 3
+    et 9), d) grand multiple du type 1231π/6 (numérateur de 101 à 2999, dénominateur 2, 3, 4, 5, 6, 8,
+    10 ou 12). Rappel « mesure principale = unique mesure dans ]−π ; π] » dans le calcul ;
+  - **« Autres angles » (18.6)** : angles dont la mesure principale doit être cherchée (hors ]−π ; π],
+    c'est-à-dire k > 12 ou k ≤ −12 en douzièmes de π, mesure principale « même simple » comprise : 7π/6,
+    5π/4, 19π/6, −13π/4…) ;
+  - **« Connaissant l'un, déduire l'autre » quitte les calculs avancés** : devenu 18.7, dans une section
+    « Relation entre cosinus et sinus » juste après « Autres angles » (rappel de cos²+sin²=1 inclus dans le
+    calcul, reformulé « On pourra utiliser… ») ;
+  - renumérotation : 18.4 mesure principale, 18.5 premiers angles, 18.6 autres angles, 18.7 connaissant
+    l'un, 18.8 monotonie, 18.9 comparaison sin/cos, puis avancés 18.10 valeurs de tan, 18.11 parité et
+    périodicité, 18.12 avec la tangente. Groupes `grille-18-1` à `grille-18-12`, indices 0 à 34. Pas de
+    barème sur cette fiche : rien à régénérer.
+  Vérifié : calcul indépendant de la mesure principale (3 200 tirages), de l'angle hors ]−π ; π] et de
+  la valeur trigonométrique en 18.6 (3 200), des valeurs de 18.7 et 18.12 (3 500) ; cycle complet
+  15 × 35 = 525 réponses acceptées, angle équivalent modulo 2π ou fraction non réduite refusés ; 0 erreur
+  MathJax ; captures. **Incident de la session, sans suite** : un premier lancement du script avait
+  supprimé tous les « @ » de la page (adresse MathLive, règles `@media`) ; détecté par l'absence de
+  MathLive, fiche restaurée et script corrigé avant tout commit.
