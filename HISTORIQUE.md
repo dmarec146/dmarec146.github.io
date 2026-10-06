@@ -7215,3 +7215,20 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   champ texte) et cycles complets : fiche 17 de Première (215 questions), fiche 12 de Première
   (92), fiche 5 de Seconde (120) : 0 refus, 0 erreur MathJax. Pages d'automatismes non traitées
   (elles ne chargent pas `claviers.js`).
+
+- **Claviers : bouton ⌨ sans correction prématurée, xⁿ et ^ avec case à remplir (06/10/2026), 50 fiches.**
+  Retours de David sur la fiche 17 (correctif dans `assets/js/claviers.js`, section 6) :
+  - cliquer sur ⌨ en cours de rédaction déclenchait « À revoir » : dans un champ texte, le clic
+    retirait le focus (maintenant `mousedown` sans action par défaut) ; dans un champ mathématique,
+    c'est MathLive lui-même qui fait perdre puis rend le focus au champ, environ 0,9 s après le clic
+    (`toggleVirtualKeyboard`) : ce blur passager est écarté pendant 2 s après un clic sur ⌨ (un vrai
+    blur, par exemple un clic ailleurs, corrige toujours) ;
+  - touche xⁿ des claviers simplifiés (champs texte) : insère `^(▢)` avec ▢ sélectionné (comme √ et
+    a/b), `→` ou la flèche droite sort de la parenthèse ; la touche ^ du clavier physique dans un champ
+    texte fait de même (touche morte AZERTY gérée par deux chemins, non testée sur un vrai AZERTY) ; les
+    champs mathématiques avaient déjà la case d'exposant de MathLive ;
+  - « * » affiché au lieu de × : non reproduit après rechargement (champ texte et champ mathématique
+    affichent ×) ; cause probable : ancienne version de `claviers.js` restée en cache du navigateur →
+    recharger sans cache (Ctrl+F5).
+  Vérifié par frappe réelle sur la fiche 17 (champ texte et champ mathématique) et la fiche 5 de
+  Seconde ; vérificateur de syntaxe : 50 fiches, 0 erreur.

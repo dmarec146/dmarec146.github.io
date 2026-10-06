@@ -613,3 +613,74 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
 })();
+
+// --- 6. Bouton ⌨ sans perte de focus ; touche xⁿ et touche ^ avec case a remplir ------------------
+//
+// 06/10/2026, retours de David (fiche 17) :
+//   - cliquer sur le bouton ⌨ pendant la redaction d'une reponse retirait le focus du champ, ce qui
+//     declenchait la correction immediate (« A revoir ») d'une reponse inachevee : « mousedown » sans
+//     action par defaut, comme pour les touches des claviers a l'ecran (section 3) ;
+//   - la touche xⁿ d'un clavier simplifie, et la touche ^ du clavier physique dans un champ texte,
+//     n'inseraient qu'un « ^ » nu : ils inserent maintenant « ^(▢) » avec la case ▢ selectionnee, comme
+//     √ et a/b ; la touche → (ou une fleche du clavier) sort de la parenthese. Les champs
+//     mathematiques font deja une case d'exposant (MathLive).
+(function () {
+  // Champ texte : le focus reste dans le champ. Champ mathematique : c'est MathLive qui, en ouvrant ou
+  // fermant son clavier (commande toggleVirtualKeyboard), fait perdre puis rend le focus au champ ;
+  // ce blur passager (ecouteurs des fiches : correction immediate) est donc ecarte pendant 2 s (il survient environ 0,9 s apres le clic).
+  let ouvertureClavier = 0;
+  document.addEventListener('mousedown', (e) => {
+    if (e.target instanceof Element && e.target.closest('.q-clavier-btn')) e.preventDefault();
+  }, true);
+  document.addEventListener('click', (e) => {
+    if (e.target instanceof Element && e.target.closest('.q-clavier-btn')) ouvertureClavier = Date.now() + 2000;
+  }, true);
+  const ecarterBlurPassager = (e) => {
+    if (Date.now() < ouvertureClavier && e.target instanceof Element && e.target.tagName === 'MATH-FIELD' && !e.relatedTarget) e.stopImmediatePropagation();
+  };
+  document.addEventListener('blur', ecarterBlurPassager, true);
+  document.addEventListener('focusout', ecarterBlurPassager, true);
+
+  const estTexte = (el) => !!el && el.tagName === 'INPUT' && /^input-/.test(el.id || '');
+
+  // « ^(▢) » a la place de [debut, fin[ ; texte deja selectionne (hors ▢) : il reste devant l'exposant.
+  function exposantAvecCase(champ, debut, fin, garder = true) {
+    const selection = champ.value.slice(debut, fin);
+    const devant = garder && selection && selection !== '▢' ? selection : '';
+    const texte = devant + '^(▢)';
+    champ.value = champ.value.slice(0, debut) + texte + champ.value.slice(fin);
+    const pos = debut + texte.length - 2;
+    champ.focus();
+    champ.setSelectionRange(pos, pos + 1);
+  }
+
+  function envelopperExposant() {
+    const origine = window.insererExposant;
+    if (typeof origine !== 'function' || origine.__case) return;
+    const enveloppe = function (idx) {
+      const champ = document.getElementById('input-' + idx);
+      if (!estTexte(champ)) return origine.apply(this, arguments);
+      exposantAvecCase(champ, champ.selectionStart ?? champ.value.length, champ.selectionEnd ?? champ.value.length);
+      if (typeof window.reinitialiserStatut === 'function') window.reinitialiserStatut(idx);
+    };
+    enveloppe.__case = true;
+    window.insererExposant = enveloppe;
+  }
+
+  // Touche ^ du clavier physique (champ texte) : touche morte sur un clavier AZERTY, d'ou deux chemins
+  // (« insertText » direct, ou fin de composition) ; le « ^ » tout juste ecrit devient « ^(▢) ».
+  function exposantTape(e) {
+    const champ = e.target;
+    if (!estTexte(champ) || typeof e.data !== 'string' || !e.data.endsWith('^')) return;
+    if (e.type === 'input' && (e.isComposing || e.inputType === 'insertCompositionText')) return;
+    const pos = champ.selectionStart;
+    if (pos == null || champ.selectionEnd !== pos || champ.value[pos - 1] !== '^' || champ.value[pos] === '(') return;
+    exposantAvecCase(champ, pos - 1, pos, false);
+    champ.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  document.addEventListener('input', exposantTape, true);
+  document.addEventListener('compositionend', (e) => setTimeout(() => exposantTape({ target: e.target, data: e.data, type: 'compositionend' }), 0), true);
+
+  function demarrer() { envelopperExposant(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
+})();
