@@ -7376,3 +7376,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   de ce que l'élève doit connaître ; consigne déjà dite : rien qui indique la démarche). Aucun autre
   changement ; les rappels de définition (conversion en 18.3, mesure principale en 18.4, tangente avant
   18.10) sont conservés.
+
+- **Première fiche 18, 18.4 : rappel de la définition de la mesure principale retiré (06/10/2026).** David :
+  « enlève la mesure principale » (interprété comme le rappel « La mesure principale d'un angle est son
+  unique mesure appartenant à ]−π ; π] » du calcul 18.4, dans la suite de « 18.7 aucun rappel de formule »).
+  Le calcul et ses 4 questions sont inchangés.
