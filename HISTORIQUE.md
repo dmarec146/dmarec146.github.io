@@ -7290,3 +7290,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   étendu à la fiche 17. Bonus (E) = les 4 questions du calcul 17.13 (déterminant). Contrôle de
   cohérence : fichiers cohérents, 34 questions tirées sur 300 générations, toutes avec points ; affichage
   « Total : 30 points (+ 7 points de calculs avancés) » vérifié. Proposition à valider par David.
+
+- **Barème de la fiche 17, ajustements de David (06/10/2026) : base 26 points, bonus 7 points.** Points
+  modifiés : 17.1 a) 0,5 ; 17.1 b) 0,5 ; 17.2 a) 0,75 ; 17.4 b) 0,5 ; 17.5 b) 0,75 ; 17.5 c) 1 ; 17.5 d) 1 ;
+  17.6 b) 1,25 ; 17.6 c) 1,5 ; 17.9 a) 0,5 ; 17.9 b) 1 ; 17.12 a) 0,5 ; puis 17.11 b) 1,25 (option 3
+  choisie pour obtenir un total de base entier : 26,5 → 26). Contrôle de cohérence : fichiers cohérents.
