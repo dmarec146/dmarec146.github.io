@@ -7264,3 +7264,15 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : 500 tirages (17.4 a, 17.11 a recalculés indépendamment ; réponses modèles de 17.4
   acceptées), 25 cycles complets (650 réponses modèles acceptées dans les champs mathématiques), mauvaises
   réponses refusées, 0 erreur MathJax, 0 erreur console, vérificateur de syntaxe 50 fiches.
+
+- **Première fiche 17, calcul 17.9 : forme simplifiée imposée (06/10/2026).** David : 17.9 doit imposer
+  une forme simplifiée. Titre « Calculer la norme du vecteur AB, **sous forme simplifiée** » (en bleu),
+  drapeau `normeSimplifiee` sur 17.9 a–c et fonction `estNormeSimplifiee` (outils communs regroupés dans
+  `FORME17`, partagés avec `estCoordSimplifiee` de 17.4). Sans paramètre : entier, fraction irréductible ou
+  racine simplifiée (« 3√7/5 » et « (3/5)√7 » acceptées ; √63/5, √(63/25), 6√7/10, √32 refusées).
+  Avec paramètre (17.9 c) : produit d'au plus un entier ≥ 2, de racines d'entiers sans facteur carré et de
+  racines de polynômes sans facteur carré commun à tous les coefficients, écriture courte (≤ 11 nœuds) :
+  k√(2α⁴+2) et k√(2(α⁴+1)) acceptés ; la somme de carrés recopiée, √(18α⁴+18) pour 3√2√(α⁴+1), ×1 refusés.
+  Aide du « ? » ajoutée. Correctif au passage : la réponse attendue de 17.9 c) s'écrivait « 1*√2… »
+  quand k = 1. Vérifié : réponse attendue acceptée sur 1 500 tirages, 17 écritures testées, 20 cycles
+  complets (520 réponses), 0 erreur MathJax.
