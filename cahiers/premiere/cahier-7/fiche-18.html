@@ -1260,7 +1260,14 @@ function genererExercices() {
       const fn = fns[i];
       const table = fn === 'cos' ? COS_TABLE : SIN_TABLE;
       let k;
-      do { k = (alea(0,1)===0 ? 1 : -1) * NICE_K[alea(0,NICE_K.length-1)] + 12*alea(-3,3); } while (k > -12 && k <= 12);   // k en douziemes de pi : la mesure principale est dans ]-12 ; 12]
+      if (i < 2) {
+        // deux angles « moyens » : un a quatre demi-tours, hors de ]-pi ; pi]
+        do { k = (alea(0,1)===0 ? 1 : -1) * NICE_K[alea(0,NICE_K.length-1)] + 12*alea(-3,3); } while (k > -12 && k <= 12);   // k en douziemes de pi : la mesure principale est dans ]-12 ; 12]
+      } else {
+        // deux angles de grande mesure (8 a 40 demi-tours, jusqu'a des numerateurs de l'ordre de 500) : il faut d'abord determiner
+        // la mesure principale, la lecture sur un cercle ne suffit plus (06/10/2026, demande de David)
+        do { k = (alea(0,1)===0 ? 1 : -1) * NICE_K[alea(0,NICE_K.length-1)] + 12*(alea(0,1)===0 ? 1 : -1)*alea(8,40); } while (Math.abs(k) < 96);   // au moins 8 demi-tours (8*pi)
+      }
       ex.push({id:`18.6 ${l}`, type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[mod24(k)]});
     });
   })();

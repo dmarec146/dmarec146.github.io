@@ -7362,3 +7362,11 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   MathJax ; captures. **Incident de la session, sans suite** : un premier lancement du script avait
   supprimé tous les « @ » de la page (adresse MathLive, règles `@media`) ; détecté par l'absence de
   MathLive, fiche restaurée et script corrigé avant tout commit.
+
+- **Première fiche 18, 18.6 : deux angles de grande mesure (06/10/2026).** David : prendre deux angles de
+  mesure vraiment plus grande, pour obliger à déterminer d'abord la mesure principale (une lecture sur un
+  cercle ne suffit plus). 18.6 a) et b) restent « moyens » (de 1 à 4,8 demi-tours, hors ]−π ; π]) ;
+  18.6 c) et d) tirent des angles d'au moins 8π et jusqu'à environ 42π (numérateurs jusqu'à plusieurs
+  centaines, ex. −143π/6, 121π/6, 113π/3). Vérifié : valeurs recalculées sur 3 200 tirages sans écart,
+  amplitudes mesurées (c et d : de 8,0π à 41,8π), 570 énoncés distincts par question, cycle complet 48
+  réponses acceptées.
