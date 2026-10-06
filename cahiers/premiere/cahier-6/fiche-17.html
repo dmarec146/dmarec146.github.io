@@ -1229,16 +1229,16 @@ function genererExercices() {
     const [n1,d1] = irr(), [n2,d2] = irr(), [Ay2n,Ay2d] = irr(), [Bx2n,Bx2d] = irr(), [By2n,By2d] = irr();
     const Ax2 = math.add(math.fraction(n1,d1), math.fraction(n2,d2));
     const Ay2 = math.fraction(Ay2n,Ay2d), Bx2 = math.fraction(Bx2n,Bx2d), By2 = math.fraction(By2n,By2d);
-    ex.push({id:"17.3 a)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${n1}}{${d1}}+\\dfrac{${n2}}{${d2}};\\dfrac{${Ay2n}}{${Ay2d}}\\right)\\) et \\(B\\left(\\dfrac{${Bx2n}}{${Bx2d}};\\dfrac{${By2n}}{${By2d}}\\right)\\)`, pa: fracToStr(math.subtract(Bx2,Ax2)), pb: fracToStr(math.subtract(By2,Ay2))});
+    ex.push({id:"17.3 a)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${n1}}{${d1}}+\\dfrac{${n2}}{${d2}};\\dfrac{${Ay2n}}{${Ay2d}}\\right)\\) et \\(B\\left(\\dfrac{${Bx2n}}{${Bx2d}};\\dfrac{${By2n}}{${By2d}}\\right)\\)`, pa: fracToStr(math.subtract(Bx2,Ax2)), pb: fracToStr(math.subtract(By2,Ay2))});
     // item statique (radicaux) : conserve la structure d'origine, trop fragile pour generaliser sans risque
     // A(1+sqrt(m) ; 1/sqrt(n)), B(sqrt(4m) ; sqrt(n)) : AB = (sqrt(m)-1 ; (n-1)sqrt(n)/n) (tire au hasard le 05/10/2026)
     const RAD17 = [2,3,5,6,7]; const mR = RAD17[alea(0,4)], nR = RAD17[alea(0,4)];
-    ex.push({id:"17.3 b)", type:"paire", texteLibre:true, enonce:`Avec \\(A\\left(1+\\sqrt{${mR}};\\dfrac{1}{\\sqrt{${nR}}}\\right)\\) et \\(B\\left(\\sqrt{${4*mR}};\\sqrt{${nR}}\\right)\\)`, pa:`sqrt(${mR})-1`, pb: surdTerm(math.fraction(nR-1, nR), nR)});
+    ex.push({id:"17.3 b)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(1+\\sqrt{${mR}};\\dfrac{1}{\\sqrt{${nR}}}\\right)\\) et \\(B\\left(\\sqrt{${4*mR}};\\sqrt{${nR}}\\right)\\)`, pa:`sqrt(${mR})-1`, pb: surdTerm(math.fraction(nR-1, nR), nR)});
   })();
   // Calcul 17.4 - avec parametre n (1 item)
   (function() {
     const k = alea(2,5);
-    ex.push({id:"17.3 c)", type:"paire", texteLibre:true, enonce:`Avec \\(A(${k}\\times 2^n;1-3^{2(n+1)})\\) et \\(B(${k}\\times 2^{n+1};(1-3^n)(1+3^n))\\), où \\(n\\in\\mathbb{N}\\)`, pa:`${k}*2^n`, pb:"8*9^n", vars:["n"]});
+    ex.push({id:"17.3 c)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A(${k}\\times 2^n;1-3^{2(n+1)})\\) et \\(B(${k}\\times 2^{n+1};(1-3^n)(1+3^n))\\), où \\(n\\in\\mathbb{N}\\)`, pa:`${k}*2^n`, pb:"8*9^n", vars:["n"]});
   })();
   // Calcul 17.5 - avec parametre alpha (mise a l'echelle globale des identites originales)
   (function() {
@@ -1248,7 +1248,7 @@ function genererExercices() {
     const B1a = joinSigned([signedFracTermLatex(-2*k1,'\\alpha')]);
     const k2 = aleaNonNul(-4,4);
     const k3 = aleaNonNul(-4,4);
-    ex.push({id:"17.3 d)", type:"paire", texteLibre:true, enonce:`Avec \\(A(${coefPrefixeL(k3)}\\alpha(\\alpha-1);${coefPrefixeL(k3)}(\\alpha-1)^2)\\) et \\(B(${coefPrefixeL(k3)}\\alpha^2;${coefPrefixeL(k3)}(\\alpha+1)^2)\\)`, pa: `${coefPrefixe(k3)}lam`, pb: `${coefPrefixe(4*k3)}lam`, vars:["lam"]});
+    ex.push({id:"17.3 d)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A(${coefPrefixeL(k3)}\\alpha(\\alpha-1);${coefPrefixeL(k3)}(\\alpha-1)^2)\\) et \\(B(${coefPrefixeL(k3)}\\alpha^2;${coefPrefixeL(k3)}(\\alpha+1)^2)\\)`, pa: `${coefPrefixe(k3)}lam`, pb: `${coefPrefixe(4*k3)}lam`, vars:["lam"]});
     const k4 = aleaNonNul(-4,4);
   })();
   // Calcul 17.7 - points ABC, D defini par diverses relations vectorielles (4 items)
@@ -2049,6 +2049,79 @@ function checkPaire(userInput, correctA, correctB, vars) {
   } catch(e) { return false; }
 }
 
+// Coordonnees « simplifiees » (17.4, 06/10/2026, David : recopier les coordonnees sans les simplifier
+// etait accepte). Chaque coordonnee doit etre :
+//   - sans parametre : un entier, une fraction irreductible, ou (si la reponse attendue contient une
+//     racine) une racine simplifiee (estRacineSimplifiee) ;
+//   - avec parametre : aucun calcul numerique reste a faire (pas de 3*2, 2^3, 4/6 : tout morceau sans
+//     lettre est un entier ou une fraction irreductible), et pas plus long que la reponse attendue
+//     (+2 noeuds de marge : 8*3^(2n) est tolere pour 8*9^n, mais pas k*2^(n+1)-k*2^n).
+function estCoordSimplifiee(userInput, correctA, correctB, vars) {
+  const sansP = (n) => { while (n.type === 'ParenthesisNode') n = n.content; return n; };
+  // sans parentheses ni moins unaire : « -(4/5) » et « (-4)/5 » se lisent comme 4/5
+  const nu = (n) => { n = sansP(n); while (n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1) n = sansP(n.args[0]); return n; };
+  const compter = (n) => { let k = 0; n.traverse((m) => { if (m.type !== 'ParenthesisNode') k++; }); return k; };
+  const entierPositif = (n) => { n = nu(n); return n.type === 'ConstantNode' && Number.isInteger(n.value) && n.value >= 0; };
+  const fractionIrr = (n) => {
+    n = nu(n);
+    if (n.type !== 'OperatorNode' || n.op !== '/' || n.args.length !== 2 || !entierPositif(n.args[0]) || !entierPositif(n.args[1])) return false;
+    const a = nu(n.args[0]).value, b = nu(n.args[1]).value;
+    return b >= 2 && pgcd(a, b) === 1;
+  };
+  const constanteSimple = (n) => entierPositif(n) || fractionIrr(n);
+  // recopie d'un calcul sans le faire : « *1 », « /1 », « +0 »
+  const neutre = (n) => {
+    let oui = false;
+    n.traverse((m) => {
+      if (m.type !== 'OperatorNode' || m.args.length !== 2) return;
+      const [a, b] = m.args.map(nu);
+      const est = (x, v) => x.type === 'ConstantNode' && x.value === v;
+      if ((m.op === '*' && (est(a, 1) || est(b, 1))) || (m.op === '/' && est(b, 1)) || ((m.op === '+' || m.op === '-') && (est(a, 0) || est(b, 0)))) oui = true;
+    });
+    return oui;
+  };
+  // tout morceau sans lettre est un entier ou une fraction irreductible
+  const sansCalculRestant = (n) => {
+    n = sansP(n);
+    let lettre = false;
+    n.traverse((m) => { if (m.type === 'SymbolNode') lettre = true; });
+    if (!lettre) return constanteSimple(n);
+    if (n.type === 'OperatorNode' && n.op === '-' && n.args.length === 1) return sansCalculRestant(n.args[0]);
+    // « 6*2^n/2 » : un facteur entier du numerateur a un diviseur commun avec le denominateur entier
+    if (n.type === 'OperatorNode' && n.op === '/' && n.args.length === 2 && entierPositif(n.args[1])) {
+      const d = nu(n.args[1]).value, facteurs = [];
+      const aplatir = (m) => { m = sansP(m); if (m.type === 'OperatorNode' && m.op === '*' && m.args.length === 2) m.args.forEach(aplatir); else facteurs.push(m); };
+      aplatir(n.args[0]);
+      if (facteurs.some((f) => entierPositif(f) && pgcd(nu(f).value, d) > 1)) return false;
+    }
+    if (n.type === 'OperatorNode' || n.type === 'FunctionNode') return n.args.every(sansCalculRestant);
+    return true;
+  };
+  // « (6/7)*sqrt(7) » et « -(2/3)*sqrt(3) » : fraction irreductible fois une racine simplifiee
+  const fractionFoisRacine = (n) => {
+    n = nu(n);
+    if (n.type !== 'OperatorNode' || n.op !== '*' || n.args.length !== 2) return false;
+    const [a, b] = n.args.map(nu);
+    const racine = (x) => x.type === 'FunctionNode' && estRacineSimplifiee(x.toString());
+    return (fractionIrr(a) && racine(b)) || (fractionIrr(b) && racine(a));
+  };
+  try {
+    let s = normaliserSaisie(String(userInput)).trim().replace(/\s/g, '');
+    if (entoureParParentheses(s)) s = s.slice(1, -1);
+    const parties = s.split(';');
+    const attendues = [correctA, correctB];
+    if (parties.length !== 2) return false;
+    return parties.every((part, i) => {
+      const attendue = String(attendues[i]);
+      const noeud = math.parse(part);
+      if (neutre(noeud)) return false;
+      if (vars && vars.length) return sansCalculRestant(noeud) && compter(noeud) <= compter(math.parse(attendue)) + 2;
+      if (/sqrt/.test(attendue)) return estRacineSimplifiee(part) || fractionFoisRacine(noeud);
+      return constanteSimple(noeud);
+    });
+  } catch (e) { return false; }
+}
+
 function checkTriplet(userInput, correctA, correctB, correctC, vars) {
   let nettoye = normaliserSaisie(userInput).trim().replace(/\s/g,'');
   if (entoureParParentheses(nettoye)) {
@@ -2325,7 +2398,7 @@ function verifierUne(idx) {
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'vecteur') ok = checkVecteur(val, ex.vx, ex.vy, ex.vars);
   // coordonnees d'un point ou d'un vecteur, couple : parentheses exigees (06/10/2026, David)
-  else if (ex.type === 'paire') ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars);
+  else if (ex.type === 'paire') ok = checkPointCoordonnees(val, ex.pa, ex.pb, ex.vars) && (!ex.coordSimplifiees || estCoordSimplifiee(val, ex.pa, ex.pb, ex.vars));
   else if (ex.type === 'eqcart') ok = checkEquationCartesienne(val, ex.eqa, ex.eqb, ex.eqc, ex.vars);
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
@@ -2926,6 +2999,9 @@ function aideContextuellePour(ex) {
   }
   if (ex.type === 'paire' && ex.couple) {
     return "Écrire le couple entre parenthèses, les deux valeurs séparées par un point-virgule : par exemple <code>(2;-1)</code>. Une réponse sans parenthèses n'est pas acceptée. Sur le clavier ⌨ de l'écran, le point-virgule s'obtient avec la touche ⇧ puis la touche <code>}</code>.";
+  }
+  if (ex.type === 'paire' && ex.coordSimplifiees) {
+    return "Écrire les coordonnées du vecteur entre parenthèses, séparées par un point-virgule, <strong>chacune sous forme simplifiée</strong> : par exemple <code>(7/15;-2)</code> et non <code>(4/5-1/3;-6+4)</code>. Une réponse sans parenthèses n'est pas acceptée. Le clavier ⌨ de l'écran insère puissances, fractions et racines ; le point-virgule s'obtient avec la touche ⇧ puis la touche <code>}</code>.";
   }
   if (ex.type === 'paire') {
     return "Écrire les coordonnées du vecteur entre parenthèses, séparées par un point-virgule : par exemple <code>(3;-2)</code>. Une réponse sans parenthèses n'est pas acceptée. Le clavier ⌨ de l'écran insère puissances, fractions et racines ; le point-virgule s'obtient avec la touche ⇧ puis la touche <code>}</code>.";

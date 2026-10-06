@@ -7232,3 +7232,15 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     recharger sans cache (Ctrl+F5).
   Vérifié par frappe réelle sur la fiche 17 (champ texte et champ mathématique) et la fiche 5 de
   Seconde ; vérificateur de syntaxe : 50 fiches, 0 erreur.
+
+- **Première fiche 17, calcul 17.4 : coordonnées exigées sous forme simplifiée (06/10/2026).** David : en
+  17.4 c), recopier les coordonnées sans les simplifier était accepté alors que le titre demande de
+  simplifier (le contrôle ne comparait que la valeur numérique). Nouveau drapeau `coordSimplifiees` sur
+  17.4 a–d et fonction `estCoordSimplifiee` : chaque coordonnée doit être, sans paramètre, un entier, une
+  fraction irréductible ou une racine simplifiée (« 6√7/7 » et « (6/7)√7 » acceptées, « √8 » refusée) ;
+  avec paramètre, aucun calcul numérique restant (« 3×2×2ⁿ », « 4/6 », « ×1 », « +0 » refusés, facteur
+  entier du numérateur commun avec le dénominateur refusé) et pas plus long que la réponse attendue
+  (+2 nœuds : 8×3^(2n) toléré pour 8×9ⁿ ; 2^(n+1) accepté pour 2×2ⁿ). Aide du bouton « ? » complétée.
+  Vérifié : réponse attendue acceptée sur 1 200 tirages, 0 écriture non simplifiée acceptée parmi 5
+  variantes × 1 200, saisie réelle sur 17.4 c). Les autres calculs de coordonnées (17.12 milieu, 17.9
+  normes déjà contrôlées) n'ont pas de consigne de simplification dans leur titre : non modifiés.
