@@ -7276,3 +7276,11 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Aide du « ? » ajoutée. Correctif au passage : la réponse attendue de 17.9 c) s'écrivait « 1*√2… »
   quand k = 1. Vérifié : réponse attendue acceptée sur 1 500 tirages, 17 écritures testées, 20 cycles
   complets (520 réponses), 0 erreur MathJax.
+
+- **Première fiche 17, calculs 17.5 et 17.12 : forme simplifiée imposée (06/10/2026).** David (« oui » à la
+  proposition faite après 17.9). Titres : « Un point défini par une égalité de vecteurs. Donner ses
+  coordonnées **sous forme simplifiée** » et « Milieu d'un segment. Calculer les coordonnées du vecteur AI,
+  où I est le milieu du segment [AB], **sous forme simplifiée** » ; drapeau `coordSimplifiees` (contrôle
+  `estCoordSimplifiee`, voir 17.4) sur 17.5 a–d et 17.12 a–b ; aide des points complétée. Vérifié : 500
+  tirages (réponses attendues acceptées, 4 variantes non simplifiées refusées), 20 cycles complets (520
+  réponses), 0 erreur MathJax. Non touchés (pas de consigne de simplification) : 17.6, 17.7, 17.8.
