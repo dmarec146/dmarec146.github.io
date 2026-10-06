@@ -7244,3 +7244,23 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : réponse attendue acceptée sur 1 200 tirages, 0 écriture non simplifiée acceptée parmi 5
   variantes × 1 200, saisie réelle sur 17.4 c). Les autres calculs de coordonnées (17.12 milieu, 17.9
   normes déjà contrôlées) n'ont pas de consigne de simplification dans leur titre : non modifiés.
+
+- **Première fiche 17 : 34 questions, 13 calculs (06/10/2026).** Demandes de David après relecture :
+  - 17.4 : a) devient un cas à coordonnées entières (nouvel item), l'ancien d) (avec α) est supprimé ;
+    titre « Calculer les coordonnées du vecteur AB, **sous forme simplifiée** » (partie en bleu comme
+    en 17.3) ;
+  - 17.6 : questions rédigées « On considère A(…) et B(…), où α ∈ ℝ. Déterminer α tel que AB = u » (c :
+    « où α et β sont deux réels. Déterminer le couple (α;β) tel que AB = 0 ») ; titre réduit à
+    « Paramètres et égalité de vecteurs » (la consigne n'y est plus, elle est dans chaque question,
+    car a/b et c n'ont pas la même) ;
+  - 17.9 : d) supprimé (3 questions) ; 17.11 : a) cas simple sans paramètre (u = λv à coordonnées
+    entières, λ fraction irréductible ≠ 1, tirage aléatoire), b) garde le cas avec paramètres α et n
+    (l'ancien a) à α est retiré) ; 17.12 : deux exemples, a) sans paramètre (fractions), b) avec
+    paramètre (ancien c) ; anciens b) racines et d) retirés ;
+  - ancien 17.13 (ménélienne, avec sa figure et `construireGraphique22_19`) supprimé ; l'ancien
+    17.14 (déterminant) devient 17.13 et reste dans « Calculs plus avancés » ;
+  - identifiants renumérotés (table `RENUMEROTATION_17`, groupes `grille-17-1` à `grille-17-13`,
+    indices 0 à 33). Pas de barème encore fait pour cette fiche : rien à régénérer.
+  Vérifié : 500 tirages (17.4 a, 17.11 a recalculés indépendamment ; réponses modèles de 17.4
+  acceptées), 25 cycles complets (650 réponses modèles acceptées dans les champs mathématiques), mauvaises
+  réponses refusées, 0 erreur MathJax, 0 erreur console, vérificateur de syntaxe 50 fiches.
