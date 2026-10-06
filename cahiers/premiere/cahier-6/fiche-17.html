@@ -2661,9 +2661,13 @@ function jsVersLatex(expr) {
     tex = collerCoefficientLettre(tex);
     tex = tex.replace(/\\cdot/g, '\\times ');
     tex = tex.replace(/\\frac\{/g, '\\dfrac{');
-    tex = tex.replace(/(?<!\\)lambda/g, '\\alpha ');   // le parametre des enonces est alpha
-    // pas de « × » entre un coefficient et une lettre, une racine ou une parenthese
-    tex = tex.replace(/(\d|\})\s*\\times\s*(?=\\alpha|\\sqrt|\\left|\{\\left|[a-zA-Z])/g, '$1');
+    // le parametre des enonces est alpha (variable interne « lam », que math.js ecrit \lambda)
+    tex = tex.replace(/\\lambda(?![a-zA-Z])/g, '\\alpha').replace(/(?<!\\)lambda/g, '\\alpha ');
+    // pas de « × » entre un coefficient et une lettre, une racine ou une parenthese, ni entre deux lettres
+    tex = tex.replace(/(\d|\})\s*\\times\s*(?=\\alpha|\\sqrt|\\left|\{\\|\{[a-zA-Z]|[a-zA-Z])/g, '$1');
+    tex = tex.replace(/(?<![\\a-zA-Z])([a-zA-Z])\s*\\times\s*(?=[a-zA-Z](?![a-zA-Z]))/g, '$1');
+    // signe devant la fraction : « -\dfrac{4}{7} » et non « \dfrac{-4}{7} »
+    tex = tex.replace(/\\dfrac\{-([^{}]+)\}\{/g, '-\\dfrac{$1}{');
     return tex;
   } catch(e) {
     s = convertirSqrt(s);
@@ -2672,7 +2676,7 @@ function jsVersLatex(expr) {
     s = s.replace(/(\d)\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/([a-zA-Z}])\*([a-zA-Z\\])/g, '$1$2');
     s = s.replace(/\*/g, '\\times ');
-    s = s.replace(/lambda/g, '\\lambda ');
+    s = s.replace(/lambda/g, '\\alpha ');
     return s;
   }
 }

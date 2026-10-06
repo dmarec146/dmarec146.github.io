@@ -7161,3 +7161,26 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   David : « 16.15 supprimer b) et regénérer le barème ». 16.15 (colinéarité avec un paramètre)
   garde une seule question (ancien 16.17 a)), introduction mise au singulier. Barème : 16.15 à
   1,5 ; base 22 points inchangée, bonus 11 → 9. Contrôle : 35 questions tirées, toutes pointées.
+
+- **Première fiche 17 (Coordonnées des vecteurs) : refonte (05-06/10/2026), 44 → 43 questions,
+  15 → 14 calculs.** David : « refais la refonte d'après tes commentaires (écarts avec les règles
+  et corrige les réponses justes refusées, notamment le pb alpha) ».
+  - **Paramètre α** : les énoncés écrivaient α mais les réponses attendaient « a » (champs de
+    couples, α refusé) ou λ (champs mathématiques), et les corrigés affichaient a ou λ. Variable
+    interne unique « lam » ; `normaliserSaisie` convertit α, λ et « alpha » ; le clavier propose
+    une touche α ; `jsVersLatex` affiche α. Ménélienne : r au lieu de « b pour désigner r » (r ajouté
+    aux variables de `checkEqualNumeric`).
+  - **Automatismes** : 17.1 a) degré 1 avec coefficient fractionnaire (ancien 17.1 c), sans
+    « (5x−1) » ni « −5x− » vide), b) (ax+b)/(x²+k) ◊ 0 ; 17.2 a) (px+q)²−(rx+s)²=0, b)
+    (x+a)²+2b(x+a)+b²=0 (anciennes factorisations devenues équations) ; 17.3 a) (a/b)²+(c/d)²
+    (fraction irréductible contrôlée), b) √(a²+b²) (racine simplifiée contrôlée).
+  - **Fusions** : 17.5 = anciens 17.4 b) + 17.5 avec les mêmes points (« même méthode que dans
+    l'exercice précédent » supprimé, l'étape « coordonnées de AB » retirée) ; 17.6 = anciens 17.6 +
+    17.7 (« Paramètres et égalité de vecteurs »). Ancien 17.3 b) (radicaux) tiré au hasard.
+    Titres ajoutés partout. Affichage « 2 × −2α » remplacé par le coefficient calculé.
+  - **Corrigés** : α, plus de « × » devant une lettre ou une racine, signe devant la fraction.
+  - **Brouillon** : `contexte22` (points de 17.5, vecteurs de 17.7) enregistré et restauré.
+  - Vérifié : 300 tirages recalculés indépendamment (intervalles, équations, calculs numériques,
+    coordonnées, valeurs de α) : 0 écart ; cycle complet 8 × 43 accepté avec α tapé dans les
+    champs de couples ; mauvaises réponses refusées ; brouillon restauré (50 essais) ; 0 erreur
+    MathJax ; vérificateur : 0 erreur.
