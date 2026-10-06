@@ -7284,3 +7284,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   `estCoordSimplifiee`, voir 17.4) sur 17.5 a–d et 17.12 a–b ; aide des points complétée. Vérifié : 500
   tirages (réponses attendues acceptées, 4 variantes non simplifiées refusées), 20 cycles complets (520
   réponses), 0 erreur MathJax. Non touchés (pas de consigne de simplification) : 17.6, 17.7, 17.8.
+
+- **Barème de la fiche 17 de Première (06/10/2026) : base 30 points, bonus 7 points.** Fichier
+  `outils/bareme/fiche-17.json` (34 questions), fiche câblée (`cabler-fiche.js 17`) et `appliquer-bareme.js`
+  étendu à la fiche 17. Bonus (E) = les 4 questions du calcul 17.13 (déterminant). Contrôle de
+  cohérence : fichiers cohérents, 34 questions tirées sur 300 générations, toutes avec points ; affichage
+  « Total : 30 points (+ 7 points de calculs avancés) » vérifié. Proposition à valider par David.
