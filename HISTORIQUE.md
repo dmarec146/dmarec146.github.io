@@ -7710,3 +7710,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   acceptée). Fiche : **32 questions, 15 calculs**. Barème mis à jour : 21.13 a) 1,5, b) 1,75, c) 1,75, d) 1,75 (ancien e supprimé), **bonus 10,25** au lieu de 11,5 (base 20 inchangée).
   Vérifié : 200 jeux de paramètres aléatoires (H sur la droite, AH colinéaire à n, distance), corrigé retapé accepté / corrigé + 1 refusé, écriture équivalente acceptée, forme du signe fausse et k seul refusés, 0 erreur MathJax ;
   barème régénéré et cohérent (32 questions, base 20, bonus 10,25).
+
+- **Première fiche 21 : suppression de 21.13 (07/10/2026).** Demande de David (« en fait, supprimer 21.13 ») : le calcul guidé « Distance d'un point à une droite : formule générale » (4 questions après
+  la réécriture sans méthode) est retiré en entier. Les anciens 21.14 (tangente à un cercle) et 21.15 (cercle tangent à une droite) deviennent **21.13 et 21.14**. Fiche : **28 questions, 14 calculs**
+  (21.1 à 21.3 automatismes, 21.4 à 21.9 droites et vecteurs, 21.10 et 21.11 projeté et distance, 21.12 cercle de diamètre, 21.13 et 21.14 avancés). Barème : clés 21.13 supprimées, 21.14 → 21.13
+  (1,75) et 21.15 → 21.14 (1,75) ; **base 20 points inchangée, bonus 3,5 points**. Vérifié : barème régénéré et cohérent, contrôle des questions tirées (28 sur 28 avec points), note 23,5 / 23,5 toutes justes,
+  20 / 20 sur le cœur, cycle 60/60 réponses justes et 60/60 fausses refusées sur 21.13 et 21.14, 0 erreur MathJax.
