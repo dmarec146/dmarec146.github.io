@@ -187,7 +187,7 @@ les corrections ponctuelles d'une fiche).
   `assets/js/qcm-clic.js` (branché par `node outils/qcm-clic/cabler-fiches.js`, contrôlé par
   `outils/qcm-clic/audit.html`). Un seul bon choix : le clic valide ; plusieurs bonnes réponses : cocher puis
   « Valider ». Le champ texte reste la source de vérité (même lettre qu'avant : brouillons, devoirs, barèmes
-  inchangés). Un oui/non s'écrit donc comme un QCM à deux choix « oui » / « non ». Une fiche **nouvelle** doit
+  inchangés). Un oui/non s'écrit donc comme un QCM à deux choix « oui » / « non ». Pour un oui/non, **pas de pastille « a » / « b »** : le mot seul dans le bouton (comme « Vrai » / « Faux »), le script la masque. Une fiche **nouvelle** doit
   charger ce script. Les fiches ayant un devoir en cours ne sont pas modifiées (liste `EXCLUES` de l'outil).
 - **QCM sur des figures ou des courbes : la réponse porte le nom de
   l'étiquette.** Courbes notées \(f_1\), \(f_2\), \(f_3\) → réponse

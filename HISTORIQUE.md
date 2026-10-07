@@ -7576,3 +7576,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : 185 tirages recomptés par un calcul indépendant à partir des énoncés (0 erreur), variété (20.12 : 26 énoncés, autres de 74
   à 400), balayage des défauts d'énoncé (aucun), cycle 700/700 corrigés acceptés, 700/700 réponses fausses refusées, 400/400 écritures
   non simplifiées refusées, 0 erreur MathJax, capture de la nouvelle section.
+
+- **Première fiche 20 : allègement après relecture de David (07/10/2026).** 1) Oui/non (20.5) : la c) « puissances de 10 » est supprimée
+  (3 questions : fractions, entiers ou racines, avec un réel x). 2) Oui/non dans toute la bibliothèque : plus de pastille « a » / « b » dans
+  les boutons, seulement « oui » et « non » (`qcm-clic.js` : classe `qcm-oui-non`, lettre masquée par CSS mais toujours écrite dans le champ ;
+  règle ajoutée à REGLES-FICHES.md). 3) « Trouver x » (20.6) ramené à 3 exemples : a) cas simple (premier degré, fraction), b) équation du
+  second degré (racine ou rationnel, une fois sur deux), c) équation produit à deux solutions ; l'ancien b) (premier degré à fractions) retiré.
+  4) Droites par un point et un vecteur normal (20.7) ramenées à 2 exemples : a) point entier, b) point rationnel ou, une fois sur deux,
+  avec racines. Nouveau total : **25 questions, 12 calculs** (20.5 : 3, 20.6 : 3, 20.7 : 2).
+  Vérifié : 40 tirages recomptés (0 erreur), cycle 625/625 corrigés acceptés, 625/625 fausses refusées, 350/350 non simplifiées refusées,
+  lettres masquées sur les 6 cartes oui/non, audit de clic sur 14 fiches à QCM (toutes les bonnes réponses obtenues par clic), capture.

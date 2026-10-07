@@ -20,6 +20,7 @@
       cursor: pointer; padding: 6px 12px; border: 1.5px solid #d4d4d4; border-radius: 8px; background: #fff;
       user-select: none; -webkit-user-select: none; transition: border-color 0.12s, background-color 0.12s;
     }
+    .question.qcm-oui-non .q-qcm-lettre { display: none; }
     .q-qcm-option.cliquable:hover { border-color: var(--bleu, #4a45c4); background: #f7f7ff; }
     .q-qcm-option.cliquable:focus-visible { outline: 2px solid var(--bleu, #4a45c4); outline-offset: 2px; }
     .q-qcm-option.choisie { border-color: var(--bleu, #4a45c4); background: var(--bleu-clair, #eceaff); }
@@ -54,6 +55,9 @@
     carte.dataset.qcmClic = '1';
     carte.classList.add('qcm-clic');
     const multiple = plusieursReponses(exerciceDe(idx));
+    // oui / non : pas de pastille « a » / « b », le mot suffit (comme vrai / faux)
+    const mots = [...options.querySelectorAll('.q-qcm-option')].map((o) => ((o.children[1] || o).textContent || '').trim().toLowerCase());
+    if (mots.length === 2 && mots.every((m) => m === 'oui' || m === 'non')) carte.classList.add('qcm-oui-non');
     options.querySelectorAll('.q-qcm-option').forEach((o) => {
       const lettre = (o.querySelector('.q-qcm-lettre') || {}).textContent || '';
       o.classList.add('cliquable');
