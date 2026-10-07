@@ -7611,3 +7611,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   « 14,25 ». Les angles tirés évitent les cas limites (partie décimale de 10θ à moins de 0,12 de 0,5) pour qu'un arrondi de calculatrice soit
   sans ambiguïté. Corrigé affiché « ≈ 143,1° », aide « ? » mise à jour.
   Vérifié : 120 tirages recomptés (0 erreur), cycle 775/775 / 775/775 / 450/450, 0 erreur MathJax.
+
+- **Première fiche 20 : marge sur le cosinus dans 20.6 c) (07/10/2026).** Demande de David : tolérer l'arrondi du cosinus. `checkApprox` accepte
+  maintenant toute valeur écrite avec une décimale que donne arccos(c') pour un cosinus c' compris dans [cos − 0,0005 ; cos + 0,0005]
+  (cosinus arrondi au millième), en plus de la valeur exacte arrondie (champs `approxCos`, `approxMarge`). Les angles tirés sont maintenant
+  compris entre 14,5° et 165,5° environ (sin θ ≥ 0,25) pour que la fenêtre reste de 1 à 3 valeurs (1 : 21 %, 2 : 68 %, 3 : 11 % des tirages) ;
+  l'aide « ? » le dit. Vérifié : fenêtre recalculée indépendamment (balayage fin de c') sur 1500 tirages, 0 écart ; 135,0 accepté,
+  135,1 / 134,9 / 136,5 / 12 refusés pour θ = 135° (cos = −√2/2) ; « 135,000 » accepté ; 0 erreur MathJax.
