@@ -7586,3 +7586,19 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   avec racines. Nouveau total : **25 questions, 12 calculs** (20.5 : 3, 20.6 : 3, 20.7 : 2).
   Vérifié : 40 tirages recomptés (0 erreur), cycle 625/625 corrigés acceptés, 625/625 fausses refusées, 350/350 non simplifiées refusées,
   lettres masquées sur les 6 cartes oui/non, audit de clic sur 14 fiches à QCM (toutes les bonnes réponses obtenues par clic), capture.
+
+- **Première fiche 20 : formule géométrique du produit scalaire et mesure d'un angle (07/10/2026).** Demande de David : 1) avant le calcul en
+  coordonnées, une section avec la formule « norme × norme × cosinus » ; 2) après le calcul en coordonnées, un exercice mêlant les deux
+  formules pour trouver la valeur approchée d'un angle en degrés. Nouvelle section **« Produit scalaire : norme et cosinus »**
+  (calcul 20.4, 3 questions, résultats rationnels, forme simplifiée) : a) normes entières et angle en degrés (0°, 60°, 90°, 120°, 180°),
+  b) angle en radians (π/3, 2π/3, π/4, 3π/4, π/6, 5π/6) avec une norme en k√2 ou k√3 qui se simplifie avec le cosinus, c) triangle
+  équilatéral ou carré de côté a (AB·AC, AB·BC, BA·BC, AB·CD, AC·BD, AC·DA : a²/2, −a²/2, a², −a², 0). Le calcul en coordonnées devient 20.5.
+  Nouveau calcul **20.6 « Mesure d'un angle »** (problème guidé) : points A, B, C, a) AB·AC par les coordonnées, b) cos(BAC) sous forme
+  simplifiée (une fois sur deux avec des vecteurs à normes entières, donc cosinus rationnel), c) mesure de BAC en degrés arrondie à
+  l'unité (accepte tout nombre à 0,5° près, unité non écrite, fraction de la partie décimale écartée autour de 0,5 pour que l'arrondi soit
+  net ; drapeau `approx` / `approxTol`, fonction `checkApprox`, corrigé « ≈ 143° »). **Calculatrice** : exception à la bannière « Calculatrice
+  interdite », qui précise maintenant « sauf pour la dernière question du calcul 20.6 » (la question c) en a besoin pour arccos).
+  Calculs suivants renumérotés (20.7 à 20.14). Nouveau total : **31 questions, 14 calculs**.
+  Vérifié : 125 tirages recomptés par un calcul indépendant à partir des énoncés (0 erreur, dont les produits scalaires, la figure
+  équilatéral/carré, le cosinus exact et l'angle), cycle 775/775 corrigés acceptés, 775/775 réponses fausses refusées, 450/450 écritures non
+  simplifiées refusées ; 14 ou 15 refusé, 13 refusé pour 14,25° ; 0 erreur MathJax ; captures des nouvelles sections.
