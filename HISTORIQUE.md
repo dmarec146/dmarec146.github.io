@@ -7436,3 +7436,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   à barème cohérentes, 33 questions tirées sur 300 générations toutes avec points ; affichage « Total : 19 points
   (+ 14,25 points de calculs avancés) » et note « 33,25 / 33,25 » toutes réponses justes vérifiés. Proposition à
   valider par David.
+
+- **Aide du point-virgule reformulée (fiches 17 et 18 de Première, 07/10/2026).** David : pourquoi le bouton « ? » dit « ⇧ puis
+  la touche } » plutôt que « ; » ? Vérifié à l'écran : sur le clavier MathLive, la touche `}` change d'étiquette quand on appuie
+  sur ⇧ (elle affiche alors `;`) ; le texte désignait l'emplacement de la touche avant le ⇧, ce qui prête à confusion.
+  Nouveau texte (6 occurrences : fiche 17 couples, points, vecteurs ; fiche 18 équations trigonométriques) : « le
+  point-virgule s'obtient en appuyant sur la touche ⇧ : la touche } se change alors en ; ». Seules ces deux fiches contenaient
+  la phrase.
