@@ -7381,3 +7381,20 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   « enlève la mesure principale » (interprété comme le rappel « La mesure principale d'un angle est son
   unique mesure appartenant à ]−π ; π] » du calcul 18.4, dans la suite de « 18.7 aucun rappel de formule »).
   Le calcul et ses 4 questions sont inchangés.
+
+- **Section « Comparaisons » déplacée de la fiche 18 à la fiche 19 de Première (07/10/2026).** Demande de
+  David : les calculs « Monotonie du cosinus et du sinus » (ancien 18.8, 4 QCM) et « Comparaison entre sinus
+  et cosinus » (ancien 18.9, 2 QCM dont un à choix multiples) se retrouvent dans la fiche 19, **avant les
+  calculs plus avancés**.
+  - Fiche 19 : nouvelle section « Comparaisons » après « Courbes représentatives » = 19.11 (monotonie) et
+    19.12 (comparaison), puis les avancés renumérotés 19.13 (formules d'addition), 19.14 (valeurs exactes),
+    19.15 (formules d'addition ?), 19.16 (tangente) ; 45 questions (39 + 6), 16 groupes ; la fiche reprend
+    l'option `pleineLargeur` de la fiche 18 (cartes d'un groupe en pleine largeur quand les options
+    tiennent sur une ligne défilante).
+  - Fiche 18 : 29 questions (35 − 6), 10 calculs ; les avancés deviennent 18.8 (valeurs de tan), 18.9
+    (parité et périodicité), 18.10 (avec la tangente) ; groupes `grille-18-1` à `grille-18-10`.
+  - Identifiants : positionnels, **ceux de 18.8 à 18.10 et de 19.11 à 19.16 changent** (aucun barème sur ces
+    deux fiches ; un devoir en cours sur l'une d'elles serait à revoir).
+  Vérifié : 45/45 et 29/29 questions, aucune carte manquante dans les grilles, cycles complets (450 et 435
+  réponses acceptées, les réponses des champs d'ensemble 19.1/19.2 étant saisies au format ascii comme
+  dans la fiche), réponses fausses refusées sur les QCM déplacés, 0 erreur MathJax, rendu contrôlé à l'écran.
