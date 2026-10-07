@@ -7490,3 +7490,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   - Calcul 19.11 « Valeurs exactes » (cos et sin de kπ/12) supprimé ; les avancés deviennent 19.11 (formule d'addition de la
     tangente) et 19.12 (équations a·cos x + b·sin x = c) ; groupes `grille-19-1` à `grille-19-12`, indices 0 à 33.
   Vérifié : 34 questions, 12 groupes, cartes complètes, cycle complet 408/408, 0 erreur MathJax.
+
+- **Première fiche 19 : 19.7 et 19.8 (courbes représentatives) supprimés (07/10/2026), 30 questions, 10 calculs.** David : ces questions
+  ne sont pas réellement traitées dans le programme du lycée. Section « Courbes représentatives » retirée (les deux calculs, leurs
+  figures et leurs 4 questions) ; avec elle le code devenu inutile : générateur de courbes, pool d'identités, dessin des figures SVG
+  (`genererSVGCourbeTrigo`, `construireGraphique24_10/11`), curseur de lecture des coordonnées et zoom au clic (`activerCurseurSvg`,
+  `activerZoomSvg`, modale), CSS correspondant. Les calculs suivants sont renumérotés : 19.7 monotonie, 19.8 comparaison sinus/cosinus,
+  puis avancés 19.9 (tangente) et 19.10 (équations a·cos x + b·sin x = c). Groupes `grille-19-1` à `grille-19-10`, indices 0 à 29.
+  Il ne reste donc aucune question graphique dans la fiche 19 (il y en avait été décidé le contraire le 07/10 au moment de la refonte).
+  Vérifié : 30 questions, 10 groupes, cartes complètes, cycle complet 360/360, 0 erreur MathJax, 0 erreur console.

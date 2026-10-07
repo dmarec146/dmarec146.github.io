@@ -205,73 +205,6 @@ window.MathJax = {
     outline: 2px solid var(--bleu-clair);
     outline-offset: 2px;
   }
-  /* ---------- bouton-icone "curseur avec coordonnees" + zoom au clic, portes depuis les fiches
-     14/15 de Seconde (memes fonctions/CSS que sur fiche-06 de Premiere) ---------- */
-  .figure-avec-curseur { position: relative; display: inline-block; line-height: 0; padding-right: 30px; }
-  .btn-curseur {
-    position: absolute; top: 4px; right: 0;
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 24px; height: 24px; border-radius: 6px;
-    background: rgba(255,255,255,0.92); border: 1.3px solid var(--bleu-clair);
-    color: var(--bleu); cursor: pointer; line-height: 0;
-  }
-  .btn-curseur:hover, .btn-curseur.actif { background: var(--bleu); border-color: var(--bleu); color: white; }
-  @media (hover: none) { .figure-avec-curseur { padding-right: 0; } .btn-curseur { display: none; } }
-  .figure-avec-curseur-modale { display: block; width: 100%; padding-right: 0; }
-  .figure-avec-curseur-modale .btn-curseur { top: 6px; left: 6px; right: auto; }
-  .curseur-groupe { pointer-events: none; }
-  svg.curseur-actif { cursor: crosshair; }
-  /* empeche le glissement tactile sur la figure d'etre intercepte comme un scroll de page : sans
-     ca, un geste au doigt sur une figure scrolle au lieu d'activer le curseur (voir cablerCurseurUnique).
-     Le clone agrandi de la modale (#modal-svg-contenu-interieur) perd la classe qcm-svg (voir
-     ouvrirModalSvg), d'ou le second selecteur. */
-  svg.qcm-svg, #modal-svg-contenu-interieur svg { touch-action: none; }
-  .modal-svg-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 20, 25, 0.8);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    cursor: zoom-out;
-  }
-  .modal-svg-overlay.ouvert {
-    display: flex;
-  }
-  .modal-svg-contenu {
-    position: relative;
-    background: white;
-    border-radius: 10px;
-    padding: 32px 14px 14px;
-    width: min(96vw, 720px);
-    max-height: 94vh;
-    overflow: auto;
-    cursor: default;
-  }
-  .modal-svg-contenu svg {
-    display: block;
-    margin: 0 auto;
-    width: 100%;
-    height: auto;
-  }
-  .modal-svg-fermer {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    background: none;
-    border: none;
-    font-size: 22px;
-    line-height: 1;
-    color: var(--gris);
-    cursor: pointer;
-    padding: 4px 8px;
-  }
-  .modal-svg-fermer:hover {
-    color: var(--rouge);
-  }
-
   .aide {
     font-size: 12.5px;
     color: var(--gris);
@@ -849,7 +782,6 @@ window.MathJax = {
     .clavier-visuel,
     .q-aide-btn,
     .barre-controle,
-    .modal-svg-overlay,
     #score-panneau .btn-secondaire {
       display: none !important;
     }
@@ -1011,38 +943,27 @@ window.MathJax = {
 <p class="calcul-titre"><span>Calcul 19.6 — Équations trigonométriques. Résoudre dans l'intervalle \(]-\pi\,;\pi]\) les équations suivantes (ensemble des solutions), <span class="titre-mise-en-valeur">sous la forme de fractions de \(\pi\) irréductibles</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-19-6"></div>
 
-<p class="section-titre">Courbes représentatives</p>
-<div class="section-barre"></div>
-
-<p class="calcul-titre"><span>Calcul 19.7 — Courbes représentatives.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="graphique-19-10"></div>
-<div class="question-grille" id="grille-19-7"></div>
-
-<p class="calcul-titre"><span>Calcul 19.8 — Autres courbes.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
-<div id="graphique-19-11"></div>
-<div class="question-grille" id="grille-19-8"></div>
-
 <p class="section-titre">Comparaisons</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 19.9 — Monotonie du cosinus et du sinus.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 19.7 — Monotonie du cosinus et du sinus.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <p>Dans chaque cas, \(t_1\) et \(t_2\) sont deux réels vérifiant l'encadrement indiqué. Quelle est l'affirmation juste ?</p>
-<div class="question-grille" id="grille-19-9"></div>
+<div class="question-grille" id="grille-19-7"></div>
 
-<p class="calcul-titre"><span>Calcul 19.10 — Comparaison entre sinus et cosinus.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 19.8 — Comparaison entre sinus et cosinus.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <p>Dans chaque question, plusieurs réponses sont possibles.</p>
-<div class="question-grille" id="grille-19-10"></div>
+<div class="question-grille" id="grille-19-8"></div>
 
 <div class="bloc-avance">
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 19.11 — Formule d'addition de la tangente. Les valeurs demandées sont à donner <span class="titre-mise-en-valeur">sous forme simplifiée</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 19.9 — Formule d'addition de la tangente. Les valeurs demandées sont à donner <span class="titre-mise-en-valeur">sous forme simplifiée</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
 <div class="rappel-formule">Soient \(a,b\in\mathbb{R}\) tels que \(\tan(a)\), \(\tan(b)\) et \(\tan(a+b)\) sont bien définis.</div>
-<div class="question-grille" id="grille-19-11"></div>
+<div class="question-grille" id="grille-19-9"></div>
 
-<p class="calcul-titre"><span>Calcul 19.12 — Équations de la forme \(a\cos(x)+b\sin(x)=c\). Résoudre dans l'intervalle \(]-\pi\,;\pi]\) les équations suivantes (ensemble des solutions), <span class="titre-mise-en-valeur">sous la forme de fractions de \(\pi\) irréductibles</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
-<div class="question-grille" id="grille-19-12"></div>
+<p class="calcul-titre"><span>Calcul 19.10 — Équations de la forme \(a\cos(x)+b\sin(x)=c\). Résoudre dans l'intervalle \(]-\pi\,;\pi]\) les équations suivantes (ensemble des solutions), <span class="titre-mise-en-valeur">sous la forme de fractions de \(\pi\) irréductibles</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="#555"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.65-.07-.97l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.65.07.97l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/></svg></span></p>
+<div class="question-grille" id="grille-19-10"></div>
 </div>
 
 <div class="barre-controle">
@@ -1086,13 +1007,6 @@ window.MathJax = {
   <a class="nav-btn" href="fiche-18.html">&larr; Fiche précédente</a>
   <span class="nav-btn nav-btn-disabled">Fiche suivante &rarr;</span>
   <button type="button" class="nav-btn nav-btn-pdf" onclick="exporterPDF()"><svg class="icone-pdf" width="15" height="15" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="#E24B4A"/><path d="M15 2v5h5z" fill="#ffffff" opacity="0.35"/><text x="12.5" y="17.5" font-family="Arial, Helvetica, sans-serif" font-size="7.3" font-weight="bold" fill="#ffffff" text-anchor="middle">PDF</text></svg>Exporter en PDF</button>
-</div>
-
-<div class="modal-svg-overlay" id="modal-svg-overlay" onclick="fermerModalSvg(event)">
-  <div class="modal-svg-contenu">
-    <button class="modal-svg-fermer" onclick="fermerModalSvg(event, true)" title="Fermer">&times;</button>
-    <div id="modal-svg-contenu-interieur"></div>
-  </div>
 </div>
 
 <script>
@@ -1223,16 +1137,6 @@ function piocheDistinct(tableau, n) {
   return res;
 }
 
-// ---------- toolkit formules d'addition sur les angles de base pi/6, pi/4, pi/3 ----------
-// ---------- pool d'identites d'angles associes se ramenant a cos(x), sin(x), -cos(x) ou -sin(x) ----------
-const IDENTITES_COURBE = [
-  ['\\cos(-x)', '\\sin\\left(x+\\dfrac{\\pi}{2}\\right)', '\\sin\\left(\\dfrac{\\pi}{2}-x\\right)', '-\\cos(\\pi-x)'],
-  ['\\sin(\\pi-x)', '\\cos\\left(x-\\dfrac{\\pi}{2}\\right)', '-\\cos\\left(x+\\dfrac{\\pi}{2}\\right)', '-\\sin(-x)'],
-  ['\\cos(x+\\pi)', '\\cos(\\pi-x)', '\\sin\\left(x-\\dfrac{\\pi}{2}\\right)', '-\\sin\\left(x+\\dfrac{\\pi}{2}\\right)'],
-  ['\\sin(-x)', '\\sin(x+\\pi)', '\\cos\\left(x+\\dfrac{\\pi}{2}\\right)', '-\\sin(\\pi-x)']
-];
-const LETTRES_COURBE = ['a','b','c','d'];
-
 function genererExercices() {
   const ex = [];
   // Calcul 19.1 - equations avec carres (8 items)
@@ -1351,27 +1255,14 @@ function genererExercices() {
       ex.push({id:"19.6 d)", type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(\\${g}(2x)=${e < 0 ? '-' : ''}\\${h}(x)\\)`, reponse: s});
     }
   })();
-  // Calcul 19.8 - courbes representatives (3 items, graphique fixe, identites tirees au sort)
-  (function() {
-    const lettres10 = ['a)','b)'];
-    for (let i=0;i<2;i++) {
-      const t = alea(0,3);
-      const pool = IDENTITES_COURBE[t];
-      const formule = pool[alea(0,pool.length-1)];
-      ex.push({id:`19.7 ${lettres10[i]}`, type:"qcm", texteLibre:true, enonce:`\\(f:x\\mapsto ${formule}\\)`, bonneReponse: LETTRES_COURBE[t]});
-    }
-  })();
-  // Calcul 19.13 - courbes representatives, autres (2 items, graphique fixe)
-  ex.push({id:"19.8 a)", type:"qcm", texteLibre:true, enonce:"Courbe a)", bonneReponse:"c", options:[{lettre:"a",texte:"\\cos(x)"},{lettre:"b",texte:"\\cos\\left(x-\\dfrac{\\pi}{3}\\right)"},{lettre:"c",texte:"\\cos\\left(x+\\dfrac{\\pi}{3}\\right)"},{lettre:"d",texte:"-\\cos\\left(x+\\dfrac{\\pi}{3}\\right)"}], optionsSurUneLigne:true});
-  ex.push({id:"19.8 b)", type:"qcm", texteLibre:true, enonce:"Courbe b)", bonneReponse:"c", options:[{lettre:"a",texte:"\\sin(x)"},{lettre:"b",texte:"\\sin\\left(x-\\dfrac{\\pi}{4}\\right)"},{lettre:"c",texte:"-\\sin\\left(x-\\dfrac{\\pi}{4}\\right)"},{lettre:"d",texte:"-\\sin\\left(x+\\dfrac{\\pi}{4}\\right)"}], optionsSurUneLigne:true});
-  // Calcul 19.9 - monotonie (4 items, QCM, theoreme fixe) ; la consigne commune est dans l'introduction
+  // Calcul 19.7 - monotonie (4 items, QCM, theoreme fixe) ; la consigne commune est dans l'introduction
   const OPT_COS = [{lettre:"a",texte:"\\cos(t_1)\\lt\\cos(t_2)"},{lettre:"b",texte:"\\cos(t_1)>\\cos(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}];
   const OPT_SIN = [{lettre:"a",texte:"\\sin(t_1)\\lt\\sin(t_2)"},{lettre:"b",texte:"\\sin(t_1)>\\sin(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}];
-  ex.push({id:"19.9 a)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"b", options:OPT_COS});
-  ex.push({id:"19.9 b)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"a", options:OPT_SIN});
-  ex.push({id:"19.9 c)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"b", options:OPT_COS});
-  ex.push({id:"19.9 d)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"c", options:OPT_SIN});
-  // Calcul 19.10 - comparaison sin/cos en des points (1 item, plusieurs bonnes reponses, randomise)
+  ex.push({id:"19.7 a)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"b", options:OPT_COS});
+  ex.push({id:"19.7 b)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"a", options:OPT_SIN});
+  ex.push({id:"19.7 c)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"b", options:OPT_COS});
+  ex.push({id:"19.7 d)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"c", options:OPT_SIN});
+  // Calcul 19.8 - comparaison sin/cos en des points (1 item, plusieurs bonnes reponses, randomise)
   (function() {
     let ks, reponses;
     do {
@@ -1381,11 +1272,11 @@ function genererExercices() {
     const lettresOpt = ['a','b','c','d','e','f'];
     const options = ks.map((k,i) => ({lettre: lettresOpt[i], texte: `x=${angleLatex(k)}`}));
     const bonne = lettresOpt.filter((l,i) => reponses[i]).join(',');
-    ex.push({id:"19.10 a)", type:"qcm", pleineLargeur:true, texteLibre:true, enonce:"Pour quelles valeurs du réel \\(x\\) a-t-on \\(\\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse: bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"19.8 a)", type:"qcm", pleineLargeur:true, texteLibre:true, enonce:"Pour quelles valeurs du réel \\(x\\) a-t-on \\(\\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse: bonne, options, optionsSurUneLigne:true});
   })();
   // Calcul 19.8 - comparaison sin/cos sur intervalle (1 item, theoreme fixe : la region est fixe, les intervalles proposes sont fixes)
-  ex.push({id:"19.10 b)", type:"qcm", texteLibre:true, enonce:"Sur quel(s) intervalle(s) \\(I\\) a-t-on \\(\\forall x\\in I,\\ \\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse:"b,c,f", options:[{lettre:"a",texte:"I_1=\\left[0;\\dfrac{\\pi}{2}\\right]"},{lettre:"b",texte:"I_2=\\left[0;\\dfrac{\\pi}{4}\\right]"},{lettre:"c",texte:"I_3=\\left[-\\dfrac{2\\pi}{3};-\\dfrac{\\pi}{3}\\right]"},{lettre:"d",texte:"I_4=\\left[\\dfrac{\\pi}{2};\\pi\\right]"},{lettre:"e",texte:"I_5=\\left[\\dfrac{7\\pi}{6};\\dfrac{5\\pi}{4}\\right]"},{lettre:"f",texte:"I_6=\\left[\\dfrac{3\\pi}{2};\\dfrac{9\\pi}{4}\\right]"}], optionsSurUneLigne:true});
-  // ---------- Calcul 19.11 - formule d'addition de la tangente (3 items) ----------
+  ex.push({id:"19.8 b)", type:"qcm", texteLibre:true, enonce:"Sur quel(s) intervalle(s) \\(I\\) a-t-on \\(\\forall x\\in I,\\ \\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse:"b,c,f", options:[{lettre:"a",texte:"I_1=\\left[0;\\dfrac{\\pi}{2}\\right]"},{lettre:"b",texte:"I_2=\\left[0;\\dfrac{\\pi}{4}\\right]"},{lettre:"c",texte:"I_3=\\left[-\\dfrac{2\\pi}{3};-\\dfrac{\\pi}{3}\\right]"},{lettre:"d",texte:"I_4=\\left[\\dfrac{\\pi}{2};\\pi\\right]"},{lettre:"e",texte:"I_5=\\left[\\dfrac{7\\pi}{6};\\dfrac{5\\pi}{4}\\right]"},{lettre:"f",texte:"I_6=\\left[\\dfrac{3\\pi}{2};\\dfrac{9\\pi}{4}\\right]"}], optionsSurUneLigne:true});
+  // ---------- Calcul 19.9 - formule d'addition de la tangente (3 items) ----------
   (function() {
     const optionsBase = [
       {texte:"\\dfrac{\\tan(a)+\\tan(b)}{1+\\tan(a)\\tan(b)}", correct:false},
@@ -1397,21 +1288,21 @@ function genererExercices() {
     const lettresQCM = ['a','b','c','d'];
     const options = shuffled.map((o,i) => ({lettre: lettresQCM[i], texte: o.texte}));
     const bonne = lettresQCM[shuffled.findIndex(o=>o.correct)];
-    ex.push({id:"19.11 a)", type:"qcm", texteLibre:true, enonce:"Choisir parmi les propositions une expression de \\(\\tan(a+b)\\) :", bonneReponse: bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"19.9 a)", type:"qcm", texteLibre:true, enonce:"Choisir parmi les propositions une expression de \\(\\tan(a+b)\\) :", bonneReponse: bonne, options, optionsSurUneLigne:true});
   })();
   (function() {
     // b) tan(a+b) a partir de tan(a) et tan(b)
     let A, B;
     do { A = math.fraction(aleaNonNul(-3,3), alea(1,5)); B = math.fraction(aleaNonNul(-3,3), alea(1,5)); } while (math.multiply(A, B).valueOf() === 1);
     const t = math.divide(math.add(A, B), math.subtract(1, math.multiply(A, B)));
-    ex.push({id:"19.11 b)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\tan(a)=${latexFrac(A)}\\) et \\(\\tan(b)=${latexFrac(B)}\\), que vaut \\(\\tan(a+b)\\) ?`, reponse: fracToStr(t)});
+    ex.push({id:"19.9 b)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\tan(a)=${latexFrac(A)}\\) et \\(\\tan(b)=${latexFrac(B)}\\), que vaut \\(\\tan(a+b)\\) ?`, reponse: fracToStr(t)});
     // c) tan(k*pi/12), k impair : +-2 +-sqrt(3)
     const k = [1,5,7,11,-1,-5,-7,-11][alea(0,7)], v = Math.tan(k * Math.PI / 12);
     let rep = null;
     for (const s0 of [2,-2]) for (const s1 of [1,-1]) if (Math.abs(s0 + s1 * Math.sqrt(3) - v) < 1e-9) rep = s1 > 0 && s0 < 0 ? 'sqrt(3)-' + (-s0) : s0 + (s1 < 0 ? '-' : '+') + 'sqrt(3)';
-    ex.push({id:"19.11 c)", type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: rep});
+    ex.push({id:"19.9 c)", type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: rep});
   })();
-  // ---------- Calcul 19.12 - equations a cos(x) + b sin(x) = c dans ]-pi ; pi] (3 items) ----------
+  // ---------- Calcul 19.10 - equations a cos(x) + b sin(x) = c dans ]-pi ; pi] (3 items) ----------
   (function() {
     // a cos(x) + b sin(x) = R cos(x - phi) avec R = 2, phi = +-pi/6, +-pi/3, +-2pi/3, +-5pi/6 (a, b dans {+-1, +-sqrt(3)}) ou R = sqrt(2), phi = +-pi/4, +-3pi/4 (a, b = +-1)
     const FAM = [
@@ -1432,7 +1323,7 @@ function genererExercices() {
       const num = (v) => v.coef.valueOf() * Math.sqrt(v.rad);
       const A = num(aV), B = num(bV), Cc = num(cV);
       const s = ensembleParSubstitution((x) => A * Math.cos(x) + B * Math.sin(x) - Cc);
-      ex.push({id:`19.12 ${l}`, type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(${lat(aV, 'cos', true)}${lat(bV, 'sin', false)}=${latexValeur(cV.coef, cV.rad)}\\)`, reponse: s});
+      ex.push({id:`19.10 ${l}`, type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(${lat(aV, 'cos', true)}${lat(bV, 'sin', false)}=${latexValeur(cV.coef, cV.rad)}\\)`, reponse: s});
     });
   })();
   return ex;
@@ -1446,12 +1337,10 @@ const groupes = {
   "grille-19-4": [6,7,8,9],
   "grille-19-5": [10,11,12,13],
   "grille-19-6": [14,15,16,17],
-  "grille-19-7": [18,19],
-  "grille-19-8": [20,21],
-  "grille-19-9": [22,23,24,25],
-  "grille-19-10": [26,27],
-  "grille-19-11": [28,29,30],
-  "grille-19-12": [31,32,33]
+  "grille-19-7": [18,19,20,21],
+  "grille-19-8": [22,23],
+  "grille-19-9": [24,25,26],
+  "grille-19-10": [27,28,29]
 };
 const lettresEtendues = ["a","b","c","d","e","f","g","h","i","j"];
 
@@ -3377,250 +3266,6 @@ function labelFormeCanonique(a, alpha, beta) {
   return coeffStr + '(x' + signeDecalage + absDecalage + ')² ' + signeBeta + ' ' + absBeta;
 }
 
-function genererSVGCourbeTrigo(fonctionJs, largeur, hauteur) {
-  largeur = largeur || 240; hauteur = hauteur || 170;
-  const xmin = -2*Math.PI, xmax = 2*Math.PI, ymin = -1.3, ymax = 1.3;
-  const toSvgX = x => (x - xmin) / (xmax - xmin) * largeur;
-  const toSvgY = y => hauteur - (y - ymin) / (ymax - ymin) * hauteur;
-  let points = [];
-  for (let i = 0; i <= 200; i++) {
-    const x = xmin + (xmax-xmin)*i/200;
-    const y = fonctionJs(x);
-    points.push(toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1));
-  }
-  const path = 'M ' + points.join(' L ');
-  const ox = toSvgX(0).toFixed(1), oy = toSvgY(0).toFixed(1);
-
-  let graduations = '';
-  // etiquettes en unicode brut (pas de LaTeX) : ce sont des <text> SVG, jamais passees a MathJax
-  const labelsX = [
-    [-2*Math.PI,'-2π'], [-3*Math.PI/2,'-3π/2'], [-Math.PI,'-π'], [-Math.PI/2,'-π/2'],
-    [Math.PI/2,'π/2'], [Math.PI,'π'], [3*Math.PI/2,'3π/2'], [2*Math.PI,'2π']
-  ];
-  labelsX.forEach(([gx, lbl], i) => {
-    const sx = toSvgX(gx).toFixed(1);
-    // eviter que les etiquettes extremes (-2pi, 2pi) debordent du viewBox et soient rognees
-    const ancre = i === 0 ? 'start' : (i === labelsX.length-1 ? 'end' : 'middle');
-    graduations += `<line x1="${sx}" y1="${(parseFloat(oy)-2).toFixed(1)}" x2="${sx}" y2="${(parseFloat(oy)+2).toFixed(1)}" stroke="#999" stroke-width="0.8"/><text x="${sx}" y="${(parseFloat(oy)+11).toFixed(1)}" font-size="7" text-anchor="${ancre}" fill="#666">${lbl}</text>`;
-  });
-  [-1,-0.5,0.5,1].forEach(gy => {
-    const sy = toSvgY(gy).toFixed(1);
-    graduations += `<line x1="${(parseFloat(ox)-2).toFixed(1)}" y1="${sy}" x2="${(parseFloat(ox)+2).toFixed(1)}" y2="${sy}" stroke="#999" stroke-width="0.8"/><text x="${(parseFloat(ox)-8).toFixed(1)}" y="${(parseFloat(sy)+2.5).toFixed(1)}" font-size="7" text-anchor="middle" fill="#666">${gy}</text>`;
-  });
-  for (let i=Math.ceil(xmin/(Math.PI/2)); i<=Math.floor(xmax/(Math.PI/2)); i++) {
-    if (i===0) continue;
-    const gx = i*Math.PI/2;
-    const sx = toSvgX(gx).toFixed(1);
-    graduations += `<line x1="${sx}" y1="0" x2="${sx}" y2="${hauteur}" stroke="#eee" stroke-width="0.6"/>`;
-  }
-
-  // data-* : donnees de conversion pixel<->coordonnees, reutilisees par activerCurseurSvg (voir
-  // plus bas). marge=0 ici : le trace occupe tout le canevas, pas de bande vide autour comme sur
-  // genererSVGCourbe (fiche 6). width/height explicites (en plus du viewBox), meme raison que sur
-  // fiche-06 : necessaire pour que le bouton-icone du curseur ne casse pas le calcul de hauteur.
-  return `<svg viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}" xmlns="http://www.w3.org/2000/svg" class="qcm-svg" style="max-width:260px;"
-    data-xmin="${xmin}" data-xmax="${xmax}" data-ymin="${ymin}" data-ymax="${ymax}" data-marge="0">
-    <line x1="0" y1="${oy}" x2="${largeur}" y2="${oy}" stroke="#ccc" stroke-width="1"/>
-    <line x1="${ox}" y1="0" x2="${ox}" y2="${hauteur}" stroke="#ccc" stroke-width="1"/>
-    ${graduations}
-    <path d="${path}" fill="none" stroke="#e8820c" stroke-width="2"/>
-    <g class="curseur-groupe" visibility="hidden">
-      <line class="curseur-ligne-v" x1="0" y1="0" x2="0" y2="${hauteur}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
-      <line class="curseur-ligne-h" x1="0" y1="0" x2="${largeur}" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
-      <text class="curseur-texte" font-size="9" fill="#666"></text>
-    </g>
-  </svg>`;
-}
-
-function construireGraphique24_10() {
-  const options = [
-    {label:'a', func: x => Math.cos(x)},
-    {label:'b', func: x => Math.sin(x)},
-    {label:'c', func: x => -Math.cos(x)},
-    {label:'d', func: x => -Math.sin(x)},
-  ];
-  let html = '<p>Pour chacune des fonctions suivantes, reconnaître sa courbe représentative parmi les propositions :</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  options.forEach(o => {
-    const svg = genererSVGCourbeTrigo(o.func, 240, 170);
-    html += `<div><div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div><p style="text-align:center;">(${o.label})</p></div>`;
-  });
-  html += '</div>';
-  document.getElementById('graphique-19-10').innerHTML = html;
-  activerZoomSvg(document.getElementById('graphique-19-10'));
-  activerCurseurSvg(document.getElementById('graphique-19-10'));
-}
-
-function construireGraphique24_11() {
-  const courbeA = genererSVGCourbeTrigo(x => Math.cos(x+Math.PI/3), 260, 190);
-  const courbeB = genererSVGCourbeTrigo(x => -Math.sin(x-Math.PI/4), 260, 190);
-  let html = '<p>Pour chacune des courbes suivantes, choisir parmi les propositions la fonction correspondante.</p>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  html += `<div><p>a)</p><div class="figure-centree"><span class="figure-avec-curseur">${courbeA}${boutonCurseurHTML()}</span></div></div>`;
-  html += `<div><p>b)</p><div class="figure-centree"><span class="figure-avec-curseur">${courbeB}${boutonCurseurHTML()}</span></div></div>`;
-  html += '</div>';
-  document.getElementById('graphique-19-11').innerHTML = html;
-  activerZoomSvg(document.getElementById('graphique-19-11'));
-  activerCurseurSvg(document.getElementById('graphique-19-11'));
-}
-
-// ---------- curseur avec lecture des coordonnees + agrandissement au clic, portes depuis les
-// fiches 14/15 de Seconde (meme code que sur fiche-06 de Premiere). Adaptation tactile (Pointer
-// Events, curseur ancre sur la courbe, persiste au relachement) portee depuis la fiche 1 de
-// Premiere apres validation sur celle-ci (18/09/2026) : voir le commentaire detaille sur
-// cablerCurseurUnique dans fiche-06.html. Ici genererSVGCourbeTrigo ne fournit pas de data-pas
-// (graduations en multiples de π, pas une grille decimale) : pasFin reste a 0, donc l'abscisse
-// tactile suit le doigt sans aimantation — coherent, ces exercices demandent de reconnaitre une
-// forme de courbe, pas de lire une valeur precise.
-function activerCurseurSvg(container) {
-  if (!container) return;
-  container.querySelectorAll('svg.qcm-svg').forEach(cablerCurseurUnique);
-}
-// cable le curseur sur UN svg donne (independant de la classe qcm-svg, requise pour re-cabler le
-// clone affiche dans la modale de zoom — voir ouvrirModalSvg — qui retire cette classe).
-function cablerCurseurUnique(svg) {
-  const xmin = parseFloat(svg.dataset.xmin), xmax = parseFloat(svg.dataset.xmax);
-  const ymin = parseFloat(svg.dataset.ymin), ymax = parseFloat(svg.dataset.ymax);
-  const marge = parseFloat(svg.dataset.marge);
-  const pas = parseFloat(svg.dataset.pas) || 0;
-  const groupe = svg.querySelector('.curseur-groupe');
-  const ligneV = svg.querySelector('.curseur-ligne-v'), ligneH = svg.querySelector('.curseur-ligne-h');
-  const texte = svg.querySelector('.curseur-texte');
-  const chemin = svg.querySelector('path');
-  const largeur = svg.viewBox.baseVal.width, hauteur = svg.viewBox.baseVal.height;
-  const pasFin = pas > 0 ? pas / 4 : 0;
-  const auPasFin = (v) => pasFin > 0 ? Math.round(v / pasFin) * pasFin : v;
-
-  // point du trace (chemin SVG de la courbe) dont l'abscisse-pixel est la plus proche de pxCible.
-  function pointCourbeA(pxCible) {
-    if (!chemin) return null;
-    let bas = 0, haut = chemin.getTotalLength();
-    for (let i = 0; i < 24; i++) {
-      const milieu = (bas + haut) / 2;
-      if (chemin.getPointAtLength(milieu).x < pxCible) bas = milieu; else haut = milieu;
-    }
-    return chemin.getPointAtLength((bas + haut) / 2);
-  }
-
-  function afficherRepere(px, py, tactile) {
-    groupe.setAttribute('visibility', 'visible');
-    ligneV.setAttribute('x1', px.toFixed(1)); ligneV.setAttribute('x2', px.toFixed(1));
-    ligneH.setAttribute('y1', py.toFixed(1)); ligneH.setAttribute('y2', py.toFixed(1));
-    const x = xmin + (px - marge) / (largeur - 2*marge) * (xmax - xmin);
-    const y = ymin + (hauteur - marge - py) / (hauteur - 2*marge) * (ymax - ymin);
-    const texteX = px < largeur - 60 ? px + 5 : px - 5;
-    const ancrage = px < largeur - 60 ? 'start' : 'end';
-    const decalage = tactile ? 26 : 5;
-    const texteY = py > marge + decalage ? py - decalage : py + (tactile ? 30 : 12);
-    texte.setAttribute('x', texteX.toFixed(1)); texte.setAttribute('y', texteY.toFixed(1));
-    texte.setAttribute('text-anchor', ancrage);
-    texte.textContent = `(${fmtGraduation(Math.round(x*100)/100)} ; ${fmtGraduation(Math.round(y*100)/100)})`;
-  }
-
-  svg.addEventListener('pointermove', (evt) => {
-    const tactile = evt.pointerType !== 'mouse';
-    if (!tactile && !svg.classList.contains('curseur-actif')) return;
-    const pt = svg.createSVGPoint();
-    pt.x = evt.clientX; pt.y = evt.clientY;
-    const local = pt.matrixTransform(svg.getScreenCTM().inverse());
-    if (local.x < marge || local.x > largeur - marge) return; // hors abscisse : on garde le dernier repere affiche
-    if (tactile) {
-      let pxCible = local.x;
-      if (pasFin > 0) {
-        const xBrut = xmin + (local.x - marge) / (largeur - 2*marge) * (xmax - xmin);
-        const xAimante = auPasFin(xBrut);
-        pxCible = marge + (xAimante - xmin) / (xmax - xmin) * (largeur - 2*marge);
-      }
-      const ptCourbe = pointCourbeA(pxCible);
-      if (ptCourbe) afficherRepere(ptCourbe.x, ptCourbe.y, true);
-    } else {
-      if (local.y < marge || local.y > hauteur - marge) { groupe.setAttribute('visibility', 'hidden'); return; }
-      afficherRepere(local.x, local.y, false);
-    }
-  });
-  const cacherSiSouris = (evt) => { if (evt.pointerType === 'mouse') groupe.setAttribute('visibility', 'hidden'); };
-  svg.addEventListener('pointerup', cacherSiSouris);
-  svg.addEventListener('pointercancel', cacherSiSouris);
-  svg.addEventListener('pointerleave', cacherSiSouris);
-}
-function fmtGraduation(v) {
-  const arrondi = Math.round(v * 1000) / 1000;
-  return Number.isInteger(arrondi) ? String(arrondi) : String(arrondi).replace('.', ',');
-}
-// icone reticule (14x14, viewBox 24x24) : meme gabarit que ICONE_LOUPE d'automatismes/moteur.js.
-const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
-  + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
-  + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-  + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-  + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-  + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-function boutonCurseurHTML() {
-  return `<span class="btn-curseur" onclick="toggleCurseurSvg(this)"
-    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCurseurSvg(this)}"
-    role="button" tabindex="0" title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">${ICONE_CURSEUR}</span>`;
-}
-function toggleCurseurSvg(btn) {
-  const svg = btn.parentElement.querySelector('svg');
-  if (!svg) return;
-  const actif = svg.classList.toggle('curseur-actif');
-  btn.classList.toggle('actif', actif);
-  if (!actif) svg.querySelector('.curseur-groupe').setAttribute('visibility', 'hidden');
-}
-
-// selecteur "svg.qcm-svg" (pas juste "svg") : necessaire depuis que le bouton-icone du curseur
-// (voir boutonCurseurHTML) contient lui-meme un <svg> -- un selecteur generique l'aurait aussi
-// rendu zoomable, ouvrant a tort la modale sur l'icone au lieu du graphique au clic sur ce bouton.
-function activerZoomSvg(container) {
-  if (!container) return;
-  container.querySelectorAll('svg.qcm-svg').forEach(svg => {
-    svg.classList.add('svg-agrandissable');
-    svg.setAttribute('tabindex', '0');
-    svg.setAttribute('role', 'button');
-    svg.setAttribute('aria-label', 'Agrandir ce graphique');
-    svg.addEventListener('click', () => ouvrirModalSvg(svg));
-    svg.addEventListener('keydown', (evt) => {
-      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirModalSvg(svg); }
-    });
-  });
-}
-
-function ouvrirModalSvg(svg) {
-  const interieur = document.getElementById('modal-svg-contenu-interieur');
-  interieur.innerHTML = '';
-  const clone = svg.cloneNode(true);
-  clone.classList.remove('svg-agrandissable', 'qcm-svg');
-  clone.removeAttribute('style');
-  clone.removeAttribute('width');
-  clone.removeAttribute('height');
-  // le curseur (voir cablerCurseurUnique) doit continuer a fonctionner dans la modale agrandie :
-  // cloneNode() ne copie pas les ecouteurs, il faut recabler explicitement le clone.
-  const aCurseur = svg.dataset.xmin !== undefined;
-  if (aCurseur) {
-    const enveloppe = document.createElement('span');
-    enveloppe.className = 'figure-avec-curseur figure-avec-curseur-modale';
-    enveloppe.appendChild(clone);
-    enveloppe.insertAdjacentHTML('beforeend', boutonCurseurHTML());
-    interieur.appendChild(enveloppe);
-    cablerCurseurUnique(clone);
-    if (svg.classList.contains('curseur-actif')) {
-      clone.classList.add('curseur-actif');
-      enveloppe.querySelector('.btn-curseur').classList.add('actif');
-    }
-  } else {
-    interieur.appendChild(clone);
-  }
-  document.getElementById('modal-svg-overlay').classList.add('ouvert');
-}
-
-function fermerModalSvg(evt, force) {
-  if (force || evt.target.id === 'modal-svg-overlay') {
-    document.getElementById('modal-svg-overlay').classList.remove('ouvert');
-  }
-}
-
-document.addEventListener('keydown', (evt) => {
-  if (evt.key === 'Escape') fermerModalSvg(null, true);
-});
-
 // Au chargement : si un brouillon existe pour cette fiche (clic precedent
 // sur "Enregistrer", jamais valide depuis), on reprend ses valeurs generees
 // et les reponses deja saisies plutot que d'en tirer de nouvelles.
@@ -3709,8 +3354,6 @@ async function initialiserFiche() {
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
   }
 construireGrilles();
-construireGraphique24_10();
-construireGraphique24_11();
 attacherEcouteurs();
 attacherEcouteursTactiles();
 definirMode(true);
