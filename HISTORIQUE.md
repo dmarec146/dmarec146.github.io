@@ -7427,3 +7427,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   questions recalculées indépendamment par balayage numérique des racines, 0 écart ; répartition de b sur 600
   tirages : 38, 41, 61, 65, 46, 49 pour 1, 2, 3, −1, −3, −2 ; nombre de solutions 2 / 4 / 6 en proportions
   voisines ; 146 énoncés distincts par question (au lieu de 39) ; cycle complet accepté (60/60).
+
+- **Barème de la fiche 18 de Première (07/10/2026) : base 19 points, bonus 14,25 points.** Fichier
+  `outils/bareme/fiche-18.json` (33 questions), fiche câblée (`cabler-fiche.js 18`), `appliquer-bareme.js` étendu à la
+  fiche 18. Bonus (E) = les calculs avancés 18.9 (valeurs de tan, 4 × 1,5), 18.10 (parité 1,5, périodicité 1,5), 18.11
+  (1,5 / 1,75 / 2). Cœur : 18.1 (0,5 / 0,75), 18.2 (0,75 / 0,5), 18.3 (0,5 × 2), 18.4 (0,5 / 0,5 / 0,75 / 1),
+  18.5 (0,5 × 4), 18.6 (0,75 / 0,75 / 1 / 1), 18.7 (1 / 1), 18.8 (1 / 1 / 1,5 / 1,75). Contrôle de cohérence : 19 fiches
+  à barème cohérentes, 33 questions tirées sur 300 générations toutes avec points ; affichage « Total : 19 points
+  (+ 14,25 points de calculs avancés) » et note « 33,25 / 33,25 » toutes réponses justes vérifiés. Proposition à
+  valider par David.
