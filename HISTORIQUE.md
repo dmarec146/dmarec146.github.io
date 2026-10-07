@@ -7663,3 +7663,15 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : 190 tirages recomptés par un calcul indépendant à partir des énoncés (signe sur grille fine, bornes et inclusions, racines des équations,
   produit scalaire, valeur des puissances, forme simplifiée de la réponse) : 0 erreur ; variété (287 à 400 énoncés distincts sur 400 tirages) ; cycle
   180/180 corrigés acceptés, 180/180 réponses fausses refusées, 30/30 écritures non simplifiées refusées ; structure : 46 cartes, 19 groupes, 0 erreur MathJax ; capture.
+
+- **Première fiche 21 : retouches après les automatismes (07/10/2026).** Demandes de David (numérotation d'alors) : supprimer 21.4 (« Un calcul fondamental » : u·v en lettres
+  et QCM du vecteur orthogonal) avec sa section « Autour des vecteurs normaux » ; 21.7 a) doit mener à une vraie équation du second degré ; 21.9 et 21.10 ramenés à
+  deux exemples ; 21.11 : un vecteur directeur à la place du vecteur normal dans l'une des deux questions. Réalisé : **21.4 supprimé** et fiche renumérotée (anciens
+  21.5 à 21.19 → 21.4 à 21.18) ; **ancien 21.7 a) (devenu 21.6 a)** : u(a₁m+A ; a₂m+B)·n(c₁m+C ; c₂m+D) = 0 avec a₁, a₂, c₁, c₂ ∈ {±1, ±2} et a₁c₁+a₂c₂ ≠ 0 (le terme en m²
+  ne se simplifie plus), réponse = deux solutions rationnelles (discriminant carré parfait), « Trouver les valeurs du réel m » ; **anciens 21.9 → 21.8** : deux QCM de
+  vecteur normal (celui d'une droite donnée par son équation, puis celui de y = Kx avec plusieurs bonnes réponses) ; **anciens 21.10 → 21.9** : deux oui/non, un oui et un non
+  (ordre tiré) ; **ancien 21.11 → 21.10** : « la droite passant par A et de vecteur normal n » dans l'une des deux questions, « de vecteur directeur u » dans l'autre (laquelle est tirée au
+  hasard ; équation cartésienne attendue, tout multiple accepté). Au passage, `coordLatex` écrit `\dfrac` (et non `\frac`) dans cette fiche. Nouveau total : **41 questions,
+  18 calculs** (calculs : 21.1 à 21.3 automatismes, 21.4 à 21.7 droites et vecteurs, 21.8 à 21.10, 21.11 à 21.12 projeté et distance, 21.13 à 21.15 cercles, 21.16 à 21.18 avancés).
+  Vérifié : 300 tirages recomptés (équation en m de degré 2 à chaque tirage, racines vérifiées, équation cartésienne passant par A et colinéaire au bon vecteur normal, un directeur et un
+  normal à chaque tirage, un oui et un non, aucun `\frac` dans les énoncés) ; cycle 150/150, 90/90 fausses refusées, 120/120 clics de QCM ; 0 erreur MathJax ; 41 cartes.
