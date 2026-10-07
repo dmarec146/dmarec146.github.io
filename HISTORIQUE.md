@@ -7482,3 +7482,11 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   |f| (racines doubles comprises, π inclus, −π exclu) : aucun écart ; cycle complet 380 à 456 réponses acceptées ; 110 écritures
   non simplifiées ou énoncés recopiés refusés ; 0 erreur MathJax ; captures. Fiche 18 : cycle complet 396/396 après le correctif.
   Pas de barème sur la fiche 19 ; identifiants renumérotés (un devoir en cours sur cette fiche serait à revoir).
+
+- **Première fiche 19 : titre de 19.4 simplifié, 19.11 supprimé (07/10/2026), 34 questions, 12 calculs.** David : le titre de 19.4 ne
+  convient pas (retirer notamment « où bx est le terme en x de l'énoncé », garder A, B et b réels) ; supprimer 19.11.
+  - Titre de 19.4 : « Développer chaque expression **sous la forme A cos(bx) + B sin(bx)**, où A, B et b sont des réels »
+    (« (valeurs exactes) » retiré aussi ; l'aide du « ? » garde la consigne de valeurs exactes).
+  - Calcul 19.11 « Valeurs exactes » (cos et sin de kπ/12) supprimé ; les avancés deviennent 19.11 (formule d'addition de la
+    tangente) et 19.12 (équations a·cos x + b·sin x = c) ; groupes `grille-19-1` à `grille-19-12`, indices 0 à 33.
+  Vérifié : 34 questions, 12 groupes, cartes complètes, cycle complet 408/408, 0 erreur MathJax.
