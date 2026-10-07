@@ -7692,3 +7692,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   la section « Calculs plus avancés » (distance d'un point à une droite, tangente à un cercle, cercle tangent à une droite : 21.14 à 21.16). Fiche renumérotée : **34 questions, 16 calculs**
   (21.1 à 21.3 automatismes, 21.4 à 21.10 droites et vecteurs, 21.11 et 21.12 projeté et distance, 21.13 cercle de diamètre, 21.14 à 21.16 avancés). Vérifié : 300 tirages de 21.13 recomptés
   (coefficients et équation développée de (x−xA)(x−xB)+(y−yA)(y−yB) = 0), cycle 90/90 corrigés acceptés et 90/90 réponses fausses refusées pour 21.13, 21.15, 21.16, 34 cartes, 0 erreur MathJax.
+
+- **Première fiche 21 : fusion de 21.4 et 21.8, puis barème (07/10/2026).** Fusion demandée par David (« trois exemples suffisent ») : les deux calculs de QCM sur les
+  vecteurs normaux et directeurs deviennent un seul **calcul 21.4 à 3 QCM**, un clic suffit : a) vecteur normal d'une droite donnée par son équation, b) vecteur normal connaissant un vecteur
+  directeur, c) vecteur directeur d'une droite perpendiculaire à une droite de vecteur normal donné. Le QCM « plusieurs bonnes réponses » (y = Kx, avec son bouton « Valider ») est retiré,
+  l'ancien 21.8 b) également. Fiche renumérotée (anciens 21.9 à 21.16 → 21.8 à 21.15) : **33 questions, 15 calculs** (21.1 à 21.3 automatismes, 21.4 à 21.9 droites et vecteurs, 21.10 et 21.11 projeté et
+  distance, 21.12 cercle de diamètre, 21.13 à 21.15 avancés). **Barème de la fiche 21 : base 20 points, bonus 11,5 points** (`outils/bareme/fiche-21.json`, `cabler-fiche.js 21`,
+  `appliquer-bareme.js` étendu). Cœur : 21.1 inéquations (0,5 / 0,75), 21.2 équations (0,75 / 0,5), 21.3 calcul numérique (0,5 / 0,75), 21.4 QCM (0,5 / 0,5 / 0,75), 21.5 vecteur normal à (AB) (0,5 / 0,75),
+  21.6 deux équations (1,25 / 1), 21.7 vecteurs directeurs et normaux (4 × 0,5), 21.8 droites perpendiculaires (0,75 / 0,75), 21.9 équations cartésiennes (0,75 / 1), 21.10 projeté orthogonal (1 / 1,25),
+  21.11 distances (1 / 1,25), 21.12 cercle de diamètre (1,25). Bonus (E) = avancés : 21.13 formule générale de la distance (1,5 / 1,5 / 1,5 / 1,75 / 1,75), 21.14 tangente (1,75), 21.15 cercle tangent
+  à une droite (1,75). Contrôle : 33 questions tirées sur 300 générations, toutes avec points ; « Total : 20 points (+ 11,5 points de calculs avancés) » ; note 31,5 / 31,5 toutes justes, 20 / 20 sur
+  le cœur seul, 11,5 / 31,5 sur le bonus seul, 0 / 20 à vide ; cycle des 3 QCM : 120/120 clics justes, 120/120 clics faux refusés ; 0 erreur MathJax. Proposition à valider par David.
