@@ -7443,3 +7443,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Nouveau texte (6 occurrences : fiche 17 couples, points, vecteurs ; fiche 18 équations trigonométriques) : « le
   point-virgule s'obtient en appuyant sur la touche ⇧ : la touche } se change alors en ; ». Seules ces deux fiches contenaient
   la phrase.
+
+- **Barème de la fiche 18, ajustements de David (07/10/2026) : base 19 points, bonus 14,25 points.** 18.4 d) 0,75 ; 18.8 d) 1,5 ;
+  puis, pour que le total de base reste entier (18,5 → 19, « option 2 ») : 18.8 c) 1,75 et 18.4 c) 1 (catégorie B). Contrôle de
+  cohérence : fichiers cohérents ; affichage « Total : 19 points (+ 14,25 points de calculs avancés) » et pastilles de 33
+  questions vérifiés. Remarque laissée à David : 18.4 c) (plusieurs tours, 1 pt) vaut maintenant plus que 18.4 d) (grand
+  multiple, 0,75 pt).
