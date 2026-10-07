@@ -7675,3 +7675,13 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   18 calculs** (calculs : 21.1 à 21.3 automatismes, 21.4 à 21.7 droites et vecteurs, 21.8 à 21.10, 21.11 à 21.12 projeté et distance, 21.13 à 21.15 cercles, 21.16 à 21.18 avancés).
   Vérifié : 300 tirages recomptés (équation en m de degré 2 à chaque tirage, racines vérifiées, équation cartésienne passant par A et colinéaire au bon vecteur normal, un directeur et un
   normal à chaque tirage, un oui et un non, aucun `\frac` dans les énoncés) ; cycle 150/150, 90/90 fausses refusées, 120/120 clics de QCM ; 0 erreur MathJax ; 41 cartes.
+
+- **Première fiche 21 : formes simplifiées, corrigé de la distance, énoncés (07/10/2026).** Suite de l'audit (numérotation actuelle). **Forme simplifiée exigée et contrôlée**
+  (`estSimplifie` : couple (x;y), triplet a;b;c ou valeur seule, via `estValeurSimplifiee`) en 21.11 a/b (projeté), 21.12 a/b (distances), 21.14 a à d (centre et rayon) et
+  21.18 (coefficients de l'équation du cercle), avec la phrase en bleu dans les titres. **21.12 b)** : distance écrite `114√85/85` (`surdFrac`) au lieu de « (47/26) × √26 » ;
+  **bug corrigé** : quand √(a²+b²) est entier (vecteur BC de norme entière), la réponse attendue était |N|/(a²+b²) au lieu de |N|/√(a²+b²) (cas rare, 5 % environ des tirages à vérifier). **21.14** :
+  la parenthèse « (on pourra s'inspirer de la mise sous forme canonique d'un trinôme du second degré) » est retirée (règle : jamais la démarche dans le titre). **21.8 b)** :
+  « (plusieurs réponses possibles) » ajouté à l'énoncé du QCM à deux bonnes réponses, qui justifie le bouton « Valider ». Non traité : 21.4 et 21.8 (QCM sur les vecteurs normaux) restent
+  proches ; barème de la fiche 21 non fait.
+  Vérifié : 410 tirages recomptés par un calcul indépendant à partir des énoncés (projeté par produit scalaire, distances par formule et par produit vectoriel, centre et rayon à partir de
+  l'équation, cercle tangent) : 0 erreur ; cycle 270/270 corrigés acceptés, 270/270 réponses fausses refusées, 270/270 écritures non simplifiées refusées ; 0 erreur MathJax.
