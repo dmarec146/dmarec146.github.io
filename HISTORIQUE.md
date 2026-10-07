@@ -7499,3 +7499,11 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   puis avancés 19.9 (tangente) et 19.10 (équations a·cos x + b·sin x = c). Groupes `grille-19-1` à `grille-19-10`, indices 0 à 29.
   Il ne reste donc aucune question graphique dans la fiche 19 (il y en avait été décidé le contraire le 07/10 au moment de la refonte).
   Vérifié : 30 questions, 10 groupes, cartes complètes, cycle complet 360/360, 0 erreur MathJax, 0 erreur console.
+
+- **Barème de la fiche 19 de Première (07/10/2026) : base 20 points, bonus 10 points.** Fichier `outils/bareme/fiche-19.json`
+  (30 questions), fiche câblée (`cabler-fiche.js 19`), `appliquer-bareme.js` étendu à la fiche 19. Cœur : 19.1 (0,5 / 0,75),
+  19.2 (0,5 / 0,75), 19.3 (0,5 / 0,75), 19.4 développement (0,75 / 0,75 / 1 / 1), 19.5 duplication (0,5 / 1 / 0,5 / 1,25),
+  19.6 équations (1,25 / 1,25 / 1,5 / 1,5), 19.7 monotonie (4 × 0,5), 19.8 comparaison (0,75 / 1,25). Bonus (E) = avancés :
+  19.9 tangente (1,5 / 1,5 / 1,75), 19.10 équations a·cos x + b·sin x = c (3 × 1,75). Contrôle de cohérence : 20 fiches à
+  barème cohérentes, 30 questions tirées sur 300 générations toutes avec points ; « Total : 20 points (+ 10 points de calculs
+  avancés) » et note 30 / 30 toutes réponses justes vérifiés. Proposition à valider par David.
