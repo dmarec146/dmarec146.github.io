@@ -7618,3 +7618,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   compris entre 14,5° et 165,5° environ (sin θ ≥ 0,25) pour que la fenêtre reste de 1 à 3 valeurs (1 : 21 %, 2 : 68 %, 3 : 11 % des tirages) ;
   l'aide « ? » le dit. Vérifié : fenêtre recalculée indépendamment (balayage fin de c') sur 1500 tirages, 0 écart ; 135,0 accepté,
   135,1 / 134,9 / 136,5 / 12 refusés pour θ = 135° (cos = −√2/2) ; « 135,000 » accepté ; 0 erreur MathJax.
+
+- **Première fiche 20 : marge au centième et barème (07/10/2026).** 1) Marge sur le cosinus portée de 0,0005 à **0,005** (cosinus arrondi au
+  centième ; aide « ? » mise à jour) : `approxMarge: 0.005` ; les angles tirés de 20.6 c) sont limités à 30°–150° (sin θ ≥ 0,5) pour garder une
+  fenêtre raisonnable (7 à 13 valeurs acceptées, 8,6 en moyenne, soit environ ± 0,4°) ; fenêtre recalculée indépendamment sur 1500 tirages,
+  0 écart ; cos = −0,71 donne 135,2° accepté pour θ = 135°. 2) **Barème de la fiche 20 : base 20 points, bonus 10 points** (`outils/bareme/fiche-20.json`,
+  31 questions, fiche câblée par `cabler-fiche.js 20`, `appliquer-bareme.js` étendu). Cœur : 20.1 inéquations (0,5 / 0,75), 20.2 équations (0,5 / 0,75),
+  20.3 vecteurs (0,5 / 0,5), 20.4 norme et cosinus (0,5 / 0,75 / 0,75), 20.5 coordonnées (0,5 / 1), 20.6 mesure d'un angle (0,5 / 1,25 / 1),
+  20.7 oui/non (0,5 / 0,5 / 0,75), 20.8 trouver x (0,75 / 1 / 1,25), 20.9 droites par un point et un vecteur normal (0,75 / 1), 20.10 perpendiculaire
+  à (D) (1,25), 20.11 droites du triangle (1,25 / 1,25). Bonus (E) = avancés : 20.12 rectangle (1,5 / 1,5 / 1,5 / 1,75), 20.13 tangentes (1,75),
+  20.14 tangentes avec paramètre (2). Contrôle : 31 questions tirées sur 300 générations, toutes avec points ; « Total : 20 points (+ 10 points de
+  calculs avancés) » ; note 30/30 toutes justes, 20/20 sur le cœur seul, 10/30 sur le bonus seul, 0/20 à vide. Proposition à valider par David.

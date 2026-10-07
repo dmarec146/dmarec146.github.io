@@ -18,6 +18,11 @@ window.MathJax = {
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
+<script src="../../../assets/js/bareme.js"></script>
+<script>
+// Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
+Bareme.definir({"points":{"20.1 a)":0.5,"20.1 b)":0.75,"20.2 a)":0.5,"20.2 b)":0.75,"20.3 a)":0.5,"20.3 b)":0.5,"20.4 a)":0.5,"20.4 b)":0.75,"20.4 c)":0.75,"20.5 a)":0.5,"20.5 b)":1,"20.6 a)":0.5,"20.6 b)":1.25,"20.6 c)":1,"20.7 a)":0.5,"20.7 b)":0.5,"20.7 c)":0.75,"20.8 a)":0.75,"20.8 b)":1,"20.8 c)":1.25,"20.9 a)":0.75,"20.9 b)":1,"20.10":1.25,"20.11 a)":1.25,"20.11 b)":1.25,"20.12 a)":1.5,"20.12 b)":1.5,"20.12 c)":1.5,"20.12 d)":1.75,"20.13":1.75,"20.14":2},"bonus":["20.12 a)","20.12 b)","20.12 c)","20.12 d)","20.13","20.14"]});
+</script>
 <style>
   :root {
     --bleu: #4B46C7;
@@ -1528,7 +1533,7 @@ function genererExercices() {
       if (n1 === 0 || n2 === 0) continue;
       theta = Math.acos(p / Math.sqrt(n1 * n2)) * 180 / Math.PI;
       s = simplifierRacine(n1 * n2);
-    } while (n1 === 0 || n2 === 0 || p === 0 || u[0]*v[1] - u[1]*v[0] === 0 || Math.abs((theta * 10 % 1) - 0.5) < 0.12 || Math.sin(theta * Math.PI / 180) < 0.25);
+    } while (n1 === 0 || n2 === 0 || p === 0 || u[0]*v[1] - u[1]*v[0] === 0 || Math.abs((theta * 10 % 1) - 0.5) < 0.12 || Math.sin(theta * Math.PI / 180) < 0.5);
     const A = [alea(-5,5), alea(-5,5)];
     const B = [A[0] + u[0], A[1] + u[1]], C = [A[0] + v[0], A[1] + v[1]];
     ctx.c6 = {A, B, C};
@@ -1536,7 +1541,7 @@ function genererExercices() {
     const cosStr = s.radicand === 1 ? fracToStr(math.fraction(p, s.coef)) : surdFrac(Math.sign(p), Math.abs(p), s.radicand, s.coef * s.radicand);
     ex.push({id:"20.6 a)", type:"num", texteLibre:true, enonce:"\\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\)", reponse: String(p)});
     ex.push({id:"20.6 b)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:"\\(\\cos\\left(\\widehat{BAC}\\right)\\)", reponse: cosStr});
-    ex.push({id:"20.6 c)", type:"num", texteLibre:true, approx: theta, approxDec: 1, approxCos: p / Math.sqrt(n1 * n2), approxMarge: 0.0005, enonce:"la mesure de l'angle \\(\\widehat{BAC}\\) en degrés", reponse: (Math.round(theta * 10) / 10).toFixed(1)});
+    ex.push({id:"20.6 c)", type:"num", texteLibre:true, approx: theta, approxDec: 1, approxCos: p / Math.sqrt(n1 * n2), approxMarge: 0.005, enonce:"la mesure de l'angle \\(\\widehat{BAC}\\) en degrés", reponse: (Math.round(theta * 10) / 10).toFixed(1)});
   })();
 
   // ---------- 20.7 : orthogonalite, oui / non (au moins un oui et un non) ----------
@@ -2013,7 +2018,7 @@ function normaliserSaisie(str) {
 
 // Valeur approchee (angle en degres) arrondie a `decimales` decimales : l'unite n'est pas ecrite ; la reponse est un nombre ecrit
 // en clair (pas d'expression) avec au plus `decimales` decimales (zeros finaux admis : « 14,30 » = « 14,3 »), egal a la valeur exacte arrondie.
-// Avec `cosExact` et `marge` : on tolere aussi l'arrondi du cosinus (ici a 0,0005 pres, soit au millieme) avant le calcul de l'angle :
+// Avec `cosExact` et `marge` : on tolere aussi l'arrondi du cosinus (ici a 0,005 pres, soit au centieme) avant le calcul de l'angle :
 // sont alors acceptees toutes les valeurs arrondies que donne l'arccos d'un cosinus compris entre cosExact - marge et cosExact + marge.
 function checkApprox(userInput, valeur, decimales, cosExact, marge) {
   const s = normaliserSaisie(String(userInput).trim().replace(/°|\^\{?\\circ\}?|\^\(?circ\)?/g, '')).replace(/\s/g, '');
@@ -2531,6 +2536,7 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   devoirTermine = garderBandeau ? etatDevoir : null;
   etatDevoir = null;
   DevoirPartiel.retirer(); // devoir sur une partie de fiche : tous les calculs reviennent
+  if (window.Bareme) Bareme.afficher(false); // plus de barème hors devoir
   const panneauMode = document.getElementById('mode-panneau');
   const boutonVerifier = document.getElementById('btn-verifier');
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
@@ -2717,8 +2723,12 @@ async function validerFicheActuelle() {
     // de bord enseignant sur 7 fiches de Seconde.
     const nonVide = (v) => (v !== null && typeof v === 'object') ? Object.values(v).some(nonVide) : (typeof v === 'string' ? v.trim() !== '' : v !== null && v !== undefined);
     const nbRepondues = reponses.filter((s) => nonVide(s.valeur)).length;
-    await window.validerFiche(FICHE_ID, idsReussis, totalRetenu, nbRepondues);
-    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${totalRetenu} bonnes réponses.`);
+    // Barème en points (assets/js/bareme.js) : note pondérée, calculs avancés en bonus.
+    const bareme = window.Bareme && Bareme.visible() ? Bareme.calculer(exercices, saisies) : null;
+    await window.validerFiche(FICHE_ID, idsReussis, bareme ? bareme.total : totalRetenu, nbRepondues, bareme || undefined);
+    afficherEtatSuivi(bareme
+      ? `Fiche validée : ${Bareme.format(bareme.score)} / ${Bareme.format(bareme.total)} points.`
+      : `Fiche validée : ${idsReussis.length} / ${totalRetenu} bonnes réponses.`);
 
     // etatDevoir.essaisUtilises (30/09/2026) : incremente desormais apres
     // TOUTE validation reussie, pas seulement celle qui epuise le quota --
@@ -3018,7 +3028,9 @@ function verifierTout() {
     else if (ok === false) erreurs.push(idx);
   });
   document.getElementById('score-panneau').classList.add('visible');
-  document.getElementById('score-chiffre').textContent = score + ' / ' + DevoirPartiel.compter(exercices);
+  document.getElementById('score-chiffre').textContent = (window.Bareme && Bareme.visible())
+    ? Bareme.libelleScore(exercices, saisies)
+    : score + ' / ' + DevoirPartiel.compter(exercices);
   const correctionDiv = document.getElementById('correction-panneau');
   if (erreurs.length === 0) {
     correctionDiv.innerHTML = '<p style="color:var(--vert);font-weight:bold;">Toutes les réponses saisies sont correctes.</p>';
@@ -3175,7 +3187,7 @@ function aideContextuelleBase(ex) {
 }
 
 function aideContextuellePour(ex) {
-  if (ex.approx !== undefined) return "Donner la mesure en degrés, <strong>arrondie au dixième</strong> (un chiffre après la virgule), sans écrire l'unité : par exemple <code>37,4</code>. La calculatrice est autorisée ici ; un écart dû à l'arrondi du cosinus au millième est toléré.";
+  if (ex.approx !== undefined) return "Donner la mesure en degrés, <strong>arrondie au dixième</strong> (un chiffre après la virgule), sans écrire l'unité : par exemple <code>37,4</code>. La calculatrice est autorisée ici ; un écart dû à l'arrondi du cosinus au centième est toléré.";
   let texte = ex.formeVecteur
     ? "Écrire les coordonnées du vecteur entre parenthèses, séparées par un point-virgule : par exemple <code>(3;-2)</code>. Sur le clavier ⌨ de l'écran, le point-virgule s'obtient en appuyant sur la touche ⇧ : la touche <code>}</code> se change alors en <code>;</code>."
     : aideContextuelleBase(ex);
@@ -3491,6 +3503,8 @@ async function initialiserFiche() {
   // retenus (voir assets/js/devoir-partiel.js) tant que le devoir est actif ;
   // sans effet pour un devoir sur la fiche entiere (etatDevoir.calculs nul).
   if (etatDevoir) DevoirPartiel.appliquer(etatDevoir.calculs, exercices);
+  // Barème en points : uniquement dans un devoir (assets/js/bareme.js) ; entraînement libre : rien.
+  if (window.Bareme) Bareme.afficher(!!etatDevoir);
 
 // Panneau de mode, "Corrige des erreurs", "Enregistrer"/"Valider" :
   // corriges ici APRES avoir su si un devoir est actif -- l'ENSEMBLE de ces
