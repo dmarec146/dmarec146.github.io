@@ -7716,3 +7716,17 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   (21.1 à 21.3 automatismes, 21.4 à 21.9 droites et vecteurs, 21.10 et 21.11 projeté et distance, 21.12 cercle de diamètre, 21.13 et 21.14 avancés). Barème : clés 21.13 supprimées, 21.14 → 21.13
   (1,75) et 21.15 → 21.14 (1,75) ; **base 20 points inchangée, bonus 3,5 points**. Vérifié : barème régénéré et cohérent, contrôle des questions tirées (28 sur 28 avec points), note 23,5 / 23,5 toutes justes,
   20 / 20 sur le cœur, cycle 60/60 réponses justes et 60/60 fausses refusées sur 21.13 et 21.14, 0 erreur MathJax.
+
+- **Première fiche 22 (« Calcul de sommes I ») : refonte et barème (07/10/2026).** Audit puis « fais tout ce que tu proposes » (David). **Méthode donnée supprimée** : l'ancien 22.10 (développer (k+1)³, exprimer
+  avec S₁ et S₂, en déduire…), 22.11 (« à partir du développement de (k+1)⁴ et en raisonnant de la même manière… ») et 22.12 (calculer u_{k+1} − u_k puis « en déduire ») sont remplacés par
+  **22.10 « Sommes de puissances »** (a : ∑k², b : ∑k³, sans aucune indication) et **22.11** (∑_{k=0}^{n}((q−1)k+q)q^k, q de 2 à 7, résultat (n+1)q^{n+1}, à calculer par télescopage sans l'indiquer). Les titres vides de 22.5 et
+  22.6 sont écrits (« Suites arithmétiques », « Suites géométriques »). **22.9** : borne impaire (« entre 1 et 2M−1 »). **Corrigés lisibles** : bug « n+−3 » corrigé, fractions réduites (plus de « 8n²/2 + 4n/2 »),
+  réponses factorisées (« (n+4)(n−3)/2 », « 2n(2n+1) »), plus de « × » entre un coefficient et une lettre ou une parenthèse (`jsVersLatex`). **Défaut mathématique corrigé** : « Soit n ∈ ℕ* » ne suffisait pas
+  pour ∑_{k=L}^{n}k (22.4 b) ni ∑_{k=L}^{n}2^k (22.8 a) quand n < L − 1 : 22.4 devient « n ≥ 9 » et 22.8 « n ≥ 5 ». **Variété élargie** : 22.4 a (K de 1 à 10, borne de départ 1, 2 ou 3), b (L de 2 à 8, borne haute n à n+3),
+  d (M de 2 à 6, deux formes), 22.7 a (B de 2 à 5, départ 0 ou 1), c (9 cas), d (3 familles de sommes alternées), 22.8 a (borne n ou n+m, départ 0 à 4), b (base de 3 à 7, départ 0 ou 1), c (A signé, base 2 ou 3), d (base 2 ou 3).
+  Fiche : **26 questions, 11 calculs**. Les encadrés « Rappel » du cours sont conservés (question posée à David).
+  **Barème de la fiche 22 : base 20 points, bonus 5,75** (`outils/bareme/fiche-22.json`, `cabler-fiche.js 22`, `appliquer-bareme.js` étendu). Cœur : 22.1 (0,5 / 0,75), 22.2 (0,75 / 0,75), 22.3 (0,75 / 0,75), 22.4 (0,75 / 0,75 / 0,5 / 1,25),
+  22.5 (0,5 / 0,75), 22.6 (0,5 / 0,75), 22.7 Σ (1 / 1,25 / 1 / 1,75), 22.8 (0,75 / 0,75 / 1 / 1,25), 22.9 (1,25). Bonus (E) : 22.10 a (1,75), b (2), 22.11 (2).
+  Vérifié : 500 tirages recalculés par sommation explicite à n = 9, 10, 13 (22.4, 22.8, 22.10, 22.11) et par les termes écrits (22.7, 3 valeurs de n) : 0 erreur ; 22.9 recompté ; cycle des réponses acceptées / refusées (somme : forme sum(k,…) écrite
+  comme l'indique l'aide, 100/100 et 100/100 refusées ; autres champs 400/400 et 400/400) ; « Total : 20 points (+ 5,75 points de calculs avancés) », note 25,75 / 25,75 toutes justes, 20 / 20 sur le cœur, 0 / 20 à vide ; contrôle des questions tirées
+  (26 sur 26 avec points) ; 0 erreur MathJax. Proposition de barème à valider par David.
