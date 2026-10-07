@@ -7398,3 +7398,25 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : 45/45 et 29/29 questions, aucune carte manquante dans les grilles, cycles complets (450 et 435
   réponses acceptées, les réponses des champs d'ensemble 19.1/19.2 étant saisies au format ascii comme
   dans la fiche), réponses fausses refusées sur les QCM déplacés, 0 erreur MathJax, rendu contrôlé à l'écran.
+
+- **Première fiche 18 : section « Équations trigonométriques » après 18.7 (07/10/2026), 33 questions, 11 calculs.**
+  Demande de David : une section de résolution d'équations trigonométriques, quatre exemples, deux du type
+  a·cos(x) = b et a·sin(x) = b (angles remarquables), deux du type a·cos(bx+c) = d et a·sin(bx+c) = d.
+  - Nouveau **18.8** (section « Équations trigonométriques », dans le cœur de la fiche, avant les calculs avancés) :
+    « Résoudre dans l'intervalle ]−π ; π] les équations suivantes (ensemble des solutions), **sous la forme de
+    fractions de π irréductibles** » (consigne dans le titre, partie imposée en bleu). a) a·cos(x) = b,
+    b) a·sin(x) = b avec a ∈ {±2, ±3, ±4}, b = a·t pour t ∈ {0, ±1/2, ±√2/2, ±√3/2} (deux solutions) ;
+    c) a·cos(bx+c) = d, d) a·sin(bx+c) = d avec b = ±2 et c multiple de π/6 (valeurs 0, ±1/2, ±√3/2) ou de π/4
+    (valeurs ±√2/2) : quatre solutions dans ]−π ; π], dénominateurs 6, 12 ou 8, résolues exactement en
+    arithmétique de fractions (y = ±α + 2kπ ou α, π−α, puis x = (y−c)/b).
+  - Saisie : champ mathématique (`ensembleMath`), placeholder `{a;b}`, clavier MathLive (π, fraction,
+    accolades ; point-virgule en ⇧ puis }) ; frappe physique vérifiée (« { - p i / 6 ; p i / 6 } » → correct).
+    Contrôle `checkEnsemblePi` : ensemble exact (ni solution manquante ni en trop) et chaque élément 0, π ou
+    fraction de π irréductible (« 2π/12 » refusé, valeurs décimales refusées) ; accolades facultatives comme
+    dans les autres fiches ; aide « ? » dédiée. Les ids des avancés passent à 18.9 (valeurs de tan), 18.10
+    (parité et périodicité) et 18.11 (avec la tangente) ; groupes `grille-18-1` à `grille-18-11`, indices
+    0 à 32 (aucun barème sur cette fiche).
+  Vérifié : solutions recalculées indépendamment par balayage numérique du signe de a·f(bx+c) − d sur
+  ]−π ; π] (480 questions : mêmes racines, 2 solutions en a/b, 4 en c/d), cycle complet 396 réponses acceptées,
+  ensembles incomplets, avec solution en trop, non réduits, opposés ou décimaux refusés, variété (23 à 39
+  énoncés par question sur 40 tirages), 0 erreur MathJax, captures (section et clavier MathLive).
