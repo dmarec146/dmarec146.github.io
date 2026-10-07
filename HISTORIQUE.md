@@ -7562,3 +7562,17 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     650/650 corrigés acceptés, 650/650 réponses fausses refusées, 400/400 écritures non simplifiées refusées ; 0 erreur MathJax ;
     4/4 oui/non cliquables (audit `qcm-clic`) ; saisie physique d'un couple fraction/racine vérifiée dans MathLive ; capture des
     sections.
+
+- **Première fiche 20 : moins de racines carrées et nouvelle section « Produit scalaire en coordonnées » (07/10/2026).** Remarque de David :
+  les racines carrées étaient omniprésentes dans les coordonnées (norme, 20.4 b, 20.5 c, deux des trois droites de 20.6, 20.7, f en 20.10).
+  Corrections : norme (20.3 b) entière 40 % du temps, racine simplifiée 60 % ; oui/non b) en entiers une fois sur deux (racines
+  1/4 + 1/4) ; « trouver x » c) en solution rationnelle (entiers tels que (b²−a²)/(q²−p²) soit un carré) une fois sur deux ; droites
+  par un point et un vecteur normal : a) point entier, b) point rationnel, c) seul cas avec racines (√D en facteur ou au dénominateur) ;
+  perpendiculaire à (D) avec des entiers 60 % du temps ; f(x) avec β = b√D seulement 25 % du temps. Restent radicaux par nature :
+  les réponses des deux calculs avancés « tangentes perpendiculaires », la norme (60 %) et le cas c) des droites.
+  Nouvelle section **« Produit scalaire en coordonnées »** après les automatismes : calcul 20.4 à deux questions, a) u·v avec des
+  coordonnées entières, b) AB·AC avec trois points entiers (résultat jamais nul). Les calculs suivants sont renumérotés (20.5 à 20.12) :
+  **28 questions, 12 calculs**.
+  Vérifié : 185 tirages recomptés par un calcul indépendant à partir des énoncés (0 erreur), variété (20.12 : 26 énoncés, autres de 74
+  à 400), balayage des défauts d'énoncé (aucun), cycle 700/700 corrigés acceptés, 700/700 réponses fausses refusées, 400/400 écritures
+  non simplifiées refusées, 0 erreur MathJax, capture de la nouvelle section.
