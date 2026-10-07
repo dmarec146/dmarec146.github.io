@@ -7420,3 +7420,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   ]−π ; π] (480 questions : mêmes racines, 2 solutions en a/b, 4 en c/d), cycle complet 396 réponses acceptées,
   ensembles incomplets, avec solution en trop, non réduits, opposés ou décimaux refusés, variété (23 à 39
   énoncés par question sur 40 tirages), 0 erreur MathJax, captures (section et clavier MathLive).
+
+- **Première fiche 18, 18.8 c) et d) : coefficient b de bx plus varié (07/10/2026).** David : « j'ai l'impression que 2
+  sort toujours » (b valait ±2 en dur). Désormais b ∈ {±1, ±2, ±3} tiré au hasard (affichage « x » ou « −x » pour
+  |b| = 1), soit 2, 4 ou 6 solutions dans ]−π ; π] (dénominateurs jusqu'à 12 ou 24 selon c). Vérifié : 600
+  questions recalculées indépendamment par balayage numérique des racines, 0 écart ; répartition de b sur 600
+  tirages : 38, 41, 61, 65, 46, 49 pour 1, 2, 3, −1, −3, −2 ; nombre de solutions 2 / 4 / 6 en proportions
+  voisines ; 146 énoncés distincts par question (au lieu de 39) ; cycle complet accepté (60/60).

@@ -1304,7 +1304,7 @@ function genererExercices() {
     const argLatex = (b, cc) => {   // « 2x+\dfrac{\pi}{3} »
       const n = Math.abs(cc.n * cc.s), signe = cc.s < 0 ? '-' : '+';
       const pi = (n === 1 ? '' : n) + '\\pi';
-      return `${b < 0 ? '-' : ''}${Math.abs(b)}x${signe}\\dfrac{${pi}}{${cc.d}}`;
+      return `${b < 0 ? '-' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}x${signe}\\dfrac{${pi}}{${cc.d}}`;
     };
     // solutions dans ]-1 ; 1] (multiples de pi) de f(b*x + c) = t, ou f(y)=t pour y = al + 2k, (pi-al)+2k (sin) / +-al + 2k (cos)
     const resoudre = (fn, al, b, cc) => {
@@ -1326,10 +1326,10 @@ function genererExercices() {
         enonce:`\\(${coefPrefixeL(a)}\\${fn}(x)=${latexValeur(d, v.r)}\\)`,
         reponse: ensemble(resoudre(fn, math.fraction(v.al[0], v.al[1]), 1, math.fraction(0)))});
     });
-    // c) a cos(bx+c) = d ; d) a sin(bx+c) = d : b = +-2, famille de denominateurs (6, 3, 2) ou (4, 2) commune a t et c
+    // c) a cos(bx+c) = d ; d) a sin(bx+c) = d : b dans {+-1, +-2, +-3} (2, 4 ou 6 solutions), famille de denominateurs (6, 3, 2) ou (4, 2) commune a t et c
     ['cos','sin'].forEach((fn, i) => {
       const v = VAL[fn][alea(0, VAL[fn].length-1)], a = a0();
-      const b = alea(0,1) === 0 ? 2 : -2;
+      const b = [1,2,3,-1,-2,-3][alea(0,5)];   // 2|b| solutions dans ]-pi ; pi]
       const k = v.f === 'S' ? aleaNonNul(-5,5) : aleaNonNul(-3,3);
       const cc = math.fraction(k, v.f === 'S' ? 6 : 4);
       const d = math.multiply(a, math.fraction(v.c[0], v.c[1]));
