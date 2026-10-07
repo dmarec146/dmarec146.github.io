@@ -7703,3 +7703,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   21.11 distances (1 / 1,25), 21.12 cercle de diamètre (1,25). Bonus (E) = avancés : 21.13 formule générale de la distance (1,5 / 1,5 / 1,5 / 1,75 / 1,75), 21.14 tangente (1,75), 21.15 cercle tangent
   à une droite (1,75). Contrôle : 33 questions tirées sur 300 générations, toutes avec points ; « Total : 20 points (+ 11,5 points de calculs avancés) » ; note 31,5 / 31,5 toutes justes, 20 / 20 sur
   le cœur seul, 11,5 / 31,5 sur le bonus seul, 0 / 20 à vide ; cycle des 3 QCM : 120/120 clics justes, 120/120 clics faux refusés ; 0 erreur MathJax. Proposition à valider par David.
+
+- **Première fiche 21 : 21.13 sans méthode donnée (07/10/2026).** Remarque de David : « toute la méthode est donnée » dans 21.13 b) (énoncé : « les vecteurs AH et n sont colinéaires, il existe donc un réel k tel que
+  AH = kn, qu'on fixe… » puis questions guidées sur k). Réécrit en **4 questions sans indication de démarche** : a) un vecteur normal à (D) ; b) l'abscisse x_H du projeté H de A sur (D) en fonction de
+  x_A, y_A, a, b, c ; c) l'ordonnée y_H ; d) « en déduire » la distance de A à (D). Réponses : x_A − a(ax_A+by_A+c)/(a²+b²), y_A − b(…)/(a²+b²), |ax_A+by_A+c|/√(a²+b²) (toute écriture équivalente
+  acceptée). Fiche : **32 questions, 15 calculs**. Barème mis à jour : 21.13 a) 1,5, b) 1,75, c) 1,75, d) 1,75 (ancien e supprimé), **bonus 10,25** au lieu de 11,5 (base 20 inchangée).
+  Vérifié : 200 jeux de paramètres aléatoires (H sur la droite, AH colinéaire à n, distance), corrigé retapé accepté / corrigé + 1 refusé, écriture équivalente acceptée, forme du signe fausse et k seul refusés, 0 erreur MathJax ;
+  barème régénéré et cohérent (32 questions, base 20, bonus 10,25).
