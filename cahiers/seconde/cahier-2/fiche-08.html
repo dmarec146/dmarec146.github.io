@@ -2012,6 +2012,8 @@ function egaliteBorneIntervalle(a, b) {
 }
 
 function checkIntervalle(userInput, correctSpec) {
+  // la reponse attendue peut etre ecrite ]-∞;+∞[ : meme chose que « tout ℝ » (la saisie « ℝ » ou « ]-∞;+∞[ » est lue { type: 'tout' })
+  if (correctSpec.type === 'intervalles' && correctSpec.liste.length === 1 && correctSpec.liste[0].bas === -Infinity && correctSpec.liste[0].haut === Infinity) correctSpec = { type: 'tout' };
   const userParsed = parseReponseIntervalle(userInput);
   if (!userParsed) return false;
   if (userParsed.type !== correctSpec.type) return false;

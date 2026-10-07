@@ -7635,3 +7635,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   « Produit scalaire et cosinus. Donner les résultats sous forme simplifiée ») ; 3) barème : 20.3 a) 0,75 (au lieu de 0,5) et 20.5 b) 0,75 (au lieu de 1) —
   base toujours 20 points, bonus 10. Vérifié : 800 énoncés 20.4 a)/b) recalculés (produit des normes par le cosinus de l'angle écrit), 0 écart ;
   barème régénéré (`appliquer-bareme.js 20`), contrôle de cohérence des fichiers OK ; rendu de « [2π] » contrôlé.
+
+- **Seconde : touches +∞ / −∞ manquantes au clavier simplifié des intervalles (07/10/2026).** Signalement de David. Constat : les fiches 7, 8, 12 et 13 avaient
+  bien +∞ et −∞ dans le groupe « Intervalle », mais pas les **fiches 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 et 25** (génération `genererClavierIntervalle` plus
+  ancienne : ] [ ; − seulement, alors que le correcteur lit « ∞ »). Correction fiche par fiche (pas dans `claviers.js`, partagé avec les fiches en devoir) : touches
+  « +∞ » et « −∞ » ajoutées au groupe Intervalle, astuce complétée par « ]-∞;1[ ∪ ]3;+∞[ ». Première : aucun clavier d'intervalle sans ∞ (Première 2 et 3 utilisent
+  le clavier MathLive, qui a ∞ sur sa couche « ∞≠∈ »).
+  **Défaut découvert au passage (Seconde 17.3 a, ensemble de définition de |x|, x ↦ ax+b, x², x³ = ℝ)** : la réponse attendue est écrite `]-∞;+∞[` en intervalles, mais la
+  saisie « ℝ » ou « ]-∞;+∞[ » est lue « tout ℝ » (type `tout`) : les deux étaient refusées (60 tirages sur 60) ; le corrigé affiché ne pouvait donc pas être saisi.
+  `checkIntervalle` ramène maintenant une réponse attendue ]-∞;+∞[ à « tout ℝ » (12 fiches ayant cette lecture : Seconde 8, 14 à 23, 25).
+  Vérifié : touches présentes et insérant « +∞ » / « −∞ » dans les 13 fiches à intervalles (7, 8, 12 à 23, 25), 5 fiches saisies uniquement à la souris
+  (borne ∞ comprise : 15, 17, 19, 22, 25 toutes justes), et 1700 réponses d'intervalle générées (30 tirages × 12 fiches) toutes acceptées sous leur forme écrite, dont les 30 cas ℝ.

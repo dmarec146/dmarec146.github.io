@@ -1521,6 +1521,8 @@ function egaliteBorneIntervalle(a, b, tolerance) {
   return Math.abs(a - b) <= tolerance;
 }
 function checkIntervalle(userInput, correctSpec, tolerance) {
+  // la reponse attendue peut etre ecrite ]-∞;+∞[ : meme chose que « tout ℝ » (la saisie « ℝ » ou « ]-∞;+∞[ » est lue { type: 'tout' })
+  if (correctSpec.type === 'intervalles' && correctSpec.liste.length === 1 && correctSpec.liste[0].bas === -Infinity && correctSpec.liste[0].haut === Infinity) correctSpec = { type: 'tout' };
   const userParsed = parseReponseIntervalle(userInput);
   if (!userParsed) return false;
   if (userParsed.type !== correctSpec.type) return false;
@@ -2601,6 +2603,8 @@ function genererClavierIntervalle(idx) {
         <button onclick="inserer(${idx},'[')">[</button>
         <button onclick="inserer(${idx},';')">;</button>
         <button onclick="inserer(${idx},'-')">−</button>
+        <button class="touche-large" onclick="inserer(${idx},'+∞')">+∞</button>
+        <button class="touche-large" onclick="inserer(${idx},'-∞')">−∞</button>
       </div>
       <div class="clavier-groupe">
         <span class="clavier-label">Autre</span>
@@ -2610,7 +2614,7 @@ function genererClavierIntervalle(idx) {
         <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
         <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
       </div>
-      <div class="clavier-apercu">Astuce : « ]-2;5[ » (bornes exclues), « ∪ » pour une réunion de deux intervalles.</div>`;
+      <div class="clavier-apercu">Astuce : « ]-2;5[ » (bornes exclues), « ]-∞;1[ ∪ ]3;+∞[ » pour une réunion de deux intervalles.</div>`;
 }
 
 // clavier de 14.8 d/e : la reponse attendue est l'inegalite complete (ex. "f(x1)<f(x2)"), donc
