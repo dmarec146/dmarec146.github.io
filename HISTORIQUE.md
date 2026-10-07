@@ -7602,3 +7602,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : 125 tirages recomptés par un calcul indépendant à partir des énoncés (0 erreur, dont les produits scalaires, la figure
   équilatéral/carré, le cosinus exact et l'angle), cycle 775/775 corrigés acceptés, 775/775 réponses fausses refusées, 450/450 écritures non
   simplifiées refusées ; 14 ou 15 refusé, 13 refusé pour 14,25° ; 0 erreur MathJax ; captures des nouvelles sections.
+
+- **Première fiche 20 : 20.4 sans degrés, angle du 20.6 au dixième (07/10/2026).** Demande de David : aucun angle en degrés dans 20.4 (a) passe
+  en radians : 0, π/3, π/2, 2π/3, π ; b) ne garde que π/4, 3π/4, π/6, 5π/6) ; dans 20.6 c), mesure de l'angle **arrondie au dixième**.
+  Règle d'arrondi (`checkApprox(saisie, valeurExacte, décimales)`) : la réponse doit être un nombre écrit en clair (pas d'expression,
+  virgule ou point, unité ° tolérée), avec au plus 1 décimale (zéros finaux admis, « 14,30 » = « 14,3 »), et égal à la valeur exacte
+  arrondie au dixième (écart < 10⁻⁹). Pas de marge de tolérance : 14,2 ou 14,4 sont refusés pour 14,25… (14,3 attendu), comme « 14 » ou
+  « 14,25 ». Les angles tirés évitent les cas limites (partie décimale de 10θ à moins de 0,12 de 0,5) pour qu'un arrondi de calculatrice soit
+  sans ambiguïté. Corrigé affiché « ≈ 143,1° », aide « ? » mise à jour.
+  Vérifié : 120 tirages recomptés (0 erreur), cycle 775/775 / 775/775 / 450/450, 0 erreur MathJax.
