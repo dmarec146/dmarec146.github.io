@@ -7629,3 +7629,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   à (D) (1,25), 20.11 droites du triangle (1,25 / 1,25). Bonus (E) = avancés : 20.12 rectangle (1,5 / 1,5 / 1,5 / 1,75), 20.13 tangentes (1,75),
   20.14 tangentes avec paramètre (2). Contrôle : 31 questions tirées sur 300 générations, toutes avec points ; « Total : 20 points (+ 10 points de
   calculs avancés) » ; note 30/30 toutes justes, 20/20 sur le cœur seul, 10/30 sur le bonus seul, 0/20 à vide. Proposition à valider par David.
+
+- **Première fiche 20 : retouches après le barème (07/10/2026).** Demande de David : 1) un angle en radians s'écrit modulo 2π : « (u, v) = π/3 [2π] »
+  dans 20.4 a) et b) ; 2) 20.4 : énoncés « Calculer u·v, sachant que… » et « …. Calculer AB·AC » (le verbe est dans chaque énoncé, le titre devient
+  « Produit scalaire et cosinus. Donner les résultats sous forme simplifiée ») ; 3) barème : 20.3 a) 0,75 (au lieu de 0,5) et 20.5 b) 0,75 (au lieu de 1) —
+  base toujours 20 points, bonus 10. Vérifié : 800 énoncés 20.4 a)/b) recalculés (produit des normes par le cosinus de l'angle écrit), 0 écart ;
+  barème régénéré (`appliquer-bareme.js 20`), contrôle de cohérence des fichiers OK ; rendu de « [2π] » contrôlé.
