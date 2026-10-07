@@ -7526,3 +7526,39 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
     rendues cliquables, 75/75 bonnes réponses obtenues par clic (dont 5 QCM à plusieurs réponses), aucune erreur de script ; devoir
     simulé (clic enregistré dans `saisies` sans verdict affiché) ; « Recommencer » et nouvelle version resynchronisent l'affichage.
   - Règle ajoutée à REGLES-FICHES.md et note dans SUIVI-FIREBASE.md.
+
+- **Première fiche 20 (« Produit scalaire I ») : refonte des automatismes, formes simplifiées, rectangles quelconques (07/10/2026).**
+  Réponses de David à l'audit : 1) automatismes avec des vecteurs (vus dans les fiches précédentes) et des valeurs absolues ;
+  2) toujours sous forme simplifiée ; 3) tout type de rectangle. La fiche passe de 25 à **26 questions, 11 calculs** (ids positionnels
+  renumérotés ; aucun barème ni devoir sur cette fiche à ce stade).
+  - **Automatismes (6)** à la place du « méli-mélo » QCM : 20.1 inéquations (a : premier degré à deux membres fractionnaires, signes
+    quelconques ; b : |ax+b| ◊ k, quatre opérateurs), 20.2 équations (a : |ax+b| = c avec c > 0, c = 0 ou c < 0 → deux solutions, une
+    ou ∅ ; b : (ax+b)/(cx+d) = k, la valeur interdite n'est jamais la solution), 20.3 vecteurs (a : coordonnées de u·AB + v·AC,
+    coordonnées entières, réponse « (x;y) » ; b : norme de AB, entier ou racine simplifiée). Toutes les réponses d'inéquations en
+    intervalles.
+  - **« Sous forme simplifiée » partout où une valeur est attendue** (20.3, 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.11 ; expression
+    « sous forme réduite » en 20.9 b/c), phrase mise en bleu dans les titres. Contrôle `estSimplifie(val, ex)` (drapeau
+    `formeSimplifiee`) appliqué après le test d'égalité : chaque élément d'un ensemble, chaque coordonnée d'un couple, pente et
+    ordonnée d'une équation « y= » (`estLineaireSimplifie` : au plus un terme par lettre et une constante, coefficient sans 1 ni 0
+    écrit, `-(x+1)` refusé), `estValeurSimplifiee` portée de la fiche 19 (entier, fraction irréductible, racine sans facteur carré,
+    pas de racine au dénominateur ; « (16√14)/3 », « (2x)/3 », « 2/3x » acceptées, « 4/6 », « 1/√2 », « 5+0 » refusées).
+  - **Orthogonalité (20.4)** : oui/non tiré au hasard (au moins un oui et un non, ≈ 50 % chacun), démarche « en calculant le produit
+    scalaire » retirée du titre ; non-orthogonal obtenu en changeant un signe ; d) avec |a| = |b| ou non (produit scalaire b² − a²).
+    **20.5** : c) généralisé (√D·x ± a ; b ± kx, racine simplifiée de la solution), a) signe de x tiré.
+  - **Droites** : 20.6 a/b/c réponses lisibles (« 2x/3 + 7/3 », « 16√14/3 »), signe devant la fraction dans l'énoncé de c) ; 20.7
+    généralisée (a x + e·s√D y + c = 0, pente ± s√D / a, point E(k√D ; e)) ; 20.8 deux droites « passant par X et perpendiculaire à
+    (YZ) » avec des points tirés parmi A, B, C (jamais la même base de départ), « l'équation réduite de la droite » dite une seule fois
+    dans le titre.
+  - **20.9 : rectangle quelconque ABDC** (AB ⟂ AC, coordonnées entières : AB = t(p;q), AC = s(−q;p), t ∈ {1,2}, s ∈ {±1,±2} ; ≈ 25 %
+    de rectangles à côtés parallèles aux axes, 75 % inclinés), questions : AB·AC, AC·CD et AB·BD en fonction de x **et y** (forme
+    réduite exigée), puis D (x;y) tel que ABDC soit un rectangle (système de deux équations).
+  - **Avancés** : 20.10 f(x) = a x² + βx + d avec a ∈ ±{1,2,3}, β entier ou b√D (x = ± √(β²+1) / (2|a|), racine simplifiée, jamais
+    un carré parfait) ; 20.11 f(x) = a x² + b x, abscisses ± n/2, b = ± √(m²−1) avec m = |a|n.
+  - **Corrigé lisible** : `signeDevantFraction`, `surdFrac`, suppression du « × » devant une racine (`2\sqrt{3}x`), ensemble vide affiché
+    ∅, pente écrite « −2x/3 » (numérateur porteur du x) et non « 2/3 × x ».
+  - Vérifié : 26 questions / 11 groupes ; ≈ 400 tirages recomptés par un calcul indépendant à partir des énoncés (balayage numérique
+    des racines, signes, perpendicularité, rectangle : 0 erreur réelle) ; variété (20 à 400 énoncés distincts par question, 20.11 : 26,
+    20.10 : 96) ; balayage des défauts d'énoncé (« +- », « 1x », « \dfrac{- »…) : un seul trouvé (20.6 c) et corrigé ; cycle complet
+    650/650 corrigés acceptés, 650/650 réponses fausses refusées, 400/400 écritures non simplifiées refusées ; 0 erreur MathJax ;
+    4/4 oui/non cliquables (audit `qcm-clic`) ; saisie physique d'un couple fraction/racine vérifiée dans MathLive ; capture des
+    sections.
