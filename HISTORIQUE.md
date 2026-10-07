@@ -7646,3 +7646,20 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   `checkIntervalle` ramène maintenant une réponse attendue ]-∞;+∞[ à « tout ℝ » (12 fiches ayant cette lecture : Seconde 8, 14 à 23, 25).
   Vérifié : touches présentes et insérant « +∞ » / « −∞ » dans les 13 fiches à intervalles (7, 8, 12 à 23, 25), 5 fiches saisies uniquement à la souris
   (borne ∞ comprise : 15, 17, 19, 22, 25 toutes justes), et 1700 réponses d'intervalle générées (30 tirages × 12 fiches) toutes acceptées sous leur forme écrite, dont les 30 cas ℝ.
+
+- **Première fiche 21 (« Produit scalaire II ») : nouveaux automatismes (07/10/2026).** Audit de la fiche (45 questions, 18 calculs, pas de barème), puis
+  demande de David : régler d'abord les automatismes, avec du calcul simple de produit scalaire. Les anciens 21.1 (puissances, 2 questions) et 21.2
+  (développements `aⁿ − bⁿ`, 3 questions), qui ne suivaient pas la règle de diversité, sont remplacés par **6 questions** : **21.1 inéquations**
+  (a : premier degré avec parenthèses des deux côtés m(px+q) ◊ n(rx+s), coefficients signés ; b : quotient (ax+b)/(cx+d) ◊ 0, valeur interdite jamais
+  incluse, un ou deux intervalles) ; **21.2 équations** (a : second degré ax²+bx+c = 0 construit par (αx+β)(γx+δ) : deux solutions 52 %, solution double
+  20 %, aucune 28 % ; b : √(ax+b) = c, aucune solution si c < 0) ; **21.3 calcul numérique, sous forme simplifiée** (a : produit scalaire u·v, coordonnées
+  entières, résultat non nul ; b : l'ancien 21.1 a, fraction de puissances, réponse fraction irréductible, maintenant contrôlée par `estValeurSimplifiee`).
+  Le reste de la fiche est **renuméroté** (anciens 21.3 à 21.18 → 21.4 à 21.19, **46 questions, 19 calculs**, `groupes` réécrit) ; aucun devoir ni barème
+  n'existe sur la fiche. Outils portés de la fiche 20 : `coefPrefixeL`, `fracLatexSigned`, `ensembleStr`, `parSigne` (+ `parSigneQuotient`),
+  `estRacineSimplifiee`, `estValeurSimplifiee`, `signeDevantFraction` ; **le corrigé de toute la fiche est plus lisible** (signe devant la fraction,
+  ensemble vide ∅, plus de « × » devant une racine) ; l'aide « ? » mentionne la forme simplifiée. Constats de l'audit **non encore traités** : 21.3 a) ancien
+  (devenu 21.4 a) non saisissable à l'écran (pas de y, ni x'), 21.12 b) (devenu 21.13 b) « 47/26 × √26 », formes simplifiées des distances, projetés et rayons,
+  `\frac` au lieu de `\dfrac` dans quelques énoncés, 21.4 et 21.8 (devenus 21.5 et 21.9) très proches.
+  Vérifié : 190 tirages recomptés par un calcul indépendant à partir des énoncés (signe sur grille fine, bornes et inclusions, racines des équations,
+  produit scalaire, valeur des puissances, forme simplifiée de la réponse) : 0 erreur ; variété (287 à 400 énoncés distincts sur 400 tirages) ; cycle
+  180/180 corrigés acceptés, 180/180 réponses fausses refusées, 30/30 écritures non simplifiées refusées ; structure : 46 cartes, 19 groupes, 0 erreur MathJax ; capture.
