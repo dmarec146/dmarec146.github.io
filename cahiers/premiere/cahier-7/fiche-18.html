@@ -2585,10 +2585,26 @@ function signeDevantFraction(tex) {
   const cle = '\\dfrac{-';
   let i = 0;
   while ((i = tex.indexOf(cle, i)) !== -1) {
-    let prof = 1, j = i + cle.length;
-    while (j < tex.length && prof > 0) { if (tex[j] === '{') prof++; else if (tex[j] === '}') prof--; j++; }
-    // j est juste apres l'accolade fermante du numerateur : le « - » passe devant \dfrac
-    tex = tex.slice(0, i) + '-\\dfrac{' + tex.slice(i + cle.length, j) + tex.slice(j);
+    let prof = 1, j = i + cle.length, termeUnique = true;
+    while (j < tex.length && prof > 0) {
+      if (tex[j] === '{') prof++; else if (tex[j] === '}') prof--;
+      else if (prof === 1 && (tex[j] === '+' || tex[j] === '-')) termeUnique = false;   // « -a+b » : le moins ne porte que sur a
+      j++;
+    }
+    // j est juste apres l'accolade fermante du numerateur
+    let numerateur = tex.slice(i + cle.length, j - 1);
+    // « -(a+b) » : le numerateur entier est entre parentheses, le moins porte sur toute la somme
+    let parenthese = numerateur.startsWith('\\left(') && numerateur.endsWith('\\right)');
+    if (parenthese) {   // la parenthese ouvrante du debut doit etre celle qui se ferme tout a la fin : « (a+b)(c+d) » n'en est pas une
+      let niveau = 0;
+      for (let k = 0; k < numerateur.length; k++) {
+        if (numerateur.startsWith('\\left(', k)) niveau++;
+        else if (numerateur.startsWith('\\right)', k)) { niveau--; if (niveau === 0 && k + '\\right)'.length < numerateur.length) { parenthese = false; break; } }
+      }
+    }
+    if (parenthese) numerateur = numerateur.slice('\\left('.length, -'\\right)'.length);
+    // le « - » d'un numerateur a un seul terme (ou d'une somme entre parentheses) passe devant \dfrac
+    if (termeUnique || parenthese) tex = tex.slice(0, i) + '-\\dfrac{' + numerateur + '}' + tex.slice(j);
     i += 1;
   }
   return tex;

@@ -7449,3 +7449,36 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   cohérence : fichiers cohérents ; affichage « Total : 19 points (+ 14,25 points de calculs avancés) » et pastilles de 33
   questions vérifiés. Remarque laissée à David : 18.4 c) (plusieurs tours, 1 pt) vaut maintenant plus que 18.4 d) (grand
   multiple, 0,75 pt).
+
+- **Première fiche 19 (Fonctions trigonométriques II) : refonte du cœur (07/10/2026), 38 questions, 13 calculs.** Demande de David : repenser
+  le cœur de la fiche autour des formules d'addition et de cos(2x), sin(2x) (développement de a·cos(bx+c) ou a·sin(bx+c)), des
+  équations trigonométriques plus délicates, en gardant les questions graphiques et la comparaison. Choix de David (3 questions) :
+  retirer tous les anciens calculs « valeurs remarquables / tangente / angles associés » (19.4 à 19.8), garder les automatismes
+  19.1 à 19.3, avancés = tan(a+b), équations a·cos x + b·sin x = c, valeurs exactes (π/12…).
+  - **Automatismes** 19.1 à 19.3 inchangés (équations avec carrés, valeurs absolues, inéquations).
+  - **Section « Formules d'addition et de duplication »** (avec la boîte « Formules admises » cos(a+b), sin(a+b) qui était dans
+    les avancés) : **19.4** développement, « sous la forme A cos(bx) + B sin(bx) » : a·cos(x+c), a·sin(x+c) puis a·cos(bx+c),
+    a·sin(bx+c) avec b ∈ {2, 3, 4}, c = ±π/6, ±π/4, ±π/3, ±2π/3, ±3π/4, ±5π/6, a ∈ ±{1…4}, cos/sin dans un ordre tiré ;
+    forme contrôlée (`estDeveloppe` : tout cos/sin a exactement l'argument bx, aucun π, aucune autre fonction ; l'énoncé recopié est
+    refusé). **19.5** duplication, « sous forme simplifiée » : cos(2x) connaissant cos(x), sin(2x) connaissant cos(x) et le quadrant,
+    cos(2x) connaissant sin(x), cos(x) connaissant cos(2x) et le quadrant.
+  - **Section « Équations trigonométriques »**, **19.6**, dans ]−π ; π], fractions de π irréductibles (champ mathématique, clavier
+    MathLive, comme 18.8) : a) second degré en cos (racines parmi 0, ±1/2, ±1, coefficients entiers de pgcd 1), b) second degré en
+    sin, c) cos(ax) = cos(bx) ou sin(ax) = sin(bx) avec (a, b) ∈ {(2,1), (3,1), (3,2)} (3 à 6 solutions), d) cos(2x) = ±cos(x),
+    ±sin(x) ou sin(2x) = ±cos(x), ±sin(x). Solutions obtenues exactement en testant les multiples de π/120.
+  - **Courbes représentatives** (19.7, 19.8) et **Comparaisons** (19.9 monotonie, 19.10 comparaison sinus/cosinus) conservées,
+    renumérotées (les anciennes figures `graphique-19-10/11` ne changent pas d'identifiant).
+  - **Calculs plus avancés** : **19.11** valeurs exactes cos et sin de kπ/12 (k impair : (√6±√2)/4), **19.12** formule d'addition de la
+    tangente (le QCM d'avant, puis tan(a+b) connaissant tan a et tan b, puis tan(kπ/12) = ±2 ± √3), **19.13** équations
+    a·cos x + b·sin x = c dans ]−π ; π] (R = 2 avec a, b ∈ {±1, ±√3} ou R = √2 avec a, b = ±1 ; deux solutions).
+  - Outils repris de la fiche 18 : `estFractionIrreductible`, `estRacineSimplifiee`, `estValeurSimplifiee`, `checkEnsemblePi`,
+    `piFracAscii`, `signeDevantFraction`. Champ d'ensemble en fractions de π : MathLive (placeholder {a;b}), le champ à clavier
+    maison de 19.1 et 19.2 est conservé. Retiré : calculs d'addition sur « 4 » devenus inutiles (`BASIC3`, `calcAdditionSurd`…).
+  - **Correctif des corrigés** (fiches 18 et 19) : `signeDevantFraction` ne déplace plus le moins d'une somme « −a+b » (« −√6+√2 »
+    devenait « −(√6+√2) », faux) ; un numérateur « −(a+b) » entre parenthèses passe devant la fraction ; les réponses de 19.11
+    s'écrivent « (√2−√6)/4 » (terme positif d'abord) ; plus de « × » entre un coefficient et cos, sin, tan, racine (fiche 19).
+  Vérifié : calculs recalculés indépendamment sur 1 200 tirages (19.4 : valeur de a·f(bx+c) en 4 points ; 19.5 : valeur déterminée
+  de façon unique par l'intervalle ; 19.11 et 19.12), équations 19.6 et 19.13 sur 1 400 tirages par balayage de signe et minima de
+  |f| (racines doubles comprises, π inclus, −π exclu) : aucun écart ; cycle complet 380 à 456 réponses acceptées ; 110 écritures
+  non simplifiées ou énoncés recopiés refusés ; 0 erreur MathJax ; captures. Fiche 18 : cycle complet 396/396 après le correctif.
+  Pas de barème sur la fiche 19 ; identifiants renumérotés (un devoir en cours sur cette fiche serait à revoir).
