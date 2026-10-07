@@ -182,6 +182,13 @@ les corrections ponctuelles d'une fiche).
   retouche d'un clavier, d'une fonction `inserer*` ou une mise à jour de MathLive. **Tout
   clavier qui propose a/b ou √ propose aussi la touche → ** (case suivante : numérateur →
   dénominateur, sortie de la racine), ajoutée automatiquement par `claviers.js`.
+- **Questions à choix : on clique, on ne tape pas** (07/10/2026, demande de David) : QCM, oui/non et
+  vrai/faux se répondent en cliquant sur la réponse (comme dans les automatismes), via le script partagé
+  `assets/js/qcm-clic.js` (branché par `node outils/qcm-clic/cabler-fiches.js`, contrôlé par
+  `outils/qcm-clic/audit.html`). Un seul bon choix : le clic valide ; plusieurs bonnes réponses : cocher puis
+  « Valider ». Le champ texte reste la source de vérité (même lettre qu'avant : brouillons, devoirs, barèmes
+  inchangés). Un oui/non s'écrit donc comme un QCM à deux choix « oui » / « non ». Une fiche **nouvelle** doit
+  charger ce script. Les fiches ayant un devoir en cours ne sont pas modifiées (liste `EXCLUES` de l'outil).
 - **QCM sur des figures ou des courbes : la réponse porte le nom de
   l'étiquette.** Courbes notées \(f_1\), \(f_2\), \(f_3\) → réponse
   « f1 » ; figures notées « figure 1 » → réponse « 1 » ; jamais des figures

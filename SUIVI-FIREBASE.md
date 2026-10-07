@@ -89,6 +89,12 @@ depuis la réorganisation du 02/10/2026 »).
     fiche à barème modifiée (question ajoutée, supprimée, renumérotée) se désynchronise sans signal ;
     outils de contrôle disponibles **à la demande de David** : `outils/bareme/controle-bareme.js` +
     `controle.html` (voir `outils/bareme/README.md`).
+  - `assets/js/qcm-clic.js` (script classique, 07/10/2026) : QCM, oui/non et vrai/faux **cliquables** (le champ texte
+    est masqué mais reste la source de vérité, un clic y écrit la lettre ou « vrai » / « faux » puis simule Entrée ;
+    plusieurs bonnes réponses : bouton « Valider »). Branché dans 47 fiches par `outils/qcm-clic/cabler-fiches.js`
+    (balise après `claviers.js`) ; **EXCLUES tant que leur devoir court : Première 1 et 2 (jusqu'au 10/10/2026 au
+    soir) et Seconde 5** — à retirer de la liste `EXCLUES` de l'outil puis `--toutes` après les échéances ; audit :
+    `outils/qcm-clic/audit.html` (`A.lancer()`, 15 fiches à choix, 75 cartes, 75/75 bonnes réponses par clic le 07/10/2026).
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique

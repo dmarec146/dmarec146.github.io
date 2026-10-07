@@ -7507,3 +7507,22 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   19.9 tangente (1,5 / 1,5 / 1,75), 19.10 équations a·cos x + b·sin x = c (3 × 1,75). Contrôle de cohérence : 20 fiches à
   barème cohérentes, 30 questions tirées sur 300 générations toutes avec points ; « Total : 20 points (+ 10 points de calculs
   avancés) » et note 30 / 30 toutes réponses justes vérifiés. Proposition à valider par David.
+
+- **QCM, oui/non et vrai/faux cliquables dans 47 fiches (07/10/2026).** Demande de David : pour les questions qui n'ont que oui/non ou les
+  QCM, utiliser comme dans les pages d'automatismes de simples clics au lieu de taper une lettre. Le scalaire partagé
+  `assets/js/qcm-clic.js` (nouveau fichier, aucun générateur modifié) repère les cartes à choix (`.q-qcm-options` + champ texte),
+  rend les choix cliquables (même aspect que les automatismes : bordure, pastille de lettre, état « choisi »), masque le champ et son
+  clavier, et y écrit la même lettre que la frappe : un seul bon choix → un clic valide (touche Entrée simulée) ; plusieurs bonnes
+  réponses (« b,c,f ») → cocher puis bouton « Valider » ; vrai/faux (type `vraifaux`) → deux boutons « Vrai » / « Faux » créés par le
+  script. Brouillons, reprises, devoirs (verdict caché jusqu'à la validation), mode « Tout à la fin », « Recommencer » et « Générer une
+  nouvelle version » inchangés ; l'aide « ? » devient « Cliquer sur la bonne réponse » (ou « …toutes les bonnes réponses, puis
+  « Valider » »). Outil de câblage `outils/qcm-clic/cabler-fiches.js` (balise après `claviers.js`, idempotent, option `--verif`),
+  audit `outils/qcm-clic/audit.html`.
+  - **Devoirs en cours** (lus en lecture seule dans Firestore, sans identité d'élève) : Première fiche 1 (calculs 1.1 à 1.5 et 1.9,
+    classe 1ere-Gr 1, 8/10), Première fiche 2 (2.1 à 2.6, 1ere-Gr 1, 10/10), Seconde fiche 5 (5.1 à 5.5 et 5.7, 2nde-207, 8/10) : ces trois
+    fiches ne sont **pas** câblées (liste `EXCLUES`) ; à câbler après les échéances. Les fiches dont le script partagé `claviers.js`
+    avait été modifié le 06/10 (touche ×, bouton clavier, xⁿ) restent concernées par ces changements déjà en ligne.
+  - Vérifié : 15 fiches contiennent des questions à choix (Première 4, 7, 8, 9, 10, 16 à 21, 23 à 26 ; Seconde : aucune), 75 cartes toutes
+    rendues cliquables, 75/75 bonnes réponses obtenues par clic (dont 5 QCM à plusieurs réponses), aucune erreur de script ; devoir
+    simulé (clic enregistré dans `saisies` sans verdict affiché) ; « Recommencer » et nouvelle version resynchronisent l'affichage.
+  - Règle ajoutée à REGLES-FICHES.md et note dans SUIVI-FIREBASE.md.
