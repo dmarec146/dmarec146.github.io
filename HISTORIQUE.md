@@ -7685,3 +7685,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   proches ; barème de la fiche 21 non fait.
   Vérifié : 410 tirages recomptés par un calcul indépendant à partir des énoncés (projeté par produit scalaire, distances par formule et par produit vectoriel, centre et rayon à partir de
   l'équation, cercle tangent) : 0 erreur ; cycle 270/270 corrigés acceptés, 270/270 réponses fausses refusées, 270/270 écritures non simplifiées refusées ; 0 erreur MathJax.
+
+- **Première fiche 21 : équations de cercles non liées au produit scalaire supprimées (07/10/2026).** Question de David (« pourquoi des équations de cercles pour le produit scalaire ? »)
+  puis choix de l'option « supprimer les équations de cercles non liées au produit scalaire ». Supprimés (numérotation d'alors) : 21.13 (équation d'un cercle de centre et rayon donnés), 21.14 (centre et
+  rayon à partir de l'équation) et 21.15 b) (cercle de centre Ω passant par B). Restent : le **cercle de diamètre [AB]** (question unique, devenue **21.13** : équation x²+y²+ax+by+c = 0, lien MA·MB = 0),
+  la section « Calculs plus avancés » (distance d'un point à une droite, tangente à un cercle, cercle tangent à une droite : 21.14 à 21.16). Fiche renumérotée : **34 questions, 16 calculs**
+  (21.1 à 21.3 automatismes, 21.4 à 21.10 droites et vecteurs, 21.11 et 21.12 projeté et distance, 21.13 cercle de diamètre, 21.14 à 21.16 avancés). Vérifié : 300 tirages de 21.13 recomptés
+  (coefficients et équation développée de (x−xA)(x−xB)+(y−yA)(y−yB) = 0), cycle 90/90 corrigés acceptés et 90/90 réponses fausses refusées pour 21.13, 21.15, 21.16, 34 cartes, 0 erreur MathJax.
