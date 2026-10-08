@@ -7730,3 +7730,12 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   Vérifié : 500 tirages recalculés par sommation explicite à n = 9, 10, 13 (22.4, 22.8, 22.10, 22.11) et par les termes écrits (22.7, 3 valeurs de n) : 0 erreur ; 22.9 recompté ; cycle des réponses acceptées / refusées (somme : forme sum(k,…) écrite
   comme l'indique l'aide, 100/100 et 100/100 refusées ; autres champs 400/400 et 400/400) ; « Total : 20 points (+ 5,75 points de calculs avancés) », note 25,75 / 25,75 toutes justes, 20 / 20 sur le cœur, 0 / 20 à vide ; contrôle des questions tirées
   (26 sur 26 avec points) ; 0 erreur MathJax. Proposition de barème à valider par David.
+
+## 2026-10-08 — Première, fiche 23 (Calcul de sommes II) : méthode retirée, titres, corrigés lisibles, variété, barème
+
+- **Méthode retirée** (consigne de David : « toute la méthode est donnée ») : 23.4 réduit à 2 questions (a : (a−b)∑ a^k b^(N−k) ; b : (a+b)∑ alternée, N pair), 23.11 sans l'indication du paramètre λ, 23.12 et 23.13 deviennent des questions uniques (plus de f(x) ni de dérivation guidée), 23.14 réduit aux deux oui/non (monotonie de v_n = u_2n et w_n = u_2n+1).
+- **Titres** écrits pour tous les calculs (23.4, 23.6, 23.7 étaient vides ; « Un QCM » et « Une formule phare » n'étaient pas des titres). Textes dynamiques de 23.13 et 23.14 mis à jour par `mettreAJourTextesAvances`.
+- **Corrigés lisibles** : `exprCommune` (somme de coefficient × facteur sur un dénominateur commun), plus de « −1−− », « +− », de signe devant une fraction, ni de « × » inutile (regex ajoutée à `jsVersLatex`, `signeDevantFraction` repris de la fiche 19).
+- **Variété** : 23.4 (deux formes d'indice, N variable), 23.5 (4 variantes : bornes 0..n, 1..n, 0..n−1, signe de 1−b), 23.8, 23.10 (A, B premiers entre eux 2..6), 23.13 (∑ k x^k ou ∑ (k+1) x^k), 23.14 (signe et exposant p ∈ {1,2}).
+- **Bilan** : 24 questions, 14 calculs (groupes contigus). Vérifié : recalcul indépendant sur 300 tirages (0 écart), cycle complet 475/475 bonnes réponses acceptées et 475/475 fausses refusées, QCM 75/75, 0 erreur MathJax, `verifier-syntaxe-fiches.js` OK (50 fiches).
+- **Barème** : `outils/bareme/fiche-23.json`, base 20, bonus 7,25 (23.12, 23.13, 23.14 a et b). `cabler-fiche.js 23`, `appliquer-bareme.js 23` (+ --verif), `controle-bareme.js` et `Controle.lancer()` : 24/24 questions avec points. Notes testées : tout juste 27,25 / cœur seul 20/20 / vide 0/20.
