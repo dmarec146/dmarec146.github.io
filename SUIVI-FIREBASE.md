@@ -402,6 +402,17 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   devoir partiel y était attribué par un autre moyen, l'élève verrait la
   fiche entière notée sur toutes les questions.
 
+**Session cloud (conteneur Linux)**
+- Le proxy du conteneur bloque `unpkg.com` et `cdnjs.cloudflare.com` : une fiche s'ouvre
+  sans MathLive, MathJax ni math.js (le correcteur numérique répond « faux » à tout).
+  Pour tester dans le navigateur : `npm pack mathlive@0.111.0 mathjax@3.2.2 mathjs@12.4.0`
+  (le registre npm passe), extraire dans un dossier neuf, puis, avec Playwright
+  (`/opt/node22/lib/node_modules/playwright`, `executablePath: '/opt/pw-browsers/chromium'`),
+  rediriger ces trois URL vers les fichiers locaux (`page.route`) ; `mathjax` : `es5/tex-mml-chtml.js`
+  (sans `.min`) ; `mathjs` : `lib/browser/math.js`. Serveur : `python3 -m http.server 8791`.
+  Lancer les scripts de test depuis un dossier hors dépôt (une capture écrite en chemin relatif
+  atterrit à la racine du dépôt).
+
 **Scripts et outils (Windows)**
 - Scripts contenant des antislashs (LaTeX) : les écrire dans un fichier
   (outil Write), jamais via un heredoc shell ou `node -e` (antislashs

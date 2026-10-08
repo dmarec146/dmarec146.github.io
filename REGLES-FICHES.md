@@ -81,6 +81,12 @@ les corrections ponctuelles d'une fiche).
   - **à partir de la fiche 15** : plus de calcul numérique pur dans le
     premier calcul, remplacé par du calcul littéral (développer, réduire)
     et des inéquations du premier degré ou produits déjà factorisés.
+  - **reprise des premières fiches de Seconde (08/10/2026, en cours, fiche 5
+    exclue tant que son devoir court)** : « Quelques automatismes » réduit à
+    **un seul calcul de 4 questions, calcul numérique uniquement** (pas de
+    développer ni de puissances dans ce bloc) ; les règles de diversification
+    de Première (§2 ci-dessus) viendront plus tard. Fiche 1 faite le
+    08/10/2026 ; les suivantes au fur et à mesure des demandes de David.
 
 ## 3. Titres et énoncés
 
