@@ -85,8 +85,8 @@ les corrections ponctuelles d'une fiche).
     exclue tant que son devoir court)** : « Quelques automatismes » réduit à
     **un seul calcul de 4 questions, calcul numérique uniquement** (pas de
     développer ni de puissances dans ce bloc) ; les règles de diversification
-    de Première (§2 ci-dessus) viendront plus tard. Fiche 1 faite le
-    08/10/2026 ; les suivantes au fur et à mesure des demandes de David.
+    de Première (§2 ci-dessus) viendront plus tard. Fiches 1 (08/10/2026)
+    et 2 (09/10/2026) faites ; les suivantes au fur et à mesure des demandes de David.
 
 ## 3. Titres et énoncés
 
