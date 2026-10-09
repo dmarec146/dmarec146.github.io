@@ -7769,3 +7769,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Vérifié** : `verifier-syntaxe-fiches.js` (50 fiches, 0 erreur) ; navigateur : 27 cartes, 4 dans le bloc automatismes ; 600 générations des fractions recalculées en flottants (0 écart sur 1.2, 1.3, 1.4 a-b, 1.5 ; 1.4 c) non couvert par le convertisseur du test, question inchangée), toutes les réponses irréductibles, aucun résultat nul ; énoncés distincts sur 600 tirages : 1.3 a) 102, b) 279, c) 509, 1.5 a) 501, b) 502, c) 584 ; cycle complet 540/540 corrigés retapés acceptés et 440/440 réponses fausses refusées ; captures relues. Non traité : 1.8 compte 5 questions (a à e), non demandé.
 - **Titre du 1.3 raccourci (08/10/2026, demande de David)** : « dénominateurs premiers entre eux » retiré du titre, qui devient « Somme et différence. Donner le résultat sous la forme d'une fraction irréductible » (identique à celui du 1.2 ; le contenu du calcul n'a pas changé).
 - **Seconde fiche 1 : 1.8 e) supprimé (08/10/2026, demande de David)** : la comparaison de a/b et (a+1)/(b+1) est retirée du calcul « Fractions : écritures décimales et sommes », qui passe à **4 questions (a à d)** ; fiche : **26 questions, 8 calculs**. Aucune renumérotation (c'était la dernière question). Vérifié : syntaxe 50 fiches OK, 26 cartes, cycle 520/520 corrigés acceptés et 440/440 réponses fausses refusées, capture relue.
+
+## 2026-10-09 — Seconde fiche 1 : barème en points
+
+- **Demande de David** : « crée un barème pour cette fiche ». Proposition à valider par David.
+- **Barème de la fiche 1 de Seconde : base 20 points, bonus 6,75** (`outils/bareme/fiche-S01.json`, clé `S01` ajoutée dans `appliquer-bareme.js`, `cabler-fiche.js S01`, `appliquer-bareme.js S01` + `--verif`). 26 questions : 22 au cœur, 4 en bonus.
+  - 1.1 automatismes (calcul numérique) : 0,5 × 4 = 2 ; la position, non le modèle tiré, porte les points (limite connue du README).
+  - 1.2 somme et différence : 0,5 (même dénominateur) / 1 (dénominateurs multiples) / 1,25 (trois ou quatre fractions) = 2,75.
+  - 1.3 somme et différence (nouveau) : 1 / 1,25 / 1,25 = 3,5.
+  - 1.4 produit, quotient, inverse : 0,5 / 1 / 0,75 = 2,25.
+  - 1.5 sommes et produits (nouveau, catégorie C : priorités, parenthèses) : 1 / 1,25 / 1,25 = 3,5.
+  - 1.6 comparer : 1 / 0,5 (fraction et entier) / 1,25 (même numérateur, piège classique) = 2,75.
+  - 1.7 fractions et calcul littéral : 1 / 1 / 1,25 = 3,25.
+  - 1.8 avancés (bonus, E) : décimal ou non 1,5, période 2, somme télescopique 1,75, fraction étagée 1,5 = 6,75.
+- **Vérifié** (navigateur, mêmes bibliothèques servies depuis npm que pour la fiche) : 300 générations, chaque question tirée a des points et chaque clé du JSON correspond à une question ; notes tout juste 26,75 / 26,75, cœur seul 20 / 20, bonus seul 6,75 / 26,75, à vide 0 / 20 ; encart « Total : 20 points (+ 6,75 points de calculs avancés) », 26 pastilles de points, tout retiré hors devoir ; aucune erreur de page. `controle-bareme.js` : fichiers cohérents (`fiches-a-bareme.json` mis à jour : 26 fiches). Le volet `controle.html` n'a pas été lancé tel quel (il charge les 26 fiches) ; son contrôle a été refait sur cette seule fiche.
+- **Rappel** : le barème est lié aux ids de questions ; toute nouvelle modification de la fiche 1 (question ajoutée, supprimée, renumérotée) oblige à mettre à jour `fiche-S01.json` puis relancer `appliquer-bareme.js S01`.

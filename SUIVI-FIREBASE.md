@@ -74,8 +74,8 @@ depuis la réorganisation du 02/10/2026 »).
     autre retouche des fiches que la balise `<script>`. Une nouvelle fiche à
     widget doit l'inclure.
   - `assets/js/bareme.js` (script classique, 05/10/2026) : **barème en points**
-    des fiches de calcul, pilotes Première 2 et 9 (les 48 autres n'ont pas de
-    `Bareme.definir`, donc inchangées). **Uniquement dans un devoir** : affiche la note de chaque question et
+    des fiches de calcul, fiches à barème : Première 1 à 24, Seconde 1 et 5 (les autres n'ont pas de
+    `Bareme.definir`, donc inchangées ; marche à suivre dans `outils/bareme/README.md`). **Uniquement dans un devoir** : affiche la note de chaque question et
     « Total : N points (+ M points de calculs avancés) » en tête (rien d'autre pour
     l'élève), et rien en entraînement libre ; `Bareme.calculer`
     donne la note pondérée, les calculs avancés étant un **bonus** (bonne réponse :
