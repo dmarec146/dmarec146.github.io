@@ -8,14 +8,14 @@
 //   node outils/qcm-clic/cabler-fiches.js --toutes                                      (toutes, sauf EXCLUES)
 //   node outils/qcm-clic/cabler-fiches.js --verif                                       (liste ce qui manque, n'ecrit rien)
 //
-// EXCLUES : fiches ayant un devoir en cours (07/10/2026) -- elles ne changent pas tant que le devoir n'est
-// pas termine : Premiere 1 et 2 (jusqu'au 10/10/2026 au soir), Seconde 5. Les retirer de la liste apres les
-// echeances, puis relancer --toutes.
+// EXCLUES : fiches ayant un devoir en cours -- elles ne changent pas tant que le devoir n'est pas termine.
+// Liste vide depuis le 12/10/2026 : Premiere 1 et 2 et Seconde 5, exclues le 07/10/2026, cablees une fois
+// leurs devoirs termines (verifie dans Firestore). Ajouter ici une fiche dont un devoir court, si besoin.
 
 const fs = require('fs');
 const path = require('path');
 
-const EXCLUES = ['premiere/cahier-1/fiche-01', 'premiere/cahier-1/fiche-02', 'seconde/cahier-1/fiche-05'];
+const EXCLUES = [];
 const racine = path.join(__dirname, '..', '..', 'cahiers');
 const BALISE = '<script src="../../../assets/js/qcm-clic.js"></script>';
 

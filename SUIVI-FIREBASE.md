@@ -91,10 +91,12 @@ depuis la réorganisation du 02/10/2026 »).
     `controle.html` (voir `outils/bareme/README.md`).
   - `assets/js/qcm-clic.js` (script classique, 07/10/2026) : QCM, oui/non et vrai/faux **cliquables** (le champ texte
     est masqué mais reste la source de vérité, un clic y écrit la lettre ou « vrai » / « faux » puis simule Entrée ;
-    plusieurs bonnes réponses : bouton « Valider »). Branché dans 47 fiches par `outils/qcm-clic/cabler-fiches.js`
-    (balise après `claviers.js`) ; **EXCLUES tant que leur devoir court : Première 1 et 2 (jusqu'au 10/10/2026 au
-    soir) et Seconde 5** — à retirer de la liste `EXCLUES` de l'outil puis `--toutes` après les échéances ; audit :
+    plusieurs bonnes réponses : bouton « Valider »). Branché dans **les 50 fiches** par `outils/qcm-clic/cabler-fiches.js`
+    (balise après `claviers.js` ; Première 1 et 2 et Seconde 5, exclues pendant leurs devoirs, câblées le 12/10/2026 ;
+    liste `EXCLUES` de l'outil vide, à remplir si une fiche doit attendre la fin d'un devoir) ; audit :
     `outils/qcm-clic/audit.html` (`A.lancer()`, 15 fiches à choix, 75 cartes, 75/75 bonnes réponses par clic le 07/10/2026).
+    Ne concerne que les cartes à options listées (`.q-qcm-options`) et les vrai/faux : les QCM sur figures dont la réponse
+    se tape (Première 1.7/1.8, 4.4/4.5…) restent en saisie.
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique
