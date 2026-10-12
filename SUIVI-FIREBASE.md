@@ -94,9 +94,15 @@ depuis la réorganisation du 02/10/2026 »).
     plusieurs bonnes réponses : bouton « Valider »). Branché dans **les 50 fiches** par `outils/qcm-clic/cabler-fiches.js`
     (balise après `claviers.js` ; Première 1 et 2 et Seconde 5, exclues pendant leurs devoirs, câblées le 12/10/2026 ;
     liste `EXCLUES` de l'outil vide, à remplir si une fiche doit attendre la fin d'un devoir) ; audit :
-    `outils/qcm-clic/audit.html` (`A.lancer()`, 15 fiches à choix, 75 cartes, 75/75 bonnes réponses par clic le 07/10/2026).
-    Ne concerne que les cartes à options listées (`.q-qcm-options`) et les vrai/faux : les QCM sur figures dont la réponse
-    se tape (Première 1.7/1.8, 4.4/4.5…) restent en saisie.
+    `outils/qcm-clic/audit.html` (`A.lancer()` : une « carte à choix » est toute question de type QCM ou vrai/faux ;
+    liste les non cliquables, les choix mal centrés, les lignes qui défilent ; 12/10/2026 : 50 fiches, 16 avec des choix,
+    73 cartes, 73 cliquables, 73/73 bonnes réponses par clic, 0 décentré, 0 qui défile).
+    **QCM sur figure (12/10/2026)** : les choix affichés dans le bloc voisin (`.qcm-bloc`, Première 1.7) sont déplacés dans la
+    carte de réponse ; sans choix affichés (« 1, 2 ou 3 » en 1.8, « f1, f2 ou f3 » en 4.4/4.5), des boutons sont créés à partir
+    du texte grisé du champ (« Figure n », (f_n) en MathJax). **Centrage** : les choix sont toujours centrés sur leur propre
+    ligne ; une ligne qui défilait avec une flèche (`q-qcm-options--scroll`, 12 fiches de Première) passe à la ligne, centrée.
+    Après construction des cartes, `rafraichirAides()` recalcule les bulles d'aide « ? » de groupe (« Cliquer sur la bonne
+    réponse »), construites avant les cartes.
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique

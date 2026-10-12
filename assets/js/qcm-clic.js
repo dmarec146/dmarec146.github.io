@@ -10,13 +10,28 @@
 //   - vrai/faux (type « vraifaux », champ « vrai » / « faux ») : deux boutons « Vrai » et « Faux » crees par le script ;
 //   - un seul bon choix : un clic choisit la reponse et la valide (meme effet que la touche Entree) ;
 //   - plusieurs bonnes reponses (ex. « b,c,f ») : on coche / decoche, puis « Valider » ;
-//   - en devoir, comme avant : le verdict n'est pas affiche avant la validation de la fiche.
+//   - en devoir, comme avant : le verdict n'est pas affiche avant la validation de la fiche ;
+//   - QCM sur figure (12/10/2026) : si les choix sont affiches dans le bloc voisin (.qcm-bloc), ils sont deplaces dans la
+//     carte de reponse et rendus cliquables ; s'il n'y en a pas (« figure 1, 2 ou 3 », « f1, f2 ou f3 »), des boutons sont
+//     crees a partir du texte grise du champ ;
+//   - tous les choix sont centres, sur leur propre ligne, dans leur carte.
 (function () {
   'use strict';
 
   const STYLE = `
     .question.qcm-clic .q-input, .question.qcm-clic .q-clavier-btn, .question.qcm-clic .clavier-visuel { display: none !important; }
+    .question.qcm-clic .q-qcm-options-wrapper { flex: 1 1 100%; display: flex; justify-content: center; max-width: 100%; }
+    .question.qcm-clic .q-qcm-options { flex: 1 1 100%; width: 100%; justify-content: center; align-items: center; margin-left: 0; margin-right: 0; }
+    .question.qcm-clic .qcm-masque { display: none !important; }
+    /* choix sur une seule ligne qui defile (--scroll) : pour une question cliquable, ils passent a la ligne, centres,
+       sans fleche ni marge reservee (12/10/2026) */
+    .question.qcm-clic .q-qcm-options-wrapper--scroll { padding-right: 0; }
+    .question.qcm-clic .q-qcm-options-wrapper--scroll::before, .question.qcm-clic .q-qcm-options-wrapper--scroll::after { display: none; }
+    .question.qcm-clic .q-qcm-options--scroll { flex-wrap: wrap; justify-content: center; overflow: visible; }
+    .question.qcm-clic.qcm-figure { justify-content: center; }
+    .question.qcm-clic.qcm-figure .q-statut { margin-left: 0; }
     .q-qcm-option.cliquable {
+      display: inline-flex; align-items: center; justify-content: center; text-align: center;
       cursor: pointer; padding: 6px 12px; border: 1.5px solid #d4d4d4; border-radius: 8px; background: #fff;
       user-select: none; -webkit-user-select: none; transition: border-color 0.12s, background-color 0.12s;
     }
@@ -48,10 +63,12 @@
 
   function ameliorer(carte) {
     if (carte.dataset.qcmClic) return;
-    const options = carte.querySelector('.q-qcm-options');
     const idx = indiceDe(carte);
     const champ = idx >= 0 ? document.getElementById('input-' + idx) : null;
-    if (!options || !champ || champ.tagName !== 'INPUT') return;
+    if (!champ || champ.tagName !== 'INPUT') return;
+    let options = carte.querySelector('.q-qcm-options');
+    if (!options) options = choixDuBlocVoisin(carte) || choixDepuisTexteGrise(carte, champ);
+    if (!options) return;
     carte.dataset.qcmClic = '1';
     carte.classList.add('qcm-clic');
     const multiple = plusieursReponses(exerciceDe(idx));
@@ -74,6 +91,51 @@
       enveloppe.insertAdjacentElement('afterend', b);
     }
     synchroniser(carte);
+  }
+
+  // QCM sur figure (Premiere 1.7) : les choix sont dans le bloc voisin de la carte de reponse
+  function choixDuBlocVoisin(carte) {
+    const ex = exerciceDe(indiceDe(carte));
+    const bloc = carte.closest('.qcm-bloc');
+    const ext = bloc && ex && ex.type === 'qcm' ? bloc.querySelector('.q-qcm-options') : null;
+    if (!ext) return null;
+    carte.classList.add('qcm-figure');
+    carte.insertBefore(ext, carte.firstChild);
+    masquerLibelleReponse(carte);
+    return ext;
+  }
+
+  // QCM sur figure sans choix affiches (« 1, 2 ou 3 », « f1, f2 ou f3 ») : boutons crees depuis le texte grise du champ
+  function choixDepuisTexteGrise(carte, champ) {
+    const ex = exerciceDe(indiceDe(carte));
+    if (!ex || ex.type !== 'qcm') return null;
+    const items = String(champ.getAttribute('placeholder') || '').split(/\s*,\s*|\s+ou\s+/).map((s) => s.trim()).filter(Boolean);
+    if (items.length < 2 || !items.every((s) => /^(f\d+|\d+)$/i.test(s))) return null;
+    const bloc = document.createElement('div');
+    bloc.className = 'q-qcm-options-wrapper';
+    bloc.innerHTML = '<div class="q-qcm-options">' + items.map((s) => {
+      const m = /^f(\d+)$/i.exec(s);
+      const libelle = m ? '\\(f_{' + m[1] + '}\\)' : 'Figure ' + s;
+      return '<span class="q-qcm-option cliquable" role="button" tabindex="0" data-valeur="' + s.toLowerCase() + '"><span>' + libelle + '</span></span>';
+    }).join('') + '</div>';
+    carte.classList.add('qcm-figure');
+    champ.insertAdjacentElement('beforebegin', bloc);
+    masquerLibelleReponse(carte);
+    composer(bloc);
+    return bloc.firstChild;
+  }
+
+  // « Réponse : » devant un champ masque n'a plus de sens
+  function masquerLibelleReponse(carte) {
+    carte.querySelectorAll('.q-lettre').forEach((l) => { if (/^R[ée]ponse/i.test((l.textContent || '').trim())) l.classList.add('qcm-masque'); });
+  }
+
+  // formules des boutons crees par le script : MathJax, des qu'il est pret
+  function composer(el) {
+    const mj = window.MathJax;
+    if (!mj) return;
+    const lancer = () => { try { if (mj.typesetPromise) mj.typesetPromise([el]); } catch (e) { /* le libelle reste lisible en texte */ } };
+    if (mj.startup && mj.startup.promise) mj.startup.promise.then(lancer); else lancer();
   }
 
   // vrai/faux : le champ « vrai » / « faux » est remplace par deux boutons (meme apparence que les choix d'un QCM)
@@ -107,7 +169,22 @@
     });
   }
   function toutSynchroniser() { document.querySelectorAll('.question.qcm-clic').forEach(synchroniser); }
-  function toutAmeliorer() { document.querySelectorAll('.question').forEach((q) => { ameliorer(q); ameliorerVraiFaux(q); }); }
+  function toutAmeliorer() { document.querySelectorAll('.question').forEach((q) => { ameliorer(q); ameliorerVraiFaux(q); }); rafraichirAides(); }
+
+  // les bulles d'aide « ? » de groupe sont construites AVANT les cartes : une fois les choix rendus cliquables, leur texte
+  // (« Ecrire la lettre… ») est recalcule par la fonction de la fiche, que envelopperAide() fait deja parler de clics
+  function rafraichirAides() {
+    let g, f;
+    try { g = typeof groupes !== 'undefined' ? groupes : null; f = typeof texteAideGroupe === 'function' ? texteAideGroupe : null; } catch (e) { return; }
+    if (!g || !f) return;
+    for (const [gridId, indices] of Object.entries(g)) {
+      const bulle = document.getElementById('aide-groupe-' + gridId);
+      if (!bulle || !indices.some((i) => { const c = document.getElementById('q-' + i); return c && c.classList.contains('qcm-clic'); })) continue;
+      let texte;
+      try { texte = f(indices); } catch (e) { continue; }
+      if (texte && bulle.innerHTML !== texte) bulle.innerHTML = texte;
+    }
+  }
 
   function valider(champ) {
     champ.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
@@ -198,6 +275,7 @@
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
     setInterval(toutSynchroniser, 400);
+
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
 })();

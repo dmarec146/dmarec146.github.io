@@ -2,7 +2,7 @@
 <html lang="fr"><head><meta charset="utf-8"><title>Audit des QCM cliquables</title></head>
 <body>
 <h1>Audit des QCM cliquables (qcm-clic.js)</h1>
-<p>Ouvrir cette page par le serveur statique (<code>/outils/qcm-clic/audit.html</code>) puis, dans la console, <code>A.lancer()</code> ; attendre <code>AUDIT_FIN === true</code> et lire <code>AUDIT</code> (une ligne par fiche : cartes à choix, cartes cliquables, bonnes réponses obtenues par clic, erreurs de script). Chaque fiche est chargée dans l'iframe, ses questions à choix reçoivent un clic sur la bonne réponse (plusieurs bonnes réponses : cocher puis « Valider »).</p>
+<p>Ouvrir cette page par le serveur statique (<code>/outils/qcm-clic/audit.html</code>) puis, dans la console, <code>A.lancer()</code> ; attendre <code>AUDIT_FIN === true</code> et lire <code>AUDIT</code> (une ligne par fiche : cartes à choix, cartes cliquables, bonnes réponses obtenues par clic, choix mal centrés, erreurs de script ; depuis le 12/10/2026 une « carte à choix » est toute question de type QCM ou vrai/faux, y compris les QCM sur figure : aucune ne doit rester en saisie). Chaque fiche est chargée dans l'iframe, ses questions à choix reçoivent un clic sur la bonne réponse (plusieurs bonnes réponses : cocher puis « Valider »).</p>
 <iframe id="cadre" style="width:900px;height:700px;border:1px solid #888"></iframe>
 <pre id="sortie"></pre>
 <script>
@@ -27,22 +27,42 @@ async function auditerUne(url) {
   for (let i = 0; i < 40 && !(w.document.querySelector('.question') && w.customElements.get('math-field')); i++) await attendre(150);
   await attendre(900);
   const doc = w.document;
-  const cartes = [...doc.querySelectorAll('.question')].filter((q) => q.querySelector('.q-qcm-options'));
+  const exs = w.eval('typeof exercices !== "undefined" ? exercices : []');
+  const cartes = [...doc.querySelectorAll('.question')].filter((q) => {
+    const e = exs[Number(q.id.replace('q-', ''))];
+    return q.querySelector('.q-qcm-options') || (e && (e.type === 'qcm' || e.type === 'vraifaux'));
+  });
   const cliquables = cartes.filter((q) => q.classList.contains('qcm-clic'));
+  const nonCliquables = cartes.filter((q) => !q.classList.contains('qcm-clic')).map((q) => (exs[Number(q.id.replace('q-', ''))] || {}).id);
+  const decentres = [], defilent = [];
   let bonnes = 0, tentees = 0, multiples = 0, ratees = [];
   for (const q of cliquables) {
     const idx = Number(q.id.replace('q-', ''));
     const ex = w.eval('exercices')[idx];
     if (q.offsetParent === null) continue;   // calcul masque (devoir partiel)
+    // centrage : milieu reel des choix (du premier au dernier) comparé au milieu de la carte ; une ligne qui defile
+    // parce que les choix ne tiennent pas dans la carte n'est pas un defaut de centrage
+    const ro = q.querySelector('.q-qcm-options'), rq = q.getBoundingClientRect();
+    if (ro) {
+      const choix = ro.querySelectorAll('.q-qcm-option');
+      if (ro.scrollWidth > ro.clientWidth + 1) defilent.push(ex.id);
+      else if (choix.length) {
+        // boite englobante de TOUS les choix (plusieurs lignes possibles, chacune centree)
+        let g = Infinity, d = -Infinity;
+        choix.forEach((c) => { const r = c.getBoundingClientRect(); g = Math.min(g, r.left); d = Math.max(d, r.right); });
+        const ecart = Math.round((rq.left + rq.right) / 2 - (g + d) / 2);
+        if (Math.abs(ecart) > 3) decentres.push(ex.id + ' (' + ecart + ' px)');
+      }
+    }
     let attendue;
     if (ex.type === 'vraifaux') { attendue = [ex.estVrai ? 'vrai' : 'faux']; const o = q.querySelector(`.q-qcm-option[data-valeur="${attendue[0]}"]`); if (o) o.click(); }
-    else { attendue = String(ex.bonneReponse != null ? ex.bonneReponse : ex.reponse).split('|')[0].split(','); for (const l of attendue) { const o = q.querySelector(`.q-qcm-option[data-lettre="${l}"]`); if (o) o.click(); } }
+    else { attendue = String(ex.bonneReponse != null ? ex.bonneReponse : ex.reponse).split('|')[0].split(','); for (const l of attendue) { const o = q.querySelector(`.q-qcm-option[data-lettre="${l}"]`) || q.querySelector(`.q-qcm-option[data-valeur="${String(l).toLowerCase()}"]`); if (o) o.click(); } }
     if (attendue.length > 1) { multiples++; const b = q.querySelector('.q-qcm-valider'); if (b) b.click(); }
     tentees++;
     await attendre(60);
     if (doc.getElementById('statut-' + idx).textContent.includes('correct') && !doc.getElementById('statut-' + idx).textContent.includes('revoir')) bonnes++; else ratees.push(ex.id);
   }
-  return { cartes: cartes.length, cliquables: cliquables.length, tentees, multiples, bonnes, ratees: ratees.slice(0, 5), erreurs: erreurs.slice(0, 3) };
+  return { cartes: cartes.length, cliquables: cliquables.length, nonCliquables, tentees, multiples, bonnes, ratees: ratees.slice(0, 5), decentres, defilent, erreurs: erreurs.slice(0, 3) };
 }
 
 window.A = { async lancer(liste) {

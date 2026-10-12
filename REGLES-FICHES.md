@@ -196,6 +196,10 @@ les corrections ponctuelles d'une fiche).
   « Valider ». Le champ texte reste la source de vérité (même lettre qu'avant : brouillons, devoirs, barèmes
   inchangés). Un oui/non s'écrit donc comme un QCM à deux choix « oui » / « non ». Pour un oui/non, **pas de pastille « a » / « b »** : le mot seul dans le bouton (comme « Vrai » / « Faux »), le script la masque. Une fiche **nouvelle** doit
   charger ce script. Les fiches ayant un devoir en cours ne sont pas modifiées (liste `EXCLUES` de l'outil).
+- **Tous les QCM sont cliquables et centrés** (12/10/2026, demande de David), figures comprises : un QCM sur figure
+  (« figure 1, 2, 3 », courbes (f_1), (f_2), (f_3), formes proposées sous la courbe) reçoit aussi ses boutons ; les choix
+  sont **centrés sur leur propre ligne**, sans ligne qui défile ni flèche. Un nouveau type de QCM doit passer
+  `outils/qcm-clic/audit.html` (aucune carte à choix non cliquable, aucune décentrée).
 - **QCM sur des figures ou des courbes : la réponse porte le nom de
   l'étiquette.** Courbes notées \(f_1\), \(f_2\), \(f_3\) → réponse
   « f1 » ; figures notées « figure 1 » → réponse « 1 » ; jamais des figures
