@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
 <script>
@@ -952,7 +953,7 @@ Bareme.definir({"points":{"1.1 a)":0.5,"1.1 b)":0.75,"1.2 a)":0.5,"1.2 b)":0.75,
 <p class="section-titre">Changements de forme</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 1.4 — De la forme canonique à la forme développée.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
+<p class="calcul-titre"><span>Calcul 1.4 — De la forme canonique à la <span class="titre-mise-en-valeur">forme développée</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
 <div class="question-grille" id="grille-1-4"></div>
 
 <p class="calcul-titre"><span>Calcul 1.5 — Formes canoniques. Mettre <span class="titre-mise-en-valeur">sous la forme \(a(x-\alpha)^2+\beta\)</span>.</span><span class="picto-niveau"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#ddd"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#555"/><line x1="7" y1="7" x2="7" y2="3.2" stroke="white" stroke-width="1"/><line x1="7" y1="7" x2="9.5" y2="8.5" stroke="white" stroke-width="1"/></svg></span></p>
@@ -1133,12 +1134,30 @@ function fmtTermeCanoniqueFrac(alphaCoef, v, w){
 // fractionnaire (delicat, une seule difficulte -- celle qu'on retrouve dans toute la fiche).
 // Retirees : l'ancienne b) (carre d'une difference entiere, doublon de a) et l'ancienne c)
 // (racine carree : difficulte deja travaillee en 1.4 c).
+// Forme developpee ecrite en texte pour math.js : termes [{c: fraction, v: 'x^2' | 'x' | '', r: 'sqrt(5)' | ''}], coefficients
+// reduits (fraction irreductible, 1 omis devant une lettre ou un radical), termes nuls supprimes, signe devant le terme :
+// « 9*z^2/16+3*z/2-91/25 » (jamais « +-3 » ni « 0*x »).
+function ecrireDev(termes) {
+  let s = '';
+  for (const { c, v, r } of termes) {
+    if (c.n === 0) continue;
+    const a = fracAbs(c);
+    const facteurs = [];
+    if (!(a.n === 1 && (v || r))) facteurs.push(String(a.n));
+    if (r) facteurs.push(r);
+    if (v) facteurs.push(v);
+    const corps = facteurs.join('*') + (a.d > 1 ? '/' + a.d : '');
+    s += (c.n < 0 ? '-' : (s ? '+' : '')) + corps;
+  }
+  return s || '0';
+}
+
 function genGroupe1_1() {
   const pa=alea(2,5), qa=alea(2,9);
   const [pe,qe] = aleaParmi(PAIRES_COPREMIERES); const re=alea(2,5);
   return [
-    {id:"1.1 a)", type:"alg", enonce:`(${pa}x+${qa})^2`, reponse:`${pa*pa}*x^2+${2*pa*qa}*x+${qa*qa}`},
-    {id:"1.1 b)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^2`, reponse:`${pe*pe}/${qe*qe}*z^2+${2*pe*re}/${qe}*z+${re*re}`}
+    {id:"1.1 a)", type:"alg", enonce:`(${pa}x+${qa})^2`, reponse: ecrireDev([{c:F(pa*pa),v:'x^2'},{c:F(2*pa*qa),v:'x'},{c:F(qa*qa),v:''}])},
+    {id:"1.1 b)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^2`, reponse: ecrireDev([{c:F(pe*pe,qe*qe),v:'z^2'},{c:F(2*pe*re,qe),v:'z'},{c:F(re*re),v:''}])}
   ];
 }
 
@@ -1184,10 +1203,10 @@ function genGroupe1_4() {
   const [pe,qe]=aleaParmi(PAIRES_COPREMIERES), [re,se]=aleaParmi(PAIRES_COPREMIERES), te=aleaNonNul(-4,4);
   const constE = F(re*re*te===0?re*re: re*re + te*se*se, se*se); // (r/s)^2+t exact
   return [
-    {id:"1.4 a)", type:"alg", enonce:`(x-${pa})^2${fmtConst(qa)}`, reponse:`x^2-${2*pa}*x+${pa*pa+qa}`},
-    {id:"1.4 b)", type:"alg", enonce:`${Ab}(x+${pb})^2${fmtConst(qb)}`, reponse:`${Ab}*x^2+${2*Ab*pb}*x+${Ab*pb*pb+qb}`},
-    {id:"1.4 c)", type:"alg", enonce:`\\sqrt{${md}}(${nd}x-${pd})^2${fmtConst(-kd)}\\sqrt{${md}}`, reponse:`${nd*nd}*sqrt(${md})*x^2-${2*nd*pd}*sqrt(${md})*x+${pd*pd-kd}*sqrt(${md})`},
-    {id:"1.4 d)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^2${fmtConst(te)}`, reponse:`${pe*pe}/${qe*qe}*x^2+${2*pe*re}/${qe*se}*x+${fracStr(constE)}`}
+    {id:"1.4 a)", type:"alg", enonce:`(x-${pa})^2${fmtConst(qa)}`, reponse: ecrireDev([{c:F(1),v:'x^2'},{c:F(-2*pa),v:'x'},{c:F(pa*pa+qa),v:''}])},
+    {id:"1.4 b)", type:"alg", enonce:`${Ab}(x+${pb})^2${fmtConst(qb)}`, reponse: ecrireDev([{c:F(Ab),v:'x^2'},{c:F(2*Ab*pb),v:'x'},{c:F(Ab*pb*pb+qb),v:''}])},
+    {id:"1.4 c)", type:"alg", enonce:`\\sqrt{${md}}(${nd}x-${pd})^2${fmtConst(-kd)}\\sqrt{${md}}`, reponse: ecrireDev([{c:F(nd*nd),v:'x^2',r:`sqrt(${md})`},{c:F(-2*nd*pd),v:'x',r:`sqrt(${md})`},{c:F(pd*pd-kd),v:'',r:`sqrt(${md})`}])},
+    {id:"1.4 d)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^2${fmtConst(te)}`, reponse: ecrireDev([{c:F(pe*pe,qe*qe),v:'x^2'},{c:F(2*pe*re,qe*se),v:'x'},{c:constE,v:''}])}
   ];
 }
 
@@ -1209,11 +1228,13 @@ function genGroupe1_5() {
   }
   function itemFraction(lettre, Afr, Bfr, Cfr) {
     const {alpha,beta} = completerCarreExact(Afr,Bfr,Cfr);
-    const AcoefStr = (Afr.n===1&&Afr.d===1)?'':(Afr.n===-1&&Afr.d===1?'-':fracStr(Afr)+'*');
+    const carreAscii = `${fmtTermeCanonique(alpha,'x')}^2`;
+    const Aabs = fracAbs(Afr);
+    const corpsA = Afr.d===1 ? (Aabs.n===1 ? carreAscii : `${Aabs.n}*${carreAscii}`) : `${Aabs.n===1 ? carreAscii : Aabs.n+'*'+carreAscii}/${Aabs.d}`;
     const enonceA = (Afr.n===1&&Afr.d===1)?'x^2':(Afr.d===1?`${Afr.n}x^2`:`\\dfrac{${Afr.n}}{${Afr.d}}x^2`);
     const enonceB = Bfr.d===1?fmtLin(Bfr.n,'x'):(sgn(Bfr.n)+`\\dfrac{${Math.abs(Bfr.n)}}{${Bfr.d}}x`);
     const enonceC = Cfr.d===1?fmtConst(Cfr.n):(sgn(Cfr.n)+`\\dfrac{${Math.abs(Cfr.n)}}{${Cfr.d}}`);
-    const reponse = `${AcoefStr}${fmtTermeCanonique(alpha,'x')}^2${fmtFracApres(beta)}`;
+    const reponse = `${Afr.n<0?'-':''}${corpsA}${fmtFracApres(beta)}`;
     return {id:`1.5 ${lettre})`, type:"alg", enonce:enonceA+enonceB+enonceC, reponse};
   }
   return [
@@ -1337,6 +1358,10 @@ function genererExercices() {
 // restreint l'exigence au numerateur du quotient obtenu. Tout exercice absent de cette table
 // est volontairement hors exigence (consigne souple, simplification, question preparatoire).
 const FORMES_FACTORISEES = { '1.2': true };
+// Formes imposees controlees par le moteur de validation (assets/js/moteur-reponses.js) : la reponse doit AVOIR
+// cette forme, pas seulement la bonne valeur (12/10/2026) -- 1.1 et 1.4 : forme developpee et reduite ;
+// 1.5 et 1.6 : forme canonique a(x-alpha)^2+beta.
+const FORMES_REPONSE = { '1.1': 'developpe', '1.4': 'developpe', '1.5': 'canonique', '1.6': 'canonique' };
 function marquerFormesFactorisees(liste) {
   return liste.map(function (ex) {
     const id = String(ex.id).trim();
@@ -1344,7 +1369,11 @@ function marquerFormesFactorisees(liste) {
     const portee = Object.prototype.hasOwnProperty.call(FORMES_FACTORISEES, id)
       ? FORMES_FACTORISEES[id]
       : FORMES_FACTORISEES[groupe];
-    return portee ? Object.assign({}, ex, { formeFactorisee: portee }) : ex;
+    const forme = FORMES_REPONSE[id] || FORMES_REPONSE[groupe];
+    let r = ex;
+    if (portee) r = Object.assign({}, r, { formeFactorisee: portee });
+    if (forme) r = Object.assign({}, r, { forme: forme });
+    return r;
   });
 }
 
@@ -2061,6 +2090,7 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
+  else if (ex.forme) ok = MoteurReponses.verifier(ex, input, val);
   else if (ex.formeFactorisee) ok = estFactorise(val, ex.formeFactorisee) && checkEqualNumeric(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
@@ -2591,6 +2621,7 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (ex.forme) return MoteurReponses.aide(ex);
   if (ex.formeFactorisee === 'numerateur') {
     return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
   }
@@ -2635,6 +2666,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (ex.forme) return true;
   if (ex.formeFactorisee) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
@@ -3516,7 +3548,8 @@ async function initialiserFiche() {
     && Array.isArray(brouillon.exercices)
     && brouillon.exercices.length === exercices.length;
   if (brouillonValide) {
-    exercices = brouillon.exercices;
+    // un brouillon enregistre avant le moteur de formes n'a pas le champ `forme` : on le remet (12/10/2026)
+    exercices = marquerFormesFactorisees(brouillon.exercices);
     if (brouillon.passe) PASSE_ACTUELLE = brouillon.passe;
     restaurerEtatSupplementaire(brouillon.extra);
   }

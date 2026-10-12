@@ -103,6 +103,16 @@ depuis la réorganisation du 02/10/2026 »).
     ligne ; une ligne qui défilait avec une flèche (`q-qcm-options--scroll`, 12 fiches de Première) passe à la ligne, centrée.
     Après construction des cartes, `rafraichirAides()` recalcule les bulles d'aide « ? » de groupe (« Cliquer sur la bonne
     réponse »), construites avant les cartes.
+  - `assets/js/moteur-reponses.js` (script classique, sans dépendance, 12/10/2026) : **validation des réponses par
+    forme**. La réponse est lue (LaTeX du champ mathématique, sinon texte) dans un arbre propre au moteur — convention
+    `1/4(x+2)^2` = (1/4)(x+2)², contrairement à math.js qui lit 1/(4(x+2)²) — puis on contrôle la valeur ET la forme
+    (`puissance` : une puissance par base, bases de la réponse attendue, pas de nombre calculé ; `monome` ; `developpe`
+    : somme de termes cx^k, un par puissance, fractions irréductibles, sans parenthèse ; `canonique` : a(x−α)²+β, x une
+    seule fois). Une question déclare `forme` (+ `formeOptions`) ; la fiche appelle `MoteurReponses.verifier(ex, champ,
+    val)` dans `verifierUne()` et `MoteurReponses.aide(ex)` dans `aideContextuellePour()` (+ `necessiteAide`). **Câblé dans
+    Première 1 (1.1, 1.4 développée ; 1.5, 1.6 canonique) et Seconde 2 (2.2 à 2.4 puissances, 2.4 c d et 2.5 b c monômes)** ;
+    les 48 autres fiches gardent leur validation numérique (à câbler fiche par fiche). Tests Node :
+    `outils/verification/test-moteur-reponses.js` (95 cas).
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique

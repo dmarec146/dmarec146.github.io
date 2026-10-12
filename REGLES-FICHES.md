@@ -154,7 +154,15 @@ les corrections ponctuelles d'une fiche).
 - **Forme imposée contrôlée**, pas seulement l'égalité numérique (ex.
   `estFractionIrreductible`, `formePuissance2`, racines simplifiées, « y= »
   exigé, forme factorisée). Hors forme imposée, toute écriture équivalente est
-  acceptée.
+  acceptée. **Moteur de validation par forme** (12/10/2026, fiches pilotes
+  Première 1 et Seconde 2) : `assets/js/moteur-reponses.js`, formes `puissance`,
+  `monome`, `developpe`, `canonique` — la question déclare `forme: '…'` et la fiche
+  appelle `MoteurReponses.verifier(ex, champ, val)` (aiguillage) et
+  `MoteurReponses.aide(ex)` (aide « ? »). Toute question dont le titre impose une
+  forme doit en avoir une ; sinon la forme recopiée de l'énoncé, ou le nombre calculé
+  (2401 pour 7^4), passe pour la réponse. Les réponses attendues sont écrites
+  **réduites** (fractions irréductibles, aucun terme nul) : le moteur refuse une
+  forme non réduite. Tests : `node outils/verification/test-moteur-reponses.js`.
 - **Lectures graphiques : marge de ±0,2** sur toute réponse numérique lue sur
   un graphique (les élèves lisent sur téléphone) : `margeLecture:0.2`, et
   l'aide « ? » le dit. Les valeurs simplement écrites sur une figure (effectifs,
