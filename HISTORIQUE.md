@@ -7872,3 +7872,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Table validée par David** : 18 (18.1, 18.2 `auto` ; 18.3 à 18.6 `simplifie`), 19 (19.1, 19.2 `auto` ; 19.3, 19.4), 20 (20.1, 20.2 `auto` ; 20.4, 20.6, 20.12), 21 (21.1, 21.2 `auto`), 22 (22.1, 22.2 `auto`), 23 (23.1, 23.2 `auto`), 25 (25.1, 25.2 `auto`). `auto` couvre aussi « Résoudre » (valeur : calcul terminé).
 - **Décisions** : 23.6 (norme) et 21.4 (distance) **non câblés** — l'objectif n'est pas de simplifier la racine, `sqrt(45)` et `3*sqrt(5)` restent acceptés (valeur seule). 25.5 : le corrigé affiché est déjà correct (`reponseLatex`, fractions réduites, `x=5/3` pour une verticale) ; seules les chaînes internes de valeur sont laides (`(2/-3)*x+(-8/-3)`), invisibles, laissées. Diagrammes, tableaux croisés et vecteurs laissés en valeur seule.
 - **Audit** : 7 fiches sans anomalie (hors présentation).
+
+## 2026-10-13 — Moteur de validation : lot 3 (Première 4, 5, 9 à 13) et puissances à exposant littéral
+
+- **Table validée par David** : 4.1 (`puissance`) ; 5.3, 5.5 ; 9.3 ; 10.3 ; 11.3 a (`puissance`, exposants négatifs permis), 11.3 b (a√b), 11.4, 11.6, 11.9 ; 12.4, 12.5, 12.6 c, 12.7 a, 12.8 a, 12.9 a ; 13.4 a b f, 13.5 a, 13.6 a, 13.7 a, 13.8, 13.9 a (`simplifie`, calcul terminé, y compris les termes de suites). Les dérivées, tangentes, équations, expressions de suites en n, 4.2 et 10.4 (« forme factorisée lorsque c'est possible ») restent en valeur seule.
+- **Moteur** : la forme `puissance` accepte maintenant un **exposant littéral** (`2^(4n+1)` ; `2×16^n`, `2^(4n)×2`, `4^(2n)×2` refusés). 186 cas de test.
+- **Exclus après audit** : 13.4 c (expression de u_n) et 13.5 b (u_0 volontairement laissé en `coefficient × q^K`, valeur trop grande pour être développée).
+- **Audit** des 7 fiches : plus de refus de corrigé causés par le câblage ; restent des anomalies de présentation et les erreurs déjà connues (9.7 c `0e^{2}`).

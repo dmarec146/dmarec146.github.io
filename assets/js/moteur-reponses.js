@@ -270,12 +270,20 @@
     const cartes = new Map();
     for (const cote of ['num', 'den']) {
       for (const feuille of f[cote]) {
-        let base, exp = 1;
+        let base, exp = 1, arbre = null;
         if (feuille.t === 'num' && Number.isInteger(feuille.v)) base = feuille.v;
-        else if (feuille.t === 'pow') { base = entierRelatif(feuille.a); const e = entierRelatif(feuille.b); if (base === null || e === null) return null; exp = e; }
+        else if (feuille.t === 'pow') {
+          base = entierRelatif(feuille.a);
+          if (base === null) return null;
+          const e = entierRelatif(feuille.b);
+          if (e !== null) exp = e;
+          else if (symboles(feuille.b).size > 0 && polynomial(feuille.b)) arbre = feuille.b;   // exposant litteral : 2^(4n+1)
+          else return null;
+        }
         else return null;
         if (base === 1) continue;                       // 1/5^4 : le 1 ne compte pas
         if (cartes.has(base)) return null;              // base repetee : 7^2*7, ou 7^3/7
+        if (arbre) { cartes.set(base, { arbre: cote === 'num' ? arbre : neg(arbre) }); continue; }
         if (exp === 0) return null;
         if (exp < 0 && !(options && options.exposantsNegatifs)) return null;
         cartes.set(base, cote === 'num' ? exp : -exp);
@@ -286,7 +294,15 @@
   function formePuissance(u, a, options) {
     const lu = lirePuissances(u, options), la = lirePuissances(a, { exposantsNegatifs: true });
     if (!lu || !la || lu.signe !== la.signe || lu.cartes.size !== la.cartes.size) return false;
-    for (const [base, e] of la.cartes) if (lu.cartes.get(base) !== e) return false;
+    for (const [base, e] of la.cartes) {
+      if (!lu.cartes.has(base)) return false;
+      const eu = lu.cartes.get(base);
+      if (typeof e === 'number' && typeof eu === 'number') { if (eu !== e) return false; }
+      else {
+        const arbre = (x) => (typeof x === 'number' ? num(x) : x.arbre);
+        if (!memeValeur(arbre(eu), arbre(e))) return false;
+      }
+    }
     return true;
   }
 
