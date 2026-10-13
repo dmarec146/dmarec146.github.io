@@ -163,6 +163,16 @@ les corrections ponctuelles d'une fiche).
   (2401 pour 7^4), passe pour la réponse. Les réponses attendues sont écrites
   **réduites** (fractions irréductibles, aucun terme nul) : le moteur refuse une
   forme non réduite. Tests : `node outils/verification/test-moteur-reponses.js`.
+  **Formes générales (13/10/2026)** : `simplifie` (« Simplifier / Calculer / Réduire » : plus rien à
+  simplifier, l'énoncé recopié est refusé), `factorise` (un produit, facteurs sans facteur numérique commun,
+  factorisation complète), `decimal` (notation décimale exigée). Elles ne se déclarent pas question par question :
+  **table par fiche** `outils/moteur-reponses/formes-par-fiche.json` (clé = numéro de calcul « 4.2 » ou id « 4.8 c) »)
+  puis `node outils/moteur-reponses/cabler-fiches.js` (branche la fiche : balise, table, aiguillage, aide ; idempotent).
+  Options : `euler` (le `e` des fiches d'exponentielle est le nombre d'Euler). **Pour toute nouvelle fiche ou tout
+  nouveau calcul dont le titre dit simplifier / développer / factoriser / calculer / « sous la forme » : ajouter l'entrée à
+  la table et relancer le câblage.** Câblées le 13/10/2026 : 12 fiches (voir HISTORIQUE) ; restent les autres (dresser
+  `connues.json` de l'audit pour repérer lesquelles). Le **corrigé est la référence** : la réponse attendue doit être
+  une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé.
 - **Lectures graphiques : marge de ±0,2** sur toute réponse numérique lue sur
   un graphique (les élèves lisent sur téléphone) : `margeLecture:0.2`, et
   l'aide « ? » le dit. Les valeurs simplement écrites sur une figure (effectifs,

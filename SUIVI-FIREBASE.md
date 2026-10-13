@@ -111,8 +111,14 @@ depuis la réorganisation du 02/10/2026 »).
     seule fois). Une question déclare `forme` (+ `formeOptions`) ; la fiche appelle `MoteurReponses.verifier(ex, champ,
     val)` dans `verifierUne()` et `MoteurReponses.aide(ex)` dans `aideContextuellePour()` (+ `necessiteAide`). **Câblé dans
     Première 1 (1.1, 1.4 développée ; 1.5, 1.6 canonique) et Seconde 2 (2.2 à 2.4 puissances, 2.4 c d et 2.5 b c monômes)** ;
-    les 48 autres fiches gardent leur validation numérique (à câbler fiche par fiche). Tests Node :
-    `outils/verification/test-moteur-reponses.js` (95 cas).
+    les autres fiches gardent leur validation numérique (à câbler fiche par fiche). Tests Node :
+    `outils/verification/test-moteur-reponses.js` (~160 cas).
+    **13/10/2026 : formes générales `simplifie`, `factorise`, `decimal`** (option `euler`), pilotées par une table par
+    fiche `outils/moteur-reponses/formes-par-fiche.json` + câblage automatique `outils/moteur-reponses/cabler-fiches.js`
+    (balise, bloc `formesCalcul()/parametresForme()/exAvecForme()`, aiguillage en tête de `verifierUne`, crochets d'aide ;
+    si le moteur ne sait pas lire la réponse attendue, la fiche se rabat sur la valeur — l'audit le signale :
+    `reference-illisible`). Câblées : Seconde 1, 3, 4, 5, 11 et Première 2, 3, 6, 7, 8, 25 (Seconde 9 : corrigés
+    corrigés, fractions irréductibles). Les autres : voir `connues.json`.
   - `outils/audit-reponses/` (13/10/2026) : **audit permanent de la validation des réponses**, script Node qui pilote le
     Chrome installé (playwright-core, `npm install` une fois par machine). `node outils/audit-reponses/audit.js` (fiches
     modifiées) ou `--toutes`. Corrigé retapé dans les vrais champs, énoncé recopié / nombre calculé refusés, corrigés

@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <style>
   :root {
@@ -880,6 +881,14 @@ function termeX(v, premier) {
   return `${signe}${coef}x`;
 }
 // rend "coefX*x+constante" avec omission propre des coefficients nuls/unitaires et des signes
+// facteur partage * (c1 x + c0) en factorisant AUSSI le facteur numerique commun a c1 et c0 (factorisation complete :
+// (x+6)(9x+9) devient 9(x+6)(x+1)) ; sans facteur commun, la forme habituelle facteur*(c1x+c0)
+function reponseFactorisee(facteurPartage, c1, c0) {
+  if (c0 === 0) return `${c1}*x*${facteurPartage}`;     // le facteur c1*x se lit mieux en tete : -5x(x-2), et non 5(x-2)(-x)
+  const g = pgcd(c1, c0);
+  if (g > 1) return `${g}*${facteurPartage}*(${polynomeXConst(c1 / g, c0 / g)})`;
+  return `${facteurPartage}*(${polynomeXConst(c1, c0)})`;
+}
 function polynomeXConst(coefX, constante) {
   const tx = termeX(coefX, true);
   const tc = termeConst(constante, tx === '');
@@ -1081,7 +1090,7 @@ const generateurs = [
     // plus exigeant : facteur commun CACHE, un binome partage par deux produits
     const a = alea(2,9), p = alea(1,9), q = alea(1,9), r = alea(1,9), s = alea(1,9);
     return { enonce:`(x+${a})(${binomeLatex(p,q)})+(x+${a})(${binomeLatex(r,s)})`,
-             reponse:`(x+${a})*(${p+r}*x+${q+s})` };
+             reponse: reponseFactorisee(`(x+${a})`, p+r, q+s) };
   }},
   {id:"4.6 d)", type:"alg", gen: () => {
     // encore plus exigeant : le facteur commun apparait dans TROIS termes, dont un terme "nu"
@@ -1089,7 +1098,7 @@ const generateurs = [
     let q, s, t;
     do { q = alea(1,9); s = alea(1,9); t = alea(1,9); } while (q + s - t === 0);
     return { enonce:`(x+${a})(${binomeLatex(p,q)})+(x+${a})(${binomeLatex(r,s)})-${t}(x+${a})`,
-             reponse:`(x+${a})*(${polynomeXConst(p+r, q+s-t)})` };
+             reponse: reponseFactorisee(`(x+${a})`, p+r, q+s-t) };
   }},
 
   // ---------- 5.7 : simplifier une expression fractionnaire ----------
@@ -1140,7 +1149,7 @@ const generateurs = [
     // un produit et un terme isole partageant tous le facteur (x-n)
     const n = alea(2,9), p = alea(2,7), q = entierSigne(1,7);
     return { enonce: `Factoriser complètement l'expression suivante : \\(x^2-${n*n}-(${binomeLatex(p,q)})(x-${n})+x-${n}\\).`,
-             reponse:`(x-${n})*(${polynomeXConst(1-p, n-q+1)})` };
+             reponse: reponseFactorisee(`(x-${n})`, 1-p, n-q+1) };
   }},
   {id:"4.8 e)", type:"alg", texteLibre:true, gen: () => {
     // variante avec (x+n) comme facteur partage, et un terme carre-scalaire k*(x^2-n^2)
@@ -1148,7 +1157,7 @@ const generateurs = [
     const prefixeK = k === 1 ? '' : `${k}`;
     const termeR = `${signeMagnitude(-r, false, true)}(x+${n})`;
     return { enonce: `Factoriser complètement l'expression suivante : \\(${prefixeK}x^2-${k*n*n}+(${binomeLatex(p,q)})(x+${n})${termeR}\\).`,
-             reponse:`(x+${n})*(${polynomeXConst(k+p, q-r-k*n)})` };
+             reponse: reponseFactorisee(`(x+${n})`, k+p, q-r-k*n) };
   }}
 ];
 
@@ -1178,6 +1187,7 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.formeChoix) return true;
   if (['ineq', 'encadrement'].includes(ex.type)) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
@@ -1185,6 +1195,7 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.formeChoix) {
     return "Répondre par <code>développée</code> ou par <code>factorisée</code>.";
   }
@@ -1765,6 +1776,32 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "4.1": "simplifie",
+    "4.2": "simplifie",
+    "4.3": "developpe",
+    "4.4": "developpe",
+    "4.5": "developpe",
+    "4.6": "factorise",
+    "4.7": "simplifie",
+    "4.8 c)": "factorise",
+    "4.8 d)": "factorise",
+    "4.8 e)": "factorise"
+  };
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  const v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -1784,7 +1821,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);

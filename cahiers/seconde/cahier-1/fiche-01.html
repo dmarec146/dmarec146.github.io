@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
 <script>
@@ -1215,6 +1216,7 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.comparaison) return true;
   if (ex.ouiNon) return true;
   if (ex.fractionIrreductible) return true;
@@ -1224,6 +1226,7 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.comparaison) {
     return "Répondre par le signe seul : <code>&lt;</code> ou <code>&gt;</code>. Les mots « inférieur » et « supérieur » sont acceptés.";
   }
@@ -1846,6 +1849,24 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "1.1": "simplifie",
+    "1.7": "simplifie"
+  };
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  const v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -1865,7 +1886,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);

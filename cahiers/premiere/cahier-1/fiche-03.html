@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
 <script>
@@ -1078,7 +1079,7 @@ function genGroupe3_2() {
   const coefD = rd*rd*rd*rd - rd*rd + 1;
   return [
     {id:"3.2 a)", type:"num", enonce:`\\dfrac{${pw(6,e1)}\\times ${pw(2,e2)}}{${pw(4,e3)}\\times ${pw(12,e4)}}`, reponse:fracStr(valA)},
-    {id:"3.2 b)", type:"alg", enonce:`\\dfrac{${Ab}^n\\times ${pw(C0,expC)}}{${Bb}^n\\times ${pw(D0,expD)}}`, reponse:`(${ratioAB.n}/${ratioAB.d})^n*(${fracStr(ratioCD)})`},
+    {id:"3.2 b)", type:"alg", enonce:`\\dfrac{${Ab}^n\\times ${pw(C0,expC)}}{${Bb}^n\\times ${pw(D0,expD)}}`, reponse:`${ratioAB.d===1 ? ratioAB.n : `(${ratioAB.n}/${ratioAB.d})`}^n*(${fracStr(ratioCD)})`},
     {id:"3.2 c)", type:"alg", enonce:`${ac}^{n+2}-${ac}^{n+1}-${kc}\\times ${ac}^n+${ac}^{n-1}`, reponse:`(${fracStr(coefC)})*${ac}^n`},
     {id:"3.2 d)", type:"alg", enonce:`\\dfrac{${rd**4}^{n+1}+(-${rd*rd})^{2n+1}+(-${rd})^{4n}}{${rd**3}^n}`, reponse:`${coefD}*${rd}^n`}
   ];
@@ -2042,6 +2043,23 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "3.2": "simplifie"
+  };
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  const v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -2061,7 +2079,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.type === 'cercle') ok = checkCercle(val, ex.cx, ex.cy, ex.r);
   else if (ex.type === 'vraifaux') ok = checkVraiFaux(val, ex.estVrai);
@@ -2601,6 +2620,7 @@ function placeholderPour(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.formeFactorisee === 'numerateur') {
     return "La réponse doit être un quotient dont le <strong>numérateur</strong> est factorisé : par exemple <code>(2x-1)(x+3)/(x^2+1)^2</code>. Un numérateur développé n'est pas accepté, même s'il est égal.";
   }
@@ -2644,6 +2664,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.formeFactorisee) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;

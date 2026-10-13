@@ -13,7 +13,8 @@
 //   node outils/audit-reponses/audit.js --toutes        les 50 fiches
 //   node outils/audit-reponses/audit.js cahiers/seconde/cahier-1/fiche-02.html [autre.html ...]
 //   options : --tirages-saisie N (defaut 10 ; 30 pour une fiche nommee/modifiee)  --tirages-corrige N (defaut 100)
-//             --enregistrer-connues   enregistre les anomalies actuelles dans connues.json (liste de travail)
+//             --enregistrer-connues   AJOUTE les anomalies de ce lancement a connues.json (liste de travail)
+//             --actualiser-connues    REMPLACE, pour les fiches auditees, leurs anomalies de connues.json par celles de ce lancement
 //             --tout-afficher         affiche aussi les anomalies deja connues
 // Code de sortie 1 s'il y a des anomalies NOUVELLES (absentes de connues.json) de gravite « erreur ».
 const fs = require('fs');
@@ -94,8 +95,13 @@ async function auditerDansLaPage(opts) {
       // un coefficient multiplicateur ou une valeur decimale demandee est exacte, pas approchee
       const decimalExact = /coefficient|sous forme décimale|écriture décimale|forme décimale/i.test(e.enonce || '');
       const motifs = [];
+      // forme imposee par le moteur de validation (table de la fiche) : forme « decimal » => une decimale est voulue ;
+      // reponse attendue que le moteur ne sait pas lire => il se rabattrait en silence sur la seule valeur
+      let formeMoteur = null;
+      try { if (typeof parametresForme === 'function') { const pf = parametresForme(e); formeMoteur = pf ? pf.forme : null; } } catch (er) { /* sans moteur */ }
+      if (formeMoteur && window.MoteurReponses && !window.MoteurReponses.referenceLisible(e)) motifs.push(['erreur', 'reference-illisible']);
       if (/NaN|undefined|Infinity/.test(tex)) motifs.push(['erreur', 'corrige-invalide']);
-      if (!approche && !decimalExact && /\d+\.\d{3,}/.test(tex)) motifs.push(['erreur', 'corrige-decimale']);
+      if (!approche && !decimalExact && formeMoteur !== 'decimal' && /\d+\.\d{3,}/.test(tex)) motifs.push(['erreur', 'corrige-decimale']);
       if (/\+-|-\+|--/.test(tex.replace(/\\,/g, ''))) motifs.push(['erreur', 'corrige-plus-moins']);
       if (/(?:^|[+\-=(])\s*0(?:\\sqrt|\s*[a-z]|\{ ?[a-z]|\\times)|\+\s*0(?![\d.,])/.test(tex)) motifs.push(['erreur', 'corrige-terme-nul']);
       if (/\^\{1\}(?!\d)/.test(tex)) motifs.push(['erreur', 'corrige-exposant-1']);
@@ -233,8 +239,14 @@ async function auditerDansLaPage(opts) {
   console.log(lignes.join('\n'));
   console.log(bilan + `\nRapport complet : outils/audit-reponses/rapport.txt`);
 
-  if (drapeau('--enregistrer-connues')) {
-    const actuelles = new Set(connues);
+  if (drapeau('--enregistrer-connues') || drapeau('--actualiser-connues')) {
+    // --enregistrer-connues : ajoute les anomalies vues (les tirages etant aleatoires, une anomalie rare peut manquer a un lancement) ;
+    // --actualiser-connues  : pour les fiches auditees, REMPLACE leurs anomalies par celles de ce lancement (a faire apres une correction)
+    let actuelles = new Set(connues);
+    if (drapeau('--actualiser-connues')) {
+      const auditees = new Set(resultats.map((r) => r.fiche.replace(/^cahiers\//, '').replace('.html', '')));
+      actuelles = new Set([...connues].filter((k) => !auditees.has(k.split('|')[0])));
+    }
     for (const k of toutes) actuelles.add(k);
     fs.writeFileSync(CONNUES, JSON.stringify({ commentaire: 'Anomalies deja connues (liste de travail) : cle = fiche|calcul|motif. Ne pas y ajouter une anomalie sans la traiter ensuite.', anomalies: [...actuelles].sort() }, null, 1) + '\n', 'utf8');
     console.log(`connues.json mis a jour (${actuelles.size} anomalies).`);

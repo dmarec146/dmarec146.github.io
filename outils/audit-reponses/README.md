@@ -40,8 +40,8 @@ node outils/audit-reponses/audit.js cahiers/seconde/cahier-1/fiche-02.html
 Les anomalies déjà présentes quand l'outil a été créé (12/10/2026) sont enregistrées dans `connues.json`
 (clé `fiche|calcul|motif`). Par défaut le script n'affiche et ne sanctionne que les **nouvelles** anomalies ;
 `--tout-afficher` montre aussi les connues. **`connues.json` n'est pas une liste d'exceptions acceptées mais le travail restant** :
-chaque correction retire des lignes (relancer avec `--enregistrer-connues` après avoir corrigé ne retire rien ;
-supprimer à la main les lignes traitées, puis relancer pour vérifier qu'elles ne reviennent pas).
+chaque correction retire des lignes (`--enregistrer-connues` ne fait qu’ajouter ; après une correction, `--actualiser-connues` remplace les anomalies des fiches auditées par celles du lancement ;
+).  Les tirages étant aléatoires, une anomalie rare peut manquer à un lancement : relancer pour confirmer qu’elle a bien disparu.
 
 ## Quand le relancer
 

@@ -1066,27 +1066,29 @@ let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 3);
 
 // ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
 // en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
+// fraction irreductible n/d en texte (entier si d = 1), pour que le corrige donne la VALEUR et non l'expression
+function fractionTexte(n, d) { const g = pgcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : n + '/' + d; }
 const MODELES_CALCUL = [
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:`${a}/${b}+${c}/${d}` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:`${a}/${b}-${c}/${d}` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:`(${a}/${b})*(${c}/${d})` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}+\\dfrac{${e}}{${f}}`, reponse:`(${a}/${b})*(${c}/${d})+${e}/${f}` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}+\\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*f + e*b*d, b*d*f), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:`${a}/${b}+(${c}/${d})*(${e}/${f})` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*d*f + c*e*b, b*d*f), fractionIrreductible:true }; },
   () => { const c = alea(2,9), e = alea(2,9), b = alea(1,c-1), d = alea(1,e-1), a = alea(2,9);
-          return { enonce:`${a}\\times \\dfrac{${b}}{${c}}-\\dfrac{${d}}{${e}}`, reponse:`${a}*${b}/${c}-${d}/${e}` }; },
+          return { enonce:`${a}\\times \\dfrac{${b}}{${c}}-\\dfrac{${d}}{${e}}`, reponse:fractionTexte(a*b*e - d*c, c*e), fractionIrreductible:true }; },
   () => { const b = alea(2,9), e = alea(2,9), a = alea(1,b-1), d = alea(1,e-1), c = alea(2,9);
-          return { enonce:`\\dfrac{${a}}{${b}}-${c}\\times \\dfrac{${d}}{${e}}`, reponse:`${a}/${b}-${c}*${d}/${e}` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}-${c}\\times \\dfrac{${d}}{${e}}`, reponse:fractionTexte(a*e - c*d*b, b*e), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\left(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse:`(${a}/${b}+${c}/${d})*(${e}/${f})` }; },
+          return { enonce:`\\left(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte((a*d + c*b)*e, b*d*f), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:`(${a}/${b})*(${c}/${d})*(${e}/${f})` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}-\\dfrac{${e}}{${f}}`, reponse:`${a}/${b}+${c}/${d}-${e}/${f}` }; }
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}-\\dfrac{${e}}{${f}}`, reponse:fractionTexte((a*d + c*b)*f - e*b*d, b*d*f), fractionIrreductible:true }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 
@@ -1157,11 +1159,11 @@ const generateurs = [
   {id:"9.5 b)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_NICE);
     let base; do { base = alea(10,90); } while ((valeurExacte(p*base/100)) % 1 === 0);
-    return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${p}/100*${base}` };
+    return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${valeurExacte(p*base/100)}` };
   }},
-  {id:"9.5 c)", type:"num", texteLibre:true, gen: () => {
+  {id:"9.5 c)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     const den = alea(3,12), num = aleaNonNul(1,den-1), base = alea(10,50);
-    return { enonce:`Calculer \\(\\dfrac{${num}}{${den}}\\) de \\(${base}\\).`, reponse:`(${num}*${base})/${den}` };
+    return { enonce:`Calculer \\(\\dfrac{${num}}{${den}}\\) de \\(${base}\\).`, reponse:fractionTexte(num*base, den) };
   }},
 
   // ---------- 9.6 : calculer le tout connaissant une partie et un pourcentage ----------
