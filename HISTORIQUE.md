@@ -7932,3 +7932,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   - 3.7 avancés (bonus, E) : conjugué + somme 2, rationnel ou non 1,5, conjugué 1,5, comparaison 1,75 = 6,75.
 - **Vérifié** : `controle-bareme.js` cohérent, `appliquer-bareme.js S03 --verif` à jour, syntaxe 50/50 ; 300 générations : notes tout juste 22,75 / 22,75, cœur seul 16 / 16, à vide 0 / 16 ; aucune erreur de page. **Pas d'audit de validation lancé** (consigne du jour).
 - **Rappel** : le barème est lié aux ids de questions ; toute modification de la fiche 3 oblige à mettre à jour `fiche-S03.json` puis relancer `appliquer-bareme.js S03`.
+
+## 2026-10-13 — Seconde fiche 4 (Développer, réduire, factoriser) : reprise
+
+- **Demande de David** : supprimer 4.8 a) et b) des calculs avancés ; réduire les automatismes « en supprimant entre autres les calculs numériques ». Aucun devoir sur la fiche (Firestore, 13/10). Fiche : 33 → **24 questions, 6 calculs**.
+- **Automatismes** : l'ancien 4.1 (calcul numérique, 4 questions) disparaît et le vivier de calculs numériques est supprimé de la fiche. Les anciens 4.2 (réduire) et 4.3 (développer, dont a b c identiques : trois tirages du même modèle) sont **fusionnés en un seul calcul de 4 questions « Développer et réduire les expressions suivantes »** (interprétation de « entre autres » ; à ajuster si David préfère garder l'un des deux tels quels) : a) réduire deux termes en x, b) réduire trois termes en x, c) distribution simple k(x±a), d) distribution avec coefficient interne k(mx±a). Forme `developpe` pour les 4.
+- **Calculs avancés** : 4.8 a) et b) (« choisir la forme adaptée ») supprimés ; il reste c d e (factorisations), qui deviennent **4.6 a b c**. La consigne « Factoriser complètement l'expression suivante : » était répétée dans chaque question : elle passe dans le titre « Factoriser **complètement** les expressions suivantes » (mise en valeur sur « complètement »).
+- **Renumérotation** : 4.4 → 4.2 (produits, 6 questions), 4.5 → 4.3, 4.6 → 4.4 (factoriser), 4.7 → 4.5 (fractionnaires), 4.8 → 4.6. Ids changés : brouillons non reconnus.
+- **Correction d'un défaut au passage** : l'énoncé de 4.2 f) affichait « x² + 4 ∗ x + 6 » (astérisque ASCII dans un énoncé LaTeX) ; trinôme maintenant écrit en LaTeX.
+- **Table des formes** : 4.1 4.2 4.3 `developpe`, 4.4 et 4.6 `factorise`, 4.5 `simplifie`.
+- **Vérifié** : syntaxe 50/50 ; 600 tirages, 14 400 réponses de type expression recalculées indépendamment en 3 points (x, y) avec math.js : 0 écart ; aucune réponse nulle en 4.1 ; 24 cartes, groupes 4/6/3/4/4/3, aucune erreur de page ; capture. **Pas d'audit de validation** (consigne : en fin de série de modifications). Pas de barème (non demandé).
+- **Écarts aux règles notés, non modifiés (non demandés)** : 4.2 compte 6 questions (plafond de 4, §1) ; peu de variété en 4.6 a (28 énoncés) et 4.5 b (63).

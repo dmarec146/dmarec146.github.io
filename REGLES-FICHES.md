@@ -86,7 +86,7 @@ les corrections ponctuelles d'une fiche).
     **un seul calcul de 4 questions, calcul numérique uniquement** (pas de
     développer ni de puissances dans ce bloc) ; les règles de diversification
     de Première (§2 ci-dessus) viendront plus tard. Fiches 1 (08/10/2026),
-    2 (09/10/2026), 5 (12/10/2026, une fois son devoir terminé) et 3 (13/10/2026, avec un 2e calcul de fractions à dénominateurs premiers entre eux) faites ;
+    2 (09/10/2026), 5 (12/10/2026, une fois son devoir terminé) 3 (13/10/2026, avec un 2e calcul de fractions à dénominateurs premiers entre eux) et 4 (13/10/2026, automatismes = un calcul « Développer et réduire », sans calcul numérique) faites ;
     les suivantes au fur et à mesure des demandes de David.
 
 ## 3. Titres et énoncés
