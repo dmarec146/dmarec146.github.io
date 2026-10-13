@@ -7891,3 +7891,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Ensembles de solutions** : David confirme qu'on garde le contrôle actuel (ordre libre, solution manquante ou en trop refusée, éléments non réduits acceptés comme `{16/2;1}`) ; pas de forme sur les éléments.
 - **Moteur** : l'audit a montré que `cos(0)`, `tan(3π/4)` (valeurs trigonométriques non calculées) et `(4-3√6)^2` (somme constante élevée à une puissance) passaient ; nouvelles règles de `simplifie` : fonction `cos/sin/tan/abs` d'un nombre ou d'un multiple de π, somme constante élevée à une puissance entière. Le lecteur LaTeX comprend `\cos`, `\sin`, `\tan`, `\ln`, `\exp`. 193 cas de test.
 - **Audit des 50 fiches** (463 s) : aucune erreur nouvelle ; anomalies connues 66 → 51 (hors présentation : 9.7 c `0e^{2}`, 6.5 `^{1}` de dérivées, 20.6 c).
+
+## 2026-10-13 — Moteur de validation : lot 5 (Première 22, 23, 24, 26)
+
+- **Table validée par David** : 22.5, 22.6, 22.9 ; 23.6 a, 23.7 a ; 24.6 a b ; 26.1 (`simplifie`, valeur de la solution) ; 26.2 (`factorise`). Les sommes et produits en fonction de n et les calculs à contrôle propre (fraction irréductible) restent en valeur seule.
+- **Moteur** : `factorise` accepte un dénominateur numérique (`(2x+1)^2/4`, aussi écrit `(x+1/2)^2`) ; 200 cas de test.
+- **Audit** des 4 fiches : aucune anomalie nouvelle. **Bilan du chantier** : câblées toutes les fiches sauf Première 14 (devoir en cours jusqu'au 16/10) ; Seconde 2 et Première 1 par le câblage manuel du pilote ; Seconde 9 (corrigés réparés, `fractionIrreductible`).

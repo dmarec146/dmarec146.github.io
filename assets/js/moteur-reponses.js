@@ -608,7 +608,7 @@
     while (n.t === 'neg') n = n.a;
     if (n.t === 'add' || n.t === 'sub') return false;                    // une somme n'est pas factorisee
     const f = aplatir(n);
-    if (f.den.length) return false;
+    if (f.den.some((x) => !nombrePur(x))) return false;              // seul un denominateur numerique est permis : (2x+1)^2/4
     const facteurs = f.num.map((x) => (x.t === 'pow' && (x.a.t === 'add' || x.a.t === 'sub')) ? x.a : x);
     if (facteurs.filter(nombrePur).length > 1) return false;
     if (facteurs.some((x) => x.t === 'num' && (x.v === 1 || x.v === 0))) return false;      // 1*(...)

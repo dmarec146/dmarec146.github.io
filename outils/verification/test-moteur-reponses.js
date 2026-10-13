@@ -185,6 +185,13 @@ const CAS = [
   ['puissance', {}, '2^(4*n+1)', 'L:4^{2n}\\times2', false],
   ['puissance', {}, '2^(2*n-1)', 'L:2^{2n-1}', true],
   ['puissance', {}, '2^(2*n-1)', 'L:\\frac{4^{n}}{2}', false],
+  ['factorise', {}, '(2*x+1)^2/4', '(2x+1)^2/4', true],        // denominateur numerique permis
+  ['factorise', {}, '(2*x+1)^2/4', 'L:\\frac{\\left(2x+1\\right)^{2}}{4}', true],
+  ['factorise', {}, '(2*x+1)^2/4', 'L:\\left(x+\\frac{1}{2}\\right)^{2}', true],
+  ['factorise', {}, '(2*x+1)^2/4', 'L:x^{2}+x+\\frac{1}{4}', false],
+  ['factorise', {}, '3*(x-2)*(x+2)', '3(x-2)(x+2)', true],
+  ['factorise', {}, '3*(x-2)*(x+2)', '3x^2-12', false],
+  ['factorise', {}, '(x-3)^2', 'x^2-6x+9', false],
   ['simplifie', {}, '1', 'cos(0)', false],                      // valeur trigonometrique a calculer
   ['simplifie', {}, '1', 'L:\\cos\\left(0\\right)', false],
   ['simplifie', {}, '-1/2', 'L:\\cos\\left(-\\frac{10\\pi}{3}\\right)', false],
