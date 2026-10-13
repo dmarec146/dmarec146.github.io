@@ -880,6 +880,8 @@ const DENOMINATEURS_DECIMAUX_FINIS = [2,4,5,8,10,16,20,25,40,50];
 
 function formatDecimalFr(v) { return String(v).replace('.', '{,}'); }
 // multiple de (100/pgcd(p,100)) : p% de ce nombre est toujours entier
+// un pourcentage de quantite calcule en une seule division, sans residu flottant (62.99999999999999)
+function valeurExacte(v) { return Math.round(v * 1e6) / 1e6; }
 function baseDivisiblePar(p) { const den = 100 / pgcd(p, 100); return den * alea(2, 12); }
 
 // accepte "25%"/"25 %" (pourcentage direct), ou toute expression evaluee puis multipliee par 100
@@ -1117,11 +1119,11 @@ const generateurs = [
   // ---------- 9.3 : calculer une partie connaissant le tout ----------
   {id:"9.3 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_NICE), base = baseDivisiblePar(p);
-    return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${p/100*base}` };
+    return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${valeurExacte(p*base/100)}` };
   }},
   {id:"9.3 b)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_NICE), base = baseDivisiblePar(p);
-    return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${p/100*base}` };
+    return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${valeurExacte(p*base/100)}` };
   }},
   {id:"9.3 c)", type:"num", texteLibre:true, gen: () => {
     const den = alea(2,9), num = alea(1,den-1), base = den*alea(2,15);
@@ -1150,11 +1152,11 @@ const generateurs = [
   {id:"9.5 a)", type:"num", texteLibre:true, gen: () => {
     const [n,d,p] = choix(FRACTIONS_POURCENT.filter(t => !Number.isInteger(t[2])));
     const base = d*alea(2,10);
-    return { enonce:`Calculer \\(${formatDecimalFr(String(p))}\\,\\%\\) de \\(${base}\\).`, reponse:`${p/100*base}` };
+    return { enonce:`Calculer \\(${formatDecimalFr(String(p))}\\,\\%\\) de \\(${base}\\).`, reponse:`${valeurExacte(p*base/100)}` };
   }},
   {id:"9.5 b)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_NICE);
-    let base; do { base = alea(10,90); } while ((p/100*base) % 1 === 0);
+    let base; do { base = alea(10,90); } while ((valeurExacte(p*base/100)) % 1 === 0);
     return { enonce:`Calculer \\(${p}\\,\\%\\) de \\(${base}\\).`, reponse:`${p}/100*${base}` };
   }},
   {id:"9.5 c)", type:"num", texteLibre:true, gen: () => {
@@ -1164,11 +1166,11 @@ const generateurs = [
 
   // ---------- 9.6 : calculer le tout connaissant une partie et un pourcentage ----------
   {id:"9.6 a)", type:"num", texteLibre:true, gen: () => {
-    const p = choix(POURCENTAGES_NICE), nombre = baseDivisiblePar(p), partie = p/100*nombre;
+    const p = choix(POURCENTAGES_NICE), nombre = baseDivisiblePar(p), partie = valeurExacte(p*nombre/100);
     return { enonce:`\\(${p}\\,\\%\\) d'un nombre vaut \\(${partie}\\). Calculer ce nombre.`, reponse:`${nombre}` };
   }},
   {id:"9.6 b)", type:"num", texteLibre:true, gen: () => {
-    const p = choix(POURCENTAGES_NICE), nombre = baseDivisiblePar(p), partie = p/100*nombre;
+    const p = choix(POURCENTAGES_NICE), nombre = baseDivisiblePar(p), partie = valeurExacte(p*nombre/100);
     return { enonce:`\\(${p}\\,\\%\\) d'un nombre vaut \\(${partie}\\). Calculer ce nombre.`, reponse:`${nombre}` };
   }},
   {id:"9.6 c)", type:"num", texteLibre:true, gen: () => {
@@ -1178,11 +1180,11 @@ const generateurs = [
 
   // ---------- 9.7 : calculer une proportion connaissant une partie et le tout ----------
   {id:"9.7 a)", type:"pourcentage", texteLibre:true, gen: () => {
-    const p = choix(POURCENTAGES_NICE), tout = baseDivisiblePar(p), partie = p/100*tout;
+    const p = choix(POURCENTAGES_NICE), tout = baseDivisiblePar(p), partie = valeurExacte(p*tout/100);
     return { enonce:`Dans un total de \\(${tout}\\), une partie vaut \\(${partie}\\). Quel pourcentage du total représente cette partie ?`, reponsePourcent:p };
   }},
   {id:"9.7 b)", type:"pourcentage", texteLibre:true, gen: () => {
-    const p = choix(POURCENTAGES_NICE), tout = baseDivisiblePar(p), partie = p/100*tout;
+    const p = choix(POURCENTAGES_NICE), tout = baseDivisiblePar(p), partie = valeurExacte(p*tout/100);
     return { enonce:`Dans un total de \\(${tout}\\), une partie vaut \\(${partie}\\). Quel pourcentage du total représente cette partie ?`, reponsePourcent:p };
   }},
   {id:"9.7 c)", type:"pourcentage", texteLibre:true, gen: () => {
@@ -1200,14 +1202,14 @@ const generateurs = [
     const p1 = choix(POURCENTAGES_NICE), p2 = choix(POURCENTAGES_NICE);
     const g1 = 100/pgcd(p1,100), g2 = 100/pgcd(p2,100);
     const total = g1*g2*alea(1,4);
-    const intermediaire = p1/100*total, finalV = p2/100*intermediaire;
+    const intermediaire = valeurExacte(p1*total/100), finalV = valeurExacte(p2*intermediaire/100);
     return { enonce:`Un lycée compte \\(${total}\\) élèves. \\(${p1}\\,\\%\\) d'entre eux sont en filière générale, et parmi ceux-ci, \\(${p2}\\,\\%\\) suivent une spécialité mathématiques. Combien d'élèves suivent cette spécialité ?`, reponse:`${finalV}` };
   }},
   {id:"9.8 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const p1 = choix(POURCENTAGES_NICE), p2 = choix(POURCENTAGES_NICE);
     const g1 = 100/pgcd(p1,100), g2 = 100/pgcd(p2,100);
     const total = g1*g2*alea(1,4);
-    const intermediaire = p1/100*total, finalV = p2/100*intermediaire;
+    const intermediaire = valeurExacte(p1*total/100), finalV = valeurExacte(p2*intermediaire/100);
     return { enonce:`Dans un lycée, \\(${p1}\\,\\%\\) des \\(${total}\\) élèves sont en filière générale. Parmi eux, \\(${finalV}\\) suivent une spécialité mathématiques. Quel pourcentage des élèves de la filière générale cela représente-t-il ?`, reponsePourcent:p2 };
   }},
   {id:"9.8 c)", type:"pourcentage", texteLibre:true, gen: () => {

@@ -1182,7 +1182,7 @@ function genGroupe3_5() {
     } while (delta < 0);
     const sq = Math.sqrt(delta);
     const reponse = Number.isInteger(delta) && Number.isInteger(sq)
-      ? `{${(-Bc-sq)/(2*Ac)};${(-Bc+sq)/(2*Ac)}}`
+      ? `{${fracStr(F(-Bc-sq,2*Ac))};${fracStr(F(-Bc+sq,2*Ac))}}`
       : `{(${-Bc}-sqrt(${delta}))/${2*Ac};(${-Bc}+sqrt(${delta}))/${2*Ac}}`;
     return {id:"3.5 b)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{x}{x^2-1}=${A}-\\dfrac{${B}}{x-1}\\)`, reponse};
   }
@@ -1318,16 +1318,18 @@ function genGroupe3_8() {
     const coefA2_C = F(k1-k2,2), constC = F(k1*k1-k2*k2,4);
     const enonce = `x^2-(a^2${fmtConst(k1)})x${sgn(coefA2_C.n)}${coefLatex(coefA2_C,'a^2')}${constC.n===0?'':(sgn(constC.n)+fracLatex(fracAbs(constC)))}`;
     const cible1 = 1-k2, cible2 = -1-k2; // a^2 = cible1 ou cible2
-    let sols = [];
-    if (cible1 > 1e-9) sols.push(-Math.sqrt(cible1), Math.sqrt(cible1));
-    else if (Math.abs(cible1) < 1e-9) sols.push(0);
-    if (cible2 > 1e-9) sols.push(-Math.sqrt(cible2), Math.sqrt(cible2));
-    else if (Math.abs(cible2) < 1e-9) sols.push(0);
-    const fmtSol = (v) => { if (Math.abs(v)<1e-9) return '0'; return Number.isInteger(v)?String(v):(v<0?`-sqrt(${(v*v).toFixed(6).replace(/\.?0+$/,'')})`:`sqrt(${(v*v).toFixed(6).replace(/\.?0+$/,'')})`); };
-    const uniques = [...new Set(sols.map(v=>Math.round(v*1e6)/1e6))].sort((a,b)=>a-b);
+    // racines exactes : ±sqrt(c) pour c entier > 0 (jamais de valeur arrondie puis reelevee au carre)
+    const fmtRac = (c, signe) => { const r = Math.round(Math.sqrt(c)); return r*r === c ? String(signe*r) : (signe<0?'-':'')+`sqrt(${c})`; };
+    const trouvees = [];
+    [cible1, cible2].forEach(c => {
+      if (c > 0) trouvees.push({v:-Math.sqrt(c), t:fmtRac(c,-1)}, {v:Math.sqrt(c), t:fmtRac(c,1)});
+      else if (c === 0) trouvees.push({v:0, t:'0'});
+    });
+    trouvees.sort((a,b)=>a.v-b.v);
+    const uniques = trouvees.filter((x,k)=>k===0 || Math.abs(x.v-trouvees[k-1].v)>1e-9).map(x=>x.t);
     return {id:`3.8 ${lettre})`, type:"num", texteLibre:true,
       enonce:`On note \\(\\alpha,\\beta\\) les racines de \\(${enonce}\\). Déterminer les valeurs de \\(a\\) telles que \\(|\\alpha-\\beta|=1\\)`,
-      reponse:`{${uniques.map(fmtSol).join(';')}}`};
+      reponse:`{${uniques.join(';')}}`};
   }
   return [
     {id:"3.8 a)", type:"num", texteLibre:true, enonce:`\\(${bq1.enonce}\\)`, reponse:bq1.reponseSols},

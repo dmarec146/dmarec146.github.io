@@ -1026,6 +1026,24 @@ function fmtLin(coef, v){ if(coef===0) return ''; const a=Math.abs(coef); return
 function fmtConst(c){ if(c===0) return ''; return sgn(c)+Math.abs(c); }
 
 // resout A*t^2+B*t+C (op) 0 et retourne un intervalleSpec ; on evite delta=0 dans nos constructions
+// racine (-B + signe*sqrt(delta)) / (2A) en LaTeX EXACT et reduit (jamais de decimale approchee) :
+// sqrt(delta) = k*sqrt(m), m sans facteur carre ; fraction reduite par le pgcd de -B, k et 2A.
+function texRacineQuadratique(A, B, delta, signe) {
+  let k = 1, m = delta;
+  for (let f = 2; f * f <= m; f++) while (m % (f * f) === 0) { m /= f * f; k *= f; }
+  let p = -B, q = signe * k, d = 2 * A;
+  if (m === 1) { // delta carre parfait : rationnel
+    const fr = F(p + q, d);
+    return fr.d === 1 ? String(fr.n) : (fr.n < 0 ? '-' : '') + '\\dfrac{' + Math.abs(fr.n) + '}{' + fr.d + '}';
+  }
+  const g = pgcd(pgcd(p, q), d);
+  p /= g; q /= g; d /= g;
+  if (d < 0) { p = -p; q = -q; d = -d; }
+  const racine = (Math.abs(q) === 1 ? '' : String(Math.abs(q))) + '\\sqrt{' + m + '}';
+  const num = (p === 0 ? '' : String(p)) + (q < 0 ? '-' : (p === 0 ? '' : '+')) + racine;
+  return d === 1 ? num : (p === 0 ? (q < 0 ? '-' : '') + '\\dfrac{' + racine + '}{' + d + '}' : '\\dfrac{' + num + '}{' + d + '}');
+}
+
 function resoudreInequationQuadratique(A, B, C, op) {
   // precondition : A != 0 (sinon ce n'est pas une inequation du second degre ; division par 2A plus bas)
   const delta = B*B - 4*A*C;
@@ -1037,13 +1055,14 @@ function resoudreInequationQuadratique(A, B, C, op) {
   }
   const sq = Math.sqrt(delta);
   let r1 = (-B - sq) / (2*A), r2 = (-B + sq) / (2*A);
-  if (r1 > r2) { const t=r1; r1=r2; r2=t; }
+  let t1 = texRacineQuadratique(A, B, delta, -1), t2 = texRacineQuadratique(A, B, delta, 1);
+  if (r1 > r2) { let t=r1; r1=r2; r2=t; t=t1; t1=t2; t2=t; }
   const dehors = (A > 0) === veutPositif;
   const inclus = !strict;
   if (dehors) {
-    return {type:'intervalles', liste:[{bas:-Infinity,haut:r1,inclusBas:false,inclusHaut:inclus},{bas:r2,haut:Infinity,inclusBas:inclus,inclusHaut:false}]};
+    return {type:'intervalles', liste:[{bas:-Infinity,haut:r1,inclusBas:false,inclusHaut:inclus,texHaut:t1},{bas:r2,haut:Infinity,inclusBas:inclus,inclusHaut:false,texBas:t2}]};
   }
-  return {type:'intervalles', liste:[{bas:r1,haut:r2,inclusBas:inclus,inclusHaut:inclus}]};
+  return {type:'intervalles', liste:[{bas:r1,haut:r2,inclusBas:inclus,inclusHaut:inclus,texBas:t1,texHaut:t2}]};
 }
 
 // Section "Quelques automatismes" (2.1-2.2) ramenee de 8 a 6 questions le 30/09/2026 (regle
@@ -1113,9 +1132,9 @@ function genGroupe2_4() {
   // A = sqrt(n)/p ; C = (kNum/kDen)*sqrt(n) ; delta = bm - 4AC = bm - 4*n*k/p, rationnel car A*C = (1/p)*k*n
   return [
     {id:"2.4 a)", type:"num", sansEgal:true, enonce:`${Aq===1?Ap:`\\dfrac{${Ap}}{${Aq}}`}x^2${fmtLin(Ba,'x')}${Csgn>0?'+':'-'}\\dfrac{${Cp}}{${Cq}}`,
-      reponse:`(${Ba})^2-4*${Ap}/${Aq}*(${Csgn>0?'':'-'}${Cp}/${Cq})`},
+      reponse:fracStr(fracSub(F(Ba*Ba), F(4*Ap*Csgn*Cp, Aq*Cq)))},
     {id:"2.4 b)", type:"num", sansEgal:true, enonce:`\\dfrac{\\sqrt{${n}}}{${p}}x^2+\\sqrt{${bm}}x${kNum<0?'-':'+'}\\dfrac{${Math.abs(kNum)}}{${kDen}}\\sqrt{${n}}`,
-      reponse:`${bm}-4*(sqrt(${n})/${p})*(${kNum}/${kDen}*sqrt(${n}))`}
+      reponse:fracStr(fracSub(F(bm), F(4*n*kNum, p*kDen)))}
   ];
 }
 
@@ -1200,7 +1219,7 @@ function genGroupe2_6() {
       {id:"2.6 a)", type:"texte", texteLibre:true, enonce:`Avec \\(b=${bTest}\\), \\(P\\) a-t-il deux racines distinctes ?`, reponse: estDistinct ? "oui":"non"},
       {id:"2.6 b)", type:"alg", texteLibre:true, enonce:`Discriminant de \\(P\\) en fonction de \\(b\\)`, reponse:`b^2-${4*C7}`},
       {id:"2.6 c)", type:"intervalle", texteLibre:true, enonce:`Valeurs de \\(b\\) telles que \\(P\\) a deux racines distinctes`,
-        intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:-bound,inclusBas:false,inclusHaut:false},{bas:bound,haut:Infinity,inclusBas:false,inclusHaut:false}]}}
+        intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:-bound,inclusBas:false,inclusHaut:false,texHaut:texRacineQuadratique(1,0,4*C7,-1)},{bas:bound,haut:Infinity,inclusBas:false,inclusHaut:false,texBas:texRacineQuadratique(1,0,4*C7,1)}]}}
     ]
   };
 }
@@ -2477,10 +2496,15 @@ function formaterUneBorne(v) {
   if (v === Infinity) return '+\\infty';
   if (v === -Infinity) return '-\\infty';
   if (Number.isInteger(v)) return String(v);
-  try {
-    const frac = math.fraction(v);
-    if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
-  } catch(e) {}
+  // rationnel a grand denominateur (fraction continue, exactitude controlee a 1e-10) : jamais de decimale
+  { let h1 = 1, h0 = 0, k1 = 0, k0 = 1, x = Math.abs(v);
+    for (let i = 0; i < 30; i++) {
+      const a = Math.floor(x), h = a * h1 + h0, k = a * k1 + k0;
+      if (k > 1e6) break;
+      h0 = h1; h1 = h; k0 = k1; k1 = k;
+      if (Math.abs(Math.abs(v) - h1 / k1) < 1e-10) return (v < 0 ? '-' : '') + '\\dfrac{' + h1 + '}{' + k1 + '}';
+      const reste = x - a; if (reste < 1e-12) break; x = 1 / reste;
+    } }
   return v.toFixed(3);
 }
 
@@ -2492,7 +2516,7 @@ function formaterIntervalleSpec(spec) {
     return spec.liste.map(iv => {
       const cg = iv.inclusBas ? '[' : ']';
       const cd = iv.inclusHaut ? ']' : '[';
-      return `${cg}${formaterUneBorne(iv.bas)}\\,;\\,${formaterUneBorne(iv.haut)}${cd}`;
+      return `${cg}${iv.texBas || formaterUneBorne(iv.bas)}\\,;\\,${iv.texHaut || formaterUneBorne(iv.haut)}${cd}`;
     }).join('\\ \\cup\\ ');
   }
   return '';

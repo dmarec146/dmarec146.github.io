@@ -103,7 +103,8 @@ async function auditerDansLaPage(opts) {
         const a = Math.abs(+f[1]), b = +f[2];
         if (b > 1 && pgcd(a, b) > 1 && !approche) { motifs.push(['erreur', 'corrige-fraction-reductible']); break; }
       }
-      if (/\\dfrac\{-/.test(tex)) motifs.push(['style', 'corrige-signe-au-numerateur']);
+      // numerateur reduit a un nombre negatif seul (une somme comme -1-\sqrt{2} sur 2 est normale)
+      if (/\\dfrac\{-[^{}+\-]*\}\{/.test(tex)) motifs.push(['style', 'corrige-signe-au-numerateur']);
       if (/\\times\s*\{?\s*[a-zA-Z(\\]|\\dfrac\{[^{}]*\}\{[^{}]*\}\\times/.test(tex) && /\\dfrac/.test(tex)) motifs.push(['style', 'corrige-multiplication-apres-fraction']);
       for (const [g, m] of motifs) { const cle = e.id + '|' + m; if (!vus.has(cle)) { vus.add(cle); ajouter(g, m, e, tex); } }
     }

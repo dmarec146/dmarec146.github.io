@@ -7831,3 +7831,14 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Constats utiles** : vrais défauts de flottant dans les corrigés (Seconde 9.3 a `62.99999999999999`, 9.8 a `99.00000000000001`, Première 3.5 b `-1.3333333333333333`, 3.8 d `√3.000001`) ; bornes d'intervalle irrationnelles affichées en décimal (Première 2.6 c, 2.9 b, 2.11, 2.12).
 - **Décisions de David (13/10/2026)** : approche « le corrigé sert de référence » avec interrupteur par calcul ; déploiement d'abord sur les fiches où l'audit a trouvé des cas ; correction des corrigés faux séparément du moteur.
 - Règles : REGLES-FICHES.md §5 (point 7), SUIVI-FIREBASE.md, README de l'outil.
+
+## 2026-10-13 — Corrigés faux : valeurs exactes à la place des décimales (Première 2 et 3, Seconde 9)
+
+- **Décision de David** : corriger les corrigés avant, et séparément, du déploiement du moteur de validation.
+- **Première 2** : les bornes d'intervalle irrationnelles (2.6 c, 2.9 b, 2.11, 2.12) s'affichaient en décimales (]−∞ ; −2,828[). Nouveau `texRacineQuadratique(A, B, delta, signe)` : racine exacte réduite en LaTeX (`\dfrac{-9-4\sqrt{2}}{7}`, `-2\sqrt{3}`) ; `resoudreInequationQuadratique` et 2.6 c joignent `texBas`/`texHaut` aux intervalles ; `formaterIntervalleSpec` les utilise, et `formaterUneBorne` retrouve par fraction continue les rationnels à grand dénominateur (2.10, 2.11) au lieu de tronquer à 3 décimales. La validation de la saisie reste numérique (inchangée).
+- **Première 2.4 a) b)** : le corrigé affichait l'expression non évaluée (`3−4·(√7/2)·(−2/2)·√7`, fraction réductible) ; il donne maintenant la valeur du discriminant, fraction irréductible (`fracStr(fracSub(...))`).
+- **Première 3.5 b)** : racines rationnelles écrites en fractions exactes (plus de −1,3333333333333333). **3.8 d)** : les racines étaient arrondies à 6 décimales puis élevées au carré (`√3.000001`) ; elles sont maintenant construites à partir du radicande entier (`sqrt(3)`).
+- **Seconde 9** (9.3 a b, 9.5 c, 9.6, 9.7, 9.8 a b) : `p/100*base` produisait `62.99999999999999` ; `valeurExacte(p*base/100)` (une division, arrondi à 1e-6).
+- **Outil** : règle « signe au numérateur » limitée aux numérateurs réduits à un nombre négatif seul ; `connues.json` mis à jour (141 → 129 anomalies).
+- **Vérifié** : audit des trois fiches (aucun `corrige-decimale`, aucun corrigé refusé), vérificateur de syntaxe 50/50.
+- **Reste constaté** (à traiter avec le moteur) : en Seconde 9.1 a) et 9.5 b) le corrigé est lui aussi une expression non évaluée (`3/9 + 2/5 × 3/4`), l'énoncé recopié est accepté en Première 2.1, 3.2, etc.
