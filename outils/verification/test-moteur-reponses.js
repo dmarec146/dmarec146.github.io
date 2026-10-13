@@ -155,7 +155,13 @@ const CAS = [
   ['factorise', {}, '(x-1)^2', '(x-1)^2', true],
   ['factorise', {}, '(x-1)^2', 'x^2-2x+1', false],
   ['factorise', {}, '9*(x+6)*(x+1)', '9(x+6)(x+1)', true],
-  ['factorise', {}, '9*(x+6)*(x+1)', '(x+6)(9x+9)', false],      // facteur 9 encore commun dans la parenthese
+  ['factorise', {}, '9*(x+6)*(x+1)', '(x+6)(9x+9)', true],       // deux facteurs non constants : le scalaire peut rester dans une parenthese
+  ['factorise', {}, '9*(x+6)*(x+1)', '(x+6)*9*(x+1)', true],
+  ['factorise', {}, '9*(x+6)*(x+1)', '9(x^2+7x+6)', false],      // factorisation en x manquante
+  ['factorise', {}, '9*(x+6)*(x+1)', '(x+6)(9x+9)*1', false],
+  ['factorise', {}, '3*(x-2)*(x+2)*(x^2+4)', '(x-2)(x+2)(3x^2+12)', true],
+  ['factorise', {}, '3*(x-2)*(x+2)*(x^2+4)', '3(x^2-4)(x^2+4)', false],
+  ['factorise', {}, '9*(8*x+5)', '3(24x+15)', false],            // un seul facteur non constant : facteur numerique a extraire en entier
   // ---- regles ajoutees : bases numeriques de meme exposant, somme de quotients, constante e, decimal ----
   ['simplifie', {}, '(3/4)^n*5/6', 'L:\\frac{6^{n}\\times5}{8^{n}\\times6}', false],
   ['simplifie', {}, '2^n*3^n', '2^n*3^n', false],

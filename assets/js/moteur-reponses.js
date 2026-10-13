@@ -571,7 +571,8 @@
 
   // --- 3.6 factorise : un produit (au moins un facteur non constant), jamais une somme ---------------------
   // facteurs sommes sans facteur numerique commun (3(24x+15) refuse), pas de facteur 1, un seul facteur
-  // numerique, au moins autant de facteurs non constants que la reponse attendue, rien de reductible a l'interieur.
+  // numerique (sauf s'il y a deux facteurs non constants ou plus : un scalaire peut rester dans une parenthese), au moins
+// autant de facteurs non constants que la reponse attendue, rien de reductible a l'interieur.
   function facteursNonConstants(n) {
     const f = aplatir(n);
     let k = 0;
@@ -590,7 +591,10 @@
     const facteurs = f.num.map((x) => (x.t === 'pow' && (x.a.t === 'add' || x.a.t === 'sub')) ? x.a : x);
     if (facteurs.filter(nombrePur).length > 1) return false;
     if (facteurs.some((x) => x.t === 'num' && (x.v === 1 || x.v === 0))) return false;      // 1*(...)
-    for (const x of facteurs) if ((x.t === 'add' || x.t === 'sub') && contenuSomme(x) > 1) return false;
+    // facteur numerique commun reste dans une parenthese : refuse quand extraire ce facteur est l'objet de l'exercice
+    // (reponse attendue a un seul facteur non constant : 9(8x+5)), tolere quand la reponse attendue a au moins deux
+    // facteurs non constants ((x+6)(9x+9) accepte pour 9(x+6)(x+1)) ; une factorisation en x manquante reste refusee
+    if (facteursNonConstants(a) < 2) for (const x of facteurs) if ((x.t === 'add' || x.t === 'sub') && contenuSomme(x) > 1) return false;
     if (facteursNonConstants(n) < facteursNonConstants(a)) return false;
     if (f.num.length < 2 && !(f.num.length === 1 && f.num[0].t === 'pow' && (f.num[0].a.t === 'add' || f.num[0].a.t === 'sub'))) return false;
     return !reductible(u, optionsSimplifie(a));
@@ -640,7 +644,7 @@
     developpe: () => 'La réponse doit être la <strong>forme développée et réduite</strong> : une somme de termes de la forme <code>ax^k</code>, un seul terme par puissance de x, sans parenthèse à développer. Une forme factorisée ou canonique n’est pas acceptée, même si elle est égale.',
     simplifie: () => 'La réponse doit être <strong>entièrement simplifiée</strong> : plus aucun calcul à faire (pas de <code>3+4</code>, de fraction réductible, de racine <code>√8</code> à simplifier, de termes semblables à regrouper, de même base écrite deux fois). Recopier l’énoncé n’est pas accepté.',
     decimal: () => 'La réponse doit être écrite en <strong>notation décimale</strong> (par exemple <code>0,0072</code>), pas sous forme de fraction ni de puissance de 10.',
-    factorise: () => 'La réponse doit être <strong>un produit</strong> (par exemple <code>9(8x+5)</code> ou <code>(x-4)(x+4)</code>) : factoriser complètement, sans facteur numérique encore commun dans une parenthèse. Une somme, même égale, n’est pas acceptée.',
+    factorise: () => 'La réponse doit être <strong>un produit</strong> (par exemple <code>9(8x+5)</code> ou <code>(x-4)(x+4)</code>) : factoriser complètement. Quand il n’y a qu’un seul facteur non constant, extraire entièrement le facteur numérique commun (<code>9(8x+5)</code> et non <code>3(24x+15)</code>). Une somme, même égale, n’est pas acceptée.',
     canonique: () => 'La réponse doit être écrite sous la <strong>forme canonique</strong> <code>a(x-α)^2+β</code> : x n’apparaît qu’une seule fois, dans une parenthèse élevée au carré (par exemple <code>2(x-4)^2+6</code>). La forme développée n’est pas acceptée, même si elle est égale.'
   };
   function aide(ex) { return (AIDES[ex.forme] || (() => ''))(ex.formeOptions || {}); }

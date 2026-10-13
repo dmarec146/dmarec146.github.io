@@ -173,6 +173,14 @@ les corrections ponctuelles d'une fiche).
   la table et relancer le câblage.** Câblées le 13/10/2026 : 12 fiches (voir HISTORIQUE) ; restent les autres (dresser
   `connues.json` de l'audit pour repérer lesquelles). Le **corrigé est la référence** : la réponse attendue doit être
   une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé.
+  **Quand exiger quoi (précisé par David le 13/10/2026)** : (1) titre qui impose une forme (simplifier, réduire,
+  développer, factoriser, « sous la forme… », fraction irréductible, forme canonique, notation décimale…) : forme
+  contrôlée, mais **toute écriture équivalente respectant la forme est acceptée**, pas seulement celle du corrigé ;
+  (2) « Calculer » / « Calcul numérique » / discriminants : le **calcul doit être terminé** (`simplifie`) — `6*8`
+  ou `(15-2)/2` refusés ; (3) toute autre question : valeur seule, toute écriture équivalente. **Factoriser** : si la
+  réponse attendue a au moins deux facteurs non constants, un scalaire peut rester dans une parenthèse
+  (`(x+6)(9x+9)` accepté pour `9(x+6)(x+1)`), mais jamais une expression non factorisée ; avec un seul facteur non
+  constant (`9(8x+5)`), le facteur numérique commun doit être extrait en entier.
 - **Lectures graphiques : marge de ±0,2** sur toute réponse numérique lue sur
   un graphique (les élèves lisent sur téléphone) : `margeLecture:0.2`, et
   l'aide « ? » le dit. Les valeurs simplement écrites sur une figure (effectifs,
