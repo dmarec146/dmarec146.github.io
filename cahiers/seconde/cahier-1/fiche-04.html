@@ -19,6 +19,11 @@ window.MathJax = {
 <script src="../../../assets/js/qcm-clic.js"></script>
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
+<script src="../../../assets/js/bareme.js"></script>
+<script>
+// Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
+Bareme.definir({"points":{"4.1 a)":0.5,"4.1 b)":0.75,"4.1 c)":0.75,"4.1 d)":0.75,"4.2 a)":0.75,"4.2 b)":1,"4.2 c)":1.25,"4.2 d)":1.25,"4.3 a)":1,"4.3 b)":1.25,"4.3 c)":1.25,"4.4 a)":0.75,"4.4 b)":0.75,"4.4 c)":1.25,"4.4 d)":1.25,"4.5 a)":0.75,"4.5 b)":0.75,"4.5 c)":0.75,"4.5 d)":1.25,"4.6 a)":1.5,"4.6 b)":1.75,"4.6 c)":2},"bonus":["4.6 a)","4.6 b)","4.6 c)"]});
+</script>
 <style>
   :root {
     --bleu: #4B46C7;
@@ -960,38 +965,23 @@ const generateurs = [
     return { enonce:`(${binomeLatex(1,q)})(${binomeLatex(1,s)})`, reponse: polynomeQuad(1, q+s, q*s) };
   }},
   {id:"4.2 b)", type:"alg", gen: () => {
-    // un seul des deux facteurs porte un coefficient devant x (positif ou negatif)
-    const c = entierSigne(2,8), q = entierSigne(2,9), s = entierSigne(2,9);
-    return { enonce:`(${binomeLatex(1,q)})(${binomeLatex(c,s)})`, reponse: polynomeQuad(c, s + c*q, q*s) };
-  }},
-  {id:"4.2 c)", type:"alg", gen: () => {
     // les deux facteurs portent chacun un coefficient devant x (positif ou negatif)
     const p = entierSigne(2,8), r = entierSigne(2,8), q = entierSigne(2,7), s = entierSigne(2,7);
     return { enonce:`(${binomeLatex(p,q)})(${binomeLatex(r,s)})`, reponse: polynomeQuad(p*r, p*s + q*r, q*s) };
   }},
-  {id:"4.2 d)", type:"alg", gen: () => {
+  {id:"4.2 c)", type:"alg", gen: () => {
     // plus exigeant : un facteur constant multiplie le produit des deux binomes
     const k = entierSigne(2,6), r = entierSigne(2,7), q = entierSigne(2,7), s = entierSigne(2,7);
     return { enonce:`${k}(${binomeLatex(1,q)})(${binomeLatex(r,s)})`,
              reponse: polynomeQuad(k*r, k*(s + r*q), k*q*s) };
   }},
-  {id:"4.2 e)", type:"alg", gen: () => {
+  {id:"4.2 d)", type:"alg", gen: () => {
     // plus exigeant encore : un produit de TROIS facteurs affines
     const p1 = choix([-3,-2,-1,1,2,3]), p2 = choix([-3,-2,-1,1,2,3]), p3 = choix([-3,-2,-1,1,2,3]);
     const q1 = entierSigne(1,6), q2 = entierSigne(1,6), q3 = entierSigne(1,6);
     const quad = [p1*p2, p1*q2 + q1*p2, q1*q2];
     const [c3, c2, c1, c0] = multQuadParLineaire(quad, [p3, q3]);
     return { enonce:`(${binomeLatex(p1,q1)})(${binomeLatex(p2,q2)})(${binomeLatex(p3,q3)})`,
-             reponse: polynomeCubic(c3,c2,c1,c0) };
-  }},
-  {id:"4.2 f)", type:"alg", gen: () => {
-    // et encore plus exigeant : l'un des facteurs n'est pas de degre 1
-    const p = choix([-3,-2,-1,1,2,3]), q = entierSigne(1,6);
-    const b = entierSigne(1,7), c = entierSigne(1,9);
-    const [c3, c2, c1, c0] = multQuadParLineaire([1,b,c], [p,q]);
-    // trinome ecrit en LaTeX (jamais « 4*x » dans un enonce) : x^2 + bx + c, b et c non nuls
-    const trinome = `x^2${b < 0 ? '-' : '+'}${Math.abs(b) === 1 ? '' : Math.abs(b)}x${c < 0 ? '-' : '+'}${Math.abs(c)}`;
-    return { enonce:`(${binomeLatex(p,q)})(${trinome})`,
              reponse: polynomeCubic(c3,c2,c1,c0) };
   }},
 
@@ -1107,11 +1097,11 @@ let exercices = genererExercices();
 
 const groupes = {
   "grille-4-1": [0,1,2,3],
-  "grille-4-2": [4,5,6,7,8,9],
-  "grille-4-3": [10,11,12],
-  "grille-4-4": [13,14,15,16],
-  "grille-4-5": [17,18,19,20],
-  "grille-4-6": [21,22,23]
+  "grille-4-2": [4,5,6,7],
+  "grille-4-3": [8,9,10],
+  "grille-4-4": [11,12,13,14],
+  "grille-4-5": [15,16,17,18],
+  "grille-4-6": [19,20,21]
 };
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
@@ -1694,6 +1684,7 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   devoirTermine = garderBandeau ? etatDevoir : null;
   etatDevoir = null;
   DevoirPartiel.retirer(); // devoir sur une partie de fiche : tous les calculs reviennent
+  if (window.Bareme) Bareme.afficher(false); // plus de barème hors devoir
   const panneauMode = document.getElementById('mode-panneau');
   const boutonVerifier = document.getElementById('btn-verifier');
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
@@ -1906,8 +1897,12 @@ async function validerFicheActuelle() {
     // de bord enseignant sur 7 fiches de Seconde.
     const nonVide = (v) => (v !== null && typeof v === 'object') ? Object.values(v).some(nonVide) : (typeof v === 'string' ? v.trim() !== '' : v !== null && v !== undefined);
     const nbRepondues = reponses.filter((s) => nonVide(s.valeur)).length;
-    await window.validerFiche(FICHE_ID, idsReussis, totalRetenu, nbRepondues);
-    afficherEtatSuivi(`Fiche validée : ${idsReussis.length} / ${totalRetenu} bonnes réponses.`);
+    // Barème en points (assets/js/bareme.js) : note pondérée, calculs avancés en bonus.
+    const bareme = window.Bareme && Bareme.visible() ? Bareme.calculer(exercices, saisies) : null;
+    await window.validerFiche(FICHE_ID, idsReussis, bareme ? bareme.total : totalRetenu, nbRepondues, bareme || undefined);
+    afficherEtatSuivi(bareme
+      ? `Fiche validée : ${Bareme.format(bareme.score)} / ${Bareme.format(bareme.total)} points.`
+      : `Fiche validée : ${idsReussis.length} / ${totalRetenu} bonnes réponses.`);
 
     // etatDevoir.essaisUtilises (30/09/2026) : incremente desormais apres
     // TOUTE validation reussie, pas seulement celle qui epuise le quota --
@@ -2129,7 +2124,9 @@ function verifierTout() {
     else if (ok === false) erreurs.push(idx);
   });
   document.getElementById('score-panneau').classList.add('visible');
-  document.getElementById('score-chiffre').textContent = score + ' / ' + DevoirPartiel.compter(exercices);
+  document.getElementById('score-chiffre').textContent = (window.Bareme && Bareme.visible())
+    ? Bareme.libelleScore(exercices, saisies)
+    : score + ' / ' + DevoirPartiel.compter(exercices);
   const correctionDiv = document.getElementById('correction-panneau');
   if (erreurs.length === 0) {
     correctionDiv.innerHTML = '<p style="color:var(--vert);font-weight:bold;">Toutes les réponses saisies sont correctes.</p>';
@@ -2268,6 +2265,8 @@ async function initialiserFiche() {
   // retenus (voir assets/js/devoir-partiel.js) tant que le devoir est actif ;
   // sans effet pour un devoir sur la fiche entiere (etatDevoir.calculs nul).
   if (etatDevoir) DevoirPartiel.appliquer(etatDevoir.calculs, exercices);
+  // Barème en points : uniquement dans un devoir (assets/js/bareme.js) ; entraînement libre : rien.
+  if (window.Bareme) Bareme.afficher(!!etatDevoir);
 
 // Panneau de mode, "Corrige des erreurs", "Enregistrer"/"Valider" :
   // corriges ici APRES avoir su si un devoir est actif -- l'ENSEMBLE de ces

@@ -7943,3 +7943,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Table des formes** : 4.1 4.2 4.3 `developpe`, 4.4 et 4.6 `factorise`, 4.5 `simplifie`.
 - **Vérifié** : syntaxe 50/50 ; 600 tirages, 14 400 réponses de type expression recalculées indépendamment en 3 points (x, y) avec math.js : 0 écart ; aucune réponse nulle en 4.1 ; 24 cartes, groupes 4/6/3/4/4/3, aucune erreur de page ; capture. **Pas d'audit de validation** (consigne : en fin de série de modifications). Pas de barème (non demandé).
 - **Écarts aux règles notés, non modifiés (non demandés)** : 4.2 compte 6 questions (plafond de 4, §1) ; peu de variété en 4.6 a (28 énoncés) et 4.5 b (63).
+
+## 2026-10-13 — Seconde fiche 4 : 4.2 ramené à 4 questions, barème en points
+
+- **Demande de David** : « oui, fais les deux » (ramener 4.2 à 4 questions ; créer un barème). Fiche : 24 → **22 questions**.
+- **4.2 « Développer les produits suivants »** : 6 → 4 (plafond de 4, §1). Gardés : a) (x+p)(x+q) classique ; (ancien c) (ax+b)(cx+d) à deux coefficients signés ; (ancien d) k(x+p)(ax+b), facteur numérique devant ; (ancien e) produit de trois binômes. **Retirés** : l'ancien b) (un seul coefficient, intermédiaire entre a et c) et l'ancien f) (binôme × trinôme, 2e famille de degré 3 ; celle du trois facteurs est gardée). Ids renommés (c d e → b c d) ; groupes 4/4/3/4/4/3.
+- **Barème de la fiche 4 de Seconde : base 18 points, bonus 5,25** (`outils/bareme/fiche-S04.json`, clé `S04` dans `appliquer-bareme.js`, `cabler-fiche.js S04`, `appliquer-bareme.js S04`). 4.1 automatismes 2,75 ; 4.2 4,25 ; 4.3 3,5 ; 4.4 factoriser 4 ; 4.5 fractionnaires 3,5 ; 4.6 avancés (bonus) 1,5 + 1,75 + 2 = 5,25.
+- **Vérifié** : syntaxe 50/50 ; `controle-bareme.js` cohérent ; 600 tirages (13 200 réponses recalculées, 0 écart) ; notes tout juste 23,25 / 23,25, cœur seul 18 / 18, à vide 0 / 18 ; aucune erreur de page. **Pas d'audit de validation** (consigne : en fin de série).
