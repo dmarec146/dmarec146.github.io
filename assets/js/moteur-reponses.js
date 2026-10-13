@@ -619,7 +619,9 @@
     if (entree.latex) essais.push([entree.latex, true]);
     if (entree.ascii) essais.push([entree.ascii, false]);
     for (const [src, latex] of essais) {
-      try { return lire(src, latex); } catch (e) { /* essai suivant */ }
+      // « x = -5 », « f(6) = -29 » : seule la valeur compte (le membre de gauche est ignore)
+      const sansNom = String(src).replace(/^\s*[A-Za-z]\s*(\([^()]*\))?\s*=\s*/, '');
+      try { return lire(sansNom, latex); } catch (e) { /* essai suivant */ }
     }
     return null;
   }

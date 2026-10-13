@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <style>
@@ -1320,12 +1321,14 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.type === 'pourcentage') return true;
   if (ex.type === 'schemaEvolution') return true;
   return false;
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.type === 'pourcentage') {
     return "Écrire la réponse avec le symbole <code>%</code> (par exemple <code>8%</code> ou <code>-8%</code>) — jamais un nombre seul sans le signe %. Une diminution se répond par un nombre négatif.";
   }
@@ -1797,6 +1800,44 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "10.1": "simplifie",
+    "10.2": "simplifie",
+    "10.3": "simplifie",
+    "10.4": "simplifie",
+    "10.5": "simplifie",
+    "10.7": "simplifie",
+    "10.8": "simplifie"
+  };
+}
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer)/.test(t)) return 'simplifie';
+  return null;
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const div = document.getElementById('q-' + idx);
@@ -1832,7 +1873,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'pourcentage') ok = checkPourcentage(val, ex.reponsePourcent, ex.tolerancePourcent);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'pourcentage') ok = checkPourcentage(val, ex.reponsePourcent, ex.tolerancePourcent);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse, ex.toleranceNumerique);
   if (reveler) {
@@ -2140,6 +2182,7 @@ function jsVersLatex(expr) {
 
 function formaterReponse(ex) {
   try {
+    if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
     if (ex.type === 'pourcentage') {
       const p = ex.reponsePourcent;
       const val = Number.isInteger(p) ? String(p) : String(p).replace('.', '{,}');

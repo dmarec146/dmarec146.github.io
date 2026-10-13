@@ -37,17 +37,32 @@ const FIN = '// ---- fin des formes imposees';
 
 function bloc(formes) {
   const lignes = Object.entries(formes).map(([k, v]) => `    ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n');
-  return `${DEBUT}
+  return String.raw`${DEBUT}
 // Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
 function formesCalcul() {
   return {
 ${lignes}
   };
 }
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer)/.test(t)) return 'simplifie';
+  return null;
+}
 function parametresForme(ex) {
   if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
   const t = formesCalcul();
-  const v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
   if (!v) return null;
   return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
 }

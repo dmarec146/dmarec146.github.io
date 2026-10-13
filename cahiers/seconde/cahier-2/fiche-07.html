@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <style>
   :root {
@@ -1058,6 +1059,7 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.comparaison) return true;
   if (ex.variation) return true;
   if (['ineq', 'encadrement', 'intervalle'].includes(ex.type)) return true;
@@ -1066,6 +1068,7 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.comparaison) {
     return "Répondre par le signe seul : <code>&lt;</code> ou <code>&gt;</code>. Les mots « inférieur » et « supérieur » sont acceptés.";
   }
@@ -1777,6 +1780,39 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "7.1": "simplifie",
+    "7.7 d)": "factorise"
+  };
+}
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer)/.test(t)) return 'simplifie';
+  return null;
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -1796,7 +1832,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut, ex.inclusBas, ex.inclusHaut);
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
@@ -2111,6 +2148,7 @@ function jsVersLatex(expr) {
 
 function formaterReponse(ex) {
   try {
+    if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
     if (ex.type === 'ineq') {
       const symb = {'>':'>', '<':'<', '>=':'\\geqslant', '<=':'\\leqslant'}[ex.sens];
       return `x ${symb} ${ex.seuil}`;

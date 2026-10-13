@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <style>
   :root {
@@ -1082,8 +1083,11 @@ const generateurs = [
   {id:"6.9 e)", type:"alg", texteLibre:true, gen: () => {
     // plus exigeant encore : la variable a isoler apparait dans une expression a distribuer d'abord
     const a = alea(2,7), b = alea(2,9), c = entierSigne(1,15), termeC = c<0?`-${-c}`:`+${c}`;
+    // y = ((b-a)x + c) / a, ecrit en fraction reduite (jamais 3/3 ni (3x+3)/3)
+    const k = b - a, g = pgcd(pgcd(k, c), a), kk = k / g, cc = c / g, aa = a / g;
+    const numerateur = `${kk === 0 ? '' : (kk === 1 ? 'x' : (kk === -1 ? '-x' : kk + '*x'))}${kk === 0 ? cc : (cc >= 0 ? '+' : '') + cc}`;
     return { enonce: `Dans la relation \\(${a}(x+y)=${b}x${termeC}\\), exprimer \\(y\\) en fonction de \\(x\\).`,
-             reponse: `((${b}-${a})*x${termeC})/${a}` };
+             reponse: aa === 1 ? numerateur : `(${numerateur})/${aa}` };
   }}
 ];
 
@@ -1128,6 +1132,7 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.solutionEquation) return true;
   if (['ineq', 'encadrement'].includes(ex.type)) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
@@ -1135,6 +1140,7 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.solutionEquation) {
     return "Écrire uniquement la valeur de la solution : <code>4</code>, <code>x=4</code> et <code>{4}</code> sont tous acceptés.";
   }
@@ -1748,6 +1754,45 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "6.1": "simplifie",
+    "6.2": "simplifie",
+    "6.3": "simplifie",
+    "6.4": "simplifie",
+    "6.5": "simplifie",
+    "6.7": "simplifie",
+    "6.8": "simplifie",
+    "6.9 c)": "simplifie"
+  };
+}
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer)/.test(t)) return 'simplifie';
+  return null;
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -1767,7 +1812,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -2110,6 +2156,7 @@ function jsVersLatex(expr) {
 
 function formaterReponse(ex) {
   try {
+    if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
     if (ex.type === 'ineq') {
       const symb = {'>':'>', '<':'<', '>=':'\\geqslant', '<=':'\\leqslant'}[ex.sens];
       return `x ${symb} ${ex.seuil}`;

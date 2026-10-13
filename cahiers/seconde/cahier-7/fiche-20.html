@@ -1983,6 +1983,7 @@ function tableCorrigeCroiseHTML(ex) {
 // ---------- vivier de revisions melangees (groupe 18.2) : developpement, racines
 // carrees, evolutions successives — sujets deja rencontres dans les fiches precedentes,
 // melanges maintenant que la fiche est avancee dans le cahier ----------
+function pgcdEntiers(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
 const MODELES_REVISION = [
   () => {
     let a, b; do { a = entierSigne(1,9); b = entierSigne(1,9); } while (a + b === 0);
@@ -1995,7 +1996,7 @@ const MODELES_REVISION = [
     return { enonce:`Développer et réduire \\(${k}(${a}x${b>=0?'+':''}${b})\\).`, reponse:`${k*a}*x${constante>=0?'+':''}${constante}` };
   },
   () => {
-    const k=alea(2,7), a=alea(2,8), b=aleaNonNul(1,9);
+    let k, a, b; do { k=alea(2,7); a=alea(2,8); b=aleaNonNul(1,9); } while (pgcdEntiers(a, b) !== 1);   // a et b premiers entre eux : factorisation complete
     return { enonce:`Factoriser \\(${k*a}x${(k*b)>=0?'+':''}${k*b}\\).`, reponse:`${k}*(${a}*x+${b})` };
   },
   () => {
@@ -2705,7 +2706,7 @@ const MODELES_AUTOMATISME = [
   () => {
     const a = entierSigne(1,9), b = entierSigne(1,9);
     const diff = a - b, produit = -a*b;
-    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(${xMoinsTexte(b)})\\).`, reponse:`x^2${diff>=0?'+':''}${diff}*x${produit>=0?'+':''}${produit}` };
+    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(${xMoinsTexte(b)})\\).`, reponse:`x^2${diff===0?'':`${diff>=0?'+':''}${diff}*x`}${produit>=0?'+':''}${produit}` };
   }
 ];
 let tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
@@ -3856,6 +3857,7 @@ function jsVersLatex(expr) {
 
 function formaterReponse(ex) {
   try {
+    if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
     if (ex.type === 'ouiNon') {
       return ex.reponseOuiNon ? '\\text{Oui}' : '\\text{Non}';
     }

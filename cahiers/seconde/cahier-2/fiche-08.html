@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <style>
@@ -887,6 +888,8 @@ function melanger(tab) {
   return a;
 }
 function pgcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+// n/d en fraction irreductible (entier si d = 1, signe au numerateur) : la valeur, pas un calcul non termine
+function fractionReduite(n, d) { const g = pgcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : n + '/' + d; }
 // entier non nul de magnitude [min,max], signe tire au hasard
 function entierSigne(min, max) {
   const v = alea(min, max);
@@ -1269,20 +1272,20 @@ const generateurs = [
   // ---------- 8.3 : trouver la valeur qui annule ax+b (resoudre ax+b=0) ----------
   {id:"8.3 a)", type:"num", gen: () => {
     const a = alea(2,9), b = entierSigne(1,15);
-    return { enonce:`${affineTexte(a,b)}=0`, reponse:`(${-b})/(${a})` };
+    return { enonce:`${affineTexte(a,b)}=0`, reponse:fractionReduite(-b, a) };
   }},
   {id:"8.3 b)", type:"num", gen: () => {
     const a = -alea(2,9), b = entierSigne(1,15);
-    return { enonce:`${affineTexte(a,b)}=0`, reponse:`(${-b})/(${a})` };
+    return { enonce:`${affineTexte(a,b)}=0`, reponse:fractionReduite(-b, a) };
   }},
   {id:"8.3 c)", type:"num", gen: () => {
     const a = entierSigne(3,12), b = entierSigne(1,20);
-    return { enonce:`${affineTexte(a,b)}=0`, reponse:`(${-b})/(${a})` };
+    return { enonce:`${affineTexte(a,b)}=0`, reponse:fractionReduite(-b, a) };
   }},
   {id:"8.3 d)", type:"num", gen: () => {
     // coefficients choisis pour que la solution soit une vraie fraction, pas un entier
     let a, b; do { a = alea(2,9); b = entierSigne(1,15); } while (b % a === 0);
-    return { enonce:`${affineTexte(a,b)}=0`, reponse:`(${-b})/(${a})` };
+    return { enonce:`${affineTexte(a,b)}=0`, reponse:fractionReduite(-b, a) };
   }},
 
   // ---------- 8.4 : signe de ax+b selon le signe de a ----------
@@ -1500,6 +1503,7 @@ const groupes = {
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.signe) return true;
   if (ex.type === 'intervalle') return true;
   if (ex.type === 'tableauSigne') return true;
@@ -1508,6 +1512,7 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.signe) {
     return "Répondre par le symbole seul : <code>+</code>, <code>-</code> ou <code>0</code>.";
   }
@@ -2323,6 +2328,39 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "8.1": "simplifie",
+    "8.3": "simplifie"
+  };
+}
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer)/.test(t)) return 'simplifie';
+  return null;
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const div = document.getElementById('q-' + idx);
@@ -2361,7 +2399,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'discussionParametre') ok = checkDiscussionParametre(val, ex);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
@@ -2671,6 +2710,7 @@ function jsVersLatex(expr) {
 
 function formaterReponse(ex) {
   try {
+    if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
     if (ex.type === 'intervalle') {
       return formaterIntervalleSpec(ex.intervalleSpec);
     }
