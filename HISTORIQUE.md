@@ -7965,3 +7965,7 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 ## 2026-10-13 — Seconde fiche 5 : barème ajusté par David
 
 - **Demande de David** : 0,75 point par question en 5.2 (a à d) et 1,25 en 5.3 (a à d). `fiche-S05.json` mis à jour, `appliquer-bareme.js S05` : 5.2 = 3 (4,25 avant), 5.3 = 5 (4,5 avant) ; **base 15,25 points** (16 avant), bonus 8 inchangé. La base n'est plus entière (le README prévoyait un total entier) : à ajuster si David le souhaite.
+
+## 2026-10-13 — Seconde fiche 5 : barème ajusté (2e passe)
+
+- **Demande de David** : 5.1 d) = 0,75 ; 5.4 c) et d) = 1,5. `appliquer-bareme.js S05` : **base 16 points** (de nouveau entière : 15,25 + 0,75), bonus 8 inchangé.
