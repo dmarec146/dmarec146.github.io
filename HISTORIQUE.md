@@ -7917,3 +7917,18 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Validation** : table des formes de la fiche : 3.1, 3.3, 3.4, 3.5, 3.6 et 3.7 a, c en `simplifie` (3.7 c : l'énoncé recopié `1/(√a−√b)` était accepté, il est refusé ; l'audit ne le détectait pas car l'énoncé est une phrase).
 - **Vérifié** : syntaxe 50/50 ; 600 tirages (14 400 réponses recalculées indépendamment avec math.js, 0 écart) ; aucune réponse nulle, dénominateurs de 3.2 toujours premiers entre eux, 3.5 b/c correctement tirés, 3.7 c sans radicande simplifiable ; énoncés distincts (3.1 ~565, 3.2 ~310, 3.4 a 567, 3.7 b 422…) ; audit de la fiche seule : 1 290 saisies, 0 anomalie ; captures : 25 cartes, aucune erreur de page.
 - **Non fait** : pas de barème (non demandé).
+
+## 2026-10-13 — Seconde fiche 3 : barème en points, et consigne sur l'audit
+
+- **Demande de David** : « crée un barème » pour la fiche 3 ; « ne fais un audit de validation que lorsque j'aurai terminé toutes les modifications » (règle ajoutée à REGLES-FICHES.md §5 point 7).
+- **Remarques sur le corrigé** (analyse du jour) : toutes appliquées dans la reprise — corrigé du conjugué définitif (radicandes sans facteur carré), encadrement « par balayage » (point décimal) retiré, `3.7 c` câblé en `simplifie` ; affichage vérifié sur 3.2, 3.5, 3.6, 3.7 (`-\dfrac{1}{6}`, `\dfrac{12\sqrt{38}}{19}`, `\sqrt{15}+\sqrt{14}`).
+- **Barème de la fiche 3 de Seconde : base 16 points, bonus 6,75** (`outils/bareme/fiche-S03.json`, clé `S03` dans `appliquer-bareme.js`, `cabler-fiche.js S03`, `appliquer-bareme.js S03` + `--verif`). 25 questions : 21 au cœur, 4 en bonus.
+  - 3.1 automatismes (calcul numérique) : 0,5 × 4 = 2.
+  - 3.2 fractions : 0,5 (somme) / 0,75 (différence) / 0,5 (produit) / 0,75 (quotient) = 2,5.
+  - 3.3 a√b : 0,75 / 1 / 1 = 2,75.
+  - 3.4 opérations sur les radicaux : 0,5 / 0,75 / 1 / 1,25 = 3,5.
+  - 3.5 radicaux au dénominateur : 0,75 / 1 / 1,25 = 3.
+  - 3.6 √(x²) : 0,5 / 0,75 / 1 = 2,25.
+  - 3.7 avancés (bonus, E) : conjugué + somme 2, rationnel ou non 1,5, conjugué 1,5, comparaison 1,75 = 6,75.
+- **Vérifié** : `controle-bareme.js` cohérent, `appliquer-bareme.js S03 --verif` à jour, syntaxe 50/50 ; 300 générations : notes tout juste 22,75 / 22,75, cœur seul 16 / 16, à vide 0 / 16 ; aucune erreur de page. **Pas d'audit de validation lancé** (consigne du jour).
+- **Rappel** : le barème est lié aux ids de questions ; toute modification de la fiche 3 oblige à mettre à jour `fiche-S03.json` puis relancer `appliquer-bareme.js S03`.

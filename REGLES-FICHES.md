@@ -310,6 +310,9 @@ les corrections ponctuelles d'une fiche).
    **Aucune anomalie nouvelle de gravité « erreur »** avant de pousser (code de sortie 0). `connues.json` = travail
    restant, à vider au fil des corrections. Détail : `outils/audit-reponses/README.md`. Il ne remplace pas le
    recalcul indépendant (point 3).
+   **Quand le lancer (David, 13/10/2026)** : pas après chaque modification pendant une reprise de fiches (trop long) —
+   **une fois, quand David a terminé toutes ses modifications** (ou s'il le demande) ; entre-temps, se limiter au
+   vérificateur de syntaxe et aux contrôles ciblés de la fiche (recalcul indépendant, tirages dégénérés).
 8. Entrée datée à la fin de `HISTORIQUE.md` (et mise à jour de
    `SUIVI-FIREBASE.md` si l'état ou un piège change), commit, push.
 
