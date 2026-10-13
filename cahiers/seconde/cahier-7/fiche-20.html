@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <style>
@@ -2764,6 +2765,7 @@ function remplirIntrosGroupes() {
 const lettres = ["a","b","c","d","e","f"];
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.type === 'ouiNon') return true;
   if (ex.comparaison) return true;
   if (ex.type === 'approx') return true;
@@ -2776,6 +2778,7 @@ function necessiteAide(ex) {
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.type === 'ouiNon') {
     return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
   }
@@ -3483,6 +3486,42 @@ function etatSupplementairePourBrouillon() {
 }
 function restaurerEtatSupplementaire(extra) {}
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "20.1": "auto",
+    "20.2": "auto",
+    "20.4": "simplifie",
+    "20.6": "simplifie",
+    "20.12": "simplifie"
+  };
+}
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer|Résoudre)/.test(t)) return 'simplifie';
+  return null;
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const div = document.getElementById('q-' + idx);
@@ -3534,7 +3573,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
   else if (ex.comparaison) ok = checkComparaisonFonctions(val, ex.reponse);
   else if (ex.type === 'texte') ok = checkTexte(val, ex.reponse);
   else if (ex.type === 'approx') {

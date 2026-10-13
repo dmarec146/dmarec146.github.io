@@ -7866,3 +7866,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Câblage** (`cabler-fiches.js`, bloc généré en `String.raw`) : Seconde 6 (6.1 à 6.5, 6.7, 6.8, 6.9 c), 7 (7.1 ; 7.7 d factoriser), 8 (8.1, 8.3), 10 (10.1 à 10.5, 10.7, 10.8), 12 (12.1, 12.9 b c), 13 (13.1, 13.2, 13.6, 13.8 a), 14 (14.1 ; 14.2 14.3 auto ; 14.4 à 14.8), 15 (15.1 à 15.3 auto), 16 (16.1 16.2 auto ; 16.3), 17 (17.1 17.2 auto ; 17.4). Aucun devoir en cours sur ces fiches.
 - **Corrigés réparés** : Seconde 8.3 (fractions irréductibles), 6.9 e (fraction réduite, plus de `3/3` ni de `(4-3)x`) ; pools de Seconde 14 à 25 : factorisation de référence complète (a et b premiers entre eux, plus de `4(6x+2)`), plus de terme `+0x` (développements (x+a)(x−b) avec a = b, (ax+b)(cx+d) avec ad+bc = 0) ; **grands entiers** : le corrigé n'affiche plus 390625 en `3,90625×10^{+5}` (toutes les fiches sauf Première 14).
 - **Audit des 50 fiches** : anomalies connues 66 → 49 ; plus aucun `+0x` en Seconde ; il reste en « erreur » Première 6.5 (`^{1}` dans le corrigé d'une dérivée) et 9.7 c (`0e^{-2}x`).
+
+## 2026-10-13 — Moteur de validation : lot 2 (Seconde 18 à 25)
+
+- **Table validée par David** : 18 (18.1, 18.2 `auto` ; 18.3 à 18.6 `simplifie`), 19 (19.1, 19.2 `auto` ; 19.3, 19.4), 20 (20.1, 20.2 `auto` ; 20.4, 20.6, 20.12), 21 (21.1, 21.2 `auto`), 22 (22.1, 22.2 `auto`), 23 (23.1, 23.2 `auto`), 25 (25.1, 25.2 `auto`). `auto` couvre aussi « Résoudre » (valeur : calcul terminé).
+- **Décisions** : 23.6 (norme) et 21.4 (distance) **non câblés** — l'objectif n'est pas de simplifier la racine, `sqrt(45)` et `3*sqrt(5)` restent acceptés (valeur seule). 25.5 : le corrigé affiché est déjà correct (`reponseLatex`, fractions réduites, `x=5/3` pour une verticale) ; seules les chaînes internes de valeur sont laides (`(2/-3)*x+(-8/-3)`), invisibles, laissées. Diagrammes, tableaux croisés et vecteurs laissés en valeur seule.
+- **Audit** : 7 fiches sans anomalie (hors présentation).
