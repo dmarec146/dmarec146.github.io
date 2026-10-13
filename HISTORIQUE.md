@@ -7977,3 +7977,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Renumérotation** : l'ancien 5.4 (factoriser, maintenant 4 questions a à d) devient 5.5 ; l'ancien 5.5 (avancés, 5 questions) devient 5.6. Groupes 4/4/4/2/4/5. Ids changés : brouillons non reconnus (aucun devoir en cours).
 - **Barème** (`fiche-S05.json`) : 5.4 e) retiré (−0,75) ; 5.4 a) et b) : 1,5 chacun (+3) ; clés renumérotées ; **base 18,25 points** (16 avant), bonus 8 ; la base n'est pas entière (le README prévoyait un total entier).
 - **Vérifié** : syntaxe 50/50 ; 600 tirages (10 800 réponses de type expression recalculées en 3 points (x, y), 0 écart ; 5.6 e à radicaux non couvert par le banc, question inchangée) ; `controle-bareme.js` cohérent ; notes tout juste 26,25 / 26,25, cœur seul 18,25 / 18,25, à vide 0 / 18,25 ; aucune erreur de page. Pas d'audit (consigne).
+
+## 2026-10-13 — Seconde fiche 5 : 5.1 d) à 0,5 point, audit de la fiche
+
+- **Demande de David** : 5.1 d) ramené à 0,5 point ; audit de validation de la fiche. `appliquer-bareme.js S05` : **base 18 points** (entière), bonus 8.
+- **Audit de la fiche seule** (`audit.js cahiers/seconde/cahier-1/fiche-05.html`) : 1 380 saisies, 0 anomalie. **Convention** : « audite la fiche » = ce lancement sur la seule fiche concernée.
