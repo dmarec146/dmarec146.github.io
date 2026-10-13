@@ -7954,3 +7954,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 ## 2026-10-13 — Seconde fiche 4 : barème ajusté par David
 
 - **Demande de David** : 0,5 point pour chaque automatisme (4.1 a à d) ; 1,5 pour 4.2 d) ; 1,5 pour 4.4 c) et d). `fiche-S04.json` mis à jour, `appliquer-bareme.js S04` : **base 18 points** (inchangée : −0,75 en 4.1, +0,75 sur les trois autres), bonus 5,25 ; `--verif` à jour, `controle-bareme.js` cohérent. (Les catégories C de 4.2 d), 4.4 c) et d) dépassent la bande 1 à 1,25 du README, par choix de David.)
+
+## 2026-10-13 — Seconde fiche 5 : automatismes en fractions (addition et multiplication mélangées)
+
+- **Demande de David** : fiche déjà révisée (12/10) ; il reste à changer les automatismes : « calculs de fractions avec addition et multiplication mélangées ». Aucun devoir en cours sur la fiche. Fiche inchangée en taille : **22 questions**.
+- **5.1** (4 questions) : « Calculer les nombres suivants » (calcul numérique à relatifs) remplacé par **« Donner le résultat <mise en valeur>sous la forme d'une fraction irréductible</mise en valeur> »** : a) a/b ± c/d × e/f (produit prioritaire) ; b) (a/b ± c/d) × e/f ; c) a/b × c/d ± e/f ; d) a/b × c/d ± e/f × g/h. Dénominateurs de 2 à 6, fractions d'énoncé irréductibles, résultat nul exclu (modèle du calcul 1.5 de la fiche 1). Contrôle `fractionIrreductible` (entrée « 5.1 » retirée de la table des formes). Ids inchangés : brouillons et barème (0,5 × 4 = 2, base 16) non touchés ; à réajuster si David souhaite plus de points pour ces fractions.
+- **Vérifié** : syntaxe 50/50 ; 600 tirages (2 400 réponses recalculées avec math.js, 0 écart ; aucune réponse nulle ni réductible, aucune fraction d'énoncé réductible ; ~500 énoncés distincts par question) ; 22 cartes, groupes 4/4/4/5/5, aucune erreur de page. Pas d'audit (consigne).
+- **Remarques sur la fiche (non modifiées)** : 5.4 et 5.5 comptent 5 questions chacun (plafond de 4, §1 ; probablement voulu par David) ; 5.2 et 5.3 ont le même titre « Développer et réduire les expressions suivantes ».

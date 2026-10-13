@@ -703,7 +703,7 @@ Bareme.definir({"points":{"5.1 a)":0.5,"5.1 b)":0.5,"5.1 c)":0.5,"5.1 d)":0.5,"5
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 5.1 — Calculer les nombres suivants.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 5.1 — Donner le résultat <span class="titre-mise-en-valeur">sous la forme d'une fraction irréductible</span>.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
   <div class="question-grille" id="grille-5-1"></div>
 </div>
 
@@ -912,30 +912,53 @@ function facteurVersLatex([p, a]) {
 }
 
 const generateurs = [
-  // ---------- Quelques automatismes : calcul numerique (priorites et relatifs) ----------
-  // Seul calcul du bloc depuis le 12/10/2026 (reprise des premieres fiches de Seconde, comme les
-  // fiches 1 et 2) : les anciens 5.2 (fractions) et 5.3 (puissances) sont retires.
-  {id:"5.1 a)", type:"num", gen: () => {
-    const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-    return { enonce:`${a}+${b}\\times ${c}`, reponse:`${a + b*c}` };
+  // ---------- Quelques automatismes : sommes, differences et produits de fractions melanges ----------
+  // Reprise du 13/10/2026 (demande de David) : le calcul numerique laisse la place a des fractions ou
+  // addition (ou soustraction) et multiplication se melangent. Denominateurs de 2 a 6, fractions de
+  // l'enonce irreductibles ; un resultat nul est exclu (tirage degenere).
+  {id:"5.1 a)", type:"num", fractionIrreductible:true, gen: () => {
+    // a/b +- c/d x e/f : le produit passe avant la somme
+    let b, d, f, a, c, e, sg, num;
+    do {
+      [b, d, f] = [alea(2,6), alea(2,6), alea(2,6)];
+      a = numerateurPour(b); c = numerateurPour(d); e = numerateurPour(f);
+      sg = choix([1, -1]);
+      num = a*d*f + sg*c*e*b;
+    } while (num === 0);
+    return { enonce:`\\dfrac{${a}}{${b}}${sg > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f) };
   }},
-  {id:"5.1 b)", type:"num", gen: () => {
-    // enchainement de trois termes : la regle de priorite doit etre appliquee deux fois
-    // dans le meme calcul, et le resultat intermediaire peut etre negatif
-    const a = alea(2,12), b = alea(2,9), c = alea(2,9), d = alea(2,9), e = alea(2,9);
-    switch (alea(0,2)) {
-      case 0:  return { enonce:`${a}+${b}\\times ${c}-${d}\\times ${e}`, reponse:`${a + b*c - d*e}` };
-      case 1:  return { enonce:`${a}\\times ${b}-${c}\\times ${d}+${e}`, reponse:`${a*b - c*d + e}` };
-      default: return { enonce:`${a}-${b}\\times ${c}+${d}\\times ${e}`, reponse:`${a - b*c + d*e}` };
-    }
+  {id:"5.1 b)", type:"num", fractionIrreductible:true, gen: () => {
+    // (a/b +- c/d) x e/f : parentheses
+    let b, d, f, a, c, e, sg, num;
+    do {
+      [b, d, f] = [alea(2,6), alea(2,6), alea(2,6)];
+      a = numerateurPour(b); c = numerateurPour(d); e = numerateurPour(f);
+      sg = choix([1, -1]);
+      num = (a*d + sg*c*b) * e;
+    } while (num === 0);
+    return { enonce:`\\left(\\dfrac{${a}}{${b}}${sg > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f) };
   }},
-  {id:"5.1 c)", type:"num", gen: () => {
-    const a = alea(2,9), b = alea(2,9), c = alea(1,15);
-    return { enonce:`(-${a})\\times ${b}-${c}`, reponse:`${-a*b - c}` };
+  {id:"5.1 c)", type:"num", fractionIrreductible:true, gen: () => {
+    // a/b x c/d +- e/f : produit puis somme
+    let b, d, f, a, c, e, sg, num;
+    do {
+      [b, d, f] = [alea(2,6), alea(2,6), alea(2,6)];
+      a = numerateurPour(b); c = numerateurPour(d); e = numerateurPour(f);
+      sg = choix([1, -1]);
+      num = a*c*f + sg*e*b*d;
+    } while (num === 0);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${sg > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f) };
   }},
-  {id:"5.1 d)", type:"num", gen: () => {
-    const a = alea(2,9), b = alea(2,9), c = alea(1,20);
-    return { enonce:`(-${a})\\times (-${b})+${c}`, reponse:`${a*b + c}` };
+  {id:"5.1 d)", type:"num", fractionIrreductible:true, gen: () => {
+    // a/b x c/d +- e/f x g/h : deux produits
+    let b, d, f, h, a, c, e, g, sg, num;
+    do {
+      [b, d, f, h] = [alea(2,6), alea(2,6), alea(2,6), alea(2,6)];
+      a = numerateurPour(b); c = numerateurPour(d); e = numerateurPour(f); g = numerateurPour(h);
+      sg = choix([1, -1]);
+      num = a*c*f*h + sg*e*g*b*d;
+    } while (num === 0);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${sg > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}\\times \\dfrac{${g}}{${h}}`, reponse: fractionTexte(num, b*d*f*h) };
   }},
   // ---------- Coeur : les trois identites, forme simple ----------
   // Les plages ci-dessous sont volontairement larges, et chaque exercice porte au moins deux
@@ -1716,7 +1739,6 @@ function passerEnEntrainementLibre(garderBandeau = true) {
 // Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
 function formesCalcul() {
   return {
-    "5.1": "simplifie",
     "5.2": "developpe",
     "5.3": "developpe",
     "5.4": "factorise",
