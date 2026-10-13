@@ -7879,3 +7879,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Moteur** : la forme `puissance` accepte maintenant un **exposant littéral** (`2^(4n+1)` ; `2×16^n`, `2^(4n)×2`, `4^(2n)×2` refusés). 186 cas de test.
 - **Exclus après audit** : 13.4 c (expression de u_n) et 13.5 b (u_0 volontairement laissé en `coefficient × q^K`, valeur trop grande pour être développée).
 - **Audit** des 7 fiches : plus de refus de corrigé causés par le câblage ; restent des anomalies de présentation et les erreurs déjà connues (9.7 c `0e^{2}`).
+
+## 2026-10-13 — Dérivées de polynômes et de produits : forme développée exigée (Première 5.4, 5.7 a b)
+
+- **Vérification préalable** (demande de David : « écrire la formule sans calcul ne doit pas passer ») : les dérivées sont comparées en valeur à la dérivée de référence en plusieurs points ; l'énoncé recopié, `x` ou `1` étaient déjà refusés. Restait accepté : un calcul commencé mais non terminé (`2*(-9)x-1`, produit non développé).
+- **Décision de David** : `developpe` pour **5.4** (polynômes) et **5.7 a b** (produits de polynômes) seulement ; 5.7 c (racine), quotients, exponentielles, composées restent en valeur seule (la forme factorisée y est légitime). Vérifié : `-18x-1` et `-1-18x` acceptés, `2*(-9)x-1`, `-18x-1+0` et le produit non développé refusés.
