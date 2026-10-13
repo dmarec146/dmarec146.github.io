@@ -185,6 +185,13 @@ const CAS = [
   ['puissance', {}, '2^(4*n+1)', 'L:4^{2n}\\times2', false],
   ['puissance', {}, '2^(2*n-1)', 'L:2^{2n-1}', true],
   ['puissance', {}, '2^(2*n-1)', 'L:\\frac{4^{n}}{2}', false],
+  ['simplifie', {}, '1', 'cos(0)', false],                      // valeur trigonometrique a calculer
+  ['simplifie', {}, '1', 'L:\\cos\\left(0\\right)', false],
+  ['simplifie', {}, '-1/2', 'L:\\cos\\left(-\\frac{10\\pi}{3}\\right)', false],
+  ['simplifie', {}, '-1/2', 'L:-\\frac{1}{2}', true],
+  ['simplifie', {}, '-1', 'tan(3*pi/4)', false],
+  ['simplifie', {}, '70-24*sqrt(6)', 'L:\\left(4-3\\sqrt{6}\\right)^{2}', false],
+  ['simplifie', {}, '70-24*sqrt(6)', 'L:70-24\\sqrt{6}', true],
   ['simplifie', {}, '-5', 'x=-5', true],
   ['simplifie', {}, '-5', 'L:x=-5', true],
   ['simplifie', {}, '-29', 'f(6)=-29', true],

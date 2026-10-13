@@ -58,6 +58,7 @@
         else if (nom === 'sqrt') jetons.push({ t: 'CMD', nom: 'sqrt' });
         else if (nom === 'times' || nom === 'cdot' || nom === 'ast') jetons.push({ t: 'OP', v: '*' });
         else if (nom === 'div') jetons.push({ t: 'OP', v: '/' });
+        else if (FONCTIONS.has(nom)) jetons.push({ t: 'FUNC', nom });                 // \cos, \sin, \tan, \ln, \exp
         else if (LETTRES_GRECQUES[nom]) jetons.push({ t: 'ID', nom: LETTRES_GRECQUES[nom] });
         else throw new Error('commande inconnue : ' + nom);
         i = j; continue;
@@ -525,7 +526,11 @@
       if (n.b.t === 'num' && (n.b.v === 0 || n.b.v === 1)) return true;                // x^1, x^0
       if (n.a.t === 'pow' || n.a.t === 'mul' || (n.a.t === 'neg' && !nombrePur(n.a))) return true;   // (e^-3)^3, (2x)^3, (-x)^2
       if (n.a.t === 'div' && !nombrePur(n.a)) return true;                             // (x/y)^2
+      // (4-3*sqrt(6))^2 : somme constante (sans lettre) elevee a une puissance entiere => a developper
+      if ((n.a.t === 'add' || n.a.t === 'sub') && symboles(n.a).size === 0 && n.b.t === 'num' && n.b.v >= 2) return true;
     }
+    // cos(0), sin(7*pi/6), tan(pi/3), |-3| : fonction d'un nombre (ou d'un multiple de pi) => valeur a calculer
+    if (n.t === 'fn' && ['cos', 'sin', 'tan', 'abs'].includes(n.nom) && symboles(n.a).size === 0) return true;
     // --- produit / quotient : on regarde la chaine de facteurs une seule fois, a sa racine
     if (n.t === 'mul' || n.t === 'div') {
       const f = aplatir(n);

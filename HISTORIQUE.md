@@ -7884,3 +7884,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 
 - **Vérification préalable** (demande de David : « écrire la formule sans calcul ne doit pas passer ») : les dérivées sont comparées en valeur à la dérivée de référence en plusieurs points ; l'énoncé recopié, `x` ou `1` étaient déjà refusés. Restait accepté : un calcul commencé mais non terminé (`2*(-9)x-1`, produit non développé).
 - **Décision de David** : `developpe` pour **5.4** (polynômes) et **5.7 a b** (produits de polynômes) seulement ; 5.7 c (racine), quotients, exponentielles, composées restent en valeur seule (la forme factorisée y est légitime). Vérifié : `-18x-1` et `-1-18x` acceptés, `2*(-9)x-1`, `-18x-1+0` et le produit non développé refusés.
+
+## 2026-10-13 — Moteur de validation : lot 4 (Première 15 à 21)
+
+- **Table validée par David** (`simplifie`, calcul terminé) : 15.3, 15.6 a ; 16.3 ; 17.3, 17.9 a b ; 18.3 a, 18.5, 18.6, 18.7, 18.9, 18.11 ; 19.5, 19.9 ; 20.3, 20.4, 20.5, 20.6 a b, 20.12 a ; 21.3, 21.11. Laissés en valeur seule : 20.6 c (angle en degrés, approché), 17.9 c (deux racines multipliées), les calculs avec leur contrôle propre (`fractionIrreductible`, droites, ensembles, tangentes, vecteurs).
+- **Ensembles de solutions** : David confirme qu'on garde le contrôle actuel (ordre libre, solution manquante ou en trop refusée, éléments non réduits acceptés comme `{16/2;1}`) ; pas de forme sur les éléments.
+- **Moteur** : l'audit a montré que `cos(0)`, `tan(3π/4)` (valeurs trigonométriques non calculées) et `(4-3√6)^2` (somme constante élevée à une puissance) passaient ; nouvelles règles de `simplifie` : fonction `cos/sin/tan/abs` d'un nombre ou d'un multiple de π, somme constante élevée à une puissance entière. Le lecteur LaTeX comprend `\cos`, `\sin`, `\tan`, `\ln`, `\exp`. 193 cas de test.
+- **Audit des 50 fiches** (463 s) : aucune erreur nouvelle ; anomalies connues 66 → 51 (hors présentation : 9.7 c `0e^{2}`, 6.5 `^{1}` de dérivées, 20.6 c).
