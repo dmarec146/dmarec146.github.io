@@ -7969,3 +7969,11 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 ## 2026-10-13 — Seconde fiche 5 : barème ajusté (2e passe)
 
 - **Demande de David** : 5.1 d) = 0,75 ; 5.4 c) et d) = 1,5. `appliquer-bareme.js S05` : **base 16 points** (de nouveau entière : 15,25 + 0,75), bonus 8 inchangé.
+
+## 2026-10-13 — Seconde fiche 5 : 5.4 e) supprimé, nouveau calcul « formes canoniques » développées
+
+- **Demande de David** : 1) supprimer 5.4 e) (factoriser 2x²+7x) ; 2) ajouter après 5.3 une section de **2 questions à 1,5 point** où l'on développe des formes canoniques, **sans citer le terme**, du type a(x+b)²+c. Fiche : 22 → **23 questions, 6 calculs**.
+- **Nouveau 5.4 « Développer et réduire les expressions suivantes »** (pictos du 5.3) : a) \(a(x\pm b)^2\pm c\), a de 2 à 5 ; b) \(-a(x\pm b)^2\pm c\), coefficient dominant négatif (le signe se distribue sur le carré développé) ; b et c non nuls tirés dans [−6;6] et [−9;9] (≈ 430 énoncés distincts chacun). Forme `developpe`. Titre identique à celui des 5.3 et 5.6 (la forme canonique n'est pas nommée).
+- **Renumérotation** : l'ancien 5.4 (factoriser, maintenant 4 questions a à d) devient 5.5 ; l'ancien 5.5 (avancés, 5 questions) devient 5.6. Groupes 4/4/4/2/4/5. Ids changés : brouillons non reconnus (aucun devoir en cours).
+- **Barème** (`fiche-S05.json`) : 5.4 e) retiré (−0,75) ; 5.4 a) et b) : 1,5 chacun (+3) ; clés renumérotées ; **base 18,25 points** (16 avant), bonus 8 ; la base n'est pas entière (le README prévoyait un total entier).
+- **Vérifié** : syntaxe 50/50 ; 600 tirages (10 800 réponses de type expression recalculées en 3 points (x, y), 0 écart ; 5.6 e à radicaux non couvert par le banc, question inchangée) ; `controle-bareme.js` cohérent ; notes tout juste 26,25 / 26,25, cœur seul 18,25 / 18,25, à vide 0 / 18,25 ; aucune erreur de page. Pas d'audit (consigne).
