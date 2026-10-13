@@ -113,6 +113,11 @@ depuis la réorganisation du 02/10/2026 »).
     Première 1 (1.1, 1.4 développée ; 1.5, 1.6 canonique) et Seconde 2 (2.2 à 2.4 puissances, 2.4 c d et 2.5 b c monômes)** ;
     les 48 autres fiches gardent leur validation numérique (à câbler fiche par fiche). Tests Node :
     `outils/verification/test-moteur-reponses.js` (95 cas).
+  - `outils/audit-reponses/` (13/10/2026) : **audit permanent de la validation des réponses**, script Node qui pilote le
+    Chrome installé (playwright-core, `npm install` une fois par machine). `node outils/audit-reponses/audit.js` (fiches
+    modifiées) ou `--toutes`. Corrigé retapé dans les vrais champs, énoncé recopié / nombre calculé refusés, corrigés
+    décimaux ou réductibles repérés. `connues.json` = anomalies existantes à la création (liste de travail) ; seules les
+    nouvelles font échouer le script. Voir son `README.md`.
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique

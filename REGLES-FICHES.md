@@ -280,7 +280,13 @@ les corrections ponctuelles d'une fiche).
 6. Capture d'écran pour ce qui ne se voit qu'à l'œil (titres en double,
    lettres manquantes, débordement d'une formule hors de sa carte, cadre gris
    des calculs avancés).
-7. Entrée datée à la fin de `HISTORIQUE.md` (et mise à jour de
+7. **Audit automatique de la validation des réponses** (sans crédits, ~1 à 6 min) :
+   `node outils/audit-reponses/audit.js` (fiches modifiées ; `--toutes` pour les 50). Il retape les corrigés,
+   teste l'énoncé recopié et le nombre calculé, repère décimales/fractions réductibles/`+0x`/`^1` dans les corrigés.
+   **Aucune anomalie nouvelle de gravité « erreur »** avant de pousser (code de sortie 0). `connues.json` = travail
+   restant, à vider au fil des corrections. Détail : `outils/audit-reponses/README.md`. Il ne remplace pas le
+   recalcul indépendant (point 3).
+8. Entrée datée à la fin de `HISTORIQUE.md` (et mise à jour de
    `SUIVI-FIREBASE.md` si l'état ou un piège change), commit, push.
 
 Les pièges techniques (identifiants, brouillons, MathLive, scripts…) sont
