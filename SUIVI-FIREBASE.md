@@ -118,7 +118,7 @@ depuis la réorganisation du 02/10/2026 »).
     (balise, bloc `formesCalcul()/parametresForme()/exAvecForme()`, aiguillage en tête de `verifierUne`, crochets d'aide ;
     si le moteur ne sait pas lire la réponse attendue, la fiche se rabat sur la valeur — l'audit le signale :
     `reference-illisible`). Câblées (lots 0 et 1, 13/10/2026) : Seconde 1, 3 à 8, 10 à 23 (sauf 9, 21.4 et 23.6 laissés en valeur seule) et 25, et Première 2 à 13, 15 à 26 (calculs choisis; reste Première 14, devoir en cours jusqu au 16/10) (Seconde 9 : corrigés
-    corrigés, fractions irréductibles). Les autres : voir `connues.json`.
+    corrigés, fractions irréductibles). Affichage du corrigé : `adoucirAffichage()` dans chaque fiche (voir REGLES-FICHES.md §4). Reste : Première 14 après le 16/10/2026.
   - `outils/audit-reponses/` (13/10/2026) : **audit permanent de la validation des réponses**, script Node qui pilote le
     Chrome installé (playwright-core, `npm install` une fois par machine). `node outils/audit-reponses/audit.js` (fiches
     modifiées) ou `--toutes`. Corrigé retapé dans les vrais champs, énoncé recopié / nombre calculé refusés, corrigés

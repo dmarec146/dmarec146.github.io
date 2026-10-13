@@ -7897,3 +7897,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Table validée par David** : 22.5, 22.6, 22.9 ; 23.6 a, 23.7 a ; 24.6 a b ; 26.1 (`simplifie`, valeur de la solution) ; 26.2 (`factorise`). Les sommes et produits en fonction de n et les calculs à contrôle propre (fraction irréductible) restent en valeur seule.
 - **Moteur** : `factorise` accepte un dénominateur numérique (`(2x+1)^2/4`, aussi écrit `(x+1/2)^2`) ; 200 cas de test.
 - **Audit** des 4 fiches : aucune anomalie nouvelle. **Bilan du chantier** : câblées toutes les fiches sauf Première 14 (devoir en cours jusqu'au 16/10) ; Seconde 2 et Première 1 par le câblage manuel du pilote ; Seconde 9 (corrigés réparés, `fractionIrreductible`).
+
+## 2026-10-13 — Présentation des corrigés : anomalies de style réglées
+
+- **Demande de David** : régler les anomalies de présentation « pour qu'on n'en parle plus ». Il y en avait 47 (46 de style : signe au numérateur `\dfrac{-3}{4}`, `×` entre une fraction et une lettre ; 2 erreurs : `^{1}`, `+0e`).
+- **Solution commune** : chaque fiche (sauf Première 14, devoir en cours) reçoit `adoucirAffichage(tex)` appelée par `formaterReponse` (l'ancienne fonction est devenue `formaterReponseBrut`). Règles : `\dfrac{-3}{4}` → `-\dfrac{3}{4}` (et `+\dfrac{-a}{b}` → `-\dfrac{a}{b}`, `-\dfrac{-a}{b}` → `+\dfrac{a}{b}`, jamais après un `\times`) ; `\dfrac{1}{4}\times x` → `\dfrac{1}{4}x` (devant une lettre, `\lambda`, `\sqrt`, `e^`) ; `^{1}` supprimé ; terme `+0e`, `-0e^{2}` supprimé ; tangente `y=0e^{-2}x+3e^{-2}` → `y=3e^{-2}`. Seule l'affichage du corrigé change (la validation des réponses n'est pas touchée).
+- **Audit** : la règle « × après fraction » ne vise plus que fraction × lettre ; l'audit retire du corrigé les décorations non saisissables (`\approx`, `^\circ`, `\textstyle`) avant de le retaper. Résultat sur les 50 fiches : **plus aucune anomalie** hors Première 14 (une présentation de signe en 14.2 b, à traiter avec le câblage de cette fiche après le 16/10).
+- **PC perso** : consignes pour sa première session inscrites dans `CLAUDE.md` (installation de l'audit, Chrome, fusion des règles locales, Première 14).

@@ -173,6 +173,12 @@ les corrections ponctuelles d'une fiche).
   la table et relancer le câblage.** Câblées le 13/10/2026 : 12 fiches (voir HISTORIQUE) ; restent les autres (dresser
   `connues.json` de l'audit pour repérer lesquelles). Le **corrigé est la référence** : la réponse attendue doit être
   une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé.
+  **Présentation du corrigé** : chaque fiche passe le LaTeX du corrigé par `adoucirAffichage` (appelée par
+  `formaterReponse`) — signe devant la fraction (`-\dfrac{3}{4}`, pas `\dfrac{-3}{4}`), pas de `×` entre une
+  fraction et une lettre (`\dfrac{1}{4}x`), pas de `^{1}` ni de terme nul (`+0e`). **Toute nouvelle fiche doit
+  l'avoir** (copier le bloc d'une fiche existante : de `// ---- Presentation du corrige` à
+  `function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }`, et nommer
+  `formaterReponseBrut` la fonction d'origine) ; l'audit le contrôle (style : signe au numérateur, fraction × lettre).
   **Quand exiger quoi (précisé par David le 13/10/2026)** : (1) titre qui impose une forme (simplifier, réduire,
   développer, factoriser, « sous la forme… », fraction irréductible, forme canonique, notation décimale…) : forme
   contrôlée, mais **toute écriture équivalente respectant la forme est acceptée**, pas seulement celle du corrigé ;

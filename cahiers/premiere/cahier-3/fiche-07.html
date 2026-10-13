@@ -2560,7 +2560,26 @@ function formaterIntervalleSpec(spec) {
   return '';
 }
 
-function formaterReponse(ex) {
+// ---- Presentation du corrige (13/10/2026) : signe devant la fraction, pas de × entre une fraction et une lettre ----
+function adoucirAffichage(tex) {
+  if (typeof tex !== 'string') return tex;
+  // \dfrac{-3}{4} -> -\dfrac{3}{4} ; +\dfrac{-3}{4} -> -\dfrac{3}{4} ; -\dfrac{-3}{4} -> +\dfrac{3}{4} (jamais apres un \times ou \cdot)
+  let t = tex.replace(/(^|[+\-({\[=,;])(\s*)\\dfrac\{-\s*([^{}+\-]*)\}\{/g, (m, avant, espace, numerateur) => {
+    const debut = avant === '+' ? '-' : (avant === '-' ? '+' : avant + '-');
+    return debut + espace + '\\dfrac{' + numerateur + '}{';
+  });
+  // \dfrac{a}{b}\times x -> \dfrac{a}{b}x (lettre, \lambda, \sqrt, e^)
+  t = t.replace(/(\\dfrac\{[^{}]*\}\{[^{}]*\})\\times\s*(?=\{?\s*(?:[A-Za-z]|\\lambda|\\sqrt))/g, '$1');
+  // puissance 1 inutile : (2x+1)^{1} -> (2x+1) ; terme nul : +0e, -0e^{2}
+  t = t.replace(/\^\{1\}(?![0-9])/g, '');
+  t = t.replace(/[+\-]\s*0\s*e(\^\{[^{}]*\})?(?![A-Za-z0-9])/g, '');
+  // coefficient nul en tete : y=0e^{-2} x+3e^{-2} -> y=3e^{-2}
+  t = t.replace(/=\s*0\s*e(\^\{[^{}]*\})?\s*x\s*(\+\s*|(?=-))/g, '=');
+  t = t.replace(/=\s*0\s*e(\^\{[^{}]*\})?\s*x\s*$/, '=0');
+  return t;
+}
+function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }
+function formaterReponseBrut(ex) {
   try {
     if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
     if (ex.type === 'ineq') {

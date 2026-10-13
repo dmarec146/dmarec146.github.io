@@ -111,7 +111,8 @@ async function auditerDansLaPage(opts) {
       }
       // numerateur reduit a un nombre negatif seul (une somme comme -1-\sqrt{2} sur 2 est normale)
       if (/\\dfrac\{-[^{}+\-]*\}\{/.test(tex)) motifs.push(['style', 'corrige-signe-au-numerateur']);
-      if (/\\times\s*\{?\s*[a-zA-Z(\\]|\\dfrac\{[^{}]*\}\{[^{}]*\}\\times/.test(tex) && /\\dfrac/.test(tex)) motifs.push(['style', 'corrige-multiplication-apres-fraction']);
+      // « fraction × lettre » (le × est inutile : \dfrac{1}{4}x) ; deux nombres ou une puissance gardent leur ×
+      if (/\\dfrac\{[^{}]*\}\{[^{}]*\}\\times\s*\{?\s*(?:[A-Za-z]|\\lambda|\\sqrt)/.test(tex)) motifs.push(['style', 'corrige-multiplication-apres-fraction']);
       for (const [g, m] of motifs) { const cle = e.id + '|' + m; if (!vus.has(cle)) { vus.add(cle); ajouter(g, m, e, tex); } }
     }
   }
@@ -141,6 +142,8 @@ async function auditerDansLaPage(opts) {
       const estMF = inp.tagName === 'MATH-FIELD';
       const saisir = async (latex, ascii) => { if (estMF) inp.setValue(latex, { format: 'latex' }); else inp.value = ascii; await dormir(30); };
       let tex; try { tex = formaterReponse(e); } catch (er) { tex = null; }
+      // decorations d'affichage que l'eleve ne tape pas (valeur approchee, degre, petite fraction en exposant)
+      if (typeof tex === 'string') tex = tex.replace(/\\approx\s*/g, '').replace(/\^\\circ/g, '').replace(/\\textstyle\s*/g, '');
       const ensemble = typeof e.reponse === 'string' && e.reponse.trim().startsWith('{');
       // A. corrige retape (champs mathematiques seulement : le LaTeX injecte est celui d'un champ ; ensembles et sommes ont leurs limites connues)
       if (estMF && tex && !ensemble && e.type !== 'somme') {
