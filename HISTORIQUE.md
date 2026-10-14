@@ -7998,3 +7998,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Variété** (150 tirages) : tous les énoncés ≥ 100 distincts, sauf 6.6 a (66, plafond théorique 78).
 - **Vérifié** : syntaxe 50/50 ; 150 tirages, 4 800 réponses vérifiées indépendamment (expressions de 6.1 comparées en 3 points ; pour toute équation, **chaque solution du corrigé annule bien l'équation**, 0 erreur, et le balayage de [−80 ; 80] retrouve toutes les racines des équations du second degré et produits) ; 32 cartes, groupes 4/4/4/4/2/4/2/4/4 ; rendu et énoncés LaTeX contrôlés à l'écran (les énoncés 6.9 b c d s'affichaient en texte brut avant correction) ; aucune erreur de page. Pas d'audit (consigne).
 - **Non fait** : pas de barème (non demandé) ; titre de section « Équations du premier degré » conservé alors qu'elle contient désormais des équations du second degré et produits.
+
+## 2026-10-14 — Seconde fiche 6 : barème en points
+
+- **Demande de David** : « crée un barème » pour la fiche 6 ; affiché dans le navigateur (affichage forcé hors devoir).
+- **Barème de la fiche 6 de Seconde : base 24 points, bonus 7,25** (`outils/bareme/fiche-S06.json`, clé `S06` dans `appliquer-bareme.js`, `cabler-fiche.js S06`, `appliquer-bareme.js S06`). 32 questions : 28 au cœur, 4 en bonus. 6.1 automatismes 0,5 × 4 = 2 ; 6.2 (0,5 / 0,5 / 0,75 / 0,75) = 2,5 ; 6.3 (0,75 / 0,75 / 1 / 1) = 3,5 ; 6.4 (0,75 / 0,75 / 1 / 1,25) = 3,75 ; 6.5 (1 / 1,25) = 2,25 ; 6.6 (0,75 / 1 / 1 / 1,25) = 4 ; 6.7 (1 / 1,25) = 2,25 ; 6.8 équations produits (0,75 / 0,75 / 1 / 1,25) = 3,75 ; 6.9 avancés (bonus, E) 1,5 + 1,75 + 2 + 2 = 7,25.
+- **Vérifié** : `controle-bareme.js` cohérent, `--verif` à jour, syntaxe 50/50 ; notes tout juste 31,25 / 31,25, cœur seul 24 / 24, à vide 0 / 24 ; aucune erreur de page ; affichage contrôlé dans le navigateur (« Total : 24 points (+ 7,25 points de calculs avancés) », pastilles de points sur les 32 questions).
+- **Limite connue** : 6.9 b) tire une fois sur deux des racines entières, une fois sur deux irrationnelles ; ses points (1,75) sont attachés à la position.
