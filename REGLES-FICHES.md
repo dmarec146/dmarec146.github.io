@@ -86,7 +86,7 @@ les corrections ponctuelles d'une fiche).
     **un seul calcul de 4 questions, calcul numérique uniquement** (pas de
     développer ni de puissances dans ce bloc) ; les règles de diversification
     de Première (§2 ci-dessus) viendront plus tard. Fiches 1 (08/10/2026),
-    2 (09/10/2026), 5 (12/10/2026, une fois son devoir terminé) 3 (13/10/2026, avec un 2e calcul de fractions à dénominateurs premiers entre eux) et 4 (13/10/2026, automatismes = un calcul « Développer et réduire », sans calcul numérique) faites ; fiche 5 : automatismes en fractions mélangées (13/10/2026) ; fiche 6 : automatismes en calcul littéral simple sans équations, 6.2 et 6.3 au début du coeur (14/10/2026) ; fiche 7 : idem (14/10/2026) ; fiche 8 : automatismes = un développement, une factorisation, deux équations du premier degré (14/10/2026) ; 8.2 = tableau de signes de ax+b (widget, un seul facteur donc sans ligne finale) ;
+    2 (09/10/2026), 5 (12/10/2026, une fois son devoir terminé) 3 (13/10/2026, avec un 2e calcul de fractions à dénominateurs premiers entre eux) et 4 (13/10/2026, automatismes = un calcul « Développer et réduire », sans calcul numérique) faites ; fiche 5 : automatismes en fractions mélangées (13/10/2026) ; fiche 6 : automatismes en calcul littéral simple sans équations, 6.2 et 6.3 au début du coeur (14/10/2026) ; fiche 7 : idem (14/10/2026) ; fiche 8 : automatismes = un développement, une factorisation, deux équations du premier degré (14/10/2026) ; 8.2 = tableau de signes de ax+b (widget, un seul facteur donc sans ligne finale) ; fiche 9 : automatismes = fractions (4 modèles du vivier, gardés à la demande de David), conversions et pourcentages fusionnés en 4 calculs de 4 exemples (14/10/2026) ;
     les suivantes au fur et à mesure des demandes de David.
 
 ## 3. Titres et énoncés
@@ -173,6 +173,9 @@ les corrections ponctuelles d'une fiche).
   la table et relancer le câblage.** Câblées le 13/10/2026 : 12 fiches (voir HISTORIQUE) ; restent les autres (dresser
   `connues.json` de l'audit pour repérer lesquelles). Le **corrigé est la référence** : la réponse attendue doit être
   une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé.
+  **Pourcentages (14/10/2026)** : pour une question « Écrire … en pourcentage » (donnée = décimal ou fraction), le
+  **signe % est exigé** (`exigerPourcent:true`), sinon recopier l'énoncé (0,06 ; 3/25) passait pour la réponse ; un
+  pourcentage s'écrit avec un nombre (pas `3/4*100%`). Pour « Quel pourcentage… », 25 %, 0,25 ou 1/4 restent acceptés.
   **Présentation du corrigé** : chaque fiche passe le LaTeX du corrigé par `adoucirAffichage` (appelée par
   `formaterReponse`) — signe devant la fraction (`-\dfrac{3}{4}`, pas `\dfrac{-3}{4}`), pas de `×` entre une
   fraction et une lettre (`\dfrac{1}{4}x`), pas de `^{1}` ni de terme nul (`+0e`). **Toute nouvelle fiche doit
