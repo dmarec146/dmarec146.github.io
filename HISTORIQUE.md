@@ -8123,3 +8123,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Moteur de formes** : la clé `9.6 a)` devient `9.7 a)` (pourcentage de pourcentage, calcul fini exigé).
 - **Barème** (`fiche-S09.json`) : 26 questions ; **base 20 points, bonus 7**. 9.6 (0,75 / 1 / 1,25 / 2) = 5 ; 9.7 bonus (1,5 / 1,5 / 2 / 2) = 7 (2 points étant le maximum par question, 9.7 d) est plafonné). Propositions à ajuster.
 - **Vérifié** : syntaxe 50/50 ; 200 tirages, 5 200 réponses recalculées indépendamment (tableaux lus dans le HTML : cohérence des marges et pourcentages attendus ; pourcentage donné de 9.7 d) multiple de 5) : 0 écart ; widgets 9.6 d) et 9.7 d) dans la vraie page (10 versions) : tableau + pourcentage justes acceptés 10/10 ; une case fausse, un pourcentage faux ou vide refusés 10/10 ; notes : tout juste 27/27, cœur 20/20, à vide 0/20 ; aucune erreur de page. Pas d'audit (consigne).
+
+## 2026-10-14 — Seconde fiche 9 : 9.6 à 2 exemples
+
+- **Demande de David** : « 9.6 deux exemples suffisent ». 9.6 « Utiliser un tableau d'effectifs. » passe de 4 à 2 exemples : a) **proportion parmi une ligne** (lecture, ancien b) ; b) **tableau à compléter, puis pourcentage** (widget, ancien d). Retirés : pourcentage d'une case sur l'effectif total, proportion parmi une colonne (la lecture « ou » et le tableau à partir d'un pourcentage restent en 9.7 c) et d)).
+- **Contextes de tableau** : 4 par version (au lieu de 6). **Barème** : 9.6 a) 1 et b) 2 (= 3) ; **base 18 points, bonus 7** ; 24 questions.
+- **Vérifié** : syntaxe 50/50 ; 200 tirages, 4 800 réponses recalculées : 0 écart ; jamais deux tableaux de même introduction ; widgets 9.6 b) et 9.7 d) dans la vraie page (10 versions) : justes acceptés, case fausse / pourcentage faux ou vide refusés ; notes : tout juste 25/25, cœur 18/18, à vide 0/18 ; aucune erreur de page. Pas d'audit (consigne).

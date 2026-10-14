@@ -22,7 +22,7 @@ window.MathJax = {
 <script src="../../../assets/js/bareme.js"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"9.1 a)":0.5,"9.1 b)":0.5,"9.1 c)":0.5,"9.1 d)":0.5,"9.2 a)":0.5,"9.2 b)":0.75,"9.2 c)":1,"9.2 d)":1.25,"9.3 a)":0.5,"9.3 b)":0.75,"9.3 c)":0.75,"9.3 d)":1,"9.4 a)":0.75,"9.4 b)":1.25,"9.5 a)":0.75,"9.5 b)":1,"9.5 c)":1.25,"9.5 d)":1.5,"9.6 a)":0.75,"9.6 b)":1,"9.6 c)":1.25,"9.6 d)":2,"9.7 a)":1.5,"9.7 b)":1.5,"9.7 c)":2,"9.7 d)":2},"bonus":["9.7 a)","9.7 b)","9.7 c)","9.7 d)"]});
+Bareme.definir({"points":{"9.1 a)":0.5,"9.1 b)":0.5,"9.1 c)":0.5,"9.1 d)":0.5,"9.2 a)":0.5,"9.2 b)":0.75,"9.2 c)":1,"9.2 d)":1.25,"9.3 a)":0.5,"9.3 b)":0.75,"9.3 c)":0.75,"9.3 d)":1,"9.4 a)":0.75,"9.4 b)":1.25,"9.5 a)":0.75,"9.5 b)":1,"9.5 c)":1.25,"9.5 d)":1.5,"9.6 a)":1,"9.6 b)":2,"9.7 a)":1.5,"9.7 b)":1.5,"9.7 c)":2,"9.7 d)":2},"bonus":["9.7 a)","9.7 b)","9.7 c)","9.7 d)"]});
 </script>
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <style>
@@ -396,7 +396,7 @@ Bareme.definir({"points":{"9.1 a)":0.5,"9.1 b)":0.5,"9.1 c)":0.5,"9.1 d)":0.5,"9
   .q-statut.ok { color: var(--vert); background: var(--vert-clair); }
   .q-statut.ko { color: var(--rouge); background: var(--rouge-clair); }
 
-  /* ---------- Tableau croise a completer (9.6 d, 9.7 d) ---------- */
+  /* ---------- Tableau croise a completer (9.6 b, 9.7 d) ---------- */
   .tc-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
   .tc-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .tc-cellule {
@@ -915,7 +915,7 @@ function checkPourcentage(userInput, valeurPourcent, tolerance, exigerSigne) {
 }
 
 // tableau croise 2x2, affiche en HTML statique (lecture seule, pas un widget a remplir) : les 4
-// cases internes et les marges sont toutes donnees (9.6 a-c, 9.7 c). ctx fournit les intitules de ligne/
+// cases internes et les marges sont toutes donnees (9.6 a, 9.7 c). ctx fournit les intitules de ligne/
 // colonne (deux categories factuelles, jamais une caracteristique de personne croisee avec un
 // comportement — voir la banque de contextes CONTEXTES_TABLEAU_CROISE).
 function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, total, ctx) {
@@ -929,7 +929,7 @@ function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, total, ctx) {
     <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
   </table>`;
 }
-// widget interactif (9.6 d, 9.7 d) : la valeur de la case "Ligne 1/Colonne 1" est donnee dans l'enonce
+// widget interactif (9.6 b, 9.7 d) : la valeur de la case "Ligne 1/Colonne 1" est donnee dans l'enonce
 // (pas affichee dans le tableau), mais les 4 cases internes sont TOUTES de vraies cases a remplir,
 // y compris celle-la — la laisser vide indiquerait par construction laquelle des 4 cases correspond
 // au fait donne dans le texte, un indice que le tableau ne doit pas fournir lui-meme. Meme principe
@@ -1048,7 +1048,7 @@ function tirerTableauCroise() {
   } while (a < min || b < min || c < min || d < min);
   return { a, b, c, d, totalL1, totalC1, total };
 }
-// contextes pour les tableaux croises 9.6 et 9.7 : deux categories factuelles et non personnelles
+// contextes pour les tableaux croises 9.6 a-b et 9.7 c-d : deux categories factuelles et non personnelles
 // (jamais une caracteristique de personne comme le genre ou la nationalite), tout est donne dans
 // le tableau — l'exercice est une lecture, pas une recherche d'information. {n} est remplace par
 // l'effectif total tire (voir tirerTableauCroise), qui varie d'une version a l'autre de la fiche.
@@ -1075,9 +1075,9 @@ const CONTEXTES_TABLEAU_CROISE = [
     colonne1: "Concert du vendredi", colonne2: "Concert du samedi" }
 ];
 function introContexte(ctx, total) { return ctx.intro.replace('{n}', total); }
-// 6 contextes distincts par version de la fiche (sans remise), pour ne jamais montrer deux fois
-// la meme phrase d'introduction entre les six tableaux (9.6 a-d, 9.7 c-d)
-let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 6);
+// 4 contextes distincts par version de la fiche (sans remise), pour ne jamais montrer deux fois
+// la meme phrase d'introduction entre les quatre tableaux (9.6 a-b, 9.7 c-d)
+let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 4);
 
 // ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
 // en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
@@ -1196,28 +1196,14 @@ const generateurs = [
 
   // ---------- 9.6 : utiliser un tableau d'effectifs (lecture, puis tableau a completer) ----------
   {id:"9.6 a)", type:"pourcentage", texteLibre:true, gen: () => {
-    // lecture directe : une case sur l'effectif total
+    // proportion conditionnelle : la case sur le total de la ligne
     const t = tirerTableauCroise(), ctx = tirageContextesTableau[0];
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
-    const p = Math.round(t.a/t.total*1000)/10;
-    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Quel pourcentage de l'effectif total correspond à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
-  }},
-  {id:"9.6 b)", type:"pourcentage", texteLibre:true, gen: () => {
-    // proportion conditionnelle, par ligne : la case sur le total de la ligne
-    const t = tirerTableauCroise(), ctx = tirageContextesTableau[1];
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
     const p = Math.round(t.a/t.totalL1*1000)/10;
     return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.ligne1} », quel pourcentage correspond à « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
   }},
-  {id:"9.6 c)", type:"pourcentage", texteLibre:true, gen: () => {
-    // proportion conditionnelle, par colonne (le total de la colonne 2 ne figure pas en clair dans le calcul de la ligne)
-    const t = tirerTableauCroise(), ctx = tirageContextesTableau[2];
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
-    const p = Math.round(t.d/(t.total - t.totalC1)*1000)/10;
-    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.colonne2} », quel pourcentage correspond à « ${ctx.ligne2} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
-  }},
-  {id:"9.6 d)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
-    const t = tirerTableauCroise(), ctx = tirageContextesTableau[3];
+  {id:"9.6 b)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
+    const t = tirerTableauCroise(), ctx = tirageContextesTableau[1];
     // la case "Ligne 1 / Colonne 1" est donnee dans le texte (pas dans une case du tableau) ; les 3
     // autres cases sont de vraies cases a completer, puis un pourcentage se calcule a partir du
     // tableau une fois complet — deux etapes de la MEME question, pas deux questions separees.
@@ -1242,7 +1228,7 @@ const generateurs = [
   }},
   {id:"9.7 c)", type:"pourcentage", texteLibre:true, gen: () => {
     // lecture plus delicate : « ligne 1 OU colonne 1 » (les deux cas comptes une seule fois), soit tout sauf la case ligne 2 / colonne 2
-    const t = tirerTableauCroise(), ctx = tirageContextesTableau[4];
+    const t = tirerTableauCroise(), ctx = tirageContextesTableau[2];
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
     const p = Math.round((t.total - t.d)/t.total*1000)/10;
     return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Quel pourcentage de l'effectif total correspond à « ${ctx.ligne1} » ou à « ${ctx.colonne1} » (éventuellement aux deux ; arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
@@ -1251,7 +1237,7 @@ const generateurs = [
     // tableau a completer plus delicat : la case connue est donnee par un POURCENTAGE de l'effectif total (il faut
     // d'abord en deduire l'effectif), et la proportion demandee est conditionnelle (parmi la colonne 2)
     let t; do { t = tirerTableauCroise(); } while ((t.a*100) % t.total !== 0 || (t.a*100/t.total) % 5 !== 0);
-    const ctx = tirageContextesTableau[5];
+    const ctx = tirageContextesTableau[3];
     const pa = t.a*100/t.total;
     const pourcentageAttendu = Math.round(t.d/(t.total - t.totalC1)*1000)/10;
     const libellePct = `Parmi les « ${ctx.colonne2} », pourcentage de « ${ctx.ligne2} » (arrondi au dixième) : `;
@@ -1262,7 +1248,7 @@ const generateurs = [
 function genererExercices() {
   // on renouvelle le tirage des modeles de calcul et des contextes de tableau croise a chaque version de la fiche
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
-  tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 6);
+  tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 4);
   return generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
@@ -1277,8 +1263,8 @@ const groupes = {
   "grille-9-3": [8,9,10,11],
   "grille-9-4": [12,13],
   "grille-9-5": [14,15,16,17],
-  "grille-9-6": [18,19,20,21],
-  "grille-9-7": [22,23,24,25]
+  "grille-9-6": [18,19],
+  "grille-9-7": [20,21,22,23]
 };
 const lettres = ["a","b","c","d","e","f","g","h","i","j"];
 
