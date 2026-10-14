@@ -8168,3 +8168,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Barème** (`fiche-S10.json`) : **base 20 points, bonus 6** (10.9). 10.1 = 2 ; 10.2 = 2,75 ; 10.3 (0,75 / 1) ; 10.4 (0,75 / 1) ; 10.5 = 2,75 ; 10.6 (1 / 1,25) ; 10.7 (1,25 / 1,5) ; 10.8 = 4. Propositions à ajuster.
 - **Technique** : `formes-par-fiche.json` (10.7 → 10.8, 10.8 → 10.9, ajout 10.6), `enonce-10-7` → `enonce-10-8`, groupes et commentaires renumérotés, fonction `evolutionsSuccessives` remplacée par `coefficientGlobal`.
 - **Vérifié** : syntaxe 50/50 ; 200 tirages, 5 000 réponses recalculées : 0 écart ; champs réels (pourcentages) et schéma d'évolution comme avant (accepté juste, refusé faux) ; notes : tout juste 26/26, cœur 20/20, à vide 0/20 ; aucune erreur de page. Pas d'audit (consigne).
+
+## 2026-10-14 — Audit étendu au schéma d'évolution ; audit de la fiche 10 de Seconde
+
+- **Demande de David** (après « j'accepte tes propositions puis audit » : barème de la fiche 10 accepté ; audit de la fiche 10 : OK, 1 360 saisies) : ajouter le schéma d'évolution (10.8 a) à l'audit.
+- **Schéma d'évolution** : schéma rempli juste (3 taux signés en % et 3 coefficients) accepté ; pour chaque case, une valeur fausse (taux +1 point, coefficient +0,01), une case vide et, pour les taux, un calcul non terminé (`(30)/2%`) sont refusés. Motifs `schema-corrige-refuse`, `schema-case-fausse-acceptee`, `schema-case-vide-acceptee`, `schema-calcul-accepte` (README).
+- **Test de détection** : copie de la fiche 10 rendue défectueuse (coefficient de la période 2 ignoré, tolérance de 4 points sur les taux, calcul non terminé accepté) : défauts détectés (case vide, case fausse, calcul accepté). Premier réglage trop lâche (taux fausse = +5) qui laissait passer une tolérance de 4 : écart des taux fausses ramené à +1.
+- **Résultat** : fiche 10 de Seconde **OK, 1 846 saisies** (contre 1 360 avant).

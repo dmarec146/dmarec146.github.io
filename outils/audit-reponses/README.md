@@ -35,9 +35,12 @@ Pour les questions qui ne se tapent pas dans un champ mathématique, le corrigé
 | `tableau-croise-corrige-refuse` | erreur | tableau d'effectifs à compléter rempli juste (4 cases + pourcentage) et refusé |
 | `tableau-croise-case-fausse-acceptee`, `tableau-croise-case-vide-acceptee`, `tableau-croise-pourcentage-faux-accepte`, `tableau-croise-pourcentage-vide-accepte` | erreur | une case fausse ou vide, un pourcentage faux ou vide : le tableau est quand même accepté |
 
-Ces contrôles ont été testés sur des copies volontairement défectueuses des fiches 8 et 9 de Seconde (case « | » ignorée,
-crochets ignorés, tolérances trop larges, signe % non exigé, calcul accepté, case ignorée dans le tableau d'effectifs) :
-tous les défauts sont détectés.
+| `schema-corrige-refuse` | erreur | schéma d'évolutions successives (3 taux et 3 coefficients) rempli juste et refusé |
+| `schema-case-fausse-acceptee`, `schema-case-vide-acceptee`, `schema-calcul-accepte` | erreur | une case fausse (taux +1 point, coefficient +0,01), une case vide, un taux écrit en calcul non terminé (`(30)/2%`) : le schéma est quand même accepté |
+
+Ces contrôles ont été testés sur des copies volontairement défectueuses des fiches 8, 9 et 10 de Seconde (case « | » ignorée,
+crochets ignorés, tolérances trop larges, signe % non exigé, calcul accepté, case ignorée dans le tableau d'effectifs ou
+dans le schéma d'évolution) : tous les défauts sont détectés.
 
 **Non couvert** : les autres types (QCM, vrai/faux, paire, vecteur, triplet, ensembles `{a;b}` dans un champ
 texte, tableaux croisés et de variations, schéma d'évolution, cercle, pourcentage…) ; ni les autres

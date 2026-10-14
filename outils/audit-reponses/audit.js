@@ -231,6 +231,31 @@ async function auditerDansLaPage(opts) {
       reinitialiserTableauCroiseRempli(i);
       return n;
     }
+    // schema d'evolutions successives (3 periodes : taux en % et coefficient multiplicateur) : schema juste accepte ; une case
+    // fausse ou vide, un taux ecrit en calcul non termine (« (40)/2% ») refuses
+    if (e.type === 'schemaEvolution' && e.t && typeof reinitialiserSchemaEvolution === 'function' && document.getElementById('se-taux1-' + i)) {
+      const t = e.t;
+      const fr = (x) => String(Math.round(x * 1e6) / 1e6).replace('.', ',');
+      const signe = (v) => (v > 0 ? '+' : '') + fr(v) + '%';
+      const bons = { taux1: signe(t.h1 ? t.p1 : -t.p1), cm1: fr(t.c1), taux2: signe(t.taux2), cm2: fr(t.c2), taux3: signe(t.h3 ? t.p3 : -t.p3), cm3: fr(t.c3) };
+      const valeurs = { taux1: t.h1 ? t.p1 : -t.p1, cm1: t.c1, taux2: t.taux2, cm2: t.c2, taux3: t.h3 ? t.p3 : -t.p3, cm3: t.c3 };
+      const poser = (v) => { for (const c of Object.keys(bons)) document.getElementById(`se-${c}-${i}`).value = v[c]; };
+      poser(bons); n++;
+      if (verifier() !== true) { ajouter('erreur', 'schema-corrige-refuse', e, JSON.stringify(bons)); reinitialiserSchemaEvolution(i); return n; }
+      for (const c of Object.keys(bons)) {
+        const estTaux = c.startsWith('taux');
+        poser({ ...bons, [c]: estTaux ? signe(valeurs[c] + 1) : fr(valeurs[c] + 0.01) }); n++;
+        if (verifier() === true) ajouter('erreur', 'schema-case-fausse-acceptee', e, 'case ' + c + ' : ' + (estTaux ? signe(valeurs[c] + 1) : fr(valeurs[c] + 0.01)) + ' au lieu de ' + bons[c]);
+        poser({ ...bons, [c]: '' }); n++;
+        if (verifier() === true) ajouter('erreur', 'schema-case-vide-acceptee', e, 'case ' + c + ' vide');
+        if (estTaux) {
+          poser({ ...bons, [c]: '(' + fr(2 * valeurs[c]) + ')/2%' }); n++;
+          if (verifier() === true) ajouter('erreur', 'schema-calcul-accepte', e, 'case ' + c + ' : (' + fr(2 * valeurs[c]) + ')/2%');
+        }
+      }
+      reinitialiserSchemaEvolution(i);
+      return n;
+    }
     if (e.type === 'tableauSigne' && typeof restaurerEtatTableauSigne === 'function' && typeof reinitialiserTableauSigne === 'function') {
       const sp = e.spec;
       const frac = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
@@ -270,7 +295,7 @@ async function auditerDansLaPage(opts) {
     }
     for (let i = 0; i < exercices.length; i++) {
       const e = exercices[i];
-      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli'].includes(e.type)) { saisies += await auditerStructure(i, e); continue; }
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution'].includes(e.type)) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;

@@ -124,8 +124,8 @@ depuis la réorganisation du 02/10/2026 »).
     modifiées) ou `--toutes`. Corrigé retapé dans les vrais champs, énoncé recopié / nombre calculé refusés, corrigés
     décimaux ou réductibles repérés. `connues.json` = anomalies existantes à la création (liste de travail) ; seules les
     nouvelles font échouer le script. Voir son `README.md`. **Étendu le 14/10/2026** aux intervalles saisis, à la
-    discussion selon un paramètre, aux tableaux de signes, aux pourcentages (dont écarts en points) et aux tableaux
-    d'effectifs à compléter (corrigé accepté, variantes fausses refusées) ; ne couvre toujours ni QCM, ni vrai/faux, ni
+    discussion selon un paramètre, aux tableaux de signes, aux pourcentages (dont écarts en points), aux tableaux
+    d'effectifs à compléter et aux schémas d'évolution (corrigé accepté, variantes fausses refusées) ; ne couvre toujours ni QCM, ni vrai/faux, ni
     paire/vecteur/triplet, ni tableaux de variations (liste dans le README).
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
