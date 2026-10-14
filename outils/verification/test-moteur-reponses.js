@@ -234,3 +234,14 @@ for (const [forme, formeOptions, reponse, saisie, attendu] of CAS) {
 }
 console.log(`${illisibles} saisie(s) illisible(s)`);
 if (illisibles) process.exitCode = 1;
+
+// ---- estTermine (ensembles de solutions « sous forme irreductible », racine carree libre) ----
+{
+  const T = [['2/3', null, true], ['4/6', null, false], ['-4/3', null, true], ['10/5', null, false], ['sqrt(24)', null, false],
+    ['sqrt(24)', { racineLibre: true }, true], ['-3-sqrt(12)', { racineLibre: true }, true], ['2*sqrt(6)', { racineLibre: true }, true],
+    ['sqrt(81)', { racineLibre: true }, false], ['3+4', { racineLibre: true }, false], ['(1+sqrt(5))/2', { racineLibre: true }, true]];
+  let echecsT = 0;
+  for (const [s, o, attendu] of T) { const obtenu = M.estTermine({ ascii: s }, o); if (obtenu !== attendu) { echecsT++; console.log(`ECHEC estTermine « ${s} » : obtenu ${obtenu}, voulu ${attendu}`); } }
+  console.log(`${T.length} cas estTermine, ${echecsT} echec(s)`);
+  if (echecsT) process.exitCode = 1;
+}

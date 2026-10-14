@@ -518,7 +518,10 @@
     if (n.t === 'sqrt') {
       if (nombrePur(n.a)) {
         const v = entierRelatif(n.a);
-        if (v === null || v < 2 || !sansCarre(v)) return true;         // sqrt(224), sqrt(81), sqrt(1/4)
+        const carreParfait = v !== null && v >= 0 && Number.isInteger(Math.sqrt(v));
+        if (v === null || v < 2) return true;                           // sqrt(1/4), sqrt(1)
+        if (carreParfait) return true;                                  // sqrt(81) : a calculer
+        if (!sansCarre(v) && !o.racineLibre) return true;               // sqrt(224) (autorise avec racineLibre : sqrt(24) reste sqrt(24))
       }
     }
     if (n.t === 'pow') {
@@ -685,7 +688,15 @@
   // true si le moteur sait lire la reponse attendue (controle de l'audit)
   function referenceLisible(ex) { try { lire(ex.reponse, false); return true; } catch (e) { return false; } }
 
-  const MoteurReponses = { lire, lireEntree, evaluer, memeValeur, verifier, verifierForme, referenceLisible, aide, formes: Object.keys(FORMES) };
+  // true si l'expression saisie ne contient plus rien a simplifier (sans comparaison a une reponse attendue) ;
+  // options : { racineLibre: true } laisse une racine carree telle quelle (sqrt(24) accepte)
+  function estTermine(entree, options) {
+    const u = lireEntree(entree);
+    if (!u) return false;
+    return !reductible(u, Object.assign({ puissanceDeNombres: false, racineDenominateur: false, sommeDeFractions: false }, options || {}));
+  }
+
+  const MoteurReponses = { lire, lireEntree, evaluer, memeValeur, verifier, verifierForme, referenceLisible, estTermine, aide, formes: Object.keys(FORMES) };
   if (typeof module !== 'undefined' && module.exports) module.exports = MoteurReponses;
   else {
     racine.MoteurReponses = MoteurReponses;
