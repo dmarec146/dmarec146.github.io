@@ -1028,8 +1028,8 @@ const generateurs = [
     const a1 = entierSigne(2,7), b1 = alea(1,15), p = entierSigne(1,12);
     const c1 = a1*p + b1, symb1 = a1 > 0 ? '\\gt' : '\\lt';
     const a2 = entierSigne(2,7), b2 = alea(1,15);
-    // ensemble vide possible mais rare (~8 %) : q <= p seulement dans ce cas, sinon q > p (intervalle borne)
-    const q = (alea(1,12) === 1) ? p - alea(0,6) : p + alea(1,12);
+    // ensemble vide possible mais rare (~6 %) : q <= p seulement dans ce cas, sinon q > p (intervalle borne)
+    const q = (alea(1,16) === 1) ? p - alea(0,6) : p + alea(1,12);
     const c2 = a2*q + b2, symb2 = a2 > 0 ? '\\lt' : '\\gt';
     const termeB1 = b1<0?`-${-b1}`:`+${b1}`, termeB2 = b2<0?`-${-b2}`:`+${b2}`;
     // bornes strictes (inegalites strictes des deux cotes) : intervalle ouvert des deux cotes
@@ -1044,11 +1044,52 @@ const generateurs = [
     return { enonce: `Sachant que \\(${a}\\lt x\\lt ${b}\\), donner un encadrement de \\(\\dfrac{${p}-${n}x}{${k}}\\).`,
              bas: m1, haut: m2, inclusBas:false, inclusHaut:false };
   }},
-  {id:"7.6 d)", type:"alg", texteLibre:true, gen: () => {
-    // propriete a demontrer : l'etape-cle de la preuve de monotonie d'une fonction affine
-    const a = entierSigne(2,9), b = alea(1,15);
-    return { enonce: `Soit \\(f\\) la fonction affine définie par \\(f(x)=${coefXTexte(a)}+${b}\\), et deux réels \\(p\\lt q\\). Factoriser \\(f(q)-f(p)\\).`,
-             reponse: `${a}*(q-p)` };
+  {id:"7.6 d)", type:"intervalle", texteLibre:true, gen: () => {
+    // second systeme (remplace la factorisation de f(q) - f(p)) : inegalites de formes variees (x des deux cotes,
+    // fraction, coefficient signe), strictes ou larges, bornes de sens opposes (intervalle, vide dans ~8 % des cas)
+    // ou de meme sens (la plus restrictive l'emporte, la borne stricte l'emporte a egalite : jamais d'egalite ici)
+    const pbornes = alea(1,100);
+    let p = entierSigne(1,12), q, sensA, sensB;
+    if (pbornes <= 8) { q = p - alea(1,6); sensA = '>'; sensB = '<'; }                    // vide : x > p et x < q avec q < p
+    else if (pbornes <= 28) { do { q = entierSigne(1,12); } while (q === p); const bas = alea(0,1) === 0; sensA = bas ? '>' : '<'; sensB = sensA; }   // meme sens
+    else { q = p + alea(1,12); sensA = '>'; sensB = '<'; }                                  // intervalle borne
+    if (alea(0,1) === 0) { const t = p; p = q; q = t; const u = sensA; sensA = sensB; sensB = u; }   // l'ordre des deux inequations est tire
+    const large = () => alea(0,1) === 0;
+    const gA = large(), gB = large();
+    const dirA = sensA + (gA ? '=' : ''), dirB = sensB + (gB ? '=' : '');
+    const symbole = { '>': '\\gt ', '>=': '\\geqslant ', '<': '\\lt ', '<=': '\\leqslant ' };
+    const inverse = { '>': '<', '>=': '<=', '<': '>', '<=': '>=' };
+    const terme = (v) => v > 0 ? `+${v}` : (v < 0 ? `-${-v}` : '');
+    // une inequation de seuil t et de sens 'dir' (pour x), ecrite sous l'une de trois formes
+    const ecrire = (t, dir) => {
+      const formes = [1, 3];
+      const diviseurs = [2,3,4,5,6].filter(k => t % k === 0);
+      if (diviseurs.length) formes.push(2);
+      const f = choix(formes);
+      if (f === 1) {              // a x + b  op  c x + d
+        let a, c; do { a = entierSigne(2,7); c = entierSigne(2,7); } while (a === c);
+        const b = entierSigne(1,12), d = b + (a - c) * t;
+        const op = (a - c) > 0 ? dir : inverse[dir];
+        return `${coefXTexte(a)}${terme(b)}${symbole[op]}${coefXTexte(c)}${terme(d)}`;
+      }
+      if (f === 2) {              // x/k + m  op  n
+        const k = choix(diviseurs), m = entierSigne(1,9), n = m + t / k;
+        return `\\dfrac{x}{${k}}${terme(m)}${symbole[dir]}${n}`;
+      }
+      const a = entierSigne(2,7), b = entierSigne(1,12), c = a * t + b;     // a x + b  op  c
+      const op = a > 0 ? dir : inverse[dir];
+      return `${coefXTexte(a)}${terme(b)}${symbole[op]}${c}`;
+    };
+    // intersection des deux demi-droites
+    let lo = -Infinity, incLo = false, hi = Infinity, incHi = false;
+    for (const [t, dir] of [[p, dirA], [q, dirB]]) {
+      const inc = dir.includes('=');
+      if (dir[0] === '>') { if (t > lo || (t === lo && !inc)) { lo = t; incLo = inc; } }
+      else { if (t < hi || (t === hi && !inc)) { hi = t; incHi = inc; } }
+    }
+    const vide = lo > hi || (lo === hi && !(incLo && incHi));
+    const intervalleSpec = vide ? {type:'vide'} : {type:'intervalles', liste:[{bas:lo, haut:hi, inclusBas:incLo, inclusHaut:incHi}]};
+    return { enonce: `Résoudre le système suivant : \\[\\begin{cases} ${ecrire(p, dirA)} \\\\ ${ecrire(q, dirB)} \\end{cases}\\]`, intervalleSpec };
   }}
 ];
 
@@ -1798,8 +1839,7 @@ function passerEnEntrainementLibre(garderBandeau = true) {
 // Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
 function formesCalcul() {
   return {
-    "7.1": "developpe",
-    "7.6 d)": "factorise"
+    "7.1": "developpe"
   };
 }
 // forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer

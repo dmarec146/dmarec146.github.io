@@ -8047,3 +8047,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Système (7.6 b)** : l'ensemble vide ne sort plus que dans **≈ 8 %** des tirages (mesuré : 13 sur 200, soit 6,5 %) au lieu de 45 % ; sinon intervalle borné ]p ; q[.
 - **Barème** (`fiche-S07.json`) : **base 18 points, bonus 7**. 7.1 0,5 × 4 = 2 ; 7.2 2 ; 7.3 3 ; 7.4 (0,75 / 0,75 / 1 / 1,5 / 1,25 / 1,25) = 6,5 ; 7.5 (0,75 / 1 / 1,25 / 1,5) = 4,5 ; 7.6 bonus 7.
 - **Vérifié** : syntaxe 50/50 ; 200 tirages, 5 000 réponses (inéquations comparées point par point sur [−250 ; 250], bornes et systèmes compris ; encadrements aux sommets ; 7.1 en 3 points) recalculées indépendamment : 0 écart ; sens « > » et « < » mêlés en 7.4 ; 26 cartes, groupes 4/4/4/6/4/4 ; `controle-bareme.js` cohérent ; notes tout juste 25 / 25, cœur seul 18 / 18, à vide 0 / 18 ; aucune erreur de page. Pas d'audit (consigne).
+
+## 2026-10-14 — Seconde fiche 7 : 7.6 d) remplacé par un second système d'inéquations
+
+- **Demande de David** : supprimer 7.6 d) (factoriser f(q) − f(p)) et ajouter un système d'inéquations. Fiche : 26 questions, 6 calculs (inchangé).
+- **Nouveau 7.6 d)** : « Résoudre le système suivant » avec deux inéquations de **formes variées** tirées parmi trois (ax+b ◊ cx+d ; x/k + m ◊ n ; ax+b ◊ c, coefficients signés), **strictes ou larges** (crochets ouverts ou fermés), de **bornes de sens opposés** (intervalle borné, ~72 %) ou **de même sens** (~20 % : la plus restrictive l'emporte, la borne stricte l'emporte à égalité), ensemble vide dans ~8 % des cas (mesuré 8,2 % sur 3 000 tirages). Ordre des deux inéquations tiré. Le système 7.6 b) (inéquations strictes) est ramené à ~6 % de vide (mesuré 6,3 %). La forme « factorisée » n'a plus de question : entrée `7.6 d)` retirée de la table des formes.
+- **Barème** : 7.6 d) reste à 2 points ; base 18, bonus 7 inchangés (description mise à jour).
+- **Vérifié** : syntaxe 50/50 ; 200 tirages, 5 200 réponses (intervalle comparé point par point à l'inéquation, bornes et systèmes compris) : 0 écart ; 200 énoncés distincts pour 7.6 d) ; aucune erreur de page. Pas d'audit (consigne).
