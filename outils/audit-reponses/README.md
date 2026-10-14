@@ -14,6 +14,7 @@ les fiches de calcul acceptent et refusent, **en prenant le corrigé comme réf�
 | `corrige-fraction-reductible` | erreur | fraction non irréductible dans le corrigé |
 | `corrige-plus-moins`, `corrige-terme-nul`, `corrige-exposant-1`, `corrige-invalide` | erreur | « +-3 », « +0x », « ^1 », « NaN / undefined » |
 | `corrige-signe-au-numerateur`, `corrige-multiplication-apres-fraction` | style | −a/b écrit (−a)/b ; « 3/4 × x » |
+| `enonce-redondant` | style | la même consigne est répétée dans au moins 3 questions d'un calcul (elle doit figurer une fois dans le titre : `REGLES-FICHES.md` §3). Les énoncés réduits à des nombres ne sont pas concernés |
 | `erreur-de-page` | erreur | une erreur JavaScript à l'ouverture de la fiche |
 
 ### Réponses structurées (ajouté le 14/10/2026)

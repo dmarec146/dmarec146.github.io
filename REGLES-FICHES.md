@@ -106,7 +106,10 @@ les corrections ponctuelles d'une fiche).
   « sur ℝ », « sous la forme y=ax+b »…) est dit **une fois**, dans le titre
   ou le paragraphe d'introduction — pas au début de chaque question. Le
   format de réponse est déjà expliqué par le bouton « ? » et le texte grisé
-  du champ.
+  du champ. **À vérifier à chaque reprise de fiche** (oubli constaté le 14/10/2026 aux fiches 7, 8, 9 et 11 :
+  « Quel est le plus petit ensemble… auquel appartient X ? » répété 4 fois) : les questions d'un calcul ne
+  contiennent que **la donnée** (`\(\dfrac{1}{3}\)`, `\(15\) sur \(60\)`), le titre porte la consigne. L'audit signale
+  le cas (motif `enonce-redondant`, style).
 - **Pas de « (I) » seul** : un suffixe (I)/(II)/(III) disparaît dès qu'il ne
   reste qu'un exercice de ce type sur la fiche (un « (II) » resté seul non
   plus).

@@ -83,6 +83,24 @@ async function auditerDansLaPage(opts) {
   const generer = () => (typeof marquerFormesFactorisees === 'function' ? marquerFormesFactorisees(genererExercices()) : genererExercices());
   const pgcd = (a, b) => (b ? pgcd(b, a % b) : a);
 
+  // ---------- D0. enonces redondants : la meme consigne repetee dans au moins 3 questions d'un calcul (elle doit etre
+  // dite une fois dans le titre : REGLES-FICHES.md §3). Un enonce reduit a des nombres n'est pas concerne. ----------
+  try {
+    const norm = (t) => String(t).replace(/<table[\s\S]*?<\/table>/g, ' [tableau] ').replace(/\\\([\s\S]*?\\\)/g, '#').replace(/<[^>]+>/g, ' ').replace(/\d+([,.]\d+)?/g, '#').replace(/\s+/g, ' ').trim();
+    for (const [g, idxs] of Object.entries(window.groupes || groupes)) {
+      const comptes = new Map();
+      const lettres = (t) => t.replace(/[^A-Za-zÀ-ÿ]/g, '').length;
+      for (const i of idxs) {
+        const t = norm(exercices[i].enonce || '');
+        // enonce entier identique, ou derniere phrase commune (consigne repetee apres les donnees)
+        const cles = new Set(); if (lettres(t) >= 25) cles.add(t);
+        const fin = t.match(/([^.?!]{25,}[.?!])\s*$/); if (fin && lettres(fin[1]) >= 25) cles.add('…' + fin[1]);
+        for (const c of cles) { if (!comptes.has(c)) comptes.set(c, []); comptes.get(c).push(i); }
+      }
+      for (const [t, liste] of comptes) if (liste.length >= 3) ajouter('style', 'enonce-redondant', exercices[liste[0]], t);
+    }
+  } catch (er) { /* fiche sans groupes */ }
+
   // ---------- C. defauts du corrige (rapide, sans interface) ----------
   const vus = new Set();
   for (let k = 0; k < opts.tiragesCorrige; k++) {
