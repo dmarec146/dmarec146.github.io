@@ -8022,3 +8022,8 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Moteur** : le contrôle « carré parfait à calculer » ne vaut que jusqu'à 144 = 12² ; `sqrt(169)`, `sqrt(196)` restent acceptés tels quels (dans tous les modes, `simplifie` compris) ; `sqrt(81)`, `sqrt(144)` refusés. 14 cas de test `estTermine`.
 - **Titres** : 6.6 et 6.9 (qui contiennent des racines carrées) **sans** mention d'irréductibilité ; 6.8 la garde (aucune racine). Pour que la consigne ne reste pas cachée dans le « ? », la mention est portée **par les questions fractionnaires** (comme « (fraction irréductible) » en Seconde 16.3 c) : 6.6 d) « (solutions sous forme irréductible) », 6.9 c) idem, 6.9 d) « (solution sous forme irréductible) ». Le contrôle reste actif sur 6.6 a–d, 6.8 a–d, 6.9 b c (et `simplifie` pour 6.9 a d).
 - **Vérifié** : syntaxe 50/50 ; 120/120 corrigés acceptés, 52/52 variantes non irréductibles refusées, 4/4 racines sous forme simplifiée acceptées ; aucune erreur de page.
+
+## 2026-10-14 — Seconde fiche 6 : barème ajusté par David
+
+- **Demande de David** : 6.2 c) et d) = 0,5 ; 6.3 = 0,75 chacune ; 6.4 = 0,75 chacune ; 6.7 = 1 chacune. `appliquer-bareme.js S06` : **base 22 points** (24 avant), bonus 7,25 inchangé.
+- **Question de David** : « pourquoi enlevé fraction irréductible dans 6.2 → 6.5 ? » : rien n'a été retiré, ces calculs ne l'ont jamais mentionnée (historique git vérifié) ; leurs solutions sont toujours entières par construction.
