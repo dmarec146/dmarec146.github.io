@@ -520,7 +520,9 @@
         const v = entierRelatif(n.a);
         const carreParfait = v !== null && v >= 0 && Number.isInteger(Math.sqrt(v));
         if (v === null || v < 2) return true;                           // sqrt(1/4), sqrt(1)
-        if (carreParfait) return true;                                  // sqrt(81) : a calculer
+        // sqrt(81) : a calculer ; mais seulement jusqu'a 144 = 12^2 (carres reconnaissables par un eleve de Seconde
+        // sans calculatrice) : sqrt(169) ou sqrt(196) restent acceptes tels quels
+        if (carreParfait) return v <= 144;
         if (!sansCarre(v) && !o.racineLibre) return true;               // sqrt(224) (autorise avec racineLibre : sqrt(24) reste sqrt(24))
       }
     }

@@ -239,7 +239,7 @@ if (illisibles) process.exitCode = 1;
 {
   const T = [['2/3', null, true], ['4/6', null, false], ['-4/3', null, true], ['10/5', null, false], ['sqrt(24)', null, false],
     ['sqrt(24)', { racineLibre: true }, true], ['-3-sqrt(12)', { racineLibre: true }, true], ['2*sqrt(6)', { racineLibre: true }, true],
-    ['sqrt(81)', { racineLibre: true }, false], ['3+4', { racineLibre: true }, false], ['(1+sqrt(5))/2', { racineLibre: true }, true]];
+    ['sqrt(81)', { racineLibre: true }, false], ['sqrt(144)', { racineLibre: true }, false], ['sqrt(169)', { racineLibre: true }, true], ['sqrt(196)', { racineLibre: true }, true], ['3+4', { racineLibre: true }, false], ['(1+sqrt(5))/2', { racineLibre: true }, true]];
   let echecsT = 0;
   for (const [s, o, attendu] of T) { const obtenu = M.estTermine({ ascii: s }, o); if (obtenu !== attendu) { echecsT++; console.log(`ECHEC estTermine « ${s} » : obtenu ${obtenu}, voulu ${attendu}`); } }
   console.log(`${T.length} cas estTermine, ${echecsT} echec(s)`);

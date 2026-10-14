@@ -8015,3 +8015,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Aide « ? »** des ensembles concernés : « Chaque solution doit être sous forme irréductible : 2/3 et non 4/6 ; une racine carrée peut rester telle quelle (par exemple sqrt(24)). »
 - **Vérifié dans les vrais champs** (12 générations de la fiche, 10 questions concernées) : 120/120 corrigés retapés acceptés ; 54/54 variantes avec une fraction non irréductible (a/b → 2a/2b) refusées ; 4/4 racines écrites sous forme simplifiée (`2*sqrt(6)` pour `sqrt(24)`) acceptées ; aucune erreur de page. Syntaxe 50/50.
 - **Ailleurs** : les autres fiches n'ont pas ce contrôle sur leurs ensembles de solutions (à étendre si David le souhaite).
+
+## 2026-10-14 — Seconde fiche 6 : carrés parfaits reconnaissables (144 max), titres des racines carrées
+
+- **Retours de David** : 1) un carré parfait « à calculer » (`sqrt(81)` refusé) doit être reconnaissable sans calculatrice par un élève de Seconde : **144 maximum** ; 2) pas de « forme irréductible » dans le titre des calculs à racines carrées (« cela n'a pas de sens pour un élève de Seconde ») ; 3) création du moteur validée.
+- **Moteur** : le contrôle « carré parfait à calculer » ne vaut que jusqu'à 144 = 12² ; `sqrt(169)`, `sqrt(196)` restent acceptés tels quels (dans tous les modes, `simplifie` compris) ; `sqrt(81)`, `sqrt(144)` refusés. 14 cas de test `estTermine`.
+- **Titres** : 6.6 et 6.9 (qui contiennent des racines carrées) **sans** mention d'irréductibilité ; 6.8 la garde (aucune racine). Pour que la consigne ne reste pas cachée dans le « ? », la mention est portée **par les questions fractionnaires** (comme « (fraction irréductible) » en Seconde 16.3 c) : 6.6 d) « (solutions sous forme irréductible) », 6.9 c) idem, 6.9 d) « (solution sous forme irréductible) ». Le contrôle reste actif sur 6.6 a–d, 6.8 a–d, 6.9 b c (et `simplifie` pour 6.9 a d).
+- **Vérifié** : syntaxe 50/50 ; 120/120 corrigés acceptés, 52/52 variantes non irréductibles refusées, 4/4 racines sous forme simplifiée acceptées ; aucune erreur de page.
