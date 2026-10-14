@@ -396,7 +396,7 @@ Bareme.definir({"points":{"9.1 a)":0.5,"9.1 b)":0.5,"9.1 c)":0.5,"9.1 d)":0.5,"9
   .q-statut.ok { color: var(--vert); background: var(--vert-clair); }
   .q-statut.ko { color: var(--rouge); background: var(--rouge-clair); }
 
-  /* ---------- Tableau croise a completer (9.6 b, 9.7 d) ---------- */
+  /* ---------- Tableau croise a completer (9.6 b) ---------- */
   .tc-conteneur { width: 100%; flex: 1 1 100%; order: 3; }
   .tc-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .tc-cellule {
@@ -898,6 +898,15 @@ function baseDivisiblePar(p) { const den = 100 / pgcd(p, 100); return den * alea
 // accepte "25%"/"25 %" (pourcentage direct), ou toute expression evaluee puis multipliee par 100
 // (decimale "0,25" ou fraction "1/4") : les trois ecritures d'une meme proportion sont equivalentes.
 // Le "%" de math.js est un modulo, jamais un pourcentage — on l'intercepte donc AVANT d'appeler evaluate.
+// ecart entre deux pourcentages, en « points de pourcentage » : un nombre (virgule ou point), eventuellement suivi de
+// « points » ; pas de signe % (une difference de pourcentages n'est pas un pourcentage). Tolerance de 0,15 : un eleve qui arrondit
+// chaque proportion au dixieme avant de soustraire peut s'ecarter de 0,1 de l'ecart arrondi.
+function checkPoints(userInput, valeur, tolerance) {
+  const s = String(userInput).trim().replace(/(\d),(\d)/g, '$1.$2').replace(/\s*(points?|pts?|pp)\s*$/i, '').trim();
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return false;
+  return Math.abs(parseFloat(s) - valeur) < (tolerance || 1e-6);
+}
+
 function checkPourcentage(userInput, valeurPourcent, tolerance, exigerSigne) {
   tolerance = tolerance || 1e-6;
   const s = String(userInput).trim().replace(/(\d),(\d)/g, '$1.$2');
@@ -929,7 +938,7 @@ function construireTableauCroiseHTML(a, b, c, d, totalL1, totalC1, total, ctx) {
     <tr><td style="${ent}">Total</td><td style="${std}">${totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${total}</td></tr>
   </table>`;
 }
-// widget interactif (9.6 b, 9.7 d) : la valeur de la case "Ligne 1/Colonne 1" est donnee dans l'enonce
+// widget interactif (9.6 b) : la valeur de la case "Ligne 1/Colonne 1" est donnee dans l'enonce
 // (pas affichee dans le tableau), mais les 4 cases internes sont TOUTES de vraies cases a remplir,
 // y compris celle-la — la laisser vide indiquerait par construction laquelle des 4 cases correspond
 // au fait donne dans le texte, un indice que le tableau ne doit pas fournir lui-meme. Meme principe
@@ -949,7 +958,7 @@ function tableauCroiseRempliHTML(idx, ex) {
     <tr><td style="${ent}">${ctx.ligne2}</td><td style="${std}">${cellule('tc-c-'+idx)}</td><td style="${std}">${cellule('tc-d-'+idx)}</td><td style="${std}">${totalL2}</td></tr>
     <tr><td style="${ent}">Total</td><td style="${std}">${t.totalC1}</td><td style="${std}">${totalC2}</td><td style="${std}">${t.total}</td></tr>
   </table>`;
-  const questionPct = `<div class="tc-question-pct">${ex.libellePct || `Pourcentage de l'effectif total pour « ${ctx.ligne2} » et « ${ctx.colonne2} » (arrondi au dixième) : `}<input type="text" class="tc-pourcentage" id="tc-pct-${idx}" placeholder="25%" oninput="reinitialiserStatut(${idx});enregistrerSaisieTableauCroise(${idx})"></div>`;
+  const questionPct = `<div class="tc-question-pct">Pourcentage de l'effectif total pour « ${ctx.ligne2} » et « ${ctx.colonne2} » (arrondi au dixième) : <input type="text" class="tc-pourcentage" id="tc-pct-${idx}" placeholder="25%" oninput="reinitialiserStatut(${idx});enregistrerSaisieTableauCroise(${idx})"></div>`;
   const bouton = `<button type="button" class="tc-btn-valider" onclick="verifierUne(${idx})">Valider ce tableau</button>`;
   return `<div class="tc-conteneur"><div class="tc-scroll">${table}</div>${questionPct}${bouton}</div>`;
 }
@@ -1076,7 +1085,7 @@ const CONTEXTES_TABLEAU_CROISE = [
 ];
 function introContexte(ctx, total) { return ctx.intro.replace('{n}', total); }
 // 4 contextes distincts par version de la fiche (sans remise), pour ne jamais montrer deux fois
-// la meme phrase d'introduction entre les quatre tableaux (9.6 a-b, 9.7 c-d)
+// la meme phrase d'introduction entre les quatre contextes (9.6 a-b, 9.7 c-d)
 let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 4);
 
 // ---------- vivier de calculs numeriques (groupe 9.1) : sommes et produits de fractions melanges,
@@ -1227,21 +1236,22 @@ const generateurs = [
     return { enonce:`Dans un lycée, \\(${p1}\\,\\%\\) des \\(${total}\\) élèves sont en filière générale. Parmi eux, \\(${finalV}\\) suivent une spécialité mathématiques. Quel pourcentage des élèves de la filière générale cela représente-t-il ?`, reponsePourcent:p2 };
   }},
   {id:"9.7 c)", type:"pourcentage", texteLibre:true, gen: () => {
-    // lecture plus delicate : « ligne 1 OU colonne 1 » (les deux cas comptes une seule fois), soit tout sauf la case ligne 2 / colonne 2
-    const t = tirerTableauCroise(), ctx = tirageContextesTableau[2];
-    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
-    const p = Math.round((t.total - t.d)/t.total*1000)/10;
-    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Quel pourcentage de l'effectif total correspond à « ${ctx.ligne1} » ou à « ${ctx.colonne1} » (éventuellement aux deux ; arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
+    // aucune table : trois proportions a composer (une part du tout, puis deux pourcentages conditionnels) ; p1 multiple de 20
+    // et p2, p3 multiples de 5 donnent toujours un resultat entier
+    const ctx = tirageContextesTableau[2];
+    const p1 = choix([20,40,60,80]);
+    let p2, p3; do { p2 = alea(2,18)*5; p3 = alea(2,18)*5; } while (p2 === p3);
+    const P = (p1*p2 + (100-p1)*p3)/100;
+    const nombreux = ctx.unite === 'locations' ? 'de nombreuses' : 'de nombreux';
+    return { enonce:`${ctx.intro.replace('{n}', nombreux)} ${p1} % des ${ctx.unite} correspondent à « ${ctx.ligne1} ». Parmi les ${ctx.unite} « ${ctx.ligne1} », ${p2} % correspondent à « ${ctx.colonne1} » et, parmi les ${ctx.unite} « ${ctx.ligne2} », ${p3} % correspondent à « ${ctx.colonne1} ». Quel pourcentage de l'ensemble des ${ctx.unite} correspond à « ${ctx.colonne1} » ?`, reponsePourcent:P };
   }},
-  {id:"9.7 d)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
-    // tableau a completer plus delicat : la case connue est donnee par un POURCENTAGE de l'effectif total (il faut
-    // d'abord en deduire l'effectif), et la proportion demandee est conditionnelle (parmi la colonne 2)
-    let t; do { t = tirerTableauCroise(); } while ((t.a*100) % t.total !== 0 || (t.a*100/t.total) % 5 !== 0);
+  {id:"9.7 d)", type:"pourcentage", texteLibre:true, gen: () => {
+    // deux proportions conditionnelles a calculer puis a comparer : l'ecart se donne en points de pourcentage
+    let t, ecart;
+    do { t = tirerTableauCroise(); ecart = (t.a/t.totalL1 - t.c/(t.total - t.totalL1))*100; } while (ecart < 2);
     const ctx = tirageContextesTableau[3];
-    const pa = t.a*100/t.total;
-    const pourcentageAttendu = Math.round(t.d/(t.total - t.totalC1)*1000)/10;
-    const libellePct = `Parmi les « ${ctx.colonne2} », pourcentage de « ${ctx.ligne2} » (arrondi au dixième) : `;
-    return { enonce:`${introContexte(ctx,t.total)} Seuls les totaux par ligne et par colonne sont connus, ainsi que le fait que ${pa} % des ${ctx.unite} correspondent à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} ». Compléter le tableau ci-dessous, puis calculer le pourcentage demandé.`, t, ctx, pourcentageAttendu, libellePct };
+    const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
+    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}De combien de points de pourcentage la proportion de « ${ctx.colonne1} » parmi les « ${ctx.ligne1} » dépasse-t-elle celle parmi les « ${ctx.ligne2} » (arrondi au dixième) ?`, reponsePoints:Math.round(ecart*10)/10, tolerancePoints:0.15 };
   }}
 ];
 
@@ -1281,6 +1291,9 @@ function aideContextuellePour(ex) {
   if (ex.fractionIrreductible) {
     return "La réponse doit être une seule fraction, déjà simplifiée : <code>2/3</code> et non <code>4/6</code>, ni <code>0,666…</code>, ni un calcul comme <code>1/2+1/6</code>. Si le résultat est un entier, l'écrire tel quel.";
   }
+  if (ex.reponsePoints != null) {
+    return "Donner l'écart sous la forme d'un nombre de points de pourcentage, par exemple <code>12,5</code> (sans le signe <code>%</code>, puisqu'il s'agit d'une différence de pourcentages).";
+  }
   if (ex.exigerPourcent) {
     return "La réponse doit s'écrire avec le symbole <code>%</code> (par exemple <code>25%</code> ou <code>12,5%</code>) : recopier la fraction ou le nombre décimal de l'énoncé ne convient pas.";
   }
@@ -1302,7 +1315,7 @@ function utiliseMathfield(ex) {
 }
 
 function placeholderPour(ex) {
-  if (ex.type === 'pourcentage') return '25%';
+  if (ex.type === 'pourcentage') return ex.reponsePoints != null ? 'réponse' : '25%';
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return '{a;b}';
   return 'réponse';
 }
@@ -1848,6 +1861,7 @@ function verifierUne(idx) {
   }
   let ok;
   if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.reponsePoints != null) ok = checkPoints(val, ex.reponsePoints, ex.tolerancePoints);
   else if (ex.type === 'pourcentage') ok = checkPourcentage(val, ex.reponsePourcent, ex.tolerancePourcent, ex.exigerPourcent);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
@@ -2181,6 +2195,7 @@ function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex));
 function formaterReponseBrut(ex) {
   try {
     if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
+    if (ex.reponsePoints != null) return `${String(ex.reponsePoints).replace('.', '{,}')}\\text{ points de pourcentage}`;
     if (ex.type === 'pourcentage') {
       const p = ex.reponsePourcent;
       const val = Number.isInteger(p) ? String(p) : String(p).replace('.', '{,}');
