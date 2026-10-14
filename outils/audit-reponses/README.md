@@ -29,8 +29,15 @@ Pour les questions qui ne se tapent pas dans un champ mathématique, le corrigé
 | `tableau-corrige-refuse` | erreur | tableau de signes rempli avec la réponse attendue, refusé |
 | `tableau-faux-accepte`, `tableau-incomplet-accepte`, `tableau-seuil-faux-accepte` | erreur | une case changée, une case laissée vide, un seuil décalé de 1 : le tableau est quand même accepté |
 
-Ce contrôle a été testé sur une copie volontairement défectueuse de la fiche 8 de Seconde (case « | » ignorée,
-crochets ignorés, tolérance sur les seuils) : les trois défauts sont détectés.
+| `pourcentage-corrige-refuse` | erreur | le pourcentage du corrigé (« 25% ») tapé dans le champ n'est pas accepté |
+| `pourcentage-faux-accepte`, `pourcentage-nombre-seul-accepte`, `pourcentage-calcul-accepte`, `pourcentage-enonce-accepte` | erreur | une valeur fausse, le nombre sans le signe %, un calcul non terminé (`(40)/2%`) ou l'énoncé recopié (« Écrire 0,06 en pourcentage » → `0,06`) sont acceptés |
+| `points-corrige-refuse`, `points-faux-accepte`, `points-avec-pourcent-accepte` | erreur | écart en points de pourcentage : le nombre (ou « n points ») est refusé / une valeur fausse ou un nombre suivi de % est accepté |
+| `tableau-croise-corrige-refuse` | erreur | tableau d'effectifs à compléter rempli juste (4 cases + pourcentage) et refusé |
+| `tableau-croise-case-fausse-acceptee`, `tableau-croise-case-vide-acceptee`, `tableau-croise-pourcentage-faux-accepte`, `tableau-croise-pourcentage-vide-accepte` | erreur | une case fausse ou vide, un pourcentage faux ou vide : le tableau est quand même accepté |
+
+Ces contrôles ont été testés sur des copies volontairement défectueuses des fiches 8 et 9 de Seconde (case « | » ignorée,
+crochets ignorés, tolérances trop larges, signe % non exigé, calcul accepté, case ignorée dans le tableau d'effectifs) :
+tous les défauts sont détectés.
 
 **Non couvert** : les autres types (QCM, vrai/faux, paire, vecteur, triplet, ensembles `{a;b}` dans un champ
 texte, tableaux croisés et de variations, schéma d'évolution, cercle, pourcentage…) ; ni les autres

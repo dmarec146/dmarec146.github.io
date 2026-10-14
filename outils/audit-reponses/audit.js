@@ -188,6 +188,49 @@ async function auditerDansLaPage(opts) {
       }
       return n;
     }
+    // pourcentages (« 25% », ecart en points de pourcentage) : le corrige tape est accepte ; une valeur fausse, le nombre
+    // seul (sans %), un calcul non termine et l'enonce recopie (« Ecrire 0,06 en pourcentage ») sont refuses
+    if (e.type === 'pourcentage') {
+      if (!document.getElementById('input-' + i)) return 0;
+      const points = e.reponsePoints != null;
+      const val = points ? e.reponsePoints : e.reponsePourcent;
+      if (typeof val !== 'number') return 0;
+      const fr = (x) => String(Math.round(x * 1e6) / 1e6).replace('.', ',');
+      const essais = points
+        ? [['points-corrige-refuse', fr(val), true], ['points-corrige-refuse', fr(val) + ' points', true],
+           ['points-faux-accepte', fr(val + 1), false], ['points-avec-pourcent-accepte', fr(val) + '%', false]]
+        : [['pourcentage-corrige-refuse', fr(val) + '%', true], ['pourcentage-faux-accepte', fr(val + 5) + '%', false],
+           ...(val === 0 ? [] : [['pourcentage-nombre-seul-accepte', fr(val), false]]), ['pourcentage-calcul-accepte', '(' + fr(2 * val) + ')/2%', false]];
+      const m = String(e.enonce || '').match(/\\\((.*?)\\\) en pourcentage/);
+      if (m && !points) essais.push(['pourcentage-enonce-accepte', m[1].replace(/\{,\}/g, ',').replace(/\\[dt]?frac\{(\d+)\}\{(\d+)\}/g, '$1/$2'), false]);
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte + '   => attendu ' + fr(val) + (points ? ' points' : '%'));
+      }
+      return n;
+    }
+    // tableau croise a completer (4 cases + un pourcentage) : bon tableau accepte ; une case fausse, une case vide, un pourcentage faux ou vide refuses
+    if (e.type === 'tableauCroiseRempli' && e.t && typeof reinitialiserTableauCroiseRempli === 'function' && document.getElementById('tc-a-' + i)) {
+      const t = e.t, P = e.pourcentageAttendu, cles = ['a', 'b', 'c', 'd'];
+      const fr = (x) => String(Math.round(x * 1e6) / 1e6).replace('.', ',');
+      const poser = (cases, pct) => { for (const c of cles) document.getElementById(`tc-${c}-${i}`).value = cases[c]; document.getElementById('tc-pct-' + i).value = pct; };
+      const bons = { a: String(t.a), b: String(t.b), c: String(t.c), d: String(t.d) };
+      poser(bons, fr(P) + '%'); n++;
+      if (verifier() !== true) { ajouter('erreur', 'tableau-croise-corrige-refuse', e, JSON.stringify(bons) + ' ' + fr(P) + '%'); reinitialiserTableauCroiseRempli(i); return n; }
+      for (const c of cles) {
+        poser({ ...bons, [c]: String(t[c] + 1) }, fr(P) + '%'); n++;
+        if (verifier() === true) ajouter('erreur', 'tableau-croise-case-fausse-acceptee', e, 'case ' + c + ' : ' + (t[c] + 1) + ' au lieu de ' + t[c]);
+        poser({ ...bons, [c]: '' }, fr(P) + '%'); n++;
+        if (verifier() === true) ajouter('erreur', 'tableau-croise-case-vide-acceptee', e, 'case ' + c + ' vide');
+      }
+      poser(bons, fr(P + 3) + '%'); n++;
+      if (verifier() === true) ajouter('erreur', 'tableau-croise-pourcentage-faux-accepte', e, fr(P + 3) + '% au lieu de ' + fr(P) + '%');
+      poser(bons, ''); n++;
+      if (verifier() === true) ajouter('erreur', 'tableau-croise-pourcentage-vide-accepte', e, 'pourcentage vide');
+      reinitialiserTableauCroiseRempli(i);
+      return n;
+    }
     if (e.type === 'tableauSigne' && typeof restaurerEtatTableauSigne === 'function' && typeof reinitialiserTableauSigne === 'function') {
       const sp = e.spec;
       const frac = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
@@ -227,7 +270,7 @@ async function auditerDansLaPage(opts) {
     }
     for (let i = 0; i < exercices.length; i++) {
       const e = exercices[i];
-      if (e.type === 'intervalle' || e.type === 'discussionParametre' || e.type === 'tableauSigne') { saisies += await auditerStructure(i, e); continue; }
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli'].includes(e.type)) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;

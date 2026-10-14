@@ -310,8 +310,8 @@ les corrections ponctuelles d'une fiche).
 7. **Audit automatique de la validation des réponses** (sans crédits, ~1 à 6 min) :
    `node outils/audit-reponses/audit.js` (fiches modifiées ; `--toutes` pour les 50). Il retape les corrigés,
    teste l'énoncé recopié et le nombre calculé, repère décimales/fractions réductibles/`+0x`/`^1` dans les corrigés,
-   et contrôle intervalles, discussions selon un paramètre et tableaux de signes (corrigé accepté, variantes fausses
-   refusées).
+   et contrôle intervalles, discussions selon un paramètre, tableaux de signes, pourcentages et tableaux d'effectifs
+   (corrigé accepté, variantes fausses refusées).
    **Aucune anomalie nouvelle de gravité « erreur »** avant de pousser (code de sortie 0). `connues.json` = travail
    restant, à vider au fil des corrections. Détail : `outils/audit-reponses/README.md`. Il ne remplace pas le
    recalcul indépendant (point 3).
