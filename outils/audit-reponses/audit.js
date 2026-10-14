@@ -127,6 +127,97 @@ async function auditerDansLaPage(opts) {
     return a.replace(/[{}]/g, (c) => (c === '{' ? '(' : ')')).replace(/\s+/g, '');
   };
   const comparable = (s) => String(s).replace(/\\left|\\right|\\,|\\;|\\!|\s|\{\s*\}/g, '').replace(/\\dfrac|\\tfrac/g, '\\frac');
+  // corrige LaTeX d'un intervalle, d'une reunion ou d'une discussion « si m<3 alors ... » -> texte qu'un eleve taperait
+  const corrigeVersTexte = (tex) => {
+    let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\pi/g, 'pi');
+    a = a.replace(/\\text\{\s*:\s*\}/g, '§A§').replace(/\\text\{\s*;?\s*si\s*\}/g, '§S§');
+    a = a.replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{/g, '§{§').replace(/\\\}/g, '§}§')
+      .replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\gt\s*/g, '>')
+      .replace(/\\(?:emptyset|varnothing)/g, '∅').replace(/\\mathbb\{R\}/g, 'ℝ');
+    a = a.replace(/\\[dt]?frac\{(-?\d+)\}\{(\d+)\}/g, '$1/$2');
+    for (let i = 0; i < 6; i++) a = a.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
+    return a.replace(/\s+/g, '').replace(/§S§/g, ' si ').replace(/§A§/g, ' alors ').replace(/§\{§/g, '{').replace(/§\}§/g, '}');
+  };
+  // champ texte : .value ; champ mathematique (certaines fiches y saisissent les intervalles) : le corrige est injecte en LaTeX,
+  // une variante fausse en ascii-math (jamais .value : MathLive y insere des espaces dans « sqrt »)
+  const saisirTexte = async (idx, t, latex) => {
+    const inp = document.getElementById('input-' + idx);
+    if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); if (latex != null) inp.setValue(latex, { format: 'latex' }); else inp.setValue(t, { format: 'ascii-math' }); } else inp.value = t;
+    await dormir(30);
+  };
+  // D. reponses structurees (hors champs mathematiques) : intervalles, discussion selon un parametre, tableaux de signes
+  async function auditerStructure(i, e) {
+    let n = 0;
+    const verifier = () => { try { return verifierUne(i); } catch (er) { return 'erreur'; } };
+    if (e.type === 'intervalle' || e.type === 'discussionParametre') {
+      if (!document.getElementById('input-' + i)) return 0;
+      let tex; try { tex = formaterReponse(e); } catch (er) { return 0; }
+      const t = corrigeVersTexte(tex);
+      const motifCorrige = e.type === 'intervalle' ? 'intervalle-corrige-refuse' : 'discussion-corrige-refuse';
+      await saisirTexte(i, t, tex); n++;
+      if (verifier() !== true) { ajouter('erreur', motifCorrige, e, t); return n; }
+      const mutations = [];
+      if (e.type === 'intervalle') {
+        const parties = t.split('∪');
+        const analyse = parties.map((p) => p.match(/^([\[\]])([^;]+);([^;\[\]]+)([\[\]])$/));
+        const k = analyse.findIndex((m) => m && (!/inf/.test(m[2]) || !/inf/.test(m[3])));
+        if (k >= 0) {
+          const m = analyse[k], rebati = (cg, a, b, cd) => parties.map((p, j) => (j === k ? cg + a + ';' + b + cd : p)).join('∪');
+          const ouvre = (c) => (c === '[' ? ']' : '[');
+          // crochet inverse sur une borne finie, ou borne finie decalee de 1
+          if (!/inf/.test(m[2])) mutations.push(['crochet-inverse', rebati(ouvre(m[1]), m[2], m[3], m[4])]);
+          else mutations.push(['crochet-inverse', rebati(m[1], m[2], m[3], ouvre(m[4]))]);
+          const b = !/inf/.test(m[3]) ? 3 : 2;
+          if (/^-?\d+$/.test(m[b])) mutations.push(['borne-decalee', b === 3 ? rebati(m[1], m[2], String(+m[3] + 1), m[4]) : rebati(m[1], String(+m[2] + 1), m[3], m[4])]);
+        }
+        // borne fractionnaire a donner sous forme irreductible : p/q recopiee en 2p/2q doit etre refusee
+        if (e.bornesIrreductibles) {
+          const fr = t.match(/(-?)(\d+)\/(\d+)/);
+          if (fr) mutations.push(['borne-non-irreductible', t.replace(fr[0], fr[1] + (2 * fr[2]) + '/' + (2 * fr[3]))]);
+        }
+      } else {
+        const cas = t.split(' si ').map((c) => c.trim()).filter(Boolean).map((c) => c.split(' alors '));
+        if (cas.length >= 2 && cas.every((c) => c.length === 2) && cas[0][1] !== cas[1][1]) {
+          const echange = [[cas[0][0], cas[1][1]], [cas[1][0], cas[0][1]], ...cas.slice(2)];
+          mutations.push(['cas-echanges', echange.map((c) => 'si ' + c[0] + ' alors ' + c[1]).join(' ; ')]);
+        }
+      }
+      for (const [nom, texte] of mutations) {
+        await saisirTexte(i, texte); n++;
+        if (verifier() === true) ajouter('erreur', (e.type === 'intervalle' ? 'intervalle-faux-accepte' : 'discussion-faux-acceptee'), e, nom + ' : ' + texte + '   => attendu ' + t);
+      }
+      return n;
+    }
+    if (e.type === 'tableauSigne' && typeof restaurerEtatTableauSigne === 'function' && typeof reinitialiserTableauSigne === 'function') {
+      const sp = e.spec;
+      const frac = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
+      const etat = () => { const o = { seuils: sp.seuils.map((z) => frac(z.valeur)), lignes: {}, finale: sp.finale ? sp.finale.slice() : [] }; sp.lignes.forEach((l, li) => { o.lignes[li] = l.valeurs.slice(); }); return o; };
+      const poser = (o) => { reinitialiserTableauSigne(i, e); restaurerEtatTableauSigne(i, e, o); };
+      const cycle = ['+', '-', '0', '|', '‖'];
+      poser(etat()); n++;
+      if (verifier() !== true) { ajouter('erreur', 'tableau-corrige-refuse', e, JSON.stringify(etat())); reinitialiserTableauSigne(i, e); return n; }
+      const cases = [];
+      sp.lignes.forEach((l, li) => l.valeurs.forEach((v, c) => cases.push([li, c, v])));
+      if (sp.finale) sp.finale.forEach((v, c) => cases.push(['fin', c, v]));
+      for (const [li, c, v] of cases) {
+        const o = etat(), faux = cycle[(cycle.indexOf(v) + 1) % cycle.length];
+        if (li === 'fin') o.finale[c] = faux; else o.lignes[li][c] = faux;
+        poser(o); n++;
+        if (verifier() === true) ajouter('erreur', 'tableau-faux-accepte', e, 'case ' + li + '/' + c + ' : ' + v + ' remplace par ' + faux);
+        const o2 = etat(); if (li === 'fin') o2.finale[c] = ''; else o2.lignes[li][c] = '';
+        poser(o2); n++;
+        if (verifier() === true) ajouter('erreur', 'tableau-incomplet-accepte', e, 'case ' + li + '/' + c + ' vide');
+      }
+      for (let j = 0; j < sp.seuils.length; j++) {
+        const o = etat(); o.seuils[j] = frac(sp.seuils[j].valeur + 1);
+        poser(o); n++;
+        if (verifier() === true) ajouter('erreur', 'tableau-seuil-faux-accepte', e, 'seuil ' + j + ' : ' + o.seuils[j] + ' au lieu de ' + frac(sp.seuils[j].valeur));
+      }
+      reinitialiserTableauSigne(i, e);
+      return n;
+    }
+    return 0;
+  }
   let saisies = 0;
   for (let tour = 0; tour < opts.tiragesSaisie; tour++) {
     if (tour > 0) {
@@ -136,6 +227,7 @@ async function auditerDansLaPage(opts) {
     }
     for (let i = 0; i < exercices.length; i++) {
       const e = exercices[i];
+      if (e.type === 'intervalle' || e.type === 'discussionParametre' || e.type === 'tableauSigne') { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;

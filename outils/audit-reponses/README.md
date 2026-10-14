@@ -16,8 +16,29 @@ les fiches de calcul acceptent et refusent, **en prenant le corrigé comme réf�
 | `corrige-signe-au-numerateur`, `corrige-multiplication-apres-fraction` | style | −a/b écrit (−a)/b ; « 3/4 × x » |
 | `erreur-de-page` | erreur | une erreur JavaScript à l'ouverture de la fiche |
 
+### Réponses structurées (ajouté le 14/10/2026)
+
+Pour les questions qui ne se tapent pas dans un champ mathématique, le corrigé affiché est converti en ce qu'un
+élève taperait (ou le tableau est rempli case par case), puis on contrôle la validation :
+
+| Motif | Gravité | Sens |
+|---|---|---|
+| `intervalle-corrige-refuse` | erreur | l'intervalle / la réunion du corrigé, tapé dans le champ, n'est pas accepté |
+| `intervalle-faux-accepte` | erreur | le même intervalle avec un crochet inversé ou une borne décalée de 1 est accepté ; ou, si la question exige des bornes irréductibles, une borne `p/q` écrite `2p/2q` est acceptée |
+| `discussion-corrige-refuse`, `discussion-faux-acceptee` | erreur | discussion selon un paramètre : le corrigé n'est pas accepté / les deux premiers cas échangés sont acceptés |
+| `tableau-corrige-refuse` | erreur | tableau de signes rempli avec la réponse attendue, refusé |
+| `tableau-faux-accepte`, `tableau-incomplet-accepte`, `tableau-seuil-faux-accepte` | erreur | une case changée, une case laissée vide, un seuil décalé de 1 : le tableau est quand même accepté |
+
+Ce contrôle a été testé sur une copie volontairement défectueuse de la fiche 8 de Seconde (case « | » ignorée,
+crochets ignorés, tolérance sur les seuils) : les trois défauts sont détectés.
+
+**Non couvert** : les autres types (QCM, vrai/faux, paire, vecteur, triplet, ensembles `{a;b}` dans un champ
+texte, tableaux croisés et de variations, schéma d'évolution, cercle, pourcentage…) ; ni les autres
+écritures possibles d'un même intervalle (seule la forme du corrigé est essayée).
+
 **Il ne vérifie pas que le corrigé est mathématiquement juste** (recalcul indépendant à faire fiche par fiche),
-ni toutes les mauvaises réponses possibles : seulement celles qu'il essaie (énoncé recopié, nombre calculé).
+ni toutes les mauvaises réponses possibles : seulement celles qu'il essaie (énoncé recopié, nombre calculé,
+variations d'un intervalle ou d'un tableau).
 
 ## Utilisation
 
