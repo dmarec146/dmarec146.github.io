@@ -167,6 +167,32 @@ async function auditerDansLaPage(opts) {
   async function auditerStructure(i, e) {
     let n = 0;
     const verifier = () => { try { return verifierUne(i); } catch (er) { return 'erreur'; } };
+    // tableau de variations a completer (abscisses des extrema, fleches, valeurs) : le bon tableau est accepte ; une fleche inversee, une valeur
+    // fausse, une abscisse fausse, une case vide sont refuses
+    if (e.type === 'tableauVariations' && Array.isArray(e.seuils) && typeof reinitialiserTableauVariations === 'function' && document.getElementById('tv-y-' + i + '-0')) {
+      const k = e.seuils.length;
+      const remplir = (modif) => {
+        reinitialiserTableauVariations(i, e);
+        for (let j = 1; j < k - 1; j++) document.getElementById('tv-x-' + i + '-' + j).value = String(e.seuils[j].x + (modif && modif.x === j ? 1 : 0));
+        for (let j = 0; j < k - 1; j++) { const att = e.seuils[j + 1].y > e.seuils[j].y ? '↗' : '↘'; document.getElementById('tv-fleche-' + i + '-' + j).textContent = modif && modif.fleche === j ? (att === '↗' ? '↘' : '↗') : att; }
+        for (let j = 0; j < k; j++) document.getElementById('tv-y-' + i + '-' + j).value = String(e.seuils[j].y + (modif && modif.y === j ? 1 : 0));
+      };
+      const essais = [['tableau-variations-corrige-refuse', null, true], ['tableau-variations-fleche-fausse-acceptee', { fleche: 0 }, false], ['tableau-variations-valeur-fausse-acceptee', { y: k - 1 }, false],
+        ['tableau-variations-valeur-fausse-acceptee', { y: 0 }, false]];
+      if (k > 2) essais.push(['tableau-variations-abscisse-fausse-acceptee', { x: 1 }, false]);
+      for (const [motif, modif, attendu] of essais) {
+        remplir(modif); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, JSON.stringify(modif || 'tableau juste'));
+      }
+      // une case vide : jamais accepte
+      remplir(null); document.getElementById('tv-y-' + i + '-0').value = ''; n++;
+      if (verifier() === true) ajouter('erreur', 'tableau-variations-case-vide-acceptee', e, 'valeur de depart vide');
+      remplir(null); document.getElementById('tv-fleche-' + i + '-0').textContent = ''; n++;
+      if (verifier() === true) ajouter('erreur', 'tableau-variations-case-vide-acceptee', e, 'fleche vide');
+      try { reinitialiserTableauVariations(i, e); } catch (er) { /* sans reinitialisation */ }
+      return n;
+    }
     if (e.type === 'intervalle' || e.type === 'discussionParametre') {
       if (!document.getElementById('input-' + i)) return 0;
       let tex; try { tex = formaterReponse(e); } catch (er) { return 0; }
@@ -480,7 +506,7 @@ async function auditerDansLaPage(opts) {
       const e = exercices[i];
       const champTexte = (() => { const el = document.getElementById('input-' + i); return !!el && el.tagName !== 'MATH-FIELD'; })();
       const ensembleEnExtension = e.type === 'num' && typeof e.reponse === 'string' && e.reponse.trim().startsWith('{') && champTexte;
-      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs', 'approx', 'tableauProgramme'].includes(e.type) || (e.type === 'texte' && e.comparaison) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs', 'approx', 'tableauProgramme', 'tableauVariations'].includes(e.type) || (e.type === 'texte' && e.comparaison) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;
