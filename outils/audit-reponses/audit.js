@@ -292,6 +292,63 @@ async function auditerDansLaPage(opts) {
       }
       return n;
     }
+    // valeur lue ou approchee (lecture graphique, tolerance t) : la valeur exacte et une valeur a t/2 pres (point ou virgule decimale) sont
+    // acceptees ; une valeur a 2t, du texte, un champ vide sont refuses. Plusieurs racines possibles (typeApprox « racine ») : n'importe laquelle.
+    // Une tolerance de plus de 0,2 est signalee (regle des lectures graphiques : 0,2).
+    if (e.type === 'approx' && e.tolerance > 0) {
+      if (!document.getElementById('input-' + i)) return 0;
+      const racines = Array.isArray(e.valeurApprox) ? e.valeurApprox : [e.valeurApprox];
+      if (!racines.length || racines.some((x) => typeof x !== 'number')) return 0;
+      const t = e.tolerance, v = racines[0];
+      const dec = (x, virgule) => { const s = String(Math.round(x * 1000) / 1000); return virgule ? s.replace('.', ',') : s; };
+      // un point a plus de 2t de toutes les racines
+      let loin = v + 2 * t; for (let k = 0; k < 10 && racines.some((x) => Math.abs(x - loin) <= t + 1e-9); k++) loin += t;
+      const essais = [['approx-corrige-refuse', dec(v), true], ['approx-corrige-refuse', dec(v + t / 2, true), true], ['approx-corrige-refuse', dec(v - t / 2), true],
+        ['approx-faux-accepte', dec(loin), false], ['approx-faux-accepte', 'abc', false], ['approx-faux-accepte', '', false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, (texte || '(vide)') + '   => attendu ' + dec(v) + ' a ' + t + ' pres');
+      }
+      if (t > 0.2 + 1e-9) ajouter('style', 'lecture-tolerance-superieure-a-0,2', e, 'tolerance ' + t);
+      return n;
+    }
+    // comparaison de deux images « f(x1)<f(x2) » : le corrige est accepte (aussi avec espaces) ; le sens inverse, l'inegalite large, le symbole seul,
+    // une autre fonction et le signe = sont refuses
+    if (e.type === 'texte' && e.comparaison && typeof e.reponse === 'string') {
+      if (!document.getElementById('input-' + i)) return 0;
+      const m = e.reponse.replace(/\s/g, '').match(/^(\w+)\((\w+)\)([<>])(\w+)\((\w+)\)$/);
+      if (!m) return 0;
+      const [, f1, a1, sg, f2, a2] = m, ce = (s) => f1 + '(' + a1 + ')' + s + f2 + '(' + a2 + ')';
+      const oppose = sg === '<' ? '>' : '<', autre = f1 === 'f' ? 'g' : 'f';
+      const essais = [['comparaison-corrige-refuse', ce(sg), true], ['comparaison-corrige-refuse', f1 + '(' + a1 + ') ' + sg + ' ' + f2 + '(' + a2 + ')', true],
+        ['comparaison-faux-accepte', ce(oppose), false], ['comparaison-faux-accepte', ce(sg + '='), false], ['comparaison-faux-accepte', ce('='), false],
+        ['comparaison-symbole-seul-accepte', sg, false], ['comparaison-faux-accepte', autre + '(' + a1 + ')' + sg + autre + '(' + a2 + ')', false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte + '   => attendu ' + e.reponse);
+      }
+      return n;
+    }
+    // tableau de programme de calcul (une image a calculer, un antecedent a determiner) : le bon tableau est accepte ; une case fausse,
+    // une case vide, les deux cases echangees sont refuses
+    if (e.type === 'tableauProgramme' && typeof reinitialiserTableauProgramme === 'function' && document.getElementById('tp-img-' + i)) {
+      const img = document.getElementById('tp-img-' + i), ant = document.getElementById('tp-ant-' + i);
+      const remplir = (a, b) => { img.value = a; ant.value = b; };
+      const bonI = e.resultatK3, bonA = e.x0;
+      const essais = [['tableau-programme-corrige-refuse', String(bonI), String(bonA), true], ['tableau-programme-case-fausse-acceptee', String(bonI + 1), String(bonA), false],
+        ['tableau-programme-case-fausse-acceptee', String(bonI), String(bonA + 1), false], ['tableau-programme-case-vide-acceptee', '', String(bonA), false],
+        ['tableau-programme-case-vide-acceptee', String(bonI), '', false]];
+      if (bonI !== bonA) essais.push(['tableau-programme-cases-echangees-acceptees', String(bonA), String(bonI), false]);
+      for (const [motif, a, b, attendu] of essais) {
+        remplir(a, b); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, 'image=' + (a || '(vide)') + ' antecedent=' + (b || '(vide)') + '   => attendu image=' + bonI + ' antecedent=' + bonA);
+      }
+      try { reinitialiserTableauProgramme(i); } catch (er) { /* sans reinitialisation */ }
+      return n;
+    }
     // inequation avec valeur absolue « |x-3|<=5 » (ecrire un encadrement sous cette forme) : le corrige est accepte ;
     // sens ou inclusion inverse, centre ou rayon decale, reponse qui n'est pas de la forme demandee refuses
     if (e.type === 'valAbs' && typeof e.aAttendu === 'number' && e.sensAttendu) {
@@ -423,7 +480,7 @@ async function auditerDansLaPage(opts) {
       const e = exercices[i];
       const champTexte = (() => { const el = document.getElementById('input-' + i); return !!el && el.tagName !== 'MATH-FIELD'; })();
       const ensembleEnExtension = e.type === 'num' && typeof e.reponse === 'string' && e.reponse.trim().startsWith('{') && champTexte;
-      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs'].includes(e.type) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs', 'approx', 'tableauProgramme'].includes(e.type) || (e.type === 'texte' && e.comparaison) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;

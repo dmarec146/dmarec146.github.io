@@ -8296,3 +8296,10 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **26 questions en 7 calculs** (4, 4, 4, 2, 4, 4, 4).
 - **Barème** (`fiche-S14.json`, ajouté à `appliquer-bareme.js` et `fiches-a-bareme.json`) : **base 16 points, bonus 6** — 14.1 : 4 × 0,5 ; 14.2 : 0,5 / 0,5 / 0,75 / 1 ; 14.3 : 0,5 / 0,5 / 0,75 / 1 ; 14.4 : 0,5 / 1,25 ; 14.5 : 0,5 / 1 / 0,75 / 1,25 ; 14.6 : 0,5 / 0,75 / 0,75 / 1,25 ; avancés 14.7 (bonus) : 1 / 1,75 / 1,25 / 2.
 - **Vérifié** : syntaxe 50/50 ; 250 tirages, 6 500 réponses recalculées indépendamment (images, antécédents des deux courbes, inéquations point par point sur le domaine, comparaisons) : 0 écart ; champs réels (corrigés, lecture à ±0,2, intervalles approchés, ensembles) conformes ; notes : tout juste 22/22, cœur 16/16, à vide 0/16 ; aucune erreur de page. Pas d'audit (consigne). À étendre au moment de l'audit : types « tableau de programme », « comparaison de deux images » (14.7 c, d) et « approx ».
+
+## 2026-10-15 — Audit étendu (approx, comparaison de deux images, tableau de programme) et audit de la fiche 14 de Seconde
+
+- **Demande de David** : « lance l'audit et étend ».
+- **Ajouts à l'audit** (motifs dans le README) : **`approx`** (valeur lue à une tolérance t, une ou plusieurs racines : exacte et ±t/2, avec point ou virgule, acceptées ; à plus de 2t, texte, vide refusés ; tolérance > 0,2 signalée en style, règle des lectures graphiques) ; **comparaison de deux images** `f(x1)<f(x2)` (corrigé et variante avec espaces acceptés ; sens inverse, `<=`, `=`, autre fonction, symbole seul refusés) ; **tableau de programme de calcul** (bon tableau accepté ; case fausse, case vide, cases échangées refusées).
+- **Test de détection** sur une copie défectueuse de la fiche 14 (tolérance triplée, racines non contrôlées, symbole de comparaison ignoré, case « antécédent » non vérifiée) : les défauts sont détectés (tableau, valeur approchée, comparaison).
+- **Résultats** : **fiche 14 OK (1 696 saisies)** ; Seconde 1, 3 : OK ; Seconde 15, 17 : aucune erreur de réponse (style « énoncé redondant » seulement : 15.4, 17.3, 17.5, à traiter lors du balayage de ces fiches).
