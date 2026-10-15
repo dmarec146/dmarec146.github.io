@@ -440,6 +440,19 @@ async function auditerDansLaPage(opts) {
         let ok; try { ok = verifierUne(i); } catch (er) { ok = null; }
         if (ok === false) ajouter('avertissement', 'corrige-refuse', e, tex);
       }
+      // A'. couple / triplet ordonne « (a;b) » : accolades, valeurs sans parentheses, valeur fausse, valeur manquante et ordre inverse refuses
+      if (estMF && typeof e.reponse === 'string' && /^\(.*;.*\)$/.test(e.reponse.trim())) {
+        const el = e.reponse.trim().slice(1, -1).split(';');
+        const nums = el.map((x) => { try { return math.evaluate(x); } catch (er) { return NaN; } });
+        const essais = [['tuple-accolades-accepte', '{' + el.join(';') + '}'], ['tuple-sans-parentheses-accepte', el.join(';')],
+          ['tuple-valeur-fausse-acceptee', '(' + el.map((x, k) => (k === 0 ? '(' + x + ')+1' : x)).join(';') + ')'], ['tuple-incomplet-accepte', '(' + el[0] + ')']];
+        if (nums.some((v, k) => Math.abs(v - nums[nums.length - 1 - k]) > 1e-9)) essais.push(['tuple-ordre-accepte', '(' + el.slice().reverse().join(';') + ')']);
+        for (const [motif, texte] of essais) {
+          inp.setValue(texte, { format: 'ascii-math' }); await dormir(30); saisies++;
+          let okT; try { okT = verifierUne(i); } catch (er) { okT = null; }
+          if (okT === true) ajouter('erreur', motif, e, texte + '   => attendu ' + e.reponse);
+        }
+      }
       // B. enonce recopie : accepte a tort ?
       let s = String(e.enonce || '').replace(/\\\(|\\\)/g, '').trim();
       if (!s || s.length > 160 || /[=<>]|\\leq|\\geq|\\text|\\forall|\\in\b|\\mathbb|:/.test(s) || /[A-Za-zÀ-ÿ]{4,}/.test(s.replace(/\\[a-zA-Z]+/g, ''))) continue;

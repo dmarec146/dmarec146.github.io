@@ -120,8 +120,11 @@ les corrections ponctuelles d'une fiche).
   **La nomenclature mathématique est toujours respectée, dans les énoncés comme dans les réponses attendues
   (David, 15/10/2026)** : les **coordonnées d'un point** s'écrivent `(x;y)` (parenthèses, abscisse puis ordonnée, ordre
   contrôlé), **jamais `{x;y}`** (notation d'un ensemble, où l'ordre ne compte pas). Les accolades sont réservées aux
-  ensembles de solutions. Corrigé en Seconde 17.6 d (type `point:true`, `checkPoint`) ; les autres questions de
-  coordonnées utilisent déjà le type `paire` avec `formePoint`.
+  ensembles de solutions. **Plusieurs valeurs demandées dans un ordre** (coordonnées, moyenne puis médiane, effectif
+  puis moyenne…) : un **couple / triplet `(a;b)`** — réponse `reponse:\`(${a};${b})\`` dans le générateur, parenthèses et
+  ordre contrôlés (`estTuple`, `checkTuple`, `tupleVersLatex`, clavier « Couple » ; décidé par David le 15/10/2026) ;
+  **accolades `{a;b}` seulement si l'ordre n'a aucune importance** (ensemble de solutions). Fiches 17 (17.6 d, e), 18, 19, 20
+  converties ; les questions de coordonnées de points des autres fiches utilisent le type `paire` avec `formePoint`.
 - Un calcul à **une seule question** : pas de lettre a), carte pleine largeur
   (`question-seule`) ; énoncé long : option `pleineLargeur`. Pas de « = »
   ajouté après une phrase ou une question (`sansEgal:true`).

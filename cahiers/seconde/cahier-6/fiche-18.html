@@ -2127,19 +2127,19 @@ const generateurs = [
   {id:"18.3 a)", type:"num", texteLibre:true, gen: () => {
     const brut = tirerDistincts(5, 0, 20);
     const { moyenne, mediane } = calculerMoyenneMediane(brut);
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${moyenne};${mediane}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})` };
   }},
   {id:"18.3 b)", type:"num", texteLibre:true, gen: () => {
     const brut = tirerDistincts(6, 0, 20);
     const { moyenne, mediane } = calculerMoyenneMediane(brut);
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${moyenne};${mediane}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})` };
   }},
   {id:"18.3 c)", type:"num", texteLibre:true, gen: () => {
     const s = new Set();
     while (s.size < 5) s.add(entierSigne(1, 15));
     const brut = [...s];
     const { moyenne, mediane } = calculerMoyenneMediane(brut);
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${moyenne};${mediane}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})` };
   }},
   {id:"18.3 d)", type:"num", texteLibre:true, gen: () => {
     let M, v1, v2, v3, v4, v5;
@@ -2160,14 +2160,14 @@ const generateurs = [
     const brut = tirerDistincts(n, 0, 25);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${q1};${q3}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${q1};${q3})` };
   }},
   {id:"18.4 b)", type:"num", texteLibre:true, gen: () => {
     const n = 9;
     const brut = tirerDistincts(n, 0, 30);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`{${q1};${q3}}` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${q1};${q3})` };
   }},
   {id:"18.4 c)", type:"num", texteLibre:true, gen: () => {
     const n = 12;
@@ -2182,7 +2182,7 @@ const generateurs = [
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
     const etendue = tri[n - 1] - tri[0];
-    return { enonce:`Calculer l'étendue et l'écart interquartile de la série suivante : \\(${brut.join('\\,;\\,')}\\).`, reponse:`{${etendue};${q3 - q1}}` };
+    return { enonce:`Calculer l'étendue et l'écart interquartile de la série suivante : \\(${brut.join('\\,;\\,')}\\).`, reponse:`(${etendue};${q3 - q1})` };
   }},
 
   // ---------- 17.5 : moyenne ponderee a partir d'un tableau d'effectifs (a/b) ou de frequences
@@ -2260,7 +2260,7 @@ const generateurs = [
     const k = choix([2, 3, 4, -2, -3]);
     const c = entierSigne(1, 10);
     const nouvelleMoyenne = k*M + c, nouvelEcart = Math.abs(k) * S;
-    return { enonce:`Une série statistique a pour moyenne \\(${M}\\) et écart type \\(${S}\\). On multiplie chaque valeur de cette série par \\(${k}\\), puis on ajoute \\(${c}\\) à chaque résultat obtenu. Donner la moyenne et l'écart type de la nouvelle série.`, reponse:`{${nouvelleMoyenne};${nouvelEcart}}` };
+    return { enonce:`Une série statistique a pour moyenne \\(${M}\\) et écart type \\(${S}\\). On multiplie chaque valeur de cette série par \\(${k}\\), puis on ajoute \\(${c}\\) à chaque résultat obtenu. Donner la moyenne et l'écart type de la nouvelle série.`, reponse:`(${nouvelleMoyenne};${nouvelEcart})` };
   }},
   {id:"18.6 e)", type:"num", texteLibre:true, gen: () => {
     const n = choix([7, 9, 11]);
@@ -2269,7 +2269,7 @@ const generateurs = [
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
     const mediane = tri[(n - 1) / 2];
     const c = entierSigne(1, 10);
-    return { enonce:`Une série statistique de ${n} valeurs est donnée par \\(${brut.join('\\,;\\,')}\\). On ajoute \\(${c}\\) à chacune de ses valeurs pour former une nouvelle série. Sans retrier ni recalculer toute la série, donner la médiane et l'écart interquartile de cette nouvelle série.`, reponse:`{${mediane + c};${q3 - q1}}` };
+    return { enonce:`Une série statistique de ${n} valeurs est donnée par \\(${brut.join('\\,;\\,')}\\). On ajoute \\(${c}\\) à chacune de ses valeurs pour former une nouvelle série. Sans retrier ni recalculer toute la série, donner la médiane et l'écart interquartile de cette nouvelle série.`, reponse:`(${mediane + c};${q3 - q1})` };
   }},
 
   // ---------- 17.7 : meme diagramme en batons utilise pour les trois indicateurs a la fois
@@ -2283,7 +2283,7 @@ const generateurs = [
     const N = k === 4 ? choix([12,16,18]) : choix([16,18,20]);
     const effectifs = repartirEffectifs(k, N, 1);
     const { moyenne, etendue, mediane } = statsDepuisDiagramme(valeurs, effectifs);
-    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`{${moyenne};${etendue};${mediane}}` };
+    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`(${moyenne};${etendue};${mediane})` };
   }},
   {id:"18.7 b)", type:"num", texteLibre:true, gen: () => {
     const k = choix([4,5]);
@@ -2291,7 +2291,7 @@ const generateurs = [
     const N = k === 4 ? choix([11,13,15]) : choix([15,17,19]);
     const effectifs = repartirEffectifs(k, N, 1);
     const { moyenne, etendue, mediane } = statsDepuisDiagramme(valeurs, effectifs);
-    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`{${moyenne};${etendue};${mediane}}` };
+    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`(${moyenne};${etendue};${mediane})` };
   }},
 
   // ---------- 17.8 : diagramme circulaire, pourcentage affiche sur chaque secteur. Comme pour
@@ -2311,7 +2311,7 @@ const generateurs = [
     const pourcentages = parts.map(p => p * (100 / D));
     const effectifs = parts.map(p => p * M);
     const [i1, i2, iCache] = melanger([...Array(k).keys()]).slice(0, 3);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`{${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]}}` };
+    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`(${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]})` };
   }},
   {id:"18.8 b)", type:"num", texteLibre:true, gen: () => {
     const D = choix([4,5,10]);
@@ -2323,7 +2323,7 @@ const generateurs = [
     const pourcentages = parts.map(p => p * (100 / D));
     const effectifs = parts.map(p => p * M);
     const [i1, i2, iCache] = melanger([...Array(k).keys()]).slice(0, 3);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`{${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]}}` };
+    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`(${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]})` };
   }},
 
   // ---------- 17.9 : diagramme en boite -- meme principe qu'en 17.7/17.8 (David, 2026-09-20) : UN
@@ -2337,7 +2337,7 @@ const generateurs = [
     const s = genererBoite('', 0, nbCrans, pas);
     const etendue = s.max - s.min, ecart = s.q3 - s.q1;
     const xmax = nbCrans * pas;
-    return { enonce:`${svgDiagrammeBoite([s], -pas, xmax, pas)}Le diagramme en boîte ci-dessus représente une série statistique. Donner l'étendue de cette série, son écart interquartile \\(Q_3-Q_1\\), puis sa médiane.`, reponse:`{${etendue};${ecart};${s.mediane}}` };
+    return { enonce:`${svgDiagrammeBoite([s], -pas, xmax, pas)}Le diagramme en boîte ci-dessus représente une série statistique. Donner l'étendue de cette série, son écart interquartile \\(Q_3-Q_1\\), puis sa médiane.`, reponse:`(${etendue};${ecart};${s.mediane})` };
   }},
   {id:"18.9 b)", type:"num", texteLibre:true, margeLecture:0.2, gen: () => {
     const pas = 5, nbCrans = choix([8,9,10]);
@@ -2345,7 +2345,7 @@ const generateurs = [
     const sB = genererBoite('Série B', 0, nbCrans, pas);
     const xmax = nbCrans * pas;
     const ecartA = sA.q3 - sA.q1, ecartB = sB.q3 - sB.q1;
-    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner la médiane et l'écart interquartile de la série A, puis la médiane et l'écart interquartile de la série B.`, reponse:`{${sA.mediane};${ecartA};${sB.mediane};${ecartB}}` };
+    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner la médiane et l'écart interquartile de la série A, puis la médiane et l'écart interquartile de la série B.`, reponse:`(${sA.mediane};${ecartA};${sB.mediane};${ecartB})` };
   }}
 ];
 
@@ -2457,6 +2457,7 @@ function necessiteAide(ex) {
   if (ex.type === 'tableauVariations') return true;
   if (ex.fractionIrreductible) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
+  if (estTuple(ex)) return true;
   return false;
 }
 
@@ -2487,6 +2488,9 @@ function aideContextuellePourBase(ex) {
   if (ex.fractionIrreductible) {
     return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
   }
+  if (estTuple(ex)) {
+    return "Écrire les valeurs demandées entre parenthèses, séparées par un point-virgule, <strong>dans l'ordre où elles sont demandées</strong> : par exemple <code>(2;5)</code>. Une valeur peut être une fraction, par exemple <code>(7/2;-3)</code>. Pour les coordonnées d'un point : <code>(abscisse;ordonnée)</code>.";
+  }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     const exemples = nbElementsEnsemble(ex) > 2
       ? { simple: '{-2;2;5}', fraction: '{7/2;-3;1/4}' }
@@ -2499,7 +2503,7 @@ function aideContextuellePourBase(ex) {
 const TYPES_MATHFIELD = ['num'];
 
 function estEnsemble(ex) {
-  return !!(ex.reponse && ex.reponse.trim().startsWith('{'));
+  return estTuple(ex) || !!(ex.reponse && ex.reponse.trim().startsWith('{'));
 }
 // nombre de valeurs attendues dans une reponse "{a;b}" / "{a;b;c}" (17.7 combine desormais 3
 // indicateurs en une seule reponse -- le placeholder/l'aide doivent suivre, pas rester figes a 2).
@@ -2519,6 +2523,7 @@ function placeholderPour(ex) {
   }
   if (ex.type === 'approx') return 'valeur approchée';
   if (ex.type === 'intervalle') return ']a;b[';
+  if (estTuple(ex)) return '(' + ['a','b','c','d'].slice(0, nbElementsTuple(ex)).join(';') + ')';
   // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
   // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
   // il faut les echapper pour obtenir de vraies accolades visibles.
@@ -2596,8 +2601,26 @@ function genererClavierComparaison(idx, ex) {
       <div class="clavier-apercu">Astuce : écrire la comparaison complète, par exemple « ${ex.nomFonction}(${v1})&gt;${ex.nomFonction}(${v2}) ».</div>`;
 }
 
+// clavier d'un couple / triplet : parentheses et point-virgule
+function genererClavierTuple(idx) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Couple</span>
+        <button onclick="inserer(${idx},'(')">(</button>
+        <button onclick="inserer(${idx},')')">)</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="inserer(${idx},'√')">√</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « (2;5) » : les valeurs entre parenthèses, séparées par un point-virgule, dans l'ordre demandé.</div>`;
+}
 function genererClavierPour(idx, ex) {
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
+  if (estTuple(ex)) return genererClavierTuple(idx);
   if (ex.comparaison) return genererClavierComparaison(idx, ex);
   return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
@@ -2986,6 +3009,7 @@ function verifierLectureGraphique(ex, val) {
     const c0 = val_(fc, 0), c1 = val_(fc, 1);
     return procheLecture(pente, c1 - c0, marge) && procheLecture(u[0], c0, marge);
   }
+  if (estTuple(ex)) return checkTuple(String(val), ex.reponse, marge);
   if (ex.reponse && String(ex.reponse).trim().startsWith('{')) {
     const liste = (s) => String(s).replace(/[{}]/g, '').split(';').map((x) => x.trim()).filter((x) => x !== '');
     const u = liste(normaliserSaisie(String(val))).map(nombreLu), c = liste(ex.reponse).map(nombreLu);
@@ -2996,6 +3020,30 @@ function verifierLectureGraphique(ex, val) {
   return procheLecture(nombreLu(normaliserSaisie(String(val))), nombreLu(ex.reponse), marge);
 }
 
+// couple / triplet ORDONNE « (a;b) » : parentheses et ordre des valeurs controles (jamais « {a;b} », reserve aux ensembles ou l'ordre ne compte pas)
+function estTuple(ex) { return !!(ex.reponse && /^\(.*;.*\)$/.test(String(ex.reponse).trim())); }
+function nbElementsTuple(ex) { return decouperTuple(ex.reponse).length; }
+// valeurs d'un « (a;b;c) » (separateur « ; » au niveau 0 des parentheses) ; null si la saisie n'est pas entre parentheses
+function decouperTuple(texte) {
+  const t = convertirRacineUnicode(String(texte)).replace(/[∗×·]/g, '*').replace(/(\d),(\d)/g, '$1.$2').replace(/\s/g, '');
+  if (!/^\(.*\)$/.test(t)) return null;
+  const morceaux = []; let niveau = 0, courant = '';
+  for (const c of t.slice(1, -1)) {
+    if (c === '(') niveau++;
+    if (c === ')') niveau--;
+    if (c === ';' && niveau === 0) { morceaux.push(courant); courant = ''; } else courant += c;
+  }
+  morceaux.push(courant);
+  return morceaux;
+}
+// `marge` : tolerance de lecture graphique (0 = valeurs exactes)
+function checkTuple(userInput, correctTuple, marge) {
+  const u = decouperTuple(userInput), c = decouperTuple(correctTuple);
+  if (!u || !c || u.length !== c.length) return false;
+  try {
+    return c.every((v, i) => { const a = math.evaluate(u[i]), b = math.evaluate(v); return typeof a === 'number' && Math.abs(a - b) <= (marge || 0) + 1e-9; });
+  } catch(e) { return false; }
+}
 function checkEnsemble(userInput, correctSet) {
   const nettoyerValeur = (s) => convertirRacineUnicode(s).replace(/[∗×·]/g, '*');
   const nettoyerEtSplit = (s) => nettoyerValeur(s).trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
@@ -3237,7 +3285,7 @@ function parametresForme(ex) {
   // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
   // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
   if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
-  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{') || (typeof estTuple === 'function' && estTuple(ex))) return null;
   if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
   if (v === 'auto') v = formeDepuisEnonce(ex);
   if (!v) return null;
@@ -3293,6 +3341,7 @@ function verifierUne(idx) {
   }
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec, ex.tolerance);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
+  else if (estTuple(ex)) ok = checkTuple(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
@@ -3634,6 +3683,10 @@ function ensembleVersLatex(reponse) {
   elements.push(courant.trim());
   return '\\left\\{' + elements.filter(x => x !== '').map(x => jsVersLatex(x)).join('\\,;\\,') + '\\right\\}';
 }
+// couple / triplet ordonne « (a;b) » -> LaTeX avec parentheses
+function tupleVersLatex(reponse) {
+  return '\\left(' + decouperTuple(reponse).map(x => jsVersLatex(x)).join('\\,;\\,') + '\\right)';
+}
 function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }
 function formaterReponseBrut(ex) {
   try {
@@ -3660,6 +3713,7 @@ function formaterReponseBrut(ex) {
       const texte = formaterIntervalleSpec(ex.intervalleSpec);
       return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
     }
+    if (estTuple(ex)) return tupleVersLatex(ex.reponse);
     if (ex.reponse && ex.reponse.trim().startsWith('{')) return ensembleVersLatex(ex.reponse);
     return jsVersLatex(ex.reponse);
   } catch(e) {

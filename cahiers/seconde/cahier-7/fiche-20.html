@@ -2555,7 +2555,7 @@ const generateurs = [
     const table = tableauCroiseHTML([c.nomA,'non '+c.nomA],[c.nomB,'non '+c.nomB],[[n11,n12],[n21,n22]]);
     const pAB = fracSimplifiee(n11,l1);
     const pBA = fracSimplifiee(n11,c1);
-    return { enonce: table + `Calculer, dans cet ordre, \\(P_{${c.nomA}}(${c.nomB})\\) puis \\(P_{${c.nomB}}(${c.nomA})\\).`, reponse:`{${pAB};${pBA}}`, contexteTexte: texteIntroTableau(c, N) };
+    return { enonce: table + `Calculer, dans cet ordre, \\(P_{${c.nomA}}(${c.nomB})\\) puis \\(P_{${c.nomB}}(${c.nomA})\\).`, reponse:`(${pAB};${pBA})`, contexteTexte: texteIntroTableau(c, N) };
   }},
 
   // ---------- 19.11 (avance) : test de depistage, sensibilite, specificite, faux positifs. Les 2
@@ -2774,6 +2774,7 @@ function necessiteAide(ex) {
   if (ex.type === 'tableauCroiseRempli') return true;
   if (ex.fractionIrreductible) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
+  if (estTuple(ex)) return true;
   return false;
 }
 
@@ -2802,6 +2803,9 @@ function aideContextuellePour(ex) {
   if (ex.fractionIrreductible) {
     return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
   }
+  if (estTuple(ex)) {
+    return "Écrire les valeurs demandées entre parenthèses, séparées par un point-virgule, <strong>dans l'ordre où elles sont demandées</strong> : par exemple <code>(2;5)</code>. Une valeur peut être une fraction, par exemple <code>(7/2;-3)</code>. Pour les coordonnées d'un point : <code>(abscisse;ordonnée)</code>.";
+  }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     const exemples = nbElementsEnsemble(ex) > 2
       ? { simple: '{-2;2;5}', fraction: '{7/2;-3;1/4}' }
@@ -2814,7 +2818,7 @@ function aideContextuellePour(ex) {
 const TYPES_MATHFIELD = ['num'];
 
 function estEnsemble(ex) {
-  return !!(ex.reponse && ex.reponse.trim().startsWith('{'));
+  return estTuple(ex) || !!(ex.reponse && ex.reponse.trim().startsWith('{'));
 }
 // nombre de valeurs attendues dans une reponse "{a;b}" / "{a;b;c}" (certains items combinent desormais 3
 // indicateurs en une seule reponse -- le placeholder/l'aide doivent suivre, pas rester figes a 2).
@@ -2834,6 +2838,7 @@ function placeholderPour(ex) {
   }
   if (ex.type === 'approx') return 'valeur approchée';
   if (ex.type === 'intervalle') return ']a;b[';
+  if (estTuple(ex)) return '(' + ['a','b','c','d'].slice(0, nbElementsTuple(ex)).join(';') + ')';
   // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
   // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
   // il faut les echapper pour obtenir de vraies accolades visibles.
@@ -2911,8 +2916,26 @@ function genererClavierComparaison(idx, ex) {
       <div class="clavier-apercu">Astuce : écrire la comparaison complète, par exemple « ${ex.nomFonction}(${v1})&gt;${ex.nomFonction}(${v2}) ».</div>`;
 }
 
+// clavier d'un couple / triplet : parentheses et point-virgule
+function genererClavierTuple(idx) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Couple</span>
+        <button onclick="inserer(${idx},'(')">(</button>
+        <button onclick="inserer(${idx},')')">)</button>
+        <button onclick="inserer(${idx},';')">;</button>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button onclick="inserer(${idx},'√')">√</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « (2;5) » : les valeurs entre parenthèses, séparées par un point-virgule, dans l'ordre demandé.</div>`;
+}
 function genererClavierPour(idx, ex) {
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
+  if (estTuple(ex)) return genererClavierTuple(idx);
   if (ex.comparaison) return genererClavierComparaison(idx, ex);
   return GROUPE_CHIFFRES(idx) + `
       <div class="clavier-groupe">
@@ -3273,6 +3296,30 @@ function checkEqualNumeric(userInput, correctExpr) {
 // (extension par rapport a la version d'origine de la fiche 6 de Seconde, necessaire ici puisque
 // cette fiche est la premiere ou un ensemble d'antecedents peut legitimement etre vide), et
 // convertit "√" en "sqrt" avant evaluation (necessaire pour les antecedents non entiers) ----------
+// couple / triplet ORDONNE « (a;b) » : parentheses et ordre des valeurs controles (jamais « {a;b} », reserve aux ensembles ou l'ordre ne compte pas)
+function estTuple(ex) { return !!(ex.reponse && /^\(.*;.*\)$/.test(String(ex.reponse).trim())); }
+function nbElementsTuple(ex) { return decouperTuple(ex.reponse).length; }
+// valeurs d'un « (a;b;c) » (separateur « ; » au niveau 0 des parentheses) ; null si la saisie n'est pas entre parentheses
+function decouperTuple(texte) {
+  const t = convertirRacineUnicode(String(texte)).replace(/[∗×·]/g, '*').replace(/(\d),(\d)/g, '$1.$2').replace(/\s/g, '');
+  if (!/^\(.*\)$/.test(t)) return null;
+  const morceaux = []; let niveau = 0, courant = '';
+  for (const c of t.slice(1, -1)) {
+    if (c === '(') niveau++;
+    if (c === ')') niveau--;
+    if (c === ';' && niveau === 0) { morceaux.push(courant); courant = ''; } else courant += c;
+  }
+  morceaux.push(courant);
+  return morceaux;
+}
+// `marge` : tolerance de lecture graphique (0 = valeurs exactes)
+function checkTuple(userInput, correctTuple, marge) {
+  const u = decouperTuple(userInput), c = decouperTuple(correctTuple);
+  if (!u || !c || u.length !== c.length) return false;
+  try {
+    return c.every((v, i) => { const a = math.evaluate(u[i]), b = math.evaluate(v); return typeof a === 'number' && Math.abs(a - b) <= (marge || 0) + 1e-9; });
+  } catch(e) { return false; }
+}
 function checkEnsemble(userInput, correctSet) {
   const nettoyerValeur = (s) => convertirRacineUnicode(s).replace(/[∗×·]/g, '*');
   const nettoyerEtSplit = (s) => nettoyerValeur(s).trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
@@ -3513,7 +3560,7 @@ function parametresForme(ex) {
   // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
   // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
   if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
-  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{') || (typeof estTuple === 'function' && estTuple(ex))) return null;
   if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
   if (v === 'auto') v = formeDepuisEnonce(ex);
   if (!v) return null;
@@ -3584,6 +3631,7 @@ function verifierUne(idx) {
   }
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec, ex.tolerance);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
+  else if (estTuple(ex)) ok = checkTuple(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
@@ -3928,6 +3976,10 @@ function ensembleVersLatex(reponse) {
   elements.push(courant.trim());
   return '\\left\\{' + elements.filter(x => x !== '').map(x => jsVersLatex(x)).join('\\,;\\,') + '\\right\\}';
 }
+// couple / triplet ordonne « (a;b) » -> LaTeX avec parentheses
+function tupleVersLatex(reponse) {
+  return '\\left(' + decouperTuple(reponse).map(x => jsVersLatex(x)).join('\\,;\\,') + '\\right)';
+}
 function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }
 function formaterReponseBrut(ex) {
   try {
@@ -3954,6 +4006,7 @@ function formaterReponseBrut(ex) {
       const texte = formaterIntervalleSpec(ex.intervalleSpec);
       return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
     }
+    if (estTuple(ex)) return tupleVersLatex(ex.reponse);
     if (ex.reponse && ex.reponse.trim().startsWith('{')) return ensembleVersLatex(ex.reponse);
     return jsVersLatex(ex.reponse);
   } catch(e) {
