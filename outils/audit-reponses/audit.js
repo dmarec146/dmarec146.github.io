@@ -106,7 +106,8 @@ async function auditerDansLaPage(opts) {
   for (let k = 0; k < opts.tiragesCorrige; k++) {
     let ex; try { ex = generer(); } catch (e) { continue; }
     for (const e of ex) {
-      if (e.type === 'qcm' || e.type === 'vraifaux' || typeof e.reponse !== 'string' && e.type !== 'intervalle') continue;
+      // les couples / points (type paire : pa et pb, pas de chaine « reponse ») ont eux aussi un corrige affiche a controler
+      if (e.type === 'qcm' || e.type === 'vraifaux' || typeof e.reponse !== 'string' && e.type !== 'intervalle' && e.type !== 'paire') continue;
       let tex; try { tex = formaterReponse(e); } catch (er) { continue; }
       if (typeof tex !== 'string' || !tex) continue;
       const approche = e.type === 'approx' || e.tolerance != null || /\\approx|≈/.test(tex) || /approch|arrondi|valeur approch/i.test(e.enonce || '');
