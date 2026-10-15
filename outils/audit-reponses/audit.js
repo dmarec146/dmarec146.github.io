@@ -269,15 +269,48 @@ async function auditerDansLaPage(opts) {
       const inp = document.getElementById('input-' + i);
       if (!inp || inp.tagName === 'MATH-FIELD') return 0;
       const elements = e.reponse.trim().slice(1, -1).split(';').map((x) => x.trim()).filter(Boolean);
-      if (!elements.length) return 0;
       const ens = (l) => '{' + l.join(';') + '}';
-      const supplementaire = String(Math.max(...elements.map((x) => parseFloat(x))) + 1);
-      const essais = [['ensemble-corrige-refuse', e.reponse, true], ['ensemble-ordre-refuse', ens(elements.slice().reverse()), true],
-        ['ensemble-incomplet-accepte', ens(elements.slice(0, -1)), false], ['ensemble-en-trop-accepte', ens(elements.concat([supplementaire])), false]];
+      const valeur = (x) => { try { return math.evaluate(x); } catch (er) { return NaN; } };
+      let essais;
+      if (!elements.length) {
+        // ensemble vide « {} » : le corrige est accepte ; un ensemble non vide est refuse
+        essais = [['ensemble-corrige-refuse', e.reponse, true], ['ensemble-faux-accepte', '{0}', false]];
+      } else {
+        const supplementaire = String(Math.max(...elements.map((x) => valeur(x))) + 1);
+        essais = [['ensemble-corrige-refuse', e.reponse, true], ['ensemble-ordre-refuse', ens(elements.slice().reverse()), true],
+          ['ensemble-incomplet-accepte', ens(elements.slice(0, -1)), false], ['ensemble-en-trop-accepte', ens(elements.concat([supplementaire])), false],
+          // un element faux (decale de 1) : refuse
+          ['ensemble-faux-accepte', ens(elements.map((x, k) => (k === 0 ? '(' + x + ')+1' : x))), false]];
+        // ensemble des opposes : refuse, sauf si l'ensemble est symetrique (c'est alors le meme ensemble)
+        const symetrique = elements.every((x) => elements.some((y) => Math.abs(valeur(x) + valeur(y)) < 1e-9));
+        if (!symetrique) essais.push(['ensemble-faux-accepte', ens(elements.map((x) => '-(' + x + ')')), false]);
+      }
       for (const [motif, texte, attendu] of essais) {
         await saisirTexte(i, texte); n++;
         const ok = verifier();
         if (attendu ? ok !== true : ok === true) ajouter(motif === 'ensemble-ordre-refuse' ? 'avertissement' : 'erreur', motif, e, texte + '   => attendu ' + e.reponse);
+      }
+      return n;
+    }
+    // inequation avec valeur absolue « |x-3|<=5 » (ecrire un encadrement sous cette forme) : le corrige est accepte ;
+    // sens ou inclusion inverse, centre ou rayon decale, reponse qui n'est pas de la forme demandee refuses
+    if (e.type === 'valAbs' && typeof e.aAttendu === 'number' && e.sensAttendu) {
+      if (!document.getElementById('input-' + i)) return 0;
+      const fr = (v) => String(Math.round(v * 1e6) / 1e6);
+      const terme = (a) => (a === 0 ? 'x' : (a < 0 ? 'x+' + fr(-a) : 'x-' + fr(a)));
+      const forme = (a, sens, r) => '|' + terme(a) + '|' + sens + fr(r);
+      const autreInclusion = e.sensAttendu === '<=' ? '<' : (e.sensAttendu === '<' ? '<=' : (e.sensAttendu === '>=' ? '>' : '>='));
+      const oppose = { '<': '>', '<=': '>=', '>': '<', '>=': '<=' }[e.sensAttendu];
+      const essais = [['valabs-corrige-refuse', forme(e.aAttendu, e.sensAttendu, e.rAttendu), true],
+        ['valabs-faux-accepte', forme(e.aAttendu, autreInclusion, e.rAttendu), false],
+        ['valabs-faux-accepte', forme(e.aAttendu, oppose, e.rAttendu), false],
+        ['valabs-faux-accepte', forme(e.aAttendu + 1, e.sensAttendu, e.rAttendu), false],
+        ['valabs-faux-accepte', forme(e.aAttendu, e.sensAttendu, e.rAttendu + 1), false],
+        ['valabs-hors-forme-accepte', 'x' + e.sensAttendu + fr(e.rAttendu), false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte + '   => attendu ' + forme(e.aAttendu, e.sensAttendu, e.rAttendu));
       }
       return n;
     }
@@ -390,7 +423,7 @@ async function auditerDansLaPage(opts) {
       const e = exercices[i];
       const champTexte = (() => { const el = document.getElementById('input-' + i); return !!el && el.tagName !== 'MATH-FIELD'; })();
       const ensembleEnExtension = e.type === 'num' && typeof e.reponse === 'string' && e.reponse.trim().startsWith('{') && champTexte;
-      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq'].includes(e.type) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs'].includes(e.type) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;

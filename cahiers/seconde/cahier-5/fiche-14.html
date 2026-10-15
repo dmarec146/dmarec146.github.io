@@ -3042,7 +3042,22 @@ function adoucirAffichage(tex) {
   // coefficient nul en tete : y=0e^{-2} x+3e^{-2} -> y=3e^{-2}
   t = t.replace(/=\s*0\s*e(\^\{[^{}]*\})?\s*x\s*(\+\s*|(?=-))/g, '=');
   t = t.replace(/=\s*0\s*e(\^\{[^{}]*\})?\s*x\s*$/, '=0');
+  // virgule decimale francaise : 6.2 -> 6{,}2 (jamais un point dans le corrige affiche)
+  t = t.replace(/(\d)\.(\d)/g, '$1{,}$2');
   return t;
+}
+// ensemble en extension « {a;b} » -> LaTeX avec de vraies accolades (sinon LaTeX les prend pour un groupe et les efface) ; « {} » -> ensemble vide
+function ensembleVersLatex(reponse) {
+  const texte = String(reponse).trim();
+  if (texte === '{}') return '\\emptyset';
+  const elements = []; let niveau = 0, courant = '';
+  for (const c of texte.slice(1, -1)) {
+    if (c === '(') niveau++;
+    if (c === ')') niveau--;
+    if (c === ';' && niveau === 0) { elements.push(courant.trim()); courant = ''; } else courant += c;
+  }
+  elements.push(courant.trim());
+  return '\\left\\{' + elements.filter(x => x !== '').map(x => jsVersLatex(x)).join('\\,;\\,') + '\\right\\}';
 }
 function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }
 function formaterReponseBrut(ex) {
@@ -3070,10 +3085,7 @@ function formaterReponseBrut(ex) {
       const texte = formaterIntervalleSpec(ex.intervalleSpec);
       return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
     }
-    if (ex.reponse && ex.reponse.trim().startsWith('{')) {
-      if (ex.reponse.trim() === '{}') return '\\emptyset';
-      return ex.reponse.replace(/\*/g, '\\times ').replace(/sqrt\(([^()]+)\)/g, '\\sqrt{$1}');
-    }
+    if (ex.reponse && ex.reponse.trim().startsWith('{')) return ensembleVersLatex(ex.reponse);
     return jsVersLatex(ex.reponse);
   } catch(e) {
     return ex.reponse || '';

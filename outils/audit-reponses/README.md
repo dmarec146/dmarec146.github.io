@@ -39,7 +39,8 @@ Pour les questions qui ne se tapent pas dans un champ mathématique, le corrigé
 | `ouinon-corrige-refuse`, `ouinon-faux-accepte`, `ouinon-quelconque-accepte` | erreur | réponse oui / non : « oui » ou « non » juste (aussi en majuscule) refusé / l'inverse ou « peut-être » accepté |
 | `encadrement-corrige-refuse`, `encadrement-faux-accepte`, `encadrement-ecrit-en-intervalle-accepte` | erreur | encadrement `a<=x<b` : le corrigé est refusé / un crochet inversé, une borne décalée ou l'écriture en intervalle `[a;b]` est accepté |
 | `ineq-corrige-refuse`, `ineq-faux-accepte`, `ineq-ecrite-en-intervalle-acceptee` | erreur | inégalité `x>=3` : le corrigé est refusé / un sens inversé, une inclusion inversée, un seuil décalé ou l'intervalle de l'énoncé recopié (`]3;+inf[`) est accepté |
-| `ensemble-corrige-refuse`, `ensemble-incomplet-accepte`, `ensemble-en-trop-accepte`, `ensemble-ordre-refuse` | erreur (ordre : avertissement) | ensemble en extension `{0;1;2}` dans un champ texte : le corrigé est refusé / un élément en moins ou en trop est accepté / l'ordre inversé est refusé |
+| `ensemble-corrige-refuse`, `ensemble-incomplet-accepte`, `ensemble-en-trop-accepte`, `ensemble-faux-accepte`, `ensemble-ordre-refuse` | erreur (ordre : avertissement) | ensemble en extension `{0;1;2}` (éléments entiers, fractionnaires ou irrationnels) dans un champ texte : le corrigé est refusé / un élément en moins ou en trop, un élément décalé de 1, l'ensemble des opposés (si l'ensemble n'est pas symétrique) est accepté / l'ordre inversé est refusé. Ensemble vide `{}` : le corrigé est refusé / `{0}` est accepté (ajouté le 15/10/2026) |
+| `valabs-corrige-refuse`, `valabs-faux-accepte`, `valabs-hors-forme-accepte` | erreur | écrire un encadrement sous la forme `\|x-3\|<=5` : le corrigé est refusé / l'autre inclusion, le sens inverse, un centre ou un rayon décalé de 1, ou une réponse qui n'a pas la forme `x<=5` est accepté (ajouté le 15/10/2026) |
 | `intervalle-tout-refuse`, `intervalle-ecrit-en-inegalite-accepte` | erreur | ℝ écrit `]-inf;+inf[` ou `R` refusé / un intervalle borné écrit `a<x<b` accepté |
 | `schema-corrige-refuse` | erreur | schéma d'évolutions successives (3 taux et 3 coefficients) rempli juste et refusé |
 | `schema-case-fausse-acceptee`, `schema-case-vide-acceptee`, `schema-calcul-accepte` | erreur | une case fausse (taux +1 point, coefficient +0,01), une case vide, un taux écrit en calcul non terminé (`(30)/2%`) : le schéma est quand même accepté |
@@ -48,8 +49,8 @@ Ces contrôles ont été testés sur des copies volontairement défectueuses des
 crochets ignorés, tolérances trop larges, signe % non exigé, calcul accepté, case ignorée dans le tableau d'effectifs ou
 dans le schéma d'évolution) : tous les défauts sont détectés.
 
-**Non couvert** : les autres types (QCM, vrai/faux, paire, vecteur, triplet, ensembles `{a;b}` dans un champ
-texte, tableaux croisés et de variations, schéma d'évolution, cercle, pourcentage…) ; ni les autres
+**Non couvert** : les autres types (QCM, vrai/faux, paire, vecteur, triplet,
+tableaux de variations, cercle…) ; ni les autres
 écritures possibles d'un même intervalle (seule la forme du corrigé est essayée).
 
 **Il ne vérifie pas que le corrigé est mathématiquement juste** (recalcul indépendant à faire fiche par fiche),
