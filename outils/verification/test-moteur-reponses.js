@@ -112,6 +112,12 @@ const CAS = [
   ['simplifie', {}, '13/2', 'L:\\frac{15-\\sqrt{4}}{2}', false],
   ['simplifie', {}, '13/2', '26/4', false],
   ['simplifie', {}, '13/2', '13/2/1', false],
+  // normes de Seconde 23.6 : a racine(b) sur 2, ecriture au choix, mais plus aucun calcul a faire (racine, +0)
+  ['simplifie', {}, '5*sqrt(2)/2', 'L:\\frac{5\\sqrt{2}}{2}', true],
+  ['simplifie', {}, '5*sqrt(2)/2', 'L:\\frac{5}{2}\\sqrt{2}', true],
+  ['simplifie', {}, '5*sqrt(2)/2', 'L:\\frac{\\sqrt{50}}{2}', false],
+  ['simplifie', {}, '5*sqrt(2)/2', 'L:\\frac{5\\sqrt{2}}{2}+0', false],
+  ['simplifie', {}, 'sqrt(34)/2', 'L:\\sqrt{\\frac{34}{4}}', false],
   ['simplifie', {}, '5/6', 'L:\\frac{12-\\sqrt{49}}{6}', false],
   ['simplifie', {}, '4*sqrt(14)', '4*sqrt(14)', true],
   ['simplifie', {}, '4*sqrt(14)', 'L:4\\sqrt{14}', true],

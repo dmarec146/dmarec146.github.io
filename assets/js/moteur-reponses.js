@@ -510,6 +510,8 @@
     // --- nœud par nœud
     if (n.t === 'add' || n.t === 'sub' || n.t === 'mul') {
       if (nombrePur(n.a) && nombrePur(n.b)) return true;               // 3+4, 2*5, 1/2+1/3
+      const zero = (m) => m.t === 'num' && m.v === 0;
+      if (zero(n.a) || zero(n.b)) return true;                       // x+0, 0+x, x-0, 0*x
     }
     if (n.t === 'div' && nombrePur(n.a) && nombrePur(n.b)) {
       const p = entierRelatif(n.a), q = entierRelatif(n.b);
