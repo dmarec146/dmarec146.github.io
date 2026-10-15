@@ -316,7 +316,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 - Idée non demandée : barème réglable devoir par devoir (automatismes).
 - Fiche 2 de Première : pas de titre de section entre les automatismes et
   2.3 (remarque, non traitée).
-- Seconde fiche 24 : pas encore construite.
+- Seconde : le cahier 8 compte les fiches 21 à 24 (l'ancienne fiche 25 « Équations de droites » a été
+  renumérotée 24 le 15/10/2026, faute de fiche 24 ; aucune donnée Firestore n'y était rattachée).
 - `README.md` en partie périmé (annonce 3 cahiers de Seconde, il y en a 8 ;
   ne parle ni du suivi Firebase ni des devoirs) — non traité.
 

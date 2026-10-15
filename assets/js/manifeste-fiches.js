@@ -89,7 +89,7 @@ export const MANIFESTE_CAHIERS = [
     { href: 'fiche-21.html', numero: 21, nom: 'Repérage, distances et milieux' },
     { href: 'fiche-22.html', numero: 22, nom: 'Calcul vectoriel' },
     { href: 'fiche-23.html', numero: 23, nom: 'Coordonnées de vecteurs' },
-    { href: 'fiche-25.html', numero: 25, nom: 'Équations de droites' },
+    { href: 'fiche-24.html', numero: 24, nom: 'Équations de droites' },
   ]},
 ];
 
