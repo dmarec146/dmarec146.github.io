@@ -2328,6 +2328,8 @@ function entoureParParentheses(s) {
 // tapee au clavier, \frac{3}{2}, ou une virgule, 1{,}5, faisait refuser une reponse juste).
 function latexNombresVersAscii(s) {
   let t = String(s).replace(/\\left|\\right/g, '').replace(/\{,\}/g, '.');
+  // formes abregees de MathLive : \frac72, \frac1{23}, \frac{12}3, \sqrt2
+  t = t.replace(/\\([dt]?frac)\s*(\d)\s*(\d)/g, '\\$1{$2}{$3}').replace(/\\([dt]?frac)\s*(\d)\s*\{/g, '\\$1{$2}{').replace(/\\([dt]?frac)\s*\{([^{}]*)\}\s*(\d)/g, '\\$1{$2}{$3}').replace(/\\sqrt\s*(\d)/g, '\\sqrt{$1}');
   let avant;
   do {
     avant = t;

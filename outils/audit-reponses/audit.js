@@ -167,6 +167,37 @@ async function auditerDansLaPage(opts) {
   async function auditerStructure(i, e) {
     let n = 0;
     const verifier = () => { try { return verifierUne(i); } catch (er) { return 'erreur'; } };
+    // couple ou point « (x;y) » (type paire ; coordonnees numeriques, sans parametre) : le corrige est accepte, fractions comprises (saisies comme dans un
+    // champ mathematique : MathLive ecrit \frac72) ; l'ordre inverse, une coordonnee decalee de 1 sont refuses ; un point doit avoir ses parentheses
+    // (ni « x;y » seul, ni accolades) ; « aucun point » (∅, « aucun ») accepte seulement quand il n'y a pas de point
+    if (e.type === 'paire') {
+      const inp = document.getElementById('input-' + i);
+      if (!inp) return 0;
+      const saisirP = async (t) => { if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(t, { format: 'ascii-math' }); } else inp.value = t; await dormir(30); };
+      const aucunPossible = !!e.peutEtreSansPoint || !!e.aucunPoint;
+      let essais = [];
+      if (e.aucunPoint) {
+        essais = [['point-aucun-refuse', 'aucun', true], ['point-aucun-refuse', '∅', true], ['point-aucun-accepte-a-tort', '(1;1)', false]];
+      } else if (typeof e.pa === 'string' && typeof e.pb === 'string' && !(e.vars && e.vars.length) && !e.formeVecteur && !/sqrt|pi/.test(e.pa + e.pb)) {
+        // (vecteurs a ecrire avec des noms, racines et π : saisie ascii-math non fiable, hors champ de cet audit)
+        const valeur = (x) => { try { return math.evaluate(x); } catch (er) { return NaN; } };
+        const A = valeur(e.pa), B = valeur(e.pb);
+        if (!Number.isFinite(A) || !Number.isFinite(B)) return 0;
+        // un couple s'ecrit toujours (a;b) (regle de David, 15/10/2026) : le corrige est teste entre parentheses, pour un point comme pour un couple
+        const point = !!e.formePoint, entoure = (a, b) => '(' + a + ';' + b + ')';
+        essais = [['paire-corrige-refuse', entoure(e.pa, e.pb), true], ['paire-corrige-refuse', '( ' + e.pa + ' ; ' + e.pb + ' )', true],
+          ['paire-faux-accepte', entoure('(' + e.pa + ')+1', e.pb), false], ['paire-faux-accepte', entoure(e.pa, '(' + e.pb + ')+1'), false]];
+        if (Math.abs(A - B) > 1e-9) essais.push(['paire-ordre-accepte', entoure(e.pb, e.pa), false]);
+        if (point) essais.push(['point-sans-parentheses-accepte', e.pa + ';' + e.pb, false], ['point-accolades-accepte', '{' + e.pa + ';' + e.pb + '}', false]);
+        if (aucunPossible) essais.push(['point-aucun-accepte-a-tort', 'aucun', false]);
+      } else return 0;
+      for (const [motif, texte, attendu] of essais) {
+        await saisirP(texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte + '   => attendu ' + (e.aucunPoint ? 'aucun point' : '(' + e.pa + ';' + e.pb + ')'));
+      }
+      return n;
+    }
     // tableau de variations a completer (abscisses des extrema, fleches, valeurs) : le bon tableau est accepte ; une fleche inversee, une valeur
     // fausse, une abscisse fausse, une case vide sont refuses
     if (e.type === 'tableauVariations' && Array.isArray(e.seuils) && typeof reinitialiserTableauVariations === 'function' && document.getElementById('tv-y-' + i + '-0')) {
@@ -506,7 +537,7 @@ async function auditerDansLaPage(opts) {
       const e = exercices[i];
       const champTexte = (() => { const el = document.getElementById('input-' + i); return !!el && el.tagName !== 'MATH-FIELD'; })();
       const ensembleEnExtension = e.type === 'num' && typeof e.reponse === 'string' && e.reponse.trim().startsWith('{') && champTexte;
-      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs', 'approx', 'tableauProgramme', 'tableauVariations'].includes(e.type) || (e.type === 'texte' && e.comparaison) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq', 'valAbs', 'approx', 'tableauProgramme', 'tableauVariations', 'paire'].includes(e.type) || (e.type === 'texte' && e.comparaison) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;
