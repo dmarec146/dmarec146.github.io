@@ -204,6 +204,81 @@ async function auditerDansLaPage(opts) {
         await saisirTexte(i, texte); n++;
         if (verifier() === true) ajouter('erreur', (e.type === 'intervalle' ? 'intervalle-faux-accepte' : 'discussion-faux-acceptee'), e, nom + ' : ' + texte + '   => attendu ' + t);
       }
+      if (e.type === 'intervalle' && e.intervalleSpec) {
+        const sp = e.intervalleSpec;
+        // ℝ s'ecrit aussi ]-inf;+inf[ et R
+        if (sp.type === 'tout') for (const variante of [']-inf;+inf[', 'R']) { await saisirTexte(i, variante); n++; if (verifier() !== true) ajouter('erreur', 'intervalle-tout-refuse', e, variante); }
+        // un intervalle borne ecrit sous forme d'inegalite « a<x<b » n'est pas un intervalle
+        if (sp.type === 'intervalles' && sp.liste.length === 1 && Number.isFinite(sp.liste[0].bas) && Number.isFinite(sp.liste[0].haut)) {
+          const iv = sp.liste[0], fr = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
+          const ineg = fr(iv.bas) + (iv.inclusBas ? '<=' : '<') + 'x' + (iv.inclusHaut ? '<=' : '<') + fr(iv.haut);
+          await saisirTexte(i, ineg); n++;
+          if (verifier() === true) ajouter('erreur', 'intervalle-ecrit-en-inegalite-accepte', e, ineg);
+        }
+      }
+      return n;
+    }
+    // reponse oui / non : « oui » ou « non » juste accepte (aussi en majuscule), l'inverse et une reponse quelconque refuses
+    if (e.type === 'ouiNon') {
+      if (!document.getElementById('input-' + i) || typeof e.reponseOuiNon !== 'boolean') return 0;
+      const bon = e.reponseOuiNon ? 'oui' : 'non', mauvais = e.reponseOuiNon ? 'non' : 'oui';
+      const essais = [['ouinon-corrige-refuse', bon, true], ['ouinon-corrige-refuse', bon[0].toUpperCase() + bon.slice(1), true],
+        ['ouinon-faux-accepte', mauvais, false], ['ouinon-quelconque-accepte', 'peut-être', false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte + '   => attendu ' + bon);
+      }
+      return n;
+    }
+    // encadrement « a<=x<b » : le corrige est accepte ; un crochet inverse, une borne decalee, l'ecriture en intervalle sont refuses
+    if (e.type === 'encadrement' && typeof e.bas === 'number' && typeof e.haut === 'number') {
+      if (!document.getElementById('input-' + i)) return 0;
+      const fr = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
+      const op = (incl) => (incl ? '<=' : '<');
+      const essais = [['encadrement-corrige-refuse', fr(e.bas) + op(e.inclusBas) + 'x' + op(e.inclusHaut) + fr(e.haut), true],
+        ['encadrement-faux-accepte', fr(e.bas) + op(!e.inclusBas) + 'x' + op(e.inclusHaut) + fr(e.haut), false],
+        ['encadrement-faux-accepte', fr(e.bas) + op(e.inclusBas) + 'x' + op(!e.inclusHaut) + fr(e.haut), false],
+        ['encadrement-faux-accepte', fr(e.bas) + op(e.inclusBas) + 'x' + op(e.inclusHaut) + fr(e.haut + 1), false],
+        ['encadrement-ecrit-en-intervalle-accepte', (e.inclusBas ? '[' : ']') + fr(e.bas) + ';' + fr(e.haut) + (e.inclusHaut ? ']' : '['), false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte);
+      }
+      return n;
+    }
+    // inegalite « x>=3 » : le corrige est accepte ; sens inverse, inclusion inversee, seuil decale et ecriture en intervalle (qui recopierait l'enonce) refuses
+    if (e.type === 'ineq' && typeof e.seuil === 'number' && e.sens) {
+      if (!document.getElementById('input-' + i)) return 0;
+      const fr = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
+      const oppose = { '>': '<', '<': '>', '>=': '<=', '<=': '>=' }[e.sens], large = { '>': '>=', '<': '<=', '>=': '>', '<=': '<' }[e.sens];
+      const inter = e.sens[0] === '>' ? (e.sens === '>=' ? '[' : ']') + fr(e.seuil) + ';+inf[' : ']-inf;' + fr(e.seuil) + (e.sens === '<=' ? ']' : '[');
+      const essais = [['ineq-corrige-refuse', 'x' + e.sens + fr(e.seuil), true], ['ineq-faux-accepte', 'x' + oppose + fr(e.seuil), false],
+        ['ineq-faux-accepte', 'x' + large + fr(e.seuil), false], ['ineq-faux-accepte', 'x' + e.sens + fr(e.seuil + 1), false],
+        ['ineq-ecrite-en-intervalle-acceptee', inter, false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter('erreur', motif, e, texte);
+      }
+      return n;
+    }
+    // ensemble ecrit en extension « {0;1;2} » dans un champ texte : le corrige (dans un ordre ou l'autre) est accepte ; un element en moins ou en trop refuse
+    if (e.type === 'num' && typeof e.reponse === 'string' && e.reponse.trim().startsWith('{')) {
+      const inp = document.getElementById('input-' + i);
+      if (!inp || inp.tagName === 'MATH-FIELD') return 0;
+      const elements = e.reponse.trim().slice(1, -1).split(';').map((x) => x.trim()).filter(Boolean);
+      if (!elements.length) return 0;
+      const ens = (l) => '{' + l.join(';') + '}';
+      const supplementaire = String(Math.max(...elements.map((x) => parseFloat(x))) + 1);
+      const essais = [['ensemble-corrige-refuse', e.reponse, true], ['ensemble-ordre-refuse', ens(elements.slice().reverse()), true],
+        ['ensemble-incomplet-accepte', ens(elements.slice(0, -1)), false], ['ensemble-en-trop-accepte', ens(elements.concat([supplementaire])), false]];
+      for (const [motif, texte, attendu] of essais) {
+        await saisirTexte(i, texte); n++;
+        const ok = verifier();
+        if (attendu ? ok !== true : ok === true) ajouter(motif === 'ensemble-ordre-refuse' ? 'avertissement' : 'erreur', motif, e, texte + '   => attendu ' + e.reponse);
+      }
       return n;
     }
     // pourcentages (« 25% », ecart en points de pourcentage) : le corrige tape est accepte ; une valeur fausse, le nombre
@@ -313,7 +388,9 @@ async function auditerDansLaPage(opts) {
     }
     for (let i = 0; i < exercices.length; i++) {
       const e = exercices[i];
-      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution'].includes(e.type)) { saisies += await auditerStructure(i, e); continue; }
+      const champTexte = (() => { const el = document.getElementById('input-' + i); return !!el && el.tagName !== 'MATH-FIELD'; })();
+      const ensembleEnExtension = e.type === 'num' && typeof e.reponse === 'string' && e.reponse.trim().startsWith('{') && champTexte;
+      if (['intervalle', 'discussionParametre', 'tableauSigne', 'pourcentage', 'tableauCroiseRempli', 'schemaEvolution', 'ouiNon', 'encadrement', 'ineq'].includes(e.type) || ensembleEnExtension) { saisies += await auditerStructure(i, e); continue; }
       if (e.type !== 'num' && e.type !== 'alg') continue;
       const inp = document.getElementById('input-' + i);
       if (!inp) continue;

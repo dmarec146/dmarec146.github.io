@@ -36,6 +36,11 @@ Pour les questions qui ne se tapent pas dans un champ mathématique, le corrigé
 | `tableau-croise-corrige-refuse` | erreur | tableau d'effectifs à compléter rempli juste (4 cases + pourcentage) et refusé |
 | `tableau-croise-case-fausse-acceptee`, `tableau-croise-case-vide-acceptee`, `tableau-croise-pourcentage-faux-accepte`, `tableau-croise-pourcentage-vide-accepte` | erreur | une case fausse ou vide, un pourcentage faux ou vide : le tableau est quand même accepté |
 
+| `ouinon-corrige-refuse`, `ouinon-faux-accepte`, `ouinon-quelconque-accepte` | erreur | réponse oui / non : « oui » ou « non » juste (aussi en majuscule) refusé / l'inverse ou « peut-être » accepté |
+| `encadrement-corrige-refuse`, `encadrement-faux-accepte`, `encadrement-ecrit-en-intervalle-accepte` | erreur | encadrement `a<=x<b` : le corrigé est refusé / un crochet inversé, une borne décalée ou l'écriture en intervalle `[a;b]` est accepté |
+| `ineq-corrige-refuse`, `ineq-faux-accepte`, `ineq-ecrite-en-intervalle-acceptee` | erreur | inégalité `x>=3` : le corrigé est refusé / un sens inversé, une inclusion inversée, un seuil décalé ou l'intervalle de l'énoncé recopié (`]3;+inf[`) est accepté |
+| `ensemble-corrige-refuse`, `ensemble-incomplet-accepte`, `ensemble-en-trop-accepte`, `ensemble-ordre-refuse` | erreur (ordre : avertissement) | ensemble en extension `{0;1;2}` dans un champ texte : le corrigé est refusé / un élément en moins ou en trop est accepté / l'ordre inversé est refusé |
+| `intervalle-tout-refuse`, `intervalle-ecrit-en-inegalite-accepte` | erreur | ℝ écrit `]-inf;+inf[` ou `R` refusé / un intervalle borné écrit `a<x<b` accepté |
 | `schema-corrige-refuse` | erreur | schéma d'évolutions successives (3 taux et 3 coefficients) rempli juste et refusé |
 | `schema-case-fausse-acceptee`, `schema-case-vide-acceptee`, `schema-calcul-accepte` | erreur | une case fausse (taux +1 point, coefficient +0,01), une case vide, un taux écrit en calcul non terminé (`(30)/2%`) : le schéma est quand même accepté |
 

@@ -892,12 +892,14 @@ let tirageDisjointEnPremier = true;
 // ---------- notation intervalle (ensemble solution) : repris tel quel du systeme deja etabli
 // en Premiere (cahiers/premiere/cahier-1/fiche-01.html), via les fiches 7/8 de Seconde,
 // plutot que d'en re-inventer un autre ----------
-function parseInequationSaisie(str) {
+// autoriserIntervalle = false : la question demande une INEGALITE sur x (12.2 d) ; ecrire l'intervalle de l'enonce ne repond pas a la question
+function parseInequationSaisie(str, autoriserIntervalle = true) {
   str = str.trim().toLowerCase().replace(/\s/g, '').replace(/,/g, '.');
   let m = str.match(/^x(>=|<=|>|<)(-?[\d./]+)$/);
   if (m) {
     try { return { sens: m[1], seuil: math.evaluate(m[2]) }; } catch(e) { return null; }
   }
+  if (!autoriserIntervalle) return null;
   m = str.match(/^([\]\[])(-?inf(?:ini)?|-?[\d./]+);(\+?inf(?:ini)?|-?[\d./]+)([\]\[])$/);
   if (m) {
     const [_, crochetG, gauche, droite, crochetD] = m;
@@ -914,8 +916,8 @@ function parseInequationSaisie(str) {
   return null;
 }
 
-function checkInequation(userInput, correctSens, correctSeuil) {
-  const parsed = parseInequationSaisie(userInput);
+function checkInequation(userInput, correctSens, correctSeuil, autoriserIntervalle = true) {
+  const parsed = parseInequationSaisie(userInput, autoriserIntervalle);
   if (!parsed) return false;
   const sensEquivalent = parsed.sens === correctSens;
   return Math.abs(parsed.seuil - correctSeuil) < 1e-6 && sensEquivalent;
@@ -1968,7 +1970,7 @@ function verifierUne(idx) {
   }
   let ok;
   if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
-  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil, false);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut, ex.inclusBas, ex.inclusHaut);
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec);
   else if (ex.type === 'ouiNon') ok = checkOuiNon(val, ex.reponseOuiNon);
