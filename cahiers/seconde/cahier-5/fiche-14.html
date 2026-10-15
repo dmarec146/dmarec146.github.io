@@ -2988,6 +2988,12 @@ function ensembleVersLatex(reponse) {
   elements.push(courant.trim());
   return '\\left\\{' + elements.filter(x => x !== '').map(x => jsVersLatex(x)).join('\\,;\\,') + '\\right\\}';
 }
+// corrige d'un intervalle lu sur un graphique : bornes decimales arrondies au dixieme (« 1,6 », pas une fraction ni 1,5858)
+function formaterIntervalleLecture(spec) {
+  if (!spec || spec.type !== 'intervalles') return formaterIntervalleSpec(spec);
+  const borne = (v) => v === Infinity ? '+\\infty' : (v === -Infinity ? '-\\infty' : String(Math.round(v * 10) / 10));
+  return spec.liste.map(iv => `${iv.inclusBas ? '[' : ']'}${borne(iv.bas)}\\,;\\,${borne(iv.haut)}${iv.inclusHaut ? ']' : '['}`).join('\\ \\cup\\ ');
+}
 function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }
 function formaterReponseBrut(ex) {
   try {
@@ -3005,13 +3011,13 @@ function formaterReponseBrut(ex) {
     }
     if (ex.type === 'approx') {
       if (ex.typeApprox === 'racine') {
-        const vals = ex.valeurApprox.map(v => Math.round(v*100)/100).join('\\text{ ou }');
+        const vals = ex.valeurApprox.map(v => Math.round(v*10)/10).join('\\text{ ou }');
         return `\\approx ${vals}`;
       }
-      return `\\approx ${Math.round(ex.valeurApprox*100)/100}`;
+      return `\\approx ${Math.round(ex.valeurApprox*10)/10}`;
     }
     if (ex.type === 'intervalle') {
-      const texte = formaterIntervalleSpec(ex.intervalleSpec);
+      const texte = ex.tolerance ? formaterIntervalleLecture(ex.intervalleSpec) : formaterIntervalleSpec(ex.intervalleSpec);
       return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
     }
     if (ex.reponse && ex.reponse.trim().startsWith('{')) return ensembleVersLatex(ex.reponse);
