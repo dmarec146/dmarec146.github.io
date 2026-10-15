@@ -2007,7 +2007,7 @@ const generateurs = [
   }},
   {id:"17.6 d)", type:"num", texteLibre:true, gen: () => {
     const a = alea(0,5), b = a*a;
-    return { enonce:`Le point de coordonnées \\((${a}\\,;\\,${b})\\) appartient à la courbe de la fonction carré. Par symétrie par rapport à la droite d'équation \\(y=x\\), donner les coordonnées du point correspondant sur la courbe de la fonction racine carrée.`, reponse:`{${b};${a}}` };
+    return { enonce:`Le point de coordonnées \\((${a}\\,;\\,${b})\\) appartient à la courbe de la fonction carré. Par symétrie par rapport à la droite d'équation \\(y=x\\), donner les coordonnées du point correspondant sur la courbe de la fonction racine carrée.`, reponse:`(${b};${a})`, point:true, px:b, py:a };
   }},
   {id:"17.6 e)", type:"num", texteLibre:true, gen: () => {
     const demiP = 2*alea(3,7);
@@ -2119,6 +2119,7 @@ function necessiteAide(ex) {
   if (ex.type === 'intervalle') return true;
   if (ex.type === 'tableauVariations') return true;
   if (ex.fractionIrreductible) return true;
+  if (ex.point) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   return false;
 }
@@ -2145,6 +2146,9 @@ function aideContextuellePour(ex) {
   if (ex.fractionIrreductible) {
     return "Le résultat doit être écrit sous forme de fraction irréductible (numérateur et dénominateur sans facteur commun), par exemple <code>5/3</code> et non <code>10/6</code>.";
   }
+  if (ex.point) {
+    return "Écrire les coordonnées du point entre parenthèses, abscisse puis ordonnée, séparées par un point-virgule : par exemple <code>(2;5)</code>.";
+  }
   if (ex.reponse && ex.reponse.trim().startsWith('{')) {
     return "Écrire l'ensemble des antécédents entre accolades, séparés par un point-virgule : par exemple <code>{-2;2}</code>, ou <code>{0}</code> s'il n'y en a qu'un seul, ou <code>{}</code> (ou <code>∅</code>) s'il n'y en a aucun. Une valeur peut contenir une racine carrée, par exemple <code>{-sqrt(5);sqrt(5)}</code> ou <code>{-√5;√5}</code>.";
   }
@@ -2169,6 +2173,7 @@ function placeholderPour(ex) {
   }
   if (ex.type === 'approx') return 'valeur approchée';
   if (ex.type === 'intervalle') return ']a;b[';
+  if (ex.point) return '(x;y)';
   // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
   // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
   // il faut les echapper pour obtenir de vraies accolades visibles.
@@ -2594,6 +2599,16 @@ function checkEqualNumeric(userInput, correctExpr) {
 // (extension par rapport a la version d'origine de la fiche 6 de Seconde, necessaire ici puisque
 // cette fiche est la premiere ou un ensemble d'antecedents peut legitimement etre vide), et
 // convertit "√" en "sqrt" avant evaluation (necessaire pour les antecedents non entiers) ----------
+// coordonnees d'un point : (x;y), avec les parentheses et dans cet ordre (jamais {x;y}, qui est un ensemble)
+function checkPoint(userInput, px, py) {
+  const t = convertirRacineUnicode(String(userInput)).replace(/[∗×·]/g, '*').replace(/(\d),(\d)/g, '$1.$2').replace(/\s/g, '');
+  const m = t.match(/^\(([^;()]+);([^;()]+)\)$/);
+  if (!m) return false;
+  try {
+    return Math.abs(math.evaluate(m[1]) - px) < 1e-9 && Math.abs(math.evaluate(m[2]) - py) < 1e-9;
+  } catch(e) { return false; }
+}
+
 function checkEnsemble(userInput, correctSet) {
   const nettoyerValeur = (s) => convertirRacineUnicode(s).replace(/[∗×·]/g, '*');
   const nettoyerEtSplit = (s) => nettoyerValeur(s).trim().replace(/[{}]/g,'').split(/;/).map(x=>x.trim()).filter(x=>x!=='');
@@ -2888,6 +2903,7 @@ function verifierUne(idx) {
   }
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec, ex.tolerance);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.point) ok = checkPoint(val, ex.px, ex.py);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
   if (reveler) {
@@ -3255,6 +3271,7 @@ function formaterReponseBrut(ex) {
       const texte = formaterIntervalleSpec(ex.intervalleSpec);
       return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
     }
+    if (ex.point) return '\\left(' + ex.px + '\\,;\\,' + ex.py + '\\right)';
     if (ex.reponse && ex.reponse.trim().startsWith('{')) return ensembleVersLatex(ex.reponse);
     return jsVersLatex(ex.reponse);
   } catch(e) {

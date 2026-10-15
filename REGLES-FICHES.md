@@ -117,6 +117,11 @@ les corrections ponctuelles d'une fiche).
   \(f'(x)\), \(x\in\mathbb{R}\), noms de points, droites et vecteurs, réels,
   intervalles. Intervalles et coordonnées avec un **point-virgule** :
   \(]0;1[\), \((-\frac{3}{2};9)\).
+  **La nomenclature mathématique est toujours respectée, dans les énoncés comme dans les réponses attendues
+  (David, 15/10/2026)** : les **coordonnées d'un point** s'écrivent `(x;y)` (parenthèses, abscisse puis ordonnée, ordre
+  contrôlé), **jamais `{x;y}`** (notation d'un ensemble, où l'ordre ne compte pas). Les accolades sont réservées aux
+  ensembles de solutions. Corrigé en Seconde 17.6 d (type `point:true`, `checkPoint`) ; les autres questions de
+  coordonnées utilisent déjà le type `paire` avec `formePoint`.
 - Un calcul à **une seule question** : pas de lettre a), carte pleine largeur
   (`question-seule`) ; énoncé long : option `pleineLargeur`. Pas de « = »
   ajouté après une phrase ou une question (`sansEgal:true`).
