@@ -880,10 +880,10 @@ window.MathJax = {
   <p class="section-titre">Quelques automatismes</p>
   <div class="section-barre"></div>
 
-  <p class="calcul-titre"><span>Calcul 18.1 — Calcul littéral et inéquations.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 18.1 — Résoudre les inéquations suivantes (solution <span class="titre-mise-en-valeur">sous forme d'intervalle</span>).</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
   <div class="question-grille" id="grille-18-1"></div>
 
-  <p class="calcul-titre"><span>Calcul 18.2.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
+  <p class="calcul-titre"><span>Calcul 18.2 — Calculer le taux d'évolution d'une grandeur, <span class="titre-mise-en-valeur">en pourcentage</span>, de sa valeur initiale à sa valeur finale.</span><span class="picto-niveau"><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#555"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg><svg width="11" height="13" viewBox="0 0 11 13"><polygon points="6,0.5 6,12.5 1,12.5" fill="#ddd"/></svg></span></p>
   <div class="question-grille" id="grille-18-2"></div>
 
 </div>
@@ -946,7 +946,7 @@ window.MathJax = {
 </div>
 
 <div class="score-panneau" id="score-panneau">
-  <span class="score-chiffre" id="score-chiffre">0 / 25</span> bonnes réponses
+  <span class="score-chiffre" id="score-chiffre">0 / 27</span> bonnes réponses
   <div style="margin-top:10px;">
     <button class="btn-secondaire" id="btn-correction" onclick="toggleCorrection()">Voir la correction des erreurs</button>
   </div>
@@ -1815,62 +1815,6 @@ function tableCorrigeVariationsHTML(ex) {
   return html;
 }
 
-// ---------- vivier de revisions melangees (groupes 14.2/14.3) : developpement, racines
-// carrees, evolutions successives — sujets deja rencontres dans les fiches precedentes,
-// melanges maintenant que la fiche est avancee dans le cahier ----------
-function pgcdEntiers(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
-const MODELES_REVISION = [
-  () => {
-    let a, b; do { a = entierSigne(1,9); b = entierSigne(1,9); } while (a + b === 0);
-    const somme = a+b, produit = a*b;
-    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})\\).`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}` };
-  },
-  () => {
-    const k=alea(2,9), a=alea(2,6), b=entierSigne(1,12);
-    const constante = k*b;
-    return { enonce:`Développer et réduire \\(${k}(${a}x${b>=0?'+':''}${b})\\).`, reponse:`${k*a}*x${constante>=0?'+':''}${constante}` };
-  },
-  () => {
-    let k, a, b; do { k=alea(2,7); a=alea(2,8); b=aleaNonNul(1,9); } while (pgcdEntiers(a, b) !== 1);   // a et b premiers entre eux : factorisation complete
-    return { enonce:`Factoriser \\(${k*a}x${(k*b)>=0?'+':''}${k*b}\\).`, reponse:`${k}*(${a}*x+${b})` };
-  },
-  () => {
-    const k=alea(2,6), n=choix([2,3,5,6,7]);
-    return { enonce:`Simplifier \\(\\sqrt{${k*k*n}}\\).`, reponse:`${k}*sqrt(${n})` };
-  },
-  () => {
-    const d=choix([2,3,5,6,7]), e=alea(1,3), f=alea(1,3);
-    const a=d*e*e, b=d*f*f;
-    return { enonce:`Calculer \\(\\sqrt{${a}}\\times\\sqrt{${b}}\\).`, reponse:`${d*e*f}` };
-  },
-  () => {
-    const p=alea(2,40), hausse=alea(0,1)===1;
-    const coef = Math.round((hausse ? (1+p/100) : (1-p/100)) * 100) / 100;
-    return { enonce:`Une grandeur ${hausse?'augmente':'diminue'} de \\(${p}\\,\\%\\). Donner le coefficient multiplicateur associé.`, reponse:`${coef}` };
-  },
-  () => {
-    const p1=alea(5,30), p2=alea(5,30), s1=alea(0,1)===1, s2=alea(0,1)===1;
-    const c1=s1?(1+p1/100):(1-p1/100), c2=s2?(1+p2/100):(1-p2/100);
-    const global = Math.round(c1*c2*10000)/10000;
-    return { enonce:`Une grandeur ${s1?'augmente':'diminue'} de \\(${p1}\\,\\%\\) puis ${s2?'augmente':'diminue'} de \\(${p2}\\,\\%\\). Donner le coefficient multiplicateur global.`, reponse:`${global}` };
-  },
-  () => {
-    const a=alea(2,9);
-    return { enonce:`Développer \\((x-${a})^2\\).`, reponse:`x^2-${2*a}*x+${a*a}` };
-  },
-  () => {
-    const a=alea(2,9);
-    return { enonce:`Développer \\((x+${a})(x-${a})\\).`, reponse:`x^2-${a*a}` };
-  },
-  () => {
-    const a=alea(1,6), b=alea(2,9), c=alea(1,6), d=alea(2,9);
-    const num = a*d + c*b, den = b*d, g = pgcd(num, den);
-    const numR = num/g, denR = den/g;
-    const reponse = denR === 1 ? `${numR}` : `${numR}/${denR}`;
-    return { enonce:`Calculer \\(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\) (donner le résultat sous forme de fraction irréductible).`, reponse, fractionIrreductible:true };
-  }
-];
-let tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
 
 // ---------- helpers statistiques (fiche 17) ----------
 // vrai tableau HTML a deux lignes (valeurs / effectifs ou frequences) — David a fait remarquer
@@ -2106,19 +2050,94 @@ function genererBoite(label, depart, nbCrans, pas) {
   return { label, min: f(rMin), q1: f(rQ1), mediane: f(rMed), q3: f(rQ3), max: f(rMax) };
 }
 
-const generateurs = [
-  // ---------- 17.1 : automatismes de calcul litteral et d'inequations de degre 1/2 (vivier
-  // partage, voir memoire feedback-automatismes-calcul-litteral) ----------
-  {id:"18.1 a)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[0]()},
-  {id:"18.1 b)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[1]()},
-  {id:"18.1 c)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[2]()},
-  {id:"18.1 d)", type:"num", texteLibre:true, gen: () => tirageAutomatisme[3]()},
+// ---------- inequations de degre 1 du calcul 18.1 (extraites de l'ancien vivier d'automatismes) : a) ax+b op 0, b) ax op b ----------
+const MODELES_INEQUATION_DEGRE1 = [
+  // inequation degre 1, regroupee a 0 : ax+b op 0
+  () => {
+    const a = choix([-4,-3,-2,2,3,4]);
+    const x0 = alea(-6,6);
+    const b = -a*x0;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const veutPositif = (op === '>' || op === '>=');
+    const inclus = (op === '>=' || op === '<=');
+    const auDessus = a > 0 ? veutPositif : !veutPositif; // sens de x par rapport a x0
+    const spec = auDessus
+      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
+      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
+    return { enonce:`${affineTexte(a,b)}${opSymb}0`, type:'intervalle', intervalleSpec: spec };
+  },
+  // meme famille, presentee sans regrouper a 0 : ax op b (division directe, attention au signe de a).
+  () => {
+    const a = choix([-5,-4,-3,-2,2,3,4,5]);
+    const x0 = alea(-6,6);
+    const bDroite = a*x0;
+    const op = choix(['>','>=','<','<=']);
+    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
+    const veutPositif = (op === '>' || op === '>=');
+    const inclus = (op === '>=' || op === '<=');
+    const auDessus = a > 0 ? veutPositif : !veutPositif;
+    const spec = auDessus
+      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
+      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
+    return { enonce:`${coefXTexte(a)}${opSymb}${bDroite}`, type:'intervalle', intervalleSpec: spec };
+  }
+];
 
-  // ---------- 17.2 : revisions melangees (developpement, racines carrees, evolutions) ----------
-  {id:"18.2 a)", type:"num", texteLibre:true, gen: () => tirageRevision[0]()},
-  {id:"18.2 b)", type:"num", texteLibre:true, gen: () => tirageRevision[1]()},
-  {id:"18.2 c)", type:"num", texteLibre:true, gen: () => tirageRevision[2]()},
-  {id:"18.2 d)", type:"num", texteLibre:true, gen: () => tirageRevision[3]()},
+// ---------- taux d'evolution (18.2), repris de la fiche 10 : pourcentages simples (pgcd(p,100) assez grand pour une base raisonnable) ----------
+const POURCENTAGES_EVOL_SIMPLE = [2,4,5,8,10,12,15,20,25,30,40,50];
+// arrondit a 9 decimales pour eliminer le bruit flottant
+function arrondi(v) { return Math.round(v * 1e9) / 1e9; }
+// multiple de (100/pgcd(p,100)) : p% de ce nombre est toujours entier
+function baseDivisiblePar(p) { const den = 100 / pgcd(p, 100); return den * alea(2, 12); }
+// accepte "25%"/"25 %" (pourcentage direct, positif ou negatif), ou toute expression evaluee puis multipliee par 100 (decimale « 0,25 » ou fraction).
+// Le « % » de math.js est un modulo, jamais un pourcentage : on l'intercepte donc AVANT d'appeler evaluate.
+function checkPourcentage(userInput, valeurPourcent, tolerance, exigerSigne) {
+  tolerance = tolerance || 1e-6;
+  const s = String(userInput).trim().replace(/(\d),(\d)/g, '$1.$2');
+  const mPourcent = s.match(/^(.+?)\s*%$/);
+  // « en pourcentage » : recopier le coefficient ou une ecriture decimale ne suffit pas, le signe % est exige
+  if (exigerSigne && !mPourcent) return false;
+  // un pourcentage s'ecrit avec un nombre (eventuellement signe), pas avec un calcul a terminer comme 40/2%
+  if (mPourcent && !/^[+-]?\d+(\.\d+)?$/.test(mPourcent[1].trim())) return false;
+  let val;
+  try {
+    val = mPourcent ? math.evaluate(mPourcent[1]) : math.evaluate(s) * 100;
+  } catch(e) { return false; }
+  if (typeof val !== 'number' || !isFinite(val)) return false;
+  return Math.abs(val - valeurPourcent) < tolerance;
+}
+// hausse ou baisse tiree une fois par version et inversee d'une question a l'autre : les deux cas apparaissent toujours
+let sens182 = true;
+function tauxEvolution18(hausse) {
+  const p = choix(POURCENTAGES_EVOL_SIMPLE), v1 = baseDivisiblePar(p);
+  const v2 = arrondi(hausse ? v1 + p * v1 / 100 : v1 - p * v1 / 100);
+  return { enonce:`Valeur initiale \\(${v1}\\), valeur finale \\(${v2}\\)`, reponsePourcent: hausse ? p : -p, exigerPourcent: true };
+}
+// clavier d'un taux d'evolution : chiffres, signe moins, %
+function genererClavierPourcentage(idx) {
+  return GROUPE_CHIFFRES(idx) + `
+      <div class="clavier-groupe">
+        <span class="clavier-label">Taux</span>
+        <button onclick="inserer(${idx},'-')">−</button>
+        <button class="touche-large" onclick="inserer(${idx},'%')">%</button>
+      </div>
+      <div class="clavier-groupe">
+        <button class="touche-large touche-effacer" onclick="effacer(${idx})">Effacer</button>
+        <button class="touche-large touche-effacer" onclick="reculer(${idx})">&larr; Suppr.</button>
+      </div>
+      <div class="clavier-apercu">Astuce : « 8% » ou « -8% » pour un taux d'évolution (négatif pour une baisse)</div>`;
+}
+
+const generateurs = [
+  // ---------- 18.1 : inequations de degre 1 (consigne dans le titre) : a) ax+b ◊ 0, b) ax ◊ b ; coefficient de x de signe quelconque ----------
+  {id:"18.1 a)", type:"intervalle", gen: () => MODELES_INEQUATION_DEGRE1[0]()},
+  {id:"18.1 b)", type:"intervalle", gen: () => MODELES_INEQUATION_DEGRE1[1]()},
+
+  // ---------- 18.2 : taux d'evolution entre deux valeurs (consigne dans le titre) : une hausse et une baisse, ordre tire a chaque version ----------
+  {id:"18.2 a)", type:"pourcentage", texteLibre:true, gen: () => tauxEvolution18(sens182)},
+  {id:"18.2 b)", type:"pourcentage", texteLibre:true, gen: () => tauxEvolution18(!sens182)},
+
 
   // ---------- 17.3 : moyenne et mediane d'une serie brute. a) n impair, b) n pair (mediane =
   // demi-somme des deux valeurs centrales, souvent non entiere). c) plus delicat : au moins une
@@ -2349,83 +2368,9 @@ const generateurs = [
   }}
 ];
 
-// ---------- vivier d'automatismes (groupe 15.1) : inequations de degre 1 (ax+b op 0, ax op b) et
-// de degre 2 deja factorisees ((x-a)(x-b) op 0, avec ou sans coefficient negatif devant), plus
-// deux modeles de calcul litteral (developpement) — remplace le calcul numerique pur, desormais
-// arrete en tout debut de fiche (regle demandee par David le 2026-09-11, voir memoire
-// feedback-automatismes-calcul-litteral, valable pour cette fiche et les suivantes) ----------
-const MODELES_AUTOMATISME = [
-  // inequation degre 1, regroupee a 0 : ax+b op 0
-  () => {
-    const a = choix([-4,-3,-2,2,3,4]);
-    const x0 = alea(-6,6);
-    const b = -a*x0;
-    const op = choix(['>','>=','<','<=']);
-    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
-    const veutPositif = (op === '>' || op === '>=');
-    const inclus = (op === '>=' || op === '<=');
-    const auDessus = a > 0 ? veutPositif : !veutPositif; // sens de x par rapport a x0
-    const spec = auDessus
-      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
-      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
-    return { enonce:`Résoudre \\(${affineTexte(a,b)}${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
-  },
-  // meme famille, presentee sans regrouper a 0 : ax op b (division directe, attention au signe de a).
-  () => {
-    const a = choix([-5,-4,-3,-2,2,3,4,5]);
-    const x0 = alea(-6,6);
-    const bDroite = a*x0;
-    const op = choix(['>','>=','<','<=']);
-    const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
-    const veutPositif = (op === '>' || op === '>=');
-    const inclus = (op === '>=' || op === '<=');
-    const auDessus = a > 0 ? veutPositif : !veutPositif;
-    const spec = auDessus
-      ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
-      : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
-    return { enonce:`Résoudre \\(${coefXTexte(a)}${opSymb}${bDroite}\\).`, type:'intervalle', intervalleSpec: spec };
-  },
-  // inequation produit deja factorisee (degre 2) : (x-a)(x-b) op 0, signe direct par la regle du
-  // signe d'un produit — pas besoin de developper ni de graphique.
-  () => {
-    let a, b; do { a = alea(-5,5); b = alea(-5,5); } while (a === b);
-    if (a > b) { const t = a; a = b; b = t; }
-    const veutPositif = alea(0,1) === 1;
-    const spec = veutPositif
-      ? { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] }
-      : { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] };
-    const opSymb = veutPositif ? '\\gt' : '\\lt';
-    return { enonce:`Résoudre \\((${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
-  },
-  // meme famille avec un coefficient negatif devant le produit (le signe global s'inverse).
-  () => {
-    let a, b; do { a = alea(-5,5); b = alea(-5,5); } while (a === b);
-    if (a > b) { const t = a; a = b; b = t; }
-    const veutPositif = alea(0,1) === 1;
-    const spec = veutPositif
-      ? { type:'intervalles', liste:[{bas:a,haut:b,inclusBas:false,inclusHaut:false}] }
-      : { type:'intervalles', liste:[{bas:-Infinity,haut:a,inclusBas:false,inclusHaut:false},{bas:b,haut:Infinity,inclusBas:false,inclusHaut:false}] };
-    const opSymb = veutPositif ? '\\gt' : '\\lt';
-    return { enonce:`Résoudre \\(-(${xMoinsTexte(a)})(${xMoinsTexte(b)})${opSymb}0\\).`, type:'intervalle', intervalleSpec: spec };
-  },
-  // calcul litteral : developper un carre
-  () => {
-    const a = entierSigne(1,9);
-    const double = 2*a, carre = a*a;
-    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})^2\\).`, reponse:`x^2${double>=0?'+':''}${double}*x+${carre}` };
-  },
-  // calcul litteral : developper (x+a)(x-b), signes melanges
-  () => {
-    const a = entierSigne(1,9), b = entierSigne(1,9);
-    const diff = a - b, produit = -a*b;
-    return { enonce:`Développer et réduire \\((x${a>=0?'+':''}${a})(${xMoinsTexte(b)})\\).`, reponse:`x^2${diff===0?'':`${diff>=0?'+':''}${diff}*x`}${produit>=0?'+':''}${produit}` };
-  }
-];
-let tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
 
 function genererExercices() {
-  tirageAutomatisme = melanger(MODELES_AUTOMATISME).slice(0, 4);
-  tirageRevision = melanger(MODELES_REVISION).slice(0, 8);
+  sens182 = alea(0, 1) === 1;
   return generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
@@ -2435,15 +2380,15 @@ function genererExercices() {
 let exercices = genererExercices();
 
 const groupes = {
-  "grille-18-1": [0,1,2,3],
-  "grille-18-2": [4,5,6,7],
-  "grille-18-3": [8,9,10,11],
-  "grille-18-4": [12,13,14,15],
-  "grille-18-5": [16,17,18,19],
-  "grille-18-6": [20,21,22,23,24],
-  "grille-18-7": [25,26],
-  "grille-18-8": [27,28],
-  "grille-18-9": [29,30]
+  "grille-18-1": [0,1],
+  "grille-18-2": [2,3],
+  "grille-18-3": [4,5,6,7],
+  "grille-18-4": [8,9,10,11],
+  "grille-18-5": [12,13,14,15],
+  "grille-18-6": [16,17,18,19,20],
+  "grille-18-7": [21,22],
+  "grille-18-8": [23,24],
+  "grille-18-9": [25,26]
 };
 const lettres = ["a","b","c","d","e","f"];
 
@@ -2458,6 +2403,7 @@ function necessiteAide(ex) {
   if (ex.fractionIrreductible) return true;
   if (ex.reponse && ex.reponse.trim().startsWith('{')) return true;
   if (estTuple(ex)) return true;
+  if (ex.type === 'pourcentage') return true;
   return false;
 }
 
@@ -2468,6 +2414,9 @@ function aideContextuellePour(ex) {
   return (ex.margeLecture && ex.type !== 'approx' && ex.type !== 'intervalle') ? (base ? base + ' ' : '') + "Lecture graphique : une valeur à 0,2 près de la valeur exacte est acceptée." : base;
 }
 function aideContextuellePourBase(ex) {
+  if (ex.type === 'pourcentage') {
+    return "La réponse doit s'écrire avec le symbole <code>%</code> (par exemple <code>8%</code> ou <code>-8%</code>) : recopier le coefficient ou un nombre décimal ne convient pas. Une diminution se répond par un nombre négatif.";
+  }
   if (ex.type === 'ouiNon') {
     return "Répondre simplement par <code>oui</code> ou par <code>non</code>.";
   }
@@ -2522,7 +2471,7 @@ function placeholderPour(ex) {
     return `${ex.nomFonction}(${v1}) > ${ex.nomFonction}(${v2})`;
   }
   if (ex.type === 'approx') return 'valeur approchée';
-  if (ex.type === 'intervalle') return ']a;b[';
+  if (ex.type === 'pourcentage') return '8% ou -8%';
   if (estTuple(ex)) return '(' + ['a','b','c','d'].slice(0, nbElementsTuple(ex)).join(';') + ')';
   // "\{" et "\}" : dans un placeholder de champ mathematique, des accolades non echappees
   // sont interpretees comme un groupement LaTeX et disparaissent a l'affichage (invisibles) ;
@@ -2619,6 +2568,7 @@ function genererClavierTuple(idx) {
       <div class="clavier-apercu">Astuce : « (2;5) » : les valeurs entre parenthèses, séparées par un point-virgule, dans l'ordre demandé.</div>`;
 }
 function genererClavierPour(idx, ex) {
+  if (ex.type === 'pourcentage') return genererClavierPourcentage(idx);
   if (ex.type === 'intervalle') return genererClavierIntervalle(idx);
   if (estTuple(ex)) return genererClavierTuple(idx);
   if (ex.comparaison) return genererClavierComparaison(idx, ex);
@@ -3261,8 +3211,6 @@ function restaurerEtatSupplementaire(extra) {}
 // Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
 function formesCalcul() {
   return {
-    "18.1": "auto",
-    "18.2": "auto",
     "18.3": "simplifie",
     "18.4": "simplifie",
     "18.5": "simplifie",
@@ -3341,6 +3289,7 @@ function verifierUne(idx) {
   }
   else if (ex.type === 'intervalle') ok = checkIntervalle(val, ex.intervalleSpec, ex.tolerance);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val) && checkEqualNumeric(val, ex.reponse);
+  else if (ex.type === 'pourcentage') ok = checkPourcentage(val, ex.reponsePourcent, ex.tolerancePourcent, ex.exigerPourcent);
   else if (estTuple(ex)) ok = checkTuple(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else ok = checkEqualNumeric(val, ex.reponse);
@@ -3713,6 +3662,7 @@ function formaterReponseBrut(ex) {
       const texte = formaterIntervalleSpec(ex.intervalleSpec);
       return ex.tolerance && ex.intervalleSpec.type === 'intervalles' ? `\\approx\\ ${texte}` : texte;
     }
+    if (ex.type === 'pourcentage') { const p = ex.reponsePourcent; return `${Number.isInteger(p) ? String(p) : String(p).replace('.', '{,}')}\\,\\%`; }
     if (estTuple(ex)) return tupleVersLatex(ex.reponse);
     if (ex.reponse && ex.reponse.trim().startsWith('{')) return ensembleVersLatex(ex.reponse);
     return jsVersLatex(ex.reponse);
