@@ -147,7 +147,7 @@ async function auditerDansLaPage(opts) {
   const comparable = (s) => String(s).replace(/\\left|\\right|\\,|\\;|\\!|\s|\{\s*\}/g, '').replace(/\\dfrac|\\tfrac/g, '\\frac');
   // corrige LaTeX d'un intervalle, d'une reunion ou d'une discussion « si m<3 alors ... » -> texte qu'un eleve taperait
   const corrigeVersTexte = (tex) => {
-    let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\pi/g, 'pi');
+    let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',');
     a = a.replace(/\\text\{\s*:\s*\}/g, '§A§').replace(/\\text\{\s*;?\s*si\s*\}/g, '§S§');
     a = a.replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{/g, '§{§').replace(/\\\}/g, '§}§')
       .replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\gt\s*/g, '>')

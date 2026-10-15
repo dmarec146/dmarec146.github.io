@@ -22,7 +22,7 @@ window.MathJax = {
 <script src="../../../assets/js/bareme.js"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"12.1 a)":0.5,"12.1 b)":0.5,"12.1 c)":0.5,"12.1 d)":0.5,"12.2 a)":0.5,"12.2 b)":0.75,"12.2 c)":1,"12.2 d)":0.75,"12.3 a)":0.5,"12.3 b)":0.75,"12.3 c)":0.5,"12.3 d)":0.5,"12.4 a)":0.75,"12.4 b)":1,"12.4 c)":1,"12.4 d)":1.25,"12.5 a)":0.75,"12.5 b)":1,"12.5 c)":1.25,"12.5 d)":1.25,"12.6 a)":1.5,"12.6 b)":2,"12.7 a)":1,"12.7 b)":1.5,"12.7 c)":1.5,"12.7 d)":2},"bonus":["12.7 a)","12.7 b)","12.7 c)","12.7 d)"]});
+Bareme.definir({"points":{"12.1 a)":0.5,"12.1 b)":0.5,"12.1 c)":0.5,"12.1 d)":0.5,"12.2 a)":0.5,"12.2 b)":0.75,"12.2 c)":0.5,"12.2 d)":0.5,"12.3 a)":0.5,"12.3 b)":0.75,"12.3 c)":0.5,"12.3 d)":0.5,"12.4 a)":0.75,"12.4 b)":0.75,"12.4 c)":1,"12.4 d)":1,"12.5 a)":0.75,"12.5 b)":0.75,"12.5 c)":1,"12.5 d)":0.75,"12.6 a)":1.25,"12.6 b)":1.5,"12.7 a)":2,"12.7 b)":1,"12.7 c)":1.5,"12.7 d)":2},"bonus":["12.7 a)","12.7 b)","12.7 c)","12.7 d)"]});
 </script>
 <style>
   :root {
@@ -994,7 +994,7 @@ function formaterIntervalleSpec(spec) {
     return spec.liste.map(iv => {
       const cg = iv.inclusBas ? '[' : ']';
       const cd = iv.inclusHaut ? ']' : '[';
-      return `${cg}${formaterUneBorne(iv.bas)}\\,;\\,${formaterUneBorne(iv.haut)}${cd}`;
+      return `${cg}${iv.texBas || formaterUneBorne(iv.bas)}\\,;\\,${iv.texHaut || formaterUneBorne(iv.haut)}${cd}`;
     }).join('\\ \\cup\\ ');
   }
   return '';
@@ -1057,7 +1057,7 @@ const INCLUSIONS_VIVIER = [
 const alea01 = () => alea(0,1) === 1;
 // ecriture LaTeX d'un intervalle {bas, haut, inclusBas, inclusHaut} (bornes infinies toujours ouvertes)
 function texIv(iv) {
-  return `${iv.inclusBas ? '[' : ']'}${formaterUneBorne(iv.bas)}\\,;\\,${formaterUneBorne(iv.haut)}${iv.inclusHaut ? ']' : '['}`;
+  return `${iv.inclusBas ? '[' : ']'}${iv.texBas || formaterUneBorne(iv.bas)}\\,;\\,${iv.texHaut || formaterUneBorne(iv.haut)}${iv.inclusHaut ? ']' : '['}`;
 }
 // enonce d'une question « I et J » : la donnee seule, la consigne est dans le titre du calcul
 function enonceIJ(I, J) {
@@ -1068,21 +1068,33 @@ function ordreAleatoire(I, J) { return alea01() ? [I, J] : [J, I]; }
 const ivMoins = (haut, inclusHaut) => ({ bas: -Infinity, haut, inclusBas: false, inclusHaut });
 const ivPlus = (bas, inclusBas) => ({ bas, haut: Infinity, inclusBas, inclusHaut: false });
 
-// systeme de 2 inequations (une borne inferieure, une borne superieure) ou de 3 (deux bornes inferieures, une superieure) ;
+// une inequation a1*x + b1 (>|<) c1 dont le seuil est x : borne inferieure (x > ...) ou superieure (x < ...) selon le signe du coefficient
+function ligneInequation(x, inferieure) {
+  const a = entierSigne(2,7), b = alea(1,15), c = a*x + b;
+  const symb = inferieure ? (a > 0 ? '\\gt' : '\\lt') : (a > 0 ? '\\lt' : '\\gt');
+  return `${coefXTexte(a)}+${b}${symb}${c}`;
+}
+const texSysteme = (lignes) => `\\[\\begin{cases} ${lignes.join(' \\\\ ')} \\end{cases}\\]`;
+// systeme avec des bornes inferieures et UNE borne superieure (2 inequations : nbInferieures = 1 ; 3 inequations : nbInferieures = 2) ;
 // ensemble vide environ une fois sur dix ; lignes melangees
 function genSysteme(nbInferieures) {
-  const mk = (x, inferieure) => {
-    const a = entierSigne(2,7), b = alea(1,15), c = a*x + b;
-    const symb = inferieure ? (a > 0 ? '\\gt' : '\\lt') : (a > 0 ? '\\lt' : '\\gt');
-    return `${coefXTexte(a)}${b<0?`-${-b}`:`+${b}`}${symb}${c}`;
-  };
   const vide = Math.random() < 0.1;
   const infs = Array.from({length: nbInferieures}, () => alea(-8,5));
   const maxP = Math.max(...infs);
   const q = vide ? maxP - alea(0,3) : maxP + alea(2,8);
-  const lignes = melanger([...infs.map(p => mk(p, true)), mk(q, false)]);
+  const lignes = melanger([...infs.map(p => ligneInequation(p, true)), ligneInequation(q, false)]);
   const intervalleSpec = vide ? {type:'vide'} : {type:'intervalles', liste:[{bas:maxP, haut:q, inclusBas:false, inclusHaut:false}]};
-  return { enonce: `\\[\\begin{cases} ${lignes.join(' \\\\ ')} \\end{cases}\\]`, intervalleSpec };
+  return { enonce: texSysteme(lignes), intervalleSpec };
+}
+// deux inequations de MEME sens : la solution est la demi-droite la plus restrictive
+function genSystemeMemeSens() {
+  const inferieur = alea01();
+  let p1, p2; do { p1 = alea(-8,8); p2 = alea(-8,8); } while (p1 === p2);
+  const lignes = melanger([ligneInequation(p1, inferieur), ligneInequation(p2, inferieur)]);
+  const intervalleSpec = inferieur
+    ? {type:'intervalles', liste:[{bas:Math.max(p1,p2), haut:Infinity, inclusBas:false, inclusHaut:false}]}
+    : {type:'intervalles', liste:[{bas:-Infinity, haut:Math.min(p1,p2), inclusBas:false, inclusHaut:false}]};
+  return { enonce: texSysteme(lignes), intervalleSpec };
 }
 
 const generateurs = [
@@ -1101,8 +1113,10 @@ const generateurs = [
       intervalleSpec: {type:'intervalles', liste:[{bas:a, haut:b, inclusBas, inclusHaut}]} };
   }},
   {id:"12.2 b)", type:"intervalle", texteLibre:true, gen: () => {
-    // inegalite simple a seuil demi-entier -> demi-droite
-    const seuil = (2*entierSigne(1,9) + 1)/2;
+    // inegalite simple a seuil fractionnaire peu evident (53/6, -29/4...) -> demi-droite
+    const q = choix([3,4,6,7]); let p;
+    do { p = entierSigne(5,60); } while (pgcd(p,q) !== 1 || Math.abs(p/q) < 2);
+    const seuil = p/q;
     const sens = choix(['>','<','>=','<=']);
     const symb = { '>':'\\gt', '<':'\\lt', '>=':'\\geqslant', '<=':'\\leqslant' }[sens];
     return { enonce: `Écrire sous la forme d'un intervalle : \\(x ${symb} ${formaterUneBorne(seuil)}\\)`, intervalleSpec: intervalleDemiDroite(sens, seuil) };
@@ -1156,29 +1170,30 @@ const generateurs = [
     return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[petit]} };
   }},
   {id:"12.4 c)", type:"intervalle", texteLibre:true, gen: () => {
-    // intersection vide ; une fois sur deux les deux intervalles se touchent en un point exclu d'au moins un des deux
-    const a1 = entierSigne(1,7), b1 = a1 + alea(2,5);
-    let a2, inclusHaut1, inclusBas2;
-    if (alea01()) { a2 = b1; [inclusHaut1, inclusBas2] = choix([[false,false],[false,true],[true,false]]); }
-    else { a2 = b1 + alea(1,4); inclusHaut1 = alea01(); inclusBas2 = alea01(); }
-    const b2 = a2 + alea(2,5);
-    const [x, y] = ordreAleatoire({bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:inclusHaut1}, {bas:a2, haut:b2, inclusBas:inclusBas2, inclusHaut:alea01()});
+    // intersection vide, les deux intervalles ayant la MEME borne : au moins un des deux crochets est ouvert en ce point
+    const a1 = entierSigne(1,7), b1 = a1 + alea(2,5), b2 = b1 + alea(2,5);
+    const [inclusHaut1, inclusBas2] = choix([[false,false],[false,true],[true,false]]);
+    const [x, y] = ordreAleatoire({bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:inclusHaut1}, {bas:b1, haut:b2, inclusBas:inclusBas2, inclusHaut:alea01()});
     return { enonce: enonceIJ(x, y), intervalleSpec: {type:'vide'} };
   }},
   {id:"12.4 d)", type:"intervalle", texteLibre:true, gen: () => {
-    // une demi-droite et un intervalle (ou deux demi-droites) : borne infinie
-    if (alea01()) {
-      const a = entierSigne(1,6), b = a + alea(2,6);
-      const I = ivMoins(b, alea01()), J = ivPlus(a, alea01());
-      const [x, y] = ordreAleatoire(I, J);
-      return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[{bas:a, haut:b, inclusBas:J.inclusBas, inclusHaut:I.inclusHaut}]} };
-    }
-    const a = entierSigne(1,5), c = a + alea(1,3), b = c + alea(1,4);
-    const I = {bas:a, haut:b, inclusBas:alea01(), inclusHaut:alea01()}, J = ivMoins(c, alea01());
+    // bornes proches dont une irrationnelle : le decimal (1,7 ou 1,8) est-il avant ou apres sqrt(3) ? vide ou non selon le cas
+    const k = choix([2,3,5,6,7,10,11]), r = Math.sqrt(k);
+    const dessous = Math.floor(r*10)/10, dessus = Math.round((dessous + 0.1)*10)/10;
+    const d = alea01() ? dessous : dessus;
+    const decTex = String(d).replace('.', '{,}'), racTex = `\\sqrt{${k}}`;
+    const sensA = alea01();
+    // A : I = ]-oo ; sqrt(k)] et J = [d ; +oo[ (non vide si d < sqrt(k)) ; B : I = [sqrt(k) ; +oo[ et J = ]-oo ; d] (non vide si d > sqrt(k))
+    const I = sensA ? {...ivMoins(r, alea01()), texHaut: racTex} : {...ivPlus(r, alea01()), texBas: racTex};
+    const J = sensA ? {...ivPlus(d, alea01()), texBas: decTex} : {...ivMoins(d, alea01()), texHaut: decTex};
+    const nonVide = sensA ? d < r : d > r;
     const [x, y] = ordreAleatoire(I, J);
-    return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[{bas:a, haut:c, inclusBas:I.inclusBas, inclusHaut:J.inclusHaut}]} };
+    let intervalleSpec = {type:'vide'};
+    if (nonVide) intervalleSpec = sensA
+      ? {type:'intervalles', liste:[{bas:d, haut:r, inclusBas:J.inclusBas, inclusHaut:I.inclusHaut, texBas:decTex, texHaut:racTex}]}
+      : {type:'intervalles', liste:[{bas:r, haut:d, inclusBas:I.inclusBas, inclusHaut:J.inclusHaut, texBas:racTex, texHaut:decTex}]};
+    return { enonce: enonceIJ(x, y), intervalleSpec };
   }},
-
   // ---------- 12.5 : reunion de deux intervalles (disjoints, qui se chevauchent, qui se touchent, demi-droites) ----------
   {id:"12.5 a)", type:"intervalle", texteLibre:true, gen: () => {
     const a1 = entierSigne(1,7), b1 = a1 + alea(1,4), a2 = b1 + alea(1,4), b2 = a2 + alea(1,4);
@@ -1211,37 +1226,30 @@ const generateurs = [
     return { enonce: enonceIJ(x, y), intervalleSpec: recouvrement ? {type:'tout'} : {type:'intervalles', liste:[I, J]} };
   }},
 
-  // ---------- 12.6 : systemes d'inequations (deux inequations, puis trois) ----------
+  // ---------- 12.6 : systemes de deux inequations (une borne de chaque cote, puis deux bornes de meme sens) ----------
   {id:"12.6 a)", type:"intervalle", texteLibre:true, gen: () => genSysteme(1)},
-  {id:"12.6 b)", type:"intervalle", texteLibre:true, gen: () => genSysteme(2)},
+  {id:"12.6 b)", type:"intervalle", texteLibre:true, gen: () => genSystemeMemeSens()},
 
-  // ---------- 12.7 : calculs plus avances ----------
-  {id:"12.7 a)", type:"num", texteLibre:true, gen: () => {
+  // ---------- 12.7 : calculs plus avances (systeme de trois inequations, nombre d'entiers, reels hors d'un intervalle, extension) ----------
+  {id:"12.7 a)", type:"intervalle", texteLibre:true, gen: () => genSysteme(2)},
+  {id:"12.7 b)", type:"num", texteLibre:true, gen: () => {
     const a = entierSigne(1,10), b = a + alea(5,15);
     const inclusBas = alea01(), inclusHaut = alea01();
     const cg = inclusBas?'[':']', cd = inclusHaut?']':'[';
     const debut = inclusBas ? a : a+1;
     const fin = inclusHaut ? b : b-1;
-    return { enonce: `Quel est le cardinal de l'ensemble des entiers relatifs appartenant à l'intervalle \\(${cg}${a};${b}${cd}\\) ?`, reponse: `${fin - debut + 1}` };
+    return { enonce: `Combien d'entiers relatifs appartiennent à l'intervalle \\(${cg}${a};${b}${cd}\\) ?`, reponse: `${fin - debut + 1}` };
   }},
-  {id:"12.7 b)", type:"intervalle", texteLibre:true, gen: () => {
+  {id:"12.7 c)", type:"intervalle", texteLibre:true, gen: () => {
     const a = entierSigne(1,8), b = a + alea(2,8);
     const inclusBas = alea01(), inclusHaut = alea01();
     const cg = inclusBas?'[':']', cd = inclusHaut?']':'[';
     const tex = `${cg}${a};${b}${cd}`;
-    return { enonce: `Donner le complémentaire de l'intervalle \\(${tex}\\) dans \\(\\mathbb{R}\\).`,
+    return { enonce: `Déterminer l'ensemble des nombres réels qui n'appartiennent pas à l'intervalle \\(${tex}\\).`,
       intervalleSpec: { type:'intervalles', liste: [
         {bas:-Infinity, haut:a, inclusBas:false, inclusHaut: !inclusBas},
         {bas:b, haut:Infinity, inclusBas: !inclusHaut, inclusHaut:false}
       ]} };
-  }},
-  {id:"12.7 c)", type:"intervalle", texteLibre:true, gen: () => {
-    const seuil = entierSigne(1,12);
-    const sensChoisi = choix(['>','<','>=','<=']);
-    const tex = formaterIntervalleSpec(intervalleDemiDroite(sensChoisi, seuil));
-    const sensOppose = {'>':'<=','<':'>=','>=':'<','<=':'>'}[sensChoisi];
-    return { enonce: `On considère la proposition « \\(x\\in ${tex}\\) ». Écrire, sous forme d'intervalle, l'ensemble des \\(x\\) pour lesquels cette proposition est fausse (sa négation).`,
-      intervalleSpec: intervalleDemiDroite(sensOppose, seuil) };
   }},
   {id:"12.7 d)", type:"num", texteLibre:true, gen: () => {
     const seuil = choix([10,15,20,25,30,35,40,50]);
@@ -1828,7 +1836,7 @@ function passerEnEntrainementLibre(garderBandeau = true) {
 function formesCalcul() {
   return {
     "12.1": "simplifie",
-    "12.7 a)": "simplifie"
+    "12.7 b)": "simplifie"
   };
 }
 // forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
