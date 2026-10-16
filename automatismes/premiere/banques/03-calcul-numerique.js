@@ -759,13 +759,304 @@
   void racL;
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+
+  // ---- Famille E : valeur d'une expression littérale (substitution de valeurs, souvent négatives)
+  //      Antilles-Guyane 12/06/2026 : E = (x − y)/(zt) avec x = 3, y = −2, z = −3, t = −4.
+  const par = v => (v < 0 ? `(${v})` : String(v));    // valeur substituée, entre parenthèses si négative
+  // fraction d'une étape de calcul : signe devant, jamais de dénominateur 1 ni négatif
+  const etape = (n, d) => { if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`; };
+  // somme de deux termes déjà écrits : « a + b » ou « a - |b| », jamais « a + -b »
+  const plus = (a, b) => (b.charAt(0) === '-' ? `${a} - ${b.slice(1)}` : `${a} + ${b}`);
+  // puissance sans exposant 1 ni 0
+  const pw = (b, e) => (e === 1 ? String(b) : e === 0 ? '1' : `${b}^{${e}}`);
+
+  function questionValeur(formule, valeurs, bonne, fautes, explication) {
+    const subst = Object.keys(valeurs).map(k => `${k} = ${valeurs[k]}`);
+    const dernier = subst.pop();
+    const liste = subst.length ? subst.join(', ') + '\\text{ et }' + dernier : dernier;
+    const cands = fautes.map(f => opt(m('E = ' + fL(f)), fCle(f)));
+    return qcm(`On considère l’expression ${m('E = ' + formule)}.<br>Lorsque ${m(liste)}, on a :`,
+      opt(m('E = ' + fL(bonne)), fCle(bonne)), cands, { explication });
+  }
+
+  // E = a x − b y
+  function exprAffine() {
+    const a = alea(2, 5), b = alea(2, 5);
+    let x, y;
+    do { x = O.aleaNonNul(-6, 6); y = O.aleaNonNul(-6, 6); } while (x > 0 && y > 0);
+    const v = a * x - b * y;
+    const fautes = [a * x + b * y, -a * x - b * y, a * x - b * Math.abs(y), a * y - b * x].filter(w => w !== v).map(w => F(w));
+    return questionValeur(`${a}x - ${b}y`, { x, y }, F(v), fautes,
+      `On remplace : ${m(`E = ${a} \\times ${par(x)} - ${b} \\times ${par(y)} = ${a * x} - ${par(b * y)} = ${v}`)}.`);
+  }
+
+  // E = x² − y ou E = −x² + a y, avec x négatif : (−3)² = 9 mais −3² = −9
+  function exprCarre() {
+    const x = -alea(2, 6), y = O.aleaNonNul(-7, 7);
+    if (alea(0, 1) === 0) {
+      const v = x * x - y;
+      const fautes = [-x * x - y, x * x + y, 2 * x - y, -x * x + y].filter(w => w !== v).map(w => F(w));
+      return questionValeur('x^2 - y', { x, y }, F(v), fautes,
+        `${m(`x^2 = ${par(x)}^2 = ${x * x}`)}, donc ${m(`E = ${x * x} - ${par(y)} = ${v}`)}.`);
+    }
+    const a = alea(2, 4), v = -x * x + a * y;
+    const fautes = [x * x + a * y, -x * x - a * y, x * x - a * y, -x * x + y].filter(w => w !== v).map(w => F(w));
+    return questionValeur(`-x^2 + ${a}y`, { x, y }, F(v), fautes,
+      `${m(`x^2 = ${par(x)}^2 = ${x * x}`)}, donc ${m(`E = -${x * x} + ${a} \\times ${par(y)} = ${v}`)}.`);
+  }
+
+  // E = (x − y)/(z t)
+  function exprQuotient() {
+    let x, y, z, t;
+    do { x = O.aleaNonNul(-6, 6); y = O.aleaNonNul(-6, 6); z = O.aleaNonNul(-5, 5); t = O.aleaNonNul(-5, 5); } while (x === y);
+    const v = F(x - y, z * t);
+    const fautes = [F(x + y, z * t), F(y - x, z * t), z + t !== 0 ? F(x - y, z + t) : null, F(x - y, -z * t), F(x - y, z)].filter(w => w && !fEgal(w, v));
+    return questionValeur('\\dfrac{x-y}{zt}', { x, y, z, t }, v, fautes,
+      `${m(`E = \\dfrac{${par(x)} - ${par(y)}}{${par(z)} \\times ${par(t)}} = ${etape(x - y, z * t)}${etape(x - y, z * t) === fL(v) ? '' : ' = ' + fL(v)}`)}.`);
+  }
+
+  // E = (x + y)/z − t
+  function exprFractionPlus() {
+    let x, y, z, t;
+    do { x = O.aleaNonNul(-8, 8); y = O.aleaNonNul(-8, 8); z = O.aleaNonNul(-5, 5); t = O.aleaNonNul(-6, 6); } while (z === 1 || z === -1);
+    const base = F(x + y, z), v = fSub(base, F(t));
+    const fautes = [fAdd(base, F(t)), F(x + y - t, z), fSub(F(t), base), F(x + y, z - t === 0 ? 1 : z - t)].filter(w => !fEgal(w, v));
+    return questionValeur('\\dfrac{x+y}{z} - t', { x, y, z, t }, v, fautes,
+      `${m(`E = \\dfrac{${par(x)} + ${par(y)}}{${par(z)}} - ${par(t)} = ${fL(base)} - ${par(t)} = ${fL(v)}`)}.`);
+  }
+
+  // E = 1/x + 1/y
+  function exprInverses() {
+    let x, y;
+    do { x = O.aleaNonNul(-6, 6); y = O.aleaNonNul(-6, 6); } while (x === y || x + y === 0 || Math.abs(x) === 1 || Math.abs(y) === 1);
+    const v = F(x + y, x * y);
+    const fautes = [F(1, x + y), F(2, x + y), F(-(x + y), x * y), F(x * y, x + y), F(1, x * y)].filter(w => !fEgal(w, v));
+    return questionValeur('\\dfrac{1}{x} + \\dfrac{1}{y}', { x, y }, v, fautes,
+      `${m(`E = \\dfrac{1}{${par(x)}} + \\dfrac{1}{${par(y)}} = ${plus(etape(y, x * y), etape(x, x * y))} = ${fL(v)}`)}.`);
+  }
+
+  // E = (x² − y²)/(x − y) : se simplifie en x + y
+  function exprDifferenceCarres() {
+    let x, y;
+    do { x = O.aleaNonNul(-7, 7); y = O.aleaNonNul(-7, 7); } while (x === y);
+    const v = x + y;
+    const fautes = [x - y, x * x - y * y, x * x + y * y, x * x - y].filter(w => w !== v).map(w => F(w));
+    return questionValeur('\\dfrac{x^2 - y^2}{x - y}', { x, y }, F(v), fautes,
+      `${m(`E = \\dfrac{${par(x)}^2 - ${par(y)}^2}{${par(x)} - ${par(y)}} = ${etape(x * x - y * y, x - y)}${etape(x * x - y * y, x - y) === String(v) ? '' : ' = ' + v}`)}.`);
+  }
+
+  function valeurExpression(niveau) {
+    const modeles = niveau === 1 ? [exprAffine, exprCarre]
+      : niveau === 2 ? [exprAffine, exprCarre, exprQuotient, exprFractionPlus]
+        : [exprQuotient, exprInverses, exprDifferenceCarres, exprFractionPlus];
+    return aleaParmi(modeles)();
+  }
+
+  // ---- Famille F : « une seule proposition est vraie » (comparaisons)
+  //      Métropole 11/09/2026 : 3/4 + 1/6 > 1 ; 7/9 > 5/7 ; 5/3 < 3/5 ; 5/8 − 1/4 > 1/2.
+  const cmpSigne = (a, b) => Math.sign(a.n * b.d - b.n * a.d);       // signe de a − b
+  function enonceComparaison(g, symbole, d) { return `${g} ${symbole} ${d}`; }
+
+  function cmpFractions() {
+    const b = alea(2, 12), d = alea(2, 12);
+    const A = F(alea(1, b - 1), b), B = F(alea(1, d - 1), d);
+    if (fEgal(A, B) || A.d === 1 || B.d === 1) return null;
+    const s = aleaParmi(['<', '>']);
+    const vrai = cmpSigne(A, B) === (s === '>' ? 1 : -1);
+    const plus = cmpSigne(A, B) > 0 ? '>' : '<';
+    return { tex: enonceComparaison(fL(A), s, fL(B)), vrai,
+      detail: `${m(fL(A) + ' = \\dfrac{' + (A.n * B.d) + '}{' + (A.d * B.d) + '}')} et ${m(fL(B) + ' = \\dfrac{' + (B.n * A.d) + '}{' + (A.d * B.d) + '}')} : ${m(fL(A) + ' ' + plus + ' ' + fL(B))}` };
+  }
+  function cmpDecimaux() {
+    const dens = [2, 4, 5, 8, 10, 20, 25];
+    const den = aleaParmi(dens), A = F(alea(1, 2 * den - 1), den), v = aleaParmi([0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 0.8, 0.9, 1.2, 0.35, 0.45]);
+    if (A.d === 1 || A.n / A.d === v) return null;
+    const s = aleaParmi(['<', '>']);
+    const vrai = (A.n / A.d > v) === (s === '>');
+    const plus = A.n / A.d > v ? '>' : '<';
+    const val = decL(A.n / A.d);
+    return { tex: enonceComparaison(fL(A), s, decL(v)), vrai, detail: `${m(fL(A) + ' = ' + val)}, donc ${m(val + ' ' + plus + ' ' + decL(v))}` };
+  }
+  function cmpSomme() {
+    const A = F(alea(1, 5), alea(2, 8)), B = F(alea(1, 5), alea(2, 8));
+    if (A.d === 1 || B.d === 1) return null;
+    const S = fAdd(A, B);
+    if (S.n === S.d) return null;
+    const s = aleaParmi(['<', '>']);
+    const vrai = (S.n > S.d) === (s === '>');
+    const plus = S.n > S.d ? '>' : '<';
+    return { tex: `${fL(A)} + ${fL(B)} ${s} 1`, vrai,
+      detail: `${m(fL(A) + ' + ' + fL(B) + ' = ' + fL(S))}, qui est ${plus === '>' ? 'supérieur' : 'inférieur'} à 1 : ${m(fL(S) + ' ' + plus + ' 1')}` };
+  }
+  function cmpDifference() {
+    const A = F(alea(2, 9), alea(2, 9)), B = F(alea(1, 4), alea(2, 9));
+    const D = fSub(A, B);
+    const cible = aleaParmi([F(1, 2), F(1, 3), F(1, 4), F(2, 3), F(3, 4), F(1)]);
+    if (A.d === 1 || B.d === 1 || D.n <= 0 || fEgal(D, cible)) return null;
+    const s = aleaParmi(['<', '>']);
+    const vrai = cmpSigne(D, cible) === (s === '>' ? 1 : -1);
+    const plus = cmpSigne(D, cible) > 0 ? '>' : '<';
+    return { tex: `${fL(A)} - ${fL(B)} ${s} ${fL(cible)}`, vrai,
+      detail: `${m(fL(A) + ' - ' + fL(B) + ' = ' + fL(D))}, et ${m(fL(D) + ' ' + plus + ' ' + fL(cible))}` };
+  }
+  function cmpNegatifs() {
+    const b = alea(2, 9), d = alea(2, 9);
+    const A = F(alea(1, 2 * b), b), B = F(alea(1, 2 * d), d);
+    if (fEgal(A, B) || A.d === 1 || B.d === 1) return null;
+    const s = aleaParmi(['<', '>']);
+    const NA = F(-A.n, A.d), NB = F(-B.n, B.d);
+    const vrai = cmpSigne(NA, NB) === (s === '>' ? 1 : -1);
+    const plus = cmpSigne(NA, NB) > 0 ? '>' : '<';
+    return { tex: `${fL(NA)} ${s} ${fL(NB)}`, vrai,
+      detail: `Entre deux nombres négatifs, le plus grand est celui dont la valeur absolue est la plus petite : ${m(fL(NA) + ' ' + plus + ' ' + fL(NB))}` };
+  }
+
+  function comparaison(niveau) {
+    const constructeurs = niveau === 1 ? [cmpFractions, cmpDecimaux]
+      : niveau === 2 ? [cmpSomme, cmpFractions, cmpDifference, cmpDecimaux]
+        : [cmpNegatifs, cmpDifference, cmpSomme];
+    const c = aleaParmi(constructeurs);
+    const vraies = [], fausses = [];
+    for (let i = 0; i < 60 && (vraies.length < 1 || fausses.length < 3); i++) {
+      const s = c();
+      if (!s || vraies.concat(fausses).some(t => t.tex === s.tex)) continue;
+      (s.vrai ? vraies : fausses).push(s);
+    }
+    if (!vraies.length || fausses.length < 3) return null;
+    const bonne = vraies[0];
+    return qcm('Parmi les quatre propositions suivantes, une seule est vraie. Laquelle ?', opt(m(bonne.tex), bonne.tex),
+      fausses.map(s => opt(m(s.tex), s.tex)), { explication: `La proposition vraie est ${m(bonne.tex)} : ${bonne.detail}.` });
+  }
+
+  // ---- Famille G : égalités de puissances, moitié et double d'une puissance
+  //      Polynésie 04/09/2026 : « la seule égalité vraie est » ; Antilles-Guyane 11/09/2026 : « la moitié de 2^10 ».
+  function modelesEgalites(b, a2) {
+    let m1, n1;
+    do { m1 = alea(2, 8); n1 = alea(2, 8); } while (m1 * n1 === m1 + n1);
+    const m2 = alea(5, 9), n2 = alea(2, 4), n3 = alea(2, 6), n4 = alea(3, 7);
+    return [
+      { regle: 'on additionne les exposants', vrai: `${b}^{${m1}} \\times ${b}^{${n1}} = ${b}^{${m1 + n1}}`, faux: `${b}^{${m1}} \\times ${b}^{${n1}} = ${b}^{${m1 * n1}}` },
+      { regle: 'on multiplie les exposants', vrai: `\\left(${b}^{${m1}}\\right)^{${n1}} = ${b}^{${m1 * n1}}`, faux: `\\left(${b}^{${m1}}\\right)^{${n1}} = ${b}^{${m1 + n1}}` },
+      { regle: 'on soustrait les exposants', vrai: `\\dfrac{${b}^{${m2}}}{${b}^{${n2}}} = ${pw(b, m2 - n2)}`, faux: `\\dfrac{${b}^{${m2}}}{${b}^{${n2}}} = ${pw(b, n2 - m2)}` },
+      { regle: 'un exposant négatif désigne un inverse', vrai: `${b}^{-${n3}} = \\dfrac{1}{${b}^{${n3}}}`, faux: `${b}^{-${n3}} = -${b}^{${n3}}` },
+      { regle: 'a^n × b^n = (ab)^n', vrai: `${b}^{${n4}} \\times ${a2}^{${n4}} = ${b * a2}^{${n4}}`, faux: `${b}^{${n4}} \\times ${a2}^{${n4}} = ${b + a2}^{${n4}}` },
+      { regle: 'on soustrait les exposants (b = b^1)', vrai: `\\dfrac{${b}}{${b}^{${n3 + 1}}} = ${b}^{-${n3}}`, faux: `\\dfrac{${b}}{${b}^{${n3 + 1}}} = ${b}^{${n3}}` },
+      { regle: 'a^{-n} × b^{-n} = (ab)^{-n}', vrai: `${b}^{-${n4}} \\times ${a2}^{-${n4}} = ${b * a2}^{-${n4}}`, faux: `${b}^{-${n4}} \\times ${a2}^{-${n4}} = ${b * a2}^{-${2 * n4}}` }
+    ];
+  }
+  function egalitesPuissances(niveau) {
+    const b = aleaParmi([2, 3, 5]), a2 = aleaParmi([2, 3, 5, 6, 7].filter(v => v !== b));
+    const tous = modelesEgalites(b, a2);
+    const dispo = niveau === 1 ? tous.slice(0, 4) : tous;
+    const choisis = melanger(dispo).slice(0, 4);
+    const bonne = choisis[0];
+    return qcm('La seule égalité vraie est :', opt(m(bonne.vrai), bonne.vrai),
+      choisis.slice(1).map(c => opt(m(c.faux), c.faux)),
+      { explication: `Dans ${m(bonne.vrai)}, ${bonne.regle} ; les trois autres égalités appliquent mal la règle.` });
+  }
+  function moitiePuissance() {
+    const modeles = [
+      { mot: 'La moitié de', b: 2, n: () => aleaParmi([8, 10, 12, 14, 16]), bonne: n => `2^{${n - 1}}`, fautes: n => [`1^{${n}}`, `2^{${n / 2}}`, `\\left(\\dfrac{1}{2}\\right)^{${n}}`, `2^{${n - 2}}`] },
+      { mot: 'Le double de', b: 2, n: () => alea(5, 12), bonne: n => `2^{${n + 1}}`, fautes: n => [`4^{${n}}`, `2^{${n}} + 2`, `2^{${n + 2}}`, `2^{${2 * n}}`] },
+      { mot: 'Le quart de', b: 2, n: () => aleaParmi([8, 12, 16]), bonne: n => `2^{${n - 2}}`, fautes: n => [`2^{${n / 4}}`, `\\left(\\dfrac{1}{4}\\right)^{${n}}`, `2^{${n - 4}}`, `1^{${n}}`] },
+      { mot: 'Le triple de', b: 3, n: () => alea(4, 10), bonne: n => `3^{${n + 1}}`, fautes: n => [`9^{${n}}`, `3^{${3 * n}}`, `3^{${n + 3}}`, `3^{${n}} + 3`] },
+      { mot: 'Le tiers de', b: 3, n: () => aleaParmi([6, 9, 12]), bonne: n => `3^{${n - 1}}`, fautes: n => [`1^{${n}}`, `3^{${n / 3}}`, `\\left(\\dfrac{1}{3}\\right)^{${n}}`, `3^{${n - 3}}`] },
+      { mot: 'Le dixième de', b: 10, n: () => alea(5, 12), bonne: n => `10^{${n - 1}}`, fautes: n => [`1^{${n}}`, `10^{${n - 2}}`, `\\left(\\dfrac{1}{10}\\right)^{${n}}`, `10^{${n}} - 10`] }
+    ];
+    const c = aleaParmi(modeles), n = c.n();
+    const bonne = c.bonne(n);
+    return qcm(`${c.mot} ${m(c.b + '^{' + n + '}')} est égal${c.mot.startsWith('Le') ? '' : 'e'} à :`, opt(m(bonne), bonne),
+      c.fautes(n).map(x => opt(m(x), x)),
+      { explication: `${c.mot} ${m(c.b + '^{' + n + '}')} : on ${c.mot.includes('double') || c.mot.includes('triple') ? 'multiplie' : 'divise'} par ${c.mot.includes('quart') ? '4' : c.mot.includes('moitié') || c.mot.includes('double') ? '2' : c.mot.includes('dixième') ? '10' : '3'}, ce qui change l’exposant et laisse la base inchangée : ${m(bonne)}.` });
+  }
+  function egalitePuissances(niveau) {
+    return (niveau < 3 && alea(0, 99) < 35) ? moitiePuissance() : egalitesPuissances(niveau);
+  }
+
+  // ---- Famille H : opérations sur les racines carrées (sommes, produits, quotients, carrés)
+  //      Secours Métropole 12/06/2026 : (√98 + 2√8)/√2 = 11.
+  const RADIC_LIBRES = [2, 3, 5, 6, 7];
+  const racK = (c, k) => (c === 1 ? '' : String(c)) + '\\sqrt{' + k + '}';
+  function racSomme() {
+    const k = aleaParmi(RADIC_LIBRES);
+    let p = alea(2, 6), q = alea(2, 6);
+    const moins = alea(0, 2) === 0;
+    if (p === q) q = p === 6 ? 3 : p + 1;
+    if (moins && p < q) { const t = p; p = q; q = t; }
+    const r = moins ? p - q : p + q, op = moins ? '-' : '+';
+    const e = `\\sqrt{${p * p * k}} ${op} \\sqrt{${q * q * k}}`;
+    const rep = racK(r, k);
+    const cands = [`\\sqrt{${moins ? p * p * k - q * q * k : p * p * k + q * q * k}}`, `${r * k}`, racK(p * q, k), `${r}\\sqrt{${2 * k}}`].map(x => opt(m(x), x));
+    return qcm(`La forme simplifiée de ${m(e)} est :`, opt(m(rep), rep), cands, {
+      explication: `${m('\\sqrt{' + p * p * k + '} = ' + p + '\\sqrt{' + k + '}')} et ${m('\\sqrt{' + q * q * k + '} = ' + q + '\\sqrt{' + k + '}')}, donc ${m(e + ' = ' + p + '\\sqrt{' + k + '} ' + op + ' ' + q + '\\sqrt{' + k + '} = ' + rep)}.`
+    });
+  }
+  function racProduit() {
+    const k = aleaParmi([2, 3, 5, 6]), s = alea(1, 3), t = alea(1, 2);
+    if (s === t && s === 1) return null;
+    const a = k * s * s, b = k * t * t, r = k * s * t;
+    const e = `\\sqrt{${a}} \\times \\sqrt{${b}}`;
+    const cands = [`\\sqrt{${a + b}}`, `${a * b}`, `${a + b}`, `${2 * r}`].map(x => opt(m(x), x));
+    return qcm(`Le nombre ${m(e)} est égal à :`, opt(m(String(r)), String(r)), cands, {
+      explication: `${m(e + ' = \\sqrt{' + a + ' \\times ' + b + '} = \\sqrt{' + a * b + '} = ' + r)}.`
+    });
+  }
+  function racCarre() {
+    const k = aleaParmi([2, 3, 5, 6, 7]), p = alea(2, 6);
+    const e = `\\left(${racK(p, k)}\\right)^2`;
+    const rep = p * p * k;
+    const cands = [p * k, p * p + k, p * k * k, p + k].filter(v => v !== rep).map(v => opt(m(String(v)), v)).concat([opt(m(racK(p * p, k)), racK(p * p, k))]);
+    return qcm(`Le nombre ${m(e)} est égal à :`, opt(m(String(rep)), rep), cands, {
+      explication: `${m(e + ' = ' + p + '^2 \\times (\\sqrt{' + k + '})^2 = ' + p * p + ' \\times ' + k + ' = ' + rep)}.`
+    });
+  }
+  function racQuotientSomme() {
+    const k = aleaParmi([2, 3, 5]), a = alea(2, 8), b = alea(2, 4), c = alea(2, 3);
+    if (a === b) return null;
+    const rep = a + c * b;
+    const e = `\\dfrac{\\sqrt{${k * a * a}} + ${c}\\sqrt{${k * b * b}}}{\\sqrt{${k}}}`;
+    const cands = [racK(rep, k), String(rep * k), String(a + b + c), String(a * c * b)].filter(x => x !== String(rep)).map(x => opt(m(x), x));
+    return qcm(`Le nombre ${m(e)} est égal à :`, opt(m(String(rep)), String(rep)), cands, {
+      explication: `${m('\\sqrt{' + k * a * a + '} = ' + a + '\\sqrt{' + k + '}')} et ${m(c + '\\sqrt{' + k * b * b + '} = ' + (c * b) + '\\sqrt{' + k + '}')}, donc le numérateur vaut ${m((a + c * b) + '\\sqrt{' + k + '}')} et le quotient ${m(String(rep))}.`
+    });
+  }
+  function racConjugue() {
+    const a = aleaParmi([2, 3, 5, 6, 7, 10, 11]), b = aleaParmi([2, 3, 5, 6, 7, 10].filter(v => v !== a));
+    const hi = Math.max(a, b), lo = Math.min(a, b);
+    const e = `\\left(\\sqrt{${hi}} + \\sqrt{${lo}}\\right)\\left(\\sqrt{${hi}} - \\sqrt{${lo}}\\right)`;
+    const rep = hi - lo;
+    const cands = [hi + lo, hi * lo, 2 * hi, rep * rep].filter(v => v !== rep).map(v => opt(m(String(v)), v)).concat(rep > 1 ? [opt(m('\\sqrt{' + rep + '}'), '\\sqrt{' + rep + '}')] : []);
+    return qcm(`Le nombre ${m(e)} est égal à :`, opt(m(String(rep)), rep), cands, {
+      explication: `Identité remarquable ${m('(A+B)(A-B) = A^2 - B^2')} : ${m(e + ' = ' + hi + ' - ' + lo + ' = ' + rep)}.`
+    });
+  }
+  function racDeveloppement() {
+    const k = aleaParmi([2, 3, 5, 6, 7]), p = alea(1, 4);
+    const e = `\\left(\\sqrt{${k}} + ${p}\\right)^2`;
+    const rep = `${k + p * p} + ${racK(2 * p, k)}`;
+    const cands = [`${k + p * p}`, `${k + p * p} + ${racK(p, k)}`, `${k} + ${racK(p * p, k)}`, `${k + p * p + 2 * p}`].map(x => opt(m(x), x));
+    return qcm(`Une forme développée de ${m(e)} est :`, opt(m(rep), rep), cands, {
+      explication: `${m('(a+b)^2 = a^2 + 2ab + b^2')} : ${m(e + ' = ' + k + ' + ' + (2 * p) + '\\sqrt{' + k + '} + ' + p * p + ' = ' + rep)}.`
+    });
+  }
+  function racinesOperations(niveau) {
+    return aleaParmi(niveau === 2 ? [racSomme, racSomme, racProduit, racCarre] : [racQuotientSomme, racConjugue, racSomme, racDeveloppement])();
+  }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('calcul-numerique', {
     titre: 'Calcul numérique',
     familles: {
       'priorites': famille({ nom: 'priorités opératoires', niveaux: [1, 2, 3], base: priorites, variantes3: [signesCarres, prioritesImbriquees, fractionComplexe], ordre: { 1: 1, 2: 1 } }),
       'fractions': famille({ nom: 'fractions', niveaux: [1, 2, 3], base: fractions, variantes3: [fractionEtagee, comparerFractions, fractionContinue, fractionContinue], partBase3: 0.2, ordre: { 1: 2, 2: 2 } }),
       'puissances': famille({ nom: 'puissances', niveaux: [1, 2, 3], base: puissances, variantes3: [notationScientifique, exposantsNegatifs, puissancesLitterales, sommePuissancesOpposees, simplificationJuste], partBase3: 0.2, ordre: { 1: 3, 2: 3 }, quota: { 2: { min: 1, priorite: 2 }, 3: { min: 1 } } }),
-      'racines': famille({ nom: 'racines carrées', niveaux: [2, 3], base: racines, variantes3: [() => racines(3), simplificationJuste], partBase3: 0.5, ordre: { 2: 4 }, quota: { 2: { max: 1 }, 3: { max: 2 } } })
+      'racines': famille({ nom: 'racines carrées', niveaux: [2, 3], base: racines, variantes3: [() => racines(3), simplificationJuste], partBase3: 0.5, ordre: { 2: 4 }, quota: { 2: { max: 1 }, 3: { max: 2 } } }),
+      'valeur-expression': famille({ nom: 'valeur d’une expression littérale', niveaux: [1, 2, 3], base: valeurExpression }),
+      'comparaison': famille({ nom: 'comparer des nombres', niveaux: [1, 2, 3], base: comparaison }),
+      'egalite-puissances': famille({ nom: 'égalités de puissances', niveaux: [1, 2, 3], base: egalitePuissances }),
+      'racines-operations': famille({ nom: 'opérations sur les racines carrées', niveaux: [2, 3], base: racinesOperations })
     }
   });
 })();
