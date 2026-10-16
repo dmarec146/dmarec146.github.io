@@ -1038,10 +1038,10 @@
     const u = c.unite;
     const ont = s => `ont ${unUne(c)} ${u} ${superieur(c)} à ${dec(s)}`;
     const vraies = [
-      { t: `Au moins 75 % des ${c.pop} ${ont(v.q1)}.`,
-        p: `${m('Q_1 = ' + v.q1)} sépare le premier quart des valeurs des trois autres : au plus 25 % des valeurs lui sont inférieures, donc au moins 75 % lui sont supérieures ou égales.` },
-      { t: `Au moins 25 % des ${c.pop} ${ont(v.q3)}.`,
-        p: `${m('Q_3 = ' + v.q3)} laisse au moins 75 % des valeurs en dessous, donc au moins 25 % au-dessus ou égales.` },
+      { t: `Au moins 75 % des ${c.pop} ${ont(v.q1)}.`,
+        p: `${m('Q_1 = ' + v.q1)} sépare le premier quart des valeurs des trois autres : au plus 25 % des valeurs lui sont inférieures, donc au moins 75 % lui sont supérieures ou égales.` },
+      { t: `Au moins 25 % des ${c.pop} ${ont(v.q3)}.`,
+        p: `${m('Q_3 = ' + v.q3)} laisse au moins 75 % des valeurs en dessous, donc au moins 25 % au-dessus ou égales.` },
       { t: `Au moins la moitié des ${c.pop} ${ont(v.med)}.`,
         p: `C’est la définition de la médiane ${m(String(v.med))} : elle partage la série ordonnée en deux moitiés.` }
     ];
@@ -1064,6 +1064,153 @@
         + `${m('Q_3 = ' + v.q3)} et maximum ${m(String(v.max))}. ${bonneAff.p} `
         + mauvaises.map(f => f.p).join(' ')
     });
+  }
+
+  // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+  // ---- Famille L : événement contraire et « au moins un »
+  //      Sujets 2026 : « au moins une fois » à partir d'épreuves indépendantes, P(non A) = 1 − P(A).
+  // N1 : l'événement contraire d'un événement de probabilité donnée
+  function contraireSimple() {
+    const c = aleaParmi(CTX_AB);
+    const p = alea(1, 19) * 5 / 100;                                  // 0,05 ... 0,95
+    const val = arrondir(1 - p, 6);
+    const bonne = pOpt(val);
+    const cands = nettoyer([pOpt(p), pOpt(arrondir(p * p, 6)), pOpt(arrondir(val - 0.1, 6)), pOpt(arrondir(val + 0.1, 6)), pOpt(arrondir(p / 2, 6)), pOpt(arrondir(1 - 2 * p, 6))]);
+    return qcm(`${c.intro} On note ${m('A')} l’événement « ${c.A} ». On sait que ${m('P(A) = ' + decL(p))}. Alors ${m('P(\\overline{A})')} est égale à :`, bonne, cands, {
+      explication: `${m('A')} et son contraire ${m('\\overline{A}')} se partagent tous les cas possibles, donc ${m('P(\\overline{A}) = 1 - P(A) = 1 - ' + decL(p) + ' = ' + decL(val))}.`
+    });
+  }
+
+  // N2 : « au moins un succès » en n épreuves indépendantes
+  const CTX_REPETE = [
+    { debut: 'Un basketteur réussit chaque lancer franc avec la probabilité', fin: ', indépendamment des autres lancers.', repete: n => `Il effectue ${n} lancers francs.`, question: 'qu’il réussisse au moins un lancer' },
+    { debut: 'Un contrôle détecte une panne, quand elle existe, avec la probabilité', fin: ', indépendamment des autres contrôles.', repete: n => `Une machine défectueuse subit ${n} contrôles.`, question: 'que la panne soit détectée au moins une fois' },
+    { debut: 'Une graine germe avec la probabilité', fin: ', indépendamment des autres graines.', repete: n => `On plante ${n} graines.`, question: 'qu’au moins une graine germe' },
+    { debut: 'Un candidat répond correctement à chaque question d’un test avec la probabilité', fin: ', indépendamment des autres questions.', repete: n => `Le test comporte ${n} questions.`, question: 'qu’il réponde correctement à au moins une question' }
+  ];
+  function auMoinsUnRepete(niveau) {
+    const c = aleaParmi(CTX_REPETE);
+    const n = niveau === 2 ? aleaParmi([2, 3]) : aleaParmi([3, 4]);
+    // 0,25 porte à huit décimales avec n = 4 (0,75⁴ = 0,31640625) : la réponse ne serait plus exacte
+    const p = aleaParmi([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].concat(n === 4 ? [] : [0.25]));
+    const q = arrondir(1 - p, 6), val = arrondir(1 - Math.pow(q, n), 6);
+    const bonne = pOpt(val);
+    const cands = nettoyer([pOpt(arrondir(Math.pow(p, n), 6)), pOpt(arrondir(Math.pow(q, n), 6)), pOpt(arrondir(n * p, 6)), pOpt(arrondir(1 - Math.pow(p, n), 6)), pOpt(arrondir(1 - n * q, 6))]);
+    return qcm(`${c.debut} ${m(decL(p))}${c.fin} ${c.repete(n)}<br>La probabilité ${c.question} est :`, bonne, cands, {
+      explication: `L’événement contraire de « au moins un succès » est « aucun succès » : ${m(decL(q) + '^{' + n + '} = ' + decL(arrondir(Math.pow(q, n), 6)))}. Donc la probabilité cherchée est ${m('1 - ' + decL(arrondir(Math.pow(q, n), 6)) + ' = ' + decL(val))}.`
+    });
+  }
+
+  // N3 (variante 1) : deux événements indépendants, au moins l'un des deux
+  const CTX_DEUX = [
+    { debut: 'Deux machines tombent en panne chaque jour avec les probabilités', fin: 'respectivement, de façon indépendante.', question: 'qu’au moins une des deux machines tombe en panne un jour donné' },
+    { debut: 'Deux capteurs d’une alarme se déclenchent lors d’une intrusion avec les probabilités', fin: 'respectivement, de façon indépendante.', question: 'qu’au moins un des deux capteurs se déclenche lors d’une intrusion' },
+    { debut: 'Deux élèves, Léa et Hugo, résolvent un exercice difficile avec les probabilités', fin: 'respectivement, indépendamment l’un de l’autre.', question: 'qu’au moins l’un des deux le résolve' }
+  ];
+  function auMoinsUnDeux() {
+    const c = aleaParmi(CTX_DEUX);
+    const pA = aleaParmi([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), pB = aleaParmi([0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6]);
+    const val = arrondir(1 - (1 - pA) * (1 - pB), 6);
+    const bonne = pOpt(val);
+    const cands = nettoyer([pOpt(arrondir(pA * pB, 6)), pOpt(arrondir(pA + pB, 6)), pOpt(arrondir((1 - pA) * (1 - pB), 6)), pOpt(arrondir(1 - pA * pB, 6)), pOpt(arrondir(Math.abs(pA - pB), 6))]);
+    return qcm(`${c.debut} ${m(decL(pA))} et ${m(decL(pB))} ${c.fin}<br>La probabilité ${c.question} est :`, bonne, cands, {
+      explication: `Le contraire de « au moins un » est « aucun des deux » : par indépendance, ${m('(1 - ' + decL(pA) + ') \\times (1 - ' + decL(pB) + ') = ' + decL(arrondir((1 - pA) * (1 - pB), 6)))}. La probabilité cherchée est ${m('1 - ' + decL(arrondir((1 - pA) * (1 - pB), 6)) + ' = ' + decL(val))}.`
+    });
+  }
+
+  // N3 (variante 2) : tirages avec remise dans une urne
+  function auMoinsUneUrne() {
+    const N = aleaParmi([5, 10, 10, 20]), r = alea(1, N - 1), v = N - r, n = aleaParmi([2, 3]);
+    const pr = r / N, pv = v / N;
+    const val = arrondir(1 - Math.pow(pv, n), 6);
+    const bonne = pOpt(val);
+    const cands = nettoyer([pOpt(arrondir(Math.pow(pr, n), 6)), pOpt(arrondir(Math.pow(pv, n), 6)), pOpt(arrondir(n * pr, 6)), pOpt(arrondir(1 - Math.pow(pr, n), 6)), pOpt(arrondir(pr, 6))]);
+    return qcm(`Une urne contient ${r} boule${r > 1 ? 's' : ''} rouge${r > 1 ? 's' : ''} et ${v} boule${v > 1 ? 's' : ''} verte${v > 1 ? 's' : ''}. On tire successivement ${n} boules, en remettant chaque boule dans l’urne après l’avoir tirée.<br>La probabilité d’obtenir au moins une boule rouge est :`, bonne, cands, {
+      explication: `Le contraire de « au moins une rouge » est « aucune rouge », c’est-à-dire ${n} boules vertes de suite : ${m('\\left(' + fracL(v, N) + '\\right)^{' + n + '} = ' + decL(arrondir(Math.pow(pv, n), 6)))}. La probabilité cherchée est ${m('1 - ' + decL(arrondir(Math.pow(pv, n), 6)) + ' = ' + decL(val))}.`
+    });
+  }
+
+  function evenementContraire(niveau) {
+    for (let essai = 0; essai < 30; essai++) {
+      const q = niveau === 1 ? contraireSimple() : niveau === 2 ? auMoinsUnRepete(2) : aleaParmi([() => auMoinsUnRepete(3), auMoinsUnDeux, auMoinsUneUrne])();
+      if (q) return q;
+    }
+    return null;
+  }
+
+  // ---- Famille M : moyenne d'une liste de valeurs (sans tableau d'effectifs)
+  const CTX_LISTE = [
+    { intro: 'Les notes obtenues par un élève en mathématiques sont :', lo: 5, hi: 19 },
+    { intro: 'Les températures relevées à midi (en °C) pendant quelques jours sont :', lo: 4, hi: 24 },
+    { intro: 'Les temps de trajet (en minutes) d’un employé pendant quelques jours sont :', lo: 12, hi: 40 },
+    { intro: 'Les nombres de buts marqués par une équipe lors de ses derniers matchs sont :', lo: 0, hi: 6 },
+    { intro: 'Les prix (en euros) de quelques articles d’un même rayon sont :', lo: 5, hi: 30 }
+  ];
+  // N1 : moyenne d'une liste
+  function moyenneListe() {
+    const c = aleaParmi(CTX_LISTE), k = aleaParmi([4, 5, 6]);
+    for (let essai = 0; essai < 50; essai++) {
+      const vals = Array.from({ length: k }, () => alea(c.lo, c.hi));
+      const somme = vals.reduce((s, x) => s + x, 0);
+      if (somme % k !== 0) continue;
+      const moy = somme / k, tri = vals.slice().sort((x, y) => x - y);
+      const med = k % 2 ? tri[(k - 1) / 2] : arrondir((tri[k / 2 - 1] + tri[k / 2]) / 2, 6);
+      const milieu = arrondir((tri[0] + tri[k - 1]) / 2, 6);
+      const bonne = opt(decL(moy), 'v' + moy);
+      const cands = nettoyer([med, milieu, somme, moy + 1, moy - 1].filter(x => x !== moy && x >= 0).map(x => opt(decL(x), 'v' + x)));
+      if (cands.length < 3) continue;
+      return qcm(`${c.intro} ${vals.join(' ; ')}.<br>La moyenne de cette série est :`, bonne, cands, {
+        explication: `${m('\\overline{x} = \\dfrac{' + vals.join(' + ') + '}{' + k + '} = \\dfrac{' + somme + '}{' + k + '} = ' + decL(moy))}.`
+      });
+    }
+    return null;
+  }
+
+  // N2 : effet de l'ajout d'une valeur sur la moyenne
+  function moyenneAjout() {
+    for (let essai = 0; essai < 50; essai++) {
+      const n = aleaParmi([4, 5, 6]), moy = alea(8, 15), nouv = moy + alea(-3, 3);
+      const x = (n + 1) * nouv - n * moy;
+      if (nouv === moy || x < 0 || x > 20 || x === nouv) continue;
+      const cands = nettoyer([arrondir((moy + x) / 2, 6), arrondir(moy + x / (n + 1), 6), arrondir((moy + x) / n, 6), arrondir(moy + (x - moy) / n, 6), nouv + 1, nouv - 1]
+        .filter(v => v !== nouv && v > 0).map(v => opt(decL(v), 'v' + v)));
+      if (cands.length < 3) continue;
+      return qcm(`La moyenne de ${n} notes est ${moy}. On ajoute une note de ${x}.<br>La nouvelle moyenne est :`, opt(decL(nouv), 'v' + nouv), cands, {
+        explication: `La somme des ${n} notes vaut ${m(n + ' \\times ' + moy + ' = ' + (n * moy))}. Avec la nouvelle note, elle devient ${m((n * moy) + ' + ' + x + ' = ' + (n * moy + x))}, répartie sur ${n + 1} notes : ${m('\\dfrac{' + (n * moy + x) + '}{' + (n + 1) + '} = ' + decL(nouv))}. On ne fait pas la moyenne de ${m(String(moy))} et ${m(String(x))}, car ${m(String(moy))} représente ${n} notes.`
+      });
+    }
+    return null;
+  }
+
+  // N3 : moyenne générale de deux groupes d'effectifs différents
+  function moyenneDeuxGroupes() {
+    for (let essai = 0; essai < 60; essai++) {
+      const n1 = aleaParmi([10, 15, 20, 25, 30]), n2 = aleaParmi([10, 15, 20, 25, 30]);
+      const m1 = alea(8, 16), m2 = alea(8, 16);
+      if (n1 === n2 || m1 === m2) continue;
+      const total = n1 + n2, somme = n1 * m1 + n2 * m2;
+      const moy = arrondir(somme / total, 6);
+      if (!Number.isInteger(arrondir(moy * 100, 6))) continue;
+      const simple = arrondir((m1 + m2) / 2, 6);
+      if (simple === moy) continue;
+      const cands = nettoyer([simple, arrondir((n1 * m2 + n2 * m1) / total, 6), m1 + m2, arrondir(somme / (2 * total), 6), arrondir(Math.max(m1, m2) - 1, 6)]
+        .filter(v => v !== moy && v > 0).map(v => opt(decL(v), 'v' + v)));
+      if (cands.length < 3) continue;
+      return qcm(`Dans une classe de ${n1} élèves, la moyenne à un devoir est ${m1}. Dans une autre classe de ${n2} élèves, la moyenne au même devoir est ${m2}.<br>La moyenne des ${total} élèves est :`, opt(decL(moy), 'v' + moy), cands, {
+        explication: `On retrouve la somme des notes de chaque classe : ${m(n1 + ' \\times ' + m1 + ' = ' + (n1 * m1))} et ${m(n2 + ' \\times ' + m2 + ' = ' + (n2 * m2))}. La moyenne générale est ${m('\\dfrac{' + (n1 * m1) + ' + ' + (n2 * m2) + '}{' + n1 + ' + ' + n2 + '} = \\dfrac{' + somme + '}{' + total + '} = ' + decL(moy))}, et non la moyenne ${m(decL(simple))} des deux moyennes, car les classes n’ont pas le même effectif.`
+      });
+    }
+    return null;
+  }
+
+  function moyenneSimple(niveau) {
+    for (let essai = 0; essai < 30; essai++) {
+      const q = niveau === 1 ? moyenneListe() : niveau === 2 ? moyenneAjout() : moyenneDeuxGroupes();
+      if (q) return q;
+    }
+    return null;
   }
 
   // =====================================================================
@@ -1119,7 +1266,9 @@
         nom: 'diagramme en boîte', niveaux: [2, 3], base: boiteLecture,
         variantes3: [boiteAffirmation], partBase3: 0.3,
         ordre: { 2: 10 }, quota: { 2: { max: 1 }, 3: { max: 1 } }
-      })
+      }),
+      'evenement-contraire': famille({ nom: 'événement contraire et « au moins un »', niveaux: [1, 2, 3], base: evenementContraire, ordre: { 1: 5, 2: 11 } }),
+      'moyenne-simple': famille({ nom: 'moyenne d’une liste de valeurs', niveaux: [1, 2, 3], base: moyenneSimple, ordre: { 1: 6, 2: 12 } })
     }
   });
 })();
