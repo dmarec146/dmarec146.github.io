@@ -346,6 +346,195 @@
   }
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+  const optFig = (aff, cle) => ({ affichage: aff, cle: cle });
+  const COULEUR_F = '#4B46C7';
+  const intervalleF = (a, b) => inter(decL(a), decL(b), false, false);        // [a ; b]
+  const sensF = croit => (croit ? 'croissante' : 'décroissante');
+
+  // fenêtre contenant l'origine et toutes les courbes de fs sur [xmin ; xmax]
+  function fenetreMulti(fs, xmin, xmax) {
+    let bas = Infinity, haut = -Infinity;
+    for (let x = xmin; x <= xmax + 1e-9; x += 0.25) fs.forEach(f => { const y = f(x); bas = Math.min(bas, y); haut = Math.max(haut, y); });
+    const ymin = Math.min(-1, Math.floor(bas) - 1), ymax = Math.max(1, Math.ceil(haut) + 1);
+    const x0 = Math.min(xmin, -1), x1 = Math.max(xmax, 1);
+    if (ymax - ymin < 4 || ymax - ymin > 16) return null;
+    return { xmin: x0, xmax: x1, ymin, ymax, unite: Math.min(40, Math.max(14, Math.floor(300 / Math.max(x1 - x0, ymax - ymin)))) };
+  }
+
+  // ---- Famille F : variations et extremum lus sur une courbe
+  //      Secours Métropole 12/06/2026 : tableau de variations d'une fonction, extremum.
+  // N1 / N2 : extremum d'une parabole (valeur et abscisse du sommet)
+  function extremumParabole(niveau) {
+    const a = aleaParmi(niveau === 1 ? [1, -1] : COEFS_A);
+    const al = alea(-2, 2), be = alea(-4, 4);
+    const dm = demiLargeur(a), xmin = al - dm, xmax = al + dm;
+    const f = parabole(a, al, be);
+    const fen = fenetreParabole(f, xmin, xmax);
+    if (!fen) return null;
+    const nat = a > 0 ? 'minimum' : 'maximum', autre = a > 0 ? 'maximum' : 'minimum';
+    const ecrire = (n, v, x) => `un ${n} égal à ${m(decL(v))}, atteint en ${m('x = ' + decL(x))}`;
+    const cle = (n, v, x) => n + '|' + v + '|' + x;
+    const bonne = optTxt(ecrire(nat, be, al), cle(nat, be, al));
+    const essais = [[autre, be, al], [nat, al, be], [autre, al, be], [nat, be, -al], [nat, -be, al], [nat, be + 1, al], [nat, be, al + 1]];
+    const vus = new Set([bonne.cle]), cands = [];
+    for (const [n, v, x] of melanger(essais)) {
+      const c = cle(n, v, x);
+      if (vus.has(c)) continue;
+      vus.add(c); cands.push(optTxt(ecrire(n, v, x), c));
+      if (cands.length === 3) break;
+    }
+    if (cands.length < 3) return null;
+    const figure = dessin(fen, [{ points: O.graph.echantillonner(f, xmin, xmax), label: 'C_f' }]);
+    return qcm(`On considère la fonction ${m('f')} définie sur ${m(inter(String(xmin), String(xmax), false, false))} et représentée ci-contre.<br>Sur cet intervalle, la fonction ${m('f')} admet :`, bonne, cands, {
+      figure: figure, optionsLarges: true,
+      explication: `Le sommet de la parabole est le point ${m('S(' + decL(al) + '\\,;\\,' + decL(be) + ')')}, le point le plus ${a > 0 ? 'bas' : 'haut'} de la courbe. La fonction admet donc un ${nat} égal à ${m(decL(be))} (l’ordonnée du sommet), atteint pour ${m('x = ' + decL(al))} (son abscisse).`
+    });
+  }
+
+  // N2 : sens de variation d'une parabole, de part et d'autre du sommet
+  function monotonieParabole() {
+    const a = aleaParmi(COEFS_A), al = alea(-2, 2), be = alea(-4, 4);
+    const dm = demiLargeur(a), xmin = al - dm, xmax = al + dm;
+    const f = parabole(a, al, be);
+    const fen = fenetreParabole(f, xmin, xmax);
+    if (!fen) return null;
+    const croit = Math.random() < 0.5;
+    const droite = (a > 0) === croit;                // l'intervalle cherché est à droite du sommet
+    const bonne = droite ? [al, xmax] : [xmin, al];
+    const essais = [droite ? [xmin, al] : [al, xmax], [xmin, xmax], droite ? [al - 1, xmax] : [xmin, al + 1], [al - 1, al + 1]];
+    const cands = melanger(essais).slice(0, 3).map(([u, v]) => opt(intervalleF(u, v)));
+    const figure = dessin(fen, [{ points: O.graph.echantillonner(f, xmin, xmax), label: 'C_f' }]);
+    return qcm(`On considère la fonction ${m('f')} définie sur ${m(inter(String(xmin), String(xmax), false, false))} et représentée ci-contre.<br>La fonction ${m('f')} est ${sensF(croit)} sur l’intervalle :`,
+      opt(intervalleF(bonne[0], bonne[1])), cands, {
+      figure: figure,
+      explication: `L’abscisse du sommet est ${m(decL(al))}. À gauche du sommet la fonction est ${a > 0 ? 'décroissante' : 'croissante'}, à droite elle est ${a > 0 ? 'croissante' : 'décroissante'}. Elle est donc ${sensF(croit)} sur ${m(intervalleF(bonne[0], bonne[1]))}.`
+    });
+  }
+
+  // N3 : courbe du 3e degré à deux extremums locaux placés sur des nœuds du quadrillage
+  function variationsCubique() {
+    const p = alea(-3, 1), q = p + 2, mid = p + 1;
+    const s = aleaParmi([1, -1, 2, -2]), c = alea(-2, 2);
+    const f = x => s * (Math.pow(x - mid, 3) - 3 * (x - mid)) + c;       // extremums en p et q, de valeurs 2s + c et −2s + c
+    const xmin = p - 1, xmax = q + 1;
+    const fen = fenetreMulti([f], xmin, xmax);
+    if (!fen) return null;
+    const figure = dessin(fen, [{ points: O.graph.echantillonner(f, xmin, xmax), label: 'C_f' }]);
+    const dom = m(inter(String(xmin), String(xmax), false, false));
+    const croitDebut = s > 0;
+    if (Math.random() < 0.5) {
+      const piece = ([cr, u, v], i) => (i ? ', puis ' : '') + `${sensF(cr)} sur ${m(intervalleF(u, v))}`;
+      const phrase = l => l.map(piece).join('');
+      const bonneL = [[croitDebut, xmin, p], [!croitDebut, p, q], [croitDebut, q, xmax]];
+      const fausses = [
+        [[!croitDebut, xmin, p], [croitDebut, p, q], [!croitDebut, q, xmax]],
+        [[true, xmin, q], [false, q, xmax]],
+        [[false, xmin, p], [true, p, xmax]],
+        [[croitDebut, xmin, xmax]]
+      ];
+      const cands = melanger(fausses).slice(0, 3).map(l => optTxt(phrase(l), phrase(l)));
+      return qcm(`On considère la fonction ${m('f')} définie sur ${dom} et représentée ci-contre.<br>Sur cet intervalle, la fonction ${m('f')} est :`,
+        optTxt(phrase(bonneL), phrase(bonneL)), cands, {
+        figure: figure, optionsLarges: true,
+        explication: `La courbe change de sens en ${m('x = ' + decL(p))} et en ${m('x = ' + decL(q))}. ${croitDebut ? 'Elle monte jusqu’en ' + m(decL(p)) + ', descend jusqu’en ' + m(decL(q)) + ', puis remonte' : 'Elle descend jusqu’en ' + m(decL(p)) + ', monte jusqu’en ' + m(decL(q)) + ', puis redescend'}.`
+      });
+    }
+    // valeur du maximum local
+    const yp = f(p), yq = f(q);
+    const xmax_ = croitDebut ? p : q, ymaxLocal = Math.max(yp, yq), yminLocal = Math.min(yp, yq);
+    const vals = [yminLocal, xmax_, -ymaxLocal, ymaxLocal + 1, f(xmax), f(xmin)];
+    const vus = new Set([ymaxLocal]), cands = [];
+    for (const v of melanger(vals)) { if (vus.has(v)) continue; vus.add(v); cands.push(opt(decL(v))); if (cands.length === 3) break; }
+    if (cands.length < 3) return null;
+    return qcm(`La fonction ${m('f')}, définie sur ${dom} et représentée ci-contre, admet un maximum local et un minimum local.<br>La valeur du maximum local de ${m('f')} est :`,
+      opt(decL(ymaxLocal)), cands, {
+      figure: figure,
+      explication: `Le maximum local est le sommet de la « bosse » de la courbe : c’est le point d’abscisse ${m(decL(xmax_))}, d’ordonnée ${m(decL(ymaxLocal))}. La valeur du maximum local est cette ordonnée, ${m(decL(ymaxLocal))}.`
+    });
+  }
+
+  function variationsExtremum(niveau) {
+    for (let essai = 0; essai < 40; essai++) {
+      const q = niveau === 1 ? extremumParabole(1)
+        : niveau === 2 ? (Math.random() < 0.5 ? monotonieParabole() : extremumParabole(2))
+          : variationsCubique();
+      if (q) return q;
+    }
+    return null;
+  }
+
+  // ---- Famille G : signe d'un produit ou d'un quotient de valeurs lues sur deux courbes
+  //      Amérique du Nord / Polynésie 2026 : « le signe de f(a)/g(b) » à partir de C_f et C_g.
+  function signeQuotient(niveau) {
+    const a = aleaParmi([0.5, 1, -0.5, -1]), al = alea(-2, 2), be = alea(-3, 3);
+    const g = parabole(a, al, be);
+    const mPente = aleaParmi([-2, -1, 1, 2]), p = alea(-3, 3);
+    const L = x => mPente * x + p;
+    const dm = demiLargeur(a), xmin = al - dm, xmax = al + dm;
+    const fen = fenetreMulti([L, g], xmin, xmax);
+    if (!fen) return null;
+    const lisible = (F, x) => Number.isInteger(F(x)) && F(x) >= fen.ymin && F(x) <= fen.ymax;
+    const xs = [];
+    for (let x = xmin; x <= xmax; x++) if (lisible(L, x) && lisible(g, x)) xs.push(x);
+    if (xs.length < 3) return null;
+    const produit = niveau === 1;
+    const issue = (num, den) => (produit ? (num * den === 0 ? 'nul' : num * den > 0 ? 'pos' : 'neg')
+      : den === 0 ? 'indef' : num === 0 ? 'nul' : (num > 0) === (den > 0) ? 'pos' : 'neg');
+    const but = aleaParmi(produit ? ['pos', 'neg', 'pos', 'neg', 'nul'] : ['pos', 'neg', 'pos', 'neg', 'nul', 'indef']);
+    const paires = [];
+    xs.forEach(u => xs.forEach(v => { if (niveau === 3 ? u !== v : u === v) paires.push([u, v]); }));
+    const bonnes = paires.filter(([u, v]) => issue(L(u), g(v)) === but);
+    if (!bonnes.length) return null;
+    const [u, v] = aleaParmi(bonnes);
+    const fu = L(u), gv = g(v);
+    const mots = { pos: 'strictement positif', neg: 'strictement négatif', nul: 'nul', indef: 'non défini' };
+    const quatre = produit ? ['pos', 'neg', 'nul', 'inconnu'] : ['pos', 'neg', 'nul', 'indef'];
+    const texte = k => (k === 'inconnu' ? 'impossible à dire sans connaître les expressions de ' + m('f') + ' et ' + m('g') : mots[k]);
+    const expr = produit ? 'f(' + decL(u) + ') \\times g(' + decL(v) + ')' : '\\dfrac{f(' + decL(u) + ')}{g(' + decL(v) + ')}';
+    const parenN = n => (n < 0 ? '(' + decL(n) + ')' : decL(n));
+    const detail = produit
+      ? `${m(`f(${decL(u)}) \\times g(${decL(v)}) = ${parenN(fu)} \\times ${parenN(gv)} = ${decL(fu * gv)}`)}`
+      : (gv === 0 ? `le dénominateur ${m('g(' + decL(v) + ')')} est nul : le quotient n’existe pas`
+        : `${m(`\\dfrac{f(${decL(u)})}{g(${decL(v)})} = ${Math.abs(gv) === 1 ? decL(fu * gv) : `\\dfrac{${decL(fu)}}{${decL(gv)}}`}`)}, ${fu === 0 ? 'quotient dont le numérateur est nul : il vaut 0' : (fu > 0) === (gv > 0) ? 'quotient de deux nombres de même signe : il est strictement positif' : 'quotient de deux nombres de signes contraires : il est strictement négatif'}`);
+    const figure = dessin(fen, [
+      { points: O.graph.echantillonner(L, xmin, xmax), label: 'C_f', couleur: COULEUR_F, labelAuDebut: true },
+      { points: O.graph.echantillonner(g, xmin, xmax), label: 'C_g' }
+    ]);
+    return qcm(`On a représenté ci-contre les courbes ${m('\\mathcal{C}_f')} et ${m('\\mathcal{C}_g')} de deux fonctions ${m('f')} et ${m('g')} définies sur ${m(inter(String(xmin), String(xmax), false, false))}.<br>Le ${produit ? 'produit' : 'quotient'} ${m(expr)} est :`,
+      optTxt(texte(but), but), quatre.filter(k => k !== but).map(k => optTxt(texte(k), k)), {
+      figure: figure,
+      explication: `On lit ${m('f(' + decL(u) + ') = ' + decL(fu))} et ${m('g(' + decL(v) + ') = ' + decL(gv))}. Alors ${detail}.`,
+      optionsLarges: true
+    });
+  }
+
+  // ---- Famille H : reconnaître la courbe d'une fonction du second degré donnée par sa formule
+  //      Centres étrangers 2026 : « laquelle de ces courbes représente la fonction f ? »
+  function reconnaitreCourbe(niveau) {
+    const a = aleaParmi(niveau === 2 ? [1, -1, 0.5, -0.5] : [1, -1]);
+    const al = aleaNonNul(-3, 3), be = aleaNonNul(-3, 3);
+    const f = parabole(a, al, be);
+    const developpee = niveau === 3;
+    const tex = developpee ? 'f(x) = ' + poly([[a, 'x^2'], [-2 * a * al, 'x'], [a * al * al + be, '']]) : f.tex;
+    const petit = { xmin: -5, xmax: 5, ymin: -5, ymax: 5, unite: 15, petit: true, pasGrad: 2 };
+    const fig = (aa, aal, bb) => {
+      const h = parabole(aa, aal, bb);
+      return O.graph.repere(Object.assign({}, petit, { courbes: [{ points: O.graph.echantillonner(h, -5, 5) }] }));
+    };
+    const variantes = melanger([[-a, al, be], [a, -al, be], [a, al, -be], [-a, -al, -be], [a, -al, -be], [-a, al, -be]]).slice(0, 3);
+    const bonne = optFig(fig(a, al, be), 'ok');
+    const cands = variantes.map((v, i) => optFig(fig(v[0], v[1], v[2]), 'f' + i));
+    const sommet = `S(${decL(al)}\\,;\\,${decL(be)})`;
+    return qcm(`Parmi les quatre courbes ci-dessous, laquelle représente la fonction ${m('f')} définie sur ${m('\\mathbb{R}')} par ${m(tex)} ?`, bonne, cands, {
+      explication: developpee
+        ? `Le coefficient de ${m('x^2')} est ${m(decL(a))} : la parabole est tournée vers le ${a > 0 ? 'haut' : 'bas'}. Son sommet a pour abscisse ${m('-\\dfrac{b}{2a} = ' + decL(al))} et pour ordonnée ${m('f(' + decL(al) + ') = ' + decL(be))}, soit ${m(sommet)}.`
+        : `La forme canonique donne le sommet ${m(sommet)}, et le coefficient ${m('a = ' + decL(a))} montre que la parabole est tournée vers le ${a > 0 ? 'haut' : 'bas'}.`
+    });
+  }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('lectures-graphiques', {
     titre: 'Lectures graphiques',
     familles: {
@@ -361,7 +550,10 @@
       }),
       'comparer-courbes': famille({ nom: 'comparer deux courbes', niveaux: [2, 3], base: comparerCourbes, ordre: { 2: 5 }, quota: { 2: { max: 1 }, 3: { max: 1 } } }),
       'signe-produit-x': famille({ nom: 'signe de x × f(x)', niveaux: [3], base: () => null, variantes3: [signeXFoisF] }),
-      'intersection': famille({ nom: 'intersection d’une parabole et d’une droite', niveaux: [3], base: () => null, variantes3: [intersectionParaboleDroite] })
+      'intersection': famille({ nom: 'intersection d’une parabole et d’une droite', niveaux: [3], base: () => null, variantes3: [intersectionParaboleDroite] }),
+      'variations-extremum': famille({ nom: 'variations et extremum', niveaux: [1, 2, 3], base: variationsExtremum }),
+      'signe-quotient-images': famille({ nom: 'signe d’un produit ou d’un quotient d’images', niveaux: [1, 2, 3], base: signeQuotient }),
+      'reconnaitre-courbe': famille({ nom: 'reconnaître la courbe d’une fonction', niveaux: [2, 3], base: reconnaitreCourbe, quota: { 2: { max: 1 }, 3: { max: 1 } } })
     }
   });
 })();

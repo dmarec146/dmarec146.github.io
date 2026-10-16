@@ -84,10 +84,12 @@
   const proche = (a, b) => a === b || Math.abs(a - b) <= 1e-9 * Math.max(Math.abs(a), Math.abs(b));   // tolérance relative
 
   // ---------- zones math / texte ----------
-  const enTexte = html => String(html).replace(/<br\s*\/?>/g, ' ').replace(/<[^>]*>/g, ' ');
+  // une balise commence par « < » suivi d'une lettre ou de « / » : un « < » de comparaison n'en est pas une
+  const enTexte = html => String(html).replace(/<br\s*\/?>/g, ' ').replace(/<\/?[a-zA-Z][^>]*>/g, ' ');
   function zones(html) {
     const maths = [];
-    const texte = enTexte(html).replace(/\\\(([\s\S]*?)\\\)/g, (mm, g) => { maths.push(g); return ' '; });
+    // les formules sont extraites avant le retrait des balises : une formule peut contenir « < »
+    const texte = enTexte(String(html).replace(/\\\(([\s\S]*?)\\\)/g, (mm, g) => { maths.push(g); return ' '; }));
     return { maths, texte };
   }
   const nbOuvrantes = (s, o, f) => (s.split(o).length - 1) - (s.split(f).length - 1);
@@ -334,6 +336,101 @@
       else { erreurs.push('affirmation non reconnue : ' + t); return; }
       if (k === q.bonne && !vrai) erreurs.push('la bonne réponse est fausse : ' + t + ' ' + mm.join(' ; '));
       if (k !== q.bonne && vrai) erreurs.push('l’option ' + 'abcd'[k] + ' est vraie : ' + t + ' ' + mm.join(' ; '));
+    });
+    return erreurs;
+  };
+
+  // ---------- lectures graphiques ----------
+  // lit un repère SVG du site : unité et origine d'après la grille et les axes, courbes d'après les tracés (regroupés par couleur)
+  function lireFigure(svg) {
+    const d = new DOMParser().parseFromString(svg, 'image/svg+xml');
+    const gs = d.querySelectorAll('g');
+    const xsGrille = [...gs[0].querySelectorAll('line')].filter(l => l.getAttribute('x1') === l.getAttribute('x2')).map(l => parseFloat(l.getAttribute('x1')));
+    const u = xsGrille[1] - xsGrille[0];
+    const axes = [...d.querySelectorAll('g')].find(g => g.getAttribute('stroke-width') === '1.2');
+    const ls = [...axes.querySelectorAll('line')];
+    const Y0 = parseFloat(ls.find(l => l.getAttribute('y1') === l.getAttribute('y2')).getAttribute('y1'));
+    const X0 = parseFloat(ls.find(l => l.getAttribute('x1') === l.getAttribute('x2')).getAttribute('x1'));
+    const courbes = {};
+    d.querySelectorAll('path').forEach(p => {
+      const nb = (p.getAttribute('d').match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+      const c = p.getAttribute('stroke');
+      (courbes[c] = courbes[c] || []);
+      for (let i = 0; i + 1 < nb.length; i += 2) courbes[c].push([(nb[i] - X0) / u, (Y0 - nb[i + 1]) / u]);
+    });
+    return { u, courbes };
+  }
+  const nombreTex = s => parseFloat(s.replace(/\{,\}/g, '.').replace(/\s/g, ''));
+  const yEn = (pts, x) => pts.reduce((b, p) => (Math.abs(p[0] - x) < Math.abs(b[0] - x) ? p : b))[1];
+  const proche2 = (a, b, t) => Math.abs(a - b) < (t || 0.03);
+  const intervallesDe = maths => maths.map(s => { const r = s.match(/(-?[\d.{},]+)\\,;\\,(-?[\d.{},]+)/); return r ? [nombreTex(r[1]), nombreTex(r[2])] : null; });
+  // la courbe est strictement monotone dans le sens voulu sur [a ; b]
+  function monotoneSur(pts, a, b, croit) {
+    const P = pts.filter(p => p[0] >= a - 1e-6 && p[0] <= b + 1e-6);
+    if (P.length < 3) return false;
+    for (let i = 1; i < P.length; i++) { const dy = P[i][1] - P[i - 1][1]; if (croit ? dy < -1e-9 : dy > 1e-9) return false; }
+    return Math.abs(P[P.length - 1][1] - P[0][1]) > 1e-6;
+  }
+  VERIFS['lectures-graphiques/variations-extremum'] = q => {
+    const fig = lireFigure(q.figure), pts = Object.values(fig.courbes)[0], e = zones(q.enonce), erreurs = [];
+    const verdict = (i, vrai, quoi) => {
+      if (i === q.bonne && !vrai) erreurs.push('la bonne réponse est fausse : ' + quoi);
+      if (i !== q.bonne && vrai) erreurs.push('l’option ' + 'abcd'[i] + ' est vraie : ' + quoi);
+    };
+    if (/admet :/.test(e.texte)) {                                              // extremum global d'une parabole
+      const ymin = Math.min(...pts.map(p => p[1])), ymax = Math.max(...pts.map(p => p[1]));
+      q.options.forEach((o, i) => {
+        const z = zones(o), nat = /minimum/.test(z.texte) ? 'min' : 'max', v = nombreTex(z.maths[0]), x0 = nombreTex(z.maths[1].replace(/^x\s*=/, ''));
+        const ext = nat === 'min' ? ymin : ymax, ok = proche2(v, ext) && proche2(yEn(pts, x0), ext, 0.05);
+        verdict(i, ok, z.texte + z.maths.join(' ; '));
+      });
+    } else if (/est (croissante|décroissante) sur l/.test(e.texte)) {            // sens de variation sur un intervalle
+      const croit = /est croissante/.test(e.texte);
+      q.options.forEach((o, i) => { const [a, b] = intervallesDe(zones(o).maths)[0]; verdict(i, monotoneSur(pts, a, b, croit), o); });
+    } else if (/maximum local/.test(e.texte)) {                                 // valeur du maximum local
+      const locaux = [];
+      for (let i = 1; i < pts.length - 1; i++) if (pts[i][1] > pts[i - 1][1] && pts[i][1] >= pts[i + 1][1]) locaux.push(pts[i][1]);
+      if (locaux.length !== 1) return ['maximum local non unique sur la courbe : ' + locaux.length];
+      q.options.forEach((o, i) => verdict(i, proche2(nombreTex(zones(o).maths[0]), locaux[0], 0.05), o));
+    } else {                                                                     // « croissante sur …, puis décroissante sur … »
+      q.options.forEach((o, i) => {
+        const z = zones(o), sens = [...z.texte.matchAll(/(dé)?croissante/g)].map(r => !r[1]), ints = intervallesDe(z.maths);
+        verdict(i, sens.length === ints.length && sens.every((cr, k) => monotoneSur(pts, ints[k][0], ints[k][1], cr)), o);
+      });
+    }
+    return erreurs;
+  };
+  VERIFS['lectures-graphiques/signe-quotient-images'] = q => {
+    const fig = lireFigure(q.figure), f = fig.courbes['#4B46C7'], gc = Object.keys(fig.courbes).find(c => c !== '#4B46C7'), g = fig.courbes[gc];
+    const expr = zones(q.enonce).maths.slice(-1)[0], quotient = /dfrac/.test(expr);
+    const r = expr.match(/f\((-?[\d.{},]+)\).*?g\((-?[\d.{},]+)\)/);
+    const fu = Math.round(yEn(f, nombreTex(r[1]))), gv = Math.round(yEn(g, nombreTex(r[2])));
+    const erreurs = [];
+    const vrai = t => {
+      if (/impossible/.test(t)) return false;
+      if (/non défini/.test(t)) return quotient && gv === 0;
+      if (/nul/.test(t)) return quotient ? gv !== 0 && fu === 0 : fu * gv === 0;
+      const s = quotient ? (gv === 0 ? 0 : fu * gv) : fu * gv;
+      if (/positif/.test(t)) return s > 0;
+      if (/négatif/.test(t)) return s < 0;
+      return null;
+    };
+    q.options.forEach((o, i) => {
+      const t = zones(o).texte, v = vrai(t);
+      if (v === null) { erreurs.push('option non reconnue : ' + t); return; }
+      if (i === q.bonne && !v) erreurs.push('la bonne réponse est fausse : ' + t + ' (f=' + fu + ', g=' + gv + ')');
+      if (i !== q.bonne && v) erreurs.push('l’option ' + 'abcd'[i] + ' est vraie : ' + t + ' (f=' + fu + ', g=' + gv + ')');
+    });
+    return erreurs;
+  };
+  VERIFS['lectures-graphiques/reconnaitre-courbe'] = q => {
+    const rhs = zones(q.enonce).maths.find(g => /^f\(x\)\s*=/.test(g)).replace(/^f\(x\)\s*=/, '');
+    const erreurs = [];
+    q.options.forEach((o, i) => {
+      const pts = Object.values(lireFigure(o).courbes)[0];
+      const ok = pts.length > 10 && pts.every(p => Math.abs(evalTex(rhs, { x: p[0] }) - p[1]) < 0.05);
+      if (i === q.bonne && !ok) erreurs.push('la courbe donnée comme bonne ne correspond pas à la formule');
+      if (i !== q.bonne && ok) erreurs.push('la courbe ' + 'abcd'[i] + ' correspond aussi à la formule');
     });
     return erreurs;
   };
