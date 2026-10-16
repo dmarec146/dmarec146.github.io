@@ -298,6 +298,11 @@ async function controlerDansLaPage(opts) {
       return 'ok';
     }
     if (typeof e.reponse !== 'string') return 'non-verifiable';
+    // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
+    if (e.type === 'texte') {
+      const norm = (s) => String(s).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\lt\s*/g, '<').replace(/\s+/g, '').toLowerCase();
+      return norm(F) === norm(e.reponse) ? 'ok' : 'faux';
+    }
     const rep = e.reponse.trim();
     if (rep.startsWith('{')) {
       try {
@@ -405,10 +410,10 @@ async function controlerDansLaPage(opts) {
 
   // ---------- compilation MathJax ----------
   async function compilerMathJax(l) {
-    if (!window.MathJax || !MathJax.tex2svg) return null;
+    if (!window.MathJax || !(MathJax.tex2svg || MathJax.tex2chtml)) return null;     // sortie SVG (Première) ou CHTML (Seconde)
     try {
-      const n = MathJax.tex2svg(l.replace(/\\lt /g, '\\lt '));
-      const erreur = n.querySelector('[data-mml-node="merror"]');
+      const n = (MathJax.tex2svg || MathJax.tex2chtml)(l.replace(/\\lt /g, '\\lt '));
+      const erreur = n.querySelector('[data-mml-node="merror"], mjx-merror');
       if (erreur) return (erreur.getAttribute('data-mjx-error') || erreur.textContent || 'erreur MathJax');
       return null;
     } catch (er) { return String(er.message || er); }
@@ -492,9 +497,9 @@ async function controlerDansLaPage(opts) {
         compte('equivalence-modifiee', () => { const r = verifierEquivalence(parties[0], n); if (r.faux) return true; const rc = verifierChaine(n, null, true); return !!(rc && rc.faux); }, `${e.id} : ${parties[0].trim()} ⟺ ${n.trim()}`);
       });
       // M4 : une accolade fermante supprimée => MathJax doit refuser
-      if (window.MathJax && MathJax.tex2svg && D.lignes.some((l) => l.includes('}'))) {
+      if (window.MathJax && (MathJax.tex2svg || MathJax.tex2chtml) && D.lignes.some((l) => l.includes('}'))) {
         const l = D.lignes.find((x) => x.includes('}')); const mut = l.replace(/\}([^}]*)$/, '$1');
-        compte('accolade-supprimee', () => { try { const nn = MathJax.tex2svg(mut); return !!nn.querySelector('[data-mml-node="merror"]'); } catch (er) { return true; } });
+        compte('accolade-supprimee', () => { try { const nn = (MathJax.tex2svg || MathJax.tex2chtml)(mut); return !!nn.querySelector('[data-mml-node="merror"], mjx-merror'); } catch (er) { return true; } });
       }
       // M5 : un coefficient 1 est introduit
       { const l = D.lignes[0]; if (/[a-z]/.test(l)) compte('coefficient-1-ajoute', () => { const avant = anomalies.length; const x = { id: '#autotest' + anomalies.length }; styler(x, '1\\,r + ' + l); return anomalies.length > avant; }); }
@@ -567,9 +572,9 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         let numLigne = 0;
         for (const ligne of bloc.querySelectorAll(':scope > div')) {
           numLigne++;
-          const svg = ligne.querySelector('svg'); if (!svg) { mesures.push({ id: bloc.id, vide: true }); continue; }
+          const svg = ligne.querySelector('svg, mjx-container'); if (!svg) { mesures.push({ id: bloc.id, vide: true }); continue; }
           // largeur naturelle de la formule rapportée à la largeur disponible : > 1 = la ligne défile horizontalement
-          mesures.push({ id: bloc.id, num: numLigne, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"]') });
+          mesures.push({ id: bloc.id, num: numLigne, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"], mjx-merror') });
         }
       }
       return { attendus, trouves: boutons.length, mesures, debordement: document.documentElement.scrollWidth - window.innerWidth,

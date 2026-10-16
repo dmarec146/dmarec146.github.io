@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"1.1 a)":0.5,"1.1 b)":0.5,"1.1 c)":0.5,"1.1 d)":0.5,"1.2 a)":0.5,"1.2 b)":1,"1.2 c)":1.25,"1.3 a)":1,"1.3 b)":1.25,"1.3 c)":1.25,"1.4 a)":0.5,"1.4 b)":1,"1.4 c)":0.75,"1.5 a)":1,"1.5 b)":1.25,"1.5 c)":1.25,"1.6 a)":1,"1.6 b)":0.5,"1.6 c)":1.25,"1.7 a)":1,"1.7 b)":1,"1.7 c)":1.25,"1.8 a)":1.5,"1.8 b)":2,"1.8 c)":1.75,"1.8 d)":1.5},"bonus":["1.8 a)","1.8 b)","1.8 c)","1.8 d)"]});
@@ -930,6 +931,44 @@ function longueurPeriode(b) {
   return n;
 }
 
+// ---------- details de correction (16/10/2026) ----------
+// fonctions communes : assets/js/details-correction.js ; chaque exercice porte detail: { lignes, final }
+const { dP, dPlus, fracBrute, sommeTermes } = Detail;
+const ppcmD = (u, v) => u * v / pgcd(u, v);
+// Écriture en ligne, comme au cahier (consigne de David, 16/10/2026) : 1/2 + 3/7 = 1x7/2x7 + 3x2/7x2 = 7/14 + 6/14 = 13/14
+// (aucune phrase : le dénominateur commun se lit dans la ligne)
+const signeFrac = (s, i, t) => (i === 0 ? t : `${s > 0 ? ' + ' : ' - '}${t}`);
+// somme de fractions [{s: +1|-1, n, d}] : une ligne (deux au-delà de deux fractions), résultat réduit { n, d }
+function lignesSomme(termes) {
+  const den = termes.reduce((t, x) => ppcmD(t, x.d), 1);
+  const num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+  const brute = fracBrute(num, den), simple = Detail.fracTexte(num, den);
+  const origine = termes.map((x, i) => signeFrac(x.s, i, fracBrute(x.n, x.d))).join('');
+  const converti = termes.map((x, i) => { const m = den / x.d; return signeFrac(x.s, i, m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+  const meme = termes.map((x, i) => signeFrac(x.s, i, fracBrute(x.n * (den / x.d), den))).join('');
+  const fin = den === 1 ? `${num}` : brute + (brute === simple ? '' : ` = ${simple}`);
+  const g = pgcd(num, den) || 1;
+  const conversion = termes.some(x => x.d !== den);
+  // jusqu'à deux fractions : tout sur une ligne ; au-delà, l'écriture convertie finit la première ligne et la somme occupe la seconde
+  let lignes;
+  if (termes.length <= 2 || !conversion) lignes = [`${origine} = ${conversion ? converti + ' = ' : ''}${meme} = ${fin}`];
+  else lignes = [`${origine} = ${converti}`, `${meme} = ${fin}`];
+  return { lignes, final: simple, n: num / g, d: den / g };
+}
+// produit (a/b) x (c/d) : une ligne, résultat réduit { n, d }
+function produitFrac(a, b, c, d) {
+  const n = a * c, m = b * d, g = pgcd(n, m) || 1;
+  const brute = fracBrute(n, m), simple = Detail.fracTexte(n, m);
+  return { n: n / g, d: m / g, final: simple, lignes: [
+    `${a < 0 ? `\\left(${fracBrute(a, b)}\\right)` : fracBrute(a, b)}\\times ${fracBrute(c, d)} = \\dfrac{${a}\\times ${c}}{${b}\\times ${d}} = ${brute}` + (g > 1 ? ` = ${simple}` : '')] };
+}
+// comparaison de a/b et c/d : mise au même dénominateur (une ligne par fraction), numérateurs, conclusion
+function lignesComparaison(a, b, c, d) {
+  const den = ppcmD(b, d), x = a * den / b, y = c * den / d, op = x > y ? '>' : '<';
+  const conv = (p, v) => (v === den ? [] : [`${fracBrute(p, v)} = \\dfrac{${p}\\times ${den / v}}{${v}\\times ${den / v}} = \\dfrac{${p * den / v}}{${den}}`]);
+  return { lignes: [...conv(a, b), ...conv(c, d), `${x} ${op} ${y}`, `\\dfrac{${a}}{${b}} ${op} \\dfrac{${c}}{${d}}`], final: op };
+}
+
 // ---------- vivier de calculs numeriques ----------
 // Quatre generateurs figes donneraient toujours les memes quatre calculs, d'une fiche a l'autre
 // comme d'une version a l'autre. On tire donc quatre modeles DISTINCTS dans ce vivier, une fois
@@ -942,43 +981,57 @@ function melanger(tab) {
 const MODELES_CALCUL = [
   // priorites : un produit dans une somme
   () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a} - ${b*c} = ${a - b*c}`], final: `${a - b*c}` } }; },
   // produit d'un negatif par une difference
   () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b - c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
   // carre puis soustraction
   () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}`,
+                   detail: { lignes: [`${a}^2-${b}\\times ${c} = ${a*a} - ${b*c} = ${a*a - b*c}`], final: `${a*a - b*c}` } }; },
   // double negation
   () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}`,
+                   detail: { lignes: [`-${a}-(-${b}) = -${a} + ${b} = ${-a + b}`], final: `${-a + b}` } }; },
   // produit de trois facteurs signes
   () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}`,
+                   detail: { lignes: [`${a}\\times (-${b})\\times (-${c}) = (${-a*b})\\times (-${c}) = ${a*b*c}`], final: `${a*b*c}` } }; },
   // quotient exact suivi d'une addition
   () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}`,
+                   detail: { lignes: [`\\dfrac{${b*q}}{${b}}+${c} = ${q}+${c} = ${q + c}`], final: `${q + c}` } }; },
   // quotient d'une somme : la barre de fraction joue le role d'une parenthese
   () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}}{${c}} = \\dfrac{${a + b}}{${c}} = ${q}`], final: `${q}` } }; },
   // moyenne de trois entiers
   () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}+${c}}{3} = \\dfrac{${3*q}}{3} = ${q}`], final: `${q}` } }; },
   // suite d'additions et de soustractions
   () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}`,
+                   detail: { lignes: [`${a}-${b}+${c}-${d} = ${a - b}+${c}-${d} = ${a - b + c}-${d} = ${a - b + c - d}`], final: `${a - b + c - d}` } }; },
   // distributivite mentale : a x 99 = a x 100 - a
   () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+          const base = m > 500 ? 1000 : 100, ecart = base - m, signe = ecart > 0 ? '-' : '+', k = Math.abs(ecart);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe} ${k}) = ${a*base} ${signe} ${a*k} = ${a*m}`], final: `${a*m}` } }; },
   // cube et difference
   () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}`,
+                   detail: { lignes: [`${a}^3-${b} = ${a*a*a} - ${b} = ${a*a*a - b}`], final: `${a*a*a - b}` } }; },
   // priorites imbriquees
   () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}`,
+                   detail: { lignes: [`${a}\\times (${b}+${c})-${d} = ${a}\\times ${b + c}-${d} = ${a*(b+c)}-${d} = ${a*(b+c) - d}`], final: `${a*(b+c) - d}` } }; },
   // double et moitie
   () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}`,
+                   detail: { lignes: [`\\dfrac{${a}}{2}+${b}\\times 2 = ${q}+${2*b} = ${q + 2*b}`], final: `${q + 2*b}` } }; }
 ];
 // les quatre modeles retenus pour la version courante de la fiche
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
@@ -994,13 +1047,15 @@ const generateurs = [
   {id:"1.2 a)", type:"num", fractionIrreductible:true, gen: () => {
     const d = choix([3,4,5,6,7,8,9,10,12]);
     const a = alea(1, d-1), b = alea(1, d-1);
-    return { enonce:`\\dfrac{${a}}{${d}}+\\dfrac{${b}}{${d}}`, reponse: fractionTexte(a+b, d) };
+    const S = lignesSomme([{s: 1, n: a, d}, {s: 1, n: b, d}]);
+    return { enonce:`\\dfrac{${a}}{${d}}+\\dfrac{${b}}{${d}}`, reponse: fractionTexte(a+b, d), detail: { lignes: S.lignes, final: S.final } };
   }},
   {id:"1.2 b)", type:"num", fractionIrreductible:true, gen: () => {
     // denominateurs multiples : un seul des deux est a modifier
     const b = choix([2,3,4,5,6]), k = alea(2,4), d = b*k;
     const a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*k - c, d) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: -1, n: c, d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*k - c, d), detail: { lignes: S.lignes, final: S.final } };
   }},
   {id:"1.2 c)", type:"num", fractionIrreductible:true, gen: () => {
     // Le dernier exercice du groupe est nettement plus exigeant : trois ou quatre fractions,
@@ -1020,13 +1075,16 @@ const generateurs = [
       // quatre fractions : le plus petit PPCM d'un tel quadruplet de 2 a 10 vaut deja 180.
     } while (essais < 200 && (den > 180 || dens.includes(den)));
     let num = 0;
+    const termes = [];
     const morceaux = dens.map((v, i) => {
       const p = numerateurPour(v);
       const signe = i === 0 ? 1 : choix([1, -1]);
       num += signe * p * (den / v);
+      termes.push({ s: signe, n: p, d: v });
       return (i === 0 ? '' : (signe > 0 ? '+' : '-')) + `\\dfrac{${p}}{${v}}`;
     });
-    return { enonce: morceaux.join(''), reponse: fractionTexte(num, den) };
+    const S = lignesSomme(termes);
+    return { enonce: morceaux.join(''), reponse: fractionTexte(num, den), detail: { lignes: S.lignes, final: S.final } };
   }},
 
   // ---------- 3.4 bis : somme et difference, denominateurs premiers entre eux ----------
@@ -1038,14 +1096,16 @@ const generateurs = [
     let [b, d] = choix([[2,3],[2,5],[3,4],[3,5],[2,7],[4,5],[3,7],[5,6]]);
     if (alea(0,1) === 0) [b, d] = [d, b];
     const a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d + c*b, b*d) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: 1, n: c, d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d + c*b, b*d), detail: { lignes: S.lignes, final: S.final } };
   }},
   {id:"1.3 b)", type:"num", fractionIrreductible:true, gen: () => {
     // difference, denominateurs plus grands : le resultat peut etre negatif
     let [b, d] = choix([[4,7],[5,7],[5,8],[7,8],[7,9],[8,9],[2,9],[3,8],[4,9],[5,9]]);
     if (alea(0,1) === 0) [b, d] = [d, b];
     const a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d - c*b, b*d) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: -1, n: c, d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d - c*b, b*d), detail: { lignes: S.lignes, final: S.final } };
   }},
   {id:"1.3 c)", type:"num", fractionIrreductible:true, gen: () => {
     // trois fractions, denominateurs deux a deux premiers entre eux, signes quelconques
@@ -1053,22 +1113,27 @@ const generateurs = [
     const a = numerateurPour(b), c = numerateurPour(d), e = numerateurPour(f);
     const s1 = choix([1, -1]), s2 = choix([1, -1]);
     const num = a*d*f + s1*c*b*f + s2*e*b*d, den = b*d*f;
-    return { enonce:`\\dfrac{${a}}{${b}}${s1 > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}${s2 > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, den) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: s1, n: c, d}, {s: s2, n: e, d: f}]);
+    return { enonce:`\\dfrac{${a}}{${b}}${s1 > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}${s2 > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, den), detail: { lignes: S.lignes, final: S.final } };
   }},
 
   // ---------- 3.5 : produit, quotient, inverse ----------
   {id:"1.4 a)", type:"num", fractionIrreductible:true, gen: () => {
     const [a,b] = fractionIrreductibleAlea(), [c,d] = fractionIrreductibleAlea();
-    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*c, b*d) };
+    const P = produitFrac(a, b, c, d);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*c, b*d), detail: { lignes: P.lignes, final: P.final } };
   }},
   {id:"1.4 b)", type:"num", fractionIrreductible:true, gen: () => {
     const [a,b] = fractionIrreductibleAlea(), [c,d] = fractionIrreductibleAlea();
-    return { enonce:`\\dfrac{${a}}{${b}}\\div \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d, b*c) };
+    const P = produitFrac(a, b, d, c);
+    return { enonce:`\\dfrac{${a}}{${b}}\\div \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d, b*c),
+             detail: { lignes: [`\\dfrac{${a}}{${b}}\\div \\dfrac{${c}}{${d}} = \\dfrac{${a}}{${b}}\\times ${fracBrute(d, c)}`, ...P.lignes], final: P.final } };
   }},
   {id:"1.4 c)", type:"num", fractionIrreductible:true, gen: () => {
     // inverse d'une fraction, presente comme une fraction de fraction
     const [a,b] = fractionIrreductibleAlea();
-    return { enonce:`\\dfrac{1}{\\frac{${a}}{${b}}}`, reponse: fractionTexte(b, a) };
+    return { enonce:`\\dfrac{1}{\\frac{${a}}{${b}}}`, reponse: fractionTexte(b, a),
+             detail: { lignes: [`\\dfrac{1}{\\dfrac{${a}}{${b}}} = 1\\times ${fracBrute(b, a)} = ${fracBrute(b, a)}`], final: fracBrute(b, a) } };
   }},
 
   // ---------- 3.5 bis : sommes et produits de fractions ----------
@@ -1082,7 +1147,8 @@ const generateurs = [
       s = choix([1, -1]);
       num = a*d*f + s*c*e*b; den = b*d*f;
     } while (num === 0);
-    return { enonce:`\\dfrac{${a}}{${b}}${s > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, den) };
+    const P = produitFrac(c, d, e, f), S = lignesSomme([{s: 1, n: a, d: b}, {s, n: P.n, d: P.d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}${s > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, den), detail: { lignes: [...P.lignes, ...S.lignes], final: S.final } };
   }},
   {id:"1.5 b)", type:"num", fractionIrreductible:true, gen: () => {
     // (a/b +- c/d) x e/f : parentheses
@@ -1093,7 +1159,8 @@ const generateurs = [
       s = choix([1, -1]);
       num = (a*d + s*c*b) * e; den = b*d*f;
     } while (num === 0);
-    return { enonce:`\\left(\\dfrac{${a}}{${b}}${s > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, den) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s, n: c, d}]), P = produitFrac(S.n, S.d, e, f);
+    return { enonce:`\\left(\\dfrac{${a}}{${b}}${s > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, den), detail: { lignes: [...S.lignes, ...P.lignes], final: P.final } };
   }},
   {id:"1.5 c)", type:"num", fractionIrreductible:true, gen: () => {
     // a/b x c/d +- e/f x g/h : deux produits
@@ -1104,14 +1171,16 @@ const generateurs = [
       s = choix([1, -1]);
       num = a*c*f*h + s*e*g*b*d; den = b*d*f*h;
     } while (num === 0);
-    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${s > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}\\times \\dfrac{${g}}{${h}}`, reponse: fractionTexte(num, den) };
+    const P1 = produitFrac(a, b, c, d), P2 = produitFrac(e, f, g, h), S = lignesSomme([{s: 1, n: P1.n, d: P1.d}, {s, n: P2.n, d: P2.d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${s > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}\\times \\dfrac{${g}}{${h}}`, reponse: fractionTexte(num, den), detail: { lignes: [...P1.lignes, ...P2.lignes, ...S.lignes], final: S.final } };
   }},
 
   // ---------- 3.6 : comparer ----------
   {id:"1.6 a)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     let a, b, c, d;
     do { [a,b] = fractionIrreductibleAlea(); [c,d] = fractionIrreductibleAlea(); } while (a*d === c*b);
-    return { enonce:`\\(\\dfrac{${a}}{${b}}\\ \\ldots\\ \\dfrac{${c}}{${d}}\\)`, reponse: a*d > c*b ? '>' : '<' };
+    const C = lignesComparaison(a, b, c, d);
+    return { enonce:`\\(\\dfrac{${a}}{${b}}\\ \\ldots\\ \\dfrac{${c}}{${d}}\\)`, reponse: a*d > c*b ? '>' : '<', detail: { lignes: C.lignes, final: C.final } };
   }},
   {id:"1.6 b)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     // comparaison d'une fraction a un entier
@@ -1119,14 +1188,17 @@ const generateurs = [
     const b = choix([3,4,5,6,7,8,9]), A = alea(1,4);
     let a;
     do { a = alea(1, 5*b); } while (a === A*b || pgcd(a, b) !== 1);
-    return { enonce:`\\(\\dfrac{${a}}{${b}}\\ \\ldots\\ ${A}\\)`, reponse: a > A*b ? '>' : '<' };
+    const op = a > A*b ? '>' : '<';
+    return { enonce:`\\(\\dfrac{${a}}{${b}}\\ \\ldots\\ ${A}\\)`, reponse: op,
+             detail: { lignes: [`${A} = \\dfrac{${A}\\times ${b}}{${b}} = \\dfrac{${A*b}}{${b}}`, `${a} ${op} ${A*b}`, `\\dfrac{${a}}{${b}} ${op} ${A}`], final: op } };
   }},
   {id:"1.6 c)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     // meme numerateur, denominateurs proches : le piege classique.
     // a different des deux denominateurs, sinon une des fractions vaudrait 1.
     let a, b, d;
     do { a = alea(2,9); b = alea(3,12); d = b + choix([1,2,3]); } while (a === b || a === d);
-    return { enonce:`\\(\\dfrac{${a}}{${b}}\\ \\ldots\\ \\dfrac{${a}}{${d}}\\)`, reponse: '>' };
+    const C = lignesComparaison(a, b, a, d);
+    return { enonce:`\\(\\dfrac{${a}}{${b}}\\ \\ldots\\ \\dfrac{${a}}{${d}}\\)`, reponse: '>', detail: { lignes: C.lignes, final: C.final } };
   }},
 
   // ---------- 3.7 : fractions et calcul litteral ----------
@@ -1137,13 +1209,23 @@ const generateurs = [
     const a = choix(pool), b = choix(pool.filter(v => v !== a));
     const g = pgcd(a + b, a * b) || 1;
     const num = (a + b) / g, den = (a * b) / g;
+    const comm = ppcmD(a, b), m1 = comm / a, m2 = comm / b, fin = den === 1 ? `${num === 1 ? '' : num}x` : `\\dfrac{${num === 1 ? '' : num}x}{${den}}`;
+    const coefX = k => (k === 1 ? '' : String(k));
     return { enonce:`\\dfrac{x}{${a}}+\\dfrac{x}{${b}}`,
-             reponse: den === 1 ? `${num}*x` : `${num}*x/${den}` };
+             reponse: den === 1 ? `${num}*x` : `${num}*x/${den}`,
+             detail: { lignes: [
+               `\\dfrac{x}{${a}}+\\dfrac{x}{${b}} = ${m1 === 1 ? `\\dfrac{x}{${a}}` : `\\dfrac{x\\times ${m1}}{${a}\\times ${m1}}`}+${m2 === 1 ? `\\dfrac{x}{${b}}` : `\\dfrac{x\\times ${m2}}{${b}\\times ${m2}}`} =\\dfrac{${coefX(m1)}x}{${comm}}+\\dfrac{${coefX(m2)}x}{${comm}} = \\dfrac{${m1 + m2}x}{${comm}}` + (fin === `\\dfrac{${m1 + m2}x}{${comm}}` ? '' : ` = ${fin}`)],
+               final: fin } };
   }},
   {id:"1.7 b)", type:"alg", gen: () => {
     // simplification d'un quotient de monomes
     const m = alea(2,6), q = alea(2,7), k = m*q, p = alea(2,4);
-    return { enonce:`\\dfrac{${k}${varPuissanceLatex('x', p+1)}}{${m}${varPuissanceLatex('x', p)}}`, reponse:`${q}*x` };
+    return { enonce:`\\dfrac{${k}${varPuissanceLatex('x', p+1)}}{${m}${varPuissanceLatex('x', p)}}`, reponse:`${q}*x`,
+             detail: { lignes: [
+               `\\dfrac{${k}x^{${p+1}}}{${m}x^{${p}}} = \\dfrac{${k}}{${m}}\\times \\dfrac{x^{${p+1}}}{x^{${p}}}`,
+               `\\dfrac{${k}}{${m}} = ${q} \\qquad \\dfrac{x^{${p+1}}}{x^{${p}}} = x^{${p+1}-${p}} = x`,
+               `\\dfrac{${k}x^{${p+1}}}{${m}x^{${p}}} = ${q}x`],
+               final: `${q}x` } };
   }},
   {id:"1.7 c)", type:"alg", gen: () => {
     // Le dernier exercice du groupe est nettement plus exigeant : deux fractions dont les
@@ -1156,8 +1238,18 @@ const generateurs = [
     const coefX = d - b, cst = a*d + c*b, den = b*d;
     const g = pgcd(pgcd(Math.abs(coefX), cst), den) || 1;
     const num = polynomeTexte([cst / g, coefX / g]);
+    const comm = ppcmD(b, d), m1 = comm / b, m2 = comm / d;
+    const lin = (kx, k0) => `${kx === 1 ? '' : kx === -1 ? '-' : kx}x${k0 > 0 ? '+' : ''}${k0}`;
+    const fin = den / g === 1 ? lin(coefX / g, cst / g) : `\\dfrac{${lin(coefX / g, cst / g)}}{${den / g}}`;
+    // (m1 x + m1 a) - (m2 x - m2 c) : numerateur regroupe (coefX = m2 - m1 en valeur de d - b divise par le ppcm)
+    const cx = m1 - m2, c0 = m1 * a + m2 * c;
     return { enonce:`\\dfrac{x+${a}}{${b}}-\\dfrac{x-${c}}{${d}}`,
-             reponse: den / g === 1 ? num : `(${num})/${den / g}` };
+             reponse: den / g === 1 ? num : `(${num})/${den / g}`,
+             detail: { lignes: [
+               `\\dfrac{x+${a}}{${b}}-\\dfrac{x-${c}}{${d}} = \\dfrac{(x+${a})\\times ${m1}}{${b}\\times ${m1}}-\\dfrac{(x-${c})\\times ${m2}}{${d}\\times ${m2}}`,
+               `\\dfrac{${m1}(x+${a})-${m2}(x-${c})}{${comm}} = \\dfrac{${m1}x+${m1*a}-${m2}x+${m2*c}}{${comm}} = \\dfrac{${lin(cx, c0)}}{${comm}}`
+                 + (`\\dfrac{${lin(cx, c0)}}{${comm}}` === fin ? '' : ` = ${fin}`)],
+               final: fin } };
   }},
 
   // ---------- 3.8 : calculs plus avances ----------
@@ -1169,36 +1261,73 @@ const generateurs = [
       [3,4],[7,8],[9,20],[3,15],[7,25],[9,12],[11,50],[7,28],[13,40],[3,5],[7,16],
       [9,32],[21,35],[11,64],[13,125],[3,80],[27,45],[17,100],[7,56],[9,24]
     ]);
+    const g = pgcd(a, b), ar = a / g, br = b / g, dec = estDecimal(a, b);
+    const facteurs = []; let r = br;
+    for (let p = 2; p * p <= r; p++) { let e = 0; while (r % p === 0) { r /= p; e++; } if (e) facteurs.push([p, e]); }
+    if (r > 1) facteurs.push([r, 1]);
+    const lignes = [];
+    if (g > 1) lignes.push(`\\dfrac{${a}}{${b}} = \\dfrac{${ar}}{${br}}`);
+    // dénominateur de la fraction irréductible : sa décomposition (ou « est un nombre premier »), puis la conclusion
+    if (facteurs.length > 1 || facteurs[0][1] > 1) lignes.push(`${br} = ${facteurs.map(([p, e]) => (e > 1 ? `${p}^{${e}}` : `${p}`)).join('\\times ')}`);
+    else lignes.push(`\\text{Le dénominateur } ${br} \\text{ est un nombre premier}`);
+    if (dec) {
+      const k = Math.max(...facteurs.map(([p, e]) => e)), s = String(ar * Math.pow(10, k) / br).padStart(k + 1, '0');
+      lignes.push(`\\text{Le dénominateur } ${br} \\text{ n'a pas d'autre facteur premier que 2 ou 5}`, `\\dfrac{${ar}}{${br}} = ${s.slice(0, s.length - k)}{,}${s.slice(s.length - k).replace(/0+$/, '')}`);
+    } else {
+      lignes.push(`\\text{Le dénominateur a le facteur premier } ${facteurs.map(f => f[0]).find(p => p !== 2 && p !== 5)} \\text{, autre que 2 et 5}`);
+    }
+    lignes.push(`\\text{Réponse : ${dec ? 'oui' : 'non'}}`);
     return { enonce:`Le nombre \\(\\dfrac{${a}}{${b}}\\) est-il un nombre décimal ?`,
-             reponse: estDecimal(a, b) ? 'oui' : 'non' };
+             reponse: estDecimal(a, b) ? 'oui' : 'non',
+             detail: { lignes, final: dec ? 'oui' : 'non' } };
   }},
   {id:"1.8 b)", type:"num", texteLibre:true, gen: () => {
     const b = choix([3,7,9,11,13,17,19,21,23,27,29,33,37,39,41,49,63,77,91,99]);
+    const L = longueurPeriode(b);
+    let reste = 1, chiffres = '';
+    for (let i = 0; i < L; i++) { reste *= 10; chiffres += Math.floor(reste / b); reste %= b; }
     return { enonce:`Le développement décimal de \\(\\dfrac{1}{${b}}\\) est périodique. Combien de chiffres compte sa période ?`,
-             reponse:`${longueurPeriode(b)}` };
+             reponse:`${L}`,
+             detail: { lignes: [`\\dfrac{1}{${b}} = 0{,}\\overline{${chiffres}} \\quad \\text{(période de } ${L} \\text{ chiffre${L > 1 ? 's' : ''})}`], final: `${L}` } };
   }},
   {id:"1.8 c)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     // somme telescopique : 1/(k(k+1)) = 1/k - 1/(k+1), donc la somme vaut N/(N+1)
     const N = alea(4, 30);
     return { enonce:`Calculer \\(\\dfrac{1}{1\\times 2}+\\dfrac{1}{2\\times 3}+\\cdots+\\dfrac{1}{${N}\\times ${N+1}}\\)`,
-             reponse: fractionTexte(N, N+1) };
+             reponse: fractionTexte(N, N+1),
+             detail: { lignes: [
+               `\\text{Pour tout entier } k \\geqslant 1 \\text{ :}`,
+               `\\dfrac{1}{k(k+1)} = \\dfrac{1}{k}-\\dfrac{1}{k+1}`,
+               `\\left(1-\\dfrac{1}{2}\\right)+\\left(\\dfrac{1}{2}-\\dfrac{1}{3}\\right)+\\cdots`,
+               `\\cdots+\\left(\\dfrac{1}{${N}}-\\dfrac{1}{${N+1}}\\right)`,
+               `\\text{Les fractions s'annulent deux à deux :}`,
+               `\\text{il ne reste que } 1 \\text{ et } -\\dfrac{1}{${N+1}}`,
+               `1-\\dfrac{1}{${N+1}} = \\dfrac{${N}}{${N+1}}`],
+               final: `\\dfrac{${N}}{${N+1}}` } };
   }},
   {id:"1.8 d)", type:"num", fractionIrreductible:true, gen: () => {
     // fraction etagee : 1 + 1/(1 + 1/a) = (2a+1)/(a+1)
     const a = alea(2, 30);
-    return { enonce:`1+\\dfrac{1}{1+\\dfrac{1}{${a}}}`, reponse: fractionTexte(2*a + 1, a + 1) };
+    return { enonce:`1+\\dfrac{1}{1+\\dfrac{1}{${a}}}`, reponse: fractionTexte(2*a + 1, a + 1),
+             detail: { lignes: [
+               `1+\\dfrac{1}{${a}} = \\dfrac{${a + 1}}{${a}}`,
+               `\\dfrac{1}{\\dfrac{${a + 1}}{${a}}} = \\dfrac{${a}}{${a + 1}}`,
+               `1+\\dfrac{${a}}{${a + 1}} = \\dfrac{${2*a + 1}}{${a + 1}}`],
+               final: `\\dfrac{${2*a + 1}}{${a + 1}}` } };
   }}
 ];
 
 function genererExercices() {
   // on renouvelle le tirage des modeles de calcul a chaque version de la fiche
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     // on recopie tous les champs declares sur le modele (id, type, fractionIrreductible...)
     // sauf le generateur lui-meme : un `{id, type, ...gen()}` ecrase silencieusement les autres
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2288,7 +2417,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

@@ -35,7 +35,7 @@ const Detail = (() => {
   };
 
   // fraction non simplifiée, signe devant ; « coefficient × a » sur un dénominateur numérique, signe devant aussi
-  const fracBrute = (n, d) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`;
+  const fracBrute = (n, d) => (d === 1 ? String(n) : `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`);
   const coefAbs = n => (Math.abs(n) === 1 ? '' : String(Math.abs(n)));
   const ajouterFrac = t => (t.startsWith('-') ? `- ${t.slice(1)}` : `+ ${t}`);       // « + \dfrac{1}{3} » ou « - \dfrac{1}{3} »
   // terme « coefficient × n » : jamais « 1 n » ni « -1 n » ; avec signe (« + 2\,n », « - n ») ou sans (« 2\,n », « -n »)

@@ -23,6 +23,34 @@ const ESSAIS = {
     [true, '\\text{avec } a = -\\dfrac{12}{5} \\lt  0 \\text{ et } b = -\\dfrac{3}{5}', {}, env('')],
     [false, '\\text{avec } a = \\dfrac{12}{5} \\lt  0 \\text{ et } b = -\\dfrac{3}{5}', {}, env('')]
   ],
+  'la-comparaison-ecrite-est-vraie': [
+    [true, '35 > 24', {}, env('')],
+    [false, '24 > 35', {}, env('')],
+    [true, '\\dfrac{5}{6} > \\dfrac{3}{4}', {}, env('')],
+    [false, '\\dfrac{3}{4} > \\dfrac{5}{6}', {}, env('')],
+    [true, '\\dfrac{7}{3} \\lt  4', {}, env('')],
+    [false, '\\dfrac{7}{3} \\lt  2', {}, env('')]
+  ],
+  'le-facteur-annonce-n-est-ni-2-ni-5': [
+    [true, '\\text{Le dénominateur a le facteur premier } 3 \\text{, autre que 2 et 5}', { enonce: 'Le nombre \\(\\dfrac{7}{12}\\) est-il un nombre décimal ?' }, env('')],
+    [false, '\\text{Le dénominateur a le facteur premier } 3 \\text{, autre que 2 et 5}', { enonce: 'Le nombre \\(\\dfrac{7}{20}\\) est-il un nombre décimal ?' }, env('')],
+    [false, '\\text{Le dénominateur a le facteur premier } 5 \\text{, autre que 2 et 5}', { enonce: 'Le nombre \\(\\dfrac{7}{20}\\) est-il un nombre décimal ?' }, env('')]
+  ],
+  'le-denominateur-annonce-est-premier': [
+    [true, '\\text{Le dénominateur } 7 \\text{ est un nombre premier}', { enonce: 'Le nombre \\(\\dfrac{3}{7}\\) est-il un nombre décimal ?' }, env('')],
+    [false, '\\text{Le dénominateur } 9 \\text{ est un nombre premier}', { enonce: 'Le nombre \\(\\dfrac{4}{9}\\) est-il un nombre décimal ?' }, env('')],
+    [false, '\\text{Le dénominateur } 5 \\text{ est un nombre premier}', { enonce: 'Le nombre \\(\\dfrac{3}{7}\\) est-il un nombre décimal ?' }, env('')]
+  ],
+  'seuls-2-et-5-apparaissent': [
+    [true, '\\text{Le dénominateur } 5 \\text{ n\'a pas d\'autre facteur premier que 2 ou 5}', { enonce: 'Le nombre \\(\\dfrac{3}{15}\\) est-il un nombre décimal ?' }, env('')],
+    [false, '\\text{Le dénominateur } 15 \\text{ n\'a pas d\'autre facteur premier que 2 ou 5}', { enonce: 'Le nombre \\(\\dfrac{3}{15}\\) est-il un nombre décimal ?' }, env('')],
+    [false, '\\text{Le dénominateur } 12 \\text{ n\'a pas d\'autre facteur premier que 2 ou 5}', { enonce: 'Le nombre \\(\\dfrac{7}{12}\\) est-il un nombre décimal ?' }, env('')]
+  ],
+  'la-periode-decimale-est-exacte': [
+    [true, '\\dfrac{1}{7} = 0{,}\\overline{142857} \\quad \\text{(période de } 6 \\text{ chiffres)}', {}, env('')],
+    [false, '\\dfrac{1}{7} = 0{,}\\overline{142858} \\quad \\text{(période de } 6 \\text{ chiffres)}', {}, env('')],
+    [false, '\\dfrac{1}{7} = 0{,}\\overline{142857} \\quad \\text{(période de } 3 \\text{ chiffres)}', {}, env('')]
+  ],
   'la-suite-est-arithmetique': [
     [true, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite arithmétique')],
     [false, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite géométrique')]

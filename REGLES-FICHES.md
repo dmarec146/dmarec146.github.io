@@ -464,6 +464,11 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
   Jamais `1\times x`, `1\times (…)`, `-1\times …` (coefficient 1 omis, signe seul pour −1), jamais d'exposant 1 (`3^{1}`), jamais de
   fraction de dénominateur 1. Une suite s'écrit `u_{n}` (avec accolades) pour que l'outil la reconnaisse comme grandeur définie.
   Une équation « A = B » littérale seule sur une ligne doit être suivie d'une ligne `\iff …` (sinon l'outil la lit comme une identité).
+- **Sommes et produits de fractions : une seule ligne**, comme au cahier (consigne de David, 16/10/2026) :
+  `\dfrac{1}{2}+\dfrac{3}{7} = \dfrac{1\times 7}{2\times 7}+\dfrac{3\times 2}{7\times 2} = \dfrac{7}{14}+\dfrac{6}{14} = \dfrac{13}{14}`,
+  et `\dfrac{3}{4}\times\dfrac{5}{6} = \dfrac{3\times 5}{4\times 6} = \dfrac{15}{24} = \dfrac{5}{8}`. Aucune phrase (« dénominateur
+  commun… ») : il se lit dans la ligne. Au-delà de deux fractions, la somme passe sur une seconde ligne. Cette consigne prime sur la
+  règle des lignes courtes. Fonctions toutes faites dans la fiche 1 de Seconde (`lignesSomme`, `produitFrac`, `lignesComparaison`).
 - **Outil** : `node outils/details-correction/controle.js cahiers/<niveau>/<cahier>/fiche-NN.html` (mode d'emploi, liste des contrôles et
   limites : `outils/details-correction/README.md`) lance tout ce qui suit sans crédits, plus l'interface sur ordinateur et téléphone
   et un auto-test ; `phrases.txt` et `exemples.html` sont à relire à la main. `--couverture` donne l'avancement (16/10/2026 : 23
