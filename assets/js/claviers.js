@@ -197,8 +197,10 @@
   // s'ouvre plus de lui-meme.
   // Attribut ET propriete : l'attribut pose avant l'initialisation du
   // composant n'est pas toujours pris en compte (constate le 30/09/2026).
+  // 16/10/2026 (David) : les champs « manual » (clavier MathLive ouvert seulement par le bouton ⌨) subissaient la même
+  // politique « auto » et ouvraient le clavier numérique à chaque clic dans le champ sur écran tactile : même réglage.
   function reglerPolitiqueClavier() {
-    document.querySelectorAll('math-field[virtual-keyboard-mode="off"]').forEach((mf) => {
+    document.querySelectorAll('math-field[virtual-keyboard-mode="off"], math-field[virtual-keyboard-mode="manual"]').forEach((mf) => {
       if (mf.getAttribute('math-virtual-keyboard-policy') !== 'manual') mf.setAttribute('math-virtual-keyboard-policy', 'manual');
       if ('mathVirtualKeyboardPolicy' in mf && mf.mathVirtualKeyboardPolicy !== 'manual') mf.mathVirtualKeyboardPolicy = 'manual';
     });
@@ -275,7 +277,7 @@
   new MutationObserver((mutations) => {
     for (const m of mutations) {
       for (const n of m.addedNodes) {
-        if (n.nodeType === 1 && (n.matches('.clavier-visuel, .clavier-groupe') || n.querySelector('.clavier-visuel'))) { planifier(); return; }
+        if (n.nodeType === 1 && (n.matches('.clavier-visuel, .clavier-groupe, math-field') || n.querySelector('.clavier-visuel, math-field'))) { planifier(); return; }
       }
     }
   }).observe(document.documentElement, { childList: true, subtree: true });

@@ -15,7 +15,7 @@ window.MathJax = {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
-<script src="../../../assets/js/claviers.js"></script>
+<script src="../../../assets/js/claviers.js?v=20261016c"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
@@ -1329,7 +1329,8 @@ function genererExercices() {
       enonce:`\\(r${SI}u_n=\\dfrac{${coefL(C)}a^2${kTxt}}{a}\\)`, reponse: K===1 ? '1/a' : K===-1 ? '-1/a' : `${K}/a`,
       detail: { lignes: [
         `r = u_{n+1} - u_n`,
-        `u_{n+1} - u_n = \\dfrac{${coefL(C)}a^2${nTxt}}{a} - \\dfrac{${coefL(C)}a^2${kTxt}}{a} = \\dfrac{${numDiff}}{a}`,
+        `u_{n+1} - u_n = \\dfrac{${coefL(C)}a^2${nTxt}}{a} - \\dfrac{${coefL(C)}a^2${kTxt}}{a} = \\dfrac{\\left(${coefL(C)}a^2${nTxt}\\right) - \\left(${coefL(C)}a^2${kTxt}\\right)}{a}`,
+        `u_{n+1} - u_n = \\dfrac{${numDiff}}{a} = ${kFin}`,
         `r = ${kFin}`],
         final: kFin }});
   }
@@ -1341,8 +1342,10 @@ function genererExercices() {
       enonce:`\\(a${SI}u_n=\\dfrac{${p === 0 ? '' : p}${p === 0 ? coefL(q) : (q > 0 ? '+' : '-') + coefL(Math.abs(q))}an}{${s}}${ET}r=${R}\\)`,
       reponse: fracStr(R * s, q),
       detail: { lignes: [
-        `r = u_{n+1} - u_n = \\dfrac{${numAvec('(n+1)')} - \\left(${numAvec('n')}\\right)}{${s}} = \\dfrac{${coefL(q)}a}{${s}}`,
-        `\\dfrac{${coefL(q)}a}{${s}} = ${R} \\iff ${coefL(q)}a = ${R * s}`,
+        `r = u_{n+1} - u_n`,
+        `u_{n+1} - u_n = \\dfrac{${numAvec('(n+1)')}}{${s}} - \\dfrac{${numAvec('n')}}{${s}} = \\dfrac{\\left(${numAvec('(n+1)')}\\right) - \\left(${numAvec('n')}\\right)}{${s}}`,
+        `u_{n+1} - u_n = \\dfrac{${coefL(q)}a(n+1) - ${q < 0 ? `\\left(${coefL(q)}an\\right)` : `${coefL(q)}an`}}{${s}} = \\dfrac{${coefL(q)}a}{${s}}`,
+        `r = ${R} \\iff \\dfrac{${coefL(q)}a}{${s}} = ${R} \\iff ${coefL(q)}a = ${R * s}`,
         `a = ${fracLatex(R * s, q)}`],
         final: fracLatex(R * s, q) }});
   }
