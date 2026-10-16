@@ -1079,6 +1079,17 @@ function sommeTermes(liste) {
   });
   return s || '0';
 }
+// (a n + b) / d en LaTeX, réduit comme fracLinStr
+function fracLinTex(coefX, constTerme, denom, vr) {
+  if (denom < 0) { coefX = -coefX; constTerme = -constTerme; denom = -denom; }
+  const g = pgcd(pgcd(coefX, constTerme), denom);
+  coefX /= g; constTerme /= g; denom /= g;
+  return denom === 1 ? fmtLin(coefX, constTerme, false, vr) : `\\dfrac{${fmtLin(coefX, constTerme, false, vr)}}{${denom}}`;
+}
+const ajouterFrac = t => (t.startsWith('-') ? `- ${t.slice(1)}` : `+ ${t}`);       // « + \dfrac{1}{3} » ou « - \dfrac{1}{3} »
+// terme « coefficient × n » : jamais « 1 n » ni « -1 n » ; avec signe (« + 2\,n », « - n ») ou sans (« 2\,n », « -n »)
+const termeNsansSigne = t => (t === '1' ? 'n' : t === '-1' ? '-n' : `${t}\\,n`);
+const termeNavecSigne = t => (t === '1' ? '+ n' : t === '-1' ? '- n' : `${ajouterFrac(t)}\\,n`);
 // « num / d » écrit puis simplifié : fraction (signe devant) si le numérateur est entier, « x \div d » s'il est lui-même une fraction ;
 // la forme simplifiée n'est ajoutée que si elle diffère de ce qui vient d'être écrit
 const divisionD = (num, d) => {
@@ -1124,9 +1135,18 @@ function genererExercices() {
     const l1 = op1 !== '<', l2 = op2 !== '<';
     const x1 = (c - b) / a, x2 = (d - b) / a;   // c ◊1 ax+b ◊2 d
     const liste = a > 0 ? [{bas:x1, haut:x2, inclusBas:l1, inclusHaut:l2}] : [{bas:x2, haut:x1, inclusBas:l2, inclusHaut:l1}];
+    const inv = o => (o.trim() === '<' ? '>' : '\\geqslant ');           // sens renversé par une division par un nombre négatif
+    const spec = {type:'intervalles', liste};
+    const orig = `${c}${op1}${fmtLin(a,b,false)}${op2}${d}`;
+    const lignes = [];
+    if (b !== 0) lignes.push(`${orig} \\iff ${c - b}${op1}${coefL(a)}x${op2}${d - b}`);
+    if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0 \\text{ : les inégalités changent de sens}`);
+    if (a !== 1) lignes.push(`${b !== 0 ? '\\iff ' : orig + ' \\iff '}${fracLatex(c - b, a)} ${a < 0 ? inv(op1) : op1} x ${a < 0 ? inv(op2) : op2} ${fracLatex(d - b, a)}`);
+    lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
     ex.push({id:"12.1 a)", type:"intervalle", texteLibre:true,
       enonce:`\\(${c}${op1}${fmtLin(a,b,false)}${op2}${d}\\)`,
-      intervalleSpec:{type:'intervalles', liste}});
+      intervalleSpec: spec,
+      detail: { lignes, final: formaterIntervalleSpec(spec), meta: { a, b, c, d, op1: op1.trim(), op2: op2.trim() } }});
   }
   // b) quotient (x^2-m^2)/(x-p) ◊ 0 : zeros -m et m, valeur interdite p (jamais incluse, jamais franchie)
   {
@@ -1143,9 +1163,28 @@ function genererExercices() {
       if (dernier && dernier.haut === lo && large && lo !== p) { dernier.haut = hi; dernier.inclusHaut = large && hi !== p && isFinite(hi); }
       else liste.push({bas:lo, haut:hi, inclusBas: large && lo !== p && isFinite(lo), inclusHaut: large && hi !== p && isFinite(hi)});
     }
+    // tableau de signes : le signe du quotient est celui du produit (x-m)(x+m)(x-p) ; 0 aux zéros du numérateur, double barre en p
+    const bs = [-m, m, p].sort((u, v) => u - v);
+    const signeIntervalle = i => {
+      const lo = i === 0 ? -Infinity : bs[i-1], hi = i === 3 ? Infinity : bs[i];
+      const t = !isFinite(lo) ? hi - 1 : !isFinite(hi) ? lo + 1 : (lo + hi) / 2;
+      return Math.sign((t - m) * (t + m) * (t - p)) > 0 ? '+' : '-';
+    };
+    const signes = [0, 1, 2, 3].map(signeIntervalle);
+    const marque = v => (v === p ? '\\Vert' : '0');
+    const tableau = `\\begin{array}{c|ccccccccc} x & -\\infty & & ${bs[0]} & & ${bs[1]} & & ${bs[2]} & & +\\infty \\\\ \\hline `
+      + `\\text{signe} & & ${signes[0]} & ${marque(bs[0])} & ${signes[1]} & ${marque(bs[1])} & ${signes[2]} & ${marque(bs[2])} & ${signes[3]} & \\end{array}`;
+    const spec = {type:'intervalles', liste};
     ex.push({id:"12.1 b)", type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{x^2-${m*m}}{${fmtLin(1,-p,false)}}${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste}});
+      intervalleSpec: spec,
+      detail: { lignes: [
+        `x^2-${m*m} = (x-${m})(x+${m}) = 0 \\iff x = ${-m} \\text{ ou } x = ${m}`,
+        `${fmtLin(1,-p,false)} = 0 \\iff x = ${p} \\text{ (valeur interdite)}`,
+        tableau,
+        `\\text{On cherche le quotient } ${op}\\ 0 \\text{ ; la valeur } ${p} \\text{ est toujours exclue}`,
+        `S = ${formaterIntervalleSpec(spec)}`],
+        final: formaterIntervalleSpec(spec), signes, bornes: bs, m, p }});
   }
 
   // ---------- 12.2 : equations (ensemble des solutions) ----------
@@ -1353,15 +1392,27 @@ function genererExercices() {
   // ---------- 12.7 : suite auxiliaire v_n = u_n^2 ----------
   {
     const A = alea(1,6), K = alea(1,9);
-    ex.push({id:"12.7 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: String(K)});
-    ex.push({id:"12.7 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse: fmtLin(K, A*A, true, 'n')});
+    ex.push({id:"12.7 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: String(K),
+      detail: { lignes: [
+        `v_{n+1} = u_{n+1}^2 = \\left(\\sqrt{${K}+u_n^2}\\right)^2 = ${K}+u_n^2`,
+        `v_{n+1} - v_n = ${K} + u_n^2 - u_n^2 = ${K}`,
+        `r = ${K}`],
+        final: String(K) }});
+    ex.push({id:"12.7 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse: fmtLin(K, A*A, true, 'n'),
+      detail: { lignes: [
+        `v_0 = u_0^2 = ${A}^2 = ${A*A}`,
+        `v_n = v_0 + n\\times r = ${A*A} + ${K}n`,
+        `v_n = ${fmtLin(K, A*A, false, 'n')}`],
+        final: fmtLin(K, A*A, false, 'n') }});
     paramsAvances.g7 = {A,K};
   }
 
   // ---------- 12.8 : suite auxiliaire homographique (avance) ----------
   {
     let S,R,u0;
-    do { S = aleaNonNul(-3,3); R = aleaNonNul(1,5); u0 = alea(-4,4); } while (R+S===0 || u0===S);
+    // (R+S)/(u0-S) entier négatif : un terme vaut alors -R et le suivant n'existe pas (division par zéro), la suite n'est pas
+    // définie pour tout n (défaut trouvé le 16/10/2026 par le contrôle des détails : environ 24 % des tirages)
+    do { S = aleaNonNul(-3,3); R = aleaNonNul(1,5); u0 = alea(-4,4); } while (R+S===0 || u0===S || ((R+S)/(u0-S) < 0 && Number.isInteger((R+S)/(u0-S))));
     const P = R+2*S, Q = -S*S;
     const kF = math.fraction(1, R+S);
     const v0F = math.fraction(1, u0-S);
@@ -1369,8 +1420,23 @@ function genererExercices() {
     const v0Num = v0F.s*v0F.n, v0Den = v0F.d;
     const D = math.lcm(kDen, v0Den);
     const term1 = kNum*(D/kDen), term2 = v0Num*(D/v0Den);
-    ex.push({id:"12.8 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: fracToStr(kF)});
-    ex.push({id:"12.8 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse: fracLinStr(term1, term2, D, 'n')});
+    // détails : v_{n+1} - v_n calculé jusqu'au bout (u_{n+1} = (P u_n + Q)/(u_n + R), v_n = 1/(u_n - S), Q - S R = -S (R + S))
+    const num = fmtLin(P, Q, false, 'u_n'), den = fmtLin(1, R, false, 'u_n'), unS = fmtLin(1, -S, false, 'u_n');
+    const fac = (R + S === 1 ? '' : dP(R + S)), denFact = `${fac}\\left(${unS}\\right)`;
+    ex.push({id:"12.8 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: fracToStr(kF),
+      detail: { lignes: [
+        `v_{n+1} = \\dfrac{1}{u_{n+1} ${dPlus(-S)}} = \\dfrac{1}{\\dfrac{${num}}{${den}} ${dPlus(-S)}} = \\dfrac{${den}}{${num} - ${S === 1 ? '' : dP(S)}\\left(${den}\\right)}`,
+        `v_{n+1} = \\dfrac{${den}}{${fmtLin(R + S, Q - S*R, false, 'u_n')}} = \\dfrac{${den}}{${denFact}}`,
+        `v_{n+1} - v_n = \\dfrac{${den}}{${denFact}} - \\dfrac{1}{${unS}} = \\dfrac{\\left(${den}\\right) - ${dP(R + S)}}{${denFact}}`,
+        `v_{n+1} - v_n = \\dfrac{${unS}}{${denFact}} = ${fracD(kF)}`,
+        `r = ${fracD(kF)}`],
+        final: fracD(kF) }});
+    ex.push({id:"12.8 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse: fracLinStr(term1, term2, D, 'n'),
+      detail: { lignes: [
+        `v_0 = \\dfrac{1}{u_0 ${dPlus(-S)}} = \\dfrac{1}{${u0} ${dPlus(-S)}} = ${fracD(v0F)}`,
+        `v_n = v_0 + n\\times r = ${fracD(v0F)} ${termeNavecSigne(fracD(kF))}`,
+        `v_n = \\dfrac{${fmtLin(term1, term2, false, 'n')}}{${D}}` + (fracLinTex(term1, term2, D, 'n') === `\\dfrac{${fmtLin(term1, term2, false, 'n')}}{${D}}` ? '' : ` = ${fracLinTex(term1, term2, D, 'n')}`)],
+        final: fracLinTex(term1, term2, D, 'n') }});
     paramsAvances.g8 = {S,R,u0,P,Q};
   }
 
@@ -1382,13 +1448,30 @@ function genererExercices() {
     const cst = math.subtract(math.fraction(T), math.multiply(rF, k));   // u_n = r n + (T - k r)
     const rN = rF.s * rF.n, rD = rF.d, cN = cst.s * cst.n, cD = cst.d;
     const Dc = math.lcm(rD, cD);
-    ex.push({id:"12.9 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de la suite \\((u_n)\\)", reponse: fracToStr(rF)});
-    ex.push({id:"12.9 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(u_n\\) en fonction de \\(n\\)", reponse: fracLinStr(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n')});
+    // détails : 1/(u1 u2) + 1/(u2 u3) = 2/(u1 u3) car u1 + u3 = 2 u2 ; u1 u3 = T^2 ; u1 = T - (k-1) r, u3 = T - (k-3) r
+    const c1 = -T * (2*k - 4), c2 = (k - 1) * (k - 3);
+    ex.push({id:"12.9 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de la suite \\((u_n)\\)", reponse: fracToStr(rF),
+      detail: { lignes: [
+        `\\dfrac{1}{u_1u_2}+\\dfrac{1}{u_2u_3} = \\dfrac{u_3+u_1}{u_1u_2u_3} = \\dfrac{2u_2}{u_1u_2u_3} = \\dfrac{2}{u_1u_3} \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}`,
+        `\\dfrac{2}{u_1u_3} = ${fracLatex(2, T*T)} \\iff u_1u_3 = ${T*T}`,
+        `u_1 = u_{${k}} + (1-${k})\\,r = ${T} - ${coefL(k-1)}\\,r \\qquad u_3 = u_{${k}} + (3-${k})\\,r = ${T} - ${coefL(k-3)}\\,r`,
+        `\\left(${T} - ${coefL(k-1)}\\,r\\right)\\left(${T} - ${coefL(k-3)}\\,r\\right) = ${T*T} \\iff ${c2}\\,r^2 ${dPlus(c1)}\\,r = 0 \\iff r\\left(${c2}\\,r ${dPlus(c1)}\\right) = 0`,
+        `r \\neq 0 \\text{ donc } ${c2}\\,r ${dPlus(c1)} = 0 \\iff r = ${fracD(rF)}`],
+        final: fracD(rF) }});
+    ex.push({id:"12.9 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(u_n\\) en fonction de \\(n\\)", reponse: fracLinStr(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n'),
+      detail: { lignes: [
+        `u_n = u_{${k}} + (n-${k})\\times r = ${T} + (n-${k})\\times ${fracDP(rF)}`,
+        `u_n = ${termeNsansSigne(fracD(rF))} + \\left(${T} - ${k}\\times ${fracDP(rF)}\\right) = ${termeNsansSigne(fracD(rF))} ${ajouterFrac(fracD(cst))}`,
+        `u_n = ${fracLinTex(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n')}`],
+        final: fracLinTex(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n') }});
     paramsAvances.g9 = {k,T};
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
-  ex.forEach(e => { if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt '); });
+  ex.forEach(e => {
+    if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt ');
+    if (e.detail) e.detail.lignes = e.detail.lignes.map(l => l.replace(/</g, '\\lt '));   // idem pour les étapes
+  });
   return ex;
 }
 

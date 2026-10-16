@@ -455,4 +455,8 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Contrôle obligatoire** (à relancer pour chaque fiche) : sur un millier de tirages, `final` converti en nombre doit égaler
   `reponse` (ensembles inclus, expressions en `a` évaluées en un point), la dernière ligne doit contenir `final`, et toute chaîne
   d'égalités purement numérique d'une ligne (`A = B = C`) doit avoir des membres égaux ; le contrôle doit échouer si on décale
-  `final` (test par mutation). Fiche 12 : 15 000 détails, 0 anomalie, 3 486 chaînes vérifiées, mutation détectée 1 500 fois sur 1 500.
+  `final` (test par mutation). Fiche 12 (23 exercices sur 23) : 46 000 détails sur 2 000 tirages, 0 anomalie, 61 776 chaînes
+  vérifiées, mutation détectée 100 %. Pour les suites définies par récurrence, vérifier en plus **numériquement** le détail sur la
+  suite elle-même (calculer les premiers termes) : c'est ce contrôle qui a révélé un défaut du générateur de 12.8 (voir
+  `HISTORIQUE.md`). Style : jamais « 1 n » ni « 1 r » (coefficient 1 omis), pas de signes doublés ; le contrôle automatique le cherche.
+  Les inégalités `<` des étapes passent par `\lt` (un `<` suivi d'une lettre serait lu comme une balise HTML).
