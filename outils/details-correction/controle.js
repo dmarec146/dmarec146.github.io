@@ -1,0 +1,612 @@
+#!/usr/bin/env node
+'use strict';
+// Contrôle automatique des « Détails » de correction des fiches de calcul (16/10/2026).
+//
+// Charge chaque fiche dans un Chrome invisible (playwright-core pilote le Chrome DÉJÀ installé : rien à télécharger, aucun crédit),
+// régénère la fiche des centaines de fois et contrôle, pour chaque exercice qui porte un `detail: { lignes, final }` :
+//   1. la dernière ligne contient `final`, et `final` égale la réponse attendue (nombres, expressions en a / n / x, ensembles,
+//      intervalles, couples et vecteurs) ;
+//   2. chaque chaîne d'égalités « A = B = C » est exacte (évaluée en plusieurs valeurs des lettres) ;
+//   3. chaque équivalence « P ⟺ Q » entre deux équations / inéquations a les mêmes solutions (résolution numérique) ;
+//   4. le style (coefficient 1, signes doublés, exposant 1, fraction de dénominateur 1 ou 0, « < » brut, espaces avant %, NaN…) ;
+//   5. le LaTeX compile dans MathJax (aucune erreur de syntaxe) ;
+//   6. l'interface : bouton « Détails » présent pour chaque réponse fausse, étapes dépliables, aucune erreur de page, aucune ligne
+//      réduite à moins de 85 % de sa taille ni débordement horizontal, sur ordinateur et sur téléphone (375 px).
+// Rapports : rapport.txt (anomalies), phrases.txt (toutes les phrases de méthode, à relire), exemples.html (deux exemples par
+// exercice, à parcourir), couverture.txt (exercices avec / sans détail). Un auto-test (mutations) vérifie que l'outil détecte
+// bien une erreur volontairement introduite.
+//
+//   node outils/details-correction/controle.js cahiers/premiere/cahier-4/fiche-12.html
+//   node outils/details-correction/controle.js --toutes             toutes les fiches qui portent des détails
+//   node outils/details-correction/controle.js --couverture         seulement le tableau exercices avec / sans détail
+//   options : --tirages N (défaut 300 ; 1500 pour une fiche nommée)   --regenerations K (interface, défaut 6)
+//             --sans-interface   --sans-autotest   --exemples N (exemples par exercice, défaut 2)
+// Code de sortie 1 s'il y a des anomalies de gravité « erreur ».
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+const { lancer } = require('../guide-eleve/navigateur');
+
+const RACINE = path.resolve(__dirname, '..', '..');
+const SORTIE = __dirname;
+const args = process.argv.slice(2);
+const option = (nom, defaut) => { const i = args.indexOf(nom); return i >= 0 ? Number(args[i + 1]) : defaut; };
+const drapeau = (nom) => args.includes(nom);
+const nommees = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && /^--(tirages|tirages-equivalences|regenerations|exemples)$/.test(args[i - 1])));
+
+function toutesLesFiches() {
+  const liste = [];
+  for (const niveau of ['premiere', 'seconde']) {
+    const dn = path.join(RACINE, 'cahiers', niveau);
+    for (const cahier of fs.readdirSync(dn).filter((d) => d.startsWith('cahier-'))) {
+      for (const f of fs.readdirSync(path.join(dn, cahier)).filter((n) => /^fiche-\d+\.html$/.test(n))) liste.push(`cahiers/${niveau}/${cahier}/${f}`);
+    }
+  }
+  return liste.sort();
+}
+const aDesDetails = (f) => /detail:\s*\{\s*lignes/.test(fs.readFileSync(path.join(RACINE, f), 'utf8'));
+
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.woff2': 'font/woff2' };
+function demarrerServeur() {
+  return new Promise((resolve) => {
+    const s = http.createServer((req, res) => {
+      const url = decodeURIComponent(req.url.split('?')[0]);
+      let f = path.join(RACINE, url);
+      if (!f.startsWith(RACINE)) { res.writeHead(403); return res.end(); }
+      if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, 'index.html');
+      if (!fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+      res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+      fs.createReadStream(f).pipe(res);
+    }).listen(0, '127.0.0.1', () => resolve(s));
+  });
+}
+
+// ===================================================================================================================
+// Code exécuté DANS la page (aucune variable extérieure : la fonction est sérialisée)
+// ===================================================================================================================
+async function controlerDansLaPage(opts) {
+  const anomalies = [], cles = new Set();
+  const stats = { tirages: 0, exercices: 0, avecDetail: 0, lignes: 0, chaines: 0, chainesIllisibles: 0, equivalences: 0, equivalencesIllisibles: 0,
+    finalVerifie: 0, finalNonVerifiable: 0, motifsLaTeX: 0 };
+  const ajouter = (gravite, motif, e, exemple) => {
+    const cle = e.id + '|' + motif;
+    if (cles.has(cle)) return;
+    cles.add(cle);
+    anomalies.push({ gravite, motif, id: e.id, exemple: String(exemple).replace(/\s+/g, ' ').slice(0, 260) });
+  };
+  const generer = () => (typeof marquerFormesFactorisees === 'function' ? marquerFormesFactorisees(genererExercices()) : genererExercices());
+
+  // ---------- LaTeX -> mathjs ----------
+  const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'abs', 'pi', 'e', 'Infinity', 'nthRoot']);
+  function versMathjs(tex) {
+    let t = String(tex).replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')
+      .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
+      .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
+      .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '');
+    if (/\\[a-zA-Z]+/.test(t.replace(/\\(?:dfrac|frac|sqrt)/g, ''))) throw new Error('commande LaTeX inconnue : ' + (t.match(/\\[a-zA-Z]+/) || [''])[0]);
+    for (let i = 0; i < 12; i++) {
+      const avant = t;
+      t = t.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)')
+        .replace(/_\{([^{}]*)\}/g, (m, s) => '_' + s.replace(/\+/g, 'p').replace(/-/g, 'm').replace(/[^A-Za-z0-9]/g, ''))
+        .replace(/\^\{([^{}]*)\}/g, '^($1)');
+      if (t === avant) break;
+    }
+    t = t.replace(/[{}]/g, (c) => (c === '{' ? '(' : ')')).replace(/\s+/g, ' ');
+    // identifiants : une suite de lettres sans indice se coupe en lettres multipliées (an -> a*n), sauf noms connus
+    t = t.replace(/([A-Za-z]+)(_[A-Za-z0-9]+)?/g, (m, lettres, indice) => {
+      if (indice) return lettres.length === 1 ? m : lettres.split('').slice(0, -1).join('*') + '*' + lettres.slice(-1) + indice;
+      if (FONCTIONS.has(lettres)) return lettres;
+      return lettres.split('').join('*');
+    });
+    // multiplications implicites
+    t = t.replace(/(\d)\s*([A-Za-z(])/g, '$1*$2').replace(/\)\s*([A-Za-z0-9(])/g, ')*$1')
+      .replace(/([A-Za-z0-9_])\s*\(/g, (m, c, off, s) => {
+        const mot = (s.slice(0, off + 1).match(/[A-Za-z_][A-Za-z0-9_]*$/) || [''])[0];
+        return FONCTIONS.has(mot) ? m : c + '*(';
+      });
+    t = t.replace(/([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z0-9(])/g, (m, a, b) => (FONCTIONS.has(a) ? m : a + '*' + b));
+    return t;
+  }
+  const hasard = (graine) => { let s = graine; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; };
+  function portee(expr, k) {
+    // chaque identifiant libre reçoit une valeur « quelconque » (non entière), fixe pour un k donné
+    const R = hasard(7919 * (k + 3));
+    const sc = {};
+    for (const m of String(expr).matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)) {
+      if (FONCTIONS.has(m[0])) continue;
+      if (!(m[0] in sc)) sc[m[0]] = 1.31 + R() * 2.4;
+    }
+    return sc;
+  }
+  const NB_PORTEES = 4;
+  const egal = (a, b) => Math.abs(a - b) <= 1e-8 * Math.max(1, Math.abs(a), Math.abs(b));
+  const evaluer = (tex, k) => { const m = versMathjs(tex); const sc = portee(m, k); const v = math.evaluate(m, sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; };
+  // même valeur des lettres pour toutes les expressions comparées : on construit la portée sur la concaténation
+  function evaluerGroupe(textes, k) {
+    const ms = textes.map(versMathjs);
+    const sc = portee(ms.join(' + '), k);
+    return ms.map((m) => { const v = math.evaluate(m, sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; });
+  }
+
+  // ---------- chaînes d'égalités ----------
+  // un membre réduit à un symbole (x, r, u_n, v_{n+1}^2…) est la grandeur définie par la chaîne, pas une valeur à comparer
+  const estSymboleSeul = (s) => /^\s*-?\s*[A-Za-z](_(\{[^{}]*\}|[A-Za-z0-9]))?(\^(\{[^{}]*\}|\d))?\s*$/.test(s) || /^\s*\\(Delta|lambda|alpha)\s*$/.test(s);
+  // une suite u_{14}, v_0, u_1 est une grandeur liée aux autres par l'énoncé : ses valeurs ne sont pas libres, on ne la compare pas
+  const aIndice = (s) => /_(\{[^{}]*\}|\d)/.test(s);
+  const estApplication = (s) => /^\s*[fgh]\s*(\\left)?\(/.test(s);                        // f(3/2) : image définie par la fonction de l'énoncé
+  const aDesLettres = (s) => /[A-Za-z]/.test(s.replace(/\\(?:dfrac|frac|sqrt|times|cdot|div|left|right|pi|infty|lt|gt)(?![A-Za-z])/g, ''));
+  const nz = (s) => String(s).replace(/\\\(|\\\)/g, '').replace(/\\lt\s*/g, '<').replace(/\\left|\\right|\\[,;! ]|\s+/g, '');
+  // Une chaîne « A = B = C » est vérifiée par paires voisines : deux membres numériques doivent être égaux ; deux membres littéraux
+  // doivent être égaux pour toute valeur des lettres (identité) ; un membre numérique à côté d'un membre littéral exprime une
+  // équation ou une substitution et n'est pas comparable. Un membre qui reprend l'énoncé (équation à résoudre) est ignoré.
+  function verifierChaine(partie, enonce, dansEquivalence) {
+    if (enonce && nz(partie).length >= 5 && nz(enonce).includes(nz(partie))) return null;
+    const segs = partie.split('=').map((s) => s.trim()).filter(Boolean).filter((s) => !estSymboleSeul(s) && !/\\Delta/.test(s) && !aIndice(s) && !estApplication(s));
+    if (segs.length < 2) return null;
+    let verifie = 0;
+    for (let i = 0; i + 1 < segs.length; i++) {
+      const lit = [aDesLettres(segs[i]), aDesLettres(segs[i + 1])];
+      if (lit[0] !== lit[1]) continue;
+      // « A = B » littéral seul dans une partie d'équivalence est une équation à résoudre (contrôlée par l'équivalence), pas une identité
+      if (lit[0] && dansEquivalence && segs.length === 2) continue;
+      for (let k = 0; k < (lit[0] ? NB_PORTEES : 1); k++) {
+        let vs;
+        try { vs = evaluerGroupe([segs[i], segs[i + 1]], k); } catch (er) { return verifie ? { ok: true } : { illisible: true }; }
+        if (!egal(vs[0], vs[1])) return { faux: true, valeurs: segs[i] + ' = ' + segs[i + 1] + '  =>  ' + vs.map((v) => +v.toFixed(5)).join(' | ') };
+      }
+      verifie++;
+    }
+    return verifie ? { ok: true } : null;
+  }
+
+  // ---------- équivalences entre équations / inéquations ----------
+  const OPS = [['\\leqslant', '<='], ['\\geqslant', '>='], ['\\leq', '<='], ['\\geq', '>='], ['\\lt', '<'], ['\\gt', '>'], ['<', '<'], ['>', '>']];
+  const JETON = { '<=': 'LE', '>=': 'GE', '<': 'LT', '>': 'GT' }, SYMBOLE = { LE: '<=', GE: '>=', LT: '<', GT: '>', EQ: '=' };
+  // une relation « g(v) op 0 » : [{ g: (x) => nombre, op }] ; plusieurs relations reliées par ET (double inégalité) ou OU
+  function analyserPartie(partie) {
+    let p = partie.replace(/\\text\{\s*ou\s*\}/g, ' §OU§ ').replace(/\\q?quad/g, ' ');
+    if (/\\text|\\begin|\\neq|\\in|\\cup/.test(p)) return null;
+    const morceaux = p.split('§OU§').map((s) => s.trim()).filter(Boolean);
+    const relations = [];
+    let connecteur = morceaux.length > 1 ? 'ou' : 'et';
+    for (const morceau of morceaux) {
+      // repère les opérateurs de relation (= < > ≤ ≥) au premier niveau
+      // les opérateurs sont remplacés par des jetons sans « < » ni « = » pour ne pas se couper entre eux
+      let marque = morceau;
+      for (const [tex, sym] of OPS) marque = marque.split(tex).join(' §' + JETON[sym] + '§ ');
+      marque = marque.replace(/=/g, ' §EQ§ ');
+      const jetons = marque.split(/§(LE|GE|LT|GT|EQ)§/).map((x) => x.trim());
+      // jetons : expr, op, expr, [op, expr]
+      if (jetons.length < 3 || jetons.length % 2 === 0) return null;
+      for (let i = 0; i + 2 < jetons.length; i += 2) relations.push({ gauche: jetons[i], op: SYMBOLE[jetons[i + 1]], droite: jetons[i + 2] });
+      if (jetons.length > 3) connecteur = morceaux.length > 1 ? 'mixte' : 'et';
+    }
+    if (connecteur === 'mixte') return null;
+    return { relations, connecteur };
+  }
+  function variableLibre(...analyses) {
+    const lettres = new Set();
+    for (const a of analyses) for (const r of a.relations) for (const t of [r.gauche, r.droite]) {
+      const m = versMathjs(t);
+      for (const id of m.matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)) if (!FONCTIONS.has(id[0])) lettres.add(id[0]);
+    }
+    if (lettres.size !== 1) return null;
+    return [...lettres][0];
+  }
+  function resoudre(a, v) {
+    // renvoie { racines: [...], vecteur: [booleens sur la grille], frontieres: Set d'indices }
+    const N = 2400, borne = 30, pas = (2 * borne) / N;
+    const fTout = a.relations.map((r) => { const g = math.compile(versMathjs(r.gauche)), d = math.compile(versMathjs(r.droite)); return (x) => { const sc = {}; sc[v] = x; return g.evaluate(sc) - d.evaluate(sc); }; });
+    const valeursTout = fTout.map((fn) => { const w = new Array(N + 1); for (let i = 0; i <= N; i++) { const y = fn(-borne + i * pas + 0.00137); w[i] = isFinite(y) ? y : NaN; } return w; });
+    // une égalité vraie pour tout x (identité, ex. x² - 1 = (x-1)(x+1), ou égalité numérique) n'apporte aucune condition : on l'écarte ;
+    // une égalité constamment fausse rend la partie illisible (la chaîne d'égalités la signale séparément)
+    const gardes = a.relations.map((r, k) => {
+      const w = valeursTout[k].filter(isFinite);
+      if (!w.length) return false;
+      const amp = Math.max(...w.map(Math.abs)), constante = Math.max(...w) - Math.min(...w) < 1e-9 * (1 + amp);
+      if (r.op === '=' && constante) { if (amp < 1e-9) return false; throw new Error('égalité constamment fausse'); }
+      return true;
+    });
+    if (!gardes.some(Boolean)) throw new Error('aucune condition');
+    const rels = a.relations.filter((r, k) => gardes[k]), f = fTout.filter((fn, k) => gardes[k]), valeurs = valeursTout.filter((w, k) => gardes[k]);
+    const racines = [], frontieres = new Set(), vecteur = new Array(N + 1);
+    f.forEach((fn, k) => {
+      for (let i = 0; i < N; i++) {
+        const y0 = valeurs[k][i], y1 = valeurs[k][i + 1];
+        if (!isFinite(y0) || !isFinite(y1) || y0 * y1 > 0) continue;
+        let lo = -borne + i * pas + 0.00137, hi = lo + pas, flo = y0;
+        for (let it = 0; it < 60; it++) { const mid = (lo + hi) / 2, fm = fn(mid); if (flo * fm <= 0) hi = mid; else { lo = mid; flo = fm; } }
+        const r = (lo + hi) / 2;
+        // un pôle (saut de signe sans annulation) n'est pas une racine
+        if (Math.abs(fn(r)) > 1e-5 * (1 + Math.abs(y0) + Math.abs(y1))) { frontieres.add(i); frontieres.add(i + 1); continue; }
+        racines.push({ r, k, op: rels[k].op });
+        frontieres.add(i); frontieres.add(i + 1);
+      }
+    });
+    for (let i = 0; i <= N; i++) {
+      const t = rels.map((r, k) => { const y = valeurs[k][i]; if (!isFinite(y)) return null; return r.op === '<' ? y < 0 : r.op === '>' ? y > 0 : r.op === '<=' ? y <= 0 : r.op === '>=' ? y >= 0 : null; });
+      if (t.some((x) => x === null && true)) { vecteur[i] = null; continue; }
+      vecteur[i] = a.connecteur === 'ou' ? t.some(Boolean) : t.every(Boolean);
+    }
+    // racines d'une relation d'égalité : solutions ; racines d'une inégalité : simples frontières
+    const solutions = racines.filter((x) => x.op === '=').map((x) => x.r);
+    const aEgalite = rels.some((r) => r.op === '=');
+    return { solutions, aEgalite, vecteur, frontieres, racinesToutes: racines.map((x) => x.r) };
+  }
+  function verifierEquivalence(partieA, partieB) {
+    const A = analyserPartie(partieA), B = analyserPartie(partieB);
+    if (!A || !B) return { illisible: true };
+    const v = variableLibre(A, B);
+    if (!v) return { illisible: true };
+    let RA, RB;
+    try { RA = resoudre(A, v); RB = resoudre(B, v); } catch (er) { return { illisible: true }; }
+    const tous = (R) => R.racinesToutes;
+    const memeListe = (X, Y) => X.length === Y.length && X.every((x, i) => Math.abs(x - Y[i]) < 1e-5 * (1 + Math.abs(x)));
+    if (RA.aEgalite || RB.aEgalite) {
+      const sa = RA.aEgalite ? RA.solutions.slice().sort((p, q) => p - q) : null, sb = RB.aEgalite ? RB.solutions.slice().sort((p, q) => p - q) : null;
+      if (sa && sb) {
+        // les doublons proches (racine double) sont fusionnés
+        const fus = (L) => L.filter((x, i) => i === 0 || Math.abs(x - L[i - 1]) > 1e-4);
+        return memeListe(fus(sa), fus(sb)) ? { ok: true } : { faux: true, detail: 'solutions ' + fus(sa).map((x) => +x.toFixed(4)) + ' contre ' + fus(sb).map((x) => +x.toFixed(4)) };
+      }
+      return { illisible: true };
+    }
+    // inégalités : mêmes valeurs de vérité hors des frontières
+    let ecarts = 0, comparees = 0, premier = null;
+    for (let i = 0; i < RA.vecteur.length; i++) {
+      let proche = false;
+      for (let d = -2; d <= 2 && !proche; d++) if (RA.frontieres.has(i + d) || RB.frontieres.has(i + d)) proche = true;
+      if (proche) continue;
+      if (RA.vecteur[i] === null || RB.vecteur[i] === null) continue;
+      comparees++;
+      if (RA.vecteur[i] !== RB.vecteur[i]) { ecarts++; if (premier === null) premier = i; }
+    }
+    if (comparees < 200) return { illisible: true };
+    return ecarts === 0 ? { ok: true } : { faux: true, detail: ecarts + ' points de désaccord, par exemple ' + v + ' ≈ ' + (-30 + premier * 0.025).toFixed(2) };
+  }
+
+  // ---------- réponse finale ----------
+  function comparerFinal(e) {
+    const D = e.detail;
+    const F = D.final;
+    if (e.type === 'intervalle' && e.intervalleSpec) return F === formaterIntervalleSpec(e.intervalleSpec) ? 'ok' : 'faux';
+    // couples, vecteurs, triplets : « (a ; b) »
+    const liste = (s) => String(s).replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ' ').replace(/^\s*\(|\)\s*$/g, '').split(/;/).map((x) => x.trim());
+    const cibleListe = e.type === 'paire' ? [e.pa, e.pb] : e.type === 'vecteur' ? [e.vx, e.vy] : e.type === 'triplet' ? [e.ta, e.tb, e.tc] : null;
+    if (cibleListe && cibleListe.every((x) => x !== undefined)) {
+      const L = String(F).replace(/\\left|\\right/g, '').replace(/\\,/g, '').replace(/^\s*\(|\)\s*$/g, '').split(/;/);
+      if (L.length !== cibleListe.length) return 'faux';
+      for (let i = 0; i < L.length; i++) {
+        try { const a = math.evaluate(String(cibleListe[i]).replace(/\^/g, '^')), b = evaluer(L[i], 0); if (!egal(a, b)) return 'faux'; } catch (er) { return 'non-verifiable'; }
+      }
+      return 'ok';
+    }
+    if (typeof e.reponse !== 'string') return 'non-verifiable';
+    const rep = e.reponse.trim();
+    if (rep.startsWith('{')) {
+      try {
+        const A = rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x)).sort((p, q) => p - q);
+        const interieur = String(F).replace(/\\left\\\{|\\right\\\}/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{|\\\}/g, '');
+        const B = interieur.split(';').filter((s) => s.trim()).map((x) => evaluer(x, 0)).sort((p, q) => p - q);
+        return A.length === B.length && A.every((v, i) => egal(v, B[i])) ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
+    }
+    try {
+      for (let k = 0; k < NB_PORTEES; k++) {
+        const m = versMathjs(F), sc = portee(m + ' + ' + rep, k);
+        const a = math.evaluate(rep, sc), b = math.evaluate(m, sc);
+        if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b)) return 'non-verifiable';
+        if (!egal(a, b)) return 'faux';
+      }
+      return 'ok';
+    } catch (er) { return 'non-verifiable'; }
+  }
+
+  // ---------- style ----------
+  function styler(e, l) {
+    const sansTexte = l.replace(/\\text\{[^{}]*\}/g, ' ');
+    const m = [];
+    if (/\\dfrac\{[^{}]*\}\{1\}(?!\d)/.test(sansTexte)) m.push(['erreur', 'fraction-denominateur-1']);
+    if (/\\dfrac\{[^{}]*\}\{0\}(?![\d.])/.test(sansTexte)) m.push(['erreur', 'denominateur-nul']);
+    if (/NaN|undefined|Infinity|null/.test(l)) m.push(['erreur', 'valeur-invalide']);
+    if (/\^\{1\}(?!\d)/.test(sansTexte)) m.push(['erreur', 'exposant-1']);
+    if (/\+\s*-|-\s*-|-\s*\+|\+\s*\+/.test(sansTexte.replace(/\\[a-zA-Z]+/g, '').replace(/\^\{-/g, '^{').replace(/\\left\(|\\right\)|\([^()]*\)/g, '(x)'))) m.push(['erreur', 'signes-doubles']);
+    // coefficient 1 écrit devant une lettre (« 1n », « 1\,r », « 1\times r », « 1\left(… »). Les blocs de texte et les ⟺ sont remplacés par un jeton
+    // (§) pour ne pas être pris pour une multiplication implicite : « = -1 \text{ ou } x = 1 » est correct.
+    const epure = l.replace(/\\text\{[^{}]*\}|\\iff|\\q?quad/g, ' § ').replace(/[uv]_\{?[0-9a-z+\-]*\}?/g, 'U');
+    if (/(^|[^0-9.,{}_\\A-Za-z§])1\s*(?:\\times|\\,)?\s*(?:[a-zA-Z](?![a-zA-Z])|\\left\()/.test(epure)) m.push(['erreur', 'coefficient-1']);
+    if (/(^|[^0-9.,{}_\\A-Za-z§])-1\s*(?:\\times|\\,)?\s*[a-zA-Z](?![a-zA-Z])/.test(epure)) m.push(['erreur', 'coefficient-moins-1']);
+    if (/\d,\d/.test(sansTexte)) m.push(['erreur', 'virgule-nue-en-zone-math']);
+    if (/<[a-zA-Z/!]/.test(l)) m.push(['erreur', 'chevron-brut']);
+    const o = (l.match(/\{/g) || []).length - (l.match(/\}/g) || []).length;
+    if (o !== 0 && !/\\left\\\{|\\right\\\}|\\\{|\\\}/.test(l)) m.push(['erreur', 'accolades-desequilibrees']);
+    const g = (l.match(/\\left/g) || []).length - (l.match(/\\right/g) || []).length;
+    if (g !== 0) m.push(['erreur', 'left-right-desequilibres']);
+    // numérateur négatif sur un dénominateur purement numérique : le signe va devant la fraction (-\dfrac{3}{4}) ; sur un dénominateur littéral c'est la formule
+    if (/\\dfrac\{-\d+\}\{\d+\}/.test(sansTexte) && !/\\begin/.test(l)) m.push(['style', 'signe-au-numerateur']);
+    if (/\\dfrac\{[^{}]*\}\{[^{}]*\}\\times\s*\{?\s*(?:[A-Za-z]|\\sqrt)/.test(sansTexte)) m.push(['style', 'multiplication-apres-fraction']);
+    if (/\\text\{[^{}]*\d [%€][^{}]*\}/.test(l) || /\\text\{[^{}]*\d%[^{}]*\}/.test(l)) m.push(['style', 'espace-avant-pourcent']);
+    if (/\\text\{[^{}]*\{,\}[^{}]*\}/.test(l)) m.push(['style', 'virgule-latex-en-texte']);
+    if (l.replace(/\s+/g, '').length > 170) m.push(['style', 'ligne-tres-longue']);
+    for (const [gr, motif] of m) ajouter(gr, motif, e, l);
+  }
+
+  // ---------- vérification complète d'un détail (sans effet de bord) ----------
+  function verifierDetail(e, D, ctx) {
+    const trouves = [];
+    const noter = (gr, motif, ex) => trouves.push({ gr, motif, ex });
+    if (!Array.isArray(D.lignes) || !D.lignes.length || D.lignes.some((l) => typeof l !== 'string' || !l.trim())) noter('erreur', 'lignes-invalides', JSON.stringify(D.lignes).slice(0, 120));
+    if (typeof D.final !== 'string' || !D.final.trim()) noter('erreur', 'final-absent', '');
+    if (trouves.length) return trouves;
+    const norm = (s) => s.replace(/\\lt /g, '<');
+    if (!norm(D.lignes[D.lignes.length - 1]).includes(norm(D.final))) noter('erreur', 'derniere-ligne-sans-final', D.lignes[D.lignes.length - 1] + '  /  final = ' + D.final);
+    const cmp = comparerFinal({ ...e, detail: D });
+    if (cmp === 'faux') noter('erreur', 'final-different-de-la-reponse', 'final = ' + D.final + '  /  reponse = ' + (e.reponse !== undefined ? e.reponse : '') );
+    ctx.finalVerifie += cmp === 'ok' ? 1 : 0; ctx.finalNonVerifiable += cmp === 'non-verifiable' ? 1 : 0;
+    let precedent = null;       // dernière partie de la ligne précédente : une ligne qui commence par ⟺ la prolonge
+    for (const l of D.lignes) {
+      ctx.lignes++;
+      if (/\\begin/.test(l)) { precedent = null; continue; }                    // tableau de signes : relu à la main
+      const clauses = l.split(/\\q?quad/);
+      for (const clause of clauses) {
+        const parties = clause.split(/\\iff|\\Leftrightarrow/);
+        if (parties.length > 1 && !parties[0].trim() && precedent) parties[0] = precedent;
+        // chaînes d'égalités dans chaque partie (les parties avec du texte libre sont ignorées, sauf « ou » et les symboles)
+        parties.forEach((p) => {
+          if (!p.trim()) return;
+          const pp = p.replace(/\\text\{\s*ou\s*\}/g, ' ');
+          if (/\\text|\\begin|\\neq|\\cup|\\in\b/.test(pp)) return;
+          const morceaux = p.includes('\\text{ ou }') || p.includes('\\text{ou}') ? p.split(/\\text\{\s*ou\s*\}/) : [p];
+          morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1); if (r === null) return; if (r.illisible) ctx.chainesIllisibles++; else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
+        });
+        for (let i = 0; i + 1 < parties.length && ctx.equivActif !== false; i++) {
+          if (!parties[i].trim() || !parties[i + 1].trim()) continue;
+          const cleEq = parties[i].trim() + '§' + parties[i + 1].trim();
+          if (ctx.equivVues) { if (ctx.equivVues.has(cleEq)) continue; ctx.equivVues.add(cleEq); }
+          const r = verifierEquivalence(parties[i], parties[i + 1]);
+          if (r.illisible) ctx.equivalencesIllisibles++; else { ctx.equivalences++; if (r.faux) noter('erreur', 'equivalence-fausse', parties[i] + '  ⟺  ' + parties[i + 1] + '   =>   ' + r.detail); }
+        }
+      }
+      precedent = clauses.length === 1 ? l.split(/\\iff|\\Leftrightarrow/).pop() : null;
+    }
+    return trouves;
+  }
+
+  // ---------- compilation MathJax ----------
+  async function compilerMathJax(l) {
+    if (!window.MathJax || !MathJax.tex2svg) return null;
+    try {
+      const n = MathJax.tex2svg(l.replace(/\\lt /g, '\\lt '));
+      const erreur = n.querySelector('[data-mml-node="merror"]');
+      if (erreur) return (erreur.getAttribute('data-mjx-error') || erreur.textContent || 'erreur MathJax');
+      return null;
+    } catch (er) { return String(er.message || er); }
+  }
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) { try { await MathJax.startup.promise; } catch (er) { /* sans MathJax */ } }
+  const motifsVus = new Set();
+
+  // ---------- boucle de tirages ----------
+  const phrases = new Map(), exemples = new Map(), idsAvecDetail = new Set(), idsSansDetail = new Set(), echantillons = [];
+  stats.equivVues = new Set();
+  for (let k = 0; k < opts.tirages; k++) {
+    let ex; try { ex = generer(); } catch (er) { ajouter('erreur', 'generation-en-erreur', { id: '(fiche)' }, er.message); continue; }
+    stats.tirages++;
+    stats.equivActif = k < opts.tiragesEquivalences;      // la résolution numérique des équivalences est coûteuse : sur les premiers tirages seulement
+    for (const e of ex) {
+      stats.exercices++;
+      if (!e.detail) { idsSansDetail.add(e.id); continue; }
+      stats.avecDetail++; idsAvecDetail.add(e.id);
+      const D = e.detail;
+      if (D.lignes && D.lignes.length) {
+        for (const l of D.lignes) {
+          styler(e, l);
+          for (const ph of String(l).matchAll(/\\text\{([^{}]*)\}/g)) { const cle = ph[1].trim(); if (!cle) continue; if (!phrases.has(cle)) phrases.set(cle, new Set()); phrases.get(cle).add(e.id); }
+          const motif = l.replace(/\d+/g, '0');
+          if (!motifsVus.has(motif)) { motifsVus.add(motif); const er = await compilerMathJax(l); stats.motifsLaTeX++; if (er) ajouter('erreur', 'latex-invalide', e, l + '   =>   ' + er); }
+        }
+      }
+      for (const t of verifierDetail(e, D, stats)) ajouter(t.gr, t.motif, e, t.ex);
+      const nb = exemples.get(e.id) || [];
+      if (nb.length < opts.exemples && !nb.some((x) => JSON.stringify(x.lignes) === JSON.stringify(D.lignes))) {
+        let rep = ''; try { rep = formaterReponse(e); } catch (er) { /* sans corrigé */ }
+        nb.push({ enonce: e.enonce, reponse: rep, lignes: D.lignes });
+        exemples.set(e.id, nb);
+      }
+      if (echantillons.length < 400 && k < 60) echantillons.push({ e, D });
+    }
+  }
+  for (const id of idsAvecDetail) idsSansDetail.delete(id);
+
+  // ---------- auto-test : l'outil doit détecter une erreur volontaire ----------
+  const autotest = {};
+  if (opts.autotest) {
+    const compte = (nom, f) => { const r = autotest[nom] || (autotest[nom] = { essais: 0, detectes: 0 }); r.essais++; if (f()) r.detectes++; };
+    const chiffreAlterne = (s) => { const i = [...s.matchAll(/\d+/g)].pop(); if (!i) return null; const nombre = String(+i[0] + 1); return s.slice(0, i.index) + nombre + s.slice(i.index + i[0].length); };
+    for (const { e, D } of echantillons) {
+      const ctx = { finalVerifie: 0, finalNonVerifiable: 0, lignes: 0, chaines: 0, chainesIllisibles: 0, equivalences: 0, equivalencesIllisibles: 0, equivActif: false };
+      const copie = () => ({ lignes: D.lignes.slice(), final: D.final });
+      // M1 : la réponse finale (dernière ligne et final) est décalée
+      if (e.type !== 'intervalle' && comparerFinal({ ...e, detail: D }) === 'ok') {
+        const M = copie(); const n = chiffreAlterne(D.final);
+        if (n && n !== D.final) { M.final = n; M.lignes[M.lignes.length - 1] = D.lignes[D.lignes.length - 1].replace(D.final, n); compte('reponse-finale-decalee', () => verifierDetail(e, M, ctx).some((t) => t.motif === 'final-different-de-la-reponse')); }
+      }
+      // M2 : un nombre d'une chaîne d'égalités numérique est modifié
+      D.lignes.forEach((l, i) => {
+        if (/\\iff|\\text|\\begin|\\q?quad/.test(l) || !l.includes('=')) return;
+        const segs = l.split('='); if (segs.length < 2) return;
+        const dernier = segs[segs.length - 1]; const n = chiffreAlterne(dernier); if (!n || n === dernier) return;
+        const r0 = verifierChaine(l); if (!r0 || !r0.ok) return;
+        const M = copie(); M.lignes[i] = segs.slice(0, -1).join('=') + '=' + n;
+        compte('chaine-modifiee', () => { const r = verifierChaine(M.lignes[i]); return r && r.faux; });
+      });
+      // M3 : un nombre de la seconde partie d'une équivalence est modifié
+      D.lignes.forEach((l) => {
+        if (!/\\iff/.test(l) || /\\q?quad|\\begin/.test(l)) return;
+        const parties = l.split('\\iff'); if (parties.length < 2) return;
+        const r0 = verifierEquivalence(parties[0], parties[1]); if (!r0.ok) return;
+        const n = chiffreAlterne(parties[1]); if (!n || n === parties[1]) return;
+        compte('equivalence-modifiee', () => { const r = verifierEquivalence(parties[0], n); if (r.faux) return true; const rc = verifierChaine(n, null, true); return !!(rc && rc.faux); });
+      });
+      // M4 : une accolade fermante supprimée => MathJax doit refuser
+      if (window.MathJax && MathJax.tex2svg && D.lignes.some((l) => l.includes('}'))) {
+        const l = D.lignes.find((x) => x.includes('}')); const mut = l.replace(/\}([^}]*)$/, '$1');
+        compte('accolade-supprimee', () => { try { const nn = MathJax.tex2svg(mut); return !!nn.querySelector('[data-mml-node="merror"]'); } catch (er) { return true; } });
+      }
+      // M5 : un coefficient 1 est introduit
+      { const l = D.lignes[0]; if (/[a-z]/.test(l)) compte('coefficient-1-ajoute', () => { const avant = anomalies.length; const x = { id: '#autotest' + anomalies.length }; styler(x, '1\\,r + ' + l); return anomalies.length > avant; }); }
+    }
+  }
+  // les lignes d'autotest ne comptent pas comme anomalies de la fiche
+  const reelles = anomalies.filter((a) => !String(a.id).startsWith('#autotest'));
+
+  return {
+    anomalies: reelles, stats,
+    avecDetail: [...idsAvecDetail], sansDetail: [...idsSansDetail],
+    phrases: [...phrases.entries()].map(([t, s]) => [t, [...s]]),
+    exemples: [...exemples.entries()],
+    autotest
+  };
+}
+
+// ===================================================================================================================
+// Interface : boutons « Détails », rendu, débordements, erreurs de page
+// ===================================================================================================================
+async function controlerInterface(page, viewport, regenerations, serveurUrl) {
+  const anomalies = [];
+  const erreursPage = [];
+  const ecouteur = (m) => { if (m.type() === 'error') erreursPage.push('console : ' + m.text().slice(0, 160)); };
+  page.on('console', ecouteur);
+  page.on('pageerror', (er) => erreursPage.push('page : ' + String(er.message).slice(0, 160)));
+  await page.setViewportSize(viewport);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => typeof genererExercices === 'function' && window.MathJax && MathJax.startup, null, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  for (let r = 0; r < regenerations; r++) {
+    const res = await page.evaluate(async () => {
+      const dormir = (ms) => new Promise((x) => setTimeout(x, ms));
+      if (typeof genererNouvelleFiche === 'function') { try { await genererNouvelleFiche(); } catch (er) { /* en devoir : confirmation */ } }
+      await dormir(300);
+      const avecDetail = exercices.map((e, i) => ({ e, i })).filter((x) => x.e.detail && (typeof DevoirPartiel === 'undefined' || DevoirPartiel.retenu(x.e)));
+      // réponse volontairement fausse dans chaque champ
+      for (const { i } of avecDetail) { const inp = document.getElementById('input-' + i); if (!inp) continue; if (inp.tagName === 'MATH-FIELD') inp.setValue('999'); else inp.value = '999'; }
+      await dormir(100);
+      verifierTout();
+      await dormir(200);
+      const bouton = document.getElementById('btn-correction'); if (bouton) bouton.click();
+      await dormir(200);
+      const boutons = [...document.querySelectorAll('.btn-details')];
+      const attendus = avecDetail.length;
+      boutons.forEach((b) => b.click());
+      if (window.MathJax && MathJax.typesetPromise) { try { await MathJax.typesetPromise(); } catch (er) { /* erreurs relevées ci-dessous */ } }
+      await dormir(400);
+      const blocs = [...document.querySelectorAll('.correction-ligne .details')];
+      const mesures = [];
+      for (const bloc of blocs) {
+        if (bloc.hidden) { mesures.push({ id: bloc.id, ferme: true }); continue; }
+        for (const ligne of bloc.querySelectorAll(':scope > div')) {
+          const svg = ligne.querySelector('svg'); if (!svg) { mesures.push({ id: bloc.id, vide: true }); continue; }
+          // largeur naturelle de la formule rapportée à la largeur disponible : > 1 = la ligne défile horizontalement
+          mesures.push({ id: bloc.id, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"]') });
+        }
+      }
+      return { attendus, trouves: boutons.length, mesures, debordement: document.documentElement.scrollWidth - window.innerWidth,
+        sansReponse: document.querySelectorAll('.correction-ligne .details').length };
+    });
+    const tag = `${viewport.width}px`;
+    if (res.trouves !== res.attendus) anomalies.push({ gravite: 'erreur', motif: 'bouton-details-manquant', id: '(interface ' + tag + ')', exemple: `${res.trouves} bouton(s) pour ${res.attendus} exercice(s) à détail` });
+    for (const m of res.mesures) {
+      if (m.ferme) anomalies.push({ gravite: 'erreur', motif: 'details-ne-s-ouvrent-pas', id: '(interface ' + tag + ')', exemple: m.id });
+      if (m.vide) anomalies.push({ gravite: 'erreur', motif: 'ligne-sans-formule', id: '(interface ' + tag + ')', exemple: m.id });
+      if (m.erreur) anomalies.push({ gravite: 'erreur', motif: 'erreur-mathjax-affichee', id: '(interface ' + tag + ')', exemple: m.id });
+      // la ligne garde sa taille et défile : sur téléphone, plus de 1,6 écran de large est pénible ; sur ordinateur, aucun défilement ne devrait être utile
+      const seuil = viewport.width < 600 ? 1.6 : 1.02;
+      if (m.largeur !== undefined && m.largeur > seuil) anomalies.push({ gravite: 'style', motif: 'ligne-trop-longue-' + (viewport.width < 600 ? 'telephone' : 'ordinateur'), id: m.id.replace('details-', 'ex.#'), exemple: `${m.largeur.toFixed(1)} fois la largeur disponible (${tag})` });
+    }
+    if (res.debordement > 2) anomalies.push({ gravite: 'erreur', motif: 'debordement-horizontal', id: '(interface ' + tag + ')', exemple: res.debordement + ' px de trop' });
+  }
+  page.off('console', ecouteur);
+  for (const m of new Set(erreursPage)) anomalies.push({ gravite: 'erreur', motif: 'erreur-de-page', id: '(interface ' + viewport.width + 'px)', exemple: m });
+  return anomalies;
+}
+
+// ===================================================================================================================
+(async () => {
+  const toutes = drapeau('--toutes') || drapeau('--couverture');
+  let fiches = toutes ? toutesLesFiches() : nommees.map((n) => n.replace(/\\/g, '/'));
+  if (!fiches.length) { console.error('Indiquer une fiche (cahiers/premiere/cahier-4/fiche-12.html) ou --toutes / --couverture.'); process.exit(2); }
+  const couvertureSeule = drapeau('--couverture');
+  if (drapeau('--toutes') && !couvertureSeule) fiches = fiches.filter(aDesDetails);
+  const tirages = option('--tirages', toutes ? 300 : 1500);
+  const regenerations = option('--regenerations', 6);
+  const tiragesEquivalences = option('--tirages-equivalences', 60);
+  const nbExemples = option('--exemples', 2);
+  const serveur = await demarrerServeur();
+  const base = 'http://127.0.0.1:' + serveur.address().port;
+  const navigateur = await lancer();
+  const lignesRapport = [], phrasesTout = [], exemplesHtml = [], couverture = [];
+  let erreurs = 0, avertissements = 0;
+  const T0 = Date.now();
+  for (const fiche of fiches) {
+    const contexte = await navigateur.newContext({ viewport: { width: 1000, height: 900 } });
+    const page = await contexte.newPage();
+    const chemin = fiche.replace(/^\//, '');
+    try {
+      await page.goto(base + '/' + chemin, { waitUntil: 'load' });
+      await page.waitForFunction(() => typeof genererExercices === 'function', null, { timeout: 30000 });
+      await page.waitForFunction(() => window.MathJax && MathJax.startup, null, { timeout: 30000 }).catch(() => {});
+      await page.waitForTimeout(600);
+    } catch (er) { lignesRapport.push(`${fiche} : ouverture impossible (${er.message.slice(0, 80)})`); erreurs++; await contexte.close(); continue; }
+    const r = await page.evaluate(controlerDansLaPage, { tirages: couvertureSeule ? 1 : tirages, tiragesEquivalences: couvertureSeule ? 0 : tiragesEquivalences, exemples: nbExemples, autotest: !couvertureSeule && !drapeau('--sans-autotest') });
+    couverture.push({ fiche, avec: r.avecDetail, sans: r.sansDetail });
+    let anomalies = couvertureSeule ? [] : r.anomalies;
+    if (!couvertureSeule && !drapeau('--sans-interface') && r.avecDetail.length) {
+      for (const vp of [{ width: 1000, height: 900 }, { width: 375, height: 812 }]) anomalies = anomalies.concat(await controlerInterface(page, vp, regenerations, base));
+    }
+    // une même anomalie revue à chaque régénération n'est listée qu'une fois, avec son nombre d'occurrences
+    const groupes = new Map();
+    for (const a of anomalies) { const c = a.gravite + '|' + a.motif + '|' + a.id; if (!groupes.has(c)) groupes.set(c, { ...a, n: 0 }); const g = groupes.get(c); g.n++; if (a.exemple.length > g.exemple.length && /fois/.test(a.exemple)) g.exemple = a.exemple; }
+    anomalies = [...groupes.values()];
+    const s = r.stats;
+    const nbE = anomalies.filter((a) => a.gravite === 'erreur').length, nbS = anomalies.length - nbE;
+    erreurs += nbE; avertissements += nbS;
+    if (couvertureSeule) { await contexte.close(); continue; }
+    lignesRapport.push(`${nbE ? 'ERREURS ' : nbS ? 'style    ' : 'OK       '} ${fiche} : ${r.avecDetail.length} exercice(s) à détail sur ${r.avecDetail.length + r.sansDetail.length}, ${s.avecDetail} détails contrôlés ` +
+      `(${s.chaines} chaînes d'égalités, ${s.equivalences} équivalences, ${s.finalVerifie} réponses finales vérifiées${s.finalNonVerifiable ? ', ' + s.finalNonVerifiable + ' non vérifiables automatiquement' : ''}, ` +
+      `${s.motifsLaTeX} formes LaTeX compilées${s.chainesIllisibles || s.equivalencesIllisibles ? ', ' + s.chainesIllisibles + ' chaînes et ' + s.equivalencesIllisibles + ' équivalences non lisibles' : ''})`);
+    for (const a of anomalies) lignesRapport.push(`      [${a.gravite}] ${a.id} — ${a.motif}${a.n > 1 ? ' (×' + a.n + ')' : ''} : ${a.exemple}`);
+    const at = Object.entries(r.autotest);
+    if (at.length) lignesRapport.push('      auto-test (détection d\'une erreur volontaire) : ' + at.map(([n, v]) => `${n} ${v.detectes}/${v.essais}`).join(' ; '));
+    for (const [n, v] of at) if (v.essais >= 20 && v.detectes / v.essais < 0.9) { lignesRapport.push(`      [erreur] (outil) — auto-test insuffisant : ${n} ${v.detectes}/${v.essais}`); erreurs++; }
+    for (const [t, ids] of r.phrases) phrasesTout.push({ fiche, t, ids });
+    for (const [id, liste] of r.exemples) exemplesHtml.push({ fiche, id, liste });
+    await contexte.close();
+  }
+  await navigateur.close(); serveur.close();
+  const duree = Math.round((Date.now() - T0) / 1000);
+  if (couvertureSeule) {
+    const l = couverture.map((c) => `${c.fiche} : ${c.avec.length} avec détail sur ${c.avec.length + c.sans.length}` + (c.sans.length ? `   (sans : ${c.sans.join(', ')})` : ''));
+    const total = couverture.reduce((s, c) => s + c.avec.length, 0), tout = couverture.reduce((s, c) => s + c.avec.length + c.sans.length, 0);
+    fs.writeFileSync(path.join(SORTIE, 'couverture.txt'), l.join('\n') + `\n\nTotal : ${total} exercices avec détail sur ${tout}.\n`);
+    console.log(l.join('\n') + `\n\nTotal : ${total} exercices avec détail sur ${tout}. (couverture.txt)`);
+    return;
+  }
+  const entete = `Contrôle des détails de correction — ${new Date().toISOString().slice(0, 16).replace('T', ' ')} — ${fiches.length} fiche(s), ${tirages} tirages, ${duree} s`;
+  const bilan = `${erreurs} erreur(s), ${avertissements} point(s) de style.`;
+  fs.writeFileSync(path.join(SORTIE, 'rapport.txt'), [entete, '', ...lignesRapport, '', bilan, ''].join('\n'));
+  // phrases de méthode à relire
+  const parFiche = {};
+  for (const p of phrasesTout) { (parFiche[p.fiche] = parFiche[p.fiche] || []).push(p); }
+  const txt = Object.entries(parFiche).map(([f, l]) => `== ${f}\n` + l.sort((a, b) => a.t.localeCompare(b.t)).map((p) => `  « ${p.t} »   (${p.ids.join(', ')})`).join('\n')).join('\n\n');
+  fs.writeFileSync(path.join(SORTIE, 'phrases.txt'), `Phrases de méthode des détails (zones \\text{…}) — à relire, l'outil ne peut pas juger leur justesse.\n\n${txt}\n`);
+  // exemples à parcourir
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const blocs = exemplesHtml.map(({ fiche, id, liste }) => `<section><h3>${esc(fiche.replace(/^cahiers\//, ''))} — ${esc(id)}</h3>` + liste.map((x, i) =>
+    `<div class="ex"><div class="en">${i + 1}. ${x.enonce}</div><div class="rep">Réponse attendue : \\(${x.reponse}\\)</div>${x.lignes.map((l) => `<div>\\(${l}\\)</div>`).join('')}</div>`).join('') + '</section>').join('\n');
+  fs.writeFileSync(path.join(SORTIE, 'exemples.html'), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Exemples de détails</title>
+<style>body{font:15px/1.5 Georgia,serif;max-width:860px;margin:20px auto;padding:0 16px}section{border-top:2px solid #333;margin-top:22px}h3{font:600 16px sans-serif}
+.ex{border-left:3px solid #4a47c7;background:#f5f8fc;margin:8px 0;padding:6px 12px}.en{color:#555}.rep{font-weight:bold;margin:4px 0}</style>
+<script>window.MathJax={tex:{inlineMath:[['\\\\(','\\\\)']]}}</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script></head><body>
+<h1>Exemples de détails de correction</h1><p>Deux tirages par exercice. À parcourir pour juger les phrases de méthode et la lisibilité.</p>\n${blocs}\n</body></html>`);
+  console.log([entete, '', ...lignesRapport, '', bilan, '(rapport.txt, phrases.txt, exemples.html)'].join('\n'));
+  process.exit(erreurs ? 1 : 0);
+})().catch((er) => { console.error(er); process.exit(2); });

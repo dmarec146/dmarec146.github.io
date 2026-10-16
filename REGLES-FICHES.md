@@ -452,6 +452,10 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
   un nombre négatif est entre parenthèses dans un produit ; la fraction a son signe devant ; pas de fraction de dénominateur 1 ; la
   forme simplifiée n'est ajoutée que si elle diffère de ce qui précède ; une ligne longue se coupe en deux (sur téléphone, MathJax la
   rétrécit).
+- **Outil** : `node outils/details-correction/controle.js cahiers/<niveau>/<cahier>/fiche-NN.html` (mode d'emploi, liste des contrôles et
+  limites : `outils/details-correction/README.md`) lance tout ce qui suit sans crédits, plus l'interface sur ordinateur et téléphone
+  et un auto-test ; `phrases.txt` et `exemples.html` sont à relire à la main. `--couverture` donne l'avancement (16/10/2026 : 23
+  exercices avec détail sur 1 284).
 - **Contrôle obligatoire** (à relancer pour chaque fiche) : sur un millier de tirages, `final` converti en nombre doit égaler
   `reponse` (ensembles inclus, expressions en `a` évaluées en un point), la dernière ligne doit contenir `final`, et toute chaîne
   d'égalités purement numérique d'une ligne (`A = B = C`) doit avoir des membres égaux ; le contrôle doit échouer si on décale

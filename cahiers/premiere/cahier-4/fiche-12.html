@@ -599,7 +599,9 @@ Bareme.definir({"points":{"12.1 a)":0.75,"12.1 b)":1,"12.2 a)":0.5,"12.2 b)":0.7
     margin: 8px 0 2px 16px; padding: 8px 12px;
     background: #f5f8fc; border-left: 3px solid var(--bleu); border-radius: 4px; font-size: 14px;
   }
-  .correction-ligne .details > div { padding: 2px 0; }
+  /* une ligne trop longue pour l'écran garde sa taille et défile horizontalement (sinon MathJax la réduit à 50-60 %, illisible) */
+  .correction-ligne .details > div { padding: 4px 0; overflow-x: auto; overflow-y: hidden; }
+  .correction-ligne .details svg { max-width: none; }
   .correction-ligne .details[hidden] { display: none; }
 
   /* ---------- À partir des tablettes (>=600px) ---------- */
@@ -1086,6 +1088,10 @@ function fracLinTex(coefX, constTerme, denom, vr) {
   coefX /= g; constTerme /= g; denom /= g;
   return denom === 1 ? fmtLin(coefX, constTerme, false, vr) : `\\dfrac{${fmtLin(coefX, constTerme, false, vr)}}{${denom}}`;
 }
+// fraction non simplifiée, signe devant (jamais « \dfrac{-3}{4} ») ; « coefficient × a » sur un dénominateur numérique, signe devant aussi
+const fracBrute = (n, d) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`;
+const coefAbs = n => (Math.abs(n) === 1 ? '' : String(Math.abs(n)));
+const fracCoefA = (q, s) => `${q < 0 ? '-' : ''}\\dfrac{${coefAbs(q)}a}{${s}}`;
 const ajouterFrac = t => (t.startsWith('-') ? `- ${t.slice(1)}` : `+ ${t}`);       // « + \dfrac{1}{3} » ou « - \dfrac{1}{3} »
 // terme « coefficient × n » : jamais « 1 n » ni « -1 n » ; avec signe (« + 2\,n », « - n ») ou sans (« 2\,n », « -n »)
 const termeNsansSigne = t => (t === '1' ? 'n' : t === '-1' ? '-n' : `${t}\\,n`);
@@ -1229,7 +1235,7 @@ function genererExercices() {
       b = alea(2,9); a = alea(1,2*b); c = alea(1,9); d = alea(2,9); e = alea(1,9); f = alea(2,9);
       N = a*d*f - b*c*e; D = b*d*f;
     } while (pgcd(a,b) !== 1 || pgcd(c,d) !== 1 || pgcd(e,f) !== 1 || N === 0 || D / pgcd(N, D) === 1 || c*e % (d*f) === 0);
-    const brut = `\\dfrac{${N}}{${D}}`, simple = fracL(N, D);
+    const brut = fracBrute(N, D), simple = fracL(N, D);
     ex.push({id:"12.3 a)", type:"num", fractionIrreductible:true,
       enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}\\times\\dfrac{${e}}{${f}}`, reponse: fracStr(N, D),
       detail: { lignes: [
@@ -1243,12 +1249,12 @@ function genererExercices() {
     let a, b, c, p, q, N, D;
     do { a = aleaNonNul(-4,4); b = alea(-6,6); c = alea(-6,6); q = alea(2,4); p = aleaNonNul(-7,7); N = a*p*p + b*p*q + c*q*q; D = q*q; }
     while (pgcd(p,q) !== 1 || N === 0 || D / pgcd(N, D) === 1);
-    const P = fracL(p, q), Pp = p < 0 ? `\\left(${P}\\right)` : P, brut = `\\dfrac{${N}}{${D}}`, simple = fracL(N, D);
+    const P = fracL(p, q), Pp = p < 0 ? `\\left(${P}\\right)` : P, brut = fracBrute(N, D), simple = fracL(N, D);
     ex.push({id:"12.3 b)", type:"num", texteLibre:true, sansEgal:true, fractionIrreductible:true,
       enonce:`\\(f\\left(${fracL(p,q)}\\right)${SI}f(x)=${polyQuadStr(a,b,c,false,'x')}\\)`, reponse: fracStr(N, D),
       detail: { lignes: [
         `f\\left(${P}\\right) = ${sommeTermes([[a, `\\left(${P}\\right)^2`], [b, Pp], [c, '']])}`,
-        `= \\dfrac{${sommeTermes([[a*p*p, ''], [b*p*q, ''], [c*q*q, '']])}}{${q*q}}`,
+        (() => { const s = sommeTermes([[a*p*p, ''], [b*p*q, ''], [c*q*q, '']]); return s.startsWith('-') && !/ [+-] /.test(s) ? `= -\\dfrac{${s.slice(1)}}{${q*q}}` : `= \\dfrac{${s}}{${q*q}}`; })(),
         `= ${brut}` + (brut === simple ? '' : ` = ${simple}`)],
         final: simple }});
   }
@@ -1311,8 +1317,8 @@ function genererExercices() {
     return { lignes: [
       `u_{${s.K2}} = u_{${s.K1}} + (${s.K2}-${s.K1})\\times r`,
       `${d}\\,r = ${s.tL(s.T2)} - ${fracDP(s.T1)} \\iff r = ${divisionD(delta, d)}`,
-      `u_{${s.K1}} = u_0 + ${s.K1}\\times r`,
-      `u_0 = ${s.tL(s.T1)} - ${s.K1}\\times ${fracDP(s.rF)} = ${fracD(s.u0F)}`],
+      `u_{${s.K1}} = u_0 + ${s.K1 === 1 ? '' : s.K1 + '\\times '}r`,
+      `u_0 = ${s.tL(s.T1)} - ${s.K1 === 1 ? '' : s.K1 + '\\times '}${fracDP(s.rF)} = ${fracD(s.u0F)}`],
       final: fracD(s.u0F) };
   };
   { const s = deuxTermes(false); ex.push({id:"12.4 d)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(r${SI}${s.txt}\\)`, reponse:s.r, detail: detailRaison(s)}); }
@@ -1328,8 +1334,8 @@ function genererExercices() {
       enonce:`\\(u_0+u_1+\\cdots+u_{${N}}\\), où \\(\\left(u_n\\right)\\) est arithmétique de raison \\(${r}\\) et de premier terme \\(u_0=${u0}\\)`, reponse:String((N+1)*(2*u0 + N*r)/2),
       detail: { lignes: [
         `u_{${N}} = u_0 + ${N}\\times r = ${u0} + ${N}\\times ${dP(r)} = ${uN}`,
-        `\\text{Il y a } ${N}+1 = ${N+1} \\text{ termes, donc } S = ${N+1}\\times\\dfrac{u_0 + u_{${N}}}{2} = ${N+1}\\times\\dfrac{${u0} ${dPlus(uN)}}{2} = ${N+1}\\times\\dfrac{${u0 + uN}}{2}`,
-        `S = \\dfrac{${(N+1)*(u0+uN)}}{2} = ${S}`],
+        `\\text{Il y a } ${N}+1 = ${N+1} \\text{ termes, donc } S = ${N+1}\\times\\dfrac{u_0 + u_{${N}}}{2} = ${N+1}\\times\\dfrac{${u0} ${dPlus(uN)}}{2} = ${N+1}\\times ${u0 + uN < 0 ? '\\left(' + fracBrute(u0 + uN, 2) + '\\right)' : fracBrute(u0 + uN, 2)}`,
+        `S = ${fracBrute((N+1)*(u0+uN), 2)} = ${S}`],
         final: String(S) }});
   }
   // b) somme numerique f + (f+r) + ... + dernier, termes tous positifs : compter les termes est la difficulte
@@ -1383,8 +1389,8 @@ function genererExercices() {
       detail: { lignes: [
         `r = u_{n+1} - u_n`,
         `u_{n+1} - u_n = \\dfrac{${numAvec('(n+1)')}}{${s}} - \\dfrac{${numAvec('n')}}{${s}} = \\dfrac{\\left(${numAvec('(n+1)')}\\right) - \\left(${numAvec('n')}\\right)}{${s}}`,
-        `u_{n+1} - u_n = \\dfrac{${coefL(q)}a(n+1) - ${q < 0 ? `\\left(${coefL(q)}an\\right)` : `${coefL(q)}an`}}{${s}} = \\dfrac{${coefL(q)}a}{${s}}`,
-        `r = ${R} \\iff \\dfrac{${coefL(q)}a}{${s}} = ${R} \\iff ${coefL(q)}a = ${R * s}`,
+        `u_{n+1} - u_n = \\dfrac{${coefL(q)}a(n+1) - ${q < 0 ? `\\left(${coefL(q)}an\\right)` : `${coefL(q)}an`}}{${s}} = ${fracCoefA(q, s)}`,
+        `r = ${R} \\iff ${fracCoefA(q, s)} = ${R} \\iff ${coefL(q)}a = ${R * s}`,
         `a = ${fracLatex(R * s, q)}`],
         final: fracLatex(R * s, q) }});
   }
@@ -1401,7 +1407,7 @@ function genererExercices() {
     ex.push({id:"12.7 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse: fmtLin(K, A*A, true, 'n'),
       detail: { lignes: [
         `v_0 = u_0^2 = ${A}^2 = ${A*A}`,
-        `v_n = v_0 + n\\times r = ${A*A} + ${K}n`,
+        `v_n = v_0 + n\\times r = ${A*A} + ${coefAbs(K)}n`,
         `v_n = ${fmtLin(K, A*A, false, 'n')}`],
         final: fmtLin(K, A*A, false, 'n') }});
     paramsAvances.g7 = {A,K};
@@ -1435,7 +1441,8 @@ function genererExercices() {
       detail: { lignes: [
         `v_0 = \\dfrac{1}{u_0 ${dPlus(-S)}} = \\dfrac{1}{${u0} ${dPlus(-S)}} = ${fracD(v0F)}`,
         `v_n = v_0 + n\\times r = ${fracD(v0F)} ${termeNavecSigne(fracD(kF))}`,
-        `v_n = \\dfrac{${fmtLin(term1, term2, false, 'n')}}{${D}}` + (fracLinTex(term1, term2, D, 'n') === `\\dfrac{${fmtLin(term1, term2, false, 'n')}}{${D}}` ? '' : ` = ${fracLinTex(term1, term2, D, 'n')}`)],
+        (D === 1 ? `v_n = ${fmtLin(term1, term2, false, 'n')}`
+          : `v_n = \\dfrac{${fmtLin(term1, term2, false, 'n')}}{${D}}` + (fracLinTex(term1, term2, D, 'n') === `\\dfrac{${fmtLin(term1, term2, false, 'n')}}{${D}}` ? '' : ` = ${fracLinTex(term1, term2, D, 'n')}`))],
         final: fracLinTex(term1, term2, D, 'n') }});
     paramsAvances.g8 = {S,R,u0,P,Q};
   }
