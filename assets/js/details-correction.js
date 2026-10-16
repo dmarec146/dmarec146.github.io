@@ -106,8 +106,8 @@ const Detail = (() => {
   // nombre de signes visibles ; les lignes avec ⟺, texte, tableau ou \quad ne sont pas touchées (outil de contrôle : une ligne qui
   // commence par « = » reprend le dernier membre de la précédente)
   const longueurVisible = l => l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\(?:left|right|,|;|:|!|quad|qquad)/g, '').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length;
-  const couperLigne = (l, seuil) => {
-    if (/\\iff|\\text|\\quad|\\begin/.test(l)) return [l];
+  const segmentsEgal = l => {
+    if (/\\iff|\\text|\\quad|\\begin/.test(l)) return null;
     const segs = []; let prof = 0, gauche = 0, debut = 0;
     for (let i = 0; i < l.length; i++) {
       if (l.startsWith('\\left', i)) { gauche++; i += 4; continue; }
@@ -117,7 +117,11 @@ const Detail = (() => {
       else if (c === '=' && prof === 0 && gauche === 0 && l[i - 1] === ' ' && l[i + 1] === ' ') { segs.push(l.slice(debut, i).trim()); debut = i + 1; }
     }
     segs.push(l.slice(debut).trim());
-    if (segs.length < 2) return [l];
+    return segs;
+  };
+  const couperLigne = (l, seuil) => {
+    const segs = segmentsEgal(l);
+    if (!segs || segs.length < 2) return [l];
     const lignes = []; let courant = segs[0];
     for (let k = 1; k < segs.length; k++) {
       if (longueurVisible(courant + segs[k]) > seuil) { lignes.push(courant); courant = `= ${segs[k]}`; }
@@ -126,8 +130,18 @@ const Detail = (() => {
     lignes.push(courant);
     return lignes;
   };
+  // deux lignes « A = B » puis « B = C » se rejoignent en « A = B = C » (le découpage recoupe ensuite sans répéter B)
+  const fusionnerChaines = lignes => {
+    const sortie = [];
+    for (const l of lignes) {
+      const prec = sortie.length ? sortie[sortie.length - 1] : null, sp = prec && segmentsEgal(prec), sl = segmentsEgal(l);
+      if (sp && sl && sp.length >= 2 && sl.length >= 2 && sl[0] === sp[sp.length - 1]) sortie[sortie.length - 1] = `${prec} = ${sl.slice(1).join(' = ')}`;
+      else sortie.push(l);
+    }
+    return sortie;
+  };
   const couper = (ex, seuil = 34) => {
-    ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.flatMap(l => couperLigne(l, seuil)); });
+    ex.forEach(e => { if (e.detail) e.detail.lignes = fusionnerChaines(e.detail.lignes).flatMap(l => couperLigne(l, seuil)); });
     return ex;
   };
 
