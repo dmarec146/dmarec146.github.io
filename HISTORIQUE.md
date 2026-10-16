@@ -8455,3 +8455,28 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Anomalie signalée** par l'audit complet : Première 2.12, `intervalle-tout-refuse` (`]-inf;+inf[` refusé quand la solution est ℝ).
 - **Diagnostic** : pas un défaut de la fiche. Frappée au clavier dans le vrai champ, la réponse est acceptée sous toutes ses formes (`]-inf;+inf[`, `]-oo;+oo[`, `]-infty;+infty[`, `]-\infty;+\infty[`, `R`, `\mathbb{R}`) ; le contrôleur de la fiche (`parseReponseIntervalle`) rend bien `{type:'tout'}`. C'est l'audit qui saisissait `]-inf;+inf[` en mode ascii-math de MathLive, lequel supprime le crochet fermant (`]-inf;+inf`), d'où un refus à tort.
 - **Correction de l'audit** (`audit.js`, README) : les variantes de ℝ sont saisies en LaTeX (`]-\infty;+\infty[` et `]-inf;+inf[` en lettres), `R` reste en texte. Test par mutation : en cassant volontairement l'acceptation de `R` dans la fiche, l'audit signale bien l'erreur ; sans mutation, Première 2 est entièrement propre (1 516 saisies). L'entrée correspondante est retirée de `connues.json` (il reste 2 anomalies de style : Première 14.2 et 15.14).
+
+## 2026-10-16 — Première session sur le PC perso après le travail du PC pro (moteur de validation, audit)
+
+- **Ouverture** : `git fetch` → le PC perso avait **les 3 fichiers** `fiche-25.html` de Première, `appliquer-bareme.js` et
+  `fiches-a-bareme.json` modifiés localement (travail non commité d'une session précédente : automatismes tirés au sort,
+  négations en QCM, barème de la fiche 25) alors que GitHub avait 88 commits d'avance, dont des modifications des mêmes
+  fichiers. Les trois fichiers ont été **mis de côté** (`git stash`, entrée « fiche 25 : automatismes aléatoires, négations en
+  QCM, barème »), sauvegardés aussi hors dépôt, puis `git pull --ff-only` (88 commits récupérés, aucun écrasement).
+  `outils/bareme/fiche-25.json` (non suivi) est resté en place. **La fiche 25 est à reprendre sur le nouveau moteur de
+  validation** (le travail mis de côté date d'avant son câblage) ; elle n'est ni commitée ni poussée.
+- **Outil d'audit installé** (`outils/audit-reponses`, `npm install`, playwright-core) ; Chrome présent ;
+  `audit.js cahiers/seconde/cahier-1/fiche-02.html` : OK (1 440 saisies, 78 s).
+- **Contrôles** : vérificateur de syntaxe, 50 fiches, 0 erreur ; `test-moteur-reponses.js`, 205 cas, 0 échec (+ 14 cas
+  `estTermine`).
+- **Règles de la mémoire locale fusionnées dans `REGLES-FICHES.md`** : le gros des règles de fiches y était déjà. Ajouts :
+  §3 bis (compléments de rédaction : « à partir de quel rang », discussion selon un paramètre, objet standard nommé,
+  widgets, place du rappel de formule, énoncé mixte texte/LaTeX, défauts de générateur à chasser), §6 (façon de travailler :
+  français, question avant implémentation, publication « en ligne » seulement sur validation, navigateur intégré, correction
+  transversale, chercher l'existant), §7 (cahiers d'automatismes : niveaux, contextes déclarés, audit de rédaction,
+  contrôles numériques indépendants). Aucune contradiction constatée avec les règles existantes. `SUIVI-FIREBASE.md` : raison du
+  format `1ere-Gr N`, conventions d'interface (couleurs de navigation, largeur), export PDF par `window.print()`, `gh` sur une
+  deuxième machine.
+- **Première 14** : un devoir la vise encore (ciblage individuel d'un élève, échéance le 16/10/2026 à 21 h) → **non modifiée** ;
+  reste à faire après l'échéance (voir `SUIVI-FIREBASE.md` §6).
+- Section « première session sur le PC perso » retirée de `CLAUDE.md`.

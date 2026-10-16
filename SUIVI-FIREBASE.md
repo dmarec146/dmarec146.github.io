@@ -153,6 +153,16 @@ depuis la réorganisation du 02/10/2026 »).
   `README.md`). Lié depuis l'accueil (carte « Guide de l'élève », dernière
   section, ouverture dans un nouvel onglet).
 
+- **Conventions d'interface** (fixées avec David le 04/09/2026) : barre de navigation identique sur toutes les pages, la couleur
+  appartient à la section (pas à la page courante) — « Cahiers de calcul » en pastille rouge `#E8695E` (`.nav-vedette`),
+  « Automatismes » en vert pastel `#B4DFC5` / texte `#17492E` (`.nav-vedette-vert`, fond de bandeau `#D8EEDF`, ne pas inventer
+  un autre vert) ; l'accueil ne met en vedette que deux cahiers (le reste via « Voir tous les cahiers ») ; largeur de page des
+  fiches `max-width: 980px`. Pour prévisualiser accueil et pages de cahier, passer par le serveur local (`file://` ne charge pas
+  `assets/css/style.css`) ; les fiches, au CSS en ligne, s'ouvrent en `file://`.
+- **Export PDF d'une fiche** : bouton qui appelle `window.print()` (+ `@media print`). **Ne pas retenter** html2pdf / html2canvas /
+  jsPDF : le navigateur se bloque sur les champs `<math-field>` (essai du 04/09/2026). L'export d'un **cahier entier** en un seul
+  PDF (`assets/js/export-cahier.js`) est en pause depuis le 11/09/2026, quatre architectures tentées (voir `HISTORIQUE.md`).
+
 ## 3. Firebase (projet `cahiers-interactifs`)
 
 - Authentification : élèves par pseudo (`assets/js/connexion.js`),
@@ -211,7 +221,8 @@ depuis la réorganisation du 02/10/2026 »).
   ne sont pas supprimables par l'enseignant (règles) : l'élève les nettoie lui-même
   au chargement de `/mes-devoirs/`.
 - Classes : `2nde-207`, `1ere-Gr 1`, `1ere-Gr 3` (groupes de spécialité,
-  format `1ere-Gr N`), compte de test `demo-eleve` (classe
+  format `1ere-Gr N`, sans accent et avec un seul tiret : `estPremiere()` teste `startsWith('1ere')` et
+  `formaterClasseAffichee()` prend ce qui suit le dernier `-` ; « 1ère - Gr 3 » casserait les deux), compte de test `demo-eleve` (classe
   `1ere-demo`). **La liste « Classe » du formulaire d'attribution
   est construite à partir des classes présentes chez les élèves** : une classe
   de test disparaît de la liste quand son dernier compte est supprimé. Élève **hors classe** (sans champ `classe`) : sentinelle
@@ -303,6 +314,12 @@ plages de l'aléatoire, banque d'automatismes, devoirs partiels, barème
 personnalisé, correction détaillée), qui remplace `CHANTIERS-FUTURS.md`
 depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
+- **Première 14 (Probabilités) — à traiter après l'échéance de son devoir** (constat Firestore en lecture seule, 16/10/2026) :
+  un seul devoir la vise, `KNhf6yAAyqjn1j6JvZYs` (ciblage individuel d'un élève, 3 essais, créé le 10/10/2026), **à rendre le
+  16/10/2026 à 21 h (heure de Paris)** ; la fiche ne doit pas être modifiée avant. Ensuite : relire le devoir dans Firestore
+  (échéance passée, aucune dérogation), câbler ses calculs « Calcul numérique » (`formes-par-fiche.json` puis
+  `cabler-fiches.js`), appliquer les correctifs communs (affichage des grands entiers, `adoucirAffichage`, indication grisée
+  `]a;b[` des champs d'intervalle, virgule décimale du corrigé), vider son entrée de `connues.json`, lancer l'audit.
 - Diversifier les automatismes des fiches de Première 7 à 26 au fil des
   relectures de David (règle et modèles dans `REGLES-FICHES.md`, §2).
 - Fiche 14 de Première (probabilités, ex-fiche 17 puis 19) : erreur console
@@ -470,5 +487,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
    chaque dossier ; recopier ou retélécharger `service-account.json`
    (Console Firebase → Paramètres du projet → Comptes de service) — jamais
    suivi par Git, ne voyage pas d'une machine à l'autre.
-4. Avant de modifier une fiche : lire `REGLES-FICHES.md`. Vérificateur de
+4. Publication : `gh` (GitHub CLI) authentifié sur le compte `dmarec146` fait fonctionner `git push` sans code. Sur une
+   **deuxième machine**, refaire l'installation et `gh auth login` (l'étape du code à coller dans le navigateur ne peut être
+   faite que par David). `Publier le site.bat` à la racine : double-clic = add / commit / push.
+5. Avant de modifier une fiche : lire `REGLES-FICHES.md`. Vérificateur de
    syntaxe : `node outils/verification/verifier-syntaxe-fiches.js`.

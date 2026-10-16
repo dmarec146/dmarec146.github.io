@@ -160,6 +160,32 @@ les corrections ponctuelles d'une fiche).
   contextualisés** (pas de taxi, de prix…) : soit un calcul combinant
   plusieurs techniques du cœur, soit une propriété à démontrer.
 
+## 3 bis. Compléments de rédaction (fusionnés le 16/10/2026 depuis la mémoire locale du PC perso)
+
+- **« À partir de quel rang »** : « le plus petit entier \(n\) tel que \(P(n)\) » est souvent vrai dès \(n=1\) (\(2^n>n^2\)
+  pour \(n=1\)) et ne dit rien ; l'énoncé visé est presque toujours « à partir de quel rang la propriété est vraie pour
+  tout \(n\) ».
+- **Discussion selon un paramètre** : le paramètre reste une **lettre** dans l'inéquation affichée à l'élève (y mettre sa
+  valeur concrète vide l'exercice de son sens) ; le contrôle porte sur chaque cas.
+- **Objet standard nommé** (« tableau de signes », « tableau de variations ») : si la fiche le nomme, l'élève le
+  **construit** (widget) au lieu d'en lire seulement le résultat. Une convention visuelle jamais vue tracée à la main :
+  demander un exemple à David avant de deviner.
+- **Widgets** : tout widget est câblé au contrôle « au fur et à mesure » ; aucun élément non interactif calculé depuis les
+  données du générateur ne doit trahir la réponse avant toute saisie ; une règle déjà acquise se re-vérifie après chaque
+  refonte d'un widget.
+- **Rappel de formule** (`.rappel-formule`) et paragraphes d'énoncé : toujours **après** le `<p class="calcul-titre">`
+  du calcul concerné, jamais avant (sinon ils semblent appartenir au calcul précédent).
+- **Énoncé qui mêle texte et `\(…\)`** : `texteLibre:true` sans exception (sinon double enveloppe MathJax) ;
+  `texteLibreOption:true` insère l'option brute, le LaTeX qu'elle contient s'enveloppe à la main.
+- **Défauts de générateur à chasser avant de livrer** (balayage automatique sur plusieurs centaines de tirages, énoncé,
+  réponse et corrigé) : `NaN`, `undefined`, `Infinity`, `/0` (un test `|NaN − x| > seuil` passe : tester
+  `Number.isFinite`) ; fraction affichée à partir de deux tirages indépendants sans `pgcd = 1` ; signe collé
+  (`+-`, `--`, `x--7`) ; assistant « ascii » (`*`) employé dans un énoncé LaTeX (astérisque visible) ; boucle de rejet
+  qui ne redessine rien (variables fixées avant la boucle) ; énoncé affiché et réponse stockée construits avec des
+  valeurs différentes ; réponse qui répète la question (somme non calculée) ; formule valable seulement sur un domaine
+  que les paramètres ne respectent pas (racine carrée, rang) ; auto-contrôle tautologique d'un type `paire` /
+  `triplet` sans `vars`.
+
 ## 4. Réponses, corrections, tirages
 
 - **Forme imposée contrôlée**, pas seulement l'égalité numérique (ex.
@@ -338,3 +364,59 @@ les corrections ponctuelles d'une fiche).
 
 Les pièges techniques (identifiants, brouillons, MathLive, scripts…) sont
 résumés dans `SUIVI-FIREBASE.md`, §7.
+
+## 6. Façon de travailler avec David (valable sur les deux machines)
+
+*Fusionné le 16/10/2026 depuis la mémoire locale du PC perso (non synchronisée entre les machines).*
+
+- **Répondre en français**, toujours, sans jargon anglais non traduit quand un terme français existe.
+- **Message qui mêle consignes et vraie question** : répondre d'abord à la question (quelques phrases, une
+  recommandation, une pause) avant d'implémenter ce qui en dépend.
+- **Publication** : `master` est le site public (GitHub Pages), tout `git push` met en ligne dans la minute. Ne pousser le
+  contenu d'une fiche qu'après que David l'a validé et dit « push » / « pousse tout » (un « commite et push » lancé en
+  début de session n'est pas une autorisation permanente) ; dire « en ligne », pas « poussé » ; toujours `git fetch`
+  avant de pousser. Un push de documentation expressément demandé par `CLAUDE.md` est explicite.
+- **Navigateur intégré** : laisser les onglets ouverts après une vérification. Si la vue est blanche alors que le DOM est
+  présent (`get_page_text`), réessayer (attente, fermer puis rouvrir) avant d'en parler : David ne doit pas avoir à
+  signaler « page blanche ».
+- **Correction transversale (plusieurs fiches)** : recenser d'abord les fiches concernées (`grep` dans tout le dépôt) et
+  lire le code réel de chacune avant d'éditer — les gabarits ont divergé, ne pas extrapoler à partir de deux exemples.
+- **Avant de construire un mécanisme** : chercher ce qui existe déjà dans Première, dans les fiches voisines et dans
+  `automatismes/premiere/banques/` ; l'adapter plutôt que le réinventer (une réécriture faite sans ce regard s'est
+  révélée plus faible que l'existant).
+- **Corrections répétées** : si David corrige deux fois la même sorte de défaut, relever le niveau par défaut au lieu de
+  corriger au cas par cas.
+
+## 7. Cahiers d'automatismes (`automatismes/`, banques de questions à tirer au sort)
+
+*Règles de conception issues de la section Première (8 banques + sujet blanc, 04–05/09/2026) ; mises ici pour les deux
+machines. Les règles de rédaction des §3 et §4 (contextes sensibles, signes, fractions irréductibles…) s'y appliquent
+aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md` §4 et `moteur.js`.*
+
+- **Trois niveaux** : N1 = les bases seules (familles de base, nombres ronds) ; N2 = l'épreuve (les nombres des sujets du
+  bac) ; N3 = « bien plus compliqué », c'est-à-dire des questions **de nature différente** (problèmes inverses, étape
+  cachée, pièges de formulation), pas seulement des nombres plus durs. Chaque banque livre ses variantes N3.
+- Niveaux 1 et 2 **triés par difficulté croissante** (chaque famille déclare son `ordre`), niveau 3 mélangé comme à
+  l'épreuve ; quotas déclarés par famille (ex. une seule « valeur initiale » par série).
+- **Contextes variés** : vivier large (environ 25 contextes, pas « toujours un employé »). **Le genre, le pluriel et les
+  plages de valeurs vraisemblables se déclarent par contexte, ils ne se devinent pas** (« une temps de trajet »,
+  « 34 coliss », une note de 26 sur 20). « La probabilité que… » appelle le subjonctif : nommer l'événement.
+- **Distracteurs** = résultats d'erreurs classiques mais plausibles ; **la clé d'une option est son écriture affichée**
+  (jamais deux options identiques après réduction).
+- **Typographie** : `\dfrac`, `\times` (jamais `\cdot`) dans les énoncés, espace fine insécable U+202F pour les milliers
+  et devant `%` / `€`, virgule décimale `1{,}25` en zone mathématique et `1,25` en zone de texte (jamais `{,}` dans le
+  texte), lettres variables variées (x, y, t, u, z, v), lettres d'un produit dans l'ordre alphabétique.
+- **Audit de rédaction avant de déclarer une banque terminée** : séparer zones mathématiques et zones de texte, puis
+  chercher `{,}` en texte, virgule nue en zone math, `+-` / `--` / `-+` / `++`, coefficient 1 devant `\sqrt` ou
+  `\dfrac`, `NaN` / `undefined` / `Infinity`, dénominateur nul, `%` ou `€` sans espace. Ajouter : **factorisation
+  complète** (pgcd des coefficients de chaque facteur = 1), pas de premier facteur à coefficient négatif, pas de
+  `(x+2)(x+2)` à la place de `(x+2)^2`.
+- **Contrôle numérique indépendant** : réévaluer la réponse dans l'énoncé (inéquations : borne à gauche, à droite et sur
+  la borne, pour vérifier aussi ouvert / fermé). **Chaque nouveau contrôle est relancé sur toutes les banques déjà
+  faites**, pas seulement la nouvelle. Figures : vérification indépendante (relire les pixels, pas seulement la géométrie).
+- Fiche à deux thèmes tirés au hasard (pas de fiche thématique figée) ; sujet blanc avec `masquerEtiquette: true` (une
+  étiquette qui nomme la méthode est un indice que l'épreuve ne donne pas).
+- Usage autonome, sans compte élève : pas de protection contre le tâtonnement (David, 05/09/2026), à reconsidérer si le suivi
+  s'étend aux automatismes libres.
+- **Nouvelle banque** : ajouter son `<script>` à `automatismes/premiere/fiche.html` et son id à la liste `banques`, dégriser
+  sa puce dans `automatismes/premiere/index.html`.
