@@ -118,7 +118,7 @@ async function controlerDansLaPage(opts) {
     }
     return sc;
   }
-  const NB_PORTEES = 4;
+  const NB_PORTEES = 8;
   const egal = (a, b) => Math.abs(a - b) <= 1e-8 * Math.max(1, Math.abs(a), Math.abs(b));
   const evaluer = (tex, k) => { const m = versMathjs(tex); const sc = portee(m, k); const v = math.evaluate(m, sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; };
   // même valeur des lettres pour toutes les expressions comparées : on construit la portée sur la concaténation
@@ -195,7 +195,7 @@ async function controlerDansLaPage(opts) {
   }
   function resoudre(a, v) {
     // renvoie { racines: [...], vecteur: [booleens sur la grille], frontieres: Set d'indices }
-    const N = 2400, borne = 30, pas = (2 * borne) / N;
+    const N = 4800, borne = 30, pas = (2 * borne) / N;
     const fTout = a.relations.map((r) => { const g = math.compile(versMathjs(r.gauche)), d = math.compile(versMathjs(r.droite)); return (x) => { const sc = {}; sc[v] = x; return g.evaluate(sc) - d.evaluate(sc); }; });
     const valeursTout = fTout.map((fn) => { const w = new Array(N + 1); for (let i = 0; i <= N; i++) { const y = fn(-borne + i * pas + 0.00137); w[i] = isFinite(y) ? y : NaN; } return w; });
     // une égalité vraie pour tout x (identité, ex. x² - 1 = (x-1)(x+1), ou égalité numérique) n'apporte aucune condition : on l'écarte ;
@@ -262,7 +262,7 @@ async function controlerDansLaPage(opts) {
       if (RA.vecteur[i] !== RB.vecteur[i]) { ecarts++; if (premier === null) premier = i; }
     }
     if (comparees < 200) return { illisible: true };
-    return ecarts === 0 ? { ok: true } : { faux: true, detail: ecarts + ' points de désaccord, par exemple ' + v + ' ≈ ' + (-30 + premier * 0.025).toFixed(2) };
+    return ecarts === 0 ? { ok: true } : { faux: true, detail: ecarts + ' points de désaccord, par exemple ' + v + ' ≈ ' + (-30 + premier * 0.0125).toFixed(2) };
   }
 
   // ---------- réponse finale ----------
@@ -354,18 +354,31 @@ async function controlerDansLaPage(opts) {
         // chaînes d'égalités dans chaque partie (les parties avec du texte libre sont ignorées, sauf « ou » et les symboles)
         parties.forEach((p) => {
           if (!p.trim()) return;
-          const pp = p.replace(/\\text\{\s*ou\s*\}/g, ' ');
-          if (/\\text|\\begin|\\neq|\\cup|\\in\b/.test(pp)) return;
-          const morceaux = p.includes('\\text{ ou }') || p.includes('\\text{ou}') ? p.split(/\\text\{\s*ou\s*\}/) : [p];
-          morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1); if (r === null) return; if (r.illisible) ctx.chainesIllisibles++; else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
+          if (/\\begin|\\neq|\\cup|\\in\b/.test(p)) return;
+          // le texte libre (hors « ou ») coupe la ligne en morceaux de formules, chacun contrôlé séparément ;
+          // un morceau se termine parfois par une ponctuation (« r = 11 - 9 = 2. »)
+          const pieces = p.split(/\\text\{(?!\s*ou\s*\})[^{}]*\}/).map((s) => s.replace(/[.,;:]\s*$/, '').trim()).filter(Boolean);
+          pieces.forEach((piece) => {
+            const morceaux = /\\text\{\s*ou\s*\}/.test(piece) ? piece.split(/\\text\{\s*ou\s*\}/) : [piece];
+            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1); if (r === null) return; if (r.illisible) ctx.chainesIllisibles++; else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
+          });
         });
         for (let i = 0; i + 1 < parties.length && ctx.equivActif !== false; i++) {
           if (!parties[i].trim() || !parties[i + 1].trim()) continue;
+          if (/\\text\{(?!\s*ou\s*\})/.test(parties[i] + parties[i + 1])) { ctx.equivalencesIllisibles++; continue; }
           const cleEq = parties[i].trim() + '§' + parties[i + 1].trim();
           if (ctx.equivVues) { if (ctx.equivVues.has(cleEq)) continue; ctx.equivVues.add(cleEq); }
           const r = verifierEquivalence(parties[i], parties[i + 1]);
           if (r.illisible) ctx.equivalencesIllisibles++; else { ctx.equivalences++; if (r.faux) noter('erreur', 'equivalence-fausse', parties[i] + '  ⟺  ' + parties[i + 1] + '   =>   ' + r.detail); }
         }
+      }
+      // assertions propres aux phrases (outils/phrases-details/assertions.js) : la condition qu'une phrase affirme doit être vraie dans ce tirage
+      for (const A of ctx.assertions || []) {
+        if (!A.motif.test(l)) continue;
+        let ok; try { ok = A.verifie(l, e, ctx.environnement); } catch (er) { ok = false; }
+        if (ok === null || ok === undefined) continue;
+        ctx.assertionsVerifiees = (ctx.assertionsVerifiees || 0) + 1;
+        if (ok === false) noter('erreur', 'assertion-fausse : ' + A.nom, l);
       }
       precedent = clauses.length === 1 ? l.split(/\\iff|\\Leftrightarrow/).pop() : null;
     }
@@ -388,6 +401,9 @@ async function controlerDansLaPage(opts) {
   // ---------- boucle de tirages ----------
   const phrases = new Map(), exemples = new Map(), idsAvecDetail = new Set(), idsSansDetail = new Set(), echantillons = [];
   stats.equivVues = new Set();
+  stats.environnement = { texte: (id) => { const n = document.getElementById(id); return n ? n.textContent : ''; } };
+  stats.assertions = (opts.assertions || []).map((a) => ({ nom: a.nom, motif: new RegExp(a.motif), verifie: (0, eval)('(' + a.verifie + ')') }));
+  stats.assertionsVerifiees = 0;
   for (let k = 0; k < opts.tirages; k++) {
     let ex; try { ex = generer(); } catch (er) { ajouter('erreur', 'generation-en-erreur', { id: '(fiche)' }, er.message); continue; }
     stats.tirages++;
@@ -403,7 +419,7 @@ async function controlerDansLaPage(opts) {
           // phrase « en clair » : le texte des \text{…} dans l'ordre, les formules étant remplacées par […]
           if (/\\text\{/.test(l)) {
             const clair = String(l).split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
-            if (!phrases.has(clair)) phrases.set(clair, { ids: new Set(), exemple: l });
+            if (!phrases.has(clair)) phrases.set(clair, { ids: new Set(), exemple: l, enonce: String(e.enonce).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), lignes: D.lignes.slice() });
             phrases.get(clair).ids.add(e.id);
           }
           const motif = l.replace(/\d+/g, '0');
@@ -417,7 +433,7 @@ async function controlerDansLaPage(opts) {
         nb.push({ enonce: e.enonce, reponse: rep, lignes: D.lignes });
         exemples.set(e.id, nb);
       }
-      if (echantillons.length < 400 && k < 60) echantillons.push({ e, D });
+      if (echantillons.length < 1200 && k < 150) echantillons.push({ e, D });
     }
   }
   for (const id of idsAvecDetail) idsSansDetail.delete(id);
@@ -464,10 +480,11 @@ async function controlerDansLaPage(opts) {
   // les lignes d'autotest ne comptent pas comme anomalies de la fiche
   const reelles = anomalies.filter((a) => !String(a.id).startsWith('#autotest'));
 
+  const statsSimples = (({ environnement, assertions, equivVues, equivActif, ...reste }) => reste)(stats);
   return {
-    anomalies: reelles, stats,
+    anomalies: reelles, stats: statsSimples,
     avecDetail: [...idsAvecDetail], sansDetail: [...idsSansDetail],
-    phrases: [...phrases.entries()].map(([t, v]) => [t, [...v.ids], v.exemple]),
+    phrases: [...phrases.entries()].map(([t, v]) => [t, [...v.ids], v.exemple, v.enonce, v.lignes]),
     exemples: [...exemples.entries()],
     autotest
   };
@@ -492,7 +509,23 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       if (typeof genererNouvelleFiche === 'function') { try { await genererNouvelleFiche(); } catch (er) { /* en devoir : confirmation */ } }
       await dormir(300);
       const avecDetail = exercices.map((e, i) => ({ e, i })).filter((x) => x.e.detail && (typeof DevoirPartiel === 'undefined' || DevoirPartiel.retenu(x.e)));
-      // réponse volontairement fausse dans chaque champ
+      // 1. la réponse finale du détail, saisie comme le ferait un élève, doit être acceptée par la validation de la fiche
+      const versTexte = (tex) => {
+        let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
+          .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\(?:times|cdot)/g, '*')
+          .replace(/\\(?:emptyset|varnothing)/g, '∅').replace(/\\mathbb\{R\}/g, 'ℝ');
+        for (let k = 0; k < 6; k++) a = a.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
+        return a.replace(/\s+/g, '');
+      };
+      const refus = [];
+      for (const { e, i } of avecDetail) {
+        const inp = document.getElementById('input-' + i); if (!inp) continue;
+        if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = versTexte(e.detail.final);
+        await dormir(25);
+        let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }
+        if (ok !== true) refus.push({ id: e.id, final: e.detail.final, resultat: String(ok) });
+      }
+      // 2. réponse volontairement fausse dans chaque champ
       for (const { i } of avecDetail) { const inp = document.getElementById('input-' + i); if (!inp) continue; if (inp.tagName === 'MATH-FIELD') inp.setValue('999'); else inp.value = '999'; }
       await dormir(100);
       verifierTout();
@@ -515,9 +548,10 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         }
       }
       return { attendus, trouves: boutons.length, mesures, debordement: document.documentElement.scrollWidth - window.innerWidth,
-        sansReponse: document.querySelectorAll('.correction-ligne .details').length };
+        sansReponse: document.querySelectorAll('.correction-ligne .details').length, refus };
     });
     const tag = `${viewport.width}px`;
+    for (const x of res.refus) anomalies.push({ gravite: 'erreur', motif: 'reponse-finale-refusee-par-la-fiche', id: x.id, exemple: `final = ${x.final} (résultat de la validation : ${x.resultat})` });
     if (res.trouves !== res.attendus) anomalies.push({ gravite: 'erreur', motif: 'bouton-details-manquant', id: '(interface ' + tag + ')', exemple: `${res.trouves} bouton(s) pour ${res.attendus} exercice(s) à détail` });
     for (const m of res.mesures) {
       if (m.ferme) anomalies.push({ gravite: 'erreur', motif: 'details-ne-s-ouvrent-pas', id: '(interface ' + tag + ')', exemple: m.id });
@@ -541,9 +575,15 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
   if (!fiches.length) { console.error('Indiquer une fiche (cahiers/premiere/cahier-4/fiche-12.html) ou --toutes / --couverture.'); process.exit(2); }
   const couvertureSeule = drapeau('--couverture');
   if (drapeau('--toutes') && !couvertureSeule) fiches = fiches.filter(aDesDetails);
-  const tirages = option('--tirages', toutes ? 300 : 1500);
-  const regenerations = option('--regenerations', 6);
-  const tiragesEquivalences = option('--tirages-equivalences', 60);
+  // Réglages « robustes » par défaut (David, 16/10/2026 : plus de temps pour plus de sûreté) : une fiche nommée prend de 4 à 8 minutes,
+  // --rapide (300 tirages) revient à moins d'une minute pour un essai en cours de rédaction.
+  const rapide = drapeau('--rapide');
+  const tirages = option('--tirages', rapide ? 300 : toutes ? 1500 : 4000);
+  const regenerations = option('--regenerations', rapide ? 4 : toutes ? 8 : 14);
+  const tiragesEquivalences = option('--tirages-equivalences', rapide ? 40 : toutes ? 120 : 300);
+  // assertions des phrases (outils/phrases-details/assertions.js) : fonctions envoyées à la page sous forme de texte
+  let assertions = [];
+  try { assertions = require('../phrases-details/assertions.js').map((a) => ({ nom: a.nom, motif: a.motif.source, verifie: a.verifie.toString() })); } catch (er) { /* outil des phrases absent */ }
   const nbExemples = option('--exemples', 2);
   const serveur = await demarrerServeur();
   const base = 'http://127.0.0.1:' + serveur.address().port;
@@ -561,7 +601,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       await page.waitForFunction(() => window.MathJax && MathJax.startup, null, { timeout: 30000 }).catch(() => {});
       await page.waitForTimeout(600);
     } catch (er) { lignesRapport.push(`${fiche} : ouverture impossible (${er.message.slice(0, 80)})`); erreurs++; await contexte.close(); continue; }
-    const r = await page.evaluate(controlerDansLaPage, { tirages: couvertureSeule ? 1 : tirages, tiragesEquivalences: couvertureSeule ? 0 : tiragesEquivalences, exemples: nbExemples, autotest: !couvertureSeule && !drapeau('--sans-autotest') });
+    const r = await page.evaluate(controlerDansLaPage, { tirages: couvertureSeule ? 1 : tirages, tiragesEquivalences: couvertureSeule ? 0 : tiragesEquivalences, exemples: nbExemples, assertions, autotest: !couvertureSeule && !drapeau('--sans-autotest') });
     couverture.push({ fiche, avec: r.avecDetail, sans: r.sansDetail });
     let anomalies = couvertureSeule ? [] : r.anomalies;
     if (!couvertureSeule && !drapeau('--sans-interface') && r.avecDetail.length) {
@@ -576,13 +616,13 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
     erreurs += nbE; avertissements += nbS;
     if (couvertureSeule) { await contexte.close(); continue; }
     lignesRapport.push(`${nbE ? 'ERREURS ' : nbS ? 'style    ' : 'OK       '} ${fiche} : ${r.avecDetail.length} exercice(s) à détail sur ${r.avecDetail.length + r.sansDetail.length}, ${s.avecDetail} détails contrôlés ` +
-      `(${s.chaines} chaînes d'égalités, ${s.equivalences} équivalences, ${s.finalVerifie} réponses finales vérifiées${s.finalNonVerifiable ? ', ' + s.finalNonVerifiable + ' non vérifiables automatiquement' : ''}, ` +
+      `(${s.chaines} chaînes d'égalités, ${s.equivalences} équivalences, ${s.assertionsVerifiees || 0} assertions de phrases, ${s.finalVerifie} réponses finales vérifiées${s.finalNonVerifiable ? ', ' + s.finalNonVerifiable + ' non vérifiables automatiquement' : ''}, ` +
       `${s.motifsLaTeX} formes LaTeX compilées${s.chainesIllisibles || s.equivalencesIllisibles ? ', ' + s.chainesIllisibles + ' chaînes et ' + s.equivalencesIllisibles + ' équivalences non lisibles' : ''})`);
     for (const a of anomalies) lignesRapport.push(`      [${a.gravite}] ${a.id} — ${a.motif}${a.n > 1 ? ' (×' + a.n + ')' : ''} : ${a.exemple}`);
     const at = Object.entries(r.autotest);
     if (at.length) lignesRapport.push('      auto-test (détection d\'une erreur volontaire) : ' + at.map(([n, v]) => `${n} ${v.detectes}/${v.essais}`).join(' ; '));
     for (const [n, v] of at) if (v.essais >= 20 && v.detectes / v.essais < 0.9) { lignesRapport.push(`      [erreur] (outil) — auto-test insuffisant : ${n} ${v.detectes}/${v.essais}`); erreurs++; }
-    for (const [t, ids, exemple] of r.phrases) phrasesTout.push({ fiche, t, ids, exemple });
+    for (const [t, ids, exemple, enonce, lignes] of r.phrases) phrasesTout.push({ fiche, t, ids, exemple, enonce, lignes });
     for (const [id, liste] of r.exemples) exemplesHtml.push({ fiche, id, liste });
     await contexte.close();
   }
@@ -598,7 +638,8 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
   const entete = `Contrôle des détails de correction — ${new Date().toISOString().slice(0, 16).replace('T', ' ')} — ${fiches.length} fiche(s), ${tirages} tirages, ${duree} s`;
   const bilan = `${erreurs} erreur(s), ${avertissements} point(s) de style.`;
   fs.writeFileSync(path.join(SORTIE, 'rapport.txt'), [entete, '', ...lignesRapport, '', bilan, ''].join('\n'));
-  // phrases de méthode à relire
+  // phrases de méthode : liste lisible pour l'humain, et phrases.json pour l'outil séparé outils/phrases-details (catalogue des phrases validées)
+  fs.writeFileSync(path.join(SORTIE, 'phrases.json'), JSON.stringify(phrasesTout.map((p) => ({ fiche: p.fiche, phrase: p.t, exercices: p.ids, exemple: p.exemple, enonce: p.enonce, detailComplet: p.lignes })), null, 1));
   const parFiche = {};
   for (const p of phrasesTout) { (parFiche[p.fiche] = parFiche[p.fiche] || []).push(p); }
   const txt = Object.entries(parFiche).map(([f, l]) => `== ${f}\n` + l.sort((a, b) => a.ids[0].localeCompare(b.ids[0], 'fr', { numeric: true })).map((p) => `  « ${p.t} »\n      exercices : ${p.ids.join(', ')}\n      exemple   : ${p.exemple}`).join('\n\n')).join('\n\n');

@@ -1179,7 +1179,7 @@ function genererExercices() {
     const signes = [0, 1, 2, 3].map(signeIntervalle);
     const marque = v => (v === p ? '\\Vert' : '0');
     const tableau = `\\begin{array}{c|ccccccccc} x & -\\infty & & ${bs[0]} & & ${bs[1]} & & ${bs[2]} & & +\\infty \\\\ \\hline `
-      + `\\text{signe} & & ${signes[0]} & ${marque(bs[0])} & ${signes[1]} & ${marque(bs[1])} & ${signes[2]} & ${marque(bs[2])} & ${signes[3]} & \\end{array}`;
+      + `\\text{signe du quotient} & &${signes[0]} & ${marque(bs[0])} & ${signes[1]} & ${marque(bs[1])} & ${signes[2]} & ${marque(bs[2])} & ${signes[3]} & \\end{array}`;
     const spec = {type:'intervalles', liste};
     ex.push({id:"12.1 b)", type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{x^2-${m*m}}{${fmtLin(1,-p,false)}}${op}0\\)`,
@@ -1188,7 +1188,7 @@ function genererExercices() {
         `x^2-${m*m} = (x-${m})(x+${m}) = 0 \\iff x = ${-m} \\text{ ou } x = ${m}`,
         `${fmtLin(1,-p,false)} = 0 \\iff x = ${p} \\text{ (valeur interdite)}`,
         tableau,
-        `\\text{On cherche le quotient } ${op}\\ 0 \\text{ ; la valeur } ${p} \\text{ est toujours exclue}`,
+        `\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est } ${op}\\ 0 \\text{ ; la valeur interdite } ${p} \\text{ est exclue dans tous les cas}`,
         `S = ${formaterIntervalleSpec(spec)}`],
         final: formaterIntervalleSpec(spec), signes, bornes: bs, m, p }});
   }
@@ -1205,7 +1205,7 @@ function genererExercices() {
         `x(${fmtLin(1,p,false)})=${q} \\iff ${polyQuadStr(1,p,-q,false,'x')}=0`,
         `\\Delta = ${dP(p)}^2 - 4\\times 1\\times ${dP(-q)} = ${D} = ${sq}^2`,
         `x_1 = \\dfrac{-${dP(p)} - ${sq}}{2} = ${r1} \\quad\\text{et}\\quad x_2 = \\dfrac{-${dP(p)} + ${sq}}{2} = ${r2}`,
-        `\\text{Solutions : } \\left\\{${r1}\\,;\\,${r2}\\right\\}`],
+        `S = \\left\\{${r1}\\,;\\,${r2}\\right\\}`],
         final: `\\left\\{${r1}\\,;\\,${r2}\\right\\}` }});
   }
   // b) (ax+b)^2 = (cx+d)^2, deux solutions (d-b)/(a-c) et -(b+d)/(a+c)
@@ -1214,6 +1214,7 @@ function genererExercices() {
     do { a = alea(1,4); c = alea(1,4); b = aleaNonNul(-7,7); d = aleaNonNul(-7,7); s1 = (d - b) / (a - c); s2 = -(b + d) / (a + c); }
     while (a === c || Math.abs(s1 - s2) < 1e-9 || (a === 1 && c === 1));
     const x1 = fracLatex(d - b, a - c), x2 = fracLatex(-(b + d), a + c);
+    const [sol1, sol2] = s1 < s2 ? [x1, x2] : [x2, x1];   // solutions rangées dans l'ordre croissant
     ex.push({id:"12.2 b)", type:"num", texteLibre:true,
       enonce:`\\((${fmtLin(a,b,false)})^2=(${fmtLin(c,d,false)})^2\\)`,
       reponse:`{${fracStr(d - b, a - c)};${fracStr(-(b + d), a + c)}}`,
@@ -1222,8 +1223,8 @@ function genererExercices() {
         `\\iff ${fmtLin(a,b,false)}=${fmtLin(c,d,false)} \\text{ ou } ${fmtLin(a,b,false)}=-(${fmtLin(c,d,false)})`,
         `${coefL(a - c)}x = ${d - b} \\iff x = ${x1}`,
         `${coefL(a + c)}x = ${-(b + d)} \\iff x = ${x2}`,
-        `\\text{Solutions : } \\left\\{${x1}\\,;\\,${x2}\\right\\}`],
-        final: `\\left\\{${x1}\\,;\\,${x2}\\right\\}` }});
+        `S = \\left\\{${sol1}\\,;\\,${sol2}\\right\\}`],
+        final: `\\left\\{${sol1}\\,;\\,${sol2}\\right\\}` }});
   }
 
   // ---------- 12.3 : calcul numerique, fraction irreductible (deux natures) ----------
@@ -1346,7 +1347,7 @@ function genererExercices() {
     ex.push({id:"12.5 b)", type:"num", texteLibre:true, sansEgal:true,
       enonce:`\\(${f}+${f+r}+${f+2*r}+\\cdots+${der}\\)`, reponse:String(n*(f + der)/2),
       detail: { lignes: [
-        `\\text{Raison : } r = ${f+r} - ${f} = ${r}. \\quad \\text{Nombre de termes : } \\dfrac{${der} - ${f}}{${dP(r)}} + 1 = ${(der-f)/r} + 1 = ${n}`,
+        `\\text{On reconnaît une suite arithmétique de raison } r = ${f+r} - ${f} = ${r} \\text{ ; nombre de termes : } \\dfrac{${der} - ${f}}{${dP(r)}} + 1 = ${(der-f)/r} + 1 = ${n}`,
         `S = ${n}\\times\\dfrac{${f} + ${der}}{2} = \\dfrac{${n}\\times ${f+der}}{2} = ${S}`],
         final: String(S) }});
   }

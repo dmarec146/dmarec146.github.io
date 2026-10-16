@@ -11,11 +11,16 @@ lanceur est partagé avec `outils/guide-eleve/navigateur.js`).
 node outils/details-correction/controle.js cahiers/premiere/cahier-4/fiche-12.html
 node outils/details-correction/controle.js --toutes          toutes les fiches qui portent des détails
 node outils/details-correction/controle.js --couverture      tableau « exercices avec / sans détail » des 48 fiches
-options : --tirages N (défaut 1500 pour une fiche nommée, 300 avec --toutes)
-          --tirages-equivalences N (défaut 60 : la résolution numérique des équivalences est coûteuse)
-          --regenerations K (interface, défaut 6)   --exemples N (défaut 2)   --sans-interface   --sans-autotest
+options : --tirages N (défaut 4000 pour une fiche nommée, 1500 avec --toutes, 300 avec --rapide)
+          --tirages-equivalences N (défaut 300 ; 120 avec --toutes ; 40 avec --rapide : la résolution numérique des équivalences est coûteuse)
+          --regenerations K (interface, défaut 14 ; 8 avec --toutes ; 4 avec --rapide)   --exemples N (défaut 2)
+          --rapide (essai en cours de rédaction)   --sans-interface   --sans-autotest
 ```
-Une fiche prend de 30 à 60 secondes. Code de sortie 1 s'il y a une anomalie de gravité « erreur ».
+Réglages **robustes par défaut** (demande de David, 16/10/2026 : plus de temps pour plus de sûreté) : une fiche nommée prend de 4 à 8
+minutes ; `--rapide` revient à moins d'une minute. Chaînes d'égalités évaluées en 8 valeurs des lettres, équivalences résolues sur
+4 800 points. Les réponses finales sont aussi saisies dans les vrais champs de la fiche, qui doit les accepter. Les assertions des
+phrases (`outils/phrases-details/assertions.js`) sont appliquées à chaque ligne de chaque tirage. Code de sortie 1 s'il y a une
+anomalie de gravité « erreur ».
 
 ## Ce qu'il contrôle, pour chaque exercice qui porte `detail: { lignes, final }`
 
@@ -26,6 +31,9 @@ Une fiche prend de 30 à 60 secondes. Code de sortie 1 s'il y a une anomalie de 
 | chaque chaîne d'égalités : deux membres numériques voisins égaux ; deux membres littéraux voisins égaux pour toute valeur des lettres (identité) | `chaine-d-egalites-fausse` | erreur |
 | chaque équivalence `P ⟺ Q` entre équations ou inéquations (y compris « x = a ou x = b » et les doubles inégalités) a les mêmes solutions, par résolution numérique sur [-30 ; 30] ; une ligne qui commence par ⟺ prolonge la précédente | `equivalence-fausse` | erreur |
 | le LaTeX de chaque ligne compile dans MathJax | `latex-invalide` | erreur |
+| la réponse finale du détail, saisie comme le ferait un élève dans le vrai champ, est acceptée par la validation de la fiche | `reponse-finale-refusee-par-la-fiche` | erreur |
+| les assertions des phrases (`outils/phrases-details/assertions.js`) : la condition qu'une phrase affirme est vraie dans le tirage | `assertion-fausse : <nom>` | erreur |
+| le texte libre coupe une ligne en morceaux de formules, chacun contrôlé comme une chaîne d'égalités | (même motifs que ci-dessus) | erreur |
 | style : fraction de dénominateur 1 ou 0, `NaN`, exposant 1, signes doublés, coefficient 1 ou −1 devant une lettre (`1n`, `1\times r`), virgule nue, `<` brut, accolades ou `\left\right` déséquilibrés | `fraction-denominateur-1`, `coefficient-1`… | erreur |
 | style : `\dfrac{-3}{4}` (signe devant la fraction), `fraction × lettre`, espace avant `%`, `{,}` dans du texte, ligne de plus de 170 signes | `signe-au-numerateur`… | style |
 | interface, sur ordinateur (1000 px) et téléphone (375 px), après plusieurs régénérations : un bouton « Détails » par réponse fausse, les étapes s'ouvrent, aucune erreur MathJax affichée, aucune erreur de page, aucun débordement horizontal de la page | `bouton-details-manquant`, `details-ne-s-ouvrent-pas`, `erreur-de-page`, `debordement-horizontal` | erreur |

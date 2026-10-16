@@ -464,3 +464,10 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
   suite elle-même (calculer les premiers termes) : c'est ce contrôle qui a révélé un défaut du générateur de 12.8 (voir
   `HISTORIQUE.md`). Style : jamais « 1 n » ni « 1 r » (coefficient 1 omis), pas de signes doublés ; le contrôle automatique le cherche.
   Les inégalités `<` des étapes passent par `\lt` (un `<` suivi d'une lettre serait lu comme une balise HTML).
+- **Phrases** (les `\text{…}`) : une phrase qui affirme une condition (« on divise par un négatif », « la suite est arithmétique »…)
+  doit avoir son assertion dans `outils/phrases-details/assertions.js`. Après le contrôle des calculs, lancer
+  `node outils/phrases-details/controle-phrases.js` : les phrases nouvelles sont confiées à un agent relecteur indépendant
+  (`demande-relecture.md`), ses verdicts s'enregistrent avec `--verdicts … --source agent`, les phrases refusées se corrigent dans
+  la fiche ; on relance jusqu'à 0 nouvelle et 0 refusée. Une phrase validée n'est jamais relue deux fois. Formulations retenues :
+  conclusion d'une équation `S = {…}` (solutions en ordre croissant), pas de « Solutions : » ; jamais d'étiquette sans objet (« signe »
+  seul) ; une méthode se nomme avant d'être appliquée (« on reconnaît une suite arithmétique de raison… »). David n'a rien à lancer.
