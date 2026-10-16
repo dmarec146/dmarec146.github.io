@@ -450,6 +450,134 @@
   }
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+  const parenNeg = v => (v < 0 ? `(${v})` : String(v));
+  // fraction d'une étape de calcul : signe devant, dénominateur positif, entier si le dénominateur est 1
+  const etapeFrac = (n, d) => { if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`; };
+
+  // ---- Famille E : coefficient directeur d'une droite connue par deux points
+  //      Secours Métropole 12/06/2026 : A(1 ; 3) et B(3 ; 7), coefficient directeur 2.
+  function coefficientDeuxPoints(niveau) {
+    const c = aleaParmi(COEFS[niveau] || COEFS[2]);
+    const kmax = Math.max(1, Math.floor(5 / c.q));
+    const mult = [];
+    for (let k = -kmax; k <= kmax; k++) mult.push(k * c.q);
+    const x1 = aleaParmi(mult), x2 = aleaParmi(mult.filter(x => x !== x1));
+    if (x2 === undefined) return null;
+    const b = alea(-5, 5);
+    const y1 = cVal(c) * x1 + b, y2 = cVal(c) * x2 + b;
+    if (!Number.isInteger(y1) || !Number.isInteger(y2) || Math.abs(y1) > 12 || Math.abs(y2) > 12) return null;
+    const dx = x2 - x1, dy = y2 - y1;
+    const A = `A(${x1}\\,;\\,${y1})`, B = `B(${x2}\\,;\\,${y2})`;
+    const enonce = `Le plan est muni d’un repère. On considère la droite ${m('(d)')} passant par les points ${m(A)} et ${m(B)}.<br>Le coefficient directeur de la droite ${m('(d)')} est égal à :`;
+    const cands = [coef(-c.p, c.q), coef(c.q, c.p), coef(dy, 1), coef(dx, dy), x1 + x2 !== 0 ? coef(y1 + y2, x1 + x2) : coef(-c.q, c.p)]
+      .filter(k => cL(k) !== cL(c)).map(k => opt(cL(k)));
+    const etape = etapeFrac(dy, dx);
+    return qcm(enonce, opt(cL(c)), cands, {
+      explication: `${m('a = \\dfrac{y_B - y_A}{x_B - x_A} = \\dfrac{' + y2 + ' - ' + parenNeg(y1) + '}{' + x2 + ' - ' + parenNeg(x1) + '} = ' + etape + (etape === cL(c) ? '' : ' = ' + cL(c)))}.`
+    });
+  }
+
+  // ---- Famille F : « laquelle de ces affirmations sur les droites tracées est vraie ? »
+  //      Polynésie 04/09/2026 : quatre droites D1 à D4 (verticale, horizontale, par l'origine, quelconque).
+  const COULEURS_D = ['#E24B4A', '#1f6fb4', '#2e8b3d', '#8e44ad'];
+  function tirerDroiteTypee(type, niveau, deja) {
+    const pentes = niveau === 3 ? [coef(1), coef(-1), coef(2), coef(-2), coef(1, 2), coef(-1, 2)] : [coef(1), coef(-1), coef(2), coef(-2)];
+    for (let essai = 0; essai < 60; essai++) {
+      let d;
+      if (type === 'horiz') d = { type, a: coef(0), b: aleaNonNul(-4, 4) };
+      else if (type === 'vert') d = { type, x: aleaNonNul(-4, 4) };
+      else if (type === 'origine') d = { type, a: aleaParmi(pentes), b: 0 };
+      else d = { type, a: aleaParmi(pentes), b: aleaNonNul(-3, 3) };
+      if (d.type !== 'vert' && d.type !== 'horiz') {
+        const noeuds = O.graph.noeudsDroite(cVal(d.a), d.b, -5, 5, -5, 5);
+        if (noeuds.length < 3) continue;
+      }
+      // pas deux droites parallèles ni confondues parmi les droites non horizontales
+      if (deja.some(e => e.type !== 'vert' && d.type !== 'vert' && cVal(e.a) === cVal(d.a))) continue;
+      if (deja.some(e => e.type === 'vert' && d.type === 'vert')) continue;
+      return d;
+    }
+    return null;
+  }
+  const equationDroite = d => (d.type === 'vert' ? `x = ${d.x}` : equationL(d.a, d.b));
+  // affirmations sur la droite D_i : { texte, vrai }
+  function affirmationsSur(d, i) {
+    const nom = m('D_' + i);
+    const A = (corps, vrai) => ({ texte: `La droite ${nom} ${corps}`, vrai });
+    const eq = e => `a pour équation ${m(e)}`;
+    const cd = k => `a pour coefficient directeur ${m(k)}`;
+    const oo = k => `a pour ordonnée à l’origine ${m(String(k))}`;
+    const L = [];
+    if (d.type === 'vert') {
+      L.push(A(eq(`x = ${d.x}`), true), A(eq(`y = ${d.x}`), false), A(cd(String(d.x)), false), A(cd('0'), false), A(oo(d.x), false));
+    } else if (d.type === 'horiz') {
+      L.push(A(eq(`y = ${d.b}`), true), A(cd('0'), true), A(eq(`x = ${d.b}`), false), A(cd(String(d.b)), false), A(eq(`y = ${d.b}x`), false));
+    } else if (d.type === 'origine') {
+      const inv = coef(d.a.q, d.a.p);
+      L.push(A(eq(equationL(d.a, 0)), true), A('passe par l’origine du repère', true), A(cd(cL(coef(-d.a.p, d.a.q))), false), A(oo(cL(d.a)), false), A(eq(equationL(d.a, 1)), false));
+      if (cL(inv) !== cL(d.a)) L.push(A(cd(cL(inv)), false));
+    } else {
+      const a = d.a, b = d.b;
+      L.push(A(eq(equationL(a, b)), true), A(oo(b), true), A(cd(cL(a)), true),
+        A(eq(equationL(a, -b)), false), A(eq(equationL(coef(-a.p, a.q), b)), false), A(cd(String(b)), cVal(a) === b), A(oo(cL(a)), cVal(a) === b));
+      if (a.q === 1) L.push(A(eq(equationL(coef(b, 1), a.p)), cVal(a) === b));
+    }
+    return L;
+  }
+  function affirmationDroites(niveau) {
+    const types = niveau === 1 ? ['horiz', 'origine', 'quelconque', 'quelconque'] : ['horiz', 'vert', 'origine', 'quelconque'];
+    // points d'ancrage des étiquettes (extrémité haute de chaque droite) : on écarte les tirages
+    // où deux étiquettes se chevauchent ou tombent sur le haut de l'axe des ordonnées
+    const ancre = d => {
+      if (d.type === 'vert') return [d.x, 5];
+      const seg = O.graph.segmentDroite(cVal(d.a), d.b, -5, 5, -5, 5);
+      return seg[0][1] > seg[1][1] ? seg[0] : seg[1];
+    };
+    const etiquettesLisibles = ds => {
+      const P = ds.map(ancre);
+      for (let i = 0; i < P.length; i++) {
+        if (ds[i].type !== 'vert' && Math.abs(P[i][0]) < 1 && P[i][1] > 3.5) return false;
+        for (let j = i + 1; j < P.length; j++) if (Math.abs(P[i][0] - P[j][0]) < 2 && Math.abs(P[i][1] - P[j][1]) < 1.3) return false;
+      }
+      return true;
+    };
+    let droites = null;
+    for (let essai = 0; essai < 25 && !droites; essai++) {
+      const ds = [];
+      for (const t of melanger(types)) {
+        const d = tirerDroiteTypee(t, niveau, ds);
+        if (!d) break;
+        ds.push(d);
+      }
+      if (ds.length === 4 && etiquettesLisibles(ds)) droites = ds;
+    }
+    if (!droites) return null;
+    const iVrai = alea(0, 3);
+    const lignes = droites.map((d, i) => {
+      const toutes = affirmationsSur(d, i + 1);
+      const voulu = i === iVrai;
+      const pool = toutes.filter(s => s.vrai === voulu);
+      return pool.length ? aleaParmi(pool) : null;
+    });
+    if (lignes.some(l => !l)) return null;
+    const figure = O.graph.repere({
+      xmin: -5, xmax: 5, ymin: -5, ymax: 5, unite: 28,
+      droites: droites.filter(d => d.type !== 'vert').map((d, k) => ({ a: cVal(d.a), b: d.b, label: 'D_' + (droites.indexOf(d) + 1), couleur: COULEURS_D[droites.indexOf(d)] })),
+      verticales: droites.filter(d => d.type === 'vert').map(d => ({ x: d.x, label: 'D_' + (droites.indexOf(d) + 1), couleur: COULEURS_D[droites.indexOf(d)] }))
+    });
+    const bonne = lignes[iVrai];
+    const cands = lignes.filter((_, i) => i !== iVrai);
+    const expl = droites.map((d, i) => `${m('D_' + (i + 1))} : ${m(equationDroite(d))}`).join(' ; ');
+    return qcm('On a représenté ci-contre quatre droites dans un repère orthonormé.<br>Parmi les quatre affirmations suivantes, laquelle est vraie ?',
+      { affichage: bonne.texte, cle: bonne.texte }, cands.map(s => ({ affichage: s.texte, cle: s.texte })), {
+        figure, optionsLarges: true,
+        explication: `On lit l’équation de chaque droite : ${expl}. Une seule affirmation est exacte : celle qui concerne ${m('D_' + (iVrai + 1))}.`
+      });
+  }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('droites', {
     titre: 'Droites et repères',
     familles: {
@@ -476,7 +604,9 @@
       'triangle-rectangle': famille({
         nom: 'nature d’un triangle', niveaux: [3], base: () => null, variantes3: [triangleRectangle],
         quota: { 3: { max: 1 } }
-      })
+      }),
+      'coefficient-deux-points': famille({ nom: 'coefficient directeur par deux points', niveaux: [1, 2, 3], base: coefficientDeuxPoints }),
+      'affirmation-droites': famille({ nom: 'affirmation vraie sur des droites tracées', niveaux: [1, 2, 3], base: affirmationDroites, quota: { 1: { max: 1 }, 2: { max: 1 }, 3: { max: 1 } } })
     }
   });
 })();

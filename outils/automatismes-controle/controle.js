@@ -295,6 +295,49 @@
     return erreurs;
   };
 
+  // ---------- droites ----------
+  VERIFS['droites/coefficient-deux-points'] = q => {
+    const e = q.enonce.replace(/\\,/g, ' ');
+    const pts = [...e.matchAll(/[AB]\((-?\d+)\s*;\s*(-?\d+)\)/g)].map(r => [parseInt(r[1], 10), parseInt(r[2], 10)]);
+    if (pts.length !== 2) return ['points illisibles dans l’énoncé'];
+    return verifExpression(q, (pts[1][1] - pts[0][1]) / (pts[1][0] - pts[0][0]));
+  };
+  // quatre droites D1..D4 tracées (couleurs fixes), puis quatre affirmations dont une seule est vraie
+  const COULEURS_DROITES = ['#E24B4A', '#1f6fb4', '#2e8b3d', '#8e44ad'];
+  VERIFS['droites/affirmation-droites'] = q => {
+    const d = new DOMParser().parseFromString(q.figure, 'image/svg+xml');
+    const lu = {};      // i -> { vert, x } ou { a, b }
+    [...d.querySelectorAll('line')].forEach(l => {
+      const i = COULEURS_DROITES.indexOf(l.getAttribute('stroke'));
+      if (i < 0) return;
+      const u = (parseFloat(d.documentElement.getAttribute('width')) - 28) / 10;     // unité du repère [-5 ; 5], marge 14
+      const X = px => (parseFloat(px) - 14) / u - 5, Y = py => 5 - (parseFloat(py) - 14) / u;
+      const x1 = X(l.getAttribute('x1')), y1 = Y(l.getAttribute('y1')), x2 = X(l.getAttribute('x2')), y2 = Y(l.getAttribute('y2'));
+      if (Math.abs(x2 - x1) < 1e-6) lu[i + 1] = { vert: true, x: x1 };
+      else { const a = (y2 - y1) / (x2 - x1); lu[i + 1] = { a, b: y1 - a * x1 }; }
+    });
+    const erreurs = [];
+    if (Object.keys(lu).length !== 4) erreurs.push('la figure ne montre pas quatre droites : ' + Object.keys(lu).length);
+    const egal = (u, v) => Math.abs(u - v) < 0.02;
+    q.options.forEach((o, k) => {
+      const z = zones(o), mm = z.maths, t = z.texte;
+      const i = parseInt(mm[0].replace('D_', ''), 10), D = lu[i];
+      if (!D) { erreurs.push('droite inconnue dans : ' + o); return; }
+      let vrai;
+      if (/passe par/.test(t)) vrai = !D.vert && egal(D.b, 0);
+      else if (/équation/.test(t)) {
+        const s = mm[1].replace(/\s/g, '');
+        if (/^x=/.test(s)) vrai = !!D.vert && egal(D.x, evalTex(s.slice(2)));
+        else { const f = x => evalTex(s.replace(/^y=/, ''), { x }); vrai = !D.vert && egal(f(0), D.b) && egal(f(1) - f(0), D.a); }
+      } else if (/coefficient directeur/.test(t)) vrai = !D.vert && egal(evalTex(mm[1]), D.a);
+      else if (/ordonnée à l/.test(t)) vrai = !D.vert && egal(evalTex(mm[1]), D.b);
+      else { erreurs.push('affirmation non reconnue : ' + t); return; }
+      if (k === q.bonne && !vrai) erreurs.push('la bonne réponse est fausse : ' + t + ' ' + mm.join(' ; '));
+      if (k !== q.bonne && vrai) erreurs.push('l’option ' + 'abcd'[k] + ' est vraie : ' + t + ' ' + mm.join(' ; '));
+    });
+    return erreurs;
+  };
+
   // ---------- exécution ----------
   const RESUME = {};
   function lancer(opts) {

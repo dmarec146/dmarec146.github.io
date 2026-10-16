@@ -136,6 +136,10 @@
     (o.verticales || []).forEach(v => {
       const couleur = v.couleur || ROUGE;
       s.push(`<line x1="${X(v.x)}" y1="${Y(ymin)}" x2="${X(v.x)}" y2="${Y(ymax)}" stroke="${couleur}" stroke-width="1.9"/>`);
+      if (v.label) {
+        const versGauche = v.x > (xmin + xmax) / 2;
+        s.push(`<text x="${n2(X(v.x) + (versGauche ? -6 : 6))}" y="${n2(Y(ymax) + 14)}" text-anchor="${versGauche ? 'end' : 'start'}" font-size="11.5" font-family="Georgia, serif" fill="${couleur}">${etiquette(v.label)}</text>`);
+      }
     });
 
     // courbes : suite de points [[x,y], …] déjà échantillonnés. Les portions qui sortent
