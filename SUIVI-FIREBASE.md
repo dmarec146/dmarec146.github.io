@@ -144,7 +144,7 @@ depuis la réorganisation du 02/10/2026 »).
   - MathLive **épinglé à 0.111.0** (`unpkg.com/mathlive@0.111.0`, 05/10/2026 ; avant : sans
     numéro, donc toujours la dernière version) et MathJax. Pour changer de version : modifier
     le numéro dans les 50 fiches, relancer `outils/audit-claviers/`, puis publier.
-- **Automatismes de Première** : `automatismes/premiere/sujet-blanc.html`
+- **Automatismes de Première** (séries de **12 questions** depuis le 16/10/2026, 10 avant ; fiche à deux thèmes = 6 + 6) : `automatismes/premiere/sujet-blanc.html`
   et `fiche.html` (fiche ciblée par thèmes), moteur partagé
   `automatismes/assets/moteur.js`, banques dans `automatismes/premiere/banques/`.
 - **Guide de l'élève** (PDF de 11 pages, mode d'emploi des fiches, des
@@ -252,7 +252,7 @@ depuis la réorganisation du 02/10/2026 »).
   série (pas d'Enregistrer en chrono, série d'une traite) ; chrono :
   reprise des questions sans réponse dans le budget de temps global (le
   temps continue de s'écouler sur l'écran de reprise), « Terminer le
-  sujet » explicite ; barème 0,5 point par question (note sur 5).
+  sujet » explicite ; barème 0,5 point par question (sujet blanc de 12 questions : note sur 6, 10 questions et note sur 5 avant le 16/10/2026).
 - Ciblage : un seul devoir retenu quand plusieurs visent la même fiche ou
   la même cible (`choisirDevoirActif()` : le plus proche de son échéance
   parmi les ouverts) ; côté automatismes, tout se fait **par id de

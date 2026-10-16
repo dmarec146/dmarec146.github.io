@@ -89,7 +89,7 @@
 
   // famille = base (par niveau) + variantes propres au niveau 3
   //   partBase3 : proportion des tirages de niveau 3 qui utilisent la base (0 par défaut)
-  //   quota : {niveau: {min, max}} — nombre de questions de cette famille dans une série de 10
+  //   quota : {niveau: {min, max}} — nombre de questions de cette famille dans une série (10, puis 12 depuis le 16/10/2026)
   //   ordre : {niveau: rang} — rang de difficulté, utilisé pour trier la série aux niveaux 1 et 2
   function famille(o) {
     return {
@@ -824,7 +824,7 @@
   }
 
   // =====================================================================
-  // Composition d'une série de 10 (quotas) :
+  // Composition d'une série de 10 à 12 (quotas) :
   //   niveau 1 : exactement 1 question à deux évolutions ; au moins 1 « valeur initiale »
   //   niveau 2 : au moins 1 coefficient réciproque ; deux questions un cran plus difficiles
   //              (1 aire/volume + 1 évolution manquante) ; au moins 1 « valeur initiale »

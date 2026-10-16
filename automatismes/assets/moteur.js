@@ -200,7 +200,7 @@
      blancs n'ont ainsi pas la même composition. Dans un domaine, la banque est
      choisie selon ses propres poids, sans qu'aucune ne dépasse `maxParBanque`.
      Les minimums par famille ne s'appliquent pas ici : conçus pour une fiche
-     thématique de 10 questions, ils ramèneraient toujours la même famille quand
+     thématique de 10 à 12 questions, ils ramèneraient toujours la même famille quand
      une banque n'a qu'une ou deux places. */
   function tirerSerieParDomaines(config, niveau) {
     const nb = config.nb;
@@ -269,8 +269,8 @@
   // n questions d'une banque, en respectant les quotas par famille (`quota: {2: {min, max, gen, priorite}}`)
   //   min : questions garanties ; max : plafond ; gen : niveau de génération forcé ;
   //   priorite : ordre dans lequel les minimums sont honorés quand la série est courte.
-  //   Sur n places, on honore au plus max(1, 40 % de n) familles à minimum — sur 10 places, toutes
-  //   les familles habituelles ; sur 5 places, deux d'entre elles, choisies par priorité puis au hasard.
+  //   Sur n places, on honore au plus max(1, 40 % de n) familles à minimum — sur 12 places (10 avant le 16/10/2026),
+  //   toutes les familles habituelles ; sur 6 places (deux thèmes), deux d'entre elles, choisies par priorité puis au hasard.
   function tirerDansBanque(b, niveau, n, options) {
     const fams = famillesDispo(b, niveau);
     const def = f => banques[b].familles[f];
@@ -324,7 +324,7 @@
   function echapper(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
   function demarrer(config) {
-    ETAT.config = Object.assign({ nb: 10, modeDefaut: 'fiche', duree: 120, niveauDefaut: 2, cible: '#app', labelNouvelle: 'Nouvelle série' }, config);
+    ETAT.config = Object.assign({ nb: 12, modeDefaut: 'fiche', duree: 120, niveauDefaut: 2, cible: '#app', labelNouvelle: 'Nouvelle série' }, config);
     ETAT.mode = ETAT.config.modeDefaut;
     ETAT.duree = ETAT.config.duree;
     ETAT.niveau = ETAT.config.niveauDefaut;

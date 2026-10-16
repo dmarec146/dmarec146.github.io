@@ -8481,3 +8481,35 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
 - **Première 14** : un devoir la vise encore (ciblage individuel d'un élève, échéance le 16/10/2026 à 21 h) → **non modifiée** ;
   reste à faire après l'échéance (voir `SUIVI-FIREBASE.md` §6).
 - Section « première session sur le PC perso » retirée de `CLAUDE.md`.
+
+## 2026-10-16 — Fiches d'automatismes de Première : séries de 12 questions (au lieu de 10)
+
+Chantier « Automatismes à 12 questions » de l'artefact « Chantiers futurs » (demande de David, 16/10/2026). Condition de
+lancement vérifiée : **aucun devoir d'automatismes en cours** (lecture seule de Firestore : les deux devoirs de sujet blanc,
+`1ere-Gr 1` et `1ere-Gr 3`, ont expiré le 04/10/2026 ; leurs tentatives restent enregistrées sur 5 points).
+
+- **Moteur** (`automatismes/assets/moteur.js`) : valeur par défaut `nb: 12` ; commentaires de `tirerDansBanque` et du sujet blanc mis à jour.
+  Le mécanisme de quotas (au plus 40 % des places pour les familles à minimum) est inchangé : sur 12 places il honore
+  jusqu'à 5 familles, sur 6 places (fiche à deux thèmes) 2.
+- **Fiche d'automatismes** (`fiche.html`) : `nb: 12` (deux thèmes : 6 + 6 ; thème unique `?theme=…` : 12) ; sous-titres.
+- **Sujet blanc** (`sujet-blanc.html`) : `nb: 12`, barème `{ parQuestion: 0.5, total: 6 }` (note sur 6, comme le dit l'artefact),
+  sous-titre, et paragraphe « Barème » (« soit 6 points au total pour les 12 questions » — l'ancienne mention « le poids de la
+  première partie de l'épreuve » est retirée, elle n'était vraie que pour 5 points). Le devoir enregistre le total du barème
+  (`bareme.total`) : les nouvelles tentatives sont sur 6, les anciennes restent sur 5. Fiche ciblée en devoir : score = bonnes
+  réponses sur le nombre de questions de la série, donc sur 12 sans autre changement.
+- **Textes** : pages d'accueil des automatismes (`index.html`, `premiere/index.html`), guide de l'élève (source
+  `guide-eleve.html`, six mentions) et son PDF `assets/docs/guide-eleve.pdf` régénéré (11 pages, aucun débordement). Le script
+  `outils/guide-eleve/pdf.js` exige le paquet `playwright`, absent ici : régénération faite avec une variante locale utilisant
+  `playwright-core` et le Chrome installé (même rendu, 2 139 466 → 2 138 813 octets). **Les captures d'écran du guide
+  n'ont pas été refaites** : si l'une d'elles montre « 10 questions », elle est à reprendre (`outils/guide-eleve/captures.js`).
+- **Mesures** (navigateur, moteur réel) : toutes les séries ont exactement 12 questions (3 niveaux × 300 tirages pour le
+  sujet blanc, 3 niveaux × 200 pour la fiche à deux thèmes, partout 6 + 6) ; répartition du sujet blanc sur 3 600 questions par
+  niveau : 25,0 / 11,4 / 22,8 / 26,2 / 14,6 % contre 25 / 11 / 23 / 26 / 15 visés, jamais plus de 3 questions d'une même
+  banque, jamais deux questions de suite de la même famille. Parcours de bout en bout : 12 réponses justes → « 12 / 12 bonnes
+  réponses » et « 6 / 6 points ». Chaque banque (8) à chaque niveau (3) fournit bien 12 questions en thème unique (60 tirages).
+- **Répétitions** : avec plus de questions que de familles, les niveaux 1 et 2 (triés par difficulté) comptent plus de paires
+  consécutives de même famille : 1,6 par fiche à deux thèmes avec 10 questions, 3,1 avec 12 au niveau 1 (1,5 puis 2,3 au niveau 2) ;
+  niveau 3 inchangé (0). Banques les plus courtes en familles au niveau 1 : calcul numérique et développer-factoriser (3),
+  proportions, équations, droites, lectures graphiques et probabilités (4), pourcentages (5). Rares séries avec une même question
+  deux fois en thème unique (environ 1 sur 60 avant comme après). C'est le point que David doit nourrir en ajoutant des familles
+  (voir l'artefact « Chantiers futurs »).
