@@ -264,8 +264,9 @@ async function auditerDansLaPage(opts) {
       }
       if (e.type === 'intervalle' && e.intervalleSpec) {
         const sp = e.intervalleSpec;
-        // ℝ s'ecrit aussi ]-inf;+inf[ et R
-        if (sp.type === 'tout') for (const variante of [']-inf;+inf[', 'R']) { await saisirTexte(i, variante); n++; if (verifier() !== true) ajouter('erreur', 'intervalle-tout-refuse', e, variante); }
+        // ℝ s'ecrit aussi ]-∞;+∞[, ]-inf;+inf[ (lettres tapees au clavier) et R. Saisies en LaTeX : le mode ascii-math de MathLive
+        // perd le crochet fermant de « ]-inf;+inf[ », ce qui refusait a tort une reponse que l'eleve tape sans probleme.
+        if (sp.type === 'tout') for (const [variante, tex] of [[']-inf;+inf[', ']-\\infty;+\\infty['], [']-inf;+inf[', ']-inf;+inf['], ['R', null]]) { await saisirTexte(i, variante, tex); n++; if (verifier() !== true) ajouter('erreur', 'intervalle-tout-refuse', e, tex || variante); }
         // un intervalle borne ecrit sous forme d'inegalite « a<x<b » n'est pas un intervalle
         if (sp.type === 'intervalles' && sp.liste.length === 1 && Number.isFinite(sp.liste[0].bas) && Number.isFinite(sp.liste[0].haut)) {
           const iv = sp.liste[0], fr = (v) => { if (Number.isInteger(v)) return String(v); const f = math.fraction(v); return (f.s < 0 ? '-' : '') + f.n + '/' + f.d; };
