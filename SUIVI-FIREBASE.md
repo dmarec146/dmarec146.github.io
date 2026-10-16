@@ -146,7 +146,9 @@ depuis la réorganisation du 02/10/2026 »).
     le numéro dans les 50 fiches, relancer `outils/audit-claviers/`, puis publier.
 - **Automatismes de Première** (séries de **12 questions** depuis le 16/10/2026, 10 avant ; fiche à deux thèmes = 6 + 6) : `automatismes/premiere/sujet-blanc.html`
   et `fiche.html` (fiche ciblée par thèmes), moteur partagé
-  `automatismes/assets/moteur.js`, banques dans `automatismes/premiere/banques/`.
+  `automatismes/assets/moteur.js`, banques dans `automatismes/premiere/banques/` (de 6 à 13 familles par niveau depuis le
+  16/10/2026) ; outil de contrôle des banques (rédaction + justesse recalculée) : `outils/automatismes-controle/`, mode d'emploi
+  dans `REGLES-FICHES.md` §7.
 - **Guide de l'élève** (PDF de 11 pages, mode d'emploi des fiches, des
   automatismes et des devoirs) : `assets/docs/guide-eleve.pdf` ; source HTML,
   captures et scripts de génération dans `outils/guide-eleve/` (voir son

@@ -8537,3 +8537,50 @@ Suite du passage à 12 questions (David : « la difficulté des questions peut �
   deux points, affirmation sur plusieurs droites tracées, formule avec valeurs données puis équation, relation à inverses, tableau de
   signes vers expression, x² = 6, signe d'un quotient d'images lues, reconnaissance de la courbe d'un produit, proportion d'une
   proportion, baisse de 3 % traduite par une formule). Les familles correspondantes sont à écrire (étape suivante du chantier).
+
+## 2026-10-16 — Automatismes : 20 nouvelles familles de questions (et correctifs du moteur)
+
+Suite de l'analyse des cinq nouveaux sujets de bac, pour que les séries de 12 questions ne répètent plus les mêmes types
+(David : les 8 mêmes thèmes, familles ajoutées par Claude, ordre aléatoire accepté). **Rien n'est poussé** à la date de cette
+entrée : dix commits locaux de code et un de documentation, à pousser sur le mot de David après un nouveau contrôle des devoirs
+  d'automatismes ouverts.
+
+- **Précision sur l'analyse du matin** : « x² = 6 » n'était pas une lacune (la famille `carre-egal` de la banque équations tire
+  déjà des carrés non parfaits) et la « proportion d'une proportion » existait déjà (pourcentage d'un pourcentage, banque 01 ;
+  part d'une part, banque 02, niveau 3). Ces deux lignes de la liste précédente sont donc à lire comme « déjà couvert ».
+- **Familles tirées des sujets** — calcul numérique : valeur d'une expression littérale à valeurs données, comparaison (fractions,
+  décimaux, sommes, différences), égalité de puissances, opérations sur les racines (somme, produit, carré, conjugué) ;
+  développer-factoriser : « laquelle n'est pas égale à… », opposé d'une parenthèse, factoriser avec fractions ; équations :
+  relation et valeurs données puis équation (dont la relation à inverses, niveau 3), du tableau de signes à l'expression ;
+  droites : coefficient directeur par deux points, affirmation vraie sur quatre droites tracées (verticale, horizontale, par
+  l'origine, quelconque) ; lectures graphiques : signe d'un produit ou d'un quotient d'images lues sur deux courbes,
+  reconnaître la courbe d'une fonction du second degré (formule canonique au niveau 2, développée au niveau 3) ; pourcentages :
+  choisir le calcul d'une évolution (une évolution, deux évolutions successives, valeur initiale, évolution répétée n fois).
+- **Familles de ma propre initiative** (David m'a laissé la main) — développer `k(ax+b)` ; trois formules d'isolement de plus
+  (lentille, gravité, `½bx²`) ; variations et extremum (sommet d'une parabole, sens de variation, courbe du 3ᵉ degré à deux
+  extremums placés sur des nœuds) ; partage dans un rapport (deux parts, une part connue, trois parts) ; pourcentage dans un
+  mélange (le total du mélange, pas l'autre ingrédient) et dilution ; événement contraire et « au moins un » (épreuves
+  indépendantes, deux événements, tirages avec remise) ; moyenne d'une liste, effet de l'ajout d'une valeur, moyenne générale de
+  deux groupes. **Toutes jugées à relire par David** : ce sont des choix de contenu, pas des copies de sujets.
+- **Moteur** (`automatismes/assets/moteur.js`) : `tirerDansBanque` complète désormais les places avec la famille la moins
+  représentée (au hasard à égalité) au lieu d'un tour de table cyclique, qui répétait une famille déjà honorée par son minimum alors
+  qu'une autre n'avait aucune question ; un exposant 1 est supprimé à la sortie (`^{1}`, filet commun à tous les générateurs) ;
+  `graphiques.js` : les droites verticales d'un repère peuvent porter une étiquette.
+- **Correctifs trouvés par la régression** (défauts antérieurs, jamais signalés avant l'outil de contrôle) : exposant 1 dans les
+  banques puissances / racines / ordre de grandeur (désormais supprimé à la sortie) ; espace fine insécable manquante avant `%` dans
+  trois explications écrites à la main (banques 01, 02 et 08, affirmations sur les quartiles) ; sa détection par l'outil
+  confondait un `<` de comparaison avec une balise HTML (faux positif dans l'explication de « comparer deux courbes »).
+- **Outil de contrôle** (`outils/automatismes-controle/`) : vérificateurs de justesse pour toutes les familles nouvelles, qui
+  recalculent la réponse à partir de l'énoncé ou, pour les figures, en relisant les courbes dans le SVG ; chacun est testé par
+  mutation (bonne réponse décalée : 100 % des tirages rejetés). Régression finale sur les 8 banques, tous niveaux : 0 anomalie
+  (300 à 800 tirages par famille et par niveau, 1 500 pour la famille ajoutée à la banque pourcentages).
+- **Mesures** (moteur réel, thème unique, 12 questions, 200 séries par cas ; « avant » = sans les familles nouvelles) :
+  familles distinctes par série 3-6 → 6-12 (calcul numérique N1 : 3 → 6 ; développer-factoriser N1 : 3 → 6 ; probabilités N2 :
+  10 → 12) ; plus grand nombre de questions d'une même famille 3-4 → 2 (1 en probabilités N2 et N3) ; séries où deux énoncés
+  textuels sont identiques : par exemple droites N1 24 % → 8 %, lectures graphiques N3 11,5 % → 2,5 % (le texte seul est comparé :
+  deux « lire l'équation de la droite » à figures différentes comptent comme identiques). Fiche à deux thèmes (6 + 6) : plus aucune
+  famille répétée dans une banque à aucun niveau (avant : une famille répétée dans 100 % des séries partout où la banque avait moins
+  de 6 familles, soit presque tous les niveaux 1 et 2). Chaque banque compte maintenant de 6 à 13 familles par niveau
+  (proportions : 6 / 6 / 7).
+- **Reste ouvert** : à pousser ; relire le contenu choisi par Claude ; les captures d'écran du guide de l'élève ne sont pas
+  concernées ; les anciens générateurs peuvent encore produire des énoncés identiques à figure près (droites N1 notamment).

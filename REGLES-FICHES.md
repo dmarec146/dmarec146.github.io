@@ -415,6 +415,17 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Contrôle numérique indépendant** : réévaluer la réponse dans l'énoncé (inéquations : borne à gauche, à droite et sur
   la borne, pour vérifier aussi ouvert / fermé). **Chaque nouveau contrôle est relancé sur toutes les banques déjà
   faites**, pas seulement la nouvelle. Figures : vérification indépendante (relire les pixels, pas seulement la géométrie).
+- **Outil de contrôle des banques** : `outils/automatismes-controle/controle.html` (serveur statique du dépôt, puis dans la
+  console `Controle.lancer({banques:['droites'], essais:400})` ; `Controle.apercu('banque','famille',niveau,n)` pour voir
+  les questions rendues). Il applique l'audit de rédaction ci-dessus à chaque tirage et, pour chaque famille qui a un
+  vérificateur (`VERIFS['banque/famille']`), recalcule la réponse **de façon indépendante** à partir de l'énoncé ou du
+  dessin (les courbes sont relues dans le SVG). **Toute famille nouvelle reçoit son vérificateur**, testé par mutation
+  (changer la bonne réponse doit faire échouer le contrôle), puis la banque entière est relancée avant de conclure.
+- **Assez de familles pour ne pas répéter** : viser au moins 6 familles par banque à chaque niveau (une fiche en tire 12, ou
+  6 + 6 sur deux thèmes). Le moteur répartit les places au plus équitable (la famille la moins représentée passe d'abord) ;
+  une même famille revient donc seulement quand il y a moins de familles que de places.
+- Un exposant 1 ne s'écrit jamais : le moteur supprime `^{1}` à la sortie, mais un générateur doit tout de même éviter de le
+  produire (l'audit le signale avant ce filet).
 - Fiche à deux thèmes tirés au hasard (pas de fiche thématique figée) ; sujet blanc avec `masquerEtiquette: true` (une
   étiquette qui nomme la méthode est un indice que l'épreuve ne donne pas).
 - Usage autonome, sans compte élève : pas de protection contre le tâtonnement (David, 05/09/2026), à reconsidérer si le suivi
