@@ -19,7 +19,7 @@
   }
   function conv(s) {
     s = s.replace(/\\left|\\right/g, '').replace(/\\[,; ]/g, '').replace(/\\times|\\cdot/g, '*').replace(/\\div/g, '/')
-      .replace(/\{,\}/g, '.').replace(/\\text\{[^}]*\}/g, '').replace(/\\mathbb\{R\}/g, 'R').replace(/\\geqslant/g, '>=').replace(/\\leqslant/g, '<=');
+      .replace(/\{,\}/g, '.').replace(/\\ell/g, 'l').replace(/\\text\{[^}]*\}/g, '').replace(/\\mathbb\{R\}/g, 'R').replace(/\\geqslant/g, '>=').replace(/\\leqslant/g, '<=');
     let out = '';
     for (let i = 0; i < s.length; i++) {
       if (s.startsWith('\\dfrac', i) || s.startsWith('\\frac', i)) {
@@ -132,7 +132,7 @@
   const mathsDe = html => zones(html).maths;
   const optMaths = q => q.options.map(o => mathsDe(o).join(' '));
   function aValeurs(textHtml) {            // « x = 3, y = -2 et t = -4 » -> {x:3, y:-2, t:-4}
-    const sc = {}; const re = /([a-z])\s*=\s*(-?\d+(?:\.\d+)?)/g; let r;
+    const sc = {}; const re = /([a-zA-Z])\s*=\s*(-?\d+(?:\.\d+)?)/g; let r;
     while ((r = re.exec(textHtml))) sc[r[1]] = parseFloat(r[2]);
     return sc;
   }
@@ -214,6 +214,86 @@
   VERIFS['developper-factoriser/reduire-oppose'] = q => verifEquivalence(q, zones(q.enonce).maths.find(g => /^E\s*=/.test(g)).replace(/^E\s*=\s*/, ''));
   VERIFS['developper-factoriser/developper-simple'] = q => verifEquivalence(q, zones(q.enonce).maths[0]);
   VERIFS['developper-factoriser/factoriser-fraction'] = q => verifEquivalence(q, zones(q.enonce).maths[0]);
+
+  // ---------- équations : relation et valeurs données, tableau de signes, isolement ----------
+  // racines de g sur [min, 60] (pas 0,05, bissection), pôles écartés
+  function racinesNumeriques(g, min) {
+    const res = [];
+    let xp = min, gp = g(xp);
+    for (let x = min + 0.05; x <= 60 + 1e-9; x += 0.05) {
+      const gx = g(x);
+      if (isFinite(gp) && isFinite(gx) && gp * gx <= 0) {
+        let a = xp, b = x, ga = gp;
+        for (let i = 0; i < 50; i++) { const c = (a + b) / 2, gc = g(c); if (ga * gc <= 0) b = c; else { a = c; ga = gc; } }
+        const r = (a + b) / 2;
+        if (Math.abs(g(r)) < 1e-6 * (1 + Math.abs(r)) && !res.some(v => Math.abs(v - r) < 1e-4)) res.push(r);
+      }
+      xp = x; gp = gx;
+    }
+    return res.sort((p, q) => p - q);
+  }
+  const ensembleOption = s => (/impossible/.test(s) ? [] : s.split('\\text{ ou }').map(t => evalTex(t.trim())));
+  const memeEnsemble = (A, B) => A.length === B.length && A.every((v, i) => Math.abs(v - B[i]) < 1e-6 * Math.max(1, Math.abs(v)));
+  VERIFS['equations/formule-valeurs'] = q => {
+    const M = zones(q.enonce).maths;                     // [relation, (condition), valeurs, grandeur cherchée]
+    const rel = M[0], cible = M[M.length - 1].replace(/\\ell/g, 'l').trim(), vals = M[M.length - 2];
+    const positif = M.length === 4;
+    const sc = aValeurs(vals.replace(/\\text\{[^}]*\}/g, ','));
+    const [L, R] = rel.replace(/\\ell/g, 'l').split('=');
+    const g = x => { const s = Object.assign({}, sc); s[cible] = x; return evalTex(L, s) - evalTex(R, s); };
+    const attendu = racinesNumeriques(g, positif ? 0.0001 : -60);
+    const erreurs = [];
+    optMaths(q).forEach((s, i) => {
+      let ens; try { ens = ensembleOption(s.replace(/\\ell/g, 'l')).sort((p, r) => p - r); } catch (e) { erreurs.push('option illisible : ' + s); return; }
+      const ok = memeEnsemble(ens, attendu);
+      if (i === q.bonne && !ok) erreurs.push('la bonne réponse {' + ens + '} ≠ solutions {' + attendu + '}');
+      if (i !== q.bonne && ok) erreurs.push('l’option ' + 'abcd'[i] + ' est aussi correcte : ' + s);
+    });
+    return erreurs;
+  };
+  VERIFS['equations/tableau-vers-expression'] = q => {
+    const d = new DOMParser().parseFromString(q.figure, 'image/svg+xml');
+    const t = [...d.querySelectorAll('text')].map(x => x.textContent.replace('−', '-'));
+    const racines = t.slice(t.indexOf('-∞') + 1, t.indexOf('+∞')).map(Number);
+    const signes = t.filter(x => x === '+' || x === '-');
+    const v = (t.find(x => /^A\(.\)$/.test(x)) || 'A(x)')[2];
+    const pts = [racines[0] - 1].concat(racines.slice(1).map((r, i) => (racines[i] + r) / 2), [racines[racines.length - 1] + 1]);
+    const erreurs = [];
+    optMaths(q).forEach((s, i) => {
+      const f = x => evalTex(s, { [v]: x });
+      let correct = racines.every(r => Math.abs(f(r)) < 1e-9) && pts.every((p, k) => Math.abs(f(p)) > 1e-9 && ((f(p) > 0 ? '+' : '-') === signes[k]));
+      if (i === q.bonne && !correct) erreurs.push('la bonne réponse ne correspond pas au tableau : ' + s);
+      if (i !== q.bonne && correct) erreurs.push('l’option ' + 'abcd'[i] + ' correspond aussi au tableau : ' + s);
+    });
+    if (signes.length !== racines.length + 1) erreurs.push('tableau illisible : ' + t.join(' '));
+    return erreurs;
+  };
+  // isoler une variable : seulement les formules à lettres simples (sinon la vérification est sautée)
+  VERIFS['equations/isoler-variable'] = q => {
+    const M = zones(q.enonce).maths;
+    const formule = M.find(g => g.includes('=')), cibleTex = M[M.length - 1];
+    const options = optMaths(q);
+    if ([formule, cibleTex].concat(options).some(g => /\\(mathcal|pi|ell|rho)|_/.test(g))) return [];
+    const conv1 = s => s.replace(/([a-zA-Z])'/g, (mm, l) => l.toUpperCase());
+    const [L, R] = conv1(formule).split('=');
+    const cible = conv1(cibleTex).trim();
+    const lettres = [...new Set((conv1(formule).replace(/\\[a-z]+/g, '').match(/[a-zA-Z]/g) || []))].filter(l => l !== cible);
+    const erreurs = [];
+    options.forEach((s, i) => {
+      const expr = conv1(s).split('=')[1];
+      let correct = true;
+      for (let k = 0; k < 6 && correct; k++) {
+        const sc = {}; lettres.forEach(l => { sc[l] = 1.5 + Math.random() * 4; });
+        let xv; try { xv = evalTex(expr, sc); } catch (e) { correct = false; break; }
+        sc[cible] = xv;
+        const diff = evalTex(L, sc) - evalTex(R, sc);
+        if (!isFinite(diff) || Math.abs(diff) > 1e-9 * Math.max(1, Math.abs(evalTex(L, sc)))) correct = false;
+      }
+      if (i === q.bonne && !correct) erreurs.push('formule : la bonne réponse ne vérifie pas la relation : ' + s);
+      if (i !== q.bonne && correct) erreurs.push('formule : l’option ' + 'abcd'[i] + ' vérifie aussi la relation : ' + s);
+    });
+    return erreurs;
+  };
 
   // ---------- exécution ----------
   const RESUME = {};

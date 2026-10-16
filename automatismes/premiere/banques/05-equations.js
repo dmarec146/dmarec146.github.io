@@ -421,6 +421,18 @@
       expl: 'On divise les deux membres par \\(v\\).' })
   ];
   const FORMULES_N2 = [
+    // Secours Métropole 2026 : relation de conjugaison d'une lentille
+    () => ({ ctx: `La position \\(p\\) d’un objet et la position \\(p'\\) de son image à travers une lentille de distance focale \\(f\\) sont liées par`, f: `\\dfrac{1}{p'} - \\dfrac{1}{p} = \\dfrac{1}{f}`, cible: `p'`,
+      bonne: `p' = \\dfrac{fp}{f + p}`, faux: [`p' = \\dfrac{p - f}{fp}`, `p' = \\dfrac{p + f}{fp}`, `p' = \\dfrac{fp}{f - p}`, `p' = f + p`],
+      expl: `On isole : \\(\\dfrac{1}{p'} = \\dfrac{1}{f} + \\dfrac{1}{p} = \\dfrac{p + f}{fp}\\), puis on prend l’inverse : \\(p' = \\dfrac{fp}{f + p}\\).` }),
+    // Polynésie, septembre 2026
+    () => ({ ctx: 'L’accélération gravitationnelle d’un astre de masse \\(m\\) et de rayon \\(r\\) est', f: 'g = \\dfrac{Gm}{r^2}', cible: 'r', pos: '\\(r > 0\\)',
+      bonne: 'r = \\sqrt{\\dfrac{Gm}{g}}', faux: ['r = \\dfrac{Gm}{g^2}', 'r = \\sqrt{Gmg}', 'r = \\sqrt{\\dfrac{g}{Gm}}', 'r = \\dfrac{Gm}{g}'],
+      expl: 'On multiplie par \\(r^2\\) puis on divise par \\(g\\) : \\(r^2 = \\dfrac{Gm}{g}\\) ; comme \\(r > 0\\), \\(r = \\sqrt{\\dfrac{Gm}{g}}\\).' }),
+    // Antilles-Guyane, septembre 2026
+    () => ({ ctx: 'On considère la formule', f: 'a = \\dfrac{1}{2}bx^2', cible: 'x', pos: '\\(a > 0\\), \\(b > 0\\) et \\(x > 0\\)',
+      bonne: 'x = \\sqrt{\\dfrac{2a}{b}}', faux: ['x = \\sqrt{\\dfrac{a}{2b}}', 'x = \\dfrac{2a^2}{b}', 'x = \\dfrac{\\sqrt{a}}{2b}', 'x = \\sqrt{2ab}'],
+      expl: 'On multiplie par 2 : \\(2a = bx^2\\), puis on divise par \\(b\\) : \\(x^2 = \\dfrac{2a}{b}\\) ; comme \\(x > 0\\), \\(x = \\sqrt{\\dfrac{2a}{b}}\\).' }),
     // Polynésie 2026
     () => ({ ctx: 'L’énergie cinétique d’un corps de masse \\(m\\) et de vitesse \\(v\\) est', f: 'E_c = \\dfrac{1}{2}mv^2', cible: 'v', pos: '\\(v > 0\\)',
       bonne: 'v = \\sqrt{\\dfrac{2E_c}{m}}', faux: ['v = \\sqrt{\\dfrac{E_c}{2m}}', 'v = \\dfrac{2E_c}{m}', 'v = \\sqrt{2E_cm}', 'v = \\dfrac{E_c}{2m}'],
@@ -593,6 +605,138 @@
   }
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+
+  // ---- Famille G : une relation, des valeurs données, une grandeur à retrouver (équation à résoudre)
+  //      Secours Métropole 12/06/2026 : V = t²/u, V = 20 et u = 5, donc t = 10 ou t = −10.
+  const ou = (a, b) => `${a} \\text{ ou } ${b}`;
+  function questionRelation(rel, pos, valeurs, cible, bonne, fautes, explication) {
+    const lig = valeurs.map(([l, v]) => `${l} = ${v}`);
+    const dernier = lig.pop();
+    const liste = lig.length ? lig.join(', ') + '\\text{ et }' + dernier : dernier;
+    return qcm(`On considère la relation ${m(rel)}${pos ? ', où ' + m(pos) : ''}.<br>Lorsque ${m(liste)}, la valeur de ${m(cible)} est égale à :`,
+      opt(bonne), fautes.map(x => opt(x)), { explication });
+  }
+
+  // N1 : relations du premier degré
+  function relationLineaire() {
+    const t = alea(0, 3);
+    if (t === 0) {
+      const a = alea(2, 9), mm = alea(2, 9), F = a * mm;
+      return questionRelation('F = m \\times a', '', [['F', F], ['m', mm]], 'a', String(a),
+        [String(F * mm), String(F - mm), fracL(mm, F), String(F + mm)],
+        `${m('F = m \\times a')} donne ${m('a = \\dfrac{F}{m} = \\dfrac{' + F + '}{' + mm + '} = ' + a)}.`);
+    }
+    if (t === 1) {
+      const L = alea(3, 9), l0 = alea(2, 8), P = 2 * (L + l0);
+      return questionRelation('P = 2(L + \\ell)', '', [['P', P], ['L', L]], '\\ell', String(l0),
+        [String(P - L), String(P / 2 + L), String(P - 2 * L), String(P / 2)],
+        `${m('P = 2(L + \\ell)')} donne ${m('L + \\ell = \\dfrac{P}{2} = ' + (P / 2))}, d’où ${m('\\ell = ' + (P / 2) + ' - ' + L + ' = ' + l0)}.`);
+    }
+    if (t === 2) {
+      const a = alea(2, 9), b = alea(2, 9), d = a * b;
+      return questionRelation('v = \\dfrac{d}{t}', '', [['v', a], ['d', d]], 't', String(b),
+        [String(d * a), fracL(a, d), String(d - a), String(d + a)],
+        `${m('v = \\dfrac{d}{t}')} donne ${m('t = \\dfrac{d}{v} = \\dfrac{' + d + '}{' + a + '} = ' + b)}.`);
+    }
+    const x0 = aleaNonNul(-5, 6), a = alea(2, 5), b = aleaNonNul(-9, 9), y = a * x0 + b;
+    return questionRelation('y = ax + b', '', [['y', y], ['a', a], ['b', b]], 'x', String(x0),
+      [fracL(y + b, a), String(y - b), fracL(y, a) + (b < 0 ? ' - ' + (-b) : ' + ' + b), fracL(y - b, -a === 0 ? 1 : -a)].filter(s => s !== String(x0)),
+      `${m('y = ax + b')} donne ${m('x = \\dfrac{y - b}{a} = \\dfrac{' + y + (b < 0 ? ' + ' + (-b) : ' - ' + b) + '}{' + a + '} = ' + x0)}.`);
+  }
+
+  // N2 : relations avec un carré (deux solutions, ou une seule si la grandeur est positive)
+  function relationCarre() {
+    if (alea(0, 1) === 0) {
+      // V = t²/u : t² = V u
+      const t0 = alea(2, 9);
+      const diviseurs = [2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 25, 27].filter(u => (t0 * t0) % u === 0 && u !== t0 && u > 1);
+      if (!diviseurs.length) return null;
+      const u = aleaParmi(diviseurs), V = t0 * t0 / u;
+      return questionRelation('V = \\dfrac{t^2}{u}', '', [['V', V], ['u', u]], 't', ou(t0, '-' + t0),
+        [ou(V * u, '-' + V * u), ou(u, '-' + u), ou(V, '-' + V), '\\text{impossible}'],
+        `${m('V = \\dfrac{t^2}{u}')} donne ${m('t^2 = V u = ' + V + ' \\times ' + u + ' = ' + (t0 * t0))}, d’où ${m('t = ' + t0)} ou ${m('t = -' + t0)} : un carré a deux racines opposées.`);
+    }
+    // c = k x² / 2 avec x > 0
+    const [c, k, x] = aleaParmi([['E', 'm', 'v'], ['s', 'a', 't'], ['A', 'b', 'x']]);
+    const x0 = alea(2, 9), kk = aleaParmi([2, 4, 6, 8]), cc = kk * x0 * x0 / 2;
+    return questionRelation(`${c} = \\dfrac{1}{2} ${k} ${x}^2`, `${x} > 0`, [[c, cc], [k, kk]], x, String(x0),
+      [String(x0 * x0), String(kk * cc), fracL(cc, kk), String(2 * cc - kk)].filter(s => s !== String(x0)),
+      `${m(c + ' = \\dfrac{1}{2} ' + k + x + '^2')} donne ${m(x + '^2 = \\dfrac{2' + c + '}{' + k + '} = \\dfrac{' + 2 * cc + '}{' + kk + '} = ' + x0 * x0)}, et comme ${m(x + ' > 0')}, ${m(x + ' = ' + x0)}.`);
+  }
+
+  // N3 : relation avec des inverses, relation à dénominateur, racine non entière
+  function relationAvancee() {
+    const t = alea(0, 2);
+    if (t === 0) {
+      // 1/f = 1/p + 1/q
+      const f = alea(2, 6), p = f + alea(1, 6), num = f * p, den = p - f;
+      return questionRelation('\\dfrac{1}{f} = \\dfrac{1}{p} + \\dfrac{1}{q}', '', [['f', f], ['p', p]], 'q', fracL(num, den),
+        [fracL(1, den), fracL(den, num), fracL(num, p + f), String(p - f)],
+        `${m('\\dfrac{1}{q} = \\dfrac{1}{f} - \\dfrac{1}{p} = \\dfrac{1}{' + f + '} - \\dfrac{1}{' + p + '} = \\dfrac{' + den + '}{' + num + '}')}, donc ${m('q = ' + fracL(num, den))}.`);
+    }
+    if (t === 1) {
+      // x = a / (b + y) : y = a/x − b
+      const divs = [[2, 1], [2, 2], [3, 1], [3, 3], [4, 2], [4, 4], [6, 3], [6, 2], [8, 4], [9, 3], [10, 5]];
+      const [a, x] = aleaParmi(divs), b = alea(1, 6);
+      const y = a / x - b;
+      if (b + y === 0) return null;
+      return questionRelation(`x = \\dfrac{${a}}{${b} + y}`, '', [['x', x]], 'y', String(y),
+        [fracL(a + b * x, x), fracL(a - b, x), fracL(a, x + b), String(a * x - b)].filter(s => s !== String(y)),
+        `${m('x(' + b + ' + y) = ' + a)}, donc ${m(b + ' + y = \\dfrac{' + a + '}{' + x + '} = ' + (a / x))} et ${m('y = ' + (a / x) + ' - ' + b + ' = ' + y)}.`);
+    }
+    // a = b x², racine non entière, x > 0
+    const k = aleaParmi([2, 3, 5, 6, 7, 10]), b = alea(2, 5), a = k * b;
+    if (Number.isInteger(Math.sqrt(a))) return null;
+    return questionRelation(`A = ${b}x^2`, 'x > 0', [['A', a]], 'x', `\\sqrt{${k}}`,
+      [`\\sqrt{${a}}`, String(k), fracL(a, 2 * b), `\\dfrac{\\sqrt{${a}}}{${b}}`],
+      `${m(`A = ${b}x^2`)} donne ${m('x^2 = \\dfrac{' + a + '}{' + b + '} = ' + k)} ; comme ${m('x > 0')}, ${m('x = \\sqrt{' + k + '}')}.`);
+  }
+
+  function formuleValeurs(niveau) {
+    return niveau === 1 ? relationLineaire() : niveau === 2 ? relationCarre() : relationAvancee();
+  }
+
+  // ---- Famille H : du tableau de signes à l'expression
+  //      Antilles-Guyane 12/06/2026 : tableau « + 0 − 0 + » de racines −3 et 2 ; (x−2)(x+3) ?
+  function tableauVersExpression(niveau) {
+    const v = varAlea();
+    const nb = niveau === 3 ? 3 : 2;
+    const facteurs = tirerFacteurs(v, nb);
+    if (!facteurs) return null;
+    const racines = facteurs.map(f => f.r);
+    const produit = signesProduit(facteurs, racines);
+    const cleTable = racines.join(',') + '|' + produit.join('');
+    const ecrire = fs => fs.map(f => facL(f, v)).join('');
+    // modèles d'erreurs : racines opposées, signe global inversé (un facteur multiplié par −1), signe d'un seul facteur
+    const variantes = [];
+    variantes.push(facteurs.map(f => ({ a: f.a, b: f.a * f.r, r: -f.r })));                       // « x − r » pris pour « x + r »
+    variantes.push(facteurs.map((f, i) => (i === 0 ? { a: -f.a, b: -f.b, r: f.r } : f)));         // un facteur de signe opposé
+    variantes.push(facteurs.map((f, i) => (i === facteurs.length - 1 ? { a: f.a, b: f.a * f.r, r: -f.r } : f)));   // une racine de signe erroné
+    variantes.push(facteurs.map((f, i) => (i === 0 ? { a: f.a, b: f.a * f.r, r: -f.r } : f)));
+    variantes.push(facteurs.map(f => ({ a: -f.a, b: f.a * f.r, r: -f.r })));
+    const uniq = [], vus = new Set([ecrire(facteurs)]);
+    for (const fs of variantes) {
+      const racineDe = f => -f.b / f.a;
+      const rs = fs.map(racineDe).sort((p, q) => p - q);
+      const fsTri = fs.slice().sort((p, q) => racineDe(p) - racineDe(q));
+      const signes = signesProduit(fsTri, rs);
+      const s = ecrire(fs);
+      if (rs.join(',') + '|' + signes.join('') === cleTable || vus.has(s)) continue;
+      vus.add(s); uniq.push(opt(s));
+      if (uniq.length === 3) break;
+    }
+    if (uniq.length < 3) return null;
+    const petit = nb === 3;
+    return qcm(`On considère le tableau de signes d’une fonction ${m('A')} définie sur ${m('\\mathbb{R}')}.<br>Une expression possible de ${m('A(' + v + ')')} est :`,
+      opt(ecrire(facteurs)), uniq, {
+      figure: tableSignesSVG(v, facteurs, racines, produit, petit, false),
+      explication: `Les valeurs où le tableau vaut 0 sont les racines ${racines.map(r => m(String(r))).join(', ')} : les facteurs sont ${facteurs.map(f => m(facL(f, v))).join(', ')}. Le signe du produit à droite de la dernière racine est ${produit[produit.length - 1] === '+' ? 'positif' : 'négatif'} : il dépend des coefficients de ${m(v)} des facteurs.<div class="explication-figure">${tableSignesSVG(v, facteurs, racines, produit, false, true)}</div>`
+    });
+  }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('equations', {
     titre: 'Équations et inéquations',
     familles: {
@@ -618,7 +762,9 @@
       }),
       'signe-produit': famille({
         nom: 'signe d’un produit', niveaux: [2, 3], base: signeProduit, ordre: { 2: 6 }, quota: { 2: { max: 1 }, 3: { max: 1 } }
-      })
+      }),
+      'formule-valeurs': famille({ nom: 'relation et valeurs données', niveaux: [1, 2, 3], base: formuleValeurs }),
+      'tableau-vers-expression': famille({ nom: 'du tableau de signes à l’expression', niveaux: [1, 2, 3], base: tableauVersExpression })
     }
   });
 })();
