@@ -436,3 +436,23 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
   s'étend aux automatismes libres.
 - **Nouvelle banque** : ajouter son `<script>` à `automatismes/premiere/fiche.html` et son id à la liste `banques`, dégriser
   sa puce dans `automatismes/premiere/index.html`.
+
+## 8. Détails de correction des fiches de calcul (pilote : Première, fiche 12, 16/10/2026)
+
+*Décidé avec David le 16/10/2026 ; à étendre fiche par fiche après sa validation du pilote.*
+
+- **Principe** : dans « Voir la correction des erreurs », un bouton « Détails » à droite de la réponse attendue déplie les étapes
+  du calcul. Il n'existe que pour une réponse fausse (la liste des erreurs ne contient pas les réponses vides). En devoir, la
+  correction n'apparaît qu'après la validation de la tentative, les détails aussi.
+- **Données** : chaque exercice concerné porte `detail: { lignes: [LaTeX…], final: LaTeX }` à côté de `enonce` et `reponse`. Les
+  lignes sont écrites **avec les valeurs du tirage**, dans le générateur, jamais à la main. `final` est la réponse telle qu'elle est
+  écrite à la dernière ligne.
+- **Style des étapes** : la relation générale de la suite (`u_n = u_k + (n-k)\times r`, choix de David) puis la substitution avec
+  les nombres, puis le résultat, de 2 à 5 lignes courtes ; la méthode n'est jamais dans l'énoncé mais peut figurer dans le détail ;
+  un nombre négatif est entre parenthèses dans un produit ; la fraction a son signe devant ; pas de fraction de dénominateur 1 ; la
+  forme simplifiée n'est ajoutée que si elle diffère de ce qui précède ; une ligne longue se coupe en deux (sur téléphone, MathJax la
+  rétrécit).
+- **Contrôle obligatoire** (à relancer pour chaque fiche) : sur un millier de tirages, `final` converti en nombre doit égaler
+  `reponse` (ensembles inclus, expressions en `a` évaluées en un point), la dernière ligne doit contenir `final`, et toute chaîne
+  d'égalités purement numérique d'une ligne (`A = B = C`) doit avoir des membres égaux ; le contrôle doit échouer si on décale
+  `final` (test par mutation). Fiche 12 : 15 000 détails, 0 anomalie, 3 486 chaînes vérifiées, mutation détectée 1 500 fois sur 1 500.

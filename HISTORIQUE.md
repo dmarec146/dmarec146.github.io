@@ -8613,3 +8613,13 @@ Demande de David : se rapprocher du bac avec des questions à 0,5, 0,75 ou 1 poi
 - **Mode par défaut** : le sujet blanc libre s'ouvre en mode fiche (et non plus chrono), à la demande de David ; un devoir impose toujours son mode.
 - **Cache** : numéro de version sur le moteur, les banques, la table et la feuille de style des pages du sujet blanc et de la fiche (même cause que la barre de navigation : les téléphones gardaient l'ancienne version).
 - **Décision de David (16/10/2026)** : pas de réglage du barème devoir par devoir (trop long à utiliser) ; la table de `bareme-sujet-blanc.js` fait foi et David l'ajustera lui-même avec le temps. L'item est retiré de « Chantiers futurs ».
+
+## 2026-10-16 — Détails de correction : pilote sur la fiche 12 de Première (Suites arithmétiques)
+
+Demande de David : une correction détaillée des erreurs dans les fiches de calcul, avec un bouton « Détails » en face de la bonne réponse, d'abord sur une fiche pilote choisie par Claude.
+
+- **Choix de la fiche** : Première, fiche 12 (aucun devoir passé ni ouvert dessus, calculs algorithmiques). Avis donné à David avant de coder : les fiches calculent la réponse mais pas les étapes, il faut donc un générateur d'étapes par type de calcul, vérifié automatiquement ; détails seulement après une erreur ; en devoir seulement après validation. Choix de David sur le format : pour la raison à partir de deux termes, la relation `u_7 = u_3 + (7-3)\times r`, puis sa résolution (appliquée à tous les types de suite arithmétique).
+- **Réalisation** (`cahiers/premiere/cahier-4/fiche-12.html`) : 15 exercices sur 23 ont un `detail: { lignes, final }` : 12.2 a, b (équations), 12.3 a, b (fractions), 12.4 a à f (termes, raison, premier terme), 12.5 a, b (sommes), 12.6 a, b, c (suites à paramètre). Non faits : 12.1 (intervalles) et 12.7 à 12.9 (suites auxiliaires, partie avancée). Bouton « Détails » / « Masquer » dans la liste de la correction des erreurs, étapes dépliables, MathJax recomposé à l'ouverture. Fonctions d'aide communes : `dP`, `dPlus`, `fracD`, `fracDP`, `sommeTermes`, `divisionD`.
+- **Contrôle** (navigateur, 1 000 fiches générées) : 15 000 détails, la réponse finale égale `reponse` dans 100 % des cas, dernière ligne contenant la réponse, 3 486 chaînes d'égalités numériques exactes, test par mutation (réponse finale décalée) : 1 500 détections sur 1 500. Aucune erreur console. Rendu vérifié sur ordinateur et à 375 px (des lignes trop longues ont été coupées en deux).
+- **Règles** : `REGLES-FICHES.md` §8 (principe, données, style, contrôle).
+- **Reste** : validation du pilote par David avant toute extension à d'autres fiches ; pas de « Détails » dans « Voir toutes les réponses » (choix volontaire, à rediscuter).

@@ -588,6 +588,19 @@ Bareme.definir({"points":{"12.1 a)":0.75,"12.1 b)":1,"12.2 a)":0.5,"12.2 b)":0.7
     border-bottom: 1px solid #eee;
   }
   .correction-ligne .id { font-weight: bold; color: var(--gris); }
+  /* détails d'une correction (fiche pilote) : bouton à droite de la réponse attendue, étapes dépliables dessous */
+  .btn-details {
+    margin-left: 8px; padding: 2px 10px;
+    border: 1.3px solid var(--bleu-clair, #B5D4F4); border-radius: 12px;
+    background: #fff; color: var(--bleu); font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .btn-details:hover { background: var(--bleu); border-color: var(--bleu); color: #fff; }
+  .correction-ligne .details {
+    margin: 8px 0 2px 16px; padding: 8px 12px;
+    background: #f5f8fc; border-left: 3px solid var(--bleu); border-radius: 4px; font-size: 14px;
+  }
+  .correction-ligne .details > div { padding: 2px 0; }
+  .correction-ligne .details[hidden] { display: none; }
 
   /* ---------- À partir des tablettes (>=600px) ---------- */
   @media (min-width: 600px) {
@@ -1049,6 +1062,31 @@ function nonCarreParfait(min, max) {
   return d;
 }
 
+// ---- Détails de correction (fiche pilote, 16/10/2026) ----
+// Chaque exercice concerné porte `detail: { lignes: [LaTeX…], final: LaTeX }` : les étapes, écrites avec les valeurs du
+// tirage ; `final` est la réponse telle qu'elle est écrite à la dernière ligne (le contrôle du développeur la compare à `reponse`).
+const dP = v => (v < 0 ? `(${v})` : String(v));                         // entier entre parenthèses s'il est négatif
+const dPlus = v => (v < 0 ? `- ${-v}` : `+ ${v}`);                      // « + 5 » ou « - 5 »
+const fracD = f => { f = math.fraction(f); return fracLatex(f.s * f.n, f.d); };           // fraction math.js -> LaTeX, signe devant
+const fracDP = f => { const t = fracD(f); return t.startsWith('-') ? `(${t})` : t; };      // idem, entre parenthèses si négative
+// somme de termes [coefficient entier, expression LaTeX ou ''] écrite avec les signes : « 12 - 18 + 8 », termes nuls omis
+function sommeTermes(liste) {
+  let s = '';
+  liste.forEach(([k, e]) => {
+    if (k === 0) return;
+    const m = e ? (Math.abs(k) === 1 ? e : `${Math.abs(k)}\\times ${e}`) : String(Math.abs(k));
+    s += (s ? (k < 0 ? ' - ' : ' + ') : (k < 0 ? '-' : '')) + m;
+  });
+  return s || '0';
+}
+// « num / d » écrit puis simplifié : fraction (signe devant) si le numérateur est entier, « x \div d » s'il est lui-même une fraction ;
+// la forme simplifiée n'est ajoutée que si elle diffère de ce qui vient d'être écrit
+const divisionD = (num, d) => {
+  const f = math.fraction(num), q = math.divide(f, d);
+  const ecrit = f.d === 1 ? `${f.s < 0 ? '-' : ''}\\dfrac{${f.n}}{${d}}` : `${fracDP(f)} \\div ${d}`;
+  return ecrit === fracD(q) ? ecrit : `${ecrit} = ${fracD(q)}`;
+};
+
 let paramsAvances = {};
 // Etat tire au hasard hors du tableau exercices : enregistre avec le brouillon et restaure a la
 // reprise, sinon figures/textes ne correspondraient plus aux questions restaurees (30/09/2026).
@@ -1115,17 +1153,32 @@ function genererExercices() {
   {
     let r1, r2; do { r1 = alea(-7,7); r2 = alea(-7,7); } while (r1 >= r2 || r1 + r2 === 0 || r1 * r2 === 0);
     const p = -(r1 + r2), q = -r1 * r2;
+    const D = p * p + 4 * q, sq = r2 - r1;   // delta = (r2 - r1)^2
     ex.push({id:"12.2 a)", type:"num", texteLibre:true,
-      enonce:`\\(x(${fmtLin(1,p,false)})=${q}\\)`, reponse:`{${r1};${r2}}`});
+      enonce:`\\(x(${fmtLin(1,p,false)})=${q}\\)`, reponse:`{${r1};${r2}}`,
+      detail: { lignes: [
+        `x(${fmtLin(1,p,false)})=${q} \\iff ${polyQuadStr(1,p,-q,false,'x')}=0`,
+        `\\Delta = ${dP(p)}^2 - 4\\times 1\\times ${dP(-q)} = ${D} = ${sq}^2`,
+        `x_1 = \\dfrac{-${dP(p)} - ${sq}}{2} = ${r1} \\quad\\text{et}\\quad x_2 = \\dfrac{-${dP(p)} + ${sq}}{2} = ${r2}`,
+        `\\text{Solutions : } \\left\\{${r1}\\,;\\,${r2}\\right\\}`],
+        final: `\\left\\{${r1}\\,;\\,${r2}\\right\\}` }});
   }
   // b) (ax+b)^2 = (cx+d)^2, deux solutions (d-b)/(a-c) et -(b+d)/(a+c)
   {
     let a, b, c, d, s1, s2;
     do { a = alea(1,4); c = alea(1,4); b = aleaNonNul(-7,7); d = aleaNonNul(-7,7); s1 = (d - b) / (a - c); s2 = -(b + d) / (a + c); }
     while (a === c || Math.abs(s1 - s2) < 1e-9 || (a === 1 && c === 1));
+    const x1 = fracLatex(d - b, a - c), x2 = fracLatex(-(b + d), a + c);
     ex.push({id:"12.2 b)", type:"num", texteLibre:true,
       enonce:`\\((${fmtLin(a,b,false)})^2=(${fmtLin(c,d,false)})^2\\)`,
-      reponse:`{${fracStr(d - b, a - c)};${fracStr(-(b + d), a + c)}}`});
+      reponse:`{${fracStr(d - b, a - c)};${fracStr(-(b + d), a + c)}}`,
+      detail: { lignes: [
+        `(${fmtLin(a,b,false)})^2=(${fmtLin(c,d,false)})^2`,
+        `\\iff ${fmtLin(a,b,false)}=${fmtLin(c,d,false)} \\text{ ou } ${fmtLin(a,b,false)}=-(${fmtLin(c,d,false)})`,
+        `${coefL(a - c)}x = ${d - b} \\iff x = ${x1}`,
+        `${coefL(a + c)}x = ${-(b + d)} \\iff x = ${x2}`,
+        `\\text{Solutions : } \\left\\{${x1}\\,;\\,${x2}\\right\\}`],
+        final: `\\left\\{${x1}\\,;\\,${x2}\\right\\}` }});
   }
 
   // ---------- 12.3 : calcul numerique, fraction irreductible (deux natures) ----------
@@ -1137,33 +1190,57 @@ function genererExercices() {
       b = alea(2,9); a = alea(1,2*b); c = alea(1,9); d = alea(2,9); e = alea(1,9); f = alea(2,9);
       N = a*d*f - b*c*e; D = b*d*f;
     } while (pgcd(a,b) !== 1 || pgcd(c,d) !== 1 || pgcd(e,f) !== 1 || N === 0 || D / pgcd(N, D) === 1 || c*e % (d*f) === 0);
+    const brut = `\\dfrac{${N}}{${D}}`, simple = fracL(N, D);
     ex.push({id:"12.3 a)", type:"num", fractionIrreductible:true,
-      enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}\\times\\dfrac{${e}}{${f}}`, reponse: fracStr(N, D)});
+      enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}\\times\\dfrac{${e}}{${f}}`, reponse: fracStr(N, D),
+      detail: { lignes: [
+        `\\dfrac{${c}}{${d}}\\times\\dfrac{${e}}{${f}} = \\dfrac{${c*e}}{${d*f}}`,
+        `\\dfrac{${a}}{${b}} - \\dfrac{${c*e}}{${d*f}} = \\dfrac{${a*d*f}}{${b*d*f}} - \\dfrac{${c*e*b}}{${b*d*f}} = \\dfrac{${a*d*f} - ${c*e*b}}{${b*d*f}}`,
+        `= ${brut}` + (brut === simple ? '' : ` = ${simple}`)],
+        final: simple }});
   }
   // b) image d'une fraction par un trinome : f(p/q) = (a p^2 + b p q + c q^2)/q^2
   {
     let a, b, c, p, q, N, D;
     do { a = aleaNonNul(-4,4); b = alea(-6,6); c = alea(-6,6); q = alea(2,4); p = aleaNonNul(-7,7); N = a*p*p + b*p*q + c*q*q; D = q*q; }
     while (pgcd(p,q) !== 1 || N === 0 || D / pgcd(N, D) === 1);
+    const P = fracL(p, q), Pp = p < 0 ? `\\left(${P}\\right)` : P, brut = `\\dfrac{${N}}{${D}}`, simple = fracL(N, D);
     ex.push({id:"12.3 b)", type:"num", texteLibre:true, sansEgal:true, fractionIrreductible:true,
-      enonce:`\\(f\\left(${fracL(p,q)}\\right)${SI}f(x)=${polyQuadStr(a,b,c,false,'x')}\\)`, reponse: fracStr(N, D)});
+      enonce:`\\(f\\left(${fracL(p,q)}\\right)${SI}f(x)=${polyQuadStr(a,b,c,false,'x')}\\)`, reponse: fracStr(N, D),
+      detail: { lignes: [
+        `f\\left(${P}\\right) = ${sommeTermes([[a, `\\left(${P}\\right)^2`], [b, Pp], [c, '']])}`,
+        `= \\dfrac{${sommeTermes([[a*p*p, ''], [b*p*q, ''], [c*q*q, '']])}}{${q*q}}`,
+        `= ${brut}` + (brut === simple ? '' : ` = ${simple}`)],
+        final: simple }});
   }
 
   // ---------- 12.4 : termes d'une suite arithmetique (anciens 12.4, 12.5, 12.6) ----------
   {
     const r = aleaNonNul(-9,9), u0 = aleaNonNul(-12,12), N = [20,50,100][alea(0,2)];
     ex.push({id:"12.4 a)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{${N}}${SI}r=${r}${ET}u_0=${u0}\\)`, reponse:String(u0 + N*r)});
+      enonce:`\\(u_{${N}}${SI}r=${r}${ET}u_0=${u0}\\)`, reponse:String(u0 + N*r),
+      detail: { lignes: [
+        `u_{${N}} = u_0 + ${N}\\times r`,
+        `u_{${N}} = ${u0} + ${N}\\times ${dP(r)} = ${u0} ${dPlus(N*r)} = ${u0 + N*r}`],
+        final: String(u0 + N*r) }});
   }
   {
     const r = aleaNonNul(-9,9), u1 = aleaNonNul(-12,12), N = [20,50,100][alea(0,2)];
     ex.push({id:"12.4 b)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{${N}}${SI}r=${r}${ET}u_1=${u1}\\)`, reponse:String(u1 + (N-1)*r)});
+      enonce:`\\(u_{${N}}${SI}r=${r}${ET}u_1=${u1}\\)`, reponse:String(u1 + (N-1)*r),
+      detail: { lignes: [
+        `u_{${N}} = u_1 + (${N}-1)\\times r`,
+        `u_{${N}} = ${u1} + ${N-1}\\times ${dP(r)} = ${u1} ${dPlus((N-1)*r)} = ${u1 + (N-1)*r}`],
+        final: String(u1 + (N-1)*r) }});
   }
   {
     const r = aleaNonNul(-9,9), K = alea(3,9), T = alea(-15,15), N = [51,101][alea(0,1)];
     ex.push({id:"12.4 c)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{${N}}${SI}r=${r}${ET}u_{${K}}=${T}\\)`, reponse:String(T + (N-K)*r)});
+      enonce:`\\(u_{${N}}${SI}r=${r}${ET}u_{${K}}=${T}\\)`, reponse:String(T + (N-K)*r),
+      detail: { lignes: [
+        `u_{${N}} = u_{${K}} + (${N}-${K})\\times r`,
+        `u_{${N}} = ${T} + ${N-K}\\times ${dP(r)} = ${T} ${dPlus((N-K)*r)} = ${T + (N-K)*r}`],
+        final: String(T + (N-K)*r) }});
   }
 
   // ---------- 12.5 : raison et premier terme a partir de deux termes (anciens 12.7, 12.8) ----------
@@ -1177,46 +1254,97 @@ function genererExercices() {
     const r = math.divide(math.subtract(T2, T1), K2 - K1);
     const u0 = math.subtract(T1, math.multiply(r, K1));
     const tL = f => fracL(f.s * f.n, f.d);
-    return {txt:`u_{${K1}}=${tL(T1)}${ET}u_{${K2}}=${tL(T2)}`, r: fracToStr(r), u0: fracToStr(u0)};
+    return {txt:`u_{${K1}}=${tL(T1)}${ET}u_{${K2}}=${tL(T2)}`, r: fracToStr(r), u0: fracToStr(u0), K1, K2, T1, T2, rF: r, u0F: u0, tL};
   };
-  { const s = deuxTermes(false); ex.push({id:"12.4 d)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(r${SI}${s.txt}\\)`, reponse:s.r}); }
-  { const s = deuxTermes(false); ex.push({id:"12.4 e)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(u_0${SI}${s.txt}\\)`, reponse:s.u0}); }
-  { const s = deuxTermes(true); ex.push({id:"12.4 f)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(u_0${SI}${s.txt}\\)`, reponse:s.u0}); }
+  // Détail « raison » : on écrit la relation u_k2 = u_k1 + (k2 - k1) r, puis on la résout (David, 16/10/2026)
+  const detailRaison = s => {
+    const d = s.K2 - s.K1, delta = math.subtract(s.T2, s.T1);
+    return { lignes: [
+      `u_{${s.K2}} = u_{${s.K1}} + (${s.K2}-${s.K1})\\times r`,
+      `${s.tL(s.T2)} = ${s.tL(s.T1)} + ${d}\\,r`,
+      `${d}\\,r = ${s.tL(s.T2)} - ${fracDP(s.T1)} = ${fracD(delta)}`,
+      `r = ${divisionD(delta, d)}`],
+      final: fracD(s.rF) };
+  };
+  // Détail « premier terme » : la raison d'abord, puis u_k1 = u_0 + k1 r
+  const detailU0 = s => {
+    const d = s.K2 - s.K1, delta = math.subtract(s.T2, s.T1);
+    return { lignes: [
+      `u_{${s.K2}} = u_{${s.K1}} + (${s.K2}-${s.K1})\\times r`,
+      `${d}\\,r = ${s.tL(s.T2)} - ${fracDP(s.T1)} \\iff r = ${divisionD(delta, d)}`,
+      `u_{${s.K1}} = u_0 + ${s.K1}\\times r`,
+      `u_0 = ${s.tL(s.T1)} - ${s.K1}\\times ${fracDP(s.rF)} = ${fracD(s.u0F)}`],
+      final: fracD(s.u0F) };
+  };
+  { const s = deuxTermes(false); ex.push({id:"12.4 d)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(r${SI}${s.txt}\\)`, reponse:s.r, detail: detailRaison(s)}); }
+  { const s = deuxTermes(false); ex.push({id:"12.4 e)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(u_0${SI}${s.txt}\\)`, reponse:s.u0, detail: detailU0(s)}); }
+  { const s = deuxTermes(true); ex.push({id:"12.4 f)", type:"num", texteLibre:true, sansEgal:true, enonce:`\\(u_0${SI}${s.txt}\\)`, reponse:s.u0, detail: detailU0(s)}); }
 
   // ---------- 12.5 : somme de termes consecutifs d'une suite arithmetique (02/10/2026) ----------
   // a) u_0 + ... + u_N avec r et u_0 donnes : (N+1)(u_0+u_N)/2, entier
   {
     const r = aleaNonNul(-6,6), u0 = aleaNonNul(-10,10), N = alea(10,30);
+    const uN = u0 + N*r, S = (N+1)*(2*u0 + N*r)/2;
     ex.push({id:"12.5 a)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_0+u_1+\\cdots+u_{${N}}\\), où \\(\\left(u_n\\right)\\) est arithmétique de raison \\(${r}\\) et de premier terme \\(u_0=${u0}\\)`, reponse:String((N+1)*(2*u0 + N*r)/2)});
+      enonce:`\\(u_0+u_1+\\cdots+u_{${N}}\\), où \\(\\left(u_n\\right)\\) est arithmétique de raison \\(${r}\\) et de premier terme \\(u_0=${u0}\\)`, reponse:String((N+1)*(2*u0 + N*r)/2),
+      detail: { lignes: [
+        `u_{${N}} = u_0 + ${N}\\times r = ${u0} + ${N}\\times ${dP(r)} = ${uN}`,
+        `\\text{Il y a } ${N}+1 = ${N+1} \\text{ termes, donc } S = ${N+1}\\times\\dfrac{u_0 + u_{${N}}}{2} = ${N+1}\\times\\dfrac{${u0} ${dPlus(uN)}}{2} = ${N+1}\\times\\dfrac{${u0 + uN}}{2}`,
+        `S = \\dfrac{${(N+1)*(u0+uN)}}{2} = ${S}`],
+        final: String(S) }});
   }
   // b) somme numerique f + (f+r) + ... + dernier, termes tous positifs : compter les termes est la difficulte
   {
     let f, r, n, der;
     do { r = [-7,-6,-5,-4,-3,-2,2,3,4,5,6,7][alea(0,11)]; n = alea(8,25); f = alea(1,60); der = f + (n-1)*r; } while (der < 1 || der > 200 || (r > 0 && f > 15));
+    const S = n*(f + der)/2;
     ex.push({id:"12.5 b)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(${f}+${f+r}+${f+2*r}+\\cdots+${der}\\)`, reponse:String(n*(f + der)/2)});
+      enonce:`\\(${f}+${f+r}+${f+2*r}+\\cdots+${der}\\)`, reponse:String(n*(f + der)/2),
+      detail: { lignes: [
+        `\\text{Raison : } r = ${f+r} - ${f} = ${r}. \\quad \\text{Nombre de termes : } \\dfrac{${der} - ${f}}{${dP(r)}} + 1 = ${(der-f)/r} + 1 = ${n}`,
+        `S = ${n}\\times\\dfrac{${f} + ${der}}{2} = \\dfrac{${n}\\times ${f+der}}{2} = ${S}`],
+        final: String(S) }});
   }
 
   // ---------- 12.6 : suites arithmetiques a parametre a (anciens 12.9, 12.10, 12.11) ----------
   {
     const k = aleaNonNul(-4,4), N = alea(6,15);
     const c = 1 + k*N;
+    const cTex = c === 1 ? 'a' : c === -1 ? '-a' : c === 0 ? '0' : `${c}a`;
     ex.push({id:"12.6 a)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{${N}}${SI}r=${coefL(k)}a${ET}u_0=a\\)`, reponse: c === 1 ? 'a' : c === -1 ? '-a' : c === 0 ? '0' : `${c}*a`});
+      enonce:`\\(u_{${N}}${SI}r=${coefL(k)}a${ET}u_0=a\\)`, reponse: c === 1 ? 'a' : c === -1 ? '-a' : c === 0 ? '0' : `${c}*a`,
+      detail: { lignes: [
+        `u_{${N}} = u_0 + ${N}\\times r = a + ${N}\\times\\left(${coefL(k)}a\\right)`,
+        `u_{${N}} = a ${dPlus(N*k)}a = ${cTex}`],
+        final: cTex }});
   }
   {
     const K = aleaNonNul(-6,6), C = aleaNonNul(-3,3);   // u_n = (C a^2 + K(n-1))/a, raison K/a
     const kTxt = K===1 ? '+(n-1)' : K===-1 ? '-(n-1)' : (K>0 ? `+${K}(n-1)` : `-${-K}(n-1)`);
+    const nTxt = K===1 ? '+n' : K===-1 ? '-n' : (K>0 ? `+${K}n` : `-${-K}n`);          // terme K n du numérateur de u_{n+1}
+    const ak = Math.abs(K), kn = ak === 1 ? '' : String(ak);
+    const numDiff = K > 0 ? `${kn}n - ${kn}(n-1)` : `-${kn}n + ${kn}(n-1)`;             // (K n) - K(n-1)
+    const kFin = (K < 0 ? '-' : '') + `\\dfrac{${ak}}{a}`;
     ex.push({id:"12.6 b)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(r${SI}u_n=\\dfrac{${coefL(C)}a^2${kTxt}}{a}\\)`, reponse: K===1 ? '1/a' : K===-1 ? '-1/a' : `${K}/a`});
+      enonce:`\\(r${SI}u_n=\\dfrac{${coefL(C)}a^2${kTxt}}{a}\\)`, reponse: K===1 ? '1/a' : K===-1 ? '-1/a' : `${K}/a`,
+      detail: { lignes: [
+        `r = u_{n+1} - u_n`,
+        `u_{n+1} - u_n = \\dfrac{${coefL(C)}a^2${nTxt}}{a} - \\dfrac{${coefL(C)}a^2${kTxt}}{a} = \\dfrac{${numDiff}}{a}`,
+        `r = ${kFin}`],
+        final: kFin }});
   }
   // c) ancien 12.11 corrige : la condition « de raison R » manquait (a = 4/5 attendu sans elle)
   {
     let p, q, s, R; do { p = alea(-9,9); q = aleaNonNul(-6,6); s = alea(2,5); R = aleaNonNul(-5,5); } while (pgcd(pgcd(Math.abs(p), Math.abs(q)), s) !== 1 || (R * s) % q === 0);
+    const numAvec = m => `${p === 0 ? '' : p}${p === 0 ? coefL(q) : (q > 0 ? '+' : '-') + coefL(Math.abs(q))}a${m}`;   // numérateur de u_n (m = n) ou de u_{n+1} (m = (n+1))
     ex.push({id:"12.6 c)", type:"num", texteLibre:true, sansEgal:true,
       enonce:`\\(a${SI}u_n=\\dfrac{${p === 0 ? '' : p}${p === 0 ? coefL(q) : (q > 0 ? '+' : '-') + coefL(Math.abs(q))}an}{${s}}${ET}r=${R}\\)`,
-      reponse: fracStr(R * s, q)});
+      reponse: fracStr(R * s, q),
+      detail: { lignes: [
+        `r = u_{n+1} - u_n = \\dfrac{${numAvec('(n+1)')} - \\left(${numAvec('n')}\\right)}{${s}} = \\dfrac{${coefL(q)}a}{${s}}`,
+        `\\dfrac{${coefL(q)}a}{${s}} = ${R} \\iff ${coefL(q)}a = ${R * s}`,
+        `a = ${fracLatex(R * s, q)}`],
+        final: fracLatex(R * s, q) }});
   }
 
   // ---------- 12.7 : suite auxiliaire v_n = u_n^2 ----------
@@ -2573,12 +2701,27 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      // « Détails » (fiche pilote) : les étapes du calcul, repliées par défaut, seulement pour une réponse fausse ou vide
+      const details = ex.detail
+        ? ` <button type="button" class="btn-details" aria-expanded="false" onclick="basculerDetails(${idx}, this)">Détails</button>`
+          + `<div class="details" id="details-${idx}" hidden>${ex.detail.lignes.map(l => `<div>\\(${l}\\)</div>`).join('')}</div>`
+        : '';
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${details}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
   correctionDiv.classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
+}
+
+function basculerDetails(idx, bouton) {
+  const bloc = document.getElementById('details-' + idx);
+  if (!bloc) return;
+  const ouvrir = bloc.hidden;
+  bloc.hidden = !ouvrir;
+  bouton.textContent = ouvrir ? 'Masquer' : 'Détails';
+  bouton.setAttribute('aria-expanded', String(ouvrir));
+  if (ouvrir && window.MathJax) MathJax.typesetPromise([bloc]);
 }
 
 function toggleCorrection() {
