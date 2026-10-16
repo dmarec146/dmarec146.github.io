@@ -8612,4 +8612,4 @@ Demande de David : se rapprocher du bac avec des questions à 0,5, 0,75 ou 1 poi
 - **Outil de contrôle** : `Controle.verifierBareme()` (chaque famille disponible à un niveau a ses points à ce niveau, aucune ligne inutile) ; à relancer à chaque famille ajoutée.
 - **Mode par défaut** : le sujet blanc libre s'ouvre en mode fiche (et non plus chrono), à la demande de David ; un devoir impose toujours son mode.
 - **Cache** : numéro de version sur le moteur, les banques, la table et la feuille de style des pages du sujet blanc et de la fiche (même cause que la barre de navigation : les téléphones gardaient l'ancienne version).
-- **Reste** : le barème est fixe pour toutes les attributions de devoir (réglage devoir par devoir toujours à faire, voir « Chantiers futurs »).
+- **Décision de David (16/10/2026)** : pas de réglage du barème devoir par devoir (trop long à utiliser) ; la table de `bareme-sujet-blanc.js` fait foi et David l'ajustera lui-même avec le temps. L'item est retiré de « Chantiers futurs ».
