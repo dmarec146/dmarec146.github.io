@@ -297,6 +297,27 @@
     return erreurs;
   };
 
+  // ---------- pourcentages ----------
+  const nbFr = s => parseFloat(s.replace(/−/g, '-').replace(/ /g, '').replace(',', '.'));
+  const NB = '\\d[\\d ]*(?:,\\d+)?';
+  VERIFS['pourcentages/formule-evolution'] = q => {
+    const t = zones(q.enonce).texte.replace(/\s/g, ' ');       // \s couvre aussi les espaces insécables
+    const taux = [...t.matchAll(new RegExp('(hausse|baisse) de (' + NB + ') %', 'g'))].map(r => (r[1] === 'hausse' ? 1 : -1) * nbFr(r[2]));
+    let attendu;
+    if (/chaque année pendant/.test(t)) {
+      const P = nbFr(t.match(new RegExp('vaut (' + NB + ') au'))[1]), pc = nbFr(t.match(new RegExp('de (' + NB + ') % chaque'))[1]), n = parseInt(t.match(/pendant (\d+) ans/)[1], 10);
+      attendu = P * Math.pow(1 + (/diminue/.test(t) ? -pc : pc) / 100, n);
+    } else if (/avant cette évolution/.test(t)) {
+      attendu = nbFr(t.match(new RegExp('est de (' + NB + ')'))[1]) / (1 + taux[0] / 100);
+    } else if (/successivement/.test(t)) {
+      attendu = nbFr(t.match(new RegExp(NB))[0]) * (1 + taux[0] / 100) * (1 + taux[1] / 100);
+    } else {
+      const pc = nbFr(t.match(new RegExp('de (' + NB + ') %'))[1]);
+      attendu = nbFr(t.match(new RegExp(NB))[0]) * (1 + (/diminue/.test(t) ? -pc : pc) / 100);
+    }
+    return verifExpression(q, attendu);
+  };
+
   // ---------- droites ----------
   VERIFS['droites/coefficient-deux-points'] = q => {
     const e = q.enonce.replace(/\\,/g, ' ');

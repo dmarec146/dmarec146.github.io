@@ -824,6 +824,102 @@
   }
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+  // ---- Famille K : choisir le calcul qui traduit une évolution (sans le calculer)
+  //      Métropole et Polynésie 2026 : « une hausse de t % puis une baisse de t' % : quelle expression ? »
+  const optE = e => ({ affichage: m(e), cle: e });
+  const coefEvol = t => R(1 + t / 100);                         // hausse de 15 % -> 1,15 ; baisse de 15 % -> 0,85 (t signé)
+  const signeTex = v => (v < 0 ? '-' : '+');
+  const nomsEvol = t => (t > 0 ? 'une hausse' : 'une baisse') + ' de ' + pct(Math.abs(t));
+  // trois distracteurs : expressions écrites ET valeurs numériques, pour qu'aucun ne soit égal à la bonne expression
+  function troisFausses(bonne, valeurBonne, erreurs) {
+    const vus = new Set([bonne]), res = [];
+    for (const [e, v] of erreurs) {
+      if (vus.has(e) || Math.abs(v - valeurBonne) < 1e-9 * Math.max(1, Math.abs(valeurBonne))) continue;
+      vus.add(e); res.push(optE(e));
+      if (res.length === 3) break;
+    }
+    return res.length === 3 ? res : null;
+  }
+
+  // N1 : une seule évolution
+  function formuleUneEvolution() {
+    const c = ctxAlea();
+    const P = aleaParmi(c.valeurs), t = aleaParmi([5, 8, 10, 12, 15, 20, 25, 30, 40]);
+    const hausse = Math.random() < 0.5, ts = hausse ? t : -t;
+    const k = coefEvol(ts), mult = (a, b) => [`${decL(a)} \\times ${decL(b)}`, a * b];
+    const [bonne, vb] = mult(P, k);
+    const fausses = troisFausses(bonne, vb, O.melanger([
+      mult(P, R(t / 100)), [`${decL(P)} ${signeTex(ts)} ${decL(t)}`, P + ts], mult(P, coefEvol(-ts)), mult(P, R(1 + ts / 1000))
+    ]));
+    if (!fausses) return null;
+    return qcm(`${c.intro(P)} ${c.sujet} ${hausse ? 'augmente' : 'diminue'} de ${pct(t)}.<br>Parmi les calculs suivants, lequel donne la nouvelle valeur ?`, optE(bonne), fausses, {
+      explication: `${hausse ? 'Augmenter' : 'Diminuer'} de ${pct(t)}, c’est multiplier par ${m('1 ' + signeTex(ts) + ' ' + decL(R(t / 100)) + ' = ' + decL(k))}. Le calcul est ${m(bonne)}.`
+    });
+  }
+
+  // N2 : deux évolutions successives
+  function formuleDeuxEvolutions() {
+    const c = ctxAlea();
+    const TAUX = [5, 10, 15, 20, 25, 30, 40];
+    const P = aleaParmi(c.valeurs), a = aleaParmi([-1, 1]) * aleaParmi(TAUX), b = aleaParmi([-1, 1]) * aleaParmi(TAUX);
+    const k1 = coefEvol(a), k2 = coefEvol(b);
+    const bonne = `${decL(P)} \\times ${decL(k1)} \\times ${decL(k2)}`, vb = P * k1 * k2;
+    const fausses = troisFausses(bonne, vb, O.melanger([
+      [`${decL(P)} \\times ${decL(coefEvol(a + b))}`, P * coefEvol(a + b)],
+      [`${decL(P)} \\times ${decL(k1)} \\times ${decL(coefEvol(-b))}`, P * k1 * coefEvol(-b)],
+      [`${decL(P)} \\times ${decL(R(Math.abs(a) / 100))} \\times ${decL(R(Math.abs(b) / 100))}`, P * Math.abs(a) * Math.abs(b) / 10000],
+      [`${decL(P)} ${signeTex(a)} ${decL(Math.abs(a))} ${signeTex(b)} ${decL(Math.abs(b))}`, P + a + b]
+    ]));
+    if (!fausses) return null;
+    return qcm(`${c.intro(P)} ${c.sujet} subit successivement ${nomsEvol(a)}, puis ${nomsEvol(b)}.<br>Parmi les calculs suivants, lequel donne la valeur finale ?`, optE(bonne), fausses, {
+      explication: `Chaque évolution multiplie par son coefficient : ${m(decL(k1))} pour ${nomsEvol(a)}, ${m(decL(k2))} pour ${nomsEvol(b)}. Les coefficients se multiplient : ${m(bonne)}. On n’additionne pas les taux.`
+    });
+  }
+
+  // N3 (variante 1) : le calcul qui redonne la valeur avant l'évolution
+  function formuleValeurInitiale() {
+    const c = ctxAlea();
+    const P0 = aleaParmi(c.valeurs), t = aleaParmi([5, 10, 20, 25, 40]);
+    const hausse = Math.random() < 0.5, ts = hausse ? t : -t, k = coefEvol(ts);
+    const V = R(P0 * k);
+    if (!entier(V) || V === P0) return null;
+    const bonne = `\\dfrac{${decL(V)}}{${decL(k)}}`, vb = V / k;
+    const fausses = troisFausses(bonne, vb, O.melanger([
+      [`${decL(V)} \\times ${decL(coefEvol(-ts))}`, V * coefEvol(-ts)], [`\\dfrac{${decL(V)}}{${decL(R(t / 100))}}`, V / (t / 100)],
+      [`${decL(V)} ${signeTex(-ts)} ${decL(t)}`, V - ts], [`${decL(V)} \\times ${decL(k)}`, V * k]
+    ]));
+    if (!fausses) return null;
+    return qcm(`Après ${nomsEvol(ts)}, ${minuscule(c.maj)} est de ${c.fmt(V)}.<br>Parmi les calculs suivants, lequel donne la valeur avant cette évolution ?`, optE(bonne), fausses, {
+      explication: `La valeur initiale, multipliée par ${m(decL(k))}, donne ${m(decL(V))}. Pour revenir en arrière, on <b>divise</b> par ${m(decL(k))} : ${m(bonne)}. Multiplier par ${m(decL(coefEvol(-ts)))} serait faux, car ${nomsEvol(-ts)} ne compense pas ${nomsEvol(ts)}.`
+    });
+  }
+
+  // N3 (variante 2) : la même évolution répétée n fois
+  function formuleRepetee() {
+    const P = aleaParmi([200, 500, 800, 1000, 1200, 2000, 5000]), t = aleaParmi([2, 3, 4, 5, 6, 8, 10]), n = aleaParmi([3, 4, 5, 6]);
+    const hausse = Math.random() < 0.5, ts = hausse ? t : -t, k = coefEvol(ts);
+    const bonne = `${decL(P)} \\times ${decL(k)}^{${n}}`, vb = P * Math.pow(k, n);
+    const fausses = troisFausses(bonne, vb, O.melanger([
+      [`${decL(P)} \\times ${decL(coefEvol(n * ts))}`, P * coefEvol(n * ts)], [`${decL(P)} \\times ${decL(k)} \\times ${n}`, P * k * n],
+      [`${decL(P)} \\times ${decL(k)}^{${n - 1}}`, P * Math.pow(k, n - 1)], [`${decL(P)} \\times ${decL(R(t / 100))}^{${n}}`, P * Math.pow(t / 100, n)]
+    ]));
+    if (!fausses) return null;
+    return qcm(`Une grandeur vaut ${dec(P)} au départ. Elle ${hausse ? 'augmente' : 'diminue'} de ${pct(t)} chaque année pendant ${n} ans.<br>Quelle expression donne sa valeur au bout de ${n} ans ?`, optE(bonne), fausses, {
+      explication: `Chaque année, la valeur est multipliée par ${m(decL(k))}. Au bout de ${n} ans, elle est multipliée ${n} fois de suite par ce coefficient, c’est-à-dire par ${m(decL(k) + '^{' + n + '}')} : on obtient ${m(bonne)}.`
+    });
+  }
+
+  function formuleEvolution(niveau) {
+    for (let essai = 0; essai < 30; essai++) {
+      const q = niveau === 1 ? formuleUneEvolution() : niveau === 2 ? formuleDeuxEvolutions() : aleaParmi([formuleValeurInitiale, formuleRepetee])();
+      if (q) return q;
+    }
+    return null;
+  }
+
+  // =====================================================================
   // Composition d'une série de 10 à 12 (quotas) :
   //   niveau 1 : exactement 1 question à deux évolutions ; au moins 1 « valeur initiale »
   //   niveau 2 : au moins 1 coefficient réciproque ; deux questions un cran plus difficiles
@@ -842,7 +938,8 @@
       'evolutions-successives': famille({ nom: 'évolutions successives', niveaux: [1, 2, 3], base: evolutionsSuccessives, variantes3: [tauxRepete, tauxMoyen, comparerAvantApres], partBase3: 0.4, quota: { 1: { min: 1, max: 1 } }, ordre: { 1: 5, 2: 7 } }),
       'reciproque': famille({ nom: 'coefficient réciproque', niveaux: [2, 3], base: reciproque, variantes3: [reciproqueFraction, reciproqueDouble], partBase3: 0.25, quota: { 2: { min: 1, priorite: 3 }, 3: { min: 1 } }, ordre: { 2: 8 } }),
       'evolution-manquante': famille({ nom: 'évolution manquante', niveaux: [2, 3], base: evolutionManquante, quota: { 2: { min: 1, max: 1 } }, ordre: { 2: 9 } }),
-      'aire-volume': famille({ nom: 'aires et volumes', niveaux: [2, 3], base: aireVolumeN2, variantes3: [() => aireDimension(false), volumeDimension, aireRectangle, dimensionInverse, () => multiplicateurDimension()], quota: { 2: { min: 1, max: 1 }, 3: { min: 1 } }, ordre: { 2: 10 } })
+      'aire-volume': famille({ nom: 'aires et volumes', niveaux: [2, 3], base: aireVolumeN2, variantes3: [() => aireDimension(false), volumeDimension, aireRectangle, dimensionInverse, () => multiplicateurDimension()], quota: { 2: { min: 1, max: 1 }, 3: { min: 1 } }, ordre: { 2: 10 } }),
+      'formule-evolution': famille({ nom: 'choisir le calcul d’une évolution', niveaux: [1, 2, 3], base: formuleEvolution, ordre: { 1: 6, 2: 11 } })
     }
   });
 })();
