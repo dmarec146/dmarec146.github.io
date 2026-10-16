@@ -8584,3 +8584,17 @@ entrée : dix commits locaux de code et un de documentation, à pousser sur le m
   (proportions : 6 / 6 / 7).
 - **Reste ouvert** : à pousser ; relire le contenu choisi par Claude ; les captures d'écran du guide de l'élève ne sont pas
   concernées ; les anciens générateurs peuvent encore produire des énoncés identiques à figure près (droites N1 notamment).
+
+## 2026-10-16 — Automatismes : curseur de lecture des coordonnées sur les repères des QCM
+
+Demande de David : les graphiques de courbes des QCM doivent avoir, en plus du zoom, le curseur (déjà présent sur les fiches du cahier).
+
+- **Comportement** : un repère de la question (pas les petits repères cliquables des options) reçoit un second bouton sous la loupe ;
+  activé, un réticule en pointillés suit la souris et affiche `(x ; y)` arrondi au centième, virgule décimale. Le bouton existe aussi
+  dans la fenêtre agrandie (en haut à gauche). L'état est commun à tous les repères de la page (classe `curseur-actif` sur `<html>`) et
+  survit aux réaffichages des cartes. Souris seulement : sans survol réel (tablette, téléphone) le bouton est masqué, comme sur les
+  fiches du cahier où le curseur « au doigt » est une autre mécanique, non portée ici. Masqué à l'impression.
+- **Technique** : `repere()` (`graphiques.js`) écrit `data-repere="xmin,xmax,ymin,ymax,marge,unité"` ; `moteur.js` (`figureZoomable`,
+  `deplacerCurseur`, `basculerCurseur`) et `automatismes.css` (`.curseur-btn`). Valable pour fiche, mode chrono et sujet blanc.
+- **Vérifié** (navigateur) : au centre d'un repère de fenêtre [−4 ; 2] × [−7 ; 4], le curseur lit (−1 ; −1,5), exact ; le réticule
+  disparaît hors de la zone tracée ; même lecture dans la fenêtre agrandie ; bascule du bouton dans les deux sens ; aucune erreur console.

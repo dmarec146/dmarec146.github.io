@@ -67,7 +67,7 @@
     const X = x => n2(marge + (x - xmin) * u);
     const Y = y => n2(marge + (ymax - y) * u);
     const s = [];
-    s.push(`<svg class="repere-svg${petit ? ' repere-petit' : ''}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`);
+    s.push(`<svg class="repere-svg${petit ? ' repere-petit' : ''}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" data-repere="${xmin},${xmax},${ymin},${ymax},${marge},${u}" xmlns="http://www.w3.org/2000/svg">`);
 
     // quadrillage
     let g = '';

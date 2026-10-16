@@ -638,11 +638,68 @@
   // non : la loupe y masquerait une donnée. Ces figures-là reçoivent une classe
   // qui réserve la place du bouton en dehors du dessin.
   const FIGURE_DENSE = /tab-croise-svg|tab-signes-svg|arbre-svg|boite-svg/;
-  function figureZoomable(html) {
+  // Curseur de lecture des coordonnées (comme sur les fiches du cahier) : un repère de la question (pas les
+  // petits repères des options, cliquables) reçoit un second bouton sous la loupe. L'état (actif ou non) est une
+  // classe de <html> : il vaut pour tous les repères et survit aux réaffichages des cartes.
+  const ICONE_CURSEUR = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+    + '<circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>'
+    + '<line x1="12" y1="1.5" x2="12" y2="7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+    + '<line x1="12" y1="16.7" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+    + '<line x1="1.5" y1="12" x2="7.3" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+    + '<line x1="16.7" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const boutonCurseurHTML = () => '<span class="curseur-btn" data-action="curseur" role="button" tabindex="0" '
+    + 'title="Afficher les coordonnées du curseur" aria-label="Afficher les coordonnées du curseur">' + ICONE_CURSEUR + '</span>';
+  function basculerCurseur() { document.documentElement.classList.toggle('curseur-actif'); masquerCurseur(); }
+  let curseurSvg = null;
+  function masquerCurseur() {
+    if (curseurSvg) { const g = curseurSvg.querySelector('.curseur-groupe'); if (g) g.setAttribute('visibility', 'hidden'); }
+    curseurSvg = null;
+  }
+  const formatCoord = v => String(Math.round(v * 100) / 100).replace('.', ',').replace('-', '−');
+  function deplacerCurseur(ev) {
+    if (ev.pointerType !== 'mouse' || !document.documentElement.classList.contains('curseur-actif')) return;
+    const svg = ev.target.closest && ev.target.closest('svg[data-repere]');
+    if (!svg || svg.closest('.opt')) { masquerCurseur(); return; }
+    if (curseurSvg && curseurSvg !== svg) masquerCurseur();
+    const [xmin, xmax, ymin, ymax, marge, u] = svg.dataset.repere.split(',').map(Number);
+    const pt = svg.createSVGPoint();
+    pt.x = ev.clientX; pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const L = svg.viewBox.baseVal.width, H = svg.viewBox.baseVal.height;
+    if (p.x < marge || p.x > L - marge || p.y < marge || p.y > H - marge) { masquerCurseur(); return; }
+    let g = svg.querySelector('.curseur-groupe');
+    if (!g) {
+      g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'curseur-groupe');
+      g.setAttribute('pointer-events', 'none');
+      g.innerHTML = '<line class="cv" y1="' + marge + '" y2="' + (H - marge) + '" stroke="#777" stroke-width="1" stroke-dasharray="3,3"/>'
+        + '<line class="ch" x1="' + marge + '" x2="' + (L - marge) + '" stroke="#777" stroke-width="1" stroke-dasharray="3,3"/>'
+        + '<text font-size="10" font-family="Georgia, serif" fill="#222" stroke="#fff" stroke-width="3" paint-order="stroke"></text>';
+      svg.appendChild(g);
+    }
+    const cv = g.querySelector('.cv'), ch = g.querySelector('.ch'), tx = g.querySelector('text');
+    cv.setAttribute('x1', p.x.toFixed(1)); cv.setAttribute('x2', p.x.toFixed(1));
+    ch.setAttribute('y1', p.y.toFixed(1)); ch.setAttribute('y2', p.y.toFixed(1));
+    const droite = p.x > L - 70;
+    tx.setAttribute('x', (droite ? p.x - 5 : p.x + 5).toFixed(1));
+    tx.setAttribute('y', (p.y > marge + 14 ? p.y - 5 : p.y + 13).toFixed(1));
+    tx.setAttribute('text-anchor', droite ? 'end' : 'start');
+    tx.textContent = '(' + formatCoord(xmin + (p.x - marge) / u) + ' ; ' + formatCoord(ymax - (p.y - marge) / u) + ')';
+    g.setAttribute('visibility', 'visible');
+    curseurSvg = svg;
+  }
+  document.addEventListener('pointermove', deplacerCurseur);
+  document.addEventListener('keydown', function (ev) {
+    const b = ev.target.closest && ev.target.closest('.curseur-btn');
+    if (b && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); basculerCurseur(); }
+  });
+
+  function figureZoomable(html, avecCurseur) {
     if (!html || String(html).indexOf('<svg') === -1) return html;
     return '<span class="figure-zoom' + (FIGURE_DENSE.test(html) ? ' figure-zoom-dense' : '') + '">' + html
       + '<span class="zoom-btn" data-action="zoom" role="button" title="Agrandir la figure" aria-label="Agrandir la figure">'
-      + ICONE_LOUPE + '</span></span>';
+      + ICONE_LOUPE + '</span>'
+      + (avecCurseur && String(html).indexOf('data-repere') !== -1 ? boutonCurseurHTML() : '') + '</span>';
   }
   function modaleHTML() {
     return '<div class="modal-figure" id="modal-figure" data-action="fermer-zoom" hidden>'
@@ -662,6 +719,9 @@
     copie.classList.remove('repere-petit');
     corps.innerHTML = '';
     corps.appendChild(copie);
+    // le curseur se retrouve dans la fenêtre agrandie, en haut à gauche (la croix de fermeture est à droite)
+    if (copie.hasAttribute('data-repere') && !enveloppe.closest('.opt')) corps.insertAdjacentHTML('beforeend', boutonCurseurHTML());
+    masquerCurseur();
     modale.hidden = false;
   }
   function fermerZoom() {
@@ -701,7 +761,7 @@
       retour = `<div class="carte-retour visible"><span class="verdict">${verdict}</span>${q.explication ? `<div class="explication">${q.explication}</div>` : ''}</div>`;
     }
     const corps = q.figure
-      ? `<div class="carte-corps avec-figure"><div class="carte-enonce">${q.enonce}</div><div class="carte-figure">${figureZoomable(q.figure)}</div><div class="carte-options${q.optionsLarges ? ' options-larges' : ''}">${options}</div></div>`
+      ? `<div class="carte-corps avec-figure"><div class="carte-enonce">${q.enonce}</div><div class="carte-figure">${figureZoomable(q.figure, true)}</div><div class="carte-options${q.optionsLarges ? ' options-larges' : ''}">${options}</div></div>`
       : `<div class="carte-corps"><div class="carte-enonce">${q.enonce}</div><div class="carte-options${q.optionsLarges ? ' options-larges' : ''}">${options}</div></div>`;
     // Sujet blanc : l'étiquette nomme le thème ET la méthode (« intersection sur un
     // arbre pondéré ») — c'est un indice que l'épreuve ne donne pas. On ne l'affiche
@@ -1236,6 +1296,7 @@
       // la loupe est imbriquée dans le bouton d'option : traitée en premier, elle
       // ouvre la figure sans sélectionner la réponse
       if (action === 'zoom') { ev.preventDefault(); ouvrirZoom(cible); return; }
+      if (action === 'curseur') { ev.preventDefault(); basculerCurseur(); return; }
       if (action === 'fermer-zoom') { if (ev.target === cible) fermerZoom(); return; }
       if (action === 'mode') changerMode(cible.dataset.mode);
       else if (action === 'niveau') changerNiveau(Number(cible.dataset.niveau));
