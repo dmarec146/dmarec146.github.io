@@ -257,10 +257,9 @@
       const places = Math.floor(nb / k) + (i < nb % k ? 1 : 0);
       questions = questions.concat(tirerDansBanque(b, niveau, places));
     });
+    // ordre aléatoire à tous les niveaux (David, 16/10/2026 : plus de tri par difficulté croissante, qui regroupait
+    // les questions de même famille) ; deux questions de même famille ne se suivent que si c'est inévitable
     questions = melangerQuestions(questions);
-    // niveaux 1 et 2 : difficulté croissante (rang déclaré par chaque banque, normalisé, tri stable) ;
-    // niveau 3 : ordre mélangé, comme dans l'épreuve
-    if (niveau <= 2 && config.trierParDifficulte !== false) questions.sort((a, b) => a.difficulte - b.difficulte);
     questions.themes = choisies.map(b => banques[b].titre);
     questions.themesIds = choisies.slice();
     return questions;
@@ -301,14 +300,31 @@
     });
   }
 
+  // Ordre aléatoire sans deux questions de même famille consécutives : on place les questions une à une en tirant,
+  // parmi celles dont la famille diffère de la précédente, avec une probabilité proportionnelle au nombre de questions
+  // restantes de leur famille (une famille nombreuse n'est ainsi jamais laissée pour la fin). Si seule la famille de
+  // la question précédente reste (impossible à éviter), on la place quand même. Quelques essais, on garde le meilleur.
   function melangerQuestions(questions) {
-    for (let essai = 0; essai < 60; essai++) {
-      const q = melanger(questions);
-      let ok = true;
-      for (let i = 1; i < q.length; i++) if (q[i].famille === q[i - 1].famille && q[i].banque === q[i - 1].banque) { ok = false; break; }
-      if (ok) return q;
+    const cle = q => q.banque + '/' + q.famille;
+    const adjacents = q => { let n = 0; for (let i = 1; i < q.length; i++) if (cle(q[i]) === cle(q[i - 1])) n++; return n; };
+    let meilleur = null;
+    for (let essai = 0; essai < 30; essai++) {
+      const restantes = melanger(questions.slice());
+      const ordre = [];
+      while (restantes.length) {
+        const prec = ordre.length ? cle(ordre[ordre.length - 1]) : null;
+        const reste = {}; restantes.forEach(q => { reste[cle(q)] = (reste[cle(q)] || 0) + 1; });
+        let candidats = restantes.filter(q => cle(q) !== prec);
+        if (!candidats.length) candidats = restantes;
+        let t = Math.random() * candidats.reduce((s, q) => s + reste[cle(q)], 0), choisie = candidats[candidats.length - 1];
+        for (const q of candidats) { t -= reste[cle(q)]; if (t <= 0) { choisie = q; break; } }
+        ordre.push(choisie);
+        restantes.splice(restantes.indexOf(choisie), 1);
+      }
+      if (!meilleur || adjacents(ordre) < adjacents(meilleur)) meilleur = ordre;
+      if (adjacents(meilleur) === 0) break;
     }
-    return melanger(questions);
+    return meilleur;
   }
 
   // ---------- État et rendu ----------

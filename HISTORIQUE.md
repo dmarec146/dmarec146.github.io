@@ -8515,3 +8515,25 @@ lancement vérifiée : **aucun devoir d'automatismes en cours** (lecture seule d
   (voir l'artefact « Chantiers futurs »).
 
 - **Suite (16/10/2026) : pilote de navigateur du guide.** `outils/guide-eleve/pdf.js` et `captures.js` exigeaient le paquet `playwright` (absent du PC perso). Nouveau `outils/guide-eleve/navigateur.js` : `playwright` s'il est installé avec son Chromium, sinon `playwright-core` et le Chrome installé de l'outil d'audit (`npm install` dans `outils/audit-reponses`, rien à télécharger). `node outils/guide-eleve/pdf.js` régénère maintenant le PDF tel quel (11 pages, aucun débordement) ; README mis à jour. `captures.js` : seule la ligne d'import change (syntaxe vérifiée), il lui manque toujours les paquets de capture (voir son README), non testé.
+
+## 2026-10-16 — Automatismes : ordre aléatoire des questions, familles de même type séparées
+
+Suite du passage à 12 questions (David : « la difficulté des questions peut être tout à fait aléatoire dans une fiche »).
+
+- **Moteur** (`automatismes/assets/moteur.js`) : le tri par difficulté croissante des niveaux 1 et 2 est supprimé (il regroupait les
+  questions de même famille). `melangerQuestions` est réécrit : placement glouton aléatoire, qui tire parmi les questions dont la
+  famille diffère de la précédente avec une probabilité proportionnelle au nombre de questions restantes de leur famille (une famille
+  nombreuse n'est jamais laissée pour la fin) ; si seule la famille précédente reste, elle est placée quand même ; 30 essais au plus,
+  on garde l'ordre qui a le moins de paires consécutives.
+- **Mesures** (moteur réel, 200 séries par cas) : paires de même famille consécutives par fiche à deux thèmes : 3,1 → **0** au niveau 1,
+  2,3 → **0** au niveau 2, 0 au niveau 3 ; fiche à thème unique (niveaux 1 et 2) : **0** ; sujet blanc : **0** ; toutes les séries font 12
+  questions ; la difficulté moyenne par position est plate (0,54 à 0,62 sur les 12 positions au niveau 2), donc l'ordre est bien aléatoire.
+- **Règles** : `REGLES-FICHES.md` §7 mis à jour (ordre aléatoire ; le rang `ordre` des familles n'est plus utilisé, il reste déclaré
+  dans les banques sans effet).
+- **Analyse des cinq nouveaux sujets de bac** (secours Métropole 12/06, Antilles-Guyane 12/06, Polynésie 04/09, Antilles-Guyane 11/09,
+  Métropole 11/09 ; 44 questions, 12 + 4 × 8) : environ 28 correspondent à une famille existante ; seize types de questions n'en ont
+  pas (valeur d'une expression littérale avec valeurs négatives, comparaison de fractions, égalité de puissances vraie, somme et
+  quotient de racines, « laquelle n'est pas égale à… », opposé d'une parenthèse, factorisation avec fraction, coefficient directeur par
+  deux points, affirmation sur plusieurs droites tracées, formule avec valeurs données puis équation, relation à inverses, tableau de
+  signes vers expression, x² = 6, signe d'un quotient d'images lues, reconnaissance de la courbe d'un produit, proportion d'une
+  proportion, baisse de 3 % traduite par une formule). Les familles correspondantes sont à écrire (étape suivante du chantier).

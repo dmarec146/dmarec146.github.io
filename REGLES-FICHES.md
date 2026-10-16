@@ -396,8 +396,9 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Trois niveaux** : N1 = les bases seules (familles de base, nombres ronds) ; N2 = l'épreuve (les nombres des sujets du
   bac) ; N3 = « bien plus compliqué », c'est-à-dire des questions **de nature différente** (problèmes inverses, étape
   cachée, pièges de formulation), pas seulement des nombres plus durs. Chaque banque livre ses variantes N3.
-- Niveaux 1 et 2 **triés par difficulté croissante** (chaque famille déclare son `ordre`), niveau 3 mélangé comme à
-  l'épreuve ; quotas déclarés par famille (ex. une seule « valeur initiale » par série).
+- **Ordre des questions aléatoire à tous les niveaux** (David, 16/10/2026 : plus de tri par difficulté croissante, qui regroupait
+  les questions de même famille) ; le moteur ne place jamais deux questions de même famille de suite (sauf impossibilité).
+  Quotas déclarés par famille (ex. une seule « valeur initiale » par série) ; le rang `ordre` des familles n'est plus utilisé.
 - **Contextes variés** : vivier large (environ 25 contextes, pas « toujours un employé »). **Le genre, le pluriel et les
   plages de valeurs vraisemblables se déclarent par contexte, ils ne se devinent pas** (« une temps de trajet »,
   « 34 coliss », une note de 26 sur 20). « La probabilité que… » appelle le subjonctif : nommer l'événement.
