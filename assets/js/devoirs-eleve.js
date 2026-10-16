@@ -101,7 +101,9 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
     // de l'enseignant, devoirs.js) : apres l'echeance, entrainement libre.
     const avantEcheance = tentatives.filter((t) => millis(t.horodatage) > 0 && millis(t.horodatage) <= echeanceMillis);
     let meilleure = null;
-    for (const t of avantEcheance) { if (!meilleure || t.score > meilleure.score) meilleure = t; }
+    // Meilleure = plus grande part du total (16/10/2026, voir devoirs.js) : le total d'un sujet blanc varie d'une tentative à l'autre.
+    const part = (t) => (t.totalExercices > 0 ? t.score / t.totalExercices : t.score);
+    for (const t of avantEcheance) { if (!meilleure || part(t) > part(meilleure) + 1e-9 || (Math.abs(part(t) - part(meilleure)) <= 1e-9 && t.score > meilleure.score)) meilleure = t; }
     const derniereActivite = tentatives.reduce((max, t) => Math.max(max, millis(t.horodatage)), 0);
 
     const partiel = Array.isArray(dv.calculs) && dv.calculs.length > 0;

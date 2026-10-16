@@ -769,7 +769,7 @@
     const etiquette = (ETAT.config.masquerEtiquette && !corrigee)
       ? '' : `<span class="carte-famille">${echapper(q.banqueTitre)} · ${echapper(q.familleNom)}</span>`;
     return `<div class="${classe}" id="carte-${i}">
-      <div class="carte-entete"><span class="carte-num">Question ${i + 1}</span>${etiquette}</div>
+      <div class="carte-entete"><span class="carte-num">Question ${i + 1}</span>${etiquette}${ETAT.config.bareme && ETAT.config.bareme.table ? `<span class="carte-points">${pointsTxt(pointsDeQuestion(q))}</span>` : ''}</div>
       ${corps}${retour}
     </div>`;
   }
@@ -830,7 +830,7 @@
       ? `${ETAT.serieValidee ? '' : '<button class="btn-secondaire" data-action="enregistrer-serie">Enregistrer mon avancement</button>'}
         <button class="btn-principal" data-action="valider-serie" ${ETAT.serieValidee ? 'disabled' : ''}>Valider ma série</button>`
       : `<button class="btn-secondaire" data-action="recommencer">Recommencer</button>`;
-    return `<div class="liste-questions" id="liste-questions">${cartes}</div>
+    return `${totalSujetHTML()}<div class="liste-questions" id="liste-questions">${cartes}</div>
       <div id="bilan-fiche">${bilanFicheHTML()}</div>
       <div class="barre-controle">
         <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
@@ -858,14 +858,41 @@
     return bonnes;
   }
 
+  // Barème. Deux formes de `config.bareme` :
+  //   { parQuestion, total }  : même valeur pour toutes les questions (forme d'origine) ;
+  //   { table }               : points par question selon sa famille et son niveau,
+  //                             table['banque/famille'] = [points N1, N2, N3] (16/10/2026, sujet blanc).
+  // Le total d'un sujet dépend alors des questions tirées (6 à 12 points) : il se calcule à chaque série.
+  function pointsDeQuestion(q) {
+    const b = ETAT.config.bareme;
+    if (!b) return null;
+    if (b.table) {
+      const ligne = b.table[q.banque + '/' + q.famille];
+      const v = ligne && ligne[q.niveau - 1];
+      if (typeof v === 'number') return v;
+      console.warn('Barème : aucun point pour', q.banque, q.famille, 'niveau', q.niveau);
+      return 0.5;
+    }
+    return b.parQuestion;
+  }
+  const totalBareme = () => (ETAT.config.bareme
+    ? arrondir(ETAT.questions.reduce((s, q) => s + pointsDeQuestion(q), 0), 2) : null);
+  const pointsObtenus = () => (ETAT.config.bareme
+    ? arrondir(ETAT.questions.reduce((s, q, i) => s + (ETAT.reponses[i] === q.bonne ? pointsDeQuestion(q) : 0), 0), 2) : null);
+  const pointsTxt = p => dec(p) + (p > 1 ? ' points' : ' point');
+  // Total du sujet, affiché avant toute réponse : l'élève voit sur combien il sera noté.
+  function totalSujetHTML() {
+    if (!ETAT.config.bareme || !ETAT.config.bareme.table) return '';
+    return `<div class="bareme-total">Ce sujet est noté sur <b>${pointsTxt(totalBareme())}</b> : le nombre de points de chaque question est indiqué en haut de sa carte.</div>`;
+  }
+
   // Payload transmis a onFinSerie (assets/js/suivi.js) : extrait pour etre
   // reutilise a l'identique par validerSerie() ci-dessous (devoir mode fiche).
   function payloadFinSerie() {
     const bonnes = compterBonnes();
     const total = ETAT.questions.length;
     const repondues = ETAT.reponses.filter(r => r !== null).length;
-    const points = ETAT.config.bareme ? arrondir(bonnes * ETAT.config.bareme.parQuestion, 2) : null;
-    return { bonnes: bonnes, total: total, repondues: repondues, points: points, niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree };
+    return { bonnes: bonnes, total: total, repondues: repondues, points: pointsObtenus(), baremeTotal: totalBareme(), niveau: ETAT.niveau, mode: ETAT.mode, duree: ETAT.duree };
   }
 
   // Point d'accroche pour le suivi (assets/js/suivi.js) : optionnel, ne sert
@@ -1024,8 +1051,10 @@
     ETAT.questions.forEach((q, i) => { if (ETAT.reponses[i] === null) sans++; else if (ETAT.reponses[i] === q.bonne) bonnes++; });
     let html = `<span class="score-chiffre">${bonnes} / ${n}</span> bonnes réponses`;
     if (ETAT.config.bareme) {
-      const pts = arrondir(bonnes * ETAT.config.bareme.parQuestion, 2);
-      html += `<div class="score-points">soit <b>${dec(pts)} / ${dec(ETAT.config.bareme.total)}</b> points au barème de l'épreuve (${dec(ETAT.config.bareme.parQuestion)} pt par bonne réponse, aucune pénalité)</div>`;
+      const pts = pointsObtenus(), tot = totalBareme();
+      html += ETAT.config.bareme.table
+        ? `<div class="score-points">soit <b>${dec(pts)} / ${dec(tot)}</b> points au barème de ce sujet (chaque question a son nombre de points, aucune pénalité)</div>`
+        : `<div class="score-points">soit <b>${dec(pts)} / ${dec(tot)}</b> points au barème de l'épreuve (${dec(ETAT.config.bareme.parQuestion)} pt par bonne réponse, aucune pénalité)</div>`;
     }
     if (sans > 0) html += `<div class="score-detail">${sans} question${sans > 1 ? 's' : ''} sans réponse.</div>`;
     if (ETAT.mode === 'chrono' && ETAT.chrono.tempsTotal > 0) {
@@ -1083,6 +1112,7 @@
         <h2>${n} questions · ${dureeTxt}${total}</h2>
         <p>Une seule question à l'écran. Cliquez sur une réponse puis sur « Valider ». Une question passée ou dont le temps s'écoule pourra être reprise à la fin, tant que le temps total n'est pas dépassé.</p>
         <p>Une fois validée, une réponse ne peut plus être changée. La correction complète s'affiche à la fin.</p>
+        ${ETAT.config.bareme && ETAT.config.bareme.table ? `<p>Ce sujet est noté sur <b>${pointsTxt(totalBareme())}</b> : le nombre de points de chaque question est indiqué en haut de sa carte.</p>` : ''}
         <button class="btn-principal" data-action="demarrer-chrono">Démarrer</button>
       </div>`;
     }

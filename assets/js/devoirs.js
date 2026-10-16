@@ -1114,9 +1114,12 @@ async function afficherResultats(devoir) {
     const echeanceEleve = reglages.echeance?.toMillis ? reglages.echeance.toMillis() : 0;
     const avantEcheance = avecMillis.filter((t) => t.millis > 0 && t.millis <= echeanceEleve);
 
+    // Meilleure = plus grande part du total (16/10/2026) : le total d'un sujet blanc varie d'une tentative à l'autre
+    // (barème par question), 9 sur 12 doit battre 9,5 sur 12,5 ; à part égale, le plus de points.
+    const part = (t) => (t.totalExercices > 0 ? t.score / t.totalExercices : t.score);
     let meilleure = null;
     for (const t of avantEcheance) {
-      if (!meilleure || t.score > meilleure.score) meilleure = t;
+      if (!meilleure || part(t) > part(meilleure) + 1e-9 || (Math.abs(part(t) - part(meilleure)) <= 1e-9 && t.score > meilleure.score)) meilleure = t;
     }
     const derniereActivite = avecMillis.reduce((max, t) => Math.max(max, t.millis), 0);
 

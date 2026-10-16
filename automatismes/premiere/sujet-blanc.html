@@ -13,7 +13,7 @@ window.MathJax = {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
 <script type="module" src="../../assets/js/suivi.js"></script>
-<link rel="stylesheet" href="../assets/automatismes.css">
+<link rel="stylesheet" href="../assets/automatismes.css?v=20261016b">
 </head>
 <body>
 
@@ -33,7 +33,7 @@ window.MathJax = {
   <div class="badge" title="Sujet blanc">&#9733;</div>
   <div>
     <h1>Sujet blanc</h1>
-    <p class="sous-titre">Épreuve anticipée de Première — 12 questions sur tout le programme, notées sur 6 points</p>
+    <p class="sous-titre">Épreuve anticipée de Première — 12 questions sur tout le programme, de 0,5 à 1 point chacune</p>
   </div>
 </div>
 <div class="filet"></div>
@@ -42,7 +42,7 @@ window.MathJax = {
 
 <div class="consigne-epreuve">
   <b>Rappel de la consigne officielle.</b> Pour chaque question, une seule réponse est possible. Aucune justification n'est demandée. Une réponse fausse ou l'absence de réponse n'enlève aucun point.
-  <br><b>Barème.</b> 0,5 point par bonne réponse, soit 6 points au total pour les 12 questions.
+  <br><b>Barème.</b> Chaque question vaut 0,5, 0,75 ou 1 point, indiqué sur sa carte ; le total du sujet dépend des questions tirées (de 6 à 12 points) et la note reste sur ce total.
   <br>Les thèmes sont tirés au sort dans les proportions relevées sur les sujets de l'année, et l'ordre des questions est mêlé, comme dans un vrai sujet. Le thème de chaque question n'est révélé qu'à la correction.
 </div>
 
@@ -65,17 +65,18 @@ window.MathJax = {
   <a class="nav-btn" href="../index.html">Automatismes</a>
 </div>
 
-<script src="../assets/moteur.js"></script>
-<script src="../assets/graphiques.js"></script>
+<script src="../assets/moteur.js?v=20261016b"></script>
+<script src="../assets/graphiques.js?v=20261016b"></script>
 <!-- toutes les banques : un sujet blanc peut piocher dans n'importe laquelle -->
-<script src="banques/01-pourcentages.js"></script>
-<script src="banques/02-proportions.js"></script>
-<script src="banques/03-calcul-numerique.js"></script>
-<script src="banques/04-developper-factoriser.js"></script>
-<script src="banques/05-equations.js"></script>
-<script src="banques/06-droites.js"></script>
-<script src="banques/07-lectures-graphiques.js"></script>
-<script src="banques/08-probabilites.js"></script>
+<script src="banques/01-pourcentages.js?v=20261016b"></script>
+<script src="banques/02-proportions.js?v=20261016b"></script>
+<script src="banques/03-calcul-numerique.js?v=20261016b"></script>
+<script src="banques/04-developper-factoriser.js?v=20261016b"></script>
+<script src="banques/05-equations.js?v=20261016b"></script>
+<script src="banques/06-droites.js?v=20261016b"></script>
+<script src="banques/07-lectures-graphiques.js?v=20261016b"></script>
+<script src="banques/08-probabilites.js?v=20261016b"></script>
+<script src="bareme-sujet-blanc.js?v=20261016b"></script>
 <script>
   /* Poids des domaines : distribution cumulée des 53 questions analysées
      (41 questions des sessions de juin 2026 + les 12 du sujet zéro) —
@@ -165,12 +166,11 @@ window.MathJax = {
       }
     }
 
-    // 0,5 point par question depuis le 19/09/2026, sur demande de David :
-    // note sur 5 pour 10 questions, sur 6 pour 12 questions depuis le 16/10/2026 -- barème encore fixe ici, réglable devoir par devoir prévu
-    // plus tard (pas fait). Variable partagée avec l'appel à
-    // enregistrerTentativeSujetBlancSiDevoir plus bas (onFinSerie), pour ne jamais risquer
-    // de désynchroniser le "total" enregistré du barème réellement affiché.
-    const bareme = { parQuestion: 0.5, total: 6 };
+    // Barème par question depuis le 16/10/2026 (David) : 0,5, 0,75 ou 1 point selon la famille et le niveau, table dans
+    // bareme-sujet-blanc.js. Le total dépend du sujet tiré (6 à 12 points) et n'est pas ramené sur 6 : le moteur le
+    // calcule et le transmet à onFinSerie (resultat.baremeTotal), enregistré tel quel dans la tentative du devoir.
+    // Avant : 0,5 point par question (19/09/2026), noté sur 5 puis sur 6 ; réglage devoir par devoir toujours à faire.
+    const bareme = { table: window.BAREME_SUJET_BLANC };
 
     Automatismes.demarrer({
       brouillon: brouillon,
@@ -229,7 +229,7 @@ window.MathJax = {
         // etatAvant + savoir que l'ecriture a eu lieu suffisent.
         if (devoirId && window.enregistrerTentativeSujetBlancSiDevoir) {
           try {
-            await window.enregistrerTentativeSujetBlancSiDevoir(devoirId, resultat.bonnes, resultat.total, resultat.points, resultat.repondues, bareme.total);
+            await window.enregistrerTentativeSujetBlancSiDevoir(devoirId, resultat.bonnes, resultat.total, resultat.points, resultat.repondues, resultat.baremeTotal);
           } catch (erreur) { /* deja logue cote suivi.js */ }
         }
         if (etatAvant && etatAvant.echeance && etatAvant.echeance <= Date.now()) {

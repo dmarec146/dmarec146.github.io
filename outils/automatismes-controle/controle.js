@@ -576,6 +576,22 @@
     window.CONTROLE_FIN = true;
     return lignes;
   }
+  // Barème du sujet blanc : chaque famille disponible à un niveau doit avoir ses points à ce niveau (0,5 ; 0,75 ou 1),
+  // et la table ne doit pas contenir de ligne pour une famille qui n'existe plus ou pas à ce niveau.
+  function verifierBareme() {
+    const T = window.BAREME_SUJET_BLANC || {}, erreurs = [], vues = new Set();
+    Object.keys(A.banques).forEach(b => [1, 2, 3].forEach(n => A.famillesDispo(b, n).forEach(f => {
+      const cle = b + '/' + f; vues.add(cle);
+      const v = T[cle] && T[cle][n - 1];
+      if (![0.5, 0.75, 1].includes(v)) erreurs.push('pas de points pour ' + cle + ' au niveau ' + n + ' (' + v + ')');
+    })));
+    Object.keys(T).forEach(cle => {
+      if (!vues.has(cle)) { erreurs.push('ligne inutile : ' + cle); return; }
+      const [b, f] = cle.split('/');
+      [1, 2, 3].forEach(n => { if (T[cle][n - 1] !== null && !A.famillesDispo(b, n).includes(f)) erreurs.push('points donnés à un niveau où la famille n’existe pas : ' + cle + ' niveau ' + n); });
+    });
+    return erreurs;
+  }
   // aperçu visuel : n questions d'une famille, rendues par MathJax, bonne réponse en vert
   function apercu(banque, famille, niveau, n) {
     const zone = document.getElementById('apercu');
@@ -592,5 +608,5 @@
     }
     if (window.MathJax && MathJax.typesetPromise) return MathJax.typesetPromise([zone]);
   }
-  window.Controle = { lancer, apercu, resume: () => RESUME.sortie, evalTex, zones, auditRedaction, VERIFS };
+  window.Controle = { lancer, apercu, verifierBareme, resume: () => RESUME.sortie, evalTex, zones, auditRedaction, VERIFS };
 })();

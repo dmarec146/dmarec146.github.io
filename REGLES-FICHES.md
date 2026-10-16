@@ -424,6 +424,10 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Assez de familles pour ne pas répéter** : viser au moins 6 familles par banque à chaque niveau (une fiche en tire 12, ou
   6 + 6 sur deux thèmes). Le moteur répartit les places au plus équitable (la famille la moins représentée passe d'abord) ;
   une même famille revient donc seulement quand il y a moins de familles que de places.
+- **Barème du sujet blanc** (`automatismes/premiere/bareme-sujet-blanc.js`) : chaque question vaut 0,5, 0,75 ou 1 point selon sa
+  famille et son niveau (0,5 lecture ou calcul direct ; 0,75 deux étapes ou piège connu ; 1 raisonnement en plusieurs temps ou à
+  l'envers), total libre non ramené sur 6. **Toute famille ajoutée à une banque reçoit sa ligne dans cette table** (à faire valider
+  par David), puis `Controle.verifierBareme()` doit rendre une liste vide.
 - Un exposant 1 ne s'écrit jamais : le moteur supprime `^{1}` à la sortie, mais un générateur doit tout de même éviter de le
   produire (l'audit le signale avant ce filet).
 - Fiche à deux thèmes tirés au hasard (pas de fiche thématique figée) ; sujet blanc avec `masquerEtiquette: true` (une
