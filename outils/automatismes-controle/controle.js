@@ -183,6 +183,38 @@
     return verifExpression(q, evalTex(expr));
   };
 
+  // Équivalence d'expressions littérales : égalité numérique en plusieurs points (entiers non nuls, lettres x y t z u v a b)
+  const LETTRES = ['x', 'y', 't', 'z', 'u', 'v', 'a', 'b'];
+  function egalSurPoints(texA, texB) {
+    for (let i = 0; i < 6; i++) {
+      const sc = {}; LETTRES.forEach(l => { sc[l] = Math.floor(Math.random() * 10) - 3; if (sc[l] === 0) sc[l] = 7; });
+      if (!proche(evalTex(texA, sc), evalTex(texB, sc))) return false;
+    }
+    return true;
+  }
+  // bonne option égale à la cible, les autres différentes (ou, si egalesAttendues, trois égales et une différente)
+  function verifEquivalence(q, cible) {
+    const erreurs = [], opts = optMaths(q).map(s => s.replace(/^E\s*=\s*/, ''));
+    opts.forEach((s, i) => {
+      const egal = egalSurPoints(s, cible);
+      if (i === q.bonne && !egal) erreurs.push('la bonne réponse n’est pas égale à la cible : ' + s);
+      if (i !== q.bonne && egal) erreurs.push('l’option ' + 'abcd'[i] + ' est aussi égale à la cible : ' + s);
+    });
+    return erreurs;
+  }
+  VERIFS['developper-factoriser/expression-egale'] = q => {         // la « bonne » réponse est la seule NON égale à la cible
+    const cible = zones(q.enonce).maths[0], erreurs = [];
+    optMaths(q).forEach((s, i) => {
+      const egal = egalSurPoints(s, cible);
+      if (i === q.bonne && egal) erreurs.push('la réponse attendue est égale à la cible : ' + s);
+      if (i !== q.bonne && !egal) erreurs.push('l’option ' + 'abcd'[i] + ' n’est pas égale à la cible : ' + s);
+    });
+    return erreurs;
+  };
+  VERIFS['developper-factoriser/reduire-oppose'] = q => verifEquivalence(q, zones(q.enonce).maths.find(g => /^E\s*=/.test(g)).replace(/^E\s*=\s*/, ''));
+  VERIFS['developper-factoriser/developper-simple'] = q => verifEquivalence(q, zones(q.enonce).maths[0]);
+  VERIFS['developper-factoriser/factoriser-fraction'] = q => verifEquivalence(q, zones(q.enonce).maths[0]);
+
   // ---------- exécution ----------
   const RESUME = {};
   function lancer(opts) {

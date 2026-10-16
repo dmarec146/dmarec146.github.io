@@ -389,6 +389,175 @@
   }
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+
+  // ---- Famille E : « laquelle de ces expressions n'est pas égale à … ? »
+  //      Secours Métropole 12/06/2026 : 4x² − 1 ; (2x−1)(1+2x), (1−2x)² + 4x − 2, (2x−1)², 4(x+1)² − 5 − 8x.
+  const lettreAlea = () => aleaParmi(['x', 'x', 'y', 't', 'z', 'u', 'v']);
+
+  // trois formes égales à la cible (toutes différentes de la cible écrite) et une forme fausse
+  //   egales : chaînes ; fausses : paires [expression, forme développée ou null]
+  function questionNonEgale(cible, egales, fausses, devCible) {
+    devCible = devCible || cible;
+    const vraies = melanger(egales.filter((s, i, a) => s !== cible && a.indexOf(s) === i)).slice(0, 3);
+    const mauvaises = melanger(fausses.filter(([s]) => s !== cible && egales.indexOf(s) < 0));
+    if (vraies.length < 3 || !mauvaises.length) return null;
+    const [bonne, dev] = mauvaises[0];
+    return qcm(`Parmi les expressions ci-dessous, laquelle n’est pas égale à ${m(cible)} ?`, opt(bonne), vraies.map(s => opt(s)), {
+      explication: (devCible === cible ? '' : `${m(cible)} se développe en ${m(devCible)}. `) + `${m(bonne)} n’est pas égale à ${m(cible)}` + (dev ? ` : elle se développe en ${m(dev)}` : '') +
+        `. Les trois autres expressions sont égales à ${m(cible)}.`
+    });
+  }
+
+  function expressionEgaleN1() {
+    const v = lettreAlea(), k = alea(2, 9);
+    const moins = paren([[1, v], [-k, '']]), plus = paren([[1, v], [k, '']]);
+    if (alea(0, 1) === 0) {
+      const cible = poly([[1, v + '^2'], [-k * k, '']]);
+      const egales = [moins + plus, plus + moins, paren([[k, ''], [1, v]]) + moins, paren([[-k, ''], [1, v]]) + plus];
+      const fausses = [[moins + '^2', trinome(1, -2 * k, k * k, v)], [plus + '^2', trinome(1, 2 * k, k * k, v)], [poly([[1, v + '^2'], [k * k, '']]), null]];
+      return questionNonEgale(cible, egales, fausses);
+    }
+    const cible = plus + '^2';
+    const egales = [trinome(1, 2 * k, k * k, v), plus + plus, paren([[-1, v], [-k, '']]) + '^2', paren([[k, ''], [1, v]]) + '^2',
+      joindre(v + paren([[1, v], [2 * k, '']]), String(k * k))];
+    const fausses = [[trinome(1, 0, k * k, v), null], [trinome(1, k, k * k, v), null], [moins + '^2', trinome(1, -2 * k, k * k, v)], [trinome(1, 2 * k, -k * k, v), null]];
+    return questionNonEgale(cible, egales, fausses, trinome(1, 2 * k, k * k, v));
+  }
+
+  function expressionEgaleN2() {
+    const v = lettreAlea();
+    if (alea(0, 1) === 0) {
+      // a²v² − b²  (modèle du sujet : 4x² − 1)
+      const a = alea(2, 5), b = alea(1, 6), c = alea(1, 3);
+      const cible = poly([[a * a, v + '^2'], [-b * b, '']]);
+      const moins = paren([[a, v], [-b, '']]), plus = paren([[a, v], [b, '']]);
+      const egales = [moins + plus, paren([[b, ''], [a, v]]) + moins, `(${mono(a, v)})^2 - ${b * b}`,
+        joindre(paren([[-a, v], [c, '']]) + '^2', poly([[2 * a * c, v], [-(c * c + b * b), '']]))];
+      const fausses = [[moins + '^2', trinome(a * a, -2 * a * b, b * b, v)], [plus + '^2', trinome(a * a, 2 * a * b, b * b, v)],
+        [poly([[a * a, v + '^2'], [b * b, '']]), null], [a + paren([[1, v], [-b, '']]) + paren([[1, v], [b, '']]), poly([[a, v + '^2'], [-a * b * b, '']])]];
+      return questionNonEgale(cible, egales, fausses);
+    }
+    // (a v + b)²
+    const a = alea(2, 5), b = aleaNonNul(-6, 6);
+    const base = paren([[a, v], [b, '']]);
+    const cible = base + '^2';
+    const egales = [trinome(a * a, 2 * a * b, b * b, v), base + base, paren([[-a, v], [-b, '']]) + '^2',
+      joindre(paren([[a, v], [-b, '']]) + '^2', mono(4 * a * b, v))];
+    const fausses = [[trinome(a * a, 0, b * b, v), null], [trinome(a * a, a * b, b * b, v), null], [trinome(a * a, -2 * a * b, b * b, v), null], [trinome(a, 2 * a * b, b * b, v), null]];
+    return questionNonEgale(cible, egales, fausses, trinome(a * a, 2 * a * b, b * b, v));
+  }
+
+  function expressionEgaleN3() {
+    // a²x² − b²y² avec deux variables
+    const a = alea(2, 4), b = alea(2, 5), c = alea(1, 3);
+    const cible = poly([[a * a, 'x^2'], [-b * b, 'y^2']]);
+    const moins = paren([[a, 'x'], [-b, 'y']]), plus = paren([[a, 'x'], [b, 'y']]);
+    const egales = [moins + plus, paren([[b, 'y'], [a, 'x']]) + moins, `(${mono(a, 'x')})^2 - (${mono(b, 'y')})^2`,
+      joindre(paren([[a, 'x'], [-c, 'y']]) + '^2', poly([[2 * a * c, 'xy'], [-(c * c + b * b), 'y^2']]))];
+    const fausses = [[moins + '^2', poly([[a * a, 'x^2'], [-2 * a * b, 'xy'], [b * b, 'y^2']])], [poly([[a * a, 'x^2'], [b * b, 'y^2']]), null],
+      [moins + moins, poly([[a * a, 'x^2'], [-2 * a * b, 'xy'], [b * b, 'y^2']])], [a + paren([[1, 'x'], [-b, 'y']]) + paren([[1, 'x'], [b, 'y']]), poly([[a, 'x^2'], [-a * b * b, 'y^2']])]];
+    return questionNonEgale(cible, egales, fausses);
+  }
+
+  function expressionEgale(niveau) {
+    return niveau === 1 ? expressionEgaleN1() : niveau === 2 ? expressionEgaleN2() : expressionEgaleN3();
+  }
+
+  // ---- Famille F : réduire une expression avec l'opposé d'une parenthèse
+  //      Antilles-Guyane 11/09/2026 : E = −(a − b) + a − b.
+  function questionReduire(expr, lettres, A, B, fautes, explication, intro) {
+    const ecrire = (a, b) => (a === 0 && b === 0 ? '0' : poly([[a, lettres[0]], [b, lettres[1]]]));
+    const cands = fautes.map(([a, b]) => opt('E = ' + ecrire(a, b)));
+    return qcm(`${intro}On considère l’expression ${m('E = ' + expr)}.<br>On peut affirmer que :`, opt('E = ' + ecrire(A, B)), cands, { explication });
+  }
+  function reduireOppose(niveau) {
+    if (niveau === 1) {
+      // E = −(p a + q b) + r a + s b
+      const p = alea(1, 2), q = aleaNonNul(-3, 3), r = alea(1, 3), s = aleaNonNul(-3, 3);
+      const A = r - p, B = s - q;
+      const expr = joindre('-' + paren([[p, 'a'], [q, 'b']]), poly([[r, 'a'], [s, 'b']]));
+      const fautes = [[r - p, s + q], [r + p, s + q], [r + p, s - q], [p - r, q - s], [r - p, -B]];
+      return questionReduire(expr, ['a', 'b'], A, B, fautes,
+        `${m('-(' + poly([[p, 'a'], [q, 'b']]) + ') = ' + poly([[-p, 'a'], [-q, 'b']]))} : le signe moins change le signe de tous les termes de la parenthèse. Donc ${m('E = ' + poly([[-p, 'a'], [-q, 'b'], [r, 'a'], [s, 'b']]) + ' = ' + (A === 0 && B === 0 ? '0' : poly([[A, 'a'], [B, 'b']])))}.`,
+        'Soient ' + m('a') + ' et ' + m('b') + ' deux réels.<br>');
+    }
+    const v = lettreAlea();
+    if (niveau === 2) {
+      // E = (p v + q) − (r v + s)
+      const p = alea(1, 5), q = aleaNonNul(-6, 6), r = alea(1, 5), s = aleaNonNul(-6, 6);
+      const A = p - r, B = q - s;
+      if (A === 0 && B === 0) return null;
+      const expr = paren([[p, v], [q, '']]) + ' - ' + paren([[r, v], [s, '']]);
+      const fautes = [[p - r, q + s], [p + r, q - s], [p + r, q + s], [r - p, s - q], [p - r, B === 0 ? 1 : -B]];
+      return questionReduire(expr, [v, ''], A, B, fautes,
+        `${m('-(' + poly([[r, v], [s, '']]) + ') = ' + poly([[-r, v], [-s, '']]))}, donc ${m('E = ' + poly([[p, v], [q, ''], [-r, v], [-s, '']]) + ' = ' + poly([[A, v], [B, '']]))}.`, '');
+    }
+    // N3 : E = k(p v + q) − l(r v + s)
+    const k = alea(2, 4), l = alea(2, 4), p = alea(1, 3), q = aleaNonNul(-5, 5), r = alea(1, 3), s = aleaNonNul(-5, 5);
+    const A = k * p - l * r, B = k * q - l * s;
+    if (A === 0 && B === 0) return null;
+    const expr = coefParen(k, paren([[p, v], [q, '']])) + ' - ' + coefParen(l, paren([[r, v], [s, '']]));
+    const fautes = [[A, k * q - s], [A, k * q + l * s], [k * p - r, B], [k * p + l * r, k * q + l * s], [A, -B]];
+    return questionReduire(expr, [v, ''], A, B, fautes,
+      `On distribue ${m(String(k))} puis ${m('-' + l)} sur chaque terme : ${m('E = ' + poly([[k * p, v], [k * q, ''], [-l * r, v], [-l * s, '']]) + ' = ' + poly([[A, v], [B, '']]))}.`, '');
+  }
+
+  // ---- Famille G : développer k(a v + b) et k(a v + b) ± l(c v + d)
+  function developperSimple(niveau) {
+    const v = lettreAlea();
+    if (niveau === 1) {
+      const k = alea(2, 9), a = alea(1, 4), b = aleaNonNul(-7, 7);
+      const e = coefParen(k, paren([[a, v], [b, '']]));
+      const bonne = poly([[k * a, v], [k * b, '']]);
+      const cands = [poly([[k * a, v], [b, '']]), poly([[a, v], [k * b, '']]), poly([[k * a, v], [-k * b, '']]), poly([[k + a, v], [k + b, '']])].map(x => opt(x));
+      return qcm(`La forme développée et réduite de ${m(e)} est :`, opt(bonne), cands, {
+        explication: `On multiplie chaque terme de la parenthèse par ${m(String(k))} : ${m(e + ' = ' + poly([[k * a, v], [k * b, '']]))}.`
+      });
+    }
+    const k = alea(2, 6), l = alea(2, 6), a = alea(1, 4), b = aleaNonNul(-6, 6), c = alea(1, 4), d = aleaNonNul(-6, 6);
+    const sg = alea(0, 1) === 1 ? -1 : 1;
+    const A = k * a + sg * l * c, B = k * b + sg * l * d;
+    if (A === 0 || B === 0) return null;
+    const e = coefParen(k, paren([[a, v], [b, '']])) + (sg < 0 ? ' - ' : ' + ') + coefParen(l, paren([[c, v], [d, '']]));
+    const bonne = poly([[A, v], [B, '']]);
+    const cands = [poly([[A, v], [k * b + sg * d, '']]), poly([[k * a + sg * c, v], [B, '']]), poly([[A, v], [k * b - sg * l * d, '']]), poly([[k * a - sg * l * c, v], [B, '']]), poly([[A, v], [k * b + l * d, '']])].map(x => opt(x));
+    return qcm(`La forme développée et réduite de ${m(e)} est :`, opt(bonne), cands, {
+      explication: `${m(e + ' = ' + poly([[k * a, v], [k * b, ''], [sg * l * c, v], [sg * l * d, '']]) + ' = ' + bonne)}.`
+    });
+  }
+
+  // ---- Famille H : factoriser avec des coefficients fractionnaires
+  //      Antilles-Guyane 12/06/2026 : 9x² − 1/9 = (3x − 1/3)(3x + 1/3).
+  const COPREM = [[1, 2], [1, 3], [1, 4], [1, 5], [2, 3], [3, 4], [2, 5], [3, 5], [1, 6], [5, 6]];
+  function factoriserFraction(niveau) {
+    const v = lettreAlea();
+    const [p, q] = aleaParmi(COPREM);
+    if (niveau === 2 || alea(0, 1) === 0) {
+      // a²v² − (p/q)² = (a v − p/q)(a v + p/q)
+      const a = alea(2, 4);
+      const T = `${a * a}${v}^2 - ${fracL(p * p, q * q)}`;
+      const lin = s => `${a}${v} ${s} ${fracL(p, q)}`;
+      const bonne = `\\left(${lin('-')}\\right)\\left(${lin('+')}\\right)`;
+      const cands = [`\\left(${lin('-')}\\right)^2`, `\\left(${a * a}${v} - ${fracL(p, q)}\\right)^2`,
+        `\\left(${a * a}${v} - ${fracL(p, q)}\\right)\\left(${a * a}${v} + ${fracL(p, q)}\\right)`,
+        `\\left(${a}${v} - ${fracL(p * p, q * q)}\\right)\\left(${a}${v} + ${fracL(p * p, q * q)}\\right)`, `\\left(${lin('+')}\\right)^2`].map(x => opt(x));
+      return qcm(`Une forme factorisée de ${m(T)} est :`, opt(bonne), cands, {
+        explication: `${m('A^2 - B^2 = (A-B)(A+B)')} avec ${m('A = ' + a + v)} et ${m('B = ' + fracL(p, q))}, car ${m('\\left(' + fracL(p, q) + '\\right)^2 = ' + fracL(p * p, q * q))}.`
+      });
+    }
+    // v² + 2(p/q) v + (p/q)² = (v + p/q)²
+    const T = joindre(joindre(v + '^2', monoFrac(2 * p, q, v)), fracL(p * p, q * q));
+    const bonne = `\\left(${v} + ${fracL(p, q)}\\right)^2`;
+    const cands = [`\\left(${v} + ${fracL(p * p, q * q)}\\right)^2`, `\\left(${v} + ${fracL(2 * p, q)}\\right)^2`,
+      `\\left(${v} - ${fracL(p, q)}\\right)\\left(${v} + ${fracL(p, q)}\\right)`, `\\left(${v} - ${fracL(p, q)}\\right)^2`].map(x => opt(x));
+    return qcm(`Une forme factorisée de ${m(T)} est :`, opt(bonne), cands, {
+      explication: `${m('A^2 + 2AB + B^2 = (A+B)^2')} avec ${m('A = ' + v)} et ${m('B = ' + fracL(p, q))} : le double produit ${m('2 \\times ' + fracL(p, q) + ' = ' + fracL(2 * p, q))} et ${m('B^2 = ' + fracL(p * p, q * q))}.`
+    });
+  }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('developper-factoriser', {
     titre: 'Développer et factoriser',
     familles: {
@@ -409,7 +578,11 @@
         nom: 'factoriser (identité remarquable)', niveaux: [2, 3], base: factoriserIdentite,
         variantes3: [differenceCarresBinome, differenceRacine], partBase3: 0.3,
         ordre: { 2: 4 }, quota: { 2: { min: 1, priorite: 2 }, 3: { min: 1 } }
-      })
+      }),
+      'expression-egale': famille({ nom: 'laquelle n’est pas égale à…', niveaux: [1, 2, 3], base: expressionEgale }),
+      'reduire-oppose': famille({ nom: 'réduire avec l’opposé d’une parenthèse', niveaux: [1, 2, 3], base: reduireOppose }),
+      'developper-simple': famille({ nom: 'développer k(ax+b)', niveaux: [1, 2], base: developperSimple }),
+      'factoriser-fraction': famille({ nom: 'factoriser avec des fractions', niveaux: [2, 3], base: factoriserFraction })
     }
   });
 })();
