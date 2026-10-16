@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"4.1 a)":0.5,"4.1 b)":0.5,"4.1 c)":0.5,"4.1 d)":0.5,"4.2 a)":0.75,"4.2 b)":1,"4.2 c)":1.25,"4.2 d)":1.5,"4.3 a)":1,"4.3 b)":1.25,"4.3 c)":1.25,"4.4 a)":0.75,"4.4 b)":0.75,"4.4 c)":1.5,"4.4 d)":1.5,"4.5 a)":0.75,"4.5 b)":0.75,"4.5 c)":0.75,"4.5 d)":1.25,"4.6 a)":1.5,"4.6 b)":1.75,"4.6 c)":2},"bonus":["4.6 a)","4.6 b)","4.6 c)"]});
@@ -923,13 +924,43 @@ function polynomeCubic(c3, c2, c1, c0) {
   const res = t3 + t2 + t1 + t0;
   return res === '' ? '0' : res;
 }
+// ---- details de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { dP, sommeTermes } = Detail;
+// polynome en LaTeX, coefficients par degre CROISSANT : polyL([5, 3]) -> « 3x+5 » ; jamais « 1x », signes propres
+function polyL(coefs, v = 'x') {
+  let s = '';
+  for (let p = coefs.length - 1; p >= 0; p--) {
+    const c = coefs[p];
+    if (c === 0) continue;
+    const abs = Math.abs(c), base = p === 0 ? '' : (p === 1 ? v : `${v}^{${p}}`);
+    s += (c < 0 ? '-' : (s === '' ? '' : '+')) + (p === 0 ? `${abs}` : (abs === 1 ? base : `${abs}${base}`));
+  }
+  return s === '' ? '0' : s;
+}
+// forme factorisee finale, comme reponseFactorisee : g (facteur)(c1' x + c0') apres extraction du facteur numerique commun
+function factoriseeL(facteur, c1, c0) {
+  if (c0 === 0) return `${c1 === 1 ? '' : c1 === -1 ? '-' : c1}x${facteur}`;
+  const g = pgcd(c1, c0), poly = polyL([c0 / g, c1 / g]);
+  // (x+a)(x+a) s'ecrit (x+a)^2 : la fiche attend le carre
+  if (`(${poly})` === facteur) return g > 1 ? `${g}${facteur}^{2}` : `${facteur}^{2}`;
+  return g > 1 ? `${g}${facteur}\\left(${poly}\\right)` : `${facteur}\\left(${poly}\\right)`;
+}
+// lignes de la factorisation finale : (facteur)(poly) puis, si un facteur numerique s'extrait ou si le facteur se repete, la forme complete
+function lignesFacteur(facteur, c1, c0) {
+  const brute = `${facteur}\\left(${polyL([c0, c1])}\\right)`, fin = factoriseeL(facteur, c1, c0);
+  if (brute === fin) return [];
+  const g = c0 === 0 ? 1 : pgcd(c1, c0), poly = c0 === 0 ? '' : polyL([c0 / g, c1 / g]);
+  const milieu = g > 1 && `(${poly})` === facteur ? `${g}${facteur}\\left(${poly}\\right) = ` : '';
+  return [`${brute} = ${milieu}${fin}`];
+}
 // une distribution simple k(x+a) ou -k(x-a)... : signes de k et de a tires independamment
 function distribSimple() {
   const k = alea(2,9), kNeg = alea(0,1) === 0;
   const a = alea(2,12), aNeg = alea(0,1) === 0;
   const kAff = kNeg ? -k : k, aAff = aNeg ? -a : a;
   const enonce = `${kNeg ? '-' : ''}${k}(x${aNeg ? '-' : '+'}${a})`;
-  return { enonce, reponse: polynomeXConst(kAff, kAff * aAff) };
+  return { enonce, reponse: polynomeXConst(kAff, kAff * aAff),
+           detail: { lignes: [`${enonce} = ${kAff}\\times x+${dP(kAff)}\\times ${dP(aAff)} = ${polyL([kAff * aAff, kAff])}`], final: polyL([kAff * aAff, kAff]) } };
 }
 // variante plus exigeante : un coefficient m>1 s'ajoute a l'interieur de la parenthese
 function distribAvecCoefInterne() {
@@ -938,7 +969,8 @@ function distribAvecCoefInterne() {
   const a = alea(2,10), aNeg = alea(0,1) === 0;
   const kAff = kNeg ? -k : k, aAff = aNeg ? -a : a;
   const enonce = `${kNeg ? '-' : ''}${k}(${m}x${aNeg ? '-' : '+'}${a})`;
-  return { enonce, reponse: polynomeXConst(kAff * m, kAff * aAff) };
+  return { enonce, reponse: polynomeXConst(kAff * m, kAff * aAff),
+           detail: { lignes: [`${enonce} = ${kAff}\\times ${m}x+${dP(kAff)}\\times ${dP(aAff)} = ${polyL([kAff * aAff, kAff * m])}`], final: polyL([kAff * aAff, kAff * m]) } };
 }
 
 const generateurs = [
@@ -947,13 +979,15 @@ const generateurs = [
     // reduire : deux termes en x a regrouper
     let a, c; do { a = alea(2,15); c = alea(2,15); } while (a === c);
     const b = alea(1,15), d = alea(1,15);
-    return { enonce:`${a}x+${b}-${c}x-${d}`, reponse: polynomeXConst(a - c, b - d) };
+    return { enonce:`${a}x+${b}-${c}x-${d}`, reponse: polynomeXConst(a - c, b - d),
+             detail: { lignes: [`${a}x+${b}-${c}x-${d} = (${a}-${c})x+(${b}-${d}) = ${polyL([b - d, a - c])}`], final: polyL([b - d, a - c]) } };
   }},
   {id:"4.1 b)", type:"alg", gen: () => {
     // plus exigeant : trois termes en x a regrouper, pas seulement deux
     let a, c, e; do { a = alea(2,10); c = alea(2,10); e = alea(2,10); } while (a + c === e);
     const b = alea(1,12), d = alea(1,12);
-    return { enonce:`${a}x-${b}+${c}x+${d}-${e}x`, reponse: polynomeXConst(a + c - e, d - b) };
+    return { enonce:`${a}x-${b}+${c}x+${d}-${e}x`, reponse: polynomeXConst(a + c - e, d - b),
+             detail: { lignes: [`${a}x-${b}+${c}x+${d}-${e}x = (${a}+${c}-${e})x+(${d}-${b}) = ${polyL([d - b, a + c - e])}`], final: polyL([d - b, a + c - e]) } };
   }},
   {id:"4.1 c)", type:"alg", gen: () => distribSimple()},
   {id:"4.1 d)", type:"alg", gen: () => distribAvecCoefInterne()},
@@ -962,18 +996,24 @@ const generateurs = [
   {id:"4.2 a)", type:"alg", gen: () => {
     // les deux facteurs sont monic (coefficient de x egal a 1)
     const q = entierSigne(2,9), s = entierSigne(2,9);
-    return { enonce:`(${binomeLatex(1,q)})(${binomeLatex(1,s)})`, reponse: polynomeQuad(1, q+s, q*s) };
+    return { enonce:`(${binomeLatex(1,q)})(${binomeLatex(1,s)})`, reponse: polynomeQuad(1, q+s, q*s),
+             detail: { lignes: [`(${binomeLatex(1,q)})(${binomeLatex(1,s)}) = ${sommeTermes([[1, 'x^{2}'], [s, 'x'], [q, 'x'], [q*s, '']])} = ${polyL([q*s, q+s, 1])}`], final: polyL([q*s, q+s, 1]) } };
   }},
   {id:"4.2 b)", type:"alg", gen: () => {
     // les deux facteurs portent chacun un coefficient devant x (positif ou negatif)
     const p = entierSigne(2,8), r = entierSigne(2,8), q = entierSigne(2,7), s = entierSigne(2,7);
-    return { enonce:`(${binomeLatex(p,q)})(${binomeLatex(r,s)})`, reponse: polynomeQuad(p*r, p*s + q*r, q*s) };
+    return { enonce:`(${binomeLatex(p,q)})(${binomeLatex(r,s)})`, reponse: polynomeQuad(p*r, p*s + q*r, q*s),
+             detail: { lignes: [`(${binomeLatex(p,q)})(${binomeLatex(r,s)}) = ${sommeTermes([[p*r, 'x^{2}'], [p*s, 'x'], [q*r, 'x'], [q*s, '']])} = ${polyL([q*s, p*s + q*r, p*r])}`], final: polyL([q*s, p*s + q*r, p*r]) } };
   }},
   {id:"4.2 c)", type:"alg", gen: () => {
     // plus exigeant : un facteur constant multiplie le produit des deux binomes
     const k = entierSigne(2,6), r = entierSigne(2,7), q = entierSigne(2,7), s = entierSigne(2,7);
     return { enonce:`${k}(${binomeLatex(1,q)})(${binomeLatex(r,s)})`,
-             reponse: polynomeQuad(k*r, k*(s + r*q), k*q*s) };
+             reponse: polynomeQuad(k*r, k*(s + r*q), k*q*s),
+             detail: { lignes: [
+               `(${binomeLatex(1,q)})(${binomeLatex(r,s)}) = ${sommeTermes([[r, 'x^{2}'], [s, 'x'], [q*r, 'x'], [q*s, '']])} = ${polyL([q*s, s + q*r, r])}`,
+               `${k}(${binomeLatex(1,q)})(${binomeLatex(r,s)}) = ${k}\\left(${polyL([q*s, s + q*r, r])}\\right) = ${polyL([k*q*s, k*(s + r*q), k*r])}`],
+               final: polyL([k*q*s, k*(s + r*q), k*r]) } };
   }},
   {id:"4.2 d)", type:"alg", gen: () => {
     // plus exigeant encore : un produit de TROIS facteurs affines
@@ -982,7 +1022,11 @@ const generateurs = [
     const quad = [p1*p2, p1*q2 + q1*p2, q1*q2];
     const [c3, c2, c1, c0] = multQuadParLineaire(quad, [p3, q3]);
     return { enonce:`(${binomeLatex(p1,q1)})(${binomeLatex(p2,q2)})(${binomeLatex(p3,q3)})`,
-             reponse: polynomeCubic(c3,c2,c1,c0) };
+             reponse: polynomeCubic(c3,c2,c1,c0),
+             detail: { lignes: [
+               `(${binomeLatex(p1,q1)})(${binomeLatex(p2,q2)}) = ${sommeTermes([[p1*p2, 'x^{2}'], [p1*q2, 'x'], [q1*p2, 'x'], [q1*q2, '']])} = ${polyL([quad[2], quad[1], quad[0]])}`,
+               `\\left(${polyL([quad[2], quad[1], quad[0]])}\\right)(${binomeLatex(p3,q3)}) = ${sommeTermes([[quad[0]*p3, 'x^{3}'], [quad[0]*q3, 'x^{2}'], [quad[1]*p3, 'x^{2}'], [quad[1]*q3, 'x'], [quad[2]*p3, 'x'], [quad[2]*q3, '']])} = ${polyL([c0, c1, c2, c3])}`],
+               final: polyL([c0, c1, c2, c3]) } };
   }},
 
   // ---------- 5.5 : developper et reduire une somme de produits ----------
@@ -990,13 +1034,15 @@ const generateurs = [
     const k1 = entierSigne(2,8), a1 = alea(1,9), k2 = entierSigne(2,8), a2 = alea(1,9);
     const t1 = `${signeMagnitude(k1, true, true)}(x+${a1})`;
     const t2 = `${signeMagnitude(k2, false, true)}(x-${a2})`;
-    return { enonce: t1+t2, reponse: polynomeXConst(k1+k2, k1*a1 - k2*a2) };
+    return { enonce: t1+t2, reponse: polynomeXConst(k1+k2, k1*a1 - k2*a2),
+             detail: { lignes: [`${t1+t2} = ${sommeTermes([[k1, 'x'], [k1*a1, ''], [k2, 'x'], [-k2*a2, '']])} = ${polyL([k1*a1 - k2*a2, k1+k2])}`], final: polyL([k1*a1 - k2*a2, k1+k2]) } };
   }},
   {id:"4.3 b)", type:"alg", gen: () => {
     const k = entierSigne(2,7), a = alea(1,9), m = entierSigne(2,7), b = alea(1,9);
     const t1 = `${signeMagnitude(k, true, true)}x(x+${a})`;
     const t2 = `${signeMagnitude(-m, false, true)}(x-${b})`;
-    return { enonce: t1+t2, reponse: polynomeQuad(k, k*a - m, m*b) };
+    return { enonce: t1+t2, reponse: polynomeQuad(k, k*a - m, m*b),
+             detail: { lignes: [`${t1+t2} = ${sommeTermes([[k, 'x^{2}'], [k*a, 'x'], [-m, 'x'], [m*b, '']])} = ${polyL([m*b, k*a - m, k])}`], final: polyL([m*b, k*a - m, k]) } };
   }},
   {id:"4.3 c)", type:"alg", gen: () => {
     // plus exigeant : trois produits a developper puis regrouper, pas seulement deux
@@ -1007,7 +1053,8 @@ const generateurs = [
     const t1 = `${signeMagnitude(k1, true, true)}x(x+${a1})`;
     const t2 = `${signeMagnitude(-k2, false, true)}(x-${a2})`;
     const t3 = `${signeMagnitude(k3, false, true)}x`;
-    return { enonce: t1+t2+t3, reponse: polynomeQuad(k1, k1*a1 - k2 + k3, k2*a2) };
+    return { enonce: t1+t2+t3, reponse: polynomeQuad(k1, k1*a1 - k2 + k3, k2*a2),
+             detail: { lignes: [`${t1+t2+t3} = ${sommeTermes([[k1, 'x^{2}'], [k1*a1, 'x'], [-k2, 'x'], [k2*a2, ''], [k3, 'x']])} = ${polyL([k2*a2, k1*a1 - k2 + k3, k1])}`], final: polyL([k2*a2, k1*a1 - k2 + k3, k1]) } };
   }},
 
   // ---------- 5.6 : factoriser avec un facteur commun ----------
@@ -1015,19 +1062,26 @@ const generateurs = [
     // facteur commun apparent, une seule variable
     let p, q; do { p = alea(2,9); q = alea(2,9); } while (pgcd(p,q) !== 1);
     const g = alea(2,9);
-    return { enonce:`${g*p}x+${g*q}`, reponse:`${g}*(${p}*x+${q})` };
+    return { enonce:`${g*p}x+${g*q}`, reponse:`${g}*(${p}*x+${q})`,
+             detail: { lignes: [`${g*p}x+${g*q} = ${g}\\times ${p}x+${g}\\times ${q} = ${g}\\left(${p}x+${q}\\right)`], final: `${g}\\left(${p}x+${q}\\right)` } };
   }},
   {id:"4.4 b)", type:"alg", gen: () => {
     // facteur commun apparent, deux variables
     let p, q; do { p = alea(2,9); q = alea(2,9); } while (pgcd(p,q) !== 1);
     const g = alea(2,9);
-    return { enonce:`${g*p}x+${g*q}y`, reponse:`${g}*(${p}*x+${q}*y)` };
+    return { enonce:`${g*p}x+${g*q}y`, reponse:`${g}*(${p}*x+${q}*y)`,
+             detail: { lignes: [`${g*p}x+${g*q}y = ${g}\\times ${p}x+${g}\\times ${q}y = ${g}\\left(${p}x+${q}y\\right)`], final: `${g}\\left(${p}x+${q}y\\right)` } };
   }},
   {id:"4.4 c)", type:"alg", gen: () => {
     // plus exigeant : facteur commun CACHE, un binome partage par deux produits
     const a = alea(2,9), p = alea(1,9), q = alea(1,9), r = alea(1,9), s = alea(1,9);
     return { enonce:`(x+${a})(${binomeLatex(p,q)})+(x+${a})(${binomeLatex(r,s)})`,
-             reponse: reponseFactorisee(`(x+${a})`, p+r, q+s) };
+             reponse: reponseFactorisee(`(x+${a})`, p+r, q+s),
+             detail: { lignes: [
+               `(x+${a})(${binomeLatex(p,q)})+(x+${a})(${binomeLatex(r,s)}) = (x+${a})\\left[(${binomeLatex(p,q)})+(${binomeLatex(r,s)})\\right]`,
+               `(x+${a})\\left[(${binomeLatex(p,q)})+(${binomeLatex(r,s)})\\right] = (x+${a})\\left(${polyL([q+s, p+r])}\\right)`,
+               ...lignesFacteur(`(x+${a})`, p+r, q+s)],
+               final: factoriseeL(`(x+${a})`, p+r, q+s) } };
   }},
   {id:"4.4 d)", type:"alg", gen: () => {
     // encore plus exigeant : le facteur commun apparait dans TROIS termes, dont un terme "nu"
@@ -1035,27 +1089,36 @@ const generateurs = [
     let q, s, t;
     do { q = alea(1,9); s = alea(1,9); t = alea(1,9); } while (q + s - t === 0);
     return { enonce:`(x+${a})(${binomeLatex(p,q)})+(x+${a})(${binomeLatex(r,s)})-${t}(x+${a})`,
-             reponse: reponseFactorisee(`(x+${a})`, p+r, q+s-t) };
+             reponse: reponseFactorisee(`(x+${a})`, p+r, q+s-t),
+             detail: { lignes: [
+               `(x+${a})(${binomeLatex(p,q)})+(x+${a})(${binomeLatex(r,s)})-${t}(x+${a}) = (x+${a})\\left[(${binomeLatex(p,q)})+(${binomeLatex(r,s)})-${t}\\right]`,
+               `(x+${a})\\left[(${binomeLatex(p,q)})+(${binomeLatex(r,s)})-${t}\\right] = (x+${a})\\left(${polyL([q+s-t, p+r])}\\right)`,
+               ...lignesFacteur(`(x+${a})`, p+r, q+s-t)],
+               final: factoriseeL(`(x+${a})`, p+r, q+s-t) } };
   }},
 
   // ---------- 5.7 : simplifier une expression fractionnaire ----------
   {id:"4.5 a)", type:"alg", gen: () => {
     const g = alea(2,7), a = alea(2,9), b = alea(2,9);
-    return { enonce:`\\dfrac{${g*a}x+${g*b}}{${g}}`, reponse: polynomeXConst(a,b) };
+    return { enonce:`\\dfrac{${g*a}x+${g*b}}{${g}}`, reponse: polynomeXConst(a,b),
+             detail: { lignes: [`\\dfrac{${g*a}x+${g*b}}{${g}} = \\dfrac{${g}\\left(${a}x+${b}\\right)}{${g}} = ${a}x+${b}`], final: `${a}x+${b}` } };
   }},
   {id:"4.5 b)", type:"alg", gen: () => {
     const g = alea(2,9), a = alea(2,9);
-    return { enonce:`\\dfrac{${g}x(x+${a})}{${g}}`, reponse: polynomeQuad(1,a,0) };
+    return { enonce:`\\dfrac{${g}x(x+${a})}{${g}}`, reponse: polynomeQuad(1,a,0),
+             detail: { lignes: [`\\dfrac{${g}x(x+${a})}{${g}} = x(x+${a}) = x^{2}+${a}x`], final: `x^{2}+${a}x` } };
   }},
   {id:"4.5 c)", type:"alg", gen: () => {
     // plus exigeant : le denominateur ne s'annule pas completement, un facteur numerique reste
     const r = alea(2,4), g = alea(2,6), p = alea(1,6), q = alea(1,6);
-    return { enonce:`\\dfrac{${r*g*p}x+${r*g*q}}{${g}}`, reponse: polynomeXConst(r*p, r*q) };
+    return { enonce:`\\dfrac{${r*g*p}x+${r*g*q}}{${g}}`, reponse: polynomeXConst(r*p, r*q),
+             detail: { lignes: [`\\dfrac{${r*g*p}x+${r*g*q}}{${g}} = \\dfrac{${g}\\left(${r*p}x+${r*q}\\right)}{${g}} = ${r*p}x+${r*q}`], final: `${r*p}x+${r*q}` } };
   }},
   {id:"4.5 d)", type:"alg", gen: () => {
     // encore plus delicat : un double signe negatif, numerateur ET denominateur, qui s'annulent
     const g = alea(2,7), a = alea(2,9), b = alea(2,9);
-    return { enonce:`\\dfrac{-${g*a}x-${g*b}}{-${g}}`, reponse: polynomeXConst(a,b) };
+    return { enonce:`\\dfrac{-${g*a}x-${g*b}}{-${g}}`, reponse: polynomeXConst(a,b),
+             detail: { lignes: [`\\dfrac{-${g*a}x-${g*b}}{-${g}} = \\dfrac{-${g}\\left(${a}x+${b}\\right)}{-${g}} = ${a}x+${b}`], final: `${a}x+${b}` } };
   }},
 
   // ---------- 5.8 : calculs plus avances ----------
@@ -1065,14 +1128,25 @@ const generateurs = [
     const n = alea(2,8), k = alea(1,4);
     const prefixe = k === 1 ? '' : `${k}`;
     return { enonce: `\\(${prefixe}x^4-${k*n**4}\\)`,
-             reponse:`${k === 1 ? '' : k+'*'}(x-${n})*(x+${n})*(x^2+${n*n})` };
+             reponse:`${k === 1 ? '' : k+'*'}(x-${n})*(x+${n})*(x^2+${n*n})`,
+             detail: { lignes: [
+               ...(k === 1 ? [] : [`${k}x^{4}-${k*n**4} = ${k}\\left(x^{4}-${n**4}\\right)`]),
+               `x^{4}-${n**4} = \\left(x^{2}-${n*n}\\right)\\left(x^{2}+${n*n}\\right) = (x-${n})(x+${n})\\left(x^{2}+${n*n}\\right)`,
+               `${k === 1 ? '' : k}(x-${n})(x+${n})\\left(x^{2}+${n*n}\\right)`],
+               final: `${k === 1 ? '' : k}(x-${n})(x+${n})\\left(x^{2}+${n*n}\\right)` } };
   }},
   {id:"4.6 b)", type:"alg", texteLibre:true, gen: () => {
     // dans l'esprit de x^2-16-(2x+1)(x-4)+x-4 : une difference de carres cachee (x-n)(x+n),
     // un produit et un terme isole partageant tous le facteur (x-n)
     const n = alea(2,9), p = alea(2,7), q = entierSigne(1,7);
     return { enonce: `\\(x^2-${n*n}-(${binomeLatex(p,q)})(x-${n})+x-${n}\\)`,
-             reponse: reponseFactorisee(`(x-${n})`, 1-p, n-q+1) };
+             reponse: reponseFactorisee(`(x-${n})`, 1-p, n-q+1),
+             detail: { lignes: [
+               `x^{2}-${n*n} = (x-${n})(x+${n})`,
+               `x^{2}-${n*n}-(${binomeLatex(p,q)})(x-${n})+x-${n} = (x-${n})\\left[(x+${n})-(${binomeLatex(p,q)})+1\\right]`,
+               `(x-${n})\\left[(x+${n})-(${binomeLatex(p,q)})+1\\right] = (x-${n})\\left(${polyL([n-q+1, 1-p])}\\right)`,
+               ...lignesFacteur(`(x-${n})`, 1-p, n-q+1)],
+               final: factoriseeL(`(x-${n})`, 1-p, n-q+1) } };
   }},
   {id:"4.6 c)", type:"alg", texteLibre:true, gen: () => {
     // variante avec (x+n) comme facteur partage, et un terme carre-scalaire k*(x^2-n^2)
@@ -1080,17 +1154,26 @@ const generateurs = [
     const prefixeK = k === 1 ? '' : `${k}`;
     const termeR = `${signeMagnitude(-r, false, true)}(x+${n})`;
     return { enonce: `\\(${prefixeK}x^2-${k*n*n}+(${binomeLatex(p,q)})(x+${n})${termeR}\\)`,
-             reponse: reponseFactorisee(`(x+${n})`, k+p, q-r-k*n) };
+             reponse: reponseFactorisee(`(x+${n})`, k+p, q-r-k*n),
+             detail: { lignes: [
+               `${prefixeK}x^{2}-${k*n*n} = ${prefixeK}(x-${n})(x+${n})`,
+               `${prefixeK}x^{2}-${k*n*n}+(${binomeLatex(p,q)})(x+${n})${termeR} = (x+${n})\\left[${prefixeK}(x-${n})+(${binomeLatex(p,q)})${r < 0 ? '+' : '-'}${Math.abs(r)}\\right]`,
+               `(x+${n})\\left[${prefixeK}(x-${n})+(${binomeLatex(p,q)})${r < 0 ? '+' : '-'}${Math.abs(r)}\\right] = (x+${n})\\left(${polyL([q-r-k*n, k+p])}\\right)`,
+               ...lignesFacteur(`(x+${n})`, k+p, q-r-k*n)],
+               final: factoriseeL(`(x+${n})`, k+p, q-r-k*n) } };
   }}
 ];
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     // on recopie tous les champs declares sur le modele (id, type, formeChoix...)
     // sauf le generateur lui-meme : un `{id, type, ...gen()}` ecrase silencieusement les autres
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24);     // lignes d'égalités longues coupées en « A = B = C » puis « = D » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2136,7 +2219,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

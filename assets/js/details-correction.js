@@ -66,6 +66,71 @@ const Detail = (() => {
     return `\\small\\begin{array}{c|${'c'.repeat(2 * n + 3)}} ${haut.join(' & ')} \\\\ \\hline ${bas.join(' & ')} \\end{array}`;
   };
 
+  const ppcm = (u, v) => u * v / pgcdD(u, v);
+  // ---- sommes, produits et comparaisons de fractions écrits en ligne (consigne de David, 16/10/2026) ----
+  // Écriture en ligne, comme au cahier (consigne de David, 16/10/2026) : 1/2 + 3/7 = 1x7/2x7 + 3x2/7x2 = 7/14 + 6/14 = 13/14
+  // (aucune phrase : le dénominateur commun se lit dans la ligne)
+  const signeFrac = (s, i, t) => (i === 0 ? t : `${s > 0 ? ' + ' : ' - '}${t}`);
+  // somme de fractions [{s: +1|-1, n, d}] : une ligne (deux au-delà de deux fractions), résultat réduit { n, d }
+  function lignesSomme(termes) {
+    const den = termes.reduce((t, x) => ppcm(t, x.d), 1);
+    const num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+    const brute = fracBrute(num, den), simple = fracTexte(num, den);
+    const origine = termes.map((x, i) => signeFrac(x.s, i, fracBrute(x.n, x.d))).join('');
+    const converti = termes.map((x, i) => { const m = den / x.d; return signeFrac(x.s, i, m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+    const meme = termes.map((x, i) => signeFrac(x.s, i, fracBrute(x.n * (den / x.d), den))).join('');
+    const fin = den === 1 ? `${num}` : brute + (brute === simple ? '' : ` = ${simple}`);
+    const g = pgcdD(num, den) || 1;
+    const conversion = termes.some(x => x.d !== den);
+    // jusqu'à deux fractions : tout sur une ligne ; au-delà, l'écriture convertie finit la première ligne et la somme occupe la seconde
+    let lignes;
+    if (termes.length <= 2 || !conversion) lignes = [`${origine} = ${conversion ? converti + ' = ' : ''}${meme} = ${fin}`];
+    else lignes = [`${origine} = ${converti}`, `${meme} = ${fin}`];
+    return { lignes, final: simple, n: num / g, d: den / g };
+  }
+  // produit (a/b) x (c/d) : une ligne, résultat réduit { n, d }
+  function produitFrac(a, b, c, d) {
+    const n = a * c, m = b * d, g = pgcdD(n, m) || 1;
+    const brute = fracBrute(n, m), simple = fracTexte(n, m);
+    return { n: n / g, d: m / g, final: simple, lignes: [
+      `${a < 0 ? `\\left(${fracBrute(a, b)}\\right)` : fracBrute(a, b)}\\times ${fracBrute(c, d)} = \\dfrac{${a}\\times ${c}}{${b}\\times ${d}} = ${brute}` + (g > 1 ? ` = ${simple}` : '')] };
+  }
+  // comparaison de a/b et c/d : mise au même dénominateur (une ligne par fraction), numérateurs, conclusion
+  function lignesComparaison(a, b, c, d) {
+    const den = ppcm(b, d), x = a * den / b, y = c * den / d, op = x > y ? '>' : '<';
+    const conv = (p, v) => (v === den ? [] : [`${fracBrute(p, v)} = \\dfrac{${p}\\times ${den / v}}{${v}\\times ${den / v}} = \\dfrac{${p * den / v}}{${den}}`]);
+    return { lignes: [...conv(a, b), ...conv(c, d), `${x} ${op} ${y}`, `\\dfrac{${a}}{${b}} ${op} \\dfrac{${c}}{${d}}`], final: op };
+  }
+
+  // coupe les lignes d'égalités trop longues pour un téléphone : « A = B = C = D » devient « A = B = C » puis « = D » ; seuil en
+  // nombre de signes visibles ; les lignes avec ⟺, texte, tableau ou \quad ne sont pas touchées (outil de contrôle : une ligne qui
+  // commence par « = » reprend le dernier membre de la précédente)
+  const longueurVisible = l => l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\(?:left|right|,|;|:|!|quad|qquad)/g, '').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length;
+  const couperLigne = (l, seuil) => {
+    if (/\\iff|\\text|\\quad|\\begin/.test(l)) return [l];
+    const segs = []; let prof = 0, gauche = 0, debut = 0;
+    for (let i = 0; i < l.length; i++) {
+      if (l.startsWith('\\left', i)) { gauche++; i += 4; continue; }
+      if (l.startsWith('\\right', i)) { gauche--; i += 5; continue; }
+      const c = l[i];
+      if (c === '{') prof++; else if (c === '}') prof--;
+      else if (c === '=' && prof === 0 && gauche === 0 && l[i - 1] === ' ' && l[i + 1] === ' ') { segs.push(l.slice(debut, i).trim()); debut = i + 1; }
+    }
+    segs.push(l.slice(debut).trim());
+    if (segs.length < 2) return [l];
+    const lignes = []; let courant = segs[0];
+    for (let k = 1; k < segs.length; k++) {
+      if (longueurVisible(courant + segs[k]) > seuil) { lignes.push(courant); courant = `= ${segs[k]}`; }
+      else courant += ` = ${segs[k]}`;
+    }
+    lignes.push(courant);
+    return lignes;
+  };
+  const couper = (ex, seuil = 34) => {
+    ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.flatMap(l => couperLigne(l, seuil)); });
+    return ex;
+  };
+
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt dans les étapes
   const preparer = ex => {
     ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => l.replace(/</g, '\\lt ')); });
@@ -92,7 +157,7 @@ const Detail = (() => {
     .correction-ligne .details[hidden] { display: none; }`;
   document.head.appendChild(style);
 
-  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, preparer, html };
+  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
 })();
 
 function basculerDetails(idx, bouton) {

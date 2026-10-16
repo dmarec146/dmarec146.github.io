@@ -47,9 +47,45 @@ const ESSAIS = {
     [false, '\\text{Le dénominateur } 12 \\text{ n\'a pas d\'autre facteur premier que 2 ou 5}', { enonce: 'Le nombre \\(\\dfrac{7}{12}\\) est-il un nombre décimal ?' }, env('')]
   ],
   'la-periode-decimale-est-exacte': [
-    [true, '\\dfrac{1}{7} = 0{,}\\overline{142857} \\quad \\text{(période de } 6 \\text{ chiffres)}', {}, env('')],
-    [false, '\\dfrac{1}{7} = 0{,}\\overline{142858} \\quad \\text{(période de } 6 \\text{ chiffres)}', {}, env('')],
-    [false, '\\dfrac{1}{7} = 0{,}\\overline{142857} \\quad \\text{(période de } 3 \\text{ chiffres)}', {}, env('')]
+    [true, '\\dfrac{1}{7} = 0{,}\\overline{142857}', {}, env('')],
+    [false, '\\dfrac{1}{7} = 0{,}\\overline{142858}', {}, env('')]
+  ],
+  'la-longueur-de-periode-annoncee-est-exacte': [
+    [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
+    [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
+    [true, '\\text{Période de } 1 \\text{ chiffre}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{3}\\) est périodique.' }, env('')],
+    [false, '\\text{Période de } 1 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{3}\\) est périodique.' }, env('')]
+  ],
+  'les-unites-se-repetent-tous-les-4-exposants': [
+    [true, '\\text{les chiffres des unités se répètent de 4 en 4}', { enonce: 'Déterminer le chiffre des unités de \\(4^{268}\\)' }, env('')],
+    [true, '\\text{les chiffres des unités se répètent de 4 en 4}', { enonce: 'Déterminer le chiffre des unités de \\(7^{1\\,234}\\)' }, env('')]
+  ],
+  'la-puissance-finit-comme-sa-reduite': [
+    [true, '\\text{Donc } 4^{268} \\text{ finit comme } 4^{4}', {}, env('')],
+    [false, '\\text{Donc } 4^{267} \\text{ finit comme } 4^{4}', {}, env('')],
+    [true, '\\text{Donc } 9^{389} \\text{ finit comme } 9', {}, env('')],
+    [false, '\\text{Donc } 9^{388} \\text{ finit comme } 9', {}, env('')]
+  ],
+  'le-signe-de-x-est-celui-de-l-enonce': [
+    [true, '\\text{Comme } x \\lt  0 \\text{, } |x| = -x', { enonce: '\\(\\sqrt{x^2}\\), sachant que \\(x<0\\)' }, env('')],
+    [false, '\\text{Comme } x > 0 \\text{, } |x| = x', { enonce: '\\(\\sqrt{x^2}\\), sachant que \\(x<0\\)' }, env('')],
+    [false, '\\text{Comme } x \\lt  0 \\text{, } |x| = x', { enonce: '\\(\\sqrt{x^2}\\), sachant que \\(x<0\\)' }, env('')],
+    [true, '\\text{Comme } x > 0 \\text{, } |x| = x', { enonce: '\\(\\sqrt{x^2}\\), sachant que \\(x>0\\)' }, env('')]
+  ],
+  'a-puissance-5-finit-comme-a': [
+    [true, '\\text{Comme } 4^{5} \\text{ finit comme } 4 \\text{,}', {}, env('')],
+    [true, '\\text{Comme } 7^{5} \\text{ finit comme } 7 \\text{,}', {}, env('')],
+    [false, '\\text{Comme } 7^{5} \\text{ finit comme } 3 \\text{,}', {}, env('')]
+  ],
+  'm-n-est-pas-un-carre-parfait': [
+    [true, '\\text{Comme } 7 \\text{ n\'est pas un carré parfait, } \\sqrt{7} \\text{ est irrationnel}', {}, env('')],
+    [false, '\\text{Comme } 9 \\text{ n\'est pas un carré parfait, } \\sqrt{9} \\text{ est irrationnel}', {}, env('')]
+  ],
+  'le-coefficient-est-non-nul-et-la-racine-irrationnelle': [
+    [true, '\\text{et } 28 \\neq 0 \\text{, donc } 28\\sqrt{7} \\text{ est irrationnel}', {}, env('')],
+    [true, '\\text{et } -1 \\neq 0 \\text{, donc } -\\sqrt{7} \\text{ est irrationnel}', {}, env('')],
+    [false, '\\text{et } 0 \\neq 0 \\text{, donc } 0\\sqrt{7} \\text{ est irrationnel}', {}, env('')],
+    [false, '\\text{et } 3 \\neq 0 \\text{, donc } 3\\sqrt{9} \\text{ est irrationnel}', {}, env('')]
   ],
   'la-suite-est-arithmetique': [
     [true, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite arithmétique')],

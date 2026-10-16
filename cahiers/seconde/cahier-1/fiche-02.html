@@ -19,6 +19,7 @@ window.MathJax = {
 <script src="../../../assets/js/qcm-clic.js"></script>
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <style>
   :root {
     --bleu: #4B46C7;
@@ -925,24 +926,31 @@ function grouperMilliers(entier) {
   return entier.replace(/\B(?=(\d{3})+(?!\d))/g, '\\,');
 }
 
+// details de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js
+const { dP } = Detail;
+const pL = puissanceLatex, vP = varPuissanceLatex;   // jamais d'exposant 1
 const generateurs = [
   // ---------- 2.1 : calcul numerique (priorites, relatifs) ----------
   {id:"2.1 a)", type:"num", gen: () => {
     const a = alea(2,9), b = alea(2,12), c = alea(2,9);
-    return { enonce:`${a}\\times (${b}+${c})`, reponse:`${a*(b+c)}` };
+    return { enonce:`${a}\\times (${b}+${c})`, reponse:`${a*(b+c)}`,
+             detail: { lignes: [`${a}\\times (${b}+${c}) = ${a}\\times ${b+c} = ${a*(b+c)}`], final: `${a*(b+c)}` } };
   }},
   {id:"2.1 b)", type:"num", gen: () => {
     const a = alea(5,20), b = alea(2,15), c = alea(2,12);
-    return { enonce:`${a}-(${b}-${c})`, reponse:`${a-(b-c)}` };
+    return { enonce:`${a}-(${b}-${c})`, reponse:`${a-(b-c)}`,
+             detail: { lignes: [`${a}-(${b}-${c}) = ${a}-${dP(b-c)} = ${a-(b-c)}`], final: `${a-(b-c)}` } };
   }},
   {id:"2.1 c)", type:"num", gen: () => {
     const a = alea(2,9), b = alea(5,40);
-    return { enonce:`(-${a})^2-${b}`, reponse:`${a*a-b}` };
+    return { enonce:`(-${a})^2-${b}`, reponse:`${a*a-b}`,
+             detail: { lignes: [`(-${a})^2-${b} = ${a*a}-${b} = ${a*a-b}`], final: `${a*a-b}` } };
   }},
   {id:"2.1 d)", type:"num", gen: () => {
     // parentheses imbriquees : la difference interne peut etre negative
     const a = alea(2,20), b = alea(2,9), c = alea(2,12), d = alea(2,9);
-    return { enonce:`${a}-${b}\\times (${c}-${d})`, reponse:`${a - b*(c-d)}` };
+    return { enonce:`${a}-${b}\\times (${c}-${d})`, reponse:`${a - b*(c-d)}`,
+             detail: { lignes: [`${a}-${b}\\times (${c}-${d}) = ${a}-${b}\\times ${dP(c-d)}`, `${a}-${b}\\times ${dP(c-d)} = ${a}-${dP(b*(c-d))} = ${a - b*(c-d)}`], final: `${a - b*(c-d)}` } };
   }},
 
   // ---------- 2.2 : une seule puissance, une seule base (les trois regles de base) ----------
@@ -950,31 +958,37 @@ const generateurs = [
     const a = alea(2,13);
     let m, n;
     do { m = alea(2,5); n = alea(2,5); } while (m + n > 9);
-    return { enonce:`${a}^{${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, m+n) };
+    return { enonce:`${a}^{${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, m+n),
+             detail: { lignes: [`${a}^{${m}}\\times ${a}^{${n}} = ${a}^{${m}+${n}} = ${pL(a, m+n)}`], final: pL(a, m+n) } };
   }},
   {id:"2.2 b)", type:"num", forme:'puissance', gen: () => {
     const a = alea(2,15), n = alea(1,4), m = n + alea(2,5);
-    return { enonce:`\\dfrac{${puissanceLatex(a,m)}}{${puissanceLatex(a,n)}}`, reponse: puissanceTexte(a, m-n) };
+    return { enonce:`\\dfrac{${puissanceLatex(a,m)}}{${puissanceLatex(a,n)}}`, reponse: puissanceTexte(a, m-n),
+             detail: { lignes: [`\\dfrac{${pL(a,m)}}{${pL(a,n)}} = ${a}^{${m}-${n}} = ${pL(a, m-n)}`], final: pL(a, m-n) } };
   }},
   {id:"2.2 c)", type:"num", forme:'puissance', gen: () => {
     const a = alea(2,12);
     let m, n;
     do { m = alea(2,4); n = alea(2,3); } while (m * n > 9);
-    return { enonce:`\\left(${a}^{${m}}\\right)^{${n}}`, reponse: puissanceTexte(a, m*n) };
+    return { enonce:`\\left(${a}^{${m}}\\right)^{${n}}`, reponse: puissanceTexte(a, m*n),
+             detail: { lignes: [`\\left(${a}^{${m}}\\right)^{${n}} = ${a}^{${m}\\times ${n}} = ${pL(a, m*n)}`], final: pL(a, m*n) } };
   }},
 
   // ---------- 2.3 : exposants negatifs ----------
   {id:"2.3 a)", type:"num", forme:'puissance', formeOptions:{fraction:true}, gen: () => {
     const a = alea(2,13), n = alea(2,6);
-    return { enonce:`${a}^{-${n}}`, reponse:`1/${a}^${n}` };
+    return { enonce:`${a}^{-${n}}`, reponse:`1/${a}^${n}`,
+             detail: { lignes: [`${a}^{-${n}} = \\dfrac{1}{${a}^{${n}}}`], final: `\\dfrac{1}{${a}^{${n}}}` } };
   }},
   {id:"2.3 b)", type:"num", forme:'puissance', formeOptions:{fraction:true}, gen: () => {
     const a = alea(2,13), n = alea(2,6);
-    return { enonce:`\\dfrac{1}{${a}^{-${n}}}`, reponse: puissanceTexte(a, n) };
+    return { enonce:`\\dfrac{1}{${a}^{-${n}}}`, reponse: puissanceTexte(a, n),
+             detail: { lignes: [`\\dfrac{1}{${a}^{-${n}}} = ${a}^{${n}}`], final: `${a}^{${n}}` } };
   }},
   {id:"2.3 c)", type:"num", forme:'puissance', formeOptions:{fraction:true}, gen: () => {
     const a = alea(2,13), m = alea(1,4), n = m + alea(2,5);
-    return { enonce:`${a}^{-${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, n-m) };
+    return { enonce:`${a}^{-${m}}\\times ${a}^{${n}}`, reponse: puissanceTexte(a, n-m),
+             detail: { lignes: [`${a}^{-${m}}\\times ${a}^{${n}} = ${a}^{-${m}+${n}} = ${pL(a, n-m)}`], final: pL(a, n-m) } };
   }},
 
   // ---------- 2.4 : simplifier, avec plusieurs bases ----------
@@ -987,14 +1001,21 @@ const generateurs = [
     const m2 = alea(1,3), n2 = alea(1,3);
     const m1 = m2 + dp, n1 = n2 + dq;
     return { enonce:`\\dfrac{${puissanceLatex(p,m1)}\\times ${puissanceLatex(q,n1)}}{${puissanceLatex(p,m2)}\\times ${puissanceLatex(q,n2)}}`,
-             reponse:`${puissanceTexte(p, dp)}*${puissanceTexte(q, dq)}` };
+             reponse:`${puissanceTexte(p, dp)}*${puissanceTexte(q, dq)}`,
+             detail: { lignes: [
+               `\\dfrac{${pL(p,m1)}\\times ${pL(q,n1)}}{${pL(p,m2)}\\times ${pL(q,n2)}} = ${p}^{${m1}-${m2}}\\times ${q}^{${n1}-${n2}} = ${pL(p,dp)}\\times ${pL(q,dq)}`],
+               final: `${pL(p,dp)}\\times ${pL(q,dq)}` } };
   }},
   {id:"2.4 b)", type:"num", forme:'puissance', gen: () => {
     // base composee au numerateur : il faut ecrire 6^m = 2^m x 3^m avant de simplifier
     const [p, q] = melangerDeux(choix([[2,3],[2,5],[3,5]]));
     const m = alea(3,5), a = alea(1, m-1), b = alea(1, m-1);
     return { enonce:`\\dfrac{${puissanceLatex(p*q, m)}}{${puissanceLatex(p,a)}\\times ${puissanceLatex(q,b)}}`,
-             reponse:`${puissanceTexte(p, m-a)}*${puissanceTexte(q, m-b)}` };
+             reponse:`${puissanceTexte(p, m-a)}*${puissanceTexte(q, m-b)}`,
+             detail: { lignes: [
+               `${p*q}^{${m}} = (${p}\\times ${q})^{${m}} = ${p}^{${m}}\\times ${q}^{${m}}`,
+               `\\dfrac{${p}^{${m}}\\times ${q}^{${m}}}{${pL(p,a)}\\times ${pL(q,b)}} = ${p}^{${m}-${a}}\\times ${q}^{${m}-${b}} = ${pL(p,m-a)}\\times ${pL(q,m-b)}`],
+               final: `${pL(p,m-a)}\\times ${pL(q,m-b)}` } };
   }},
   {id:"2.4 c)", type:"alg", forme:'monome', gen: () => {
     // puissance d'un produit, puis quotient, avec deux lettres
@@ -1002,7 +1023,11 @@ const generateurs = [
     do { p = alea(2,3); q = alea(2,3); n = alea(2,3); } while (p*n > 9 || q*n > 9);
     const s = alea(1, p*n - 1), t = alea(1, q*n - 1);
     return { enonce:`\\dfrac{\\left(x^{${p}}y^{${q}}\\right)^{${n}}}{${varPuissanceLatex('x',s)}${varPuissanceLatex('y',t)}}`,
-             reponse:`${puissanceTexte('x', p*n - s)}*${puissanceTexte('y', q*n - t)}` };
+             reponse:`${puissanceTexte('x', p*n - s)}*${puissanceTexte('y', q*n - t)}`,
+             detail: { lignes: [
+               `\\left(x^{${p}}y^{${q}}\\right)^{${n}} = x^{${p}\\times ${n}}y^{${q}\\times ${n}} = x^{${p*n}}y^{${q*n}}`,
+               `\\dfrac{x^{${p*n}}y^{${q*n}}}{${vP('x',s)}${vP('y',t)}} = x^{${p*n}-${s}}y^{${q*n}-${t}} = ${vP('x', p*n - s)}${vP('y', q*n - t)}`],
+               final: `${vP('x', p*n - s)}${vP('y', q*n - t)}` } };
   }},
   {id:"2.4 d)", type:"alg", forme:'monome', gen: () => {
     // coefficient et lettre melanges : (kx)^n donne k^n, qu'il faut simplifier avec le denominateur
@@ -1014,7 +1039,11 @@ const generateurs = [
     let m, p, e;
     do { m = alea(1,4); p = alea(1,4); e = n + m - p; } while (e < 1 || e > 9);
     return { enonce:`\\dfrac{(${k}x)^{${n}}\\times ${c}${varPuissanceLatex('x',m)}}{${d}${varPuissanceLatex('x',p)}}`,
-             reponse:`${C}*${puissanceTexte('x', e)}` };
+             reponse:`${C}*${puissanceTexte('x', e)}`,
+             detail: { lignes: [
+               `(${k}x)^{${n}} = ${k}^{${n}}x^{${n}} = ${Math.pow(k,n)}x^{${n}}`,
+               `\\dfrac{${Math.pow(k,n)}x^{${n}}\\times ${c}${vP('x',m)}}{${d}${vP('x',p)}} = \\dfrac{${Math.pow(k,n)*c}x^{${n}+${m}}}{${d}${vP('x',p)}} = ${C}x^{${n}+${m}-${p}} = ${C}${vP('x', e)}`],
+               final: `${C}${vP('x', e)}` } };
   }},
 
   {id:"2.4 e)", type:"num", forme:'puissance', gen: () => {
@@ -1025,7 +1054,11 @@ const generateurs = [
     do { n = alea(2,3); dp = alea(1,3); dq = alea(1,3); } while (dp*n > 9 || dq*n > 9);
     const c = alea(1,3), b = alea(1,3);
     return { enonce:`\\left(\\dfrac{${puissanceLatex(p, c+dp)}\\times ${puissanceLatex(q, b)}}{${puissanceLatex(p, c)}\\times ${puissanceLatex(q, b+dq)}}\\right)^{${n}}`,
-             reponse:`${puissanceTexte(p, dp*n)}/${puissanceTexte(q, dq*n)}` };
+             reponse:`${puissanceTexte(p, dp*n)}/${puissanceTexte(q, dq*n)}`,
+             detail: { lignes: [
+               `\\dfrac{${pL(p, c+dp)}\\times ${pL(q, b)}}{${pL(p, c)}\\times ${pL(q, b+dq)}} = ${pL(p, dp)}\\times ${q}^{-${dq}} = \\dfrac{${pL(p, dp)}}{${pL(q, dq)}}`,
+               `\\left(\\dfrac{${pL(p, dp)}}{${pL(q, dq)}}\\right)^{${n}} = \\dfrac{${p}^{${dp}\\times ${n}}}{${q}^{${dq}\\times ${n}}} = \\dfrac{${pL(p, dp*n)}}{${pL(q, dq*n)}}`],
+               final: `\\dfrac{${pL(p, dp*n)}}{${pL(q, dq*n)}}` } };
   }},
   {id:"2.4 f)", type:"num", forme:'puissance', gen: () => {
     // exposants negatifs sur deux bases : les exposants s'ajoutent au lieu de se retrancher
@@ -1033,7 +1066,11 @@ const generateurs = [
     let a, c, b, d;
     do { a = alea(1,5); c = alea(1,5); b = alea(1,5); d = alea(1,5); } while (a + c > 9 || b + d > 9);
     return { enonce:`\\dfrac{${p}^{-${a}}\\times ${puissanceLatex(q, b)}}{${puissanceLatex(p, c)}\\times ${q}^{-${d}}}`,
-             reponse:`${puissanceTexte(q, b+d)}/${puissanceTexte(p, a+c)}` };
+             reponse:`${puissanceTexte(q, b+d)}/${puissanceTexte(p, a+c)}`,
+             detail: { lignes: [
+               `\\dfrac{${p}^{-${a}}\\times ${pL(q, b)}}{${pL(p, c)}\\times ${q}^{-${d}}} = ${p}^{-${a}-${c}}\\times ${q}^{${b}+${d}} = ${p}^{-${a+c}}\\times ${pL(q, b+d)}`,
+               `${p}^{-${a+c}}\\times ${pL(q, b+d)} = \\dfrac{${pL(q, b+d)}}{${pL(p, a+c)}}`],
+               final: `\\dfrac{${pL(q, b+d)}}{${pL(p, a+c)}}` } };
   }},
   {id:"2.4 g)", type:"num", forme:'puissance', gen: () => {
     // base composee dont la decomposition n'est pas immediate : 12 = 2^2 x 3, 45 = 3^2 x 5...
@@ -1047,7 +1084,12 @@ const generateurs = [
       a = alea(1, alpha*m - 1); b = alea(1, beta*m - 1);
     } while (alpha*m - a < 1 || beta*m - b < 1 || alpha*m > 9 || beta*m > 9);
     return { enonce:`\\dfrac{${N}^{${m}}}{${puissanceLatex(p, a)}\\times ${puissanceLatex(q, b)}}`,
-             reponse:`${puissanceTexte(p, alpha*m - a)}*${puissanceTexte(q, beta*m - b)}` };
+             reponse:`${puissanceTexte(p, alpha*m - a)}*${puissanceTexte(q, beta*m - b)}`,
+             detail: { lignes: [
+               `${N} = ${pL(p, alpha)}\\times ${pL(q, beta)}`,
+               `${N}^{${m}} = \\left(${pL(p, alpha)}\\times ${pL(q, beta)}\\right)^{${m}} = ${p}^{${alpha*m}}\\times ${q}^{${beta*m}}`,
+               `\\dfrac{${p}^{${alpha*m}}\\times ${q}^{${beta*m}}}{${pL(p, a)}\\times ${pL(q, b)}} = ${p}^{${alpha*m}-${a}}\\times ${q}^{${beta*m}-${b}} = ${pL(p, alpha*m - a)}\\times ${pL(q, beta*m - b)}`],
+               final: `${pL(p, alpha*m - a)}\\times ${pL(q, beta*m - b)}` } };
   }},
 
   // ---------- 2.5 : calculs plus avances ----------
@@ -1058,7 +1100,12 @@ const generateurs = [
     const N = choix([1,2,5]) * Math.pow(10, alea(3,6));
     let n = 0, v = 1;
     while (v <= N) { v *= a; n++; }
-    return { enonce:`Déterminer le plus petit entier \\(n\\) tel que \\(${a}^n > ${grouperMilliers(String(N))}\\)`, reponse:`${n}` };
+    const gm = x => grouperMilliers(String(x)), A = BigInt(a);
+    return { enonce:`Déterminer le plus petit entier \\(n\\) tel que \\(${a}^n > ${grouperMilliers(String(N))}\\)`, reponse:`${n}`,
+             detail: { lignes: [
+               `${a}^{${n-1}} = ${gm(A ** BigInt(n-1))}`, `${gm(A ** BigInt(n-1))} \\leqslant ${gm(N)}`,
+               `${a}^{${n}} = ${gm(A ** BigInt(n))}`, `${gm(A ** BigInt(n))} > ${gm(N)}`,
+               `n = ${n}`], final: `${n}` } };
   }},
   {id:"2.5 b)", type:"alg", forme:'monome', gen: () => {
     // Regrouper une somme de puissances : a^n + a^(n+i) + ... = (1 + a^i + ...) a^n.
@@ -1067,7 +1114,12 @@ const generateurs = [
     const decalages = [0].concat(melanger([1,2,3]).slice(0, alea(1,2)).sort((u,v) => u - v));
     const coef = decalages.reduce((s, d) => s + Math.pow(a, d), 0);
     const termes = decalages.map(d => d === 0 ? `${a}^n` : `${a}^{n+${d}}`);
-    return { enonce: termes.join('+'), reponse:`${coef}*${a}^n` };
+    const facteurs = decalages.slice(1);
+    return { enonce: termes.join('+'), reponse:`${coef}*${a}^n`,
+             detail: { lignes: [
+               `${termes.join('+')} = ${a}^{n}\\left(1+${facteurs.map(d => pL(a, d)).join('+')}\\right)`,
+               `${a}^{n}\\left(1+${facteurs.map(d => Math.pow(a, d)).join('+')}\\right) = ${coef}\\times ${a}^{n}`],
+               final: `${coef}\\times ${a}^{n}` } };
   }},
   {id:"2.5 c)", type:"alg", forme:'monome', texteLibre:true, gen: () => {
     // Ramener deux puissances a une base commune. Le vivier retient tous les triplets dont les
@@ -1076,7 +1128,12 @@ const generateurs = [
     // On demande l'exposant seul, pas l'expression entiere : au clavier physique, la touche
     // « ^ » n'englobe que le caractere suivant, si bien que « 3^7n » se lit 3^7 x n.
     return { enonce:`\\(${Math.pow(b,i)}^n\\times ${Math.pow(b,j)}^n\\) peut s'écrire sous la forme \\(${b}^p\\), où \\(p\\) dépend de \\(n\\). Donner \\(p\\)`,
-             reponse:`${i+j}*n` };
+             reponse:`${i+j}*n`,
+             detail: { lignes: [
+               `${Math.pow(b,i)}^{n}\\times ${Math.pow(b,j)}^{n} = \\left(${b}^{${i}}\\right)^{n}\\times \\left(${b}^{${j}}\\right)^{n} = ${b}^{${i}n}\\times ${b}^{${j}n}`,
+               `${b}^{${i}n}\\times ${b}^{${j}n} = ${b}^{${i}n+${j}n} = ${b}^{${i+j}n}`,
+               `p = ${i+j}n`],
+               final: `${i+j}n` } };
   }},
   {id:"2.5 d)", type:"num", texteLibre:true, gen: () => {
     // Croissance comparee de b^n et de n^k. On demande le rang A PARTIR DUQUEL l'inegalite
@@ -1086,7 +1143,15 @@ const generateurs = [
     let dernierEchec = 0;
     for (let n = 1; n <= 200; n++) { if (Math.pow(b, n) <= Math.pow(n, k)) dernierEchec = n; }
     return { enonce:`Déterminer le plus petit entier \\(n_0\\) tel que \\(${b}^n > n^{${k}}\\) pour tout entier \\(n\\geqslant n_0\\)`,
-             reponse:`${dernierEchec + 1}` };
+             reponse:`${dernierEchec + 1}`,
+             detail: (() => {
+               const nf = dernierEchec, n0 = dernierEchec + 1, B = BigInt(b), K = BigInt(k);
+               const v = (x, e) => (BigInt(x) ** BigInt(e)).toString(), w = (x, e) => (BigInt(x) ** BigInt(e)).toString();
+               return { lignes: [
+                 `${b}^{${nf}} = ${v(b, nf)} \\quad ${nf}^{${k}} = ${w(nf, k)}`, `${v(b, nf)} \\leqslant ${w(nf, k)}`,
+                 `${b}^{${n0}} = ${v(b, n0)} \\quad ${n0}^{${k}} = ${w(n0, k)}`, `${v(b, n0)} > ${w(n0, k)}`,
+                 `n_0 = ${n0}`], final: `${n0}` };
+             })() };
   }},  {id:"2.5 e)", type:"num", texteLibre:true, gen: () => {
     // Chiffre des unites d'une tres grande puissance : la calculatrice etant inutile ici,
     // il faut remarquer que les unites de a^k se repetent. Pour ces bases, le motif se
@@ -1097,17 +1162,30 @@ const generateurs = [
     let u = 1;
     for (let k = 1; k <= 4; k++) { u = (u * a) % 10; motif.push(u); }
     return { enonce:`Déterminer le chiffre des unités de \\(${a}^{${grouperMilliers(String(N))}}\\)`,
-             reponse:`${motif[(N - 1) % 4]}` };
+             reponse:`${motif[(N - 1) % 4]}`,
+             detail: (() => {
+               const r0 = N % 4, q = (N - r0) / 4, r = r0 === 0 ? 4 : r0, d = motif[r - 1], Ng = grouperMilliers(String(N));
+               return { lignes: [
+                 `${a}^{2} = ${a*a} \\quad ${a}^{3} = ${a*a*a}`,
+                 `${a}^{4} = ${a*a*a*a} \\quad ${a}^{5} = ${a*a*a*a*a}`,
+                 `\\text{Comme } ${a}^{5} \\text{ finit comme } ${a} \\text{,}`,
+                 `\\text{les chiffres des unités se répètent de 4 en 4}`,
+                 r0 === 0 ? `${Ng} = 4\\times ${q}` : `${Ng} = 4\\times ${q} + ${r0}`,
+                 `\\text{Donc } ${a}^{${Ng}} \\text{ finit comme } ${pL(a, r)}`,
+                 `\\text{Chiffre des unités : } ${d}`], final: `${d}` };
+             })() };
   }}
 ];
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     // on recopie tous les champs declares sur le modele (id, type, fractionIrreductible...)
     // sauf le generateur lui-meme : un `{id, type, ...gen()}` ecrase silencieusement les autres
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2095,7 +2173,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

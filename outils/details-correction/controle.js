@@ -79,7 +79,7 @@ async function controlerDansLaPage(opts) {
   // ---------- LaTeX -> mathjs ----------
   const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'abs', 'pi', 'e', 'Infinity', 'nthRoot']);
   function versMathjs(tex) {
-    let t = String(tex).replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')
+    let t = String(tex).replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
       .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
       .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '');
@@ -365,8 +365,12 @@ async function controlerDansLaPage(opts) {
     if (cmp === 'faux') noter('erreur', 'final-different-de-la-reponse', 'final = ' + D.final + '  /  reponse = ' + (e.reponse !== undefined ? e.reponse : '') );
     ctx.finalVerifie += cmp === 'ok' ? 1 : 0; ctx.finalNonVerifiable += cmp === 'non-verifiable' ? 1 : 0;
     let precedent = null;       // dernière partie de la ligne précédente : une ligne qui commence par ⟺ la prolonge
-    for (const [idxL, l] of D.lignes.entries()) {
+    let dernierMembre = null;     // dernier membre de la ligne précédente : une ligne qui commence par « = » le reprend
+    for (const [idxL, l0] of D.lignes.entries()) {
       ctx.lignes++;
+      let l = l0;
+      if (/^\s*=(?!=)/.test(l0) && dernierMembre) l = dernierMembre + ' ' + l0.trim();
+      dernierMembre = /\\iff|\\Leftrightarrow|\\text|\\begin|\\q?quad/.test(l) ? null : l.split('=').pop().trim();
       // une ligne suivie d'une ligne qui commence par ⟺ est la première partie d'une équivalence : « A = B » littéral y est une équation à résoudre
       const prolongee = idxL + 1 < D.lignes.length && /^\s*(\\iff|\\Leftrightarrow)/.test(D.lignes[idxL + 1]);
       if (/\\begin/.test(l)) { precedent = null; continue; }                    // tableau de signes : relu à la main
@@ -383,7 +387,7 @@ async function controlerDansLaPage(opts) {
           const pieces = p.split(/\\text\{(?!\s*ou\s*\})[^{}]*\}/).map((s) => s.replace(/[.,;:]\s*$/, '').trim()).filter(Boolean);
           pieces.forEach((piece) => {
             const morceaux = /\\text\{\s*ou\s*\}/.test(piece) ? piece.split(/\\text\{\s*ou\s*\}/) : [piece];
-            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1 || prolongee); if (r === null) return; if (r.illisible) ctx.chainesIllisibles++; else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
+            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1 || prolongee); if (r === null) return; if (r.illisible) { ctx.chainesIllisibles++; const ill = stats.illisiblesEx || (stats.illisiblesEx = {}); const o = ill[e.id] || (ill[e.id] = { n: 0, ex: q }); o.n++; } else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
           });
         });
         for (let i = 0; i + 1 < parties.length && ctx.equivActif !== false; i++) {
@@ -648,6 +652,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
     lignesRapport.push(`${nbE ? 'ERREURS ' : nbS ? 'style    ' : 'OK       '} ${fiche} : ${r.avecDetail.length} exercice(s) à détail sur ${r.avecDetail.length + r.sansDetail.length}, ${s.avecDetail} détails contrôlés ` +
       `(${s.chaines} chaînes d'égalités, ${s.equivalences} équivalences, ${s.assertionsVerifiees || 0} assertions de phrases, ${s.finalVerifie} réponses finales vérifiées${s.finalNonVerifiable ? ', ' + s.finalNonVerifiable + ' non vérifiables automatiquement' : ''}, ` +
       `${s.motifsLaTeX} formes LaTeX compilées${s.chainesIllisibles || s.equivalencesIllisibles ? ', ' + s.chainesIllisibles + ' chaînes et ' + s.equivalencesIllisibles + ' équivalences non lisibles' : ''})`);
+    if (process.argv.includes('--illisibles')) for (const [id, o] of Object.entries(s.illisiblesEx || {})) lignesRapport.push(`      chaîne non lisible ${id} (×${o.n}) : ${o.ex}`);
     for (const a of anomalies) lignesRapport.push(`      [${a.gravite}] ${a.id} — ${a.motif}${a.n > 1 ? ' (×' + a.n + ')' : ''} : ${a.exemple}`);
     const at = Object.entries(r.autotest);
     if (at.length) lignesRapport.push('      auto-test (détection d\'une erreur volontaire) : ' + at.map(([n, v]) => `${n} ${v.detectes}/${v.essais}`).join(' ; '));

@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.5,"3.1 c)":0.5,"3.1 d)":0.5,"3.2 a)":0.5,"3.2 b)":0.75,"3.2 c)":0.5,"3.2 d)":0.75,"3.3 a)":0.75,"3.3 b)":1,"3.3 c)":1,"3.4 a)":0.5,"3.4 b)":0.75,"3.4 c)":1,"3.4 d)":1.25,"3.5 a)":0.75,"3.5 b)":1,"3.5 c)":1.25,"3.6 a)":0.5,"3.6 b)":0.75,"3.6 c)":1,"3.7 a)":2,"3.7 b)":1.5,"3.7 c)":1.5,"3.7 d)":1.75},"bonus":["3.7 a)","3.7 b)","3.7 c)","3.7 d)"]});
@@ -939,33 +940,69 @@ function fractionSurdTexte(coefNum, radicand, den) {
 // Quatre generateurs figes donneraient toujours les memes quatre calculs. On tire donc quatre
 // modeles DISTINCTS dans ce vivier, une fois par generation (voir genererExercices) : tirer
 // modele par modele permettrait des doublons.
+// details de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js
+const { dP, fracBrute, lignesSomme, produitFrac } = Detail;
+// coefficient devant une racine : « 3\sqrt{5} », « \sqrt{5} », « -\sqrt{5} » ; radicande 1 : le nombre seul
+const surdL = (c, r) => (r === 1 ? `${c}` : Math.abs(c) === 1 ? `${c < 0 ? '-' : ''}\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+// (cn racine(r)) / den, reduit : « \dfrac{2\sqrt{7}}{3} »
+const fracSurdL = (cn, r, den) => {
+  const g = pgcd(cn, den) || 1, c = cn / g, d = den / g;
+  const base = r === 1 ? `${c}` : (c === 1 ? `\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+  return d === 1 ? base : `\\dfrac{${base}}{${d}}`;
+};
 const MODELES_CALCUL = [
   () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a} - ${b*c} = ${a - b*c}`], final: `${a - b*c}` } }; },
+  // produit d'un negatif par une difference
   () => { let a, b, c; do { a = alea(2,9); b = alea(2,12); c = alea(2,15); } while (b === c);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b - c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
+  // carre puis soustraction
   () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}`,
+                   detail: { lignes: [`${a}^2-${b}\\times ${c} = ${a*a} - ${b*c} = ${a*a - b*c}`], final: `${a*a - b*c}` } }; },
+  // double negation
   () => { let a, b; do { a = alea(2,15); b = alea(2,15); } while (a === b);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}`,
+                   detail: { lignes: [`-${a}-(-${b}) = -${a} + ${b} = ${-a + b}`], final: `${-a + b}` } }; },
+  // produit de trois facteurs signes
   () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}`,
+                   detail: { lignes: [`${a}\\times (-${b})\\times (-${c}) = (${-a*b})\\times (-${c}) = ${a*b*c}`], final: `${a*b*c}` } }; },
+  // quotient exact suivi d'une addition
   () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}`,
+                   detail: { lignes: [`\\dfrac{${b*q}}{${b}}+${c} = ${q}+${c} = ${q + c}`], final: `${q + c}` } }; },
+  // quotient d'une somme : la barre de fraction joue le role d'une parenthese
   () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}}{${c}} = \\dfrac{${a + b}}{${c}} = ${q}`], final: `${q}` } }; },
+  // moyenne de trois entiers
   () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}+${c}}{3} = \\dfrac{${3*q}}{3} = ${q}`], final: `${q}` } }; },
+  // suite d'additions et de soustractions
   () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}`,
+                   detail: { lignes: [`${a}-${b}+${c}-${d} = ${a - b}+${c}-${d} = ${a - b + c}-${d} = ${a - b + c - d}`], final: `${a - b + c - d}` } }; },
+  // distributivite mentale : a x 99 = a x 100 - a
   () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+          const base = m > 500 ? 1000 : 100, ecart = base - m, signe = ecart > 0 ? '-' : '+', k = Math.abs(ecart);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe} ${k}) = ${a*base} ${signe} ${a*k} = ${a*m}`], final: `${a*m}` } }; },
+  // cube et difference
   () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}`,
+                   detail: { lignes: [`${a}^3-${b} = ${a*a*a} - ${b} = ${a*a*a - b}`], final: `${a*a*a - b}` } }; },
+  // priorites imbriquees
   () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}`,
+                   detail: { lignes: [`${a}\\times (${b}+${c})-${d} = ${a}\\times ${b + c}-${d} = ${a*(b+c)}-${d} = ${a*(b+c) - d}`], final: `${a*(b+c) - d}` } }; },
+  // double et moitie
   () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}`,
+                   detail: { lignes: [`\\dfrac{${a}}{2}+${b}\\times 2 = ${q}+${2*b} = ${q + 2*b}`], final: `${q + 2*b}` } }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 // une reponse nulle ("3^3-27", "12-3x4") est ecartee : le calcul retombe sur un autre tirage du meme modele
@@ -981,41 +1018,49 @@ const generateurs = [
   // ---------- 3.2 : fractions irreductibles, denominateurs premiers entre eux (sans le dire dans le titre) ----------
   {id:"3.2 a)", type:"num", fractionIrreductible:true, gen: () => {
     const [b,d] = denominateursPremiersEntreEux(), a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d + c*b, b*d) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: 1, n: c, d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d + c*b, b*d), detail: { lignes: S.lignes, final: S.final } };
   }},
   {id:"3.2 b)", type:"num", fractionIrreductible:true, gen: () => {
     // le resultat peut etre negatif ; jamais nul, les denominateurs etant premiers entre eux
     const [b,d] = denominateursPremiersEntreEux(), a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d - c*b, b*d) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: -1, n: c, d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d - c*b, b*d), detail: { lignes: S.lignes, final: S.final } };
   }},
   {id:"3.2 c)", type:"num", fractionIrreductible:true, gen: () => {
     const [b,d] = denominateursPremiersEntreEux(), a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*c, b*d) };
+    const P = produitFrac(a, b, c, d);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*c, b*d), detail: { lignes: P.lignes, final: P.final } };
   }},
   {id:"3.2 d)", type:"num", fractionIrreductible:true, gen: () => {
     const [b,d] = denominateursPremiersEntreEux(), a = numerateurPour(b), c = numerateurPour(d);
-    return { enonce:`\\dfrac{${a}}{${b}}\\div \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d, b*c) };
+    const P = produitFrac(a, b, d, c);
+    return { enonce:`\\dfrac{${a}}{${b}}\\div \\dfrac{${c}}{${d}}`, reponse: fractionTexte(a*d, b*c),
+             detail: { lignes: [`\\dfrac{${a}}{${b}}\\div \\dfrac{${c}}{${d}} = \\dfrac{${a}}{${b}}\\times ${fracBrute(d, c)}`, ...P.lignes], final: P.final } };
   }},
 
   // ---------- 3.3 : simplifier sous la forme a-racine(b) ----------
   {id:"3.3 a)", type:"num", gen: () => {
     let k, n;
     do { k = alea(2,9); n = choix(SQUAREFREE.filter(v => v <= 40)); } while (k*k*n > 600);
-    return { enonce:`\\sqrt{${k*k*n}}`, reponse: surdTexte(k, n) };
+    return { enonce:`\\sqrt{${k*k*n}}`, reponse: surdTexte(k, n),
+             detail: { lignes: [`\\sqrt{${k*k*n}} = \\sqrt{${k*k}\\times ${n}} = ${surdL(k, n)}`], final: surdL(k, n) } };
   }},
   {id:"3.3 b)", type:"num", gen: () => {
     // presente sous forme d'un produit non simplifie au prealable : il faut d'abord multiplier
     let k, n;
     do { k = alea(2,9); n = choix(SQUAREFREE.filter(v => v <= 40)); } while (k*k*n > 600);
     const facteurs = melanger([k*k, n]);
-    return { enonce:`\\sqrt{${facteurs[0]}\\times ${facteurs[1]}}`, reponse: surdTexte(k, n) };
+    return { enonce:`\\sqrt{${facteurs[0]}\\times ${facteurs[1]}}`, reponse: surdTexte(k, n),
+             detail: { lignes: [`\\sqrt{${facteurs[0]}\\times ${facteurs[1]}} = \\sqrt{${k*k*n}} = \\sqrt{${k*k}\\times ${n}} = ${surdL(k, n)}`], final: surdL(k, n) } };
   }},
   {id:"3.3 c)", type:"num", gen: () => {
     // un coefficient devant la racine, qui se combine avec celui que l'on extrait
     let k, n, c;
     do { k = alea(2,7); n = choix(SQUAREFREE.filter(v => v <= 30)); } while (k*k*n > 400);
     c = alea(2,6);
-    return { enonce:`${c}\\sqrt{${k*k*n}}`, reponse: surdTexte(c*k, n) };
+    return { enonce:`${c}\\sqrt{${k*k*n}}`, reponse: surdTexte(c*k, n),
+             detail: { lignes: [`${c}\\sqrt{${k*k*n}} = ${c}\\times ${k}\\sqrt{${n}} = ${surdL(c*k, n)}`], final: surdL(c*k, n) } };
   }},
 
   // ---------- 3.4 : operations sur les radicaux ----------
@@ -1025,14 +1070,17 @@ const generateurs = [
     const moins = alea(0,1) === 0;
     let q;
     do { q = alea(2,9); } while (moins && q === p);
-    return { enonce: suiteSurdsLatex([[p,n],[moins ? -q : q, n]]), reponse: surdTexte(moins ? p-q : p+q, n) };
+    const res = moins ? p - q : p + q;
+    return { enonce: suiteSurdsLatex([[p,n],[moins ? -q : q, n]]), reponse: surdTexte(moins ? p-q : p+q, n),
+             detail: { lignes: [`${suiteSurdsLatex([[p,n],[moins ? -q : q, n]])} = (${p}${moins ? '-' : '+'}${q})\\sqrt{${n}} = ${surdL(res, n)}`], final: surdL(res, n) } };
   }},
   {id:"3.4 b)", type:"num", gen: () => {
     // produit de deux radicaux distincts : le produit ab n'est generalement pas sans carre
     let a, b;
     do { a = choix(SQUAREFREE.filter(v => v <= 15)); b = choix(SQUAREFREE.filter(v => v <= 15)); } while (a === b);
     const { coef, radicand } = simplifierRacine(a*b);
-    return { enonce:`\\sqrt{${a}}\\times \\sqrt{${b}}`, reponse: surdTexte(coef, radicand) };
+    return { enonce:`\\sqrt{${a}}\\times \\sqrt{${b}}`, reponse: surdTexte(coef, radicand),
+             detail: { lignes: [`\\sqrt{${a}}\\times \\sqrt{${b}} = \\sqrt{${a}\\times ${b}} = \\sqrt{${a*b}}` + (coef > 1 ? ` = \\sqrt{${coef*coef}\\times ${radicand}} = ${surdL(coef, radicand)}` : '')], final: surdL(coef, radicand) } };
   }},
   {id:"3.4 c)", type:"num", gen: () => {
     // trois termes, deux radicaux distincts : il faut reconnaitre lesquels se combinent
@@ -1040,7 +1088,8 @@ const generateurs = [
     do { a = choix(SQUAREFREE.filter(v => v <= 20)); b = choix(SQUAREFREE.filter(v => v <= 20)); } while (a === b);
     const p = alea(2,9), q = alea(2,9), r = alea(2,9);
     return { enonce: suiteSurdsLatex([[p,a],[q,b],[-r,a]]),
-             reponse: joindreReponseSurds([[p - r, a], [q, b]]) };
+             reponse: joindreReponseSurds([[p - r, a], [q, b]]),
+             detail: { lignes: [`${suiteSurdsLatex([[p,a],[q,b],[-r,a]])} = (${p}-${r})\\sqrt{${a}}+${q}\\sqrt{${b}}`, `(${p}-${r})\\sqrt{${a}}+${q}\\sqrt{${b}} = ${suiteSurdsLatex([[p - r, a], [q, b]])}`], final: suiteSurdsLatex([[p - r, a], [q, b]]) } };
   }},
   {id:"3.4 d)", type:"num", gen: () => {
     // Quotient de deux racines avec coefficient. On construit a = b*m^2*s (s sans carre,
@@ -1056,41 +1105,55 @@ const generateurs = [
     } while (a > 900);
     const p = alea(2,9), q = alea(2,9);
     return { enonce:`\\dfrac{${p}\\sqrt{${a}}}{${q}\\sqrt{${b}}}`,
-             reponse: fractionSurdTexte(p * m, s, q) };
+             reponse: fractionSurdTexte(p * m, s, q),
+             detail: (() => {
+               const fin = fracSurdL(p * m, s, q), racS = s === 1 ? '' : `\\sqrt{${s}}`, ecrit = `\\dfrac{${p * m}${racS}}{${q}}`;
+               return { lignes: [
+                 `\\dfrac{${p}\\sqrt{${a}}}{${q}\\sqrt{${b}}} = \\dfrac{${p}\\sqrt{\\dfrac{${a}}{${b}}}}{${q}} = \\dfrac{${p}\\sqrt{${m*m*s}}}{${q}}`,
+                 `\\dfrac{${p}\\sqrt{${m*m*s}}}{${q}} = \\dfrac{${p}\\times ${m}${racS}}{${q}} = ${ecrit}` + (ecrit === fin ? '' : ` = ${fin}`)],
+                 final: fin };
+             })() };
   }},
 
   // ---------- 3.5 : radicaux au denominateur ----------
   {id:"3.5 a)", type:"num", gen: () => {
     const n = choix(SQUAREFREE);
-    return { enonce:`\\dfrac{1}{\\sqrt{${n}}}`, reponse: rationaliserSimple(1, n) };
+    return { enonce:`\\dfrac{1}{\\sqrt{${n}}}`, reponse: rationaliserSimple(1, n),
+             detail: { lignes: [`\\dfrac{1}{\\sqrt{${n}}} = \\dfrac{1\\times \\sqrt{${n}}}{\\sqrt{${n}}\\times \\sqrt{${n}}} = \\dfrac{\\sqrt{${n}}}{${n}}`], final: `\\dfrac{\\sqrt{${n}}}{${n}}` } };
   }},
   {id:"3.5 b)", type:"num", gen: () => {
     // numerateur premier avec le radicande : aucune simplification apres rationalisation
     let n, k;
     do { n = choix(SQUAREFREE.filter(v => v <= 40)); k = alea(2,9); } while (pgcd(k, n) !== 1);
-    return { enonce:`\\dfrac{${k}}{\\sqrt{${n}}}`, reponse: rationaliserSimple(k, n) };
+    return { enonce:`\\dfrac{${k}}{\\sqrt{${n}}}`, reponse: rationaliserSimple(k, n),
+             detail: { lignes: [`\\dfrac{${k}}{\\sqrt{${n}}} = \\dfrac{${k}\\times \\sqrt{${n}}}{\\sqrt{${n}}\\times \\sqrt{${n}}} = \\dfrac{${k}\\sqrt{${n}}}{${n}}`], final: `\\dfrac{${k}\\sqrt{${n}}}{${n}}` } };
   }},
   {id:"3.5 c)", type:"num", gen: () => {
     // numerateur ayant un facteur commun avec le radicande (sans en etre un multiple) : la fraction se simplifie
     let n, a;
     do { n = choix(SQUAREFREE.filter(v => v <= 40)); a = alea(2,30); } while (pgcd(a, n) === 1 || a % n === 0);
-    return { enonce:`\\dfrac{${a}}{\\sqrt{${n}}}`, reponse: rationaliserSimple(a, n) };
+    const g = pgcd(a, n), fin = fracSurdL(a, n, n), brut = `\\dfrac{${a}\\sqrt{${n}}}{${n}}`;
+    return { enonce:`\\dfrac{${a}}{\\sqrt{${n}}}`, reponse: rationaliserSimple(a, n),
+             detail: { lignes: [`\\dfrac{${a}}{\\sqrt{${n}}} = \\dfrac{${a}\\times \\sqrt{${n}}}{\\sqrt{${n}}\\times \\sqrt{${n}}} = ${brut}` + (brut === fin ? '' : ` = ${fin}`)], final: fin } };
   }},
 
   // ---------- 3.6 : relation racine(a^2) = valeur absolue de a ----------
   {id:"3.6 a)", type:"num", gen: () => {
     const N = alea(2,45);
-    return { enonce:`\\sqrt{(-${N})^2}`, reponse:`${N}` };
+    return { enonce:`\\sqrt{(-${N})^2}`, reponse:`${N}`,
+             detail: { lignes: [`\\sqrt{(-${N})^2} = \\sqrt{${N*N}} = ${N}`], final: `${N}` } };
   }},
   {id:"3.6 b)", type:"num", gen: () => {
     // p<q pour que p-q soit negatif : l'eleve doit reconnaitre que le carre efface le signe
     const p = alea(2,15), q = p + alea(1,15);
-    return { enonce:`\\sqrt{(${p}-${q})^2}`, reponse:`${q-p}` };
+    return { enonce:`\\sqrt{(${p}-${q})^2}`, reponse:`${q-p}`,
+             detail: { lignes: [`\\sqrt{(${p}-${q})^2} = \\sqrt{${dP(p-q)}^2} = \\sqrt{${(q-p)*(q-p)}} = ${q-p}`], final: `${q-p}` } };
   }},
   {id:"3.6 c)", type:"alg", texteLibre:true, gen: () => {
     const negatif = alea(0,1) === 0;
     return { enonce: negatif ? `\\(\\sqrt{x^2}\\), sachant que \\(x<0\\)` : `\\(\\sqrt{x^2}\\), sachant que \\(x>0\\)`,
-      reponse: negatif ? '-x' : 'x' };
+      reponse: negatif ? '-x' : 'x',
+      detail: { lignes: [`\\sqrt{x^{2}} = |x|`, negatif ? `\\text{Comme } x < 0 \\text{, } |x| = -x` : `\\text{Comme } x > 0 \\text{, } |x| = x`], final: negatif ? '-x' : 'x' } };
   }},
 
   // ---------- 3.7 : calculs plus avances ----------
@@ -1099,7 +1162,13 @@ const generateurs = [
     let a, b;
     do { a = choix(SQUAREFREE.filter(v => v <= 20)); b = choix(SQUAREFREE.filter(v => v <= 20)); } while (a <= b);
     return { enonce:`Simplifier \\(\\dfrac{1}{\\sqrt{${a}}+\\sqrt{${b}}}+\\dfrac{1}{\\sqrt{${a}}-\\sqrt{${b}}}\\)`,
-             reponse: fractionSurdTexte(2, a, a - b) };
+             reponse: fractionSurdTexte(2, a, a - b),
+             detail: { lignes: [
+               `\\dfrac{1}{\\sqrt{${a}}+\\sqrt{${b}}}+\\dfrac{1}{\\sqrt{${a}}-\\sqrt{${b}}} = \\dfrac{\\sqrt{${a}}-\\sqrt{${b}}+\\sqrt{${a}}+\\sqrt{${b}}}{\\left(\\sqrt{${a}}+\\sqrt{${b}}\\right)\\left(\\sqrt{${a}}-\\sqrt{${b}}\\right)}`,
+               `\\sqrt{${a}}-\\sqrt{${b}}+\\sqrt{${a}}+\\sqrt{${b}} = 2\\sqrt{${a}}`,
+               `\\left(\\sqrt{${a}}+\\sqrt{${b}}\\right)\\left(\\sqrt{${a}}-\\sqrt{${b}}\\right) = ${a}-${b} = ${a - b}`,
+               `\\dfrac{2\\sqrt{${a}}}{${a}-${b}} = ${fracSurdL(2, a, a - b)}`],
+               final: fracSurdL(2, a, a - b) } };
   }},
   {id:"3.7 b)", type:"texte", ouiNon:true, texteLibre:true, gen: () => {
     // p*sqrt(m) + q*sqrt(k^2*m) = (p + k*q)*sqrt(m) : rationnel seulement si ce coefficient est nul.
@@ -1110,7 +1179,20 @@ const generateurs = [
     else { do { p = alea(-9,9); q = alea(-9,9); } while (p + k*q === 0 || p === 0 || q === 0); }
     const rationnel = (p + k*q === 0);
     return { enonce:`Le nombre \\(${suiteSurdsLatex([[p,m],[q,k*k*m]])}\\) est-il un nombre rationnel ?`,
-             reponse: rationnel ? 'oui' : 'non' };
+             reponse: rationnel ? 'oui' : 'non',
+             detail: (() => {
+               const somme = p + k*q, expr = suiteSurdsLatex([[p, m], [q, k*k*m]]);
+               return { lignes: [
+                 `\\sqrt{${k*k*m}} = \\sqrt{${k*k}\\times ${m}} = ${k}\\sqrt{${m}}`,
+                 `${expr} = ${suiteSurdsLatex([[p, m], [q*k, m]])} = ${somme === 0 ? '0' : surdL(somme, m)}`,
+                 ...(rationnel ? [] : [
+                   `\\text{Comme } ${m} \\text{ n'est pas un carré parfait,}`,
+                   `\\sqrt{${m}} \\text{ est irrationnel}`,
+                   // coefficient 1 ou -1 : la ligne précédente suffit (sinon « et 1 ≠ 0, donc √m est irrationnel » tourne en rond)
+                   ...(Math.abs(somme) === 1 ? [] : [`\\text{et } ${somme} \\neq 0 \\text{, donc } ${surdL(somme, m)} \\text{ est irrationnel}`])]),
+                 `\\text{Réponse : ${rationnel ? 'oui' : 'non'}}`],
+                 final: rationnel ? 'oui' : 'non' };
+             })() };
   }},
   {id:"3.7 c)", type:"num", texteLibre:true, gen: () => {
     // quantite conjuguee : 1/(racine(a)-racine(b)) = (racine(a)+racine(b))/(a-b), a>b, a et b sans facteur carre
@@ -1119,7 +1201,12 @@ const generateurs = [
     do { a = choix(SQUAREFREE.filter(v => v <= 20)); b = choix(SQUAREFREE.filter(v => v <= 20)); } while (a <= b);
     const d = a - b;
     return { enonce:`Écrire \\(\\dfrac{1}{\\sqrt{${a}}-\\sqrt{${b}}}\\) sans racine carrée au dénominateur`,
-             reponse: d === 1 ? `sqrt(${a})+sqrt(${b})` : `(sqrt(${a})+sqrt(${b}))/${d}` };
+             reponse: d === 1 ? `sqrt(${a})+sqrt(${b})` : `(sqrt(${a})+sqrt(${b}))/${d}`,
+             detail: { lignes: [
+               `\\dfrac{1}{\\sqrt{${a}}-\\sqrt{${b}}} = \\dfrac{\\sqrt{${a}}+\\sqrt{${b}}}{\\left(\\sqrt{${a}}-\\sqrt{${b}}\\right)\\left(\\sqrt{${a}}+\\sqrt{${b}}\\right)}`,
+               `\\left(\\sqrt{${a}}-\\sqrt{${b}}\\right)\\left(\\sqrt{${a}}+\\sqrt{${b}}\\right) = ${a}-${b} = ${d}`,
+               `\\dfrac{\\sqrt{${a}}+\\sqrt{${b}}}{${a}-${b}} = ${d === 1 ? `\\sqrt{${a}}+\\sqrt{${b}}` : `\\dfrac{\\sqrt{${a}}+\\sqrt{${b}}}{${d}}`}`],
+               final: d === 1 ? `\\sqrt{${a}}+\\sqrt{${b}}` : `\\dfrac{\\sqrt{${a}}+\\sqrt{${b}}}{${d}}` } };
   }},
   {id:"3.7 d)", type:"texte", comparaison:true, texteLibre:true, gen: () => {
     // comparer p-racine(a) et q-racine(b) par elevation au carre : p^2 a vs q^2 b
@@ -1127,7 +1214,18 @@ const generateurs = [
     let p, q;
     do { p = alea(2,7); q = alea(2,7); } while (p*p*a === q*q*b);
     return { enonce:`Comparer \\(${p}\\sqrt{${a}}\\) et \\(${q}\\sqrt{${b}}\\) : répondre par \\(<\\) ou par \\(>\\)`,
-             reponse: p*p*a < q*q*b ? '<' : '>' };
+             reponse: p*p*a < q*q*b ? '<' : '>',
+             detail: (() => {
+               const op = p*p*a < q*q*b ? '<' : '>';
+               return { lignes: [
+                 `\\left(${p}\\sqrt{${a}}\\right)^{2} = ${p}^{2}\\times ${a} = ${p*p*a}`,
+                 `\\left(${q}\\sqrt{${b}}\\right)^{2} = ${q}^{2}\\times ${b} = ${q*q*b}`,
+                 `${p*p*a} ${op} ${q*q*b}`,
+                 `\\text{Deux nombres positifs}`,
+                 `\\text{sont rangés comme leurs carrés}`,
+                 `${p}\\sqrt{${a}} ${op} ${q}\\sqrt{${b}}`],
+                 final: op };
+             })() };
   }}
 ];
 
@@ -1167,12 +1265,14 @@ function joindreReponseSurds(paires) {
 function genererExercices() {
   // on renouvelle le tirage des modeles de calcul a chaque version de la fiche
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     // on recopie tous les champs declares sur le modele (id, type, fractionIrreductible...)
     // sauf le generateur lui-meme : un `{id, type, ...gen()}` ecrase silencieusement les autres
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2269,7 +2369,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

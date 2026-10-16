@@ -934,40 +934,7 @@ function longueurPeriode(b) {
 // ---------- details de correction (16/10/2026) ----------
 // fonctions communes : assets/js/details-correction.js ; chaque exercice porte detail: { lignes, final }
 const { dP, dPlus, fracBrute, sommeTermes } = Detail;
-const ppcmD = (u, v) => u * v / pgcd(u, v);
-// Écriture en ligne, comme au cahier (consigne de David, 16/10/2026) : 1/2 + 3/7 = 1x7/2x7 + 3x2/7x2 = 7/14 + 6/14 = 13/14
-// (aucune phrase : le dénominateur commun se lit dans la ligne)
-const signeFrac = (s, i, t) => (i === 0 ? t : `${s > 0 ? ' + ' : ' - '}${t}`);
-// somme de fractions [{s: +1|-1, n, d}] : une ligne (deux au-delà de deux fractions), résultat réduit { n, d }
-function lignesSomme(termes) {
-  const den = termes.reduce((t, x) => ppcmD(t, x.d), 1);
-  const num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
-  const brute = fracBrute(num, den), simple = Detail.fracTexte(num, den);
-  const origine = termes.map((x, i) => signeFrac(x.s, i, fracBrute(x.n, x.d))).join('');
-  const converti = termes.map((x, i) => { const m = den / x.d; return signeFrac(x.s, i, m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
-  const meme = termes.map((x, i) => signeFrac(x.s, i, fracBrute(x.n * (den / x.d), den))).join('');
-  const fin = den === 1 ? `${num}` : brute + (brute === simple ? '' : ` = ${simple}`);
-  const g = pgcd(num, den) || 1;
-  const conversion = termes.some(x => x.d !== den);
-  // jusqu'à deux fractions : tout sur une ligne ; au-delà, l'écriture convertie finit la première ligne et la somme occupe la seconde
-  let lignes;
-  if (termes.length <= 2 || !conversion) lignes = [`${origine} = ${conversion ? converti + ' = ' : ''}${meme} = ${fin}`];
-  else lignes = [`${origine} = ${converti}`, `${meme} = ${fin}`];
-  return { lignes, final: simple, n: num / g, d: den / g };
-}
-// produit (a/b) x (c/d) : une ligne, résultat réduit { n, d }
-function produitFrac(a, b, c, d) {
-  const n = a * c, m = b * d, g = pgcd(n, m) || 1;
-  const brute = fracBrute(n, m), simple = Detail.fracTexte(n, m);
-  return { n: n / g, d: m / g, final: simple, lignes: [
-    `${a < 0 ? `\\left(${fracBrute(a, b)}\\right)` : fracBrute(a, b)}\\times ${fracBrute(c, d)} = \\dfrac{${a}\\times ${c}}{${b}\\times ${d}} = ${brute}` + (g > 1 ? ` = ${simple}` : '')] };
-}
-// comparaison de a/b et c/d : mise au même dénominateur (une ligne par fraction), numérateurs, conclusion
-function lignesComparaison(a, b, c, d) {
-  const den = ppcmD(b, d), x = a * den / b, y = c * den / d, op = x > y ? '>' : '<';
-  const conv = (p, v) => (v === den ? [] : [`${fracBrute(p, v)} = \\dfrac{${p}\\times ${den / v}}{${v}\\times ${den / v}} = \\dfrac{${p * den / v}}{${den}}`]);
-  return { lignes: [...conv(a, b), ...conv(c, d), `${x} ${op} ${y}`, `\\dfrac{${a}}{${b}} ${op} \\dfrac{${c}}{${d}}`], final: op };
-}
+const { lignesSomme, produitFrac, lignesComparaison } = Detail, ppcmD = Detail.ppcm;
 
 // ---------- vivier de calculs numeriques ----------
 // Quatre generateurs figes donneraient toujours les memes quatre calculs, d'une fiche a l'autre
@@ -1289,7 +1256,7 @@ const generateurs = [
     for (let i = 0; i < L; i++) { reste *= 10; chiffres += Math.floor(reste / b); reste %= b; }
     return { enonce:`Le développement décimal de \\(\\dfrac{1}{${b}}\\) est périodique. Combien de chiffres compte sa période ?`,
              reponse:`${L}`,
-             detail: { lignes: [`\\dfrac{1}{${b}} = 0{,}\\overline{${chiffres}} \\quad \\text{(période de } ${L} \\text{ chiffre${L > 1 ? 's' : ''})}`], final: `${L}` } };
+             detail: { lignes: [`\\dfrac{1}{${b}} = 0{,}\\overline{${chiffres}}`, `\\text{Période de } ${L} \\text{ chiffre${L > 1 ? 's' : ''}}`], final: `${L}` } };
   }},
   {id:"1.8 c)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     // somme telescopique : 1/(k(k+1)) = 1/k - 1/(k+1), donc la somme vaut N/(N+1)

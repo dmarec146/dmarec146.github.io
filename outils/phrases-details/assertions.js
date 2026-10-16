@@ -75,13 +75,19 @@ module.exports = [
   {
     nom: 'la-comparaison-ecrite-est-vraie',
     // ligne réduite à « A > B » ou « A < B », A et B nombres ou fractions (« 35 > 24 », « \dfrac{5}{6} > \dfrac{3}{4} », « \dfrac{7}{3} > 2 »)
-    motif: /^\s*(?:\\dfrac\{\d+\}\{\d+\}|\d+)\s*(?:>|\\lt)\s*(?:\\dfrac\{\d+\}\{\d+\}|\d+)\s*$/,
+    motif: /^\s*(?:\\dfrac\{\d+\}\{\d+\}|\d[\d\\,]*)\s*(?:>|\\lt|\\leqslant|\\geqslant)\s*(?:\\dfrac\{\d+\}\{\d+\}|\d[\d\\,]*)\s*$/,
     verifie: (l) => {
-      const f = (s) => s.replace(/\\dfrac\{(\d+)\}\{(\d+)\}/g, '(($1)/($2))');
-      const m = l.trim().match(/^(.*?)\s*(>|\\lt)\s*(.*)$/);
+      const f = (s) => s.replace(/\\,/g, '').replace(/\\dfrac\{(\d+)\}\{(\d+)\}/g, '(($1)/($2))');
+      const m = l.trim().match(/^(.*?)\s*(>|\\lt|\\leqslant|\\geqslant)\s*(.*)$/);
       if (!m) return false;
+      // grands entiers : comparés en BigInt quand les deux côtés sont des entiers
+      const ent = (s) => /^\d+$/.test(s.replace(/\\,/g, '').trim());
+      if (ent(m[1]) && ent(m[3])) {
+        const a = BigInt(m[1].replace(/\\,/g, '').trim()), b = BigInt(m[3].replace(/\\,/g, '').trim());
+        return m[2] === '>' ? a > b : m[2] === '\\lt' ? a < b : m[2] === '\\leqslant' ? a <= b : a >= b;
+      }
       const a = math.evaluate(f(m[1])), b = math.evaluate(f(m[3]));
-      return m[2] === '>' ? a > b : a < b;
+      return m[2] === '>' ? a > b : m[2] === '\\lt' ? a < b : m[2] === '\\leqslant' ? a <= b : a >= b;
     }
   },
   {
@@ -125,15 +131,93 @@ module.exports = [
   },
   {
     nom: 'la-periode-decimale-est-exacte',
-    // « \dfrac{1}{7} = 0{,}\overline{142857} \quad \text{(période de } 6 \text{ chiffres)} » : chiffres recalculés par la division posée
+    // « \dfrac{1}{7} = 0{,}\overline{142857} » : chiffres recalculés par la division posée
     motif: /\\overline\{\d+\}/,
     verifie: (l) => {
-      const m = l.match(/^\\dfrac\{1\}\{(\d+)\} = 0\{,\}\\overline\{(\d+)\}.*période de \} (\d+) /);
+      const m = l.match(/^\\dfrac\{1\}\{(\d+)\} = 0\{,\}\\overline\{(\d+)\}$/);
       if (!m) return false;
       const b = Number(m[1]);
       let reste = 1, chiffres = '', n = 0;
       do { reste *= 10; chiffres += Math.floor(reste / b); reste %= b; n++; } while (reste !== 1 && n < 500);
-      return chiffres === m[2] && Number(m[3]) === chiffres.length;
+      return chiffres === m[2];
+    }
+  },
+  {
+    nom: 'la-longueur-de-periode-annoncee-est-exacte',
+    // « \text{Période de } 6 \text{ chiffres} » : longueur de la période de 1/b (b lu dans l'énoncé)
+    motif: /\\text\{Période de \} \d+ \\text\{ chiffres?\}/,
+    verifie: (l, e) => {
+      const L = Number((l.match(/Période de \} (\d+) /) || [])[1]), b = Number((String(e.enonce).match(/\\dfrac\{1\}\{(\d+)\}/) || [])[1]);
+      if (!L || !b) return false;
+      let reste = 1, n = 0;
+      do { reste = (reste * 10) % b; n++; } while (reste !== 1 && n < 500);
+      const pluriel = /chiffres\}$/.test(l.trim());
+      return n === L && pluriel === (L > 1);
+    }
+  },
+  {
+    nom: 'les-unites-se-repetent-tous-les-4-exposants',
+    motif: /les chiffres des unités se répètent de 4 en 4/,
+    verifie: (l, e) => {
+      const a = Number((String(e.enonce).match(/\\\(\s*(\d+)\^\{/) || [])[1]);
+      if (!a) return false;
+      const u = (k) => { let r = 1; for (let i = 0; i < k; i++) r = (r * a) % 10; return r; };
+      for (let k = 1; k <= 8; k++) if (u(k) !== u(k + 4)) return false;
+      return true;
+    }
+  },
+  {
+    nom: 'la-puissance-finit-comme-sa-reduite',
+    motif: /\\text\{Donc \} \d+\^\{[\d\\,]+\} \\text\{ finit comme/,
+    verifie: (l, e) => {
+      const m = l.match(/Donc \} (\d+)\^\{([\d\\,]+)\} \\text\{ finit comme \} (\d+)(?:\^\{(\d+)\})?/);
+      if (!m) return false;
+      const a = Number(m[1]), N = Number(m[2].replace(/\\,/g, '')), a2 = Number(m[3]), r = m[4] ? Number(m[4]) : 1;
+      if (a !== a2 || r < 1 || r > 4) return false;
+      const u = (k) => { let x = 1; for (let i = 0; i < k; i++) x = (x * a) % 10; return x; };
+      return u(N) === u(r);
+    }
+  },
+  {
+    nom: 'le-signe-de-x-est-celui-de-l-enonce',
+    motif: /\\text\{Comme \} x\s*(?:\\lt|>)\s*0/,
+    verifie: (l, e) => {
+      const dansLigne = (l.match(/\\text\{Comme \} x\s*(\\lt|>)\s*0/) || [])[1], dansEnonce = (String(e.enonce).match(/x\s*(<|>)\s*0/) || [])[1];
+      if (!dansLigne || !dansEnonce) return false;
+      const resultat = /\|x\| = -x$/.test(l.trim());
+      return (dansLigne === '>') === (dansEnonce === '>') && resultat === (dansEnonce === '<');
+    }
+  },
+  {
+    nom: 'a-puissance-5-finit-comme-a',
+    motif: /\\text\{Comme \} \d+\^\{5\} \\text\{ finit comme \} \d+/,
+    verifie: (l) => {
+      const m = l.match(/\\text\{Comme \} (\d+)\^\{5\} \\text\{ finit comme \} (\d+)/);
+      if (!m || m[1] !== m[2]) return false;
+      const a = Number(m[1]);
+      let x = 1; for (let i = 0; i < 5; i++) x = (x * a) % 10;
+      return x === a % 10;
+    }
+  },
+  {
+    nom: 'm-n-est-pas-un-carre-parfait',
+    motif: /n'est pas un carré parfait/,
+    verifie: (l) => {
+      const m = l.match(/Comme \} (\d+) \\text\{ n'est pas un carré parfait/);
+      if (!m) return false;
+      const n = Number(m[1]);
+      return n >= 2 && Math.pow(Math.round(Math.sqrt(n)), 2) !== n;
+    }
+  },
+  {
+    nom: 'le-coefficient-est-non-nul-et-la-racine-irrationnelle',
+    // « \text{et } 28 \neq 0 \text{, donc } 28\sqrt{7} \text{ est irrationnel} »
+    motif: /\\text\{et \} -?\d+ \\neq 0 \\text\{, donc \}/,
+    verifie: (l) => {
+      const m = l.match(/\\text\{et \} (-?\d+) \\neq 0 \\text\{, donc \} (-?\d*)\\sqrt\{(\d+)\} \\text\{ est irrationnel/);
+      if (!m) return false;
+      const c = Number(m[1]), n = Number(m[3]), cc = m[2] === '' ? 1 : m[2] === '-' ? -1 : Number(m[2]);
+      return c !== 0 && c === cc && n >= 2 && Math.pow(Math.round(Math.sqrt(n)), 2) !== n;
     }
   }
 ];
