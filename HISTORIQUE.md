@@ -8463,8 +8463,9 @@ Depuis le 18/09/2026, chaque machine a son propre clone local hors Drive
   négations en QCM, barème de la fiche 25) alors que GitHub avait 88 commits d'avance, dont des modifications des mêmes
   fichiers. Les trois fichiers ont été **mis de côté** (`git stash`, entrée « fiche 25 : automatismes aléatoires, négations en
   QCM, barème »), sauvegardés aussi hors dépôt, puis `git pull --ff-only` (88 commits récupérés, aucun écrasement).
-  `outils/bareme/fiche-25.json` (non suivi) est resté en place. **La fiche 25 est à reprendre sur le nouveau moteur de
-  validation** (le travail mis de côté date d'avant son câblage) ; elle n'est ni commitée ni poussée.
+  **Suite (16/10/2026, sur demande de David)** : la fiche 25 a été retravaillée sur l'autre PC et ne doit pas être touchée
+  ici ; le travail mis de côté sur le PC perso (stash) et le `fiche-25.json` non suivi ont donc été **abandonnés** (supprimés,
+  jamais commités ni poussés). Rien à reprendre sur le PC perso pour la fiche 25.
 - **Outil d'audit installé** (`outils/audit-reponses`, `npm install`, playwright-core) ; Chrome présent ;
   `audit.js cahiers/seconde/cahier-1/fiche-02.html` : OK (1 440 saisies, 78 s).
 - **Contrôles** : vérificateur de syntaxe, 50 fiches, 0 erreur ; `test-moteur-reponses.js`, 205 cas, 0 échec (+ 14 cas
