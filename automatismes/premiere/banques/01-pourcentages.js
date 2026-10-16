@@ -396,7 +396,7 @@
     const bonne = { affichage: m(decL(coef)), cle: coef };
     const candidats = [R(hausse ? 1 - t / 100 : 1 + t / 100), R(t / 100), R(hausse ? 1 + t / 1000 : 1 - t / 1000), t, R(1 + t / 10), R(t / 10)]
       .filter(v => v > 0 && v !== coef).map(v => ({ affichage: v === R(t / 100) ? m('\\dfrac{' + decL(t) + '}{100}') : m(decL(v)), cle: v }));
-    const expl = `${hausse ? 'Augmenter' : 'Diminuer'} de ${pct(t)}, c'est multiplier par ${m('1 ' + (hausse ? '+' : '-') + ' \\dfrac{' + decL(t) + '}{100} = ' + decL(coef))}${t >= 100 ? ' (une hausse de plus de 100 % fait plus que doubler)' : ''}.`;
+    const expl = `${hausse ? 'Augmenter' : 'Diminuer'} de ${pct(t)}, c'est multiplier par ${m('1 ' + (hausse ? '+' : '-') + ' \\dfrac{' + decL(t) + '}{100} = ' + decL(coef))}${t >= 100 ? ' (une hausse de plus de 100 % fait plus que doubler)' : ''}.`;
     return qcm(enonce, bonne, candidats, { explication: expl });
   }
 

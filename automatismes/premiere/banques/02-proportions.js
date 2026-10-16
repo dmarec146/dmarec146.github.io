@@ -412,9 +412,9 @@
       const bonne = opt(q[idx], 'ok' + idx);
       const cands = q.map((nom, i) => opt(nom, 'x' + i)).filter((_, i) => i !== idx);
       const pourc = x => dec(O.arrondir(x / B * 100, 1));
-      const detail = q.map((nom, i) => `${nom} : ${pourc(toutes[i])} %`).join(' · ');
+      const detail = q.map((nom, i) => `${nom} : ${pourc(toutes[i])} %`).join(' · ');
       return qcm(enonce, bonne, cands, {
-        explication: `On ramène tout à des pourcentages — ${m(fracL(f1.n, f1.d))} vaut ${pct(O.arrondir(f1.n / f1.d * 100, 1))}, ${m(fracL(f2.n, f2.d))} vaut ${pct(O.arrondir(f2.n / f2.d * 100, 1))}, et le reste est ce qui manque pour atteindre 100 %. Cela donne ${detail}. Le ${chercheMin ? 'plus petit' : 'plus grand'} est donc ${q[idx]}.`
+        explication: `On ramène tout à des pourcentages — ${m(fracL(f1.n, f1.d))} vaut ${pct(O.arrondir(f1.n / f1.d * 100, 1))}, ${m(fracL(f2.n, f2.d))} vaut ${pct(O.arrondir(f2.n / f2.d * 100, 1))}, et le reste est ce qui manque pour atteindre 100 %. Cela donne ${detail}. Le ${chercheMin ? 'plus petit' : 'plus grand'} est donc ${q[idx]}.`
       });
     }
     return null;
@@ -588,9 +588,9 @@
     { phrase: (s, e) => `Un jus est obtenu en mélangeant ${dec(s)} mL de concentré et ${dec(e)} mL d’eau.`, question: 'Le pourcentage de concentré dans le jus (en volume) est :', unite: 'mL' }
   ];
   const optPct = v => opt(pct(v), v);
-  function melangePourcentage() {
+  function melangePourcentage(niveau) {
     const c = aleaParmi(MELANGES);
-    const M = aleaParmi([200, 250, 400, 500, 600, 800, 1000]), p = aleaParmi([4, 5, 8, 10, 12, 15, 20, 25, 30, 40]);
+    const M = niveau === 1 ? aleaParmi([100, 200, 400]) : aleaParmi([200, 250, 400, 500, 600, 800, 1000]), p = niveau === 1 ? aleaParmi([10, 20, 25, 40, 50]) : aleaParmi([4, 5, 8, 10, 12, 15, 20, 25, 30, 40]);
     const s = R(M * p / 100), e = M - s;
     if (!entier(s)) return null;
     const candidats = [R(100 * s / e), R(100 * e / M), s, R(100 * e / s), 100 - 2 * p, R(p / 2)]
@@ -614,7 +614,7 @@
     }
     return null;
   }
-  function melange(niveau) { return niveau === 2 ? melangePourcentage() : (Math.random() < 0.5 ? melangeDilution() : melangePourcentage()); }
+  function melange(niveau) { return niveau < 3 ? melangePourcentage(niveau) : (Math.random() < 0.5 ? melangeDilution() : melangePourcentage(niveau)); }
 
   // =====================================================================
   Automatismes.enregistrerBanque('proportions', {
@@ -626,7 +626,7 @@
       'retrouver-total': famille({ nom: 'retrouver le total', niveaux: [1, 2, 3], base: retrouverTotal, variantes3: [totalDeuxParts, totalPartDePart, totalFractionReste], partBase3: 0.25, ordre: { 1: 4, 2: 4 }, quota: { 1: { min: 1 }, 2: { min: 1, priorite: 2 }, 3: { min: 1 } } }),
       'comparer-parts': famille({ nom: 'comparer des parts', niveaux: [3], base: () => null, variantes3: [comparerParts] }),
       'partage-ratio': famille({ nom: 'partage dans un rapport', niveaux: [1, 2, 3], base: partageRatio, ordre: { 1: 5, 2: 5 } }),
-      'melange-pourcentage': famille({ nom: 'pourcentage dans un mélange', niveaux: [2, 3], base: melange, ordre: { 2: 6 } })
+      'melange-pourcentage': famille({ nom: 'pourcentage dans un mélange', niveaux: [1, 2, 3], base: melange, ordre: { 1: 6, 2: 6 } })
     }
   });
 })();

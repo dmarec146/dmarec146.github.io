@@ -139,6 +139,10 @@
   function enregistrerBanque(id, def) { banques[id] = def; }
 
   // niveau : 1 (découverte), 2 (niveau de l'épreuve, défaut), 3 (approfondissement)
+  // Un exposant 1 ne s'écrit jamais (3^{1} → 3) : filet de sécurité commun à tous les générateurs,
+  // qui obtiennent parfois cet exposant en calculant la différence ou le produit de deux exposants.
+  const sansExposantUn = s => (typeof s === 'string' ? s.replace(/\^\{1\}/g, '') : s);
+
   function genererQuestion(banqueId, familleId, niveau) {
     niveau = niveau || 2;
     const banque = banques[banqueId];
@@ -151,11 +155,11 @@
       if (new Set(opts.map(o => String(o.cle))).size !== 4) continue;
       const ordre = melanger([0, 1, 2, 3]);
       return {
-        enonce: q.enonce,
+        enonce: sansExposantUn(q.enonce),
         figure: q.figure || null,
-        explication: q.explication || '',
+        explication: sansExposantUn(q.explication || ''),
         optionsLarges: !!q.optionsLarges,
-        options: ordre.map(i => opts[i].affichage),
+        options: ordre.map(i => sansExposantUn(opts[i].affichage)),
         bonne: ordre.indexOf(q.bonne),
         niveau: niveau,
         difficulte: (fam.ordre && fam.ordre[niveau]) || 0, // rang de difficulté déclaré par la banque
@@ -285,11 +289,14 @@
       for (let i = 0; i < quota(f).min && plan.length < n; i++) ajouter(f);
       honores++;
     }
-    const ordre = melanger(fams);
-    for (let i = 0, tours = 0; plan.length < n && tours < 20 * n; i++, tours++) {
-      const f = ordre[i % ordre.length];
-      const max = quota(f).max === undefined ? Infinity : quota(f).max;
-      if ((comptes[f] || 0) < max) ajouter(f);
+    // reste des places : à chaque fois, une famille parmi les moins représentées (au hasard à égalité), sous réserve
+    // de son plafond. Un tour de table cyclique répétait une famille déjà honorée par son minimum alors qu'une autre
+    // n'avait pas encore de question (16/10/2026).
+    while (plan.length < n) {
+      const possibles = fams.filter(f => (comptes[f] || 0) < (quota(f).max === undefined ? Infinity : quota(f).max));
+      if (!possibles.length) break;
+      const mini = Math.min(...possibles.map(f => comptes[f] || 0));
+      ajouter(melanger(possibles.filter(f => (comptes[f] || 0) === mini))[0]);
     }
     // rang de difficulté normalisé (0 à 1) pour être comparable d'une banque à l'autre
     const rangMax = Math.max(1, ...fams.map(f => (def(f).ordre && def(f).ordre[niveau]) || 0));

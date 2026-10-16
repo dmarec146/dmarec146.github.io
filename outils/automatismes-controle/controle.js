@@ -361,6 +361,39 @@
     return verifValeurOption(q, 100 * s / (s + e));
   };
 
+  // ---------- probabilités et statistiques ----------
+  VERIFS['probabilites/evenement-contraire'] = q => {
+    const z = zones(q.enonce), t = z.texte.replace(/\s/g, ' '), M = z.maths;
+    let attendu;
+    if (M.some(g => /overline/.test(g))) {                                  // P(non A) = 1 − P(A)
+      attendu = 1 - evalTex(M.find(g => /^P\(A\)/.test(g)).replace(/^P\(A\)\s*=/, ''));
+    } else if (/urne/.test(t)) {                                            // tirages avec remise
+      const r = parseInt(t.match(/(\d+) boules? rouges?/)[1], 10), v = parseInt(t.match(/(\d+) boules? vertes?/)[1], 10), n = parseInt(t.match(/successivement (\d+) boules/)[1], 10);
+      attendu = 1 - Math.pow(v / (r + v), n);
+    } else if (M.length >= 2) {                                             // deux événements indépendants
+      attendu = 1 - (1 - evalTex(M[0])) * (1 - evalTex(M[1]));
+    } else {                                                                // n épreuves identiques indépendantes
+      const n = parseInt(t.split('.').slice(1).join('.').match(/(\d+)/)[1], 10);
+      attendu = 1 - Math.pow(1 - evalTex(M[0]), n);
+    }
+    return verifExpression(q, attendu);
+  };
+  VERIFS['probabilites/moyenne-simple'] = q => {
+    const z = zones(q.enonce.split('<br>')[0]), t = z.texte.replace(/\s/g, ' ');
+    let attendu;
+    if (/On ajoute une note/.test(t)) {
+      const n = parseInt(t.match(/moyenne de (\d+) notes est (\d+)/)[1], 10), moy = parseInt(t.match(/moyenne de (\d+) notes est (\d+)/)[2], 10), x = parseInt(t.match(/note de (\d+)/)[1], 10);
+      attendu = (n * moy + x) / (n + 1);
+    } else if (/Dans une classe/.test(t)) {
+      const d = t.match(/classe de (\d+) élèves, la moyenne à un devoir est (\d+)\. Dans une autre classe de (\d+) élèves, la moyenne au même devoir est (\d+)/).slice(1).map(Number);
+      attendu = (d[0] * d[1] + d[2] * d[3]) / (d[0] + d[2]);
+    } else {
+      const liste = t.slice(t.indexOf(':') + 1).match(/\d+/g).map(Number);
+      attendu = liste.reduce((s, x) => s + x, 0) / liste.length;
+    }
+    return verifExpression(q, attendu);
+  };
+
   // ---------- droites ----------
   VERIFS['droites/coefficient-deux-points'] = q => {
     const e = q.enonce.replace(/\\,/g, ' ');
