@@ -34,8 +34,9 @@ Une fiche prend de 30 à 60 secondes. Code de sortie 1 s'il y a une anomalie de 
 ## Rapports (dans ce dossier, non suivis par git)
 
 - `rapport.txt` : anomalies par fiche, avec le nombre de contrôles réalisés et le résultat de l'auto-test.
-- `phrases.txt` : **toutes les phrases de méthode** (`\text{…}`) des détails, avec les exercices où elles apparaissent. À relire :
-  l'outil ne peut pas juger si une phrase est juste.
+- `phrases.txt` : **tout le texte libre** (`\text{…}`) écrit dans les étapes, phrase par phrase (les formules sont remplacées par […]),
+  avec les exercices concernés et un exemple de ligne complète. Ce n'est pas la liste de ce que l'outil échoue à vérifier : il ne
+  vérifie aucune phrase, donc toutes sont à relire pour leur justesse mathématique et leur formulation.
 - `exemples.html` : deux exemples par exercice (énoncé, réponse attendue, étapes), à ouvrir dans un navigateur et à parcourir.
 - `couverture.txt` : exercices avec et sans détail.
 

@@ -400,7 +400,12 @@ async function controlerDansLaPage(opts) {
       if (D.lignes && D.lignes.length) {
         for (const l of D.lignes) {
           styler(e, l);
-          for (const ph of String(l).matchAll(/\\text\{([^{}]*)\}/g)) { const cle = ph[1].trim(); if (!cle) continue; if (!phrases.has(cle)) phrases.set(cle, new Set()); phrases.get(cle).add(e.id); }
+          // phrase « en clair » : le texte des \text{…} dans l'ordre, les formules étant remplacées par […]
+          if (/\\text\{/.test(l)) {
+            const clair = String(l).split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
+            if (!phrases.has(clair)) phrases.set(clair, { ids: new Set(), exemple: l });
+            phrases.get(clair).ids.add(e.id);
+          }
           const motif = l.replace(/\d+/g, '0');
           if (!motifsVus.has(motif)) { motifsVus.add(motif); const er = await compilerMathJax(l); stats.motifsLaTeX++; if (er) ajouter('erreur', 'latex-invalide', e, l + '   =>   ' + er); }
         }
@@ -462,7 +467,7 @@ async function controlerDansLaPage(opts) {
   return {
     anomalies: reelles, stats,
     avecDetail: [...idsAvecDetail], sansDetail: [...idsSansDetail],
-    phrases: [...phrases.entries()].map(([t, s]) => [t, [...s]]),
+    phrases: [...phrases.entries()].map(([t, v]) => [t, [...v.ids], v.exemple]),
     exemples: [...exemples.entries()],
     autotest
   };
@@ -577,7 +582,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
     const at = Object.entries(r.autotest);
     if (at.length) lignesRapport.push('      auto-test (détection d\'une erreur volontaire) : ' + at.map(([n, v]) => `${n} ${v.detectes}/${v.essais}`).join(' ; '));
     for (const [n, v] of at) if (v.essais >= 20 && v.detectes / v.essais < 0.9) { lignesRapport.push(`      [erreur] (outil) — auto-test insuffisant : ${n} ${v.detectes}/${v.essais}`); erreurs++; }
-    for (const [t, ids] of r.phrases) phrasesTout.push({ fiche, t, ids });
+    for (const [t, ids, exemple] of r.phrases) phrasesTout.push({ fiche, t, ids, exemple });
     for (const [id, liste] of r.exemples) exemplesHtml.push({ fiche, id, liste });
     await contexte.close();
   }
@@ -596,8 +601,9 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
   // phrases de méthode à relire
   const parFiche = {};
   for (const p of phrasesTout) { (parFiche[p.fiche] = parFiche[p.fiche] || []).push(p); }
-  const txt = Object.entries(parFiche).map(([f, l]) => `== ${f}\n` + l.sort((a, b) => a.t.localeCompare(b.t)).map((p) => `  « ${p.t} »   (${p.ids.join(', ')})`).join('\n')).join('\n\n');
-  fs.writeFileSync(path.join(SORTIE, 'phrases.txt'), `Phrases de méthode des détails (zones \\text{…}) — à relire, l'outil ne peut pas juger leur justesse.\n\n${txt}\n`);
+  const txt = Object.entries(parFiche).map(([f, l]) => `== ${f}\n` + l.sort((a, b) => a.ids[0].localeCompare(b.ids[0], 'fr', { numeric: true })).map((p) => `  « ${p.t} »\n      exercices : ${p.ids.join(', ')}\n      exemple   : ${p.exemple}`).join('\n\n')).join('\n\n');
+  fs.writeFileSync(path.join(SORTIE, 'phrases.txt'), `Phrases de méthode des détails — TOUT le texte libre (\\text{…}) écrit dans les étapes, à relire : l'outil vérifie les calculs mais ne peut pas juger si une phrase est juste ni bien tournée.\n`
+    + `Les formules sont remplacées par […] ; l'exemple donne la ligne complète, avec les formules.\n\n${txt}\n`);
   // exemples à parcourir
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const blocs = exemplesHtml.map(({ fiche, id, liste }) => `<section><h3>${esc(fiche.replace(/^cahiers\//, ''))} — ${esc(id)}</h3>` + liste.map((x, i) =>
