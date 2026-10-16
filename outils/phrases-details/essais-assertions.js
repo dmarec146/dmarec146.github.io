@@ -11,6 +11,18 @@ const ESSAIS = {
     [true, '\\text{On divise par } -3 \\lt  0 \\text{ : les inégalités changent de sens}', {}, env('')],
     [false, '\\text{On divise par } 3 \\lt  0 \\text{ : les inégalités changent de sens}', {}, env('')]
   ],
+  'la-valeur-rejetee-est-negative': [
+    [true, '\\text{Or } n \\in \\mathbb{N} \\text{, donc } -3 \\text{ est rejeté}', {}, env('')],
+    [false, '\\text{Or } n \\in \\mathbb{N} \\text{, donc } 3 \\text{ est rejeté}', {}, env('')]
+  ],
+  'l-indice-cite-est-pair': [
+    [true, '\\text{Comme } 4 \\text{ est pair, } q^{4} = 81 \\text{ dans les deux cas}', {}, env('')],
+    [false, '\\text{Comme } 3 \\text{ est pair, } q^{3} = 27 \\text{ dans les deux cas}', {}, env('')]
+  ],
+  'le-coefficient-annonce-est-negatif': [
+    [true, '\\text{avec } a = -\\dfrac{12}{5} \\lt  0 \\text{ et } b = -\\dfrac{3}{5}', {}, env('')],
+    [false, '\\text{avec } a = \\dfrac{12}{5} \\lt  0 \\text{ et } b = -\\dfrac{3}{5}', {}, env('')]
+  ],
   'la-suite-est-arithmetique': [
     [true, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite arithmétique')],
     [false, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite géométrique')]

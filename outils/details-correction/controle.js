@@ -114,7 +114,8 @@ async function controlerDansLaPage(opts) {
     const sc = {};
     for (const m of String(expr).matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)) {
       if (FONCTIONS.has(m[0])) continue;
-      if (!(m[0] in sc)) sc[m[0]] = 1.31 + R() * 2.4;
+      // « n » est un indice entier (sinon (-3)^n donnerait un nombre complexe)
+      if (!(m[0] in sc)) sc[m[0]] = m[0] === 'n' ? 2 + Math.floor(R() * 11) : 1.31 + R() * 2.4;
     }
     return sc;
   }
@@ -193,9 +194,9 @@ async function controlerDansLaPage(opts) {
     if (lettres.size !== 1) return null;
     return [...lettres][0];
   }
-  function resoudre(a, v) {
+  function resoudre(a, v, borne) {
     // renvoie { racines: [...], vecteur: [booleens sur la grille], frontieres: Set d'indices }
-    const N = 4800, borne = 30, pas = (2 * borne) / N;
+    const N = 4800, pas = (2 * borne) / N;
     const fTout = a.relations.map((r) => { const g = math.compile(versMathjs(r.gauche)), d = math.compile(versMathjs(r.droite)); return (x) => { const sc = {}; sc[v] = x; return g.evaluate(sc) - d.evaluate(sc); }; });
     const valeursTout = fTout.map((fn) => { const w = new Array(N + 1); for (let i = 0; i <= N; i++) { const y = fn(-borne + i * pas + 0.00137); w[i] = isFinite(y) ? y : NaN; } return w; });
     // une égalité vraie pour tout x (identité, ex. x² - 1 = (x-1)(x+1), ou égalité numérique) n'apporte aucune condition : on l'écarte ;
@@ -222,6 +223,18 @@ async function controlerDansLaPage(opts) {
         racines.push({ r, k, op: rels[k].op });
         frontieres.add(i); frontieres.add(i + 1);
       }
+      // racine double d'une équation (ex. x²(x-5) = 0 en 0) : la fonction s'annule sans changer de signe, minimum de |f| nul
+      if (rels[k].op === '=') {
+        for (let i = 1; i < N; i++) {
+          const a0 = valeurs[k][i - 1], a1 = valeurs[k][i], a2 = valeurs[k][i + 1];
+          if (![a0, a1, a2].every(isFinite) || a0 * a1 <= 0 || a1 * a2 <= 0) continue;   // changement de signe : traité plus haut
+          if (!(Math.abs(a1) <= Math.abs(a0) && Math.abs(a1) <= Math.abs(a2))) continue;
+          let lo = -borne + (i - 1) * pas + 0.00137, hi = lo + 2 * pas;
+          for (let it = 0; it < 80; it++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (Math.abs(fn(m1)) < Math.abs(fn(m2))) hi = m2; else lo = m1; }
+          const r = (lo + hi) / 2;
+          if (Math.abs(fn(r)) < 1e-7 * (1 + Math.abs(a0) + Math.abs(a1) + Math.abs(a2))) racines.push({ r, k, op: '=' });
+        }
+      }
     });
     for (let i = 0; i <= N; i++) {
       const t = rels.map((r, k) => { const y = valeurs[k][i]; if (!isFinite(y)) return null; return r.op === '<' ? y < 0 : r.op === '>' ? y > 0 : r.op === '<=' ? y <= 0 : r.op === '>=' ? y >= 0 : null; });
@@ -239,7 +252,10 @@ async function controlerDansLaPage(opts) {
     const v = variableLibre(A, B);
     if (!v) return { illisible: true };
     let RA, RB;
-    try { RA = resoudre(A, v); RB = resoudre(B, v); } catch (er) { return { illisible: true }; }
+    // la fenêtre de recherche s'élargit avec les nombres écrits (x/72 > 5 a pour frontière x = 360)
+    const nombres = (partieA + ' ' + partieB).match(/\d+(?:\.\d+)?/g) || [];
+    const borne = Math.min(3000, Math.max(30, 1.5 * Math.max(0, ...nombres.map(Number))));
+    try { RA = resoudre(A, v, borne); RB = resoudre(B, v, borne); } catch (er) { return { illisible: true }; }
     const tous = (R) => R.racinesToutes;
     const memeListe = (X, Y) => X.length === Y.length && X.every((x, i) => Math.abs(x - Y[i]) < 1e-5 * (1 + Math.abs(x)));
     if (RA.aEgalite || RB.aEgalite) {
@@ -344,8 +360,10 @@ async function controlerDansLaPage(opts) {
     if (cmp === 'faux') noter('erreur', 'final-different-de-la-reponse', 'final = ' + D.final + '  /  reponse = ' + (e.reponse !== undefined ? e.reponse : '') );
     ctx.finalVerifie += cmp === 'ok' ? 1 : 0; ctx.finalNonVerifiable += cmp === 'non-verifiable' ? 1 : 0;
     let precedent = null;       // dernière partie de la ligne précédente : une ligne qui commence par ⟺ la prolonge
-    for (const l of D.lignes) {
+    for (const [idxL, l] of D.lignes.entries()) {
       ctx.lignes++;
+      // une ligne suivie d'une ligne qui commence par ⟺ est la première partie d'une équivalence : « A = B » littéral y est une équation à résoudre
+      const prolongee = idxL + 1 < D.lignes.length && /^\s*(\\iff|\\Leftrightarrow)/.test(D.lignes[idxL + 1]);
       if (/\\begin/.test(l)) { precedent = null; continue; }                    // tableau de signes : relu à la main
       const clauses = l.split(/\\q?quad/);
       for (const clause of clauses) {
@@ -360,7 +378,7 @@ async function controlerDansLaPage(opts) {
           const pieces = p.split(/\\text\{(?!\s*ou\s*\})[^{}]*\}/).map((s) => s.replace(/[.,;:]\s*$/, '').trim()).filter(Boolean);
           pieces.forEach((piece) => {
             const morceaux = /\\text\{\s*ou\s*\}/.test(piece) ? piece.split(/\\text\{\s*ou\s*\}/) : [piece];
-            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1); if (r === null) return; if (r.illisible) ctx.chainesIllisibles++; else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
+            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1 || prolongee); if (r === null) return; if (r.illisible) ctx.chainesIllisibles++; else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
           });
         });
         for (let i = 0; i + 1 < parties.length && ctx.equivActif !== false; i++) {
@@ -441,7 +459,7 @@ async function controlerDansLaPage(opts) {
   // ---------- auto-test : l'outil doit détecter une erreur volontaire ----------
   const autotest = {};
   if (opts.autotest) {
-    const compte = (nom, f) => { const r = autotest[nom] || (autotest[nom] = { essais: 0, detectes: 0 }); r.essais++; if (f()) r.detectes++; };
+    const compte = (nom, f, desc) => { const r = autotest[nom] || (autotest[nom] = { essais: 0, detectes: 0, rates: [] }); r.essais++; if (f()) r.detectes++; else if (desc && r.rates.length < 6) r.rates.push(desc.slice(0, 160)); };
     const chiffreAlterne = (s) => { const i = [...s.matchAll(/\d+/g)].pop(); if (!i) return null; const nombre = String(+i[0] + 1); return s.slice(0, i.index) + nombre + s.slice(i.index + i[0].length); };
     for (const { e, D } of echantillons) {
       const ctx = { finalVerifie: 0, finalNonVerifiable: 0, lignes: 0, chaines: 0, chainesIllisibles: 0, equivalences: 0, equivalencesIllisibles: 0, equivActif: false };
@@ -465,8 +483,13 @@ async function controlerDansLaPage(opts) {
         if (!/\\iff/.test(l) || /\\q?quad|\\begin/.test(l)) return;
         const parties = l.split('\\iff'); if (parties.length < 2) return;
         const r0 = verifierEquivalence(parties[0], parties[1]); if (!r0.ok) return;
-        const n = chiffreAlterne(parties[1]); if (!n || n === parties[1]) return;
-        compte('equivalence-modifiee', () => { const r = verifierEquivalence(parties[0], n); if (r.faux) return true; const rc = verifierChaine(n, null, true); return !!(rc && rc.faux); });
+        // on change le CHIFFRE DES UNITÉS ou, pour un grand nombre, son premier chiffre (un écart de 1 sur « x < 316 » est trop fin pour la grille)
+        const dernier = [...parties[1].matchAll(/\d+/g)].pop();
+        const n = !dernier ? null : dernier[0].length >= 3
+          ? parties[1].slice(0, dernier.index) + String((+dernier[0][0] % 9) + 1) + dernier[0].slice(1) + parties[1].slice(dernier.index + dernier[0].length)
+          : chiffreAlterne(parties[1]);
+        if (!n || n === parties[1]) return;
+        compte('equivalence-modifiee', () => { const r = verifierEquivalence(parties[0], n); if (r.faux) return true; const rc = verifierChaine(n, null, true); return !!(rc && rc.faux); }, `${e.id} : ${parties[0].trim()} ⟺ ${n.trim()}`);
       });
       // M4 : une accolade fermante supprimée => MathJax doit refuser
       if (window.MathJax && MathJax.tex2svg && D.lignes.some((l) => l.includes('}'))) {
@@ -541,10 +564,12 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const mesures = [];
       for (const bloc of blocs) {
         if (bloc.hidden) { mesures.push({ id: bloc.id, ferme: true }); continue; }
+        let numLigne = 0;
         for (const ligne of bloc.querySelectorAll(':scope > div')) {
+          numLigne++;
           const svg = ligne.querySelector('svg'); if (!svg) { mesures.push({ id: bloc.id, vide: true }); continue; }
           // largeur naturelle de la formule rapportée à la largeur disponible : > 1 = la ligne défile horizontalement
-          mesures.push({ id: bloc.id, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"]') });
+          mesures.push({ id: bloc.id, num: numLigne, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"]') });
         }
       }
       return { attendus, trouves: boutons.length, mesures, debordement: document.documentElement.scrollWidth - window.innerWidth,
@@ -557,9 +582,9 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       if (m.ferme) anomalies.push({ gravite: 'erreur', motif: 'details-ne-s-ouvrent-pas', id: '(interface ' + tag + ')', exemple: m.id });
       if (m.vide) anomalies.push({ gravite: 'erreur', motif: 'ligne-sans-formule', id: '(interface ' + tag + ')', exemple: m.id });
       if (m.erreur) anomalies.push({ gravite: 'erreur', motif: 'erreur-mathjax-affichee', id: '(interface ' + tag + ')', exemple: m.id });
-      // la ligne garde sa taille et défile : sur téléphone, plus de 1,6 écran de large est pénible ; sur ordinateur, aucun défilement ne devrait être utile
-      const seuil = viewport.width < 600 ? 1.6 : 1.02;
-      if (m.largeur !== undefined && m.largeur > seuil) anomalies.push({ gravite: 'style', motif: 'ligne-trop-longue-' + (viewport.width < 600 ? 'telephone' : 'ordinateur'), id: m.id.replace('details-', 'ex.#'), exemple: `${m.largeur.toFixed(1)} fois la largeur disponible (${tag})` });
+      // la ligne garde sa taille et défile : aucun défilement ne devrait être utile, ni sur téléphone ni sur ordinateur
+      const seuil = 1.1;   // David (16/10/2026) : le moins de défilement possible, même sur téléphone
+      if (m.largeur !== undefined && m.largeur > seuil) anomalies.push({ gravite: 'style', motif: 'ligne-trop-longue-' + (viewport.width < 600 ? 'telephone' : 'ordinateur'), id: m.id.replace('details-', 'ex.#'), exemple: `ligne ${m.num} : ${m.largeur.toFixed(2)} fois la largeur disponible (${tag})` });
     }
     if (res.debordement > 2) anomalies.push({ gravite: 'erreur', motif: 'debordement-horizontal', id: '(interface ' + tag + ')', exemple: res.debordement + ' px de trop' });
   }
@@ -609,7 +634,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
     }
     // une même anomalie revue à chaque régénération n'est listée qu'une fois, avec son nombre d'occurrences
     const groupes = new Map();
-    for (const a of anomalies) { const c = a.gravite + '|' + a.motif + '|' + a.id; if (!groupes.has(c)) groupes.set(c, { ...a, n: 0 }); const g = groupes.get(c); g.n++; if (a.exemple.length > g.exemple.length && /fois/.test(a.exemple)) g.exemple = a.exemple; }
+    for (const a of anomalies) { const lig = (a.exemple.match(/^ligne (d+)/) || [])[1] || ''; const c = a.gravite + '|' + a.motif + '|' + a.id + '|' + lig; if (!groupes.has(c)) groupes.set(c, { ...a, n: 0 }); const g = groupes.get(c); g.n++; const larg = (s) => parseFloat((s.match(/: ([d.]+) fois/) || [])[1] || 0); if (larg(a.exemple) > larg(g.exemple)) g.exemple = a.exemple; }
     anomalies = [...groupes.values()];
     const s = r.stats;
     const nbE = anomalies.filter((a) => a.gravite === 'erreur').length, nbS = anomalies.length - nbE;
@@ -621,7 +646,8 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
     for (const a of anomalies) lignesRapport.push(`      [${a.gravite}] ${a.id} — ${a.motif}${a.n > 1 ? ' (×' + a.n + ')' : ''} : ${a.exemple}`);
     const at = Object.entries(r.autotest);
     if (at.length) lignesRapport.push('      auto-test (détection d\'une erreur volontaire) : ' + at.map(([n, v]) => `${n} ${v.detectes}/${v.essais}`).join(' ; '));
-    for (const [n, v] of at) if (v.essais >= 20 && v.detectes / v.essais < 0.9) { lignesRapport.push(`      [erreur] (outil) — auto-test insuffisant : ${n} ${v.detectes}/${v.essais}`); erreurs++; }
+    for (const [n, v] of at) if (v.rates && v.rates.length && process.argv.includes('--rates')) v.rates.forEach((x) => lignesRapport.push(`          ${n} non détecté : ${x}`));
+    for (const [n, v] of at) if (v.essais >= 20 && v.detectes / v.essais < 0.9) { lignesRapport.push(`      [erreur] (outil) — auto-test insuffisant : ${n} ${v.detectes}/${v.essais}`); (v.rates || []).forEach((x) => lignesRapport.push('          non détecté : ' + x)); erreurs++; }
     for (const [t, ids, exemple, enonce, lignes] of r.phrases) phrasesTout.push({ fiche, t, ids, exemple, enonce, lignes });
     for (const [id, liste] of r.exemples) exemplesHtml.push({ fiche, id, liste });
     await contexte.close();

@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"12.1 a)":0.75,"12.1 b)":1,"12.2 a)":0.5,"12.2 b)":0.75,"12.3 a)":0.5,"12.3 b)":0.5,"12.4 a)":0.5,"12.4 b)":0.5,"12.4 c)":0.75,"12.4 d)":0.75,"12.4 e)":1,"12.4 f)":1,"12.5 a)":1,"12.5 b)":1.25,"12.6 a)":1,"12.6 b)":1.25,"12.6 c)":1.25,"12.7 a)":1.5,"12.7 b)":1.25,"12.8 a)":1.75,"12.8 b)":1.5,"12.9 a)":1.75,"12.9 b)":1.5},"bonus":["12.8 a)","12.8 b)","12.9 a)","12.9 b)"]});
@@ -588,21 +589,6 @@ Bareme.definir({"points":{"12.1 a)":0.75,"12.1 b)":1,"12.2 a)":0.5,"12.2 b)":0.7
     border-bottom: 1px solid #eee;
   }
   .correction-ligne .id { font-weight: bold; color: var(--gris); }
-  /* détails d'une correction (fiche pilote) : bouton à droite de la réponse attendue, étapes dépliables dessous */
-  .btn-details {
-    margin-left: 8px; padding: 2px 10px;
-    border: 1.3px solid var(--bleu-clair, #B5D4F4); border-radius: 12px;
-    background: #fff; color: var(--bleu); font-size: 12.5px; font-weight: 600; cursor: pointer;
-  }
-  .btn-details:hover { background: var(--bleu); border-color: var(--bleu); color: #fff; }
-  .correction-ligne .details {
-    margin: 8px 0 2px 16px; padding: 8px 12px;
-    background: #f5f8fc; border-left: 3px solid var(--bleu); border-radius: 4px; font-size: 14px;
-  }
-  /* une ligne trop longue pour l'écran garde sa taille et défile horizontalement (sinon MathJax la réduit à 50-60 %, illisible) */
-  .correction-ligne .details > div { padding: 4px 0; overflow-x: auto; overflow-y: hidden; }
-  .correction-ligne .details svg { max-width: none; }
-  .correction-ligne .details[hidden] { display: none; }
 
   /* ---------- À partir des tablettes (>=600px) ---------- */
   @media (min-width: 600px) {
@@ -1064,23 +1050,8 @@ function nonCarreParfait(min, max) {
   return d;
 }
 
-// ---- Détails de correction (fiche pilote, 16/10/2026) ----
-// Chaque exercice concerné porte `detail: { lignes: [LaTeX…], final: LaTeX }` : les étapes, écrites avec les valeurs du
-// tirage ; `final` est la réponse telle qu'elle est écrite à la dernière ligne (le contrôle du développeur la compare à `reponse`).
-const dP = v => (v < 0 ? `(${v})` : String(v));                         // entier entre parenthèses s'il est négatif
-const dPlus = v => (v < 0 ? `- ${-v}` : `+ ${v}`);                      // « + 5 » ou « - 5 »
-const fracD = f => { f = math.fraction(f); return fracLatex(f.s * f.n, f.d); };           // fraction math.js -> LaTeX, signe devant
-const fracDP = f => { const t = fracD(f); return t.startsWith('-') ? `(${t})` : t; };      // idem, entre parenthèses si négative
-// somme de termes [coefficient entier, expression LaTeX ou ''] écrite avec les signes : « 12 - 18 + 8 », termes nuls omis
-function sommeTermes(liste) {
-  let s = '';
-  liste.forEach(([k, e]) => {
-    if (k === 0) return;
-    const m = e ? (Math.abs(k) === 1 ? e : `${Math.abs(k)}\\times ${e}`) : String(Math.abs(k));
-    s += (s ? (k < 0 ? ' - ' : ' + ') : (k < 0 ? '-' : '')) + m;
-  });
-  return s || '0';
-}
+// ---- Détails de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { dP, dPlus, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD } = Detail;
 // (a n + b) / d en LaTeX, réduit comme fracLinStr
 function fracLinTex(coefX, constTerme, denom, vr) {
   if (denom < 0) { coefX = -coefX; constTerme = -constTerme; denom = -denom; }
@@ -1088,21 +1059,9 @@ function fracLinTex(coefX, constTerme, denom, vr) {
   coefX /= g; constTerme /= g; denom /= g;
   return denom === 1 ? fmtLin(coefX, constTerme, false, vr) : `\\dfrac{${fmtLin(coefX, constTerme, false, vr)}}{${denom}}`;
 }
-// fraction non simplifiée, signe devant (jamais « \dfrac{-3}{4} ») ; « coefficient × a » sur un dénominateur numérique, signe devant aussi
-const fracBrute = (n, d) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`;
-const coefAbs = n => (Math.abs(n) === 1 ? '' : String(Math.abs(n)));
+// « coefficient × a » sur un dénominateur numérique, signe devant
 const fracCoefA = (q, s) => `${q < 0 ? '-' : ''}\\dfrac{${coefAbs(q)}a}{${s}}`;
-const ajouterFrac = t => (t.startsWith('-') ? `- ${t.slice(1)}` : `+ ${t}`);       // « + \dfrac{1}{3} » ou « - \dfrac{1}{3} »
-// terme « coefficient × n » : jamais « 1 n » ni « -1 n » ; avec signe (« + 2\,n », « - n ») ou sans (« 2\,n », « -n »)
-const termeNsansSigne = t => (t === '1' ? 'n' : t === '-1' ? '-n' : `${t}\\,n`);
-const termeNavecSigne = t => (t === '1' ? '+ n' : t === '-1' ? '- n' : `${ajouterFrac(t)}\\,n`);
-// « num / d » écrit puis simplifié : fraction (signe devant) si le numérateur est entier, « x \div d » s'il est lui-même une fraction ;
-// la forme simplifiée n'est ajoutée que si elle diffère de ce qui vient d'être écrit
-const divisionD = (num, d) => {
-  const f = math.fraction(num), q = math.divide(f, d);
-  const ecrit = f.d === 1 ? `${f.s < 0 ? '-' : ''}\\dfrac{${f.n}}{${d}}` : `${fracDP(f)} \\div ${d}`;
-  return ecrit === fracD(q) ? ecrit : `${ecrit} = ${fracD(q)}`;
-};
+
 
 let paramsAvances = {};
 // Etat tire au hasard hors du tableau exercices : enregistre avec le brouillon et restaure a la
@@ -1146,8 +1105,9 @@ function genererExercices() {
     const orig = `${c}${op1}${fmtLin(a,b,false)}${op2}${d}`;
     const lignes = [];
     if (b !== 0) lignes.push(`${orig} \\iff ${c - b}${op1}${coefL(a)}x${op2}${d - b}`);
-    if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0 \\text{ : les inégalités changent de sens}`);
-    if (a !== 1) lignes.push(`${b !== 0 ? '\\iff ' : orig + ' \\iff '}${fracLatex(c - b, a)} ${a < 0 ? inv(op1) : op1} x ${a < 0 ? inv(op2) : op2} ${fracLatex(d - b, a)}`);
+    else lignes.push(orig);
+    if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0`, `\\text{donc les inégalités changent de sens}`);
+    if (a !== 1) lignes.push(`\\iff ${fracLatex(c - b, a)} ${a < 0 ? inv(op1) : op1} x ${a < 0 ? inv(op2) : op2} ${fracLatex(d - b, a)}`);
     lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
     ex.push({id:"12.1 a)", type:"intervalle", texteLibre:true,
       enonce:`\\(${c}${op1}${fmtLin(a,b,false)}${op2}${d}\\)`,
@@ -1178,17 +1138,21 @@ function genererExercices() {
     };
     const signes = [0, 1, 2, 3].map(signeIntervalle);
     const marque = v => (v === p ? '\\Vert' : '0');
-    const tableau = `\\begin{array}{c|ccccccccc} x & -\\infty & & ${bs[0]} & & ${bs[1]} & & ${bs[2]} & & +\\infty \\\\ \\hline `
-      + `\\text{signe du quotient} & &${signes[0]} & ${marque(bs[0])} & ${signes[1]} & ${marque(bs[1])} & ${signes[2]} & ${marque(bs[2])} & ${signes[3]} & \\end{array}`;
+    const tableau = `\\small\\begin{array}{c|ccccccccc} x & -\\infty & & ${bs[0]} & & ${bs[1]} & & ${bs[2]} & & +\\infty \\\\ \\hline `
+      + `\\text{signe} & &${signes[0]} & ${marque(bs[0])} & ${signes[1]} & ${marque(bs[1])} & ${signes[2]} & ${marque(bs[2])} & ${signes[3]} & \\end{array}`;
     const spec = {type:'intervalles', liste};
     ex.push({id:"12.1 b)", type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{x^2-${m*m}}{${fmtLin(1,-p,false)}}${op}0\\)`,
       intervalleSpec: spec,
       detail: { lignes: [
-        `x^2-${m*m} = (x-${m})(x+${m}) = 0 \\iff x = ${-m} \\text{ ou } x = ${m}`,
+        `x^2-${m*m} = (x-${m})(x+${m})`,
+        `(x-${m})(x+${m}) = 0 \\iff x = ${-m} \\text{ ou } x = ${m}`,
         `${fmtLin(1,-p,false)} = 0 \\iff x = ${p} \\text{ (valeur interdite)}`,
+        `\\text{Tableau de signes du quotient}`,
         tableau,
-        `\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est } ${op}\\ 0 \\text{ ; la valeur interdite } ${p} \\text{ est exclue dans tous les cas}`,
+        `\\text{On cherche les valeurs de } x`,
+        `\\text{pour lesquelles le quotient est } ${op}\\ 0`,
+        `\\text{La valeur interdite } ${p} \\text{ est exclue dans tous les cas}`,
         `S = ${formaterIntervalleSpec(spec)}`],
         final: formaterIntervalleSpec(spec), signes, bornes: bs, m, p }});
   }
@@ -1204,7 +1168,8 @@ function genererExercices() {
       detail: { lignes: [
         `x(${fmtLin(1,p,false)})=${q} \\iff ${polyQuadStr(1,p,-q,false,'x')}=0`,
         `\\Delta = ${dP(p)}^2 - 4\\times 1\\times ${dP(-q)} = ${D} = ${sq}^2`,
-        `x_1 = \\dfrac{-${dP(p)} - ${sq}}{2} = ${r1} \\quad\\text{et}\\quad x_2 = \\dfrac{-${dP(p)} + ${sq}}{2} = ${r2}`,
+        `x_1 = \\dfrac{-${dP(p)} - ${sq}}{2} = ${r1}`,
+        `x_2 = \\dfrac{-${dP(p)} + ${sq}}{2} = ${r2}`,
         `S = \\left\\{${r1}\\,;\\,${r2}\\right\\}`],
         final: `\\left\\{${r1}\\,;\\,${r2}\\right\\}` }});
   }
@@ -1317,7 +1282,8 @@ function genererExercices() {
     const d = s.K2 - s.K1, delta = math.subtract(s.T2, s.T1);
     return { lignes: [
       `u_{${s.K2}} = u_{${s.K1}} + (${s.K2}-${s.K1})\\times r`,
-      `${d}\\,r = ${s.tL(s.T2)} - ${fracDP(s.T1)} \\iff r = ${divisionD(delta, d)}`,
+      `${d}\\,r = ${s.tL(s.T2)} - ${fracDP(s.T1)}`,
+      `\\iff r = ${divisionD(delta, d)}`,
       `u_{${s.K1}} = u_0 + ${s.K1 === 1 ? '' : s.K1 + '\\times '}r`,
       `u_0 = ${s.tL(s.T1)} - ${s.K1 === 1 ? '' : s.K1 + '\\times '}${fracDP(s.rF)} = ${fracD(s.u0F)}`],
       final: fracD(s.u0F) };
@@ -1335,7 +1301,10 @@ function genererExercices() {
       enonce:`\\(u_0+u_1+\\cdots+u_{${N}}\\), où \\(\\left(u_n\\right)\\) est arithmétique de raison \\(${r}\\) et de premier terme \\(u_0=${u0}\\)`, reponse:String((N+1)*(2*u0 + N*r)/2),
       detail: { lignes: [
         `u_{${N}} = u_0 + ${N}\\times r = ${u0} + ${N}\\times ${dP(r)} = ${uN}`,
-        `\\text{Il y a } ${N}+1 = ${N+1} \\text{ termes, donc } S = ${N+1}\\times\\dfrac{u_0 + u_{${N}}}{2} = ${N+1}\\times\\dfrac{${u0} ${dPlus(uN)}}{2} = ${N+1}\\times ${u0 + uN < 0 ? '\\left(' + fracBrute(u0 + uN, 2) + '\\right)' : fracBrute(u0 + uN, 2)}`,
+        `\\text{Il y a } ${N}+1 = ${N+1} \\text{ termes}`,
+        `\\text{Donc } S = ${N+1}\\times\\dfrac{u_0 + u_{${N}}}{2}`,
+        `S = ${N+1}\\times\\dfrac{${u0} ${dPlus(uN)}}{2}`,
+        `S = ${N+1}\\times ${u0 + uN < 0 ? '\\left(' + fracBrute(u0 + uN, 2) + '\\right)' : fracBrute(u0 + uN, 2)}`,
         `S = ${fracBrute((N+1)*(u0+uN), 2)} = ${S}`],
         final: String(S) }});
   }
@@ -1347,8 +1316,11 @@ function genererExercices() {
     ex.push({id:"12.5 b)", type:"num", texteLibre:true, sansEgal:true,
       enonce:`\\(${f}+${f+r}+${f+2*r}+\\cdots+${der}\\)`, reponse:String(n*(f + der)/2),
       detail: { lignes: [
-        `\\text{On reconnaît une suite arithmétique de raison } r = ${f+r} - ${f} = ${r} \\text{ ; nombre de termes : } \\dfrac{${der} - ${f}}{${dP(r)}} + 1 = ${(der-f)/r} + 1 = ${n}`,
-        `S = ${n}\\times\\dfrac{${f} + ${der}}{2} = \\dfrac{${n}\\times ${f+der}}{2} = ${S}`],
+        `\\text{On reconnaît une suite arithmétique}`,
+        `\\text{de raison } r =${f+r} - ${f} = ${r}`,
+        `\\text{Nombre de termes : } \\dfrac{${der} - ${f}}{${dP(r)}} + 1 = ${(der-f)/r} + 1 = ${n}`,
+        `S = ${n}\\times\\dfrac{${f} + ${der}}{2}`,
+        `S = \\dfrac{${n}\\times ${f+der}}{2} = ${S}`],
         final: String(S) }});
   }
 
@@ -1375,7 +1347,8 @@ function genererExercices() {
       enonce:`\\(r${SI}u_n=\\dfrac{${coefL(C)}a^2${kTxt}}{a}\\)`, reponse: K===1 ? '1/a' : K===-1 ? '-1/a' : `${K}/a`,
       detail: { lignes: [
         `r = u_{n+1} - u_n`,
-        `u_{n+1} - u_n = \\dfrac{${coefL(C)}a^2${nTxt}}{a} - \\dfrac{${coefL(C)}a^2${kTxt}}{a} = \\dfrac{\\left(${coefL(C)}a^2${nTxt}\\right) - \\left(${coefL(C)}a^2${kTxt}\\right)}{a}`,
+        `u_{n+1} - u_n = \\dfrac{${coefL(C)}a^2${nTxt}}{a} - \\dfrac{${coefL(C)}a^2${kTxt}}{a}`,
+        `u_{n+1} - u_n = \\dfrac{\\left(${coefL(C)}a^2${nTxt}\\right) - \\left(${coefL(C)}a^2${kTxt}\\right)}{a}`,
         `u_{n+1} - u_n = \\dfrac{${numDiff}}{a} = ${kFin}`,
         `r = ${kFin}`],
         final: kFin }});
@@ -1389,8 +1362,10 @@ function genererExercices() {
       reponse: fracStr(R * s, q),
       detail: { lignes: [
         `r = u_{n+1} - u_n`,
-        `u_{n+1} - u_n = \\dfrac{${numAvec('(n+1)')}}{${s}} - \\dfrac{${numAvec('n')}}{${s}} = \\dfrac{\\left(${numAvec('(n+1)')}\\right) - \\left(${numAvec('n')}\\right)}{${s}}`,
-        `u_{n+1} - u_n = \\dfrac{${coefL(q)}a(n+1) - ${q < 0 ? `\\left(${coefL(q)}an\\right)` : `${coefL(q)}an`}}{${s}} = ${fracCoefA(q, s)}`,
+        `u_{n+1} - u_n = \\dfrac{${numAvec('(n+1)')}}{${s}} - \\dfrac{${numAvec('n')}}{${s}}`,
+        `u_{n+1} - u_n = \\dfrac{\\left(${numAvec('(n+1)')}\\right) - \\left(${numAvec('n')}\\right)}{${s}}`,
+        `u_{n+1} - u_n = \\dfrac{${coefL(q)}a(n+1) - ${q < 0 ? `\\left(${coefL(q)}an\\right)` : `${coefL(q)}an`}}{${s}}`,
+        `u_{n+1} - u_n = ${fracCoefA(q, s)}`,
         `r = ${R} \\iff ${fracCoefA(q, s)} = ${R} \\iff ${coefL(q)}a = ${R * s}`,
         `a = ${fracLatex(R * s, q)}`],
         final: fracLatex(R * s, q) }});
@@ -1432,9 +1407,11 @@ function genererExercices() {
     const fac = (R + S === 1 ? '' : dP(R + S)), denFact = `${fac}\\left(${unS}\\right)`;
     ex.push({id:"12.8 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: fracToStr(kF),
       detail: { lignes: [
-        `v_{n+1} = \\dfrac{1}{u_{n+1} ${dPlus(-S)}} = \\dfrac{1}{\\dfrac{${num}}{${den}} ${dPlus(-S)}} = \\dfrac{${den}}{${num} - ${S === 1 ? '' : dP(S)}\\left(${den}\\right)}`,
+        `v_{n+1} = \\dfrac{1}{u_{n+1} ${dPlus(-S)}} = \\dfrac{1}{\\dfrac{${num}}{${den}} ${dPlus(-S)}}`,
+        `v_{n+1} = \\dfrac{${den}}{${num} - ${S === 1 ? '' : dP(S)}\\left(${den}\\right)}`,
         `v_{n+1} = \\dfrac{${den}}{${fmtLin(R + S, Q - S*R, false, 'u_n')}} = \\dfrac{${den}}{${denFact}}`,
-        `v_{n+1} - v_n = \\dfrac{${den}}{${denFact}} - \\dfrac{1}{${unS}} = \\dfrac{\\left(${den}\\right) - ${dP(R + S)}}{${denFact}}`,
+        `v_{n+1} - v_n = \\dfrac{${den}}{${denFact}} - \\dfrac{1}{${unS}}`,
+        `v_{n+1} - v_n = \\dfrac{\\left(${den}\\right) - ${dP(R + S)}}{${denFact}}`,
         `v_{n+1} - v_n = \\dfrac{${unS}}{${denFact}} = ${fracD(kF)}`,
         `r = ${fracD(kF)}`],
         final: fracD(kF) }});
@@ -1460,16 +1437,22 @@ function genererExercices() {
     const c1 = -T * (2*k - 4), c2 = (k - 1) * (k - 3);
     ex.push({id:"12.9 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de la suite \\((u_n)\\)", reponse: fracToStr(rF),
       detail: { lignes: [
-        `\\dfrac{1}{u_1u_2}+\\dfrac{1}{u_2u_3} = \\dfrac{u_3+u_1}{u_1u_2u_3} = \\dfrac{2u_2}{u_1u_2u_3} = \\dfrac{2}{u_1u_3} \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}`,
+        `\\dfrac{1}{u_1u_2}+\\dfrac{1}{u_2u_3} = \\dfrac{u_3+u_1}{u_1u_2u_3}`,
+        `\\dfrac{u_3+u_1}{u_1u_2u_3} = \\dfrac{2u_2}{u_1u_2u_3} \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}`,
+        `\\dfrac{2u_2}{u_1u_2u_3} = \\dfrac{2}{u_1u_3}`,
         `\\dfrac{2}{u_1u_3} = ${fracLatex(2, T*T)} \\iff u_1u_3 = ${T*T}`,
-        `u_1 = u_{${k}} + (1-${k})\\,r = ${T} - ${coefL(k-1)}\\,r \\qquad u_3 = u_{${k}} + (3-${k})\\,r = ${T} - ${coefL(k-3)}\\,r`,
-        `\\left(${T} - ${coefL(k-1)}\\,r\\right)\\left(${T} - ${coefL(k-3)}\\,r\\right) = ${T*T} \\iff ${c2}\\,r^2 ${dPlus(c1)}\\,r = 0 \\iff r\\left(${c2}\\,r ${dPlus(c1)}\\right) = 0`,
+        `u_1 = u_{${k}} + (1-${k})\\,r = ${T} - ${coefL(k-1)}\\,r`,
+        `u_3 = u_{${k}} + (3-${k})\\,r = ${T} - ${coefL(k-3)}\\,r`,
+        `\\left(${T} - ${coefL(k-1)}\\,r\\right)\\left(${T} - ${coefL(k-3)}\\,r\\right) = ${T*T}`,
+        `\\iff ${c2}\\,r^2 ${dPlus(c1)}\\,r = 0 \\iff r\\left(${c2}\\,r ${dPlus(c1)}\\right) = 0`,
         `r \\neq 0 \\text{ donc } ${c2}\\,r ${dPlus(c1)} = 0 \\iff r = ${fracD(rF)}`],
         final: fracD(rF) }});
     ex.push({id:"12.9 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(u_n\\) en fonction de \\(n\\)", reponse: fracLinStr(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n'),
       detail: { lignes: [
-        `u_n = u_{${k}} + (n-${k})\\times r = ${T} + (n-${k})\\times ${fracDP(rF)}`,
-        `u_n = ${termeNsansSigne(fracD(rF))} + \\left(${T} - ${k}\\times ${fracDP(rF)}\\right) = ${termeNsansSigne(fracD(rF))} ${ajouterFrac(fracD(cst))}`,
+        `u_n = u_{${k}} + (n-${k})\\times r`,
+        `u_n = ${T} + (n-${k})\\times ${fracDP(rF)}`,
+        `u_n = ${termeNsansSigne(fracD(rF))} + \\left(${T} - ${k}\\times ${fracDP(rF)}\\right)`,
+        `u_n = ${termeNsansSigne(fracD(rF))} ${ajouterFrac(fracD(cst))}`,
         `u_n = ${fracLinTex(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n')}`],
         final: fracLinTex(rN*(Dc/rD), cN*(Dc/cD), Dc, 'n') }});
     paramsAvances.g9 = {k,T};
@@ -1478,8 +1461,8 @@ function genererExercices() {
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
   ex.forEach(e => {
     if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt ');
-    if (e.detail) e.detail.lignes = e.detail.lignes.map(l => l.replace(/</g, '\\lt '));   // idem pour les étapes
   });
+  Detail.preparer(ex);   // idem pour les étapes
   return ex;
 }
 
@@ -2795,27 +2778,12 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      // « Détails » (fiche pilote) : les étapes du calcul, repliées par défaut, seulement pour une réponse fausse ou vide
-      const details = ex.detail
-        ? ` <button type="button" class="btn-details" aria-expanded="false" onclick="basculerDetails(${idx}, this)">Détails</button>`
-          + `<div class="details" id="details-${idx}" hidden>${ex.detail.lignes.map(l => `<div>\\(${l}\\)</div>`).join('')}</div>`
-        : '';
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${details}</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
   correctionDiv.classList.remove('visible');
   document.getElementById('btn-correction').textContent = 'Voir la correction des erreurs';
-}
-
-function basculerDetails(idx, bouton) {
-  const bloc = document.getElementById('details-' + idx);
-  if (!bloc) return;
-  const ouvrir = bloc.hidden;
-  bloc.hidden = !ouvrir;
-  bouton.textContent = ouvrir ? 'Masquer' : 'Détails';
-  bouton.setAttribute('aria-expanded', String(ouvrir));
-  if (ouvrir && window.MathJax) MathJax.typesetPromise([bloc]);
 }
 
 function toggleCorrection() {

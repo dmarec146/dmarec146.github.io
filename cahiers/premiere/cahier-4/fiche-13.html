@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"13.1 a)":0.5,"13.1 b)":1.25,"13.2 a)":0.75,"13.2 b)":0.5,"13.3 a)":0.5,"13.3 b)":0.5,"13.4 a)":0.5,"13.4 b)":0.75,"13.4 c)":0.75,"13.4 d)":1,"13.4 e)":1,"13.4 f)":1,"13.5 a)":1.5,"13.5 b)":1,"13.6 a)":1.5,"13.6 b)":1.25,"13.6 c)":0.75,"13.7 a)":1.5,"13.7 b)":1.25,"13.7 c)":1,"13.8 a)":1,"13.8 b)":1.25,"13.9 a)":1.75,"13.9 b)":1.5,"13.9 c)":1.5,"13.10 a)":1.5,"13.10 b)":2,"13.10 c)":1.5},"bonus":["13.9 a)","13.9 b)","13.9 c)","13.10 a)","13.10 b)","13.10 c)"]});
@@ -1136,6 +1137,13 @@ function mettreAJourTextesAvances() {
 function genererExercices() {
   const ex = [];
   paramsAvances = {};
+  // Détails de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js
+  const { dP, dPlus, fracBrute, fracD, fracDP, sommeTermes, divisionD, coefAbs, ajouterFrac } = Detail;
+  const fracTex = Detail.fracTexte;                                                  // fraction irréductible, signe devant
+  const opInv13 = o => ({ '<': '>', '>': '<', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' })[o];   // sens renversé par une division par un nombre négatif
+  const powF = f => (f.d === 1 ? dP(f.s * f.n) : `\\left(${fracD(f)}\\right)`);      // puissance d'une fraction : base entre parenthèses
+  const cf = tex => (tex === '1' ? '' : tex === '-1' ? '-' : `${tex}\\times `);       // coefficient devant un produit : jamais « 1\times »
+  const fracCoefX = (t, d, v) => `${t < 0 ? '-' : ''}\\dfrac{${coefAbs(t)}${v || 'x'}}{${d}}`;   // t x / d, signe devant
   const SI = '\\;\\;\\text{si}\\;\\;', ET = '\\;\\;\\text{et}\\;\\;';
 
   // ---------- 13.1 : inequations (02/10/2026, automatismes diversifies) ----------
@@ -1161,9 +1169,19 @@ function genererExercices() {
     let a, b; do { a = alea(2,9); b = alea(2,9); } while (a === b || a % b === 0 || b % a === 0);
     const c = aleaNonNul(-6,6), op = OPS13[alea(0,3)];
     const k = (b - a) / (a * b);   // x/a - x/b = k x
+    const spec = {type:'intervalles', liste: parSigne([c*a*b / (b - a)], x => k*x - c, op)};   // borne exacte (c/k laissait une erreur d'arrondi)
+    const g = pgcd(b - a, a * b), t = (b - a) / g, d = a * b / g;   // x/a - x/b = t x / d, fraction simplifiée
+    const lignes = [
+      `\\dfrac{x}{${a}} - \\dfrac{x}{${b}} = \\dfrac{${b}x}{${a*b}} - \\dfrac{${a}x}{${a*b}}`,
+      `\\dfrac{${b}x}{${a*b}} - \\dfrac{${a}x}{${a*b}} = ${fracCoefX(b - a, a*b)}` + (g > 1 ? ` = ${fracCoefX(t, d)}` : ''),
+      `${fracCoefX(t, d)} ${op} ${c} \\iff ${fmtLin(t, 0, false, 'x')} ${op} ${c*d}`];
+    if (t < 0) lignes.push(`\\text{On divise par } ${t} < 0`, `\\text{donc le sens de l'inégalité change}`);
+    if (Math.abs(t) !== 1 || t < 0) lignes.push(`\\iff x ${t < 0 ? opInv13(op) : op} ${fracTex(c*d, t)}`);
+    lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
     ex.push({id:"13.1 a)", type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{x}{${a}}-\\dfrac{x}{${b}}${op}${c}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([c*a*b / (b - a)], x => k*x - c, op)}});   // borne exacte (c/k laissait une erreur d'arrondi)
+      intervalleSpec: spec,
+      detail: { lignes, final: formaterIntervalleSpec(spec) }});
   }
   // b) produit a factoriser : (ax+b)(cx+d) op (ax+b)(ex+f), soit (ax+b)((c-e)x+d-f) op 0
   {
@@ -1172,9 +1190,22 @@ function genererExercices() {
     while (c === e || Math.abs(r1 - r2) < 1e-9 || (c === 1 && d === 0) || (e === 1 && f === 0));
     const op = OPS13[alea(0,3)];
     const P = fmtLin(a,b,false);
+    const spec = {type:'intervalles', liste: parSigne([r1, r2], x => (a*x + b) * ((c - e)*x + d - f), op)};
+    const Q1 = fmtLin(c,d,false), Q2 = fmtLin(e,f,false), R = fmtLin(c - e, d - f, false);
     ex.push({id:"13.1 b)", type:"intervalle", texteLibre:true,
-      enonce:`\\((${P})(${fmtLin(c,d,false)})${op}(${P})(${fmtLin(e,f,false)})\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([r1, r2], x => (a*x + b) * ((c - e)*x + d - f), op)}});
+      enonce:`\\((${P})(${Q1})${op}(${P})(${Q2})\\)`,
+      intervalleSpec: spec,
+      detail: { lignes: [
+        `(${P})(${Q1}) ${op} (${P})(${Q2})`,
+        `\\iff (${P})(${Q1}) - (${P})(${Q2}) ${op} 0`,
+        `\\iff (${P})\\left[(${Q1}) - (${Q2})\\right] ${op} 0`,
+        `\\iff (${P})(${R}) ${op} 0`,
+        `\\text{Tableau de signes de } (${P})(${R})`,
+        Detail.tableauSignes([{v: r1, tex: fracTex(-b, a)}, {v: r2, tex: fracTex(-(d - f), c - e)}], x => (a*x + b) * ((c - e)*x + d - f)),
+        `\\text{On cherche les valeurs de } x`,
+        `\\text{pour lesquelles l'expression est } ${op}\\ 0`,
+        `S = ${formaterIntervalleSpec(spec)}`],
+        final: formaterIntervalleSpec(spec) }});
   }
 
   // ---------- 13.2 : equations (ensemble des solutions) ----------
@@ -1182,17 +1213,46 @@ function genererExercices() {
   {
     if (alea(0,1) === 0) {
       const m = alea(2,7);   // pas de « x^3=1x »
-      ex.push({id:"13.2 a)", type:"num", texteLibre:true, enonce:`\\(x^3=${m*m}x\\)`, reponse:`{${-m};0;${m}}`});
+      ex.push({id:"13.2 a)", type:"num", texteLibre:true, enonce:`\\(x^3=${m*m}x\\)`, reponse:`{${-m};0;${m}}`,
+        detail: { lignes: [
+          `x^3 = ${m*m}x \\iff x^3 - ${m*m}x = 0`,
+          `x^3 - ${m*m}x = x\\left(x^2 - ${m*m}\\right) = x(x-${m})(x+${m})`,
+          `x(x-${m})(x+${m}) = 0`,
+          `\\iff x = 0 \\text{ ou } x = ${m} \\text{ ou } x = ${-m}`,
+          `S = \\left\\{${-m}\\,;\\,0\\,;\\,${m}\\right\\}`],
+          final: `\\left\\{${-m}\\,;\\,0\\,;\\,${m}\\right\\}` }});
     } else {
       let a, b; do { a = aleaNonNul(-5,5); b = aleaNonNul(-9,9); } while (Math.abs(a) === 1 && Math.abs(b) === 1);
-      ex.push({id:"13.2 a)", type:"num", texteLibre:true, enonce:`\\(${coefPrefixeL(a)}x^3${b > 0 ? '+' : '-'}${Math.abs(b) === 1 ? '' : Math.abs(b)}x^2=0\\)`, reponse:`{${fracStr(-b, a)};0}`});
+      const corps = `${coefPrefixeL(a)}x^3${b > 0 ? '+' : '-'}${Math.abs(b) === 1 ? '' : Math.abs(b)}x^2`, r = -b / a;
+      const ensemble = r < 0 ? `\\left\\{${fracTex(-b, a)}\\,;\\,0\\right\\}` : `\\left\\{0\\,;\\,${fracTex(-b, a)}\\right\\}`;
+      ex.push({id:"13.2 a)", type:"num", texteLibre:true, enonce:`\\(${corps}=0\\)`, reponse:`{${fracStr(-b, a)};0}`,
+        detail: { lignes: [
+          `${corps} = x^2\\left(${fmtLin(a, b, false)}\\right)`,
+          `x^2\\left(${fmtLin(a, b, false)}\\right) = 0 \\iff x = 0 \\text{ ou } x = ${fracTex(-b, a)}`,
+          `S = ${ensemble}`],
+          final: ensemble }});
     }
   }
   // b) second degre a racines rationnelles : s (q1 x - p1)(x - p2) = 0 developpe
   {
     let q1, p1, p2, s; do { q1 = alea(2,3); p1 = aleaNonNul(-7,7); p2 = aleaNonNul(-5,5); s = [1,-1][alea(0,1)]; } while (pgcd(p1, q1) !== 1);
     const A = s*q1, B = -s*(q1*p2 + p1), C = s*p1*p2;
-    ex.push({id:"13.2 b)", type:"num", texteLibre:true, enonce:`\\(${polyQuadStr(A,B,C,false,'x')}=0\\)`, reponse:`{${fracStr(p1, q1)};${p2}}`});
+    // on se ramène à un coefficient dominant positif (division par -1) ; delta = (q1 p2 - p1)^2
+    const A2 = Math.abs(A), B2 = A < 0 ? -B : B, C2 = A < 0 ? -C : C, sq = Math.abs(q1 * p2 - p1), D = B2*B2 - 4*A2*C2;
+    const f1 = fracTex(-B2 - sq, 2 * A2), f2 = fracTex(-B2 + sq, 2 * A2);
+    const ensemble = `\\left\\{${f1}\\,;\\,${f2}\\right\\}`;
+    const ligneRacine = (signe) => {
+      const num = -B2 + signe * sq, den = 2 * A2, brute = fracBrute(num, den), simple = fracTex(num, den);
+      return `x_${signe < 0 ? 1 : 2} = \\dfrac{${-B2} ${signe < 0 ? '-' : '+'} ${sq}}{${den}} = ${brute}` + (brute === simple ? '' : ` = ${simple}`);
+    };
+    ex.push({id:"13.2 b)", type:"num", texteLibre:true, enonce:`\\(${polyQuadStr(A,B,C,false,'x')}=0\\)`, reponse:`{${fracStr(p1, q1)};${p2}}`,
+      detail: { lignes: [
+        ...(A < 0 ? [`${polyQuadStr(A,B,C,false,'x')} = 0 \\iff ${polyQuadStr(A2,B2,C2,false,'x')} = 0`] : []),
+        `\\Delta = ${dP(B2)}^2 - 4\\times ${A2}\\times ${dP(C2)} = ${D} = ${sq}^2`,
+        ligneRacine(-1),
+        ligneRacine(1),
+        `S = ${ensemble}`],
+        final: ensemble }});
   }
 
   // ---------- 13.3 : calcul numerique (entier ou fraction irreductible) ----------
@@ -1201,7 +1261,17 @@ function genererExercices() {
     const A = [2,3,5,7][alea(0,3)], p = alea(3,9), plus = alea(0,1) === 0;
     ex.push({id:"13.3 a)", type:"num", fractionIrreductible:true,
       enonce: plus ? `\\dfrac{${A}^{${p}}+${A}^{${p+1}}}{${A}^{${p-1}}}` : `\\dfrac{${A}^{${p+1}}-${A}^{${p}}}{${A}^{${p-1}}}`,
-      reponse: String(plus ? A + A*A : A*A - A)});
+      reponse: String(plus ? A + A*A : A*A - A),
+      detail: (() => {
+        const facteur = plus ? `\\left(1+${A}\\right)` : `\\left(${A}-1\\right)`, valeur = plus ? 1 + A : A - 1;
+        const brut = plus ? `${A}^{${p}}+${A}^{${p+1}}` : `${A}^{${p+1}}-${A}^{${p}}`;
+        const res = plus ? A + A*A : A*A - A;
+        return { lignes: [
+          `\\dfrac{${brut}}{${A}^{${p-1}}} = \\dfrac{${A}^{${p}}${facteur}}{${A}^{${p-1}}}`,
+          `\\dfrac{${A}^{${p}}${facteur}}{${A}^{${p-1}}} = ${A}^{${p} - ${p-1}}${facteur} = ${A}${facteur}`,
+          `${A}${facteur} = ${A}\\times ${valeur} = ${res}`],
+          final: String(res) };
+      })() });
   }
   // b) (1 - (1/k)^n)/(1 - 1/k), k = ±2 ou ±3
   {
@@ -1211,26 +1281,53 @@ function genererExercices() {
     const fL = `${sg < 0 ? '-' : ''}\\dfrac{${pp}}{${k}}`;
     ex.push({id:"13.3 b)", type:"num", fractionIrreductible:true,
       enonce:`\\dfrac{1-\\left(${fL}\\right)^{${n}}}{1${sg < 0 ? '+' : '-'}\\dfrac{${pp}}{${k}}}`,
-      reponse: fracToStr(S)});
+      reponse: fracToStr(S),
+      detail: (() => {
+        const rn = math.pow(rF, n), num = math.subtract(1, rn), den = math.subtract(1, rF);
+        const rnTexte = `\\left(${fL}\\right)^{${n}}`;
+        return { lignes: [
+          `${rnTexte} = ${fracBrute(Math.pow(sg * pp, n), Math.pow(k, n))}`,
+          `1 - ${rnTexte} = 1 ${ajouterFrac(fracD(math.multiply(-1, rn)))} = ${fracD(num)}`,
+          `1 ${sg < 0 ? '+' : '-'} \\dfrac{${pp}}{${k}} = ${fracD(den)}`,
+          `\\dfrac{${fracD(num)}}{${fracD(den)}} = ${fracDP(num)} \\times ${fracDP(math.divide(1, den))} = ${fracD(S)}`],
+          final: fracD(S) };
+      })() });
   }
 
   // ---------- 13.4 : termes d'une suite geometrique (anciens 13.5, 13.6, 13.7) ----------
   {
     const q = [-3,-2,2,3][alea(0,3)], u0 = aleaNonNul(-4,4), N = alea(4,6);
     ex.push({id:"13.4 a)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{${N}}${SI}q=${q}${ET}u_0=${u0}\\)`, reponse:String(u0 * Math.pow(q, N))});
+      enonce:`\\(u_{${N}}${SI}q=${q}${ET}u_0=${u0}\\)`, reponse:String(u0 * Math.pow(q, N)),
+      detail: { lignes: [
+        `u_{${N}} = u_0\\times q^{${N}}`,
+        `u_{${N}} = ${cf(String(u0))}${dP(q)}^{${N}}`,
+        `u_{${N}} = ${cf(String(u0))}${dP(Math.pow(q, N))} = ${u0 * Math.pow(q, N)}`],
+        final: String(u0 * Math.pow(q, N)) }});
   }
   const qFrac = () => { let P, Q; do { P = alea(2,5); Q = alea(2,4); } while (P === Q || pgcd(P,Q) !== 1); return [[1,-1][alea(0,1)] * P, Q]; };
   {
     const [P, Q] = qFrac(), K = alea(2,6), T = aleaNonNul(-12,12), off = alea(2,3);
     const v = math.multiply(T, math.pow(math.fraction(P, Q), off));
     ex.push({id:"13.4 b)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{${K+off}}${SI}q=${fracLatex(P,Q)}${ET}u_{${K}}=${T}\\)`, reponse: fracToStr(v)});
+      enonce:`\\(u_{${K+off}}${SI}q=${fracLatex(P,Q)}${ET}u_{${K}}=${T}\\)`, reponse: fracToStr(v),
+      detail: (() => {
+        const qF = math.fraction(P, Q), qOff = math.pow(qF, off);
+        return { lignes: [
+          `u_{${K+off}} = u_{${K}}\\times q^{${K+off}-${K}}`,
+          `u_{${K+off}} = ${cf(String(T))}${powF(qF)}^{${off}}`,
+          `${cf(String(T))}${powF(qF)}^{${off}} = ${cf(String(T))}${fracDP(qOff)} = ${fracD(v)}`],
+          final: fracD(v) };
+      })() });
   }
   {
     const [P, Q] = qFrac(), K = alea(2,6), T = aleaNonNul(-12,12);
     ex.push({id:"13.4 c)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_n${SI}q=${fracLatex(P,Q)}${ET}u_{${K}}=${T}\\)`, reponse:`${T}*(${P}/${Q})^(n-${K})`});
+      enonce:`\\(u_n${SI}q=${fracLatex(P,Q)}${ET}u_{${K}}=${T}\\)`, reponse:`${T}*(${P}/${Q})^(n-${K})`,
+      detail: { lignes: [
+        `u_{n} = u_{${K}}\\times q^{n-${K}}`,
+        `u_{n} = ${cf(String(T))}\\left(${fracLatex(P,Q)}\\right)^{n-${K}}`],
+        final: `${cf(String(T))}\\left(${fracLatex(P,Q)}\\right)^{n-${K}}` }});
   }
 
   // ---------- 13.5 : raison et premier terme a partir de deux termes (anciens 13.8, 13.9, 13.11) ----------
@@ -1238,7 +1335,13 @@ function genererExercices() {
   {
     const q = [-3,-2,2,3][alea(0,3)], K1 = alea(1,4), D = nonCarreParfait(2,7);
     ex.push({id:"13.4 d)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(q${SI}u_{${K1}}=\\sqrt{${D}}${ET}u_{${K1+3}}=${coefPrefixeL(q*q*q)}\\sqrt{${D}}\\)`, reponse:`{${q}}`});
+      enonce:`\\(q${SI}u_{${K1}}=\\sqrt{${D}}${ET}u_{${K1+3}}=${coefPrefixeL(q*q*q)}\\sqrt{${D}}\\)`, reponse:`{${q}}`,
+      detail: { lignes: [
+        `u_{${K1+3}} = u_{${K1}}\\times q^{${K1+3}-${K1}}`,
+        `q^{3} = \\dfrac{u_{${K1+3}}}{u_{${K1}}} = \\dfrac{${coefPrefixeL(q*q*q)}\\sqrt{${D}}}{\\sqrt{${D}}} = ${q*q*q}`,
+        `q^{3} = ${q*q*q} = ${dP(q)}^{3} \\iff q = ${q}`,
+        `S = \\left\\{${q}\\right\\}`],
+        final: `\\left\\{${q}\\right\\}` }});
   }
   // b) ecart pair : deux raisons opposees
   const ecartPair = () => {
@@ -1250,13 +1353,27 @@ function genererExercices() {
   {
     const s = ecartPair();
     ex.push({id:"13.4 e)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(q${SI}u_{${s.K1}}=${fracToLatex(s.T1)}${ET}u_{${s.K2}}=${fracToLatex(s.T2)}\\)`, reponse:`{${-s.m};${s.m}}`});
+      enonce:`\\(q${SI}u_{${s.K1}}=${fracToLatex(s.T1)}${ET}u_{${s.K2}}=${fracToLatex(s.T2)}\\)`, reponse:`{${-s.m};${s.m}}`,
+      detail: { lignes: [
+        `u_{${s.K2}} = u_{${s.K1}}\\times q^{${s.K2}-${s.K1}}`,
+        `q^{${s.K2 - s.K1}} = \\dfrac{u_{${s.K2}}}{u_{${s.K1}}} = ${fracDP(s.T2)} \\div ${fracDP(s.T1)} = ${Math.pow(s.m, s.K2 - s.K1)}`,
+        `q^{${s.K2 - s.K1}} = ${Math.pow(s.m, s.K2 - s.K1)} \\iff q = ${s.m} \\text{ ou } q = ${-s.m}`,
+        `S = \\left\\{${-s.m}\\,;\\,${s.m}\\right\\}`],
+        final: `\\left\\{${-s.m}\\,;\\,${s.m}\\right\\}` }});
   }
   // d) ecart pair et indice pair : u_0 est le meme pour les deux raisons
   {
     const s = ecartPair();
     ex.push({id:"13.4 f)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_0${SI}u_{${s.K1}}=${fracToLatex(s.T1)}${ET}u_{${s.K2}}=${fracToLatex(s.T2)}\\)`, reponse: fracToStr(s.u0)});
+      enonce:`\\(u_0${SI}u_{${s.K1}}=${fracToLatex(s.T1)}${ET}u_{${s.K2}}=${fracToLatex(s.T2)}\\)`, reponse: fracToStr(s.u0),
+      detail: { lignes: [
+        `q^{${s.K2 - s.K1}} = \\dfrac{u_{${s.K2}}}{u_{${s.K1}}} = ${fracDP(s.T2)} \\div ${fracDP(s.T1)} = ${Math.pow(s.m, s.K2 - s.K1)}`,
+        `q^{${s.K2 - s.K1}} = ${Math.pow(s.m, s.K2 - s.K1)} \\iff q = ${s.m} \\text{ ou } q = ${-s.m}`,
+        `u_{${s.K1}} = u_0\\times q^{${s.K1}}`,
+        `\\text{Comme } ${s.K1} \\text{ est pair, } q^{${s.K1}} = ${Math.pow(s.m, s.K1)} \\text{ dans les deux cas}`,
+        `${fracD(s.T1)} = u_0\\times ${Math.pow(s.m, s.K1)}`,
+        `\\iff u_0 = ${divisionD(s.T1, Math.pow(s.m, s.K1))}`],
+        final: fracD(s.u0) }});
   }
 
   // ---------- 13.6 : trois termes consecutifs (ancien 13.10) ----------
@@ -1269,9 +1386,26 @@ function genererExercices() {
     const qAbsInv = math.abs(math.divide(1, qF));
     const signFlips = math.compare(qF,0) < 0 && (K % 2 === 1);
     const coefValue = math.multiply(signFlips ? -1 : 1, aF);
-    ex.push({id:"13.5 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la valeur de \\(a\\) pour que la suite \\((u_n)\\) soit géométrique", reponse: fracToStr(aF)});
+    const aTex = fracD(aF), aD1 = math.add(aF, D1), invQ = math.divide(1, qF);
+    const corrB = `${coefValue.n === 1 && coefValue.d === 1 ? (coefValue.s < 0 ? '-' : '') : fracToLatex(coefValue) + '\\times '}${qAbsInv.d === 1 ? fracToStr(qAbsInv) : '\\left(' + fracToLatex(qAbsInv) + '\\right)'}^{${K}}`;
+    ex.push({id:"13.5 a)", type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la valeur de \\(a\\) pour que la suite \\((u_n)\\) soit géométrique", reponse: fracToStr(aF),
+      detail: { lignes: [
+        `\\text{Si la suite est géométrique,}`,
+        `\\text{alors } u_{${K+1}}^{2} = u_{${K}}\\times u_{${K+2}}`,
+        `\\left(a ${dPlus(D1)}\\right)^2 = a\\left(a ${dPlus(D2)}\\right)`,
+        `\\iff a^2 ${dPlus(2*D1)}a ${dPlus(D1*D1)} = a^2 ${D2 < 0 ? '-' : '+'} ${coefAbs(D2)}a`,
+        `\\iff ${fmtLin(2*D1 - D2, 0, false, 'a')} = ${-D1*D1}`,
+        `\\iff a = ${fracTex(-D1*D1, 2*D1 - D2)}`],
+        final: aTex }});
     ex.push({id:"13.5 b)", type:"num", texteLibre:true, sansEgal:true, enonce:"Calculer dans ce cas \\(u_0\\)", reponse:`${coefPrefixFrac(coefValue)}${qAbsInv.d === 1 ? fracToStr(qAbsInv) : '(' + fracToStr(qAbsInv) + ')'}^${K}`,   // pas de « (4)^4 »
-      correctionLatex:`${coefValue.n === 1 && coefValue.d === 1 ? (coefValue.s < 0 ? '-' : '') : fracToLatex(coefValue) + '\\times '}${qAbsInv.d === 1 ? fracToStr(qAbsInv) : '\\left(' + fracToLatex(qAbsInv) + '\\right)'}^{${K}}`});
+      correctionLatex: corrB,
+      detail: { lignes: [
+        `q = \\dfrac{u_{${K+1}}}{u_{${K}}} = ${fracDP(aD1)} \\div ${fracDP(aF)} = ${fracD(qF)}`,
+        `u_{${K}} = u_{0}\\times q^{${K}}`,
+        `u_{0} = u_{${K}}\\times\\left(\\dfrac{1}{q}\\right)^{${K}}`,
+        `u_{0} = ${cf(aTex)}${powF(invQ)}^{${K}}`,
+        `${cf(aTex)}${powF(invQ)}^{${K}} = ${corrB}`],
+        final: corrB }});
     paramsAvances.g6 = {D1,D2,K};
   }
 
@@ -1288,12 +1422,29 @@ function genererExercices() {
     const aF = math.fraction(P, Q), b = l * (Q - P) / Q, c = A - l;
     const base = Q === 1 ? (P < 0 ? `(${P})` : `${P}`) : `(${P}/${Q})`;
     const coef = c === 1 ? '' : c === -1 ? '-' : `${c}*`;
-    ex.push({id:`${id} a)`, type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: fracToStr(aF)});
+    const aTexte = fracD(aF), aU = Q === 1 ? `${P}u_{n}` : fracCoefX(P, Q, 'u_{n}');   // a et a u_n
+    ex.push({id:`${id} a)`, type:"num", texteLibre:true, sansEgal:true, enonce:"Déterminer la raison de \\((v_n)\\)", reponse: fracToStr(aF),
+      detail: { lignes: [
+        `v_{n+1} = u_{n+1} ${dPlus(-l)}`,
+        `v_{n+1} = ${aU} ${dPlus(b)} ${dPlus(-l)} = ${aU} ${dPlus(b - l)}`,
+        `${b - l} = -${powF(aF)}\\times ${dP(l)}`,
+        `v_{n+1} = ${powF(aF)}\\left(u_{n} ${dPlus(-l)}\\right) = ${powF(aF)}\\, v_{n}`,
+        `q = ${aTexte}`],
+        final: aTexte }});
     // corrige ecrit directement : sinon « -8(\dfrac{-2}{3})^n » (signe moins dans la fraction)
     const baseL = Q === 1 ? (P < 0 ? `\\left(${P}\\right)` : `${P}`) : `\\left(${fracLatex(P, Q)}\\right)`;
     const vL = `${c === 1 ? '' : c === -1 ? '-' : c + '\\times '}${baseL}^{n}`;
-    ex.push({id:`${id} b)`, type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse:`${coef}${base}^n`, correctionLatex: vL});
-    ex.push({id:`${id} c)`, type:"alg", texteLibre:true, sansEgal:true, enonce:"En déduire \\(u_n\\) en fonction de \\(n\\)", reponse:`${coef}${base}^n${l > 0 ? '+' : ''}${l}`, correctionLatex: `${vL}${l > 0 ? '+' : ''}${l}`});
+    ex.push({id:`${id} b)`, type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(v_n\\) en fonction de \\(n\\)", reponse:`${coef}${base}^n`, correctionLatex: vL,
+      detail: { lignes: [
+        `v_{0} = u_{0} ${dPlus(-l)} = ${A} ${dPlus(-l)} = ${c}`,
+        `v_{n} = v_{0}\\times q^{n}`,
+        `v_{n} = ${vL}`],
+        final: vL }});
+    ex.push({id:`${id} c)`, type:"alg", texteLibre:true, sansEgal:true, enonce:"En déduire \\(u_n\\) en fonction de \\(n\\)", reponse:`${coef}${base}^n${l > 0 ? '+' : ''}${l}`, correctionLatex: `${vL}${l > 0 ? '+' : ''}${l}`,
+      detail: { lignes: [
+        `u_{n} = v_{n} ${dPlus(l)}`,
+        `u_{n} = ${vL} ${dPlus(l)}`],
+        final: `${vL} ${dPlus(l)}` }});
     paramsAvances[cle] = {P, Q, b, l, A};
   };
   arithmeticoGeo('13.6', 'gAG1', false);
@@ -1305,7 +1456,17 @@ function genererExercices() {
     const q = [-3,-2,2,3][alea(0,3)], u0 = aleaNonNul(-5,5), N = Math.abs(q) === 3 ? alea(4,6) : alea(5,9);
     ex.push({id:"13.8 a)", type:"num", texteLibre:true, sansEgal:true,
       enonce:`\\(u_0+u_1+\\cdots+u_{${N}}\\), où \\(\\left(u_n\\right)\\) est géométrique de raison \\(${q}\\) et de premier terme \\(u_0=${u0}\\)`,
-      reponse: String(u0 * (Math.pow(q, N+1) - 1) / (q - 1))});
+      reponse: String(u0 * (Math.pow(q, N+1) - 1) / (q - 1)),
+      detail: (() => {
+        const qp = Math.pow(q, N + 1), rapport = (1 - qp) / (1 - q), S = u0 * rapport;
+        return { lignes: [
+          `\\text{Il y a } ${N}+1 = ${N+1} \\text{ termes}`,
+          `S = u_0\\times\\dfrac{1 - q^{${N+1}}}{1 - q}`,
+          `S = ${cf(String(u0))}\\dfrac{1 - ${dP(q)}^{${N+1}}}{1 - ${dP(q)}}`,
+          `S = ${cf(String(u0))}\\dfrac{1 - ${dP(qp)}}{1 - ${dP(q)}}`,
+          `S = ${cf(String(u0))}${dP(rapport)} = ${S}`],
+          final: String(S) };
+      })() });
   }
   // b) somme numerique f + f r + f r^2 + ... + f r^(n-1) : compter les termes est la difficulte
   {
@@ -1314,7 +1475,19 @@ function genererExercices() {
     const sgn = (v, premier) => v < 0 ? `-${-v}` : (premier ? `${v}` : `+${v}`);
     ex.push({id:"13.8 b)", type:"num", texteLibre:true, sansEgal:true,
       enonce:`\\(${termes.map((v, k) => sgn(v, k === 0)).join('')}+\\cdots${sgn(dernier, false)}\\)`,
-      reponse: String(f * (Math.pow(r, n) - 1) / (r - 1))});
+      reponse: String(f * (Math.pow(r, n) - 1) / (r - 1)),
+      detail: (() => {
+        const rn = Math.pow(r, n), rapport = (1 - rn) / (1 - r), S = f * rapport;
+        return { lignes: [
+          `\\text{On reconnaît une suite géométrique}`,
+          `\\text{de raison } q = ${termes[1]} \\div ${dP(termes[0])} = ${r}`,
+          `${dernier} \\div ${dP(f)} = ${dernier / f} = ${dP(r)}^{${n - 1}}`,
+          `\\text{Nombre de termes : } ${n-1}+1 = ${n}`,
+          `S = ${cf(String(f))}\\dfrac{1 - ${dP(r)}^{${n}}}{1 - ${dP(r)}}`,
+          `S = ${cf(String(f))}\\dfrac{1 - ${dP(rn)}}{1 - ${dP(r)}}`,
+          `S = ${cf(String(f))}${dP(rapport)} = ${S}`],
+          final: String(S) };
+      })() });
   }
 
   // ---------- 13.9 : suite auxiliaire, cas general (avance, ancien 13.12) ----------
@@ -1328,10 +1501,29 @@ function genererExercices() {
       v1 = math.add(A, x);
     } while (v1.n === 0);
     const reponseVn = `${coefPrefixFrac(v1)}${B}^(n-1)`;
+    const CF = math.fraction(Cp, Cq);
     const negXStr = fracToStr(math.multiply(-1, x));
-    ex.push({id:"13.9 a)", type:"num", texteLibre:true, sansEgal:true, enonce:`Déterminer la valeur de \\(x\\) pour qu'on ait \\(v_{n+1}=${B}v_n\\)`, reponse: fracToStr(x)});
-    ex.push({id:"13.9 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Donner alors l'expression de \\(v_n\\) en fonction de \\(n\\)", reponse: reponseVn});
-    ex.push({id:"13.9 c)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer enfin \\(u_n\\) en fonction de \\(n\\)", reponse:`${reponseVn}${negXStr.startsWith('-')?negXStr:'+'+negXStr}`});
+    ex.push({id:"13.9 a)", type:"num", texteLibre:true, sansEgal:true, enonce:`Déterminer la valeur de \\(x\\) pour qu'on ait \\(v_{n+1}=${B}v_n\\)`, reponse: fracToStr(x),
+      detail: { lignes: [
+        `v_{n+1} = u_{n+1} + x = ${B}u_{n} ${Cp < 0 ? '-' : '+'} \\dfrac{${Math.abs(Cp)}}{${Cq}} + x`,
+        `${B}v_{n} = ${B}\\left(u_{n} + x\\right) = ${B}u_{n} + ${B}x`,
+        `${fracD(CF)} + x = ${B}x`,
+        `\\iff ${fmtLin(B - 1, 0, false, 'x')} = ${fracD(CF)}`,
+        `\\iff x = ${B === 2 ? fracD(CF) : divisionD(CF, B - 1)}`],
+        final: fracD(x) }});
+    const v1L = fracD(v1), vnL = `${v1.n === 1 && v1.d === 1 ? (v1.s < 0 ? '-' : '') : v1L + '\\times '}${B}^{n-1}`;
+    ex.push({id:"13.9 b)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Donner alors l'expression de \\(v_n\\) en fonction de \\(n\\)", reponse: reponseVn,
+      detail: { lignes: [
+        `v_{1} = u_{1} + x = ${A} ${ajouterFrac(fracD(x))} = ${v1L}`,
+        `v_{n} = v_{1}\\times q^{n-1}`,
+        `v_{n} = ${vnL}`],
+        final: vnL }});
+    const sumX = ajouterFrac(fracD(math.multiply(-1, x)));
+    ex.push({id:"13.9 c)", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer enfin \\(u_n\\) en fonction de \\(n\\)", reponse:`${reponseVn}${negXStr.startsWith('-')?negXStr:'+'+negXStr}`,
+      detail: { lignes: [
+        `u_{n} = v_{n} - x`,
+        `u_{n} = ${vnL} ${sumX}`],
+        final: `${vnL} ${sumX}` }});
     paramsAvances.g7 = {A,B,Cp,Cq};
   }
 
@@ -1346,14 +1538,35 @@ function genererExercices() {
     const q0 = math.divide(math.multiply(-1,bF), math.multiply(2,aF));
     const N13 = alea(4,8);
     const uN13 = math.multiply(u1f, math.pow(q0, N13-1));
-    ex.push({id:"13.10 a)", type:"alg", texteLibre:true, sansEgal:true, enonce:`Exprimer \\(u_1-${K2c}u_2-${K3c}u_3\\) en fonction de la raison \\(q\\)`, reponse: polyQuadFracStr(aF,bF,cF,'q')});
-    ex.push({id:"13.10 b)", type:"num", texteLibre:true, sansEgal:true, enonce:`Déterminer la raison \\(q\\) pour que l'expression \\(u_1-${K2c}u_2-${K3c}u_3\\) soit maximale`, reponse: fracToStr(q0)});
-    ex.push({id:"13.10 c)", type:"num", texteLibre:true, sansEgal:true, enonce:`Avec la raison trouvée à la question précédente, calculer \\(u_{${N13}}\\)`, reponse: fracToStr(uN13)});
+    // polynôme en q à coefficients fractionnaires : « -\dfrac{12q^{2}}{5} - \dfrac{8q}{5} + \dfrac{4}{5} » (signes devant, numérateur portant q)
+    const termeFrac = (f, mon) => { const num = mon ? (f.n === 1 ? mon : `${f.n}${mon}`) : String(f.n); return f.d === 1 ? num : `\\dfrac{${num}}{${f.d}}`; };
+    const polyFrac = (a, b, c) => [[a, 'q^{2}'], [b, 'q'], [c, '']].map(([f, m], i) => (i === 0 ? (f.s < 0 ? '-' : '') : (f.s < 0 ? ' - ' : ' + ')) + termeFrac(f, m)).join('');
+    const u1T = fracD(u1f), developpe = polyFrac(aF, bF, cF);
+    ex.push({id:"13.10 a)", type:"alg", texteLibre:true, sansEgal:true, enonce:`Exprimer \\(u_1-${K2c}u_2-${K3c}u_3\\) en fonction de la raison \\(q\\)`, reponse: polyQuadFracStr(aF,bF,cF,'q'),
+      detail: { lignes: [
+        `u_{2} = u_{1}\\times q \\qquad u_{3} = u_{1}\\times q^{2}`,
+        `u_{1} - ${K2c}u_{2} - ${K3c}u_{3} = u_{1} - ${K2c}u_{1}q - ${K3c}u_{1}q^{2}`,
+        `${u1T} - ${K2c}\\times\\dfrac{${P}q}{${Q}} - ${K3c}\\times\\dfrac{${P}q^{2}}{${Q}} = ${developpe}`],
+        final: developpe }});
+    ex.push({id:"13.10 b)", type:"num", texteLibre:true, sansEgal:true, enonce:`Déterminer la raison \\(q\\) pour que l'expression \\(u_1-${K2c}u_2-${K3c}u_3\\) soit maximale`, reponse: fracToStr(q0),
+      detail: { lignes: [
+        `\\text{L'expression est de la forme } aq^{2} + bq + c`,
+        `\\text{avec } a = ${fracD(aF)} < 0 \\text{ et } b = ${fracD(bF)}`,
+        `\\text{donc le maximum est atteint en } q = -\\dfrac{b}{2a}`,
+        `q = ${fracD(math.multiply(-1, bF))} \\div ${fracDP(math.multiply(2, aF))} = ${fracD(q0)}`],
+        final: fracD(q0) }});
+    ex.push({id:"13.10 c)", type:"num", texteLibre:true, sansEgal:true, enonce:`Avec la raison trouvée à la question précédente, calculer \\(u_{${N13}}\\)`, reponse: fracToStr(uN13),
+      detail: { lignes: [
+        `u_{${N13}} = u_{1}\\times q^{${N13}-1}`,
+        `u_{${N13}} = ${u1T}\\times ${powF(q0)}^{${N13 - 1}}`,
+        `${u1T}\\times ${powF(q0)}^{${N13 - 1}} = ${u1T}\\times ${fracDP(math.pow(q0, N13 - 1))} = ${fracD(uN13)}`],
+        final: fracD(uN13) }});
     paramsAvances.g8 = {P,Q};
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
   ex.forEach(e => { if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt '); });
+  Detail.preparer(ex);   // idem pour les étapes
   return ex;
 }
 
@@ -2654,7 +2867,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

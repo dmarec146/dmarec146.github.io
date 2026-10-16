@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"11.1 a)":0.75,"11.1 b)":0.75,"11.2 a)":0.75,"11.2 b)":0.5,"11.3 a)":0.5,"11.3 b)":0.5,"11.4 a)":0.5,"11.4 b)":0.5,"11.4 c)":0.5,"11.4 d)":0.5,"11.5 a)":0.75,"11.5 b)":0.75,"11.5 c)":1,"11.5 d)":1,"11.6 a)":0.5,"11.6 b)":0.75,"11.6 c)":1,"11.7 a)":1.25,"11.7 b)":1.25,"11.8":1.75,"11.9 a)":1.5,"11.9 b)":1.75},"bonus":["11.8","11.9 a)","11.9 b)"]});
@@ -1060,6 +1061,10 @@ function coefTimesAPow(W, exp) {
 
 function genererExercices() {
   const ex = [];
+  // Détails de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js
+  const { dP, dPlus, fracBrute, fracD, sommeTermes, divisionD } = Detail;
+  const fracTex = Detail.fracTexte;                                                  // fraction irréductible, signe devant
+  const pw = (base, e) => (e === 1 ? String(base) : `${base}^{${e}}`);              // jamais d'exposant 1
 
   // ---------- 11.1 : inequations (02/10/2026, automatismes diversifies) ----------
   const OPS11 = ['<','>','\\leqslant ','\\geqslant '];
@@ -1082,23 +1087,46 @@ function genererExercices() {
     liste.forEach(iv => { if (isFinite(iv.haut) && large) iv.inclusHaut = true; });
     return liste;
   };
+  const opInv11 = o => ({ '<': '>', '>': '<', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' })[o];   // sens renversé par une division par un nombre négatif
   // a) premier degre deguise : (x+a)^2 op (x+b)(x+c), soit (2a-b-c) x op bc - a^2
   {
     let a, b, c, k;
     do { a = aleaNonNul(-6,6); b = aleaNonNul(-6,6); c = aleaNonNul(-6,6); k = 2*a - b - c; } while (k === 0 || b === c || b*c === a*a);
     const op = OPS11[alea(0,3)];
-    const s = (b*c - a*a) / k;
+    const s = (b*c - a*a) / k, C = b*c - a*a;
+    const spec = {type:'intervalles', liste: solutionsParSigne([s], x => k*x - C, op)};
+    const gauche = polyQuadStr(1, 2*a, a*a, false, 'x'), droite = polyQuadStr(1, b+c, b*c, false, 'x');
+    const lignes = [
+      `(${fmtLin(1,a,false)})^2 = ${gauche}`,
+      `(${fmtLin(1,b,false)})(${fmtLin(1,c,false)}) = ${droite}`,
+      `${gauche} ${op} ${droite}`,
+      `\\iff ${fmtLin(k,0,false,'x')} ${op} ${C}`];
+    if (k < 0) lignes.push(`\\text{On divise par } ${k} < 0`, `\\text{donc le sens de l'inégalité change}`);
+    if (k !== 1) lignes.push(`\\iff x ${k < 0 ? opInv11(op) : op} ${fracTex(C, k)}`);
+    lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
     ex.push({id:"11.1 a)", type:"intervalle", texteLibre:true,
       enonce:`\\((${fmtLin(1,a,false)})^2${op}(${fmtLin(1,b,false)})(${fmtLin(1,c,false)})\\)`,
-      intervalleSpec:{type:'intervalles', liste: solutionsParSigne([s], x => k*x - (b*c - a*a), op)}});
+      intervalleSpec: spec,
+      detail: { lignes, final: formaterIntervalleSpec(spec) }});
   }
   // b) produit a factoriser : a x^2 + b x op 0, racines 0 et -b/a
   {
     const a = aleaNonNul(-6,6), b = aleaNonNul(-9,9);
     const op = OPS11[alea(0,3)];
+    const spec = {type:'intervalles', liste: solutionsParSigne([0, -b/a], x => a*x*x + b*x, op)};
+    const poly = polyQuadStr(a,b,0,false,'x');
     ex.push({id:"11.1 b)", type:"intervalle", texteLibre:true,
-      enonce:`\\(${polyQuadStr(a,b,0,false,'x')}${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste: solutionsParSigne([0, -b/a], x => a*x*x + b*x, op)}});
+      enonce:`\\(${poly}${op}0\\)`,
+      intervalleSpec: spec,
+      detail: { lignes: [
+        `${poly} = x\\left(${fmtLin(a,b,false)}\\right)`,
+        `x\\left(${fmtLin(a,b,false)}\\right) = 0 \\iff x = 0 \\text{ ou } x = ${fracTex(-b, a)}`,
+        `\\text{Tableau de signes de } ${poly}`,
+        Detail.tableauSignes([{v: 0, tex: '0'}, {v: -b/a, tex: fracTex(-b, a)}], x => a*x*x + b*x),
+        `\\text{On cherche les valeurs de } x`,
+        `\\text{pour lesquelles l'expression est } ${op}\\ 0`,
+        `S = ${formaterIntervalleSpec(spec)}`],
+        final: formaterIntervalleSpec(spec) }});
   }
 
   // ---------- 11.2 : equations (ensemble des solutions) ----------
@@ -1108,7 +1136,16 @@ function genererExercices() {
     const k = r1 * r2, m = r1 + r2;
     ex.push({id:"11.2 a)", type:"num", texteLibre:true,
       enonce:`\\(x${k < 0 ? '-' : '+'}\\dfrac{${Math.abs(k)}}{x}=${m}\\)`,
-      reponse:`{${r1};${r2}}`});
+      reponse:`{${r1};${r2}}`,
+      detail: { lignes: [
+        `x = 0 \\text{ (valeur interdite)}`,
+        `x ${k < 0 ? '-' : '+'} \\dfrac{${Math.abs(k)}}{x} = ${m} \\iff x^2 ${dPlus(k)} = ${fmtLin(m,0,false,'x')}`,
+        `\\iff ${polyQuadStr(1,-m,k,false,'x')} = 0`,
+        `\\Delta = ${dP(-m)}^2 - 4\\times 1\\times ${dP(k)} = ${m*m - 4*k} = ${r2 - r1}^2`,
+        `x_1 = \\dfrac{${m} - ${r2 - r1}}{2} = ${r1}`,
+        `x_2 = \\dfrac{${m} + ${r2 - r1}}{2} = ${r2}`,
+        `S = \\left\\{${r1}\\,;\\,${r2}\\right\\}`],
+        final: `\\left\\{${r1}\\,;\\,${r2}\\right\\}` }});
   }
   // b) a(x-b) = c(x+d), solution fractionnaire (ab+cd)/(a-c)
   {
@@ -1117,7 +1154,15 @@ function genererExercices() {
     while (a === c || (a*b + c*d) % (a - c) === 0 || a*b + c*d === 0);
     ex.push({id:"11.2 b)", type:"num", texteLibre:true,
       enonce:`\\(${coefPrefixeL(a)}(${fmtLin(1,-b,false)})=${coefPrefixeL(c)}(${fmtLin(1,d,false)})\\)`,
-      reponse:`{${fracStr(a*b + c*d, a - c)}}`});
+      reponse:`{${fracStr(a*b + c*d, a - c)}}`,
+      detail: { lignes: [
+        `${coefPrefixeL(a)}(${fmtLin(1,-b,false)}) = ${coefPrefixeL(c)}(${fmtLin(1,d,false)})`,
+        `\\iff ${fmtLin(a,-a*b,false)} = ${fmtLin(c,c*d,false)}`,
+        `\\iff (${a} ${dPlus(-c)})x = ${c*d} ${dPlus(a*b)}`,
+        `\\iff ${fmtLin(a - c,0,false,'x')} = ${a*b + c*d}`,
+        `\\iff x = ${fracTex(a*b + c*d, a - c)}`,
+        `S = \\left\\{${fracTex(a*b + c*d, a - c)}\\right\\}`],
+        final: `\\left\\{${fracTex(a*b + c*d, a - c)}\\right\\}` }});
   }
 
   // ---------- 11.3 : calcul numerique (deux natures differentes) ----------
@@ -1130,7 +1175,12 @@ function genererExercices() {
     } while ([p, q, r].some(e => e === 0 || e === 1) || n === 0 || n === 1 || Math.abs(n) > 12);
     ex.push({id:"11.3 a)", type:"num", texteLibre:true, sansEgal:true, formePuissance:true,
       enonce:`Écrire sous la forme d'une seule puissance : \\(\\dfrac{${A}^{${p}}\\times ${A}^{${q}}}{\\left(${A}^{${r}}\\right)^{${s}}}\\)`,
-      reponse:`${A}^(${n})`});
+      reponse:`${A}^(${n})`,
+      detail: { lignes: [
+        `${A}^{${p}} \\times ${A}^{${q}} = ${A}^{${p} ${dPlus(q)}} = ${pw(A, p + q)}`,
+        `\\left(${A}^{${r}}\\right)^{${s}} = ${A}^{${dP(r)}\\times ${dP(s)}} = ${pw(A, r * s)}`,
+        `\\dfrac{${pw(A, p + q)}}{${pw(A, r * s)}} = ${A}^{${p + q} - ${dP(r * s)}} = ${A}^{${n}}`],
+        final: `${A}^{${n}}` }});
   }
   // b) somme de racines : c1 sqrt(k1^2 m) + c2 sqrt(k2^2 m) + c3 sqrt(k3^2 m) = a sqrt(m)
   {
@@ -1147,52 +1197,96 @@ function genererExercices() {
     }).join('');
     ex.push({id:"11.3 b)", type:"num", texteLibre:true, sansEgal:true, formeRacine:true,
       enonce:`Écrire sous la forme \\(a\\sqrt{b}\\), avec \\(b\\) entier le plus petit possible : \\(${termes}\\)`,
-      reponse: a === 1 ? `sqrt(${m})` : a === -1 ? `-sqrt(${m})` : `${a}*sqrt(${m})`});
+      reponse: a === 1 ? `sqrt(${m})` : a === -1 ? `-sqrt(${m})` : `${a}*sqrt(${m})`,
+      detail: (() => {
+        const somme = lst => lst.map(([c, t], i) => (i === 0 ? (c < 0 ? '-' : '') : (c < 0 ? ' - ' : ' + ')) + t).join('');
+        const simplifies = ks.map((k, i) => { const abs = Math.abs(cs[i]), coeur = `${k === 1 ? '' : k}\\sqrt{${m}}`; return [cs[i], abs === 1 ? coeur : `${abs}\\times ${coeur}`]; });
+        const initiaux = ks.map((k, i) => [cs[i], `${Math.abs(cs[i]) === 1 ? '' : Math.abs(cs[i])}\\sqrt{${k * k * m}}`]);
+        const ts = ks.map((k, i) => cs[i] * k);
+        return { lignes: [
+          ...ks.map(k => k > 1 ? `\\sqrt{${k * k * m}} = \\sqrt{${k * k}\\times ${m}} = ${k}\\sqrt{${m}}` : null).filter(Boolean),
+          `${somme(initiaux)} = ${somme(simplifies)}`,
+          `${somme(simplifies)} = (${sommeTermes(ts.map(t => [t, '']))})\\sqrt{${m}}`,
+          `(${sommeTermes(ts.map(t => [t, '']))})\\sqrt{${m}} = ${a === 1 ? '' : a === -1 ? '-' : a}\\sqrt{${m}}`],
+          final: `${a === 1 ? '' : a === -1 ? '-' : a}\\sqrt{${m}}` };
+      })() });
   }
 
   // ---------- 11.4 : termes d'une suite definie explicitement (anciens 11.4 et 11.5) ----------
   {
     const A = aleaNonNul(-3,3), B = alea(-5,5), C = alea(-5,5), k = alea(2,4);
     ex.push({id:"11.4 a)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_${k}\\) si \\(u_n=${polyQuadStr(A,B,C,false)}\\)`, reponse:String(A*k*k + B*k + C)});
+      enonce:`\\(u_${k}\\) si \\(u_n=${polyQuadStr(A,B,C,false)}\\)`, reponse:String(A*k*k + B*k + C),
+      detail: { lignes: [
+        `u_{${k}} = ${sommeTermes([[A, `${k}^2`], [B, `${k}`], [C, '']])} = ${sommeTermes([[A*k*k, ''], [B*k, ''], [C, '']])}`,
+        `u_{${k}} = ${A*k*k + B*k + C}`],
+        final: String(A*k*k + B*k + C) }});
   }
   {
     let A, B, C, k; do { A = aleaNonNul(-5,5); B = alea(-6,6); C = alea(1,6); k = alea(2,3); } while ((A*k + B) % (k + C) === 0);
     ex.push({id:"11.4 b)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_${k}\\) si \\(u_n=\\dfrac{${fmtLin(A,B,false,'n')}}{n+${C}}\\)`, reponse:fracStr(A*k + B, k + C)});
+      enonce:`\\(u_${k}\\) si \\(u_n=\\dfrac{${fmtLin(A,B,false,'n')}}{n+${C}}\\)`, reponse:fracStr(A*k + B, k + C),
+      detail: { lignes: [
+        `u_{${k}} = \\dfrac{${sommeTermes([[A, `${k}`], [B, '']])}}{${k} + ${C}} = ${fracBrute(A*k + B, k + C)}` + (fracBrute(A*k + B, k + C) === fracTex(A*k + B, k + C) ? '' : ` = ${fracTex(A*k + B, k + C)}`)],
+        final: fracTex(A*k + B, k + C) }});
   }
   {
     const A = [-3,-2,-1,2,3][alea(0,4)], q = [-3,-2,2,3][alea(0,3)], k = alea(3,4);
     const puissance = q < 0 ? `(${q})^n` : `${q}^n`;
     ex.push({id:"11.4 c)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_${k}\\) si \\(u_n=${A === -1 ? '-' : A + '\\times '}${puissance}\\)`, reponse:String(A * Math.pow(q, k))});
+      enonce:`\\(u_${k}\\) si \\(u_n=${A === -1 ? '-' : A + '\\times '}${puissance}\\)`, reponse:String(A * Math.pow(q, k)),
+      detail: { lignes: [
+        `u_{${k}} = ${A === -1 ? '-' : `${A}\\times `}${q < 0 ? `(${q})` : q}^{${k}} = ${A === -1 ? '-' : `${A}\\times `}${dP(Math.pow(q, k))} = ${A * Math.pow(q, k)}`],
+        final: String(A * Math.pow(q, k)) }});
   }
   {
     let a, s, k, b; do { a = alea(1,5); s = alea(2,7); k = alea(2,6); b = s*s - a*k; } while (b < 1 || b > 9);
     ex.push({id:"11.4 d)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_${k}\\) si \\(u_n=\\sqrt{${fmtLin(a,b,false,'n')}}\\)`, reponse:String(s)});
+      enonce:`\\(u_${k}\\) si \\(u_n=\\sqrt{${fmtLin(a,b,false,'n')}}\\)`, reponse:String(s),
+      detail: { lignes: [
+        `u_{${k}} = \\sqrt{${sommeTermes([[a, `${k}`], [b, '']])}} = \\sqrt{${s*s}} = ${s}`],
+        final: String(s) }});
   }
 
   // ---------- 11.5 : expressions en fonction de n (anciens 11.6, 11.7, 11.8) ----------
   {
     const A = aleaNonNul(-5,5), B = aleaNonNul(-6,6);
     ex.push({id:"11.5 a)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{n+1}\\) si \\(u_n=${fmtLin(A,B,false,'n')}\\)`, reponse: fmtLin(A, A+B, true, 'n')});
+      enonce:`\\(u_{n+1}\\) si \\(u_n=${fmtLin(A,B,false,'n')}\\)`, reponse: fmtLin(A, A+B, true, 'n'),
+      detail: { lignes: [
+        `u_{n+1} = ${coefPrefixeL(A)}(n+1) ${dPlus(B)} = ${sommeTermes([[A, 'n'], [A, ''], [B, '']])}`,
+        `u_{n+1} = ${fmtLin(A, A+B, false, 'n')}`],
+        final: fmtLin(A, A+B, false, 'n') }});
   }
   {
     let A, B; do { A = aleaNonNul(-5,5); B = aleaNonNul(-6,6); } while (B === -1);
     ex.push({id:"11.5 b)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_n+1\\) si \\(u_n=${fmtLin(A,B,false,'n')}\\)`, reponse: fmtLin(A, B+1, true, 'n')});
+      enonce:`\\(u_n+1\\) si \\(u_n=${fmtLin(A,B,false,'n')}\\)`, reponse: fmtLin(A, B+1, true, 'n'),
+      detail: { lignes: [
+        `u_{n} + 1 = \\left(${fmtLin(A, B, false, 'n')}\\right) + 1 = ${fmtLin(A, B+1, false, 'n')}`],
+        final: fmtLin(A, B+1, false, 'n') }});
   }
   {
     const A = aleaNonNul(-4,4), B = aleaNonNul(-4,4);
     ex.push({id:"11.5 c)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{2n+1}\\) si \\(u_n=${polyQuadStr(A,B,0,false)}\\)`, reponse: polyQuadStr(4*A, 4*A+2*B, A+B, true)});
+      enonce:`\\(u_{2n+1}\\) si \\(u_n=${polyQuadStr(A,B,0,false)}\\)`, reponse: polyQuadStr(4*A, 4*A+2*B, A+B, true),
+      detail: (() => {
+        const X = sommeTermes([[A, '\\left(2n+1\\right)^2'], [B, '\\left(2n+1\\right)']]);
+        const Y = sommeTermes([[A, '\\left(4n^2+4n+1\\right)'], [B, '\\left(2n+1\\right)']]);
+        const Z = `\\left(${polyQuadStr(4*A, 4*A, A, false)}\\right) + \\left(${fmtLin(2*B, B, false, 'n')}\\right)`;
+        const R = polyQuadStr(4*A, 4*A+2*B, A+B, false);
+        return { lignes: [`u_{2n+1} = ${X}`, `\\left(2n+1\\right)^2 = 4n^2+4n+1`, `u_{2n+1} = ${Y}`, `u_{2n+1} = ${Z}`, `u_{2n+1} = ${R}`], final: R };
+      })() });
   }
   {
     const C = aleaNonNul(-9,9), q = alea(0,3);   // u_n = C(-1)^n/(n+q), u_{2n+1} = -C/(2n+1+q)
     ex.push({id:"11.5 d)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_{2n+1}\\) si \\(u_n=\\dfrac{${coefPrefixeL(C)}(-1)^n}{${fmtLin(1,q,false,'n')}}\\)`, reponse: `${-C}/(2*n+${1+q})`});
+      enonce:`\\(u_{2n+1}\\) si \\(u_n=\\dfrac{${coefPrefixeL(C)}(-1)^n}{${fmtLin(1,q,false,'n')}}\\)`, reponse: `${-C}/(2*n+${1+q})`,
+      detail: { lignes: [
+        `u_{2n+1} = \\dfrac{${coefPrefixeL(C)}(-1)^{2n+1}}{2n+1${q ? ' + ' + q : ''}}`,
+        `\\text{Comme } 2n+1 \\text{ est impair, } (-1)^{2n+1} = -1`,
+        `u_{2n+1} = ${-C < 0 ? '-' : ''}\\dfrac{${Math.abs(C)}}{2n+${1+q}}`],
+        final: `${-C < 0 ? '-' : ''}\\dfrac{${Math.abs(C)}}{2n+${1+q}}` }});
   }
 
   // ---------- 11.6 : termes d'une suite definie par recurrence (anciens 11.9, 11.10, 11.11) ----------
@@ -1200,19 +1294,38 @@ function genererExercices() {
     const A = alea(-4,4), B = [-2,2,3][alea(0,2)], C = aleaNonNul(-4,4);
     let u = A; for (let i = 0; i < 3; i++) u = B*u + C;
     ex.push({id:"11.6 a)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_3\\) si \\(u_0=${A}\\) et \\(u_{n+1}=${B}u_n${C > 0 ? '+' : ''}${C}\\)`, reponse:String(u)});
+      enonce:`\\(u_3\\) si \\(u_0=${A}\\) et \\(u_{n+1}=${B}u_n${C > 0 ? '+' : ''}${C}\\)`, reponse:String(u),
+      detail: (() => {
+        const lignes = []; let prec = A;
+        for (let i = 1; i <= 3; i++) { const val = B*prec + C; lignes.push(`u_{${i}} = ${B}\\times ${dP(prec)} ${dPlus(C)} = ${val}`); prec = val; }
+        return { lignes, final: String(u) };
+      })() });
   }
   {
     const A = aleaNonNul(-5,5), k = alea(1,4);
     let u = A; for (let n = 0; n < 3; n++) u = (n + k) * u;
     ex.push({id:"11.6 b)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_3\\) si \\(u_0=${A}\\) et \\(u_{n+1}=(n+${k})u_n\\)`, reponse:String(u)});
+      enonce:`\\(u_3\\) si \\(u_0=${A}\\) et \\(u_{n+1}=(n+${k})u_n\\)`, reponse:String(u),
+      detail: (() => {
+        const lignes = []; let prec = A;
+        for (let i = 1; i <= 3; i++) { const val = (i - 1 + k) * prec; lignes.push(`u_{${i}} = (${i - 1}+${k})\\times ${dP(prec)} = ${val}`); prec = val; }
+        return { lignes, final: String(u) };
+      })() });
   }
   {
     // u_n = c + d n, car (c + d n + d)^2 = u_n^2 + 2d^2 n + 2cd + d^2 ; c + d >= 0 pour que u_1 = |c + d| = c + d
     const d = alea(1,3), c = alea(-d,5), k = alea(3,4);
     ex.push({id:"11.6 c)", type:"num", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_${k}\\) si \\(u_0=${c}\\) et \\(u_{n+1}=\\sqrt{u_n^2+${fmtLin(2*d*d,2*c*d+d*d,false,'n')}}\\)`, reponse:String(c + k*d)});
+      enonce:`\\(u_${k}\\) si \\(u_0=${c}\\) et \\(u_{n+1}=\\sqrt{u_n^2+${fmtLin(2*d*d,2*c*d+d*d,false,'n')}}\\)`, reponse:String(c + k*d),
+      detail: (() => {
+        const lignes = []; let prec = c;
+        for (let i = 1; i <= k; i++) {
+          const ajout = 2*d*d*(i - 1) + 2*c*d + d*d, val = c + d*i;
+          lignes.push(`u_{${i}} = \\sqrt{${dP(prec)}^2 ${dPlus(ajout)}} = \\sqrt{${prec*prec + ajout}} = ${val}`);
+          prec = val;
+        }
+        return { lignes, final: String(c + k*d) };
+      })() });
   }
 
   // ---------- 11.7 : recurrence avec parametre a (anciens 11.12 et 11.13) ----------
@@ -1221,13 +1334,37 @@ function genererExercices() {
     let coefA = 1, constT = 0;
     for (let i = 0; i < 3; i++) { coefA = B*coefA; constT = B*constT + C; }
     ex.push({id:"11.7 a)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_3\\) si \\(u_0=a\\) et \\(u_{n+1}=${B}u_n${C > 0 ? '+' : ''}${C}\\)`, reponse: fmtLin(coefA, constT, true, 'a')});
+      enonce:`\\(u_3\\) si \\(u_0=a\\) et \\(u_{n+1}=${B}u_n${C > 0 ? '+' : ''}${C}\\)`, reponse: fmtLin(coefA, constT, true, 'a'),
+      detail: (() => {
+        const lignes = []; let cA = 1, cT = 0;
+        for (let i = 1; i <= 3; i++) {
+          const nA = B*cA, nT = B*cT + C;
+          lignes.push(i === 1
+            ? `u_{1} = ${B}\\times a ${dPlus(C)} = ${fmtLin(nA, nT, false, 'a')}`
+            : `u_{${i}} = ${B}\\times\\left(${fmtLin(cA, cT, false, 'a')}\\right) ${dPlus(C)} = ${sommeTermes([[B*cA, 'a'], [B*cT, ''], [C, '']])}`);
+          if (i > 1) lignes.push(`u_{${i}} = ${fmtLin(nA, nT, false, 'a')}`);
+          cA = nA; cT = nT;
+        }
+        return { lignes, final: fmtLin(coefA, constT, false, 'a') };
+      })() });
   }
   {
     const W = aleaNonNul(-5,5), k = alea(3,4), decal = alea(0,1);   // u_{n+1} = a^{n+decal} u_n : u_k = W a^{somme des exposants}
     let e = 0; for (let n = 0; n < k; n++) e += n + decal;
     ex.push({id:"11.7 b)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`\\(u_${k}\\) si \\(u_0=${W}\\) et \\(u_{n+1}=a^{${decal ? 'n+1' : 'n'}}\\,u_n\\)`, reponse: coefTimesAPow(W, e)});
+      enonce:`\\(u_${k}\\) si \\(u_0=${W}\\) et \\(u_{n+1}=a^{${decal ? 'n+1' : 'n'}}\\,u_n\\)`, reponse: coefTimesAPow(W, e),
+      detail: (() => {
+        const waTex = (w, ex) => (ex === 0 ? String(w) : `${w === 1 ? '' : w === -1 ? '-' : w}a${ex === 1 ? '' : `^{${ex}}`}`);
+        const lignes = []; let ePrec = 0;
+        for (let i = 1; i <= k; i++) {
+          const p = i - 1 + decal, eNouv = ePrec + p;
+          lignes.push(i === 1
+            ? `u_{1} = ${W === 1 ? pw('a', p) : W === -1 ? '-' + pw('a', p) : `${pw('a', p)}\\times ${dP(W)}`} = ${waTex(W, eNouv)}`
+            : `u_{${i}} = ${pw('a', p)}\\times\\left(${waTex(W, ePrec)}\\right) = ${waTex(W, eNouv)}`);
+          ePrec = eNouv;
+        }
+        return { lignes, final: waTex(W, e) };
+      })() });
   }
 
   // ---------- 11.8 : suite et fractions (avance) ----------
@@ -1238,7 +1375,17 @@ function genererExercices() {
     const moyenne = math.divide(math.add(math.add(u2f,u3f),u4f), 3);
     ex.push({id:"11.8", type:"num", texteLibre:true, sansEgal:true,
       enonce:`Soit \\((u_n)\\) définie par \\(u_1=${u1txt}\\) et, pour tout entier \\(n\\geqslant 1\\), \\(u_{n+1}=\\dfrac{u_n}{u_n+1}\\). Calculer la moyenne des trois nombres \\(u_2\\), \\(u_3\\) et \\(u_4\\)`,
-      reponse: fracToStr(moyenne)});
+      reponse: fracToStr(moyenne),
+      detail: (() => {
+        const somme = math.add(math.add(u2f, u3f), u4f);
+        return { lignes: [
+          `u_2 = \\dfrac{u_1}{u_1+1} = \\dfrac{${u1txt}}{${u1txt} + 1} = ${fracD(u2f)}`,
+          `u_3 = \\dfrac{u_2}{u_2+1} = \\dfrac{${fracD(u2f)}}{${fracD(u2f)} + 1} = ${fracD(u3f)}`,
+          `u_4 = \\dfrac{u_3}{u_3+1} = \\dfrac{${fracD(u3f)}}{${fracD(u3f)} + 1} = ${fracD(u4f)}`,
+          `u_2 + u_3 + u_4 = ${fracD(u2f)} + ${fracD(u3f)} + ${fracD(u4f)} = ${fracD(somme)}`,
+          `\\dfrac{u_2+u_3+u_4}{3} = ${divisionD(somme, 3)}`],
+          final: fracD(moyenne) };
+      })() });
   }
 
   // ---------- 11.9 : valeur de n (avance) ----------
@@ -1247,18 +1394,40 @@ function genererExercices() {
     const A18 = aleaNonNul(-6,6);
     const B18 = 4 - A18*n0;
     ex.push({id:"11.9 a)", type:"num", texteLibre:true,
-      enonce:`\\(u_n=${fmtLin(A18,B18,false,'n')}\\)`, reponse: String(n0)});
+      enonce:`\\(u_n=${fmtLin(A18,B18,false,'n')}\\)`, reponse: String(n0),
+      detail: (() => {
+        const coef = Math.abs(A18), rhs = A18 > 0 ? 4 - B18 : B18 - 4;
+        return { lignes: [
+          `u_{n} = 4 \\iff ${fmtLin(A18, B18, false, 'n')} = 4`,
+          `\\iff ${fmtLin(coef, 0, false, 'n')} = ${rhs}`,
+          `\\iff n = ${coef === 1 ? rhs : `\\dfrac{${rhs}}{${coef}} = ${n0}`}`],
+          final: String(n0) };
+      })() });
   }
   {
     const n0 = alea(5,12);
     const E18 = alea(1,5);
     const D18 = n0*(4-n0) + 4*E18;
     ex.push({id:"11.9 b)", type:"num", texteLibre:true,
-      enonce:`\\(u_n=\\dfrac{n^2${D18===0?'':(D18>0?'+':'')+D18}}{n+${E18}}\\)`, reponse: String(n0)});
+      enonce:`\\(u_n=\\dfrac{n^2${D18===0?'':(D18>0?'+':'')+D18}}{n+${E18}}\\)`, reponse: String(n0),
+      detail: (() => {
+        const c0 = n0*(4 - n0), s = 2*n0 - 4;
+        return { lignes: [
+          `\\dfrac{${sommeTermes([[1, 'n^2'], [D18, '']])}}{n+${E18}} = 4`,
+          `\\text{On multiplie par } n+${E18} \\text{ (non nul car } n \\in \\mathbb{N}\\text{)}`,
+          `${sommeTermes([[1, 'n^2'], [D18, '']])} = 4(n+${E18}) \\iff ${polyQuadStr(1, -4, c0, false, 'n')} = 0`,
+          `\\Delta = (-4)^2 - 4\\times 1\\times ${dP(c0)} = ${16 - 4*c0} = ${s}^2`,
+          `n_1 = \\dfrac{4 - ${s}}{2} = ${4 - n0}`,
+          `n_2 = \\dfrac{4 + ${s}}{2} = ${n0}`,
+          `\\text{Or } n \\in \\mathbb{N} \\text{, donc } ${4 - n0} \\text{ est rejeté}`,
+          `n = ${n0}`],
+          final: String(n0) };
+      })() });
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
   ex.forEach(e => { if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt '); });
+  Detail.preparer(ex);   // idem pour les étapes
   // 11.4 a 11.7 : « u_3 si u_0=… et u_{n+1}=… » en une seule formule, mots entoures d'un double espace
   // epais \;\; (\quad jugé trop large par David)
   ex.filter(e => /^11\.[4-7] /.test(e.id)).forEach(e => {
@@ -2557,7 +2726,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

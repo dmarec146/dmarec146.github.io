@@ -437,9 +437,17 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Nouvelle banque** : ajouter son `<script>` à `automatismes/premiere/fiche.html` et son id à la liste `banques`, dégriser
   sa puce dans `automatismes/premiere/index.html`.
 
-## 8. Détails de correction des fiches de calcul (pilote : Première, fiche 12, 16/10/2026)
+## 8. Détails de correction des fiches de calcul (pilote : Première, fiche 12, 16/10/2026 ; étendu aux fiches 11 et 13)
 
-*Décidé avec David le 16/10/2026 ; à étendre fiche par fiche après sa validation du pilote.*
+*Décidé avec David le 16/10/2026 ; à étendre fiche par fiche.*
+
+- **Mise en place dans une fiche** : le code commun est dans `assets/js/details-correction.js` (objet `Detail` : `dP`, `dPlus`,
+  `fracTexte`, `fracD`, `fracDP`, `sommeTermes`, `fracBrute`, `coefAbs`, `ajouterFrac`, `divisionD`, `tableauSignes`, `preparer`,
+  `html`, plus `basculerDetails` et les styles). La fiche : (1) charge ce script après `bareme.js`
+  (`<script src="../../../assets/js/details-correction.js?v=…">`, changer le `?v=` quand le script change) ; (2) en tête de
+  `genererExercices()`, `const { dP, dPlus, … } = Detail;` ; (3) donne `detail: { lignes, final }` à chaque exercice ; (4) appelle
+  `Detail.preparer(ex)` juste avant `return ex` ; (5) ajoute `${Detail.html(ex, idx)}` à la fin de la ligne « réponse attendue » de
+  `verifierTout()`. Aucun CSS à ajouter.
 
 - **Principe** : dans « Voir la correction des erreurs », un bouton « Détails » à droite de la réponse attendue déplie les étapes
   du calcul. Il n'existe que pour une réponse fausse (la liste des erreurs ne contient pas les réponses vides). En devoir, la
@@ -450,8 +458,12 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Style des étapes** : la relation générale de la suite (`u_n = u_k + (n-k)\times r`, choix de David) puis la substitution avec
   les nombres, puis le résultat, de 2 à 5 lignes courtes ; la méthode n'est jamais dans l'énoncé mais peut figurer dans le détail ;
   un nombre négatif est entre parenthèses dans un produit ; la fraction a son signe devant ; pas de fraction de dénominateur 1 ; la
-  forme simplifiée n'est ajoutée que si elle diffère de ce qui précède ; une ligne longue se coupe en deux (sur téléphone, MathJax la
-  rétrécit).
+  forme simplifiée n'est ajoutée que si elle diffère de ce qui précède ; **le moins de défilement possible sur téléphone** (demande
+  de David) : une ligne tient dans l'écran à peu près jusqu'à 30 signes de LaTeX, on coupe donc en plusieurs lignes courtes (la
+  seconde peut commencer par `\iff` pour prolonger la première) ; l'outil signale en style toute ligne qui dépasse de plus de 10 %.
+  Jamais `1\times x`, `1\times (…)`, `-1\times …` (coefficient 1 omis, signe seul pour −1), jamais d'exposant 1 (`3^{1}`), jamais de
+  fraction de dénominateur 1. Une suite s'écrit `u_{n}` (avec accolades) pour que l'outil la reconnaisse comme grandeur définie.
+  Une équation « A = B » littérale seule sur une ligne doit être suivie d'une ligne `\iff …` (sinon l'outil la lit comme une identité).
 - **Outil** : `node outils/details-correction/controle.js cahiers/<niveau>/<cahier>/fiche-NN.html` (mode d'emploi, liste des contrôles et
   limites : `outils/details-correction/README.md`) lance tout ce qui suit sans crédits, plus l'interface sur ordinateur et téléphone
   et un auto-test ; `phrases.txt` et `exemples.html` sont à relire à la main. `--couverture` donne l'avancement (16/10/2026 : 23

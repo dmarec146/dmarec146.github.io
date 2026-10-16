@@ -9,6 +9,7 @@ lanceur est partagé avec `outils/guide-eleve/navigateur.js`).
 
 ```
 node outils/details-correction/controle.js cahiers/premiere/cahier-4/fiche-12.html
+node outils/details-correction/controle.js fiche-11.html fiche-12.html fiche-13.html    plusieurs fiches (chemins complets) à la suite ; phrases.json les regroupe
 node outils/details-correction/controle.js --toutes          toutes les fiches qui portent des détails
 node outils/details-correction/controle.js --couverture      tableau « exercices avec / sans détail » des 48 fiches
 options : --tirages N (défaut 4000 pour une fiche nommée, 1500 avec --toutes, 300 avec --rapide)
@@ -37,7 +38,7 @@ anomalie de gravité « erreur ».
 | style : fraction de dénominateur 1 ou 0, `NaN`, exposant 1, signes doublés, coefficient 1 ou −1 devant une lettre (`1n`, `1\times r`), virgule nue, `<` brut, accolades ou `\left\right` déséquilibrés | `fraction-denominateur-1`, `coefficient-1`… | erreur |
 | style : `\dfrac{-3}{4}` (signe devant la fraction), `fraction × lettre`, espace avant `%`, `{,}` dans du texte, ligne de plus de 170 signes | `signe-au-numerateur`… | style |
 | interface, sur ordinateur (1000 px) et téléphone (375 px), après plusieurs régénérations : un bouton « Détails » par réponse fausse, les étapes s'ouvrent, aucune erreur MathJax affichée, aucune erreur de page, aucun débordement horizontal de la page | `bouton-details-manquant`, `details-ne-s-ouvrent-pas`, `erreur-de-page`, `debordement-horizontal` | erreur |
-| interface : une ligne plus de 1,6 fois plus large que l'écran du téléphone (elle défile horizontalement), ou qui défile sur ordinateur | `ligne-trop-longue-telephone` | style |
+| interface : une ligne qui défile horizontalement (téléphone ou ordinateur), avec son numéro de ligne | `ligne-trop-longue-telephone` | style |
 
 ## Rapports (dans ce dossier, non suivis par git)
 
@@ -55,6 +56,14 @@ finale décalée, nombre modifié dans une chaîne d'égalités, nombre modifié
 refuser), coefficient 1 ajouté. Résultat sur la fiche 12 (16/10/2026) : 100 % de détection sur les réponses finales, les accolades,
 les équivalences et les coefficients 1, 99,3 % sur les chaînes d'égalités. Un taux inférieur à 90 % sur au moins 20 essais est
 signalé comme erreur de l'outil.
+
+## Conventions de lecture des expressions
+
+- Les lettres libres reçoivent des valeurs non entières, **sauf `n`** (entier de 2 à 12, pour que `(-3)^n` soit un nombre réel).
+- Un symbole sans accolades (`u_n`) est lu comme un produit `u*n` ; écrire `u_{n}` pour qu'il soit reconnu comme grandeur définie.
+- Une ligne suivie d'une ligne qui commence par `\iff` est la première partie d'une équivalence : une équation littérale `A = B` y
+  est résolue, pas lue comme une identité.
+- Les racines doubles d'une équation (`x^2(x-5) = 0` en 0) sont détectées par le minimum de |f|.
 
 ## Ce qu'il ne garantit pas
 

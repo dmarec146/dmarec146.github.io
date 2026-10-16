@@ -43,18 +43,33 @@ module.exports = [
     motif: /\(valeur interdite\)|est exclue dans tous les cas/,
     verifie: (l, e) => {
       const den = String(e.enonce).match(/\\dfrac\{[^{}]*\}\{([^{}]*)\}/);
-      const p = l.match(/x = (-?\d+) \\text\{ \(valeur interdite\)/) || l.match(/la valeur interdite \}\s*(-?\d+)\s*\\text\{ est exclue dans tous les cas/);
+      const p = l.match(/x = (-?\d+) \\text\{ \(valeur interdite\)/) || l.match(/[Ll]a valeur interdite \}\s*(-?\d+)\s*\\text\{ est exclue dans tous les cas/);
       if (!den || !p) return false;
       return Math.abs(math.evaluate(den[1].replace(/x/g, '(' + p[1] + ')'))) < 1e-9;
     }
   },
   {
     nom: 'le-sens-annonce-est-celui-de-l-enonce',
-    motif: /pour lesquelles le quotient est \}/,
+    motif: /pour lesquelles (?:le quotient|l'expression) est \}/,
     verifie: (l, e) => {
       const norme = (s) => (/leqslant/.test(s) ? '<=' : /geqslant/.test(s) ? '>=' : /(lt|<)/.test(s) ? '<' : '>');
-      const dansLigne = l.match(/pour lesquelles le quotient est \}\s*(\\leqslant|\\geqslant|\\lt|<|>)/), dansEnonce = String(e.enonce).match(/\}\s*(\\leqslant|\\geqslant|\\lt|<|>)\s*0/);
-      return !!(dansLigne && dansEnonce) && norme(dansLigne[1]) === norme(dansEnonce[1]);
+      const dansLigne = l.match(/pour lesquelles (?:le quotient|l'expression) est \}\s*(\\leqslant|\\geqslant|\\lt|<|>)/), rels = String(e.enonce).match(/\\leqslant|\\geqslant|\\lt|<|>/g);
+      return !!(dansLigne && rels && rels.length === 1) && norme(dansLigne[1]) === norme(rels[0]);
     }
+  },
+  {
+    nom: 'la-valeur-rejetee-est-negative',
+    motif: /donc \}\s*-?\d+\s*\\text\{ est rejeté/,
+    verifie: (l) => { const m = l.match(/donc \}\s*(-?\d+)\s*\\text\{ est rejeté/); return m ? Number(m[1]) < 0 : false; }
+  },
+  {
+    nom: 'l-indice-cite-est-pair',
+    motif: /Comme \}\s*\d+ \\text\{ est pair/,
+    verifie: (l) => { const m = l.match(/Comme \}\s*(\d+) \\text\{ est pair, \} q\^\{(\d+)\}/); return m ? Number(m[1]) % 2 === 0 && m[1] === m[2] : false; }
+  },
+  {
+    nom: 'le-coefficient-annonce-est-negatif',
+    motif: /\\text\{avec \} a = /,
+    verifie: (l) => /\\text\{avec \} a = -.*\\lt\s*0 \\text\{ et \}/.test(l)
   }
 ];
