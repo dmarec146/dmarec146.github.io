@@ -4,7 +4,7 @@
 // mathlive@0.110, firebase@12.19.0 et pngjs (chemin dans GUIDE_NODE_MODULES, sinon
 // ./node_modules). Les bibliotheques sont servies en local a la place des CDN.
 // Usage : node captures.js   (ecrit les images dans ./img)
-const { chromium, devices } = require('playwright');
+const { devices, lancer } = require('./navigateur');
 const path = require('path'); const fs = require('fs');
 const NM = process.env.GUIDE_NODE_MODULES || path.join(__dirname, 'node_modules');
 const OUT = path.join(__dirname, 'img');
@@ -44,7 +44,7 @@ async function clip(p, nom, sel, marge = 8, sel2) {
 const typeset = p => p.evaluate(() => window.MathJax && MathJax.typesetPromise ? MathJax.typesetPromise() : null);
 
 (async () => {
-  const b = await chromium.launch();
+  const b = await lancer();
   const F = '/cahiers/premiere/cahier-5/fiche-14.html';
 
   // 1. haut de fiche : navigation + en-tete + mode

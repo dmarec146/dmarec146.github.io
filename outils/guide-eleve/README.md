@@ -14,7 +14,9 @@ d'automatismes, devoirs (11 pages A4, couverture avec sommaire cliquable).
 ## Modifier le guide
 
 1. Modifier le texte dans `guide-eleve.html`.
-2. Régénérer le PDF : `node pdf.js` (Node + `playwright`). Le script
+2. Régénérer le PDF : `node pdf.js`. Le navigateur est choisi par `navigateur.js` : `playwright` s'il est
+   installé avec son Chromium, sinon `playwright-core` et le Chrome déjà installé de l'outil d'audit (un seul
+   `npm install` dans `outils/audit-reponses`, rien d'autre à télécharger). Le script
    signale toute page dont le contenu déborde sur le pied de page : réduire
    alors une capture (`style="width:80%;margin:0 auto"`) ou un texte.
 

@@ -1,9 +1,9 @@
 // Genere assets/docs/guide-eleve.pdf a partir de guide-eleve.html (A4, une page par .page).
 // Signale toute page dont le contenu deborde sur le pied de page.
-// Usage : node pdf.js   (Node avec playwright)
-const { chromium } = require('playwright'); const path = require('path');
+// Usage : node pdf.js   (Node ; navigateur : voir navigateur.js)
+const { lancer } = require('./navigateur'); const path = require('path');
 (async () => {
-  const b = await chromium.launch(); const p = await b.newPage();
+  const b = await lancer(); const p = await b.newPage();
   await p.goto('file://' + path.join(__dirname, 'guide-eleve.html'), { waitUntil: 'load' });
   await p.evaluate(() => document.fonts.ready);
   const deb = await p.evaluate(() => [...document.querySelectorAll('.page')].map((pg, i) => {

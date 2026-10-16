@@ -8513,3 +8513,5 @@ lancement vérifiée : **aucun devoir d'automatismes en cours** (lecture seule d
   proportions, équations, droites, lectures graphiques et probabilités (4), pourcentages (5). Rares séries avec une même question
   deux fois en thème unique (environ 1 sur 60 avant comme après). C'est le point que David doit nourrir en ajoutant des familles
   (voir l'artefact « Chantiers futurs »).
+
+- **Suite (16/10/2026) : pilote de navigateur du guide.** `outils/guide-eleve/pdf.js` et `captures.js` exigeaient le paquet `playwright` (absent du PC perso). Nouveau `outils/guide-eleve/navigateur.js` : `playwright` s'il est installé avec son Chromium, sinon `playwright-core` et le Chrome installé de l'outil d'audit (`npm install` dans `outils/audit-reponses`, rien à télécharger). `node outils/guide-eleve/pdf.js` régénère maintenant le PDF tel quel (11 pages, aucun débordement) ; README mis à jour. `captures.js` : seule la ligne d'import change (syntaxe vérifiée), il lui manque toujours les paquets de capture (voir son README), non testé.
