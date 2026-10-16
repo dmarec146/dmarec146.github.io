@@ -318,6 +318,49 @@
     return verifExpression(q, attendu);
   };
 
+  // ---------- proportions ----------
+  const premierNombre = s => nbFr(s.match(new RegExp(NB))[0]);
+  const nombresDe = s => [...s.matchAll(new RegExp(NB, 'g'))].map(r => nbFr(r[0]));
+  // vérifie que seule la bonne option porte la valeur attendue (le nombre de l'option est lu dans son texte)
+  function verifValeurOption(q, attendu) {
+    const erreurs = [];
+    q.options.forEach((o, i) => {
+      const v = premierNombre(zones(o).texte.replace(/\s/g, ' '));
+      if (i === q.bonne && !proche(v, attendu)) erreurs.push('la bonne réponse ' + v + ' ≠ calcul indépendant ' + attendu);
+      if (i !== q.bonne && proche(v, attendu)) erreurs.push('l’option ' + 'abcd'[i] + ' vaut aussi ' + attendu);
+    });
+    return erreurs;
+  }
+  const motCle = nom => nom.replace(/^(les |le |la |l’)/, '');
+  const contient = (texte, nom) => new RegExp('(^|[^A-Za-zÀ-ÿ])' + motCle(nom).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^A-Za-zÀ-ÿ])').test(texte);
+  VERIFS['proportions/partage-ratio'] = q => {
+    const [avant, apres] = q.enonce.split('<br>');
+    const t = zones(avant).texte.replace(/\s/g, ' '), question = zones(apres || '').texte.replace(/\s/g, ' ');
+    const trois = t.match(new RegExp('rapport (\\d+) : (\\d+) : (\\d+)'));
+    if (trois) {
+      const r = trois.slice(1).map(Number), T = premierNombre(t);
+      return verifValeurOption(q, T * (Math.max(...r) - Math.min(...r)) / r.reduce((x, y) => x + y, 0));
+    }
+    const d = t.match(/rapport (\d+) : (\d+) \(\d+ parts? pour ([^,]+), \d+ parts? pour ([^)]+)\)/);
+    const [a, b] = [Number(d[1]), Number(d[2])], n1 = d[3], n2 = d[4];
+    if (/vaut/.test(t)) {                                       // une part connue, l'autre cherchée
+      const phrase = t.slice(t.indexOf(')') + 1), X = premierNombre(phrase.replace(/^\s*\./, ''));
+      const connuEstPremier = contient(phrase.split('vaut')[0], n1);
+      return verifValeurOption(q, connuEstPremier ? X * b / a : X * a / b);
+    }
+    const T = premierNombre(t), premier = contient(question, n1);
+    return verifValeurOption(q, T * (premier ? a : b) / (a + b));
+  };
+  VERIFS['proportions/melange-pourcentage'] = q => {
+    const t = zones(q.enonce.split('<br>')[0]).texte.replace(/\s/g, ' ');
+    if (/On y ajoute/.test(t)) {
+      const S = premierNombre(t), p = nbFr(t.match(new RegExp('(' + NB + ') % de sel'))[1]), w = nbFr(t.match(new RegExp('ajoute (' + NB + ') g'))[1]);
+      return verifValeurOption(q, p * S / (S + w));
+    }
+    const [s, e] = nombresDe(t);
+    return verifValeurOption(q, 100 * s / (s + e));
+  };
+
   // ---------- droites ----------
   VERIFS['droites/coefficient-deux-points'] = q => {
     const e = q.enonce.replace(/\\,/g, ' ');

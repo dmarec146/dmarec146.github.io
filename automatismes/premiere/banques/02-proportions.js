@@ -506,6 +506,117 @@
   }
 
   // =====================================================================
+  // Familles ajoutées le 16/10/2026 (analyse des sujets de juin et septembre 2026)
+  // =====================================================================
+  // ---- Famille F : partage dans un rapport donné (proportionnalité)
+  //      Sujets 2026 : « partagé dans le rapport 2 : 3 », « 3 parts pour l'un, 2 pour l'autre ».
+  const kg = v => dec(v) + ' kg', m2 = v => dec(v) + ' m²';
+  const PARTAGES = [
+    { debut: T => `Un bénéfice de ${euros(T)} est partagé entre deux associés, Alex et Camille,`, debutSans: 'Un bénéfice est partagé entre deux associés, Alex et Camille,', noms: ['Alex', 'Camille'], qs: ['La part d’Alex est :', 'La part de Camille est :'], fmt: euros, valeurs: [600, 800, 1200, 1500, 2400, 3000, 4800, 6000] },
+    { debut: T => `Une récompense de ${euros(T)} est partagée entre deux équipes, les Bleus et les Verts,`, debutSans: 'Une récompense est partagée entre deux équipes, les Bleus et les Verts,', noms: ['les Bleus', 'les Verts'], qs: ['La part des Bleus est :', 'La part des Verts est :'], fmt: euros, valeurs: [500, 800, 1000, 1200, 2000, 3000] },
+    { debut: T => `Un terrain de ${m2(T)} est partagé entre un potager et une aire de jeux,`, debutSans: 'Un terrain est partagé entre un potager et une aire de jeux,', noms: ['le potager', 'l’aire de jeux'], qs: ['La surface du potager est :', 'La surface de l’aire de jeux est :'], fmt: m2, valeurs: [300, 400, 600, 800, 1200, 1500] },
+    { debut: T => `Un sac de ${kg(T)} de graines est réparti entre deux volières, A et B,`, debutSans: 'Un sac de graines est réparti entre deux volières, A et B,', noms: ['A', 'B'], qs: ['La quantité donnée à la volière A est :', 'La quantité donnée à la volière B est :'], fmt: kg, valeurs: [24, 30, 40, 60, 80, 120] }
+  ];
+  const sPl = n => (n > 1 ? 's' : '');
+  const rapportTxt = (a, b, n1, n2) => `dans le rapport ${a} : ${b} (${a} part${sPl(a)} pour ${n1}, ${b} part${sPl(b)} pour ${n2})`;
+
+  // N1 : on connaît le total, on cherche une part
+  function partageTotal() {
+    const c = aleaParmi(PARTAGES);
+    const [a, b] = aleaParmi([[1, 2], [1, 3], [2, 3], [1, 4], [3, 2], [2, 1], [3, 1], [4, 1], [3, 5], [1, 5]]);
+    const S = a + b;
+    const T = aleaParmi(c.valeurs.filter(v => v % S === 0));
+    if (T === undefined) return null;
+    const i = alea(0, 1), mine = i ? b : a, part = T * mine / S, u = T / S;
+    const bonne = opt(c.fmt(part), part);
+    const candidats = [T - part, R(T / mine), u, R(T * mine / Math.max(a, b)), T * mine, R(T * (i ? a : b) / S) + u]
+      .filter(v => v > 0 && v !== part && deuxDec(v)).map(v => opt(c.fmt(v), v));
+    return qcm(`${c.debut(T)} ${rapportTxt(a, b, c.noms[0], c.noms[1])}.<br>${c.qs[i]}`, bonne, candidats, {
+      explication: `Il y a ${m(a + ' + ' + b + ' = ' + S)} parts en tout ; une part vaut ${m(decL(T) + ' \\div ' + S + ' = ' + decL(u))}. La part cherchée en compte ${mine} : ${m(mine + ' \\times ' + decL(u) + ' = ' + decL(part))}.`
+    });
+  }
+
+  // N2 : on connaît une part, on cherche l'autre
+  function partageUnePart() {
+    const c = aleaParmi(PARTAGES);
+    const [a, b] = aleaParmi([[2, 3], [3, 5], [1, 4], [3, 2], [5, 3], [2, 5], [4, 3], [3, 4], [2, 7]]);
+    const u = aleaParmi([4, 5, 10, 20, 25, 30, 50]);
+    const i = alea(0, 1), connu = i ? b : a, cherche = i ? a : b;
+    const sa = connu * u, sb = cherche * u;
+    const bonne = opt(c.fmt(sb), sb);
+    const candidats = [R(sa * connu / cherche), sa * (a + b) / connu, R(sa * cherche), R(sa / connu), sa + cherche, R(sa + (cherche - connu))]
+      .filter(v => v > 0 && v !== sb && deuxDec(v)).map(v => opt(c.fmt(v), v));
+    return qcm(`${c.debutSans} ${rapportTxt(a, b, c.noms[0], c.noms[1])}. ${c.qs[i].replace(/ est :$/, '')} vaut ${c.fmt(sa)}.<br>${c.qs[1 - i]}`, bonne, candidats, {
+      explication: `La part de ${c.noms[i]} compte ${connu} parts et vaut ${m(decL(sa))} : une part vaut ${m(decL(sa) + ' \\div ' + connu + ' = ' + decL(u))}. L’autre compte ${cherche} parts : ${m(cherche + ' \\times ' + decL(u) + ' = ' + decL(sb))}.`
+    });
+  }
+
+  // N3 : trois parts, écart entre la plus grande et la plus petite
+  function partageTrois() {
+    const c = aleaParmi([
+      { debut: T => `Un gain de ${euros(T)} est partagé entre trois joueurs`, fmt: euros },
+      { debut: T => `${kg(T)} de graines sont répartis entre trois mangeoires`, fmt: kg },
+      { debut: T => `Un terrain de ${m2(T)} est divisé en trois parcelles`, fmt: m2 }
+    ]);
+    const [a, b, d] = aleaParmi([[1, 2, 3], [1, 1, 2], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 2, 3], [1, 4, 5], [3, 3, 4]]);
+    const S = a + b + d;
+    const T = aleaParmi([120, 180, 240, 300, 360, 480, 600, 720, 900, 1200, 1800, 2400].filter(v => v % S === 0));
+    if (T === undefined) return null;
+    const u = T / S, ecart = (d - a) * u;
+    const bonne = opt(c.fmt(ecart), ecart);
+    const candidats = [d * u, a * u, R(T * (d - a) / d), R(T / (d - a)), (d - a) * u + u, S * u / (d - a)]
+      .filter(v => v > 0 && v !== ecart && deuxDec(v)).map(v => opt(c.fmt(v), v));
+    return qcm(`${c.debut(T)} dans le rapport ${a} : ${b} : ${d}.<br>L’écart entre la plus grande part et la plus petite est :`, bonne, candidats, {
+      explication: `Il y a ${m(a + ' + ' + b + ' + ' + d + ' = ' + S)} parts ; une part vaut ${m(decL(T) + ' \\div ' + S + ' = ' + decL(u))}. La plus grande en compte ${d}, la plus petite ${a} : l’écart est de ${d - a} part${sPl(d - a)}, soit ${m((d - a) + ' \\times ' + decL(u) + ' = ' + decL(ecart))}.`
+    });
+  }
+
+  function partageRatio(niveau) {
+    for (let essai = 0; essai < 30; essai++) {
+      const q = niveau === 1 ? partageTotal() : niveau === 2 ? partageUnePart() : (Math.random() < 0.5 ? partageTrois() : partageUnePart());
+      if (q) return q;
+    }
+    return null;
+  }
+
+  // ---- Famille G : pourcentage dans un mélange (la part se compare au mélange entier)
+  //      Piège classique : 30 g de sel dans 270 g d'eau font 10 % (30 / 300) et non 11,1 % (30 / 270).
+  const MELANGES = [
+    { phrase: (s, e) => `On dissout ${dec(s)} g de sel dans ${dec(e)} g d’eau.`, question: 'Le pourcentage de sel dans la solution (en masse) est :', unite: 'g' },
+    { phrase: (s, e) => `On mélange ${dec(s)} mL de sirop et ${dec(e)} mL d’eau pour préparer une boisson.`, question: 'Le pourcentage de sirop dans la boisson (en volume) est :', unite: 'mL' },
+    { phrase: (s, e) => `Un alliage est fabriqué en fondant ensemble ${dec(s)} g de cuivre et ${dec(e)} g d’étain.`, question: 'Le pourcentage de cuivre dans l’alliage (en masse) est :', unite: 'g' },
+    { phrase: (s, e) => `Un jus est obtenu en mélangeant ${dec(s)} mL de concentré et ${dec(e)} mL d’eau.`, question: 'Le pourcentage de concentré dans le jus (en volume) est :', unite: 'mL' }
+  ];
+  const optPct = v => opt(pct(v), v);
+  function melangePourcentage() {
+    const c = aleaParmi(MELANGES);
+    const M = aleaParmi([200, 250, 400, 500, 600, 800, 1000]), p = aleaParmi([4, 5, 8, 10, 12, 15, 20, 25, 30, 40]);
+    const s = R(M * p / 100), e = M - s;
+    if (!entier(s)) return null;
+    const candidats = [R(100 * s / e), R(100 * e / M), s, R(100 * e / s), 100 - 2 * p, R(p / 2)]
+      .filter(v => v > 0 && v !== p && v < 100 && deuxDec(v)).map(optPct);
+    return qcm(`${c.phrase(s, e)}<br>${c.question}`, optPct(p), candidats, {
+      explication: `La quantité totale du mélange est ${m(decL(s) + ' + ' + decL(e) + ' = ' + decL(M))} ${c.unite}. La proportion se calcule par rapport au mélange entier : ${m('\\dfrac{' + decL(s) + '}{' + decL(M) + '} = ' + decL(p / 100) + ' = ' + decL(p) + ' \\%')}. Diviser par ${m(decL(e))} (l’autre ingrédient seul) serait une erreur.`
+    });
+  }
+  // N3 : dilution (on ajoute de l'eau à une solution dont on connaît le pourcentage)
+  function melangeDilution() {
+    for (let essai = 0; essai < 40; essai++) {
+      const S = aleaParmi([100, 150, 200, 250, 300, 400, 500]), w = aleaParmi([50, 100, 150, 200, 250, 300, 400, 500, 1000]), p = aleaParmi([5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60]);
+      const sel = R(S * p / 100);
+      const nouveau = R(100 * sel / (S + w));
+      if (!entier(sel) || !deuxDec(nouveau) || nouveau === p) continue;
+      const candidats = [R(p * (S + w) / S), R(p - w / 10), R(p * S / w), R(p / 2), R(p * w / (S + w)), p]
+        .filter(v => v > 0 && v < 100 && v !== nouveau && deuxDec(v)).map(optPct);
+      return qcm(`Une solution de ${dec(S)} g contient ${pct(p)} de sel (en masse). On y ajoute ${dec(w)} g d’eau pure.<br>Le pourcentage de sel dans la nouvelle solution est :`, optPct(nouveau), candidats, {
+        explication: `La masse de sel ne change pas : ${m(decL(p / 100) + ' \\times ' + decL(S) + ' = ' + decL(sel))} g. La masse de la solution devient ${m(decL(S) + ' + ' + decL(w) + ' = ' + decL(S + w))} g. Le nouveau pourcentage est ${m('\\dfrac{' + decL(sel) + '}{' + decL(S + w) + '} = ' + decL(nouveau / 100) + ' = ' + decL(nouveau) + ' \\%')}.`
+      });
+    }
+    return null;
+  }
+  function melange(niveau) { return niveau === 2 ? melangePourcentage() : (Math.random() < 0.5 ? melangeDilution() : melangePourcentage()); }
+
+  // =====================================================================
   Automatismes.enregistrerBanque('proportions', {
     titre: 'Proportions et ordres de grandeur',
     familles: {
@@ -513,7 +624,9 @@
       'ordre-grandeur': famille({ nom: 'ordre de grandeur', niveaux: [1, 2, 3], base: ordreGrandeur, variantes3: [estimation], partBase3: 0.3, ordre: { 1: 3, 2: 2 }, quota: { 2: { max: 2 } } }),
       'proportionnalite': famille({ nom: 'proportionnalité', niveaux: [1, 2, 3], base: n => (n === 2 && Math.random() < 0.6 ? debitVitesse(n) : proportionnalite(n)), variantes3: [proportionnaliteInverse, echelle, meilleurPrix, () => debitVitesse(3)], ordre: { 1: 2, 2: 3 } }),
       'retrouver-total': famille({ nom: 'retrouver le total', niveaux: [1, 2, 3], base: retrouverTotal, variantes3: [totalDeuxParts, totalPartDePart, totalFractionReste], partBase3: 0.25, ordre: { 1: 4, 2: 4 }, quota: { 1: { min: 1 }, 2: { min: 1, priorite: 2 }, 3: { min: 1 } } }),
-      'comparer-parts': famille({ nom: 'comparer des parts', niveaux: [3], base: () => null, variantes3: [comparerParts] })
+      'comparer-parts': famille({ nom: 'comparer des parts', niveaux: [3], base: () => null, variantes3: [comparerParts] }),
+      'partage-ratio': famille({ nom: 'partage dans un rapport', niveaux: [1, 2, 3], base: partageRatio, ordre: { 1: 5, 2: 5 } }),
+      'melange-pourcentage': famille({ nom: 'pourcentage dans un mélange', niveaux: [2, 3], base: melange, ordre: { 2: 6 } })
     }
   });
 })();
