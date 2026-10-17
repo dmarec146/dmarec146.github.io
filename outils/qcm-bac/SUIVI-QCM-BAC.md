@@ -1,6 +1,6 @@
 # Bloc « QCM Bac » (Terminale spécialité mathématiques) — suivi du chantier
 
-**Statut au 17/10/2026 : en cadrage, aucun code écrit.** Décisions prises avec
+**Statut au 17/10/2026 : pilote codé (suites + géométrie dans l'espace), non encore en ligne sur `master` ni lié depuis le site.** Décisions prises avec
 David lors d'une session cloud ; à tenir à jour à chaque étape (le récit détaillé
 d'un chantier terminé va à la fin de `HISTORIQUE.md`).
 
@@ -72,3 +72,38 @@ Les sources LaTeX sont préférées aux PDF (texte et formules exacts) ; les PDF
 - Aucune classe de Terminale n'existe encore dans Firestore ni dans les outils de création de comptes.
 - Les sujets de bac sont publics ; GitHub Pages publie tout le dépôt, donc les extraits rangés ici seront en ligne
   une fois sur `master`.
+
+## 5. Pilote codé le 17/10/2026 (après validation des quatre exemples par David)
+
+Décisions de David : quatre propositions par question ; **séries de 10 questions** (plus qu'au bac, pour s'entraîner) ;
+essai d'un **mélange de deux thèmes** (suites et géométrie dans l'espace, sans figure) ; **niveau 3 = questions plus
+difficiles + pénalités**. Pénalité retenue : **0,25 point par mauvaise réponse** (une question laissée sans réponse ne
+retire rien, la note ne descend pas sous 0) — valeur à confirmer par David, elle tient en un seul réglage
+(`bareme.penalites` dans `qcm-bac/fiche.html`).
+
+- **Pages et banques** : `qcm-bac/fiche.html` (page de fiche, 2 thèmes, 10 questions, trois niveaux, modes fiche et
+  chrono), `qcm-bac/banques/01-suites.js` (7 familles) et `02-geometrie-espace.js` (8 familles). Elles réutilisent
+  `automatismes/assets/moteur.js` et `automatismes.css`. Pas encore : page d'accueil du bloc, entrée dans la
+  navigation, comptes et classes de Terminale, devoirs (aucun suivi Firebase sur la page).
+- **Moteur** (`automatismes/assets/moteur.js`), deux options **facultatives**, sans effet sur la Première (vérifié) :
+  `bareme.penalites` (`{3: 0.25}` : points retirés par mauvaise réponse à ce niveau) et `textesNiveau` (phrases des
+  trois niveaux). Le bilan affiche alors les mauvaises réponses et leur retrait.
+- **Contrôle** : `node outils/qcm-bac/controle-banques.js [--essais N] [--banque ID] [--mutation] [--apercu N]`.
+  Il tire des questions brutes, contrôle la rédaction, puis **recalcule la vérité de chaque option de façon
+  indépendante** (premiers termes, itérations de récurrences, modèles de suites pour les théorèmes, coordonnées) ; avec
+  `--mutation`, il échange la bonne réponse avec une mauvaise et vérifie que le contrôle échoue. Résultat du
+  17/10/2026 : 18 500 questions, 0 anomalie, mutation détectée 2 212 / 2 212. Il a trouvé et fait corriger : plan
+  (ABC) confondu avec une équation du même plan, trois points toujours alignés quel que soit `m`, option
+  « pour tout m » vraie, option fausse en double.
+- **Navigateur** (Chromium, MathJax en local, voir `SUIVI-FIREBASE.md` §7) : 10 questions réparties 5 + 5, trois niveaux,
+  aucune erreur MathJax ni console, pas de défilement horizontal à 390 px, note calculée (niveau 3 : 6 bonnes, 3 fausses,
+  1 sans réponse → 5,25 / 10 ; niveau 2 : 6 / 10).
+- **Essai en ligne sans passer par `master`** : artefact privé https://claude.ai/artifact/42e4JA2yp4B59e5CKMFvq9 (copie
+  à plat de la page ; non testé dans l'artefact lui-même).
+- **Limites connues** : peu d'énoncés distincts pour quelques familles de niveau 1 (≈ 17 à 40) ; la famille
+  « convergence monotone » a 4 énoncés de fond (habillés par des lettres variées) ; pas d'option « je ne sais pas »
+  (on laisse la question vide) ; le niveau 3 de géométrie n'a pas de famille sur les « suites adjacentes »-équivalent
+  ni sur l'intersection de deux plans ; barème fixe à 1 point par question (pas de table par famille).
+- **À valider par David** : la valeur de la pénalité, la lecture des questions des deux thèmes (surtout le niveau 3),
+  l'équilibre 5 + 5, puis la suite : autres thèmes (exponentielle et logarithme, dérivation et convexité, intégration,
+  probabilités et dénombrement, équations différentielles), puis navigation, accueil, comptes et devoirs.

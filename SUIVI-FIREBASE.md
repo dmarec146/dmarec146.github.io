@@ -316,8 +316,10 @@ plages de l'aléatoire, banque d'automatismes, devoirs partiels, barème
 personnalisé, correction détaillée), qui remplace `CHANTIERS-FUTURS.md`
 depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
-- **Bloc « QCM Bac » (Terminale spécialité) — en cadrage depuis le 17/10/2026**, aucun code écrit : décisions,
-  sources, étapes et points d'attention dans `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher).
+- **Bloc « QCM Bac » (Terminale spécialité) — pilote codé le 17/10/2026** (`qcm-bac/fiche.html`, banques suites et géométrie
+  dans l'espace, contrôle `outils/qcm-bac/controle-banques.js`) ; pas encore lié depuis le site. Décisions, sources, état et
+  points à valider dans `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options
+  facultatives nouvelles : `bareme.penalites` et `textesNiveau`.
 - **Première 14 (Probabilités) — à traiter après l'échéance de son devoir** (constat Firestore en lecture seule, 16/10/2026) :
   un seul devoir la vise, `KNhf6yAAyqjn1j6JvZYs` (ciblage individuel d'un élève, 3 essais, créé le 10/10/2026), **à rendre le
   16/10/2026 à 21 h (heure de Paris)** ; la fiche ne doit pas être modifiée avant. Ensuite : relire le devoir dans Firestore

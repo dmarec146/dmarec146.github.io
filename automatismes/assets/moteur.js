@@ -596,11 +596,12 @@
     // choix du niveau : toujours en mode fiche, seulement avant le départ en mode chrono
     if (fiche || ETAT.chrono.phase === 'intro') {
       const n = ETAT.niveau;
-      const EXPL = {
+      // `config.textesNiveau` ({1, 2, 3}) remplace ces phrases (QCM Bac de Terminale : calculatrice autorisée, pénalités au niveau 3)
+      const EXPL = Object.assign({
         1: 'Niveau 1 — les bases : une seule étape de calcul, des nombres simples.',
         2: 'Niveau 2 — le niveau de l\'épreuve : questions calquées sur les sujets du baccalauréat.',
         3: 'Niveau 3 — bien plus difficile : plusieurs étapes, pièges, situations moins habituelles (toujours sans calculatrice).'
-      };
+      }, ETAT.config.textesNiveau || {});
       html += `<div class="mode-panneau">
         <span class="mode-label">Niveau de difficulté</span>
         <button class="mode-btn niveau-btn ${n === 1 ? 'mode-actif' : ''}" data-action="niveau" data-niveau="1">★ Niveau 1</button>
@@ -877,8 +878,19 @@
   }
   const totalBareme = () => (ETAT.config.bareme
     ? arrondir(ETAT.questions.reduce((s, q) => s + pointsDeQuestion(q), 0), 2) : null);
-  const pointsObtenus = () => (ETAT.config.bareme
-    ? arrondir(ETAT.questions.reduce((s, q, i) => s + (ETAT.reponses[i] === q.bonne ? pointsDeQuestion(q) : 0), 0), 2) : null);
+  // Pénalité (QCM Bac de Terminale, 17/10/2026) : `config.bareme.penalites = { 3: 0.25 }` retire ce nombre de
+  // points par réponse FAUSSE donnée à ce niveau ; une question sans réponse ne retire rien, et la note ne
+  // descend pas sous 0. Sans cette clé (automatismes de Première), rien ne change.
+  const penaliteDuNiveau = () => ((ETAT.config.bareme && ETAT.config.bareme.penalites) || {})[ETAT.niveau] || 0;
+  const pointsObtenus = () => {
+    if (!ETAT.config.bareme) return null;
+    const pen = penaliteDuNiveau();
+    const brut = ETAT.questions.reduce((s, q, i) => {
+      const r = ETAT.reponses[i];
+      return s + (r === q.bonne ? pointsDeQuestion(q) : (r !== null && pen ? -pen : 0));
+    }, 0);
+    return arrondir(pen ? Math.max(0, brut) : brut, 2);
+  };
   const pointsTxt = p => dec(p) + (p > 1 ? ' points' : ' point');
   // Total du sujet, affiché avant toute réponse : l'élève voit sur combien il sera noté.
   function totalSujetHTML() {
@@ -1052,9 +1064,17 @@
     let html = `<span class="score-chiffre">${bonnes} / ${n}</span> bonnes réponses`;
     if (ETAT.config.bareme) {
       const pts = pointsObtenus(), tot = totalBareme();
+      const pen = penaliteDuNiveau();
+      const regle = pen
+        ? `${dec(ETAT.config.bareme.parQuestion)} pt par bonne réponse, −${dec(pen)} pt par mauvaise réponse, 0 sans réponse`
+        : 'aucune pénalité';
       html += ETAT.config.bareme.table
-        ? `<div class="score-points">soit <b>${dec(pts)} / ${dec(tot)}</b> points au barème de ce sujet (chaque question a son nombre de points, aucune pénalité)</div>`
-        : `<div class="score-points">soit <b>${dec(pts)} / ${dec(tot)}</b> points au barème de l'épreuve (${dec(ETAT.config.bareme.parQuestion)} pt par bonne réponse, aucune pénalité)</div>`;
+        ? `<div class="score-points">soit <b>${dec(pts)} / ${dec(tot)}</b> points au barème de ce sujet (chaque question a son nombre de points, ${regle})</div>`
+        : `<div class="score-points">soit <b>${dec(pts)} / ${dec(tot)}</b> points au barème de l'épreuve (${pen ? regle : dec(ETAT.config.bareme.parQuestion) + ' pt par bonne réponse, aucune pénalité'})</div>`;
+      if (pen) {
+        const fausses = n - bonnes - sans;
+        html += `<div class="score-detail">${fausses} mauvaise${fausses > 1 ? 's' : ''} réponse${fausses > 1 ? 's' : ''} : −${dec(arrondir(fausses * pen, 2))} pt (la note ne descend pas sous 0).</div>`;
+      }
     }
     if (sans > 0) html += `<div class="score-detail">${sans} question${sans > 1 ? 's' : ''} sans réponse.</div>`;
     if (ETAT.mode === 'chrono' && ETAT.chrono.tempsTotal > 0) {
