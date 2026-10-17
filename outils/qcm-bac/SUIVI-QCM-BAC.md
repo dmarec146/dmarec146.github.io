@@ -102,8 +102,8 @@ retire rien, la note ne descend pas sous 0) — valeur à confirmer par David, e
   à plat de la page ; non testé dans l'artefact lui-même).
 - **Limites connues** : peu d'énoncés distincts pour quelques familles de niveau 1 (≈ 17 à 40) ; la famille
   « convergence monotone » a 4 énoncés de fond (habillés par des lettres variées) ; pas d'option « je ne sais pas »
-  (on laisse la question vide) ; le niveau 3 de géométrie n'a pas de famille sur les « suites adjacentes »-équivalent
-  ni sur l'intersection de deux plans ; barème fixe à 1 point par question (pas de table par famille).
+  (on laisse la question vide) ; le niveau 3 de géométrie n'a pas de question sur l'intersection de deux plans ni sur les sphères
+  (approfondissements du programme) ; barème fixe à 1 point par question (pas de table par famille).
 - **À valider par David** : la valeur de la pénalité, la lecture des questions des deux thèmes (surtout le niveau 3),
   l'équilibre 5 + 5, puis la suite : autres thèmes (exponentielle et logarithme, dérivation et convexité, intégration,
   probabilités et dénombrement, équations différentielles), puis navigation, accueil, comptes et devoirs.
