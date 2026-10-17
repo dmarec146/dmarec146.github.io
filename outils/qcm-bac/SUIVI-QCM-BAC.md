@@ -46,16 +46,19 @@ Les sources LaTeX sont préférées aux PDF (texte et formules exacts) ; les PDF
 1. **Accès aux sources** — *fait le 17/10/2026* : `www.apmep.fr` était refusé par la politique réseau du
    conteneur cloud (403 du proxy) ; David a modifié l'environnement et le téléchargement fonctionne.
    Fichiers `.tex` récupérés dans le dossier temporaire de la session (non conservés dans le dépôt).
-2. Déposer le programme officiel, puis en tirer le découpage en thèmes.
-3. Lire `moteur.js` et lister ce qui est propre à la Première.
+2. Programme officiel — *lu en entier le 17/10/2026* (fichier PDF donné par David dans la session cloud, non
+   déposé dans le dépôt) ; découpage en thèmes dans `outils/qcm-bac/pilote-suites.md` §1.
+3. `moteur.js` — *lu le 17/10/2026* : déjà générique (banques enregistrées par identifiant, QCM à 4 options,
+   niveaux 1 à 3, modes fiche et chrono, barème par table). Propre à la Première : les pages, les 8 banques,
+   `bareme-sujet-blanc.js` et le lien en dur de `assets/js/mes-devoirs.js` (ligne 40). Pas de copie du moteur.
 4. **Index des exercices** (année, centre, numéro, thème, type QCM / affirmation) — *brouillon fait le
-   17/10/2026* : `outils/qcm-bac/index-exercices.md`, 33 exercices candidats, **à faire valider par David**.
-   Deux points à trancher : le fichier « 2024 » est en fait les « Exercices 0 » de la session 2024 (les vrais
-   sujets de 2024 sont sur `https://www.apmep.fr/Annee-2024`) ; les affirmations isolées dans un exercice rédigé
-   sont mises à part.
-5. **Thème pilote** (à choisir avec David ; recommandation : un thème dont les réponses se recalculent
-   facilement de façon indépendante, comme les suites ou l'exponentielle et le logarithme). D'abord
-   3 ou 4 exemples de conversion avec la question d'origine à côté, validés par David, **avant tout code**.
+   17/10/2026* : `outils/qcm-bac/index-exercices.md`, 47 exercices candidats (les vrais sujets de 2024, page
+   `https://www.apmep.fr/Annee-2024`, ont été ajoutés le même jour ; le fichier donné d'abord pour 2024 était
+   les « Exercices 0 », gardés en complément), **à faire valider par David**. Les affirmations isolées dans un
+   exercice rédigé sont mises à part.
+5. **Thème pilote : les suites** (choisi le 17/10/2026, David m'a laissé choisir). Proposition, quatre exemples
+   de conversion (question d'origine à côté) et familles prévues : `outils/qcm-bac/pilote-suites.md`.
+   **À valider par David avant tout code.** La géométrie dans l'espace viendra ensuite.
 6. Banque pilote complète : 3 niveaux, vérificateurs indépendants testés par mutation, barème, audit de rédaction.
 7. Bloc dans la navigation et sur l'accueil, comptes et classes de Terminale (le code distingue aujourd'hui
    Seconde et Première), attribution des devoirs et tableau de bord.

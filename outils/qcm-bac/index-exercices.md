@@ -12,10 +12,11 @@ de l'APMEP ; ceux de 2024 et 2025 sont à chercher (pas dans les deux fichiers d
 
 ## Sources
 
-- **2024** : `https://www.apmep.fr/IMG/tex/Exercices_0_2024_FK_2.tex` — attention : ce sont les
-  **« Exercices 0 » de la session 2024** (8 exemples d'exercices proposés par le ministère), pas les sujets
-  des sessions 2024. Les vrais sujets de 2024 sont sur la page `https://www.apmep.fr/Annee-2024` (à vérifier
-  et à demander à David s'il les veut).
+- **2024** : page `https://www.apmep.fr/Annee-2024` — les 17 sujets des sessions 2024 (un fichier `.tex`
+  chacun, corrigés en fichiers séparés). David a donné d'abord l'adresse de
+  `https://www.apmep.fr/IMG/tex/Exercices_0_2024_FK_2.tex`, qui n'est pas un sujet de session mais les
+  **« Exercices 0 »** (8 exemples d'exercices proposés par le ministère) : conservé comme complément.
+  Le sujet de Polynésie du 9 septembre 2024 n'a que son corrigé sur la page.
 - **2025** : `https://www.apmep.fr/IMG/tex/Annee_spe_2025_DV.tex` — l'intégrale des 19 sujets de 2025
   (mai à novembre 2025). Sujets seulement, sans corrigés.
 - **2026** : page `https://www.apmep.fr/Annee-2026` — 14 sujets, un fichier `.tex` chacun, avec corrigés
@@ -25,7 +26,29 @@ de l'APMEP ; ceux de 2024 et 2025 sont à chercher (pas dans les deux fichiers d
 
 Les colonnes « Aff. » donnent le nombre d'affirmations (ou de questions de QCM).
 
-### 2024 — Exercices 0
+### 2024 — sessions (ajouté le 17/10/2026)
+
+| Sujet | Exo (pts) | Type | Aff. | Thème (deviné) | Figure |
+|---|---|---|---|---|---|
+| Amérique du Nord J1, 21 mai | 2 (4) | QCM | ? | à lire | ? |
+| Centres étrangers–Suède J1 bis, 7 juin | 1 (4) | Affirmations | 4 | suites, Python, équation différentielle | non |
+| Asie J1, 10 juin | 4 (5) | Affirmations | 5 | suites, Python | non |
+| Asie J2, 11 juin | 3 (4) | Affirmations | 4 | suites, dérivation et convexité | oui |
+| Métropole J1, 19 juin | 1 (4) | Affirmations | 4 | exp/ln (asymptote, équation différentielle), suites (gendarmes) | non |
+| Métropole J1 (secours), 19 juin | 4 (5) | Affirmations | 5 | exp/ln, limites | oui |
+| Polynésie J1, 19 juin | 1 (4) | Affirmations | 4 | espace | non |
+| Métropole J2, 20 juin | 4 (4) | Affirmations | 4 | espace | non |
+| Métropole J2 (dévoilé), 20 juin | 2 (4) | Affirmations | 4 | espace | non |
+| Polynésie J2, 20 juin | 2 (5) | QCM | ? | exp/ln, dénombrement, intégration | oui |
+| Métropole J1, 11 septembre | 3 (5) | Affirmations | 5 | suites, limites, exp/ln, Python | non |
+| Métropole J2, 12 septembre | 4 (5) | Affirmations | 5 | Python, suites, exp/ln | non |
+| Amérique du Sud J1, 21 novembre | 3 (4) | Affirmations | 4 | suites (dont suite d'intégrales) | non |
+| Amérique du Sud J2, 22 novembre | 2 (5) | Affirmations | 5 | suite, limite, équation différentielle, tangente | non |
+
+Pas d'exercice de ce type détecté : Centres étrangers J1 (5 juin) et J2 (6 juin), Amérique du Nord J2 (22 mai).
+« Secours » et « dévoilé » désignent les sujets de remplacement des mêmes épreuves.
+
+### 2024 — « Exercices 0 » (complément)
 
 | Exo | Type | Aff. | Thème (deviné) | Figure |
 |---|---|---|---|---|
@@ -99,5 +122,6 @@ de l'affirmation… » au milieu d'un exercice rédigé.
 - Le décompte par thème est deviné par mots-clés : beaucoup d'exercices d'espace parlent aussi de plans
   et de vecteurs ; à confirmer à la lecture.
 - Les « ? » sont des données que je n'ai pas encore vérifiées exercice par exercice.
-- Total : 33 exercices entiers (4 en 2024, 18 en 2025, 11 en 2026), soit de l'ordre de 130 à 140
-  affirmations ou questions de QCM. La répartition par thème n'est pas encore comptée.
+- Total : 47 exercices entiers (14 en 2024, plus 4 des « Exercices 0 », 18 en 2025, 11 en 2026), soit de
+  l'ordre de 190 affirmations ou questions de QCM. La répartition par thème n'est pas encore comptée.
+  Les sujets de 2024 n'ont été parcourus que par le script : les cases « ? » restent à vérifier.
