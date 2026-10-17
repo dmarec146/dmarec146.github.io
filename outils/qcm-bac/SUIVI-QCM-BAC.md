@@ -43,14 +43,16 @@ Les sources LaTeX sont préférées aux PDF (texte et formules exacts) ; les PDF
 
 ## 3. Prochaines étapes (dans l'ordre)
 
-1. **Accès aux sources** — *bloqué* : la politique réseau du conteneur cloud refuse `www.apmep.fr`
-   (réponse 403 du proxy, 17/10/2026). David doit ajouter ce domaine dans « Allowed domains » des
-   réglages de l'environnement (https://code.claude.com/docs/en/cloud-environments#network-access)
-   et relancer une session, ou télécharger lui-même les fichiers. Sur une session Claude Code locale,
-   le téléchargement doit fonctionner directement.
+1. **Accès aux sources** — *fait le 17/10/2026* : `www.apmep.fr` était refusé par la politique réseau du
+   conteneur cloud (403 du proxy) ; David a modifié l'environnement et le téléchargement fonctionne.
+   Fichiers `.tex` récupérés dans le dossier temporaire de la session (non conservés dans le dépôt).
 2. Déposer le programme officiel, puis en tirer le découpage en thèmes.
 3. Lire `moteur.js` et lister ce qui est propre à la Première.
-4. **Index des exercices** (année, centre, numéro, thème, type QCM / affirmation), à faire valider par David.
+4. **Index des exercices** (année, centre, numéro, thème, type QCM / affirmation) — *brouillon fait le
+   17/10/2026* : `outils/qcm-bac/index-exercices.md`, 33 exercices candidats, **à faire valider par David**.
+   Deux points à trancher : le fichier « 2024 » est en fait les « Exercices 0 » de la session 2024 (les vrais
+   sujets de 2024 sont sur `https://www.apmep.fr/Annee-2024`) ; les affirmations isolées dans un exercice rédigé
+   sont mises à part.
 5. **Thème pilote** (à choisir avec David ; recommandation : un thème dont les réponses se recalculent
    facilement de façon indépendante, comme les suites ou l'exponentielle et le logarithme). D'abord
    3 ou 4 exemples de conversion avec la question d'origine à côté, validés par David, **avant tout code**.
