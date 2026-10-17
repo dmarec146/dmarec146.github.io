@@ -1,0 +1,226 @@
+<title>Exemples QCM Bac suites</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:wght@400;600&display=swap">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<style>
+/* Mise en page : une colonne de lecture, une carte de question à la fois, sans décor. */
+:root {
+  --bg: #f6f7fa;
+  --surface: #ffffff;
+  --fg: #1b2233;
+  --muted: #5b6579;
+  --line: #d9deea;
+  --accent: #2b4c9b;
+  --accent-soft: #e6ecfa;
+  --ok: #17703f;
+  --ok-soft: #e1f3e8;
+  --ko: #a32b2b;
+  --ko-soft: #f8e4e4;
+  --font-text: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  --font-math: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161f; --surface: #1a2030; --fg: #e6e9f2; --muted: #9aa5bd; --line: #2d3650;
+    --accent: #8fa9f0; --accent-soft: #232d4a; --ok: #6fd09a; --ok-soft: #173424; --ko: #f08f8f; --ko-soft: #3a1f22;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161f; --surface: #1a2030; --fg: #e6e9f2; --muted: #9aa5bd; --line: #2d3650;
+  --accent: #8fa9f0; --accent-soft: #232d4a; --ok: #6fd09a; --ok-soft: #173424; --ko: #f08f8f; --ko-soft: #3a1f22;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-text); font-size: 17px; line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 46rem; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1 { font-size: 1.55rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.chapeau { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+.barre { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.outil {
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  padding: 8px 14px; border-radius: 6px; font-weight: 600; font-size: 0.95rem;
+}
+.outil:hover { border-color: var(--accent); color: var(--accent); }
+.carte { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.entete { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.lettre { font-weight: 700; color: var(--accent); letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.85rem; }
+.source { color: var(--muted); font-size: 0.88rem; }
+.original { border-left: 3px solid var(--line); padding: 2px 0 2px 12px; color: var(--muted); font-size: 0.95rem; }
+.original b { color: var(--fg); }
+.enonce { font-family: var(--font-math); font-size: 1.08rem; line-height: 1.6; margin: 0; }
+.choix { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.choix button {
+  width: 100%; text-align: left; background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 11px 14px; display: flex; gap: 12px; align-items: baseline; font-family: var(--font-math);
+}
+.choix button:hover:not([disabled]) { border-color: var(--accent); background: var(--accent-soft); }
+.choix button[disabled] { cursor: default; }
+.pastille { font-family: var(--font-text); font-weight: 700; color: var(--accent); min-width: 1.2em; }
+.texte { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.choix button.juste { border-color: var(--ok); background: var(--ok-soft); }
+.choix button.faux { border-color: var(--ko); background: var(--ko-soft); }
+.choix button.juste .pastille { color: var(--ok); }
+.choix button.faux .pastille { color: var(--ko); }
+.commentaire { display: none; margin: 6px 0 0 calc(1.2em + 12px); font-family: var(--font-text); font-size: 0.93rem; color: var(--muted); }
+.revele .commentaire { display: block; }
+.commentaire b { color: var(--fg); }
+.bilan { display: none; font-size: 0.95rem; border-top: 1px solid var(--line); padding-top: 12px; }
+.revele .bilan { display: block; }
+.bilan .verdict { font-weight: 700; }
+.verdict.ok { color: var(--ok); }
+.verdict.ko { color: var(--ko); }
+.famille { color: var(--muted); }
+.a-valider { border: 1px dashed var(--line); border-radius: 10px; padding: 14px 16px; color: var(--muted); font-size: 0.95rem; }
+.a-valider b { color: var(--fg); }
+.a-valider ul { margin: 6px 0 0; padding-left: 1.2em; }
+@media (prefers-reduced-motion: no-preference) {
+  .choix button { transition: background 0.12s, border-color 0.12s; }
+}
+</style>
+
+<main>
+  <header>
+    <h1>Exemples de QCM sur les suites</h1>
+    <p class="chapeau">Quatre questions tirées d'affirmations des sujets de bac, transformées en QCM. Les valeurs seront aléatoires dans le site : ici, une seule version de chaque. Clique sur une réponse pour voir le piège de chacune.</p>
+  </header>
+  <div class="barre">
+    <button class="outil" id="tout-reveler" type="button">Montrer toutes les réponses et les pièges</button>
+    <button class="outil" id="tout-cacher" type="button">Recommencer</button>
+  </div>
+  <div id="cartes" style="display:flex;flex-direction:column;gap:22px"></div>
+  <div class="a-valider">
+    <b>À dire pour chaque exemple :</b>
+    <ul>
+      <li>la question est-elle claire et au bon niveau pour le bac ?</li>
+      <li>les trois mauvaises réponses correspondent-elles à de vraies erreurs de tes élèves ?</li>
+      <li>faut-il en ajouter, en retirer, ou en rendre une plus piégeuse ?</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+var EXEMPLES = [
+  {
+    lettre: 'Exemple A', source: 'Amérique du Sud J1, 21 novembre 2024, exercice 3, affirmation 1',
+    original: 'Suite définie pour \\(n\\ge 1\\) par \\(u_n=\\dfrac{25+(-1)^n}{n}\\). Affirmation : « La suite \\((u_n)\\) est divergente. »',
+    verdict: 'Fausse',
+    famille: 'Limite d\'une suite avec \\((-1)^n\\) : valeurs aléatoires, plus des cas de vraie divergence au niveau 3.',
+    enonce: 'Que peut-on dire de la suite \\((u_n)\\) définie pour tout entier \\(n\\ge 1\\) par \\(u_n=\\dfrac{25+(-1)^n}{n}\\) ?',
+    choix: [
+      { t: 'elle diverge, car \\((-1)^n\\) n\'a pas de limite', c: 'Piège : une oscillation au numérateur est prise pour une divergence de la suite.' },
+      { t: 'elle converge vers \\(0\\)', c: 'Bonne réponse : \\(|u_n|\\le \\dfrac{26}{n}\\), puis théorème des gendarmes.', ok: true },
+      { t: 'elle tend vers \\(+\\infty\\)', c: 'Piège : le numérateur est toujours positif, mais le dénominateur est oublié.' },
+      { t: 'elle converge vers \\(25\\)', c: 'Piège : on garde le numérateur et on oublie le dénominateur.' }
+    ]
+  },
+  {
+    lettre: 'Exemple B', source: 'Amérique du Sud J1, 21 novembre 2024, exercice 3, affirmation 2',
+    original: '\\(w_0=1\\), \\(w_{n+1}=\\dfrac{w_n}{1+w_n}\\), \\(w_n>0\\) admis, \\(t_n=\\dfrac{k}{w_n}\\) avec \\(k>0\\). Affirmation : « \\((t_n)\\) est une suite arithmétique strictement croissante. »',
+    verdict: 'Vraie',
+    famille: 'Suite définie par inversion : \\(w_{n+1}=\\dfrac{w_n}{1+c\\,w_n}\\), \\(w_0=a\\), donc \\(t_n=\\dfrac{k}{w_n}\\) arithmétique de raison \\(kc\\).',
+    enonce: 'On pose \\(w_0=1\\) et, pour tout entier \\(n\\), \\(w_{n+1}=\\dfrac{w_n}{1+w_n}\\). On admet que \\(w_n>0\\) pour tout \\(n\\). Soit \\(k\\) un réel strictement positif et \\(t_n=\\dfrac{k}{w_n}\\). Quelle est la nature de la suite \\((t_n)\\) ?',
+    choix: [
+      { t: 'géométrique de raison \\(k\\)', c: 'Piège : confusion entre suite arithmétique et suite géométrique.' },
+      { t: 'arithmétique de raison \\(1\\)', c: 'Piège : on trouve la raison de \\(\\dfrac{1}{w_n}\\) mais on oublie de multiplier par \\(k\\).' },
+      { t: 'arithmétique de raison \\(k\\)', c: 'Bonne réponse : \\(\\dfrac{1}{w_{n+1}}=\\dfrac{1}{w_n}+1\\), donc \\(t_{n+1}=t_n+k\\).', ok: true },
+      { t: 'ni arithmétique ni géométrique', c: 'Piège : l\'astuce de passer à l\'inverse n\'est pas vue.' }
+    ]
+  },
+  {
+    lettre: 'Exemple C', source: 'Amérique du Sud J1, 21 novembre 2024, exercice 3, affirmation 3',
+    original: '\\(v_0=1\\), \\(v_{n+1}=\\ln(1+v_n)\\), \\(v_n>0\\) admis. Affirmation : « La suite \\((v_n)\\) est décroissante. »',
+    verdict: 'Vraie',
+    famille: 'Variations de \\(u_{n+1}=f(u_n)\\) : \\(f\\) tirée parmi \\(\\ln(1+x)\\), \\(\\sqrt{x}\\), \\(e^x-1\\), \\(\\dfrac{x}{1+x}\\)…, le sens se lit sur le signe de \\(f(x)-x\\).',
+    enonce: 'On pose \\(v_0=1\\) et, pour tout entier \\(n\\), \\(v_{n+1}=\\ln(1+v_n)\\). On admet que \\(v_n>0\\) pour tout \\(n\\). Quelle affirmation sur la suite \\((v_n)\\) est correcte ?',
+    choix: [
+      { t: 'elle est croissante, car la fonction \\(\\ln\\) est croissante', c: 'Piège : le sens de variation de \\(f\\) est confondu avec celui de la suite.' },
+      { t: 'elle est décroissante, donc elle tend vers \\(-\\infty\\)', c: 'Piège : le minorant \\(0\\) est oublié.' },
+      { t: 'elle n\'est ni croissante ni décroissante', c: 'Piège : on teste deux termes seulement.' },
+      { t: 'elle est décroissante et minorée par \\(0\\), donc elle converge', c: 'Bonne réponse : pour \\(x>0\\), \\(\\ln(1+x)<x\\), donc \\(v_{n+1}<v_n\\) ; puis théorème de convergence monotone.', ok: true }
+    ]
+  },
+  {
+    lettre: 'Exemple D', source: 'Métropole J1, 19 juin 2024, exercice 1, affirmation 3',
+    original: '\\(u_n\\le v_n\\le w_n\\), \\((u_n)\\) converge vers \\(-1\\), \\((w_n)\\) converge vers \\(1\\). Affirmation : « \\((v_n)\\) converge vers un réel \\(\\ell\\) de l\'intervalle \\([-1\\,;1]\\). »',
+    verdict: 'Fausse',
+    famille: 'Conditions du théorème des gendarmes : limites différentes (pas de conclusion) ou égales (on conclut), avec ou sans monotonie des deux suites encadrantes.',
+    enonce: 'Soit \\((u_n)\\), \\((v_n)\\) et \\((w_n)\\) trois suites telles que, pour tout entier \\(n\\), \\(u_n\\le v_n\\le w_n\\). La suite \\((u_n)\\) converge vers \\(-1\\) et la suite \\((w_n)\\) converge vers \\(1\\). Que peut-on affirmer sur \\((v_n)\\) ?',
+    choix: [
+      { t: 'on ne peut pas conclure sur sa convergence', c: 'Bonne réponse : par exemple \\(v_n\\) peut osciller entre \\(u_n\\) et \\(w_n\\) sans avoir de limite.', ok: true },
+      { t: 'elle converge vers \\(0\\)', c: 'Piège : on prend le « milieu » des deux limites.' },
+      { t: 'elle converge vers un réel de \\([-1\\,;1]\\)', c: 'Piège : c\'est l\'affirmation de l\'énoncé d\'origine, que rien ne justifie.' },
+      { t: 'elle converge vers \\(-1\\) ou vers \\(1\\)', c: 'Piège : on retient l\'une des deux limites.' }
+    ]
+  }
+];
+
+var cartes = document.getElementById('cartes');
+var LETTRES = ['A', 'B', 'C', 'D'];
+
+function creerCarte(ex) {
+  var carte = document.createElement('section');
+  carte.className = 'carte';
+  var html = '<div class="entete"><span class="lettre">' + ex.lettre + '</span><span class="source">' + ex.source + '</span></div>'
+    + '<div class="original"><b>Affirmation d\'origine (' + ex.verdict.toLowerCase() + ') :</b> ' + ex.original + '</div>'
+    + '<p class="enonce">' + ex.enonce + '</p><ul class="choix">';
+  ex.choix.forEach(function (c, i) {
+    html += '<li><button type="button" data-i="' + i + '"><span class="pastille">' + LETTRES[i] + '</span><span class="texte">' + c.t + '</span></button>'
+      + '<div class="commentaire">' + c.c + '</div></li>';
+  });
+  html += '</ul><div class="bilan"><span class="verdict"></span><div class="famille"><b>Famille prévue :</b> ' + ex.famille + '</div></div>';
+  carte.innerHTML = html;
+  carte._ex = ex;
+  carte.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (b && !carte.classList.contains('revele')) repondre(carte, +b.getAttribute('data-i'));
+  });
+  return carte;
+}
+
+function repondre(carte, i) {
+  var ex = carte._ex;
+  carte.classList.add('revele');
+  var btns = carte.querySelectorAll('button[data-i]');
+  btns.forEach(function (b, k) {
+    b.disabled = true;
+    if (ex.choix[k].ok) b.classList.add('juste');
+    else if (k === i) b.classList.add('faux');
+  });
+  var v = carte.querySelector('.verdict');
+  if (i === null) { v.textContent = ''; }
+  else if (ex.choix[i].ok) { v.textContent = 'Bonne réponse. '; v.className = 'verdict ok'; }
+  else { v.textContent = 'Mauvaise réponse. '; v.className = 'verdict ko'; }
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([carte]);
+}
+
+function tout() {
+  cartes.innerHTML = '';
+  EXEMPLES.forEach(function (ex) { cartes.appendChild(creerCarte(ex)); });
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([cartes]);
+}
+
+document.getElementById('tout-reveler').addEventListener('click', function () {
+  cartes.querySelectorAll('.carte').forEach(function (c) { if (!c.classList.contains('revele')) repondre(c, null); });
+});
+document.getElementById('tout-cacher').addEventListener('click', tout);
+
+tout();
+if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+  MathJax.startup.promise.then(function () { MathJax.typesetPromise([cartes]); });
+}
+</script>
