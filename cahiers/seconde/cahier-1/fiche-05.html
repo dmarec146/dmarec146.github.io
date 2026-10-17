@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"5.1 a)":0.5,"5.1 b)":0.5,"5.1 c)":0.5,"5.1 d)":0.5,"5.2 a)":0.75,"5.2 b)":0.75,"5.2 c)":0.75,"5.2 d)":0.75,"5.3 a)":1.25,"5.3 b)":1.25,"5.3 c)":1.25,"5.3 d)":1.25,"5.4 a)":1.5,"5.4 b)":1.5,"5.5 a)":1,"5.5 b)":1,"5.5 c)":1.5,"5.5 d)":1.5,"5.6 a)":1.5,"5.6 b)":1.5,"5.6 c)":1.75,"5.6 d)":1.5,"5.6 e)":1.75},"bonus":["5.6 a)","5.6 b)","5.6 c)","5.6 d)","5.6 e)"]});
@@ -914,6 +915,8 @@ function facteurVersLatex([p, a]) {
   return `\\left(${gauche}${a < 0 ? '-' + (-a) : '+' + a}\\right)`;
 }
 
+// ---- details de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { sommeTermes, lignesSomme, produitFrac } = Detail;
 const generateurs = [
   // ---------- Quelques automatismes : sommes, differences et produits de fractions melanges ----------
   // Reprise du 13/10/2026 (demande de David) : le calcul numerique laisse la place a des fractions ou
@@ -928,7 +931,8 @@ const generateurs = [
       sg = choix([1, -1]);
       num = a*d*f + sg*c*e*b;
     } while (num === 0);
-    return { enonce:`\\dfrac{${a}}{${b}}${sg > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f) };
+    const P = produitFrac(c, d, e, f), S = lignesSomme([{s: 1, n: a, d: b}, {s: sg, n: P.n, d: P.d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}${sg > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f), detail: { lignes: [...P.lignes, ...S.lignes], final: S.final } };
   }},
   {id:"5.1 b)", type:"num", fractionIrreductible:true, gen: () => {
     // (a/b +- c/d) x e/f : parentheses
@@ -939,7 +943,8 @@ const generateurs = [
       sg = choix([1, -1]);
       num = (a*d + sg*c*b) * e;
     } while (num === 0);
-    return { enonce:`\\left(\\dfrac{${a}}{${b}}${sg > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f) };
+    const S = lignesSomme([{s: 1, n: a, d: b}, {s: sg, n: c, d}]), P = produitFrac(S.n, S.d, e, f);
+    return { enonce:`\\left(\\dfrac{${a}}{${b}}${sg > 0 ? '+' : '-'}\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f), detail: { lignes: [...S.lignes, ...P.lignes], final: P.final } };
   }},
   {id:"5.1 c)", type:"num", fractionIrreductible:true, gen: () => {
     // a/b x c/d +- e/f : produit puis somme
@@ -950,7 +955,8 @@ const generateurs = [
       sg = choix([1, -1]);
       num = a*c*f + sg*e*b*d;
     } while (num === 0);
-    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${sg > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f) };
+    const P = produitFrac(a, b, c, d), S = lignesSomme([{s: 1, n: P.n, d: P.d}, {s: sg, n: e, d: f}]);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${sg > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}`, reponse: fractionTexte(num, b*d*f), detail: { lignes: [...P.lignes, ...S.lignes], final: S.final } };
   }},
   {id:"5.1 d)", type:"num", fractionIrreductible:true, gen: () => {
     // a/b x c/d +- e/f x g/h : deux produits
@@ -961,7 +967,8 @@ const generateurs = [
       sg = choix([1, -1]);
       num = a*c*f*h + sg*e*g*b*d;
     } while (num === 0);
-    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${sg > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}\\times \\dfrac{${g}}{${h}}`, reponse: fractionTexte(num, b*d*f*h) };
+    const P1 = produitFrac(a, b, c, d), P2 = produitFrac(e, f, g, h), S = lignesSomme([{s: 1, n: P1.n, d: P1.d}, {s: sg, n: P2.n, d: P2.d}]);
+    return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}${sg > 0 ? '+' : '-'}\\dfrac{${e}}{${f}}\\times \\dfrac{${g}}{${h}}`, reponse: fractionTexte(num, b*d*f*h), detail: { lignes: [...P1.lignes, ...P2.lignes, ...S.lignes], final: S.final } };
   }},
   // ---------- Coeur : les trois identites, forme simple ----------
   // Les plages ci-dessous sont volontairement larges, et chaque exercice porte au moins deux
@@ -969,39 +976,50 @@ const generateurs = [
   // produisait que huit enonces et les memes nombres revenaient d'une version a l'autre.
   {id:"5.2 a)", type:"alg", gen: () => {
     const a = alea(2,25), s = choix([1,-1]);
-    return { enonce:`(x${s > 0 ? '+' : '-'}${a})^2`, reponse: polynomeVersTexte([a*a, 2*s*a, 1]) };
+    const sg = s > 0 ? '+' : '-';
+    return { enonce:`(x${sg}${a})^2`, reponse: polynomeVersTexte([a*a, 2*s*a, 1]),
+             detail: { lignes: [`(x${sg}${a})^{2} = x^{2}${sg}2\\times x\\times ${a}+${a}^{2} = ${polynomeEnonceLatex([a*a, 2*s*a, 1])}`], final: polynomeEnonceLatex([a*a, 2*s*a, 1]) } };
   }},
   {id:"5.2 b)", type:"alg", gen: () => {
     const a = alea(2,25), s = choix([1,-1]);
-    return { enonce:`(${a}${s > 0 ? '+' : '-'}x)^2`, reponse: polynomeVersTexte([a*a, 2*s*a, 1]) };
+    const sg = s > 0 ? '+' : '-';
+    return { enonce:`(${a}${sg}x)^2`, reponse: polynomeVersTexte([a*a, 2*s*a, 1]),
+             detail: { lignes: [`(${a}${sg}x)^{2} = ${a}^{2}${sg}2\\times ${a}\\times x+x^{2} = ${polynomeEnonceLatex([a*a, 2*s*a, 1])}`], final: polynomeEnonceLatex([a*a, 2*s*a, 1]) } };
   }},
   {id:"5.2 c)", type:"alg", gen: () => {
     const a = alea(2,30);
-    return { enonce:`(x+${a})(x-${a})`, reponse: polynomeVersTexte([-a*a, 0, 1]) };
+    return { enonce:`(x+${a})(x-${a})`, reponse: polynomeVersTexte([-a*a, 0, 1]),
+             detail: { lignes: [`(x+${a})(x-${a}) = x^{2}-${a}^{2} = x^{2}-${a*a}`], final: `x^{2}-${a*a}` } };
   }},
   {id:"5.2 d)", type:"alg", gen: () => {
     // (x+a)(x+b) : double distributivite, deux parametres independants
     const a = aleaNonNul(-12,12), b = aleaNonNul(-12,12);
     return { enonce:`(x${a > 0 ? '+' : '-'}${Math.abs(a)})(x${b > 0 ? '+' : '-'}${Math.abs(b)})`,
-             reponse: polynomeVersTexte([a*b, a+b, 1]) };
+             reponse: polynomeVersTexte([a*b, a+b, 1]),
+             detail: { lignes: [`(x${a > 0 ? '+' : '-'}${Math.abs(a)})(x${b > 0 ? '+' : '-'}${Math.abs(b)}) = ${sommeTermes([[1, 'x^{2}'], [b, 'x'], [a, 'x'], [a*b, '']])} = ${polynomeEnonceLatex([a*b, a+b, 1])}`], final: polynomeEnonceLatex([a*b, a+b, 1]) } };
   }},
   {id:"5.3 a)", type:"alg", gen: () => {
     const [a,b] = couplePremierEntreEux(2,12), s = choix([1,-1]);
-    return { enonce:`(${a}x${s > 0 ? '+' : '-'}${b})^2`, reponse: polynomeVersTexte([b*b, 2*s*a*b, a*a]) };
+    const sg = s > 0 ? '+' : '-';
+    return { enonce:`(${a}x${sg}${b})^2`, reponse: polynomeVersTexte([b*b, 2*s*a*b, a*a]),
+             detail: { lignes: [`(${a}x${sg}${b})^{2} = (${a}x)^{2}${sg}2\\times ${a}x\\times ${b}+${b}^{2} = ${polynomeEnonceLatex([b*b, 2*s*a*b, a*a])}`], final: polynomeEnonceLatex([b*b, 2*s*a*b, a*a]) } };
   }},
   {id:"5.3 b)", type:"alg", gen: () => {
     const [a,b] = couplePremierEntreEux(2,12);
-    return { enonce:`(${a}x+${b})(${a}x-${b})`, reponse: polynomeVersTexte([-b*b, 0, a*a]) };
+    return { enonce:`(${a}x+${b})(${a}x-${b})`, reponse: polynomeVersTexte([-b*b, 0, a*a]),
+             detail: { lignes: [`(${a}x+${b})(${a}x-${b}) = (${a}x)^{2}-${b}^{2} = ${polynomeEnonceLatex([-b*b, 0, a*a])}`], final: polynomeEnonceLatex([-b*b, 0, a*a]) } };
   }},
   {id:"5.3 c)", type:"alg", gen: () => {
     // deux lettres, avec un signe libre
     const [a,b] = couplePremierEntreEux(2,9), s = choix([1,-1]);
     return { enonce:`(${a}x${s > 0 ? '+' : '-'}${b}y)^2`,
-             reponse:`${a*a}*x^2${s > 0 ? '+' : '-'}${2*a*b}*x*y+${b*b}*y^2` };
+             reponse:`${a*a}*x^2${s > 0 ? '+' : '-'}${2*a*b}*x*y+${b*b}*y^2`,
+             detail: { lignes: [`(${a}x${s > 0 ? '+' : '-'}${b}y)^{2} = (${a}x)^{2}${s > 0 ? '+' : '-'}2\\times ${a}x\\times ${b}y+(${b}y)^{2} = ${a*a}x^{2}${s > 0 ? '+' : '-'}${2*a*b}xy+${b*b}y^{2}`], final: `${a*a}x^{2}${s > 0 ? '+' : '-'}${2*a*b}xy+${b*b}y^{2}` } };
   }},
   {id:"5.3 d)", type:"alg", gen: () => {
     const [a,b] = couplePremierEntreEux(2,9);
-    return { enonce:`(${a}x+${b}y)(${a}x-${b}y)`, reponse:`${a*a}*x^2-${b*b}*y^2` };
+    return { enonce:`(${a}x+${b}y)(${a}x-${b}y)`, reponse:`${a*a}*x^2-${b*b}*y^2`,
+             detail: { lignes: [`(${a}x+${b}y)(${a}x-${b}y) = (${a}x)^{2}-(${b}y)^{2} = ${a*a}x^{2}-${b*b}y^{2}`], final: `${a*a}x^{2}-${b*b}y^{2}` } };
   }},
   // ---------- 5.4 : developper a(x+b)^2+c (forme canonique, sans le dire) ----------
   // Ajout du 13/10/2026 (demande de David) : deux questions a 1,5 point. a) coefficient dominant positif ;
@@ -1009,37 +1027,50 @@ const generateurs = [
   {id:"5.4 a)", type:"alg", gen: () => {
     const a = alea(2,5), b = aleaNonNul(-6,6), c = aleaNonNul(-9,9);
     return { enonce:`${a}(x${b > 0 ? '+' : '-'}${Math.abs(b)})^2${c > 0 ? '+' : '-'}${Math.abs(c)}`,
-             reponse: polynomeVersTexte([a*b*b + c, 2*a*b, a]) };
+             reponse: polynomeVersTexte([a*b*b + c, 2*a*b, a]),
+             detail: { lignes: [
+               `${a}(x${b > 0 ? '+' : '-'}${Math.abs(b)})^{2}${c > 0 ? '+' : '-'}${Math.abs(c)} = ${a}\\left(x^{2}${b > 0 ? '+' : '-'}${2*Math.abs(b)}x+${b*b}\\right)${c > 0 ? '+' : '-'}${Math.abs(c)}`,
+               `${a}\\left(x^{2}${b > 0 ? '+' : '-'}${2*Math.abs(b)}x+${b*b}\\right)${c > 0 ? '+' : '-'}${Math.abs(c)} = ${polynomeEnonceLatex([a*b*b + c, 2*a*b, a])}`],
+               final: polynomeEnonceLatex([a*b*b + c, 2*a*b, a]) } };
   }},
   {id:"5.4 b)", type:"alg", gen: () => {
     const a = -alea(2,5), b = aleaNonNul(-6,6), c = aleaNonNul(-9,9);
     return { enonce:`-${-a}(x${b > 0 ? '+' : '-'}${Math.abs(b)})^2${c > 0 ? '+' : '-'}${Math.abs(c)}`,
-             reponse: polynomeVersTexte([a*b*b + c, 2*a*b, a]) };
+             reponse: polynomeVersTexte([a*b*b + c, 2*a*b, a]),
+             detail: { lignes: [
+               `-${-a}(x${b > 0 ? '+' : '-'}${Math.abs(b)})^{2}${c > 0 ? '+' : '-'}${Math.abs(c)} = -${-a}\\left(x^{2}${b > 0 ? '+' : '-'}${2*Math.abs(b)}x+${b*b}\\right)${c > 0 ? '+' : '-'}${Math.abs(c)}`,
+               `-${-a}\\left(x^{2}${b > 0 ? '+' : '-'}${2*Math.abs(b)}x+${b*b}\\right)${c > 0 ? '+' : '-'}${Math.abs(c)} = ${polynomeEnonceLatex([a*b*b + c, 2*a*b, a])}`],
+               final: polynomeEnonceLatex([a*b*b + c, 2*a*b, a]) } };
   }},
   {id:"5.5 a)", type:"alg", formeFactorisee:true, gen: () => {
     const a = alea(2,20), s = choix([1,-1]);
     return { enonce: polynomeEnonceLatex([a*a, 2*s*a, 1]),
-             reponse:`(x${s > 0 ? '+' : '-'}${a})^2` };
+             reponse:`(x${s > 0 ? '+' : '-'}${a})^2`,
+             detail: { lignes: [`${polynomeEnonceLatex([a*a, 2*s*a, 1])} = x^{2}${s > 0 ? '+' : '-'}2\\times x\\times ${a}+${a}^{2} = (x${s > 0 ? '+' : '-'}${a})^{2}`], final: `(x${s > 0 ? '+' : '-'}${a})^{2}` } };
   }},
   {id:"5.5 b)", type:"alg", formeFactorisee:true, gen: () => {
     const a = alea(2,22);
-    return { enonce: polynomeEnonceLatex([-a*a, 0, 1]), reponse:`(x-${a})*(x+${a})` };
+    return { enonce: polynomeEnonceLatex([-a*a, 0, 1]), reponse:`(x-${a})*(x+${a})`,
+             detail: { lignes: [`x^{2}-${a*a} = x^{2}-${a}^{2} = (x-${a})(x+${a})`], final: `(x-${a})(x+${a})` } };
   }},
   {id:"5.5 c)", type:"alg", formeFactorisee:true, gen: () => {
     const [a,b] = couplePremierEntreEux(2,12), s = choix([1,-1]);
     return { enonce: polynomeEnonceLatex([b*b, 2*s*a*b, a*a]),
-             reponse:`(${a}*x${s > 0 ? '+' : '-'}${b})^2` };
+             reponse:`(${a}*x${s > 0 ? '+' : '-'}${b})^2`,
+             detail: { lignes: [`${polynomeEnonceLatex([b*b, 2*s*a*b, a*a])} = (${a}x)^{2}${s > 0 ? '+' : '-'}2\\times ${a}x\\times ${b}+${b}^{2} = (${a}x${s > 0 ? '+' : '-'}${b})^{2}`], final: `(${a}x${s > 0 ? '+' : '-'}${b})^{2}` } };
   }},
   {id:"5.5 d)", type:"alg", formeFactorisee:true, gen: () => {
     const [a,b] = couplePremierEntreEux(2,12);
-    return { enonce: polynomeEnonceLatex([-b*b, 0, a*a]), reponse:`(${a}*x-${b})*(${a}*x+${b})` };
+    return { enonce: polynomeEnonceLatex([-b*b, 0, a*a]), reponse:`(${a}*x-${b})*(${a}*x+${b})`,
+             detail: { lignes: [`${polynomeEnonceLatex([-b*b, 0, a*a])} = (${a}x)^{2}-${b}^{2} = (${a}x-${b})(${a}x+${b})`], final: `(${a}x-${b})(${a}x+${b})` } };
   }},
   {id:"5.6 a)", type:"alg", gen: () => {
     // developpement de (a+b+c)^2 (approfondissement du programme)
     const a = alea(2,15), s = choix([1,-1]);
     const signe = s > 0 ? '+' : '-';
     return { enonce:`(x+y${signe}${a})^2`,
-             reponse:`x^2+y^2+${a*a}+2*x*y${signe}${2*a}*x${signe}${2*a}*y` };
+             reponse:`x^2+y^2+${a*a}+2*x*y${signe}${2*a}*x${signe}${2*a}*y`,
+             detail: { lignes: [`(x+y${signe}${a})^{2} = x^{2}+y^{2}+${a}^{2}+2xy${signe}2\\times ${a}x${signe}2\\times ${a}y = x^{2}+y^{2}+${a*a}+2xy${signe}${2*a}x${signe}${2*a}y`], final: `x^{2}+y^{2}+${a*a}+2xy${signe}${2*a}x${signe}${2*a}y` } };
   }},
   {id:"5.6 b)", type:"alg", gen: () => {
     // produit de trois facteurs affines : oblige a developper par etapes, en gardant le controle
@@ -1052,36 +1083,50 @@ const generateurs = [
     } while (a === b || b === c || a === c || pgcd(p, a) !== 1);
     const facteurs = [[p, a], [1, b], [1, c]];
     return { enonce: facteurs.map(facteurVersLatex).join(''),
-             reponse: polynomeVersTexte(produitAffines(facteurs)) };
+             reponse: polynomeVersTexte(produitAffines(facteurs)),
+             detail: (() => {
+               const [f1, f2, f3] = facteurs, q = produitAffines([f1, f2]), final = polynomeEnonceLatex(produitAffines(facteurs));
+               const c = produitAffines(facteurs);   // du degre 0 au degre 3
+               return { lignes: [
+                 `${facteurVersLatex(f1)}${facteurVersLatex(f2)} = ${sommeTermes([[f1[0] * f2[0], 'x^{2}'], [f1[0] * f2[1], 'x'], [f1[1] * f2[0], 'x'], [f1[1] * f2[1], '']])} = ${polynomeEnonceLatex(q)}`,
+                 `\\left(${polynomeEnonceLatex(q)}\\right)${facteurVersLatex(f3)} = ${sommeTermes([[q[2] * f3[0], 'x^{3}'], [q[2] * f3[1], 'x^{2}'], [q[1] * f3[0], 'x^{2}'], [q[1] * f3[1], 'x'], [q[0] * f3[0], 'x'], [q[0] * f3[1], '']])} = ${final}`],
+                 final };
+             })() };
   }},
   {id:"5.6 c)", type:"alg", gen: () => {
     // developpement de (a+b)^3 (approfondissement du programme), avec un signe libre
     const a = alea(2,9), s = choix([1,-1]);
     return { enonce:`(x${s > 0 ? '+' : '-'}${a})^3`,
-             reponse: polynomeVersTexte([s*a*a*a, 3*a*a, 3*s*a, 1]) };
+             reponse: polynomeVersTexte([s*a*a*a, 3*a*a, 3*s*a, 1]),
+             detail: { lignes: [`(x${s > 0 ? '+' : '-'}${a})^{3} = x^{3}${s > 0 ? '+' : '-'}3\\times ${a}x^{2}+3\\times ${a}^{2}x${s > 0 ? '+' : '-'}${a}^{3} = ${polynomeEnonceLatex([s*a*a*a, 3*a*a, 3*s*a, 1])}`], final: polynomeEnonceLatex([s*a*a*a, 3*a*a, 3*s*a, 1]) } };
   }},
   {id:"5.6 d)", type:"alg", gen: () => {
     // difference de deux carres parfaits : la forme developpee se simplifie entierement
     const a = alea(2,22);
-    return { enonce:`(x+${a})^2-(x-${a})^2`, reponse:`${4*a}*x` };
+    return { enonce:`(x+${a})^2-(x-${a})^2`, reponse:`${4*a}*x`,
+             detail: { lignes: [`(x+${a})^{2}-(x-${a})^{2} = \\left(x^{2}+${2*a}x+${a*a}\\right)-\\left(x^{2}-${2*a}x+${a*a}\\right) = ${4*a}x`], final: `${4*a}x` } };
   }},
   {id:"5.6 e)", type:"alg", gen: () => {
     // identite remarquable avec des radicaux, sur deux premiers distincts pour que sqrt(ab) soit deja simplifie
     let a = PREMIERS[alea(0, PREMIERS.length - 1)], b;
     do { b = PREMIERS[alea(0, PREMIERS.length - 1)]; } while (b === a);
     return { enonce:`\\left(\\sqrt{${a}}+\\sqrt{${b}}\\right)^2`,
-             reponse:`${a+b}+2*sqrt(${a*b})` };
+             reponse:`${a+b}+2*sqrt(${a*b})`,
+             detail: { lignes: [`\\left(\\sqrt{${a}}+\\sqrt{${b}}\\right)^{2} = \\left(\\sqrt{${a}}\\right)^{2}+2\\sqrt{${a}}\\sqrt{${b}}+\\left(\\sqrt{${b}}\\right)^{2} = ${a}+2\\sqrt{${a*b}}+${b} = ${a+b}+2\\sqrt{${a*b}}`], final: `${a+b}+2\\sqrt{${a*b}}` } };
   }}
 ];
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     // on recopie tous les champs declares sur le modele (id, type, formeFactorisee...) sauf le
     // generateur lui-meme : ne lister que id et type ferait disparaitre silencieusement tout
     // nouvel indicateur pose sur l'exercice.
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24, e => !/^5\.1 /.test(e.id));   // lignes d'égalités longues coupées (téléphone) ; fractions : une ligne
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2195,7 +2240,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

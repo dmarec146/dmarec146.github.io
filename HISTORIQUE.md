@@ -8719,3 +8719,15 @@ variété des banques : `outils/qcm-bac/SUIVI-QCM-BAC.md` (§5 à §13).
 - **Classe de Terminale** : `Tle-Gr 2` (précisé par David). Carte « Terminale — Bientôt » de la page Automatismes conservée à sa demande.
 - **À faire par David** : tester les devoirs avec `demo-eleve`, créer les comptes de Terminale, modifier les règles Firestore pour la
   fréquentation (rappels dans `SUIVI-FIREBASE.md` §6, répétés à l'ouverture de session par `CLAUDE.md`).
+
+## 2026-10-17 — Détails de correction : fiches 5, 6 et 7 de Seconde (identités remarquables, équations, inéquations)
+
+Lot de trois fiches après le push des fiches 1 à 4.
+
+- **Fiche 5 (Identités remarquables, 23 exercices)** : fractions mélangées en une ligne (`lignesSomme`, `produitFrac` partagés), développements `(x±a)²`, `(a±x)²`, `(x+a)(x−a)`, `(x+a)(x+b)`, avec lettres, forme `a(x+b)²+c`, factorisations (carré ou produit), `(x+y+a)²`, produit de trois facteurs, `(x±a)³`, différence de carrés, `(√a+√b)²`. Aucune phrase.
+- **Fiche 6 (Équations du premier degré, 32 exercices)** : chaque équation en enchaînement d'équivalences `\iff` (une ligne par étape, `x = N \div D`), équations avec dénominateurs et valeur interdite, `x² = a` (entier, racine, avec fractions), équations produits (ensemble rangé dans l'ordre croissant), quotient, `a(x+b)² = c`, `A² − B² = 0`, `A² − B² = C`.
+- **Fiche 7 (Inéquations, 26 exercices)** : `lignesFinIneq` (division, sens inversé par un négatif avec les phrases déjà validées, solution, intervalle), inéquations à un ou deux membres avec x, parenthèses, fractions, encadrements (somme, différence, multiplication ou division par un négatif avec l'étape intermédiaire des bornes renversées), systèmes de deux inéquations (intersection, ensemble vide justifié).
+- **Outil** : type `encadrement` (bornes et caractère strict ou large de chaque côté) ; la chaîne d'équivalences traverse les lignes qui commencent par un texte (« On divise par … ») : les inéquations de la fiche 7 ont 2 160 équivalences vérifiées et aucune non lisible ; `--illisibles` liste aussi les équivalences non lues ; `Detail.couper(ex, seuil, filtre)` accepte un filtre (les fractions de la fiche 5 restent sur une ligne). Cette lecture des lignes de texte vérifie davantage de lignes des fiches de Première : aucune anomalie nouvelle.
+- **Assertions** (21 maintenant, 70 essais) : `On multiplie par […]` négatif (motif limité aux `-n \lt 0`), `Comme p ≥ q` / `p > q` pour un ensemble vide.
+- **Phrases** : 4 relectures de l'agent pour ce lot, 2 phrases refusées puis corrigées (étape intermédiaire des bornes renversées ; « > » strict en 7.6 d) puisque les inégalités peuvent y être larges), puis acceptées. Catalogue : 14 phrases utilisées par les fiches 5 à 7 et 11 à 13, toutes validées.
+- **Contrôle robuste** : fiches 5, 6 et 7, 0 erreur ; 104 000 détails pour la fiche 7 dont 11 152 équivalences.

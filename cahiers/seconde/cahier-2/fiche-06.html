@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.5,"6.1 c)":0.5,"6.1 d)":0.5,"6.2 a)":0.5,"6.2 b)":0.5,"6.2 c)":0.5,"6.2 d)":0.5,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.75,"6.4 b)":0.75,"6.4 c)":0.75,"6.4 d)":0.75,"6.5 a)":1,"6.5 b)":1.25,"6.6 a)":0.75,"6.6 b)":1,"6.6 c)":1,"6.6 d)":1.25,"6.7 a)":1,"6.7 b)":1,"6.8 a)":0.75,"6.8 b)":0.75,"6.8 c)":1,"6.8 d)":1.25,"6.9 a)":1.5,"6.9 b)":1.75,"6.9 c)":2,"6.9 d)":2},"bonus":["6.9 a)","6.9 b)","6.9 c)","6.9 d)"]});
@@ -882,13 +883,26 @@ function polynomeXConst(coefX, constante) {
   const res = tx + tc;
   return res === '' ? '0' : res;
 }
+// ---- details de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { dP, dPlus, divisionD } = Detail;
+// c x + d en LaTeX : « 3x-5 », « -x+2 », « x », « -2 » ; jamais « 1x »
+const linL = (c, d, v = 'x') => {
+  let s = '';
+  if (c !== 0) s = c === 1 ? v : c === -1 ? `-${v}` : `${c}${v}`;
+  if (d !== 0) s += (s && d > 0 ? '+' : '') + d;
+  return s === '' ? '0' : s;
+};
+const signeL = v => (v < 0 ? '-' : '+');
+// ensemble de solutions rangees dans l'ordre croissant : « \left\{a\,;\,b\right\} » ; valeurs [{v, tex}]
+const ensembleL = liste => `\\left\\{${[...liste].sort((p, q) => p.v - q.v).map(t => t.tex).join('\\,;\\,')}\\right\\}`;
 // une distribution simple k(x+a) ou -k(x-a)... : signes de k et de a tires independamment
 function distribSimple() {
   const k = alea(2,9), kNeg = alea(0,1) === 0;
   const a = alea(2,12), aNeg = alea(0,1) === 0;
   const kAff = kNeg ? -k : k, aAff = aNeg ? -a : a;
   const enonce = `${kNeg ? '-' : ''}${k}(x${aNeg ? '-' : '+'}${a})`;
-  return { enonce, reponse: polynomeXConst(kAff, kAff * aAff) };
+  return { enonce, reponse: polynomeXConst(kAff, kAff * aAff),
+           detail: { lignes: [`${enonce} = ${kAff}\\times x+${dP(kAff)}\\times ${dP(aAff)} = ${linL(kAff, kAff * aAff)}`], final: linL(kAff, kAff * aAff) } };
 }
 // variante : un coefficient m>1 s'ajoute a l'interieur de la parenthese
 function distribAvecCoefInterne() {
@@ -897,7 +911,8 @@ function distribAvecCoefInterne() {
   const a = alea(2,10), aNeg = alea(0,1) === 0;
   const kAff = kNeg ? -k : k, aAff = aNeg ? -a : a;
   const enonce = `${kNeg ? '-' : ''}${k}(${m}x${aNeg ? '-' : '+'}${a})`;
-  return { enonce, reponse: polynomeXConst(kAff * m, kAff * aAff) };
+  return { enonce, reponse: polynomeXConst(kAff * m, kAff * aAff),
+           detail: { lignes: [`${enonce} = ${kAff}\\times ${m}x+${dP(kAff)}\\times ${dP(aAff)} = ${linL(kAff * m, kAff * aAff)}`], final: linL(kAff * m, kAff * aAff) } };
 }
 
 const generateurs = [
@@ -906,7 +921,8 @@ const generateurs = [
     // reduire : deux termes en x a regrouper
     let a, c; do { a = alea(2,15); c = alea(2,15); } while (a === c);
     const b = alea(1,15), d = alea(1,15);
-    return { enonce:`${a}x+${b}-${c}x-${d}`, reponse: polynomeXConst(a - c, b - d) };
+    return { enonce:`${a}x+${b}-${c}x-${d}`, reponse: polynomeXConst(a - c, b - d),
+             detail: { lignes: [`${a}x+${b}-${c}x-${d} = (${a}-${c})x+(${b}-${d}) = ${linL(a - c, b - d)}`], final: linL(a - c, b - d) } };
   }},
   {id:"6.1 b)", type:"alg", gen: () => distribSimple()},
   {id:"6.1 c)", type:"alg", gen: () => distribAvecCoefInterne()},
@@ -914,51 +930,60 @@ const generateurs = [
     // plus exigeant : trois termes en x a regrouper
     let a, c, e; do { a = alea(2,10); c = alea(2,10); e = alea(2,10); } while (a + c === e);
     const b = alea(1,12), d = alea(1,12);
-    return { enonce:`${a}x-${b}+${c}x+${d}-${e}x`, reponse: polynomeXConst(a + c - e, d - b) };
+    return { enonce:`${a}x-${b}+${c}x+${d}-${e}x`, reponse: polynomeXConst(a + c - e, d - b),
+             detail: { lignes: [`${a}x-${b}+${c}x+${d}-${e}x = (${a}+${c}-${e})x+(${d}-${b}) = ${linL(a + c - e, d - b)}`], final: linL(a + c - e, d - b) } };
   }},
 
   // ---------- 6.2 : resoudre ax = b (debut du coeur de la fiche : 2 simples, 2 plus delicats) ----------
   {id:"6.2 a)", type:"num", gen: () => {
     const a = alea(2,12), x = entierSigne(1,15);
-    return { enonce:`${a}x=${a*x}`, reponse:`${x}` };
+    return { enonce:`${a}x=${a*x}`, reponse:`${x}`,
+             detail: { lignes: [`${a}x=${a*x}`, `\\iff x = ${a*x} \\div ${a} = ${x}`], final: `${x}` } };
   }},
   {id:"6.2 b)", type:"num", gen: () => {
     const a = alea(2,12), x = entierSigne(1,15);
-    return { enonce:`-${a}x=${-a*x}`, reponse:`${x}` };
+    return { enonce:`-${a}x=${-a*x}`, reponse:`${x}`,
+             detail: { lignes: [`-${a}x=${-a*x}`, `\\iff x = ${-a*x} \\div (-${a}) = ${x}`], final: `${x}` } };
   }},
   {id:"6.2 c)", type:"num", gen: () => {
     // plus delicat : l'inconnue est a droite du signe egal
     const a = alea(2,12), x = entierSigne(1,15);
-    return { enonce:`${a*x}=${a}x`, reponse:`${x}` };
+    return { enonce:`${a*x}=${a}x`, reponse:`${x}`,
+             detail: { lignes: [`${a*x}=${a}x`, `\\iff ${a}x=${a*x}`, `\\iff x = ${a*x} \\div ${a} = ${x}`], final: `${x}` } };
   }},
   {id:"6.2 d)", type:"num", gen: () => {
     // egalement delicat : x est divise par un entier
     const k = alea(2,12), q = entierSigne(1,12);
-    return { enonce:`\\dfrac{x}{${k}}=${q}`, reponse:`${k*q}` };
+    return { enonce:`\\dfrac{x}{${k}}=${q}`, reponse:`${k*q}`,
+             detail: { lignes: [`\\dfrac{x}{${k}}=${q}`, `\\iff x = ${q}\\times ${k} = ${k*q}`], final: `${k*q}` } };
   }},
 
   // ---------- 6.3 : resoudre ax+b = c (2 simples, 2 plus delicats) ----------
   {id:"6.3 a)", type:"num", gen: () => {
     const a = alea(2,12), x = entierSigne(1,12), b = entierSigne(1,20);
     const c = a*x+b, termeB = b<0 ? `-${-b}` : `+${b}`;
-    return { enonce:`${a}x${termeB}=${c}`, reponse:`${x}` };
+    return { enonce:`${a}x${termeB}=${c}`, reponse:`${x}`,
+             detail: { lignes: [`${a}x${termeB}=${c}`, `\\iff ${a}x = ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff ${a}x = ${a*x}`, `\\iff x = ${a*x} \\div ${a} = ${x}`], final: `${x}` } };
   }},
   {id:"6.3 b)", type:"num", gen: () => {
     const a = alea(2,12), x = entierSigne(1,12), b = alea(1,20);
     const c = a*x-b;
-    return { enonce:`${a}x-${b}=${c}`, reponse:`${x}` };
+    return { enonce:`${a}x-${b}=${c}`, reponse:`${x}`,
+             detail: { lignes: [`${a}x-${b}=${c}`, `\\iff ${a}x = ${c} ${dPlus(b)}`, `\\iff ${a}x = ${a*x}`, `\\iff x = ${a*x} \\div ${a} = ${x}`], final: `${x}` } };
   }},
   {id:"6.3 c)", type:"num", gen: () => {
     // plus delicat : coefficient de x negatif
     const a = alea(2,12), x = entierSigne(1,12), b = entierSigne(1,20);
     const c = -a*x+b, termeB = b<0 ? `-${-b}` : `+${b}`;
-    return { enonce:`-${a}x${termeB}=${c}`, reponse:`${x}` };
+    return { enonce:`-${a}x${termeB}=${c}`, reponse:`${x}`,
+             detail: { lignes: [`-${a}x${termeB}=${c}`, `\\iff -${a}x = ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff -${a}x = ${-a*x}`, `\\iff x = ${-a*x} \\div (-${a}) = ${x}`], final: `${x}` } };
   }},
   {id:"6.3 d)", type:"num", gen: () => {
     // egalement delicat : le terme en x est place apres la constante
     const a = alea(2,12), x = entierSigne(1,12), b = alea(1,25);
     const c = b - a*x;
-    return { enonce:`${b}-${a}x=${c}`, reponse:`${x}` };
+    return { enonce:`${b}-${a}x=${c}`, reponse:`${x}`,
+             detail: { lignes: [`${b}-${a}x=${c}`, `\\iff -${a}x = ${c}-${b}`, `\\iff -${a}x = ${-a*x}`, `\\iff x = ${-a*x} \\div (-${a}) = ${x}`], final: `${x}` } };
   }},
 
   // ---------- 6.4 : resoudre ax+b = cx+d ----------
@@ -966,13 +991,15 @@ const generateurs = [
     let a, c; do { a = alea(2,9); c = alea(2,9); } while (a === c);
     const x = entierSigne(1,10), b = alea(1,15);
     const d = b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
-    return { enonce:`${a}x+${b}=${c}x${termeD}`, reponse:`${x}` };
+    return { enonce:`${a}x+${b}=${c}x${termeD}`, reponse:`${x}`,
+             detail: { lignes: [`${a}x+${b}=${c}x${termeD}`, `\\iff ${a}x-${c}x = ${d} - ${b}`, `\\iff ${linL(a - c, 0)} = ${d - b}`, `\\iff x = ${d - b} \\div ${dP(a - c)} = ${x}`], final: `${x}` } };
   }},
   {id:"6.4 b)", type:"num", gen: () => {
     let a, c; do { a = alea(2,9); c = alea(2,9); } while (a === c);
     const x = entierSigne(1,10), b = alea(1,15);
     const d = -b + (a-c)*x, termeD = d<0?`-${-d}`:`+${d}`;
-    return { enonce:`${a}x-${b}=${c}x${termeD}`, reponse:`${x}` };
+    return { enonce:`${a}x-${b}=${c}x${termeD}`, reponse:`${x}`,
+             detail: { lignes: [`${a}x-${b}=${c}x${termeD}`, `\\iff ${a}x-${c}x = ${d} + ${b}`, `\\iff ${linL(a - c, 0)} = ${d + b}`, `\\iff x = ${d + b} \\div ${dP(a - c)} = ${x}`], final: `${x}` } };
   }},
   {id:"6.4 c)", type:"num", gen: () => {
     // plus exigeant : constantes signees des deux cotes
@@ -980,46 +1007,54 @@ const generateurs = [
     const x = entierSigne(1,10), b = entierSigne(1,15);
     const d = b + (a-c)*x;
     const termeB = b<0?`-${-b}`:`+${b}`, termeD = d<0?`-${-d}`:`+${d}`;
-    return { enonce:`${a}x${termeB}=${c}x${termeD}`, reponse:`${x}` };
+    return { enonce:`${a}x${termeB}=${c}x${termeD}`, reponse:`${x}`,
+             detail: { lignes: [`${a}x${termeB}=${c}x${termeD}`, `\\iff ${a}x-${c}x = ${d} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff ${linL(a - c, 0)} = ${d - b}`, `\\iff x = ${d - b} \\div ${dP(a - c)} = ${x}`], final: `${x}` } };
   }},
   {id:"6.4 d)", type:"num", gen: () => {
     // egalement delicat : il faut distribuer un cote avant de rassembler les x
     let a, c; do { a = alea(2,7); c = alea(2,9); } while (a === c);
     const x = entierSigne(1,10), p = entierSigne(1,9);
     const d = a*(x+p) - c*x, termeP = p<0?`-${-p}`:`+${p}`, termeD = d<0?`-${-d}`:`+${d}`;
-    return { enonce:`${a}(x${termeP})=${c}x${termeD}`, reponse:`${x}` };
+    return { enonce:`${a}(x${termeP})=${c}x${termeD}`, reponse:`${x}`,
+             detail: { lignes: [`${a}(x${termeP})=${c}x${termeD}`, `\\iff ${a}x${signeL(a * p)}${Math.abs(a * p)} = ${c}x${termeD}`, `\\iff ${a}x-${c}x = ${d} ${a * p < 0 ? '+' : '-'} ${Math.abs(a * p)}`, `\\iff ${linL(a - c, 0)} = ${d - a * p}`, `\\iff x = ${d - a * p} \\div ${dP(a - c)} = ${x}`], final: `${x}` } };
   }},
 
   // ---------- 6.5 : coefficients fractionnaires (2 exemples : un classique, un delicat) ----------
   {id:"6.5 a)", type:"num", gen: () => {
     const a = alea(2,12), q = entierSigne(1,12), b = entierSigne(1,15);
     const x = a*q, c = q+b, termeB = b<0?`-${-b}`:`+${b}`;
-    return { enonce:`\\dfrac{x}{${a}}${termeB}=${c}`, reponse:`${x}` };
+    return { enonce:`\\dfrac{x}{${a}}${termeB}=${c}`, reponse:`${x}`,
+             detail: { lignes: [`\\dfrac{x}{${a}}${termeB}=${c}`, `\\iff \\dfrac{x}{${a}} = ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff \\dfrac{x}{${a}} = ${q}`, `\\iff x = ${q}\\times ${a} = ${x}`], final: `${x}` } };
   }},
   {id:"6.5 b)", type:"num", gen: () => {
     // plus delicat : la fraction apparait deux fois, deux denominateurs distincts
     let a, b; do { a = alea(2,9); b = alea(2,9); } while (a === b);
     const k = entierSigne(1,5);
     const x = a*b*k, c = k*(a+b);
-    return { enonce:`\\dfrac{x}{${a}}+\\dfrac{x}{${b}}=${c}`, reponse:`${x}` };
+    return { enonce:`\\dfrac{x}{${a}}+\\dfrac{x}{${b}}=${c}`, reponse:`${x}`,
+             detail: { lignes: [`\\dfrac{x}{${a}}+\\dfrac{x}{${b}}=${c}`, `\\iff \\dfrac{x\\times ${b}}{${a}\\times ${b}}+\\dfrac{x\\times ${a}}{${b}\\times ${a}} = ${c}`, `\\iff \\dfrac{${a + b}x}{${a * b}} = ${c}`, `\\iff ${a + b}x = ${c * a * b}`, `\\iff x = ${c * a * b} \\div ${a + b} = ${x}`], final: `${x}` } };
   }},
 
   // ---------- 6.6 : x^2 = a, puis x^2 + A = B (valeurs entieres puis fractionnaires) ----------
   {id:"6.6 a)", type:"num", gen: () => {
-    const n = alea(2,40), carre = n*n;
-    return { enonce: alea(0,1) === 0 ? `x^2=${carre}` : `${carre}=x^2`, reponse:`{-${n};${n}}` };
+    const n = alea(2,40), carre = n*n, inverse = alea(0,1) === 1, enonce = inverse ? `${carre}=x^2` : `x^2=${carre}`;
+    return { enonce, reponse:`{-${n};${n}}`,
+             detail: { lignes: [enonce, ...(inverse ? [`\\iff x^{2}=${carre}`] : []), `\\iff x = ${n} \\text{ ou } x = -${n}`, `S = \\left\\{-${n}\\,;\\,${n}\\right\\}`], final: `\\left\\{-${n}\\,;\\,${n}\\right\\}` } };
   }},
   {id:"6.6 b)", type:"num", gen: () => {
     // plus delicat : a n'est pas un carre parfait, solutions irrationnelles
     let n;
     do { n = alea(2,150); } while (Number.isInteger(Math.sqrt(n)));
-    return { enonce: alea(0,1) === 0 ? `x^2=${n}` : `${n}=x^2`, reponse:`{-sqrt(${n});sqrt(${n})}` };
+    const inverse = alea(0,1) === 1, enonce = inverse ? `${n}=x^2` : `x^2=${n}`;
+    return { enonce, reponse:`{-sqrt(${n});sqrt(${n})}`,
+             detail: { lignes: [enonce, ...(inverse ? [`\\iff x^{2}=${n}`] : []), `\\iff x = \\sqrt{${n}} \\text{ ou } x = -\\sqrt{${n}}`, `S = \\left\\{-\\sqrt{${n}}\\,;\\,\\sqrt{${n}}\\right\\}`], final: `\\left\\{-\\sqrt{${n}}\\,;\\,\\sqrt{${n}}\\right\\}` } };
   }},
   {id:"6.6 c)", type:"num", gen: () => {
     // egalement delicat : il faut isoler x^2 avant de reconnaitre la forme x^2=a
     const n = alea(2,15), a = entierSigne(1,20);
     const b = n*n + a, termeA = a<0?`-${-a}`:`+${a}`;
-    return { enonce:`x^2${termeA}=${b}`, reponse:`{-${n};${n}}` };
+    return { enonce:`x^2${termeA}=${b}`, reponse:`{-${n};${n}}`,
+             detail: { lignes: [`x^2${termeA}=${b}`, `\\iff x^{2} = ${b} ${a < 0 ? '+' : '-'} ${Math.abs(a)}`, `\\iff x^{2} = ${n*n}`, `\\iff x = ${n} \\text{ ou } x = -${n}`, `S = \\left\\{-${n}\\,;\\,${n}\\right\\}`], final: `\\left\\{-${n}\\,;\\,${n}\\right\\}` } };
   }},
   {id:"6.6 d)", type:"num", texteLibre:true, gen: () => {
     // x^2 + A = B avec A et B fractionnaires (B - A = (p/q)^2, solutions rationnelles)
@@ -1034,45 +1069,62 @@ const generateurs = [
     const fracLatex = (n, d) => d === 1 ? `${Math.abs(n)}` : `\\dfrac{${Math.abs(n)}}{${d}}`;
     const gauche = `x^2${signeA < 0 ? '-' : '+'}${fracLatex(aNum, aDen)}`;
     const droite = `${bn < 0 ? '-' : ''}${bn === 0 ? '0' : fracLatex(bn, bd)}`;
-    return { enonce: `\\(${gauche}=${droite}\\) (solutions sous forme irréductible)`, reponse: `{${fractionTexte(-p, q)};${fractionTexte(p, q)}}` };
+    const solL = `\\left\\{-\\dfrac{${p}}{${q}}\\,;\\,\\dfrac{${p}}{${q}}\\right\\}`;
+    return { enonce: `\\(${gauche}=${droite}\\) (solutions sous forme irréductible)`, reponse: `{${fractionTexte(-p, q)};${fractionTexte(p, q)}}`,
+             detail: { lignes: [
+               `${gauche}=${droite}`,
+               `\\iff x^{2} = ${droite} ${signeA < 0 ? '+' : '-'} ${fracLatex(aNum, aDen)}`,
+               `\\iff x^{2} = \\dfrac{${p * p}}{${q * q}}`,
+               `\\iff x = \\dfrac{${p}}{${q}} \\text{ ou } x = -\\dfrac{${p}}{${q}}`,
+               `S = ${solL}`], final: solL } };
   }},
 
   // ---------- 6.7 : a/x = b (2 exemples : un classique, un delicat) ----------
   {id:"6.7 a)", type:"num", gen: () => {
     const b = alea(2,12), x = entierSigne(1,15), a = b*x;
-    return { enonce:`\\dfrac{${a}}{x}=${b}`, reponse:`${x}` };
+    return { enonce:`\\dfrac{${a}}{x}=${b}`, reponse:`${x}`,
+             detail: { lignes: [`x = 0 \\text{ (valeur interdite)}`, `\\dfrac{${a}}{x}=${b}`, `\\iff ${a} = ${b}x`, `\\iff x = ${a} \\div ${b} = ${x}`], final: `${x}` } };
   }},
   {id:"6.7 b)", type:"num", gen: () => {
     // plus delicat : b negatif, et l'egalite est ecrite dans l'autre sens
     const b = entierSigne(2,12), x = entierSigne(1,15), a = b*x;
-    return { enonce:`${b}=\\dfrac{${a}}{x}`, reponse:`${x}` };
+    return { enonce:`${b}=\\dfrac{${a}}{x}`, reponse:`${x}`,
+             detail: { lignes: [`x = 0 \\text{ (valeur interdite)}`, `${b}=\\dfrac{${a}}{x}`, `\\iff ${b}x = ${a}`, `\\iff x = ${a} \\div ${dP(b)} = ${x}`], final: `${x}` } };
   }},
 
   // ---------- 6.8 : equations produits (2 simples, 2 plus delicates) ----------
   {id:"6.8 a)", type:"num", gen: () => {
     let r1, r2; do { r1 = entierSigne(1,9); r2 = entierSigne(1,9); } while (r1 === r2);
+    const solL = ensembleL([{ v: r1, tex: `${r1}` }, { v: r2, tex: `${r2}` }]);
     return { enonce:`(${binomeLatex(1,-r1)})(${binomeLatex(1,-r2)})=0`,
-             reponse:`{${Math.min(r1,r2)};${Math.max(r1,r2)}}` };
+             reponse:`{${Math.min(r1,r2)};${Math.max(r1,r2)}}`,
+             detail: { lignes: [`(${binomeLatex(1,-r1)})(${binomeLatex(1,-r2)})=0`, `\\iff ${binomeLatex(1,-r1)}=0 \\text{ ou } ${binomeLatex(1,-r2)}=0`, `\\iff x = ${r1} \\text{ ou } x = ${r2}`, `S = ${solL}`], final: solL } };
   }},
   {id:"6.8 b)", type:"num", gen: () => {
     // un facteur x : 0 est solution
     const a = entierSigne(2,7), b = entierSigne(1,9);
-    return { enonce:`x(${binomeLatex(a,b)})=0`, reponse:`{0;${fractionTexte(-b,a)}}` };
+    const solL = ensembleL([{ v: 0, tex: '0' }, { v: -b / a, tex: Detail.fracTexte(-b, a) }]);
+    return { enonce:`x(${binomeLatex(a,b)})=0`, reponse:`{0;${fractionTexte(-b,a)}}`,
+             detail: { lignes: [`x(${binomeLatex(a,b)})=0`, `\\iff x = 0 \\text{ ou } ${binomeLatex(a,b)}=0`, `\\iff x = 0 \\text{ ou } x = ${Detail.fracTexte(-b, a)}`, `S = ${solL}`], final: solL } };
   }},
   {id:"6.8 c)", type:"num", gen: () => {
     // plus delicat : coefficients devant x, solutions fractionnaires
     let a, b, c, d;
     do { a = entierSigne(2,6); b = entierSigne(1,9); c = entierSigne(2,6); d = entierSigne(1,9); } while (b*c === a*d);
+    const solL = ensembleL([{ v: -b / a, tex: Detail.fracTexte(-b, a) }, { v: -d / c, tex: Detail.fracTexte(-d, c) }]);
     return { enonce:`(${binomeLatex(a,b)})(${binomeLatex(c,d)})=0`,
-             reponse:`{${fractionTexte(-b,a)};${fractionTexte(-d,c)}}` };
+             reponse:`{${fractionTexte(-b,a)};${fractionTexte(-d,c)}}`,
+             detail: { lignes: [`(${binomeLatex(a,b)})(${binomeLatex(c,d)})=0`, `\\iff ${binomeLatex(a,b)}=0 \\text{ ou } ${binomeLatex(c,d)}=0`, `\\iff x = ${Detail.fracTexte(-b, a)} \\text{ ou } x = ${Detail.fracTexte(-d, c)}`, `S = ${solL}`], final: solL } };
   }},
   {id:"6.8 d)", type:"num", gen: () => {
     // egalement delicat : trois facteurs, trois solutions distinctes
     let p, q, a, b;
     do { p = entierSigne(1,9); q = entierSigne(1,9); a = alea(2,5); b = entierSigne(1,9); }
     while (p === q || b === a*p || b === a*q);
+    const solL = ensembleL([{ v: -b / a, tex: Detail.fracTexte(-b, a) }, { v: -p, tex: `${-p}` }, { v: -q, tex: `${-q}` }]);
     return { enonce:`(${binomeLatex(1,p)})(${binomeLatex(a,b)})(${binomeLatex(1,q)})=0`,
-             reponse:`{${fractionTexte(-b,a)};${-p};${-q}}` };
+             reponse:`{${fractionTexte(-b,a)};${-p};${-q}}`,
+             detail: { lignes: [`(${binomeLatex(1,p)})(${binomeLatex(a,b)})(${binomeLatex(1,q)})=0`, `\\iff ${binomeLatex(1,p)}=0 \\text{ ou } ${binomeLatex(a,b)}=0 \\text{ ou } ${binomeLatex(1,q)}=0`, `\\iff x = ${-p} \\text{ ou } x = ${Detail.fracTexte(-b, a)} \\text{ ou } x = ${-q}`, `S = ${solL}`], final: solL } };
   }},
 
   // ---------- 6.9 : calculs plus avances ----------
@@ -1085,7 +1137,13 @@ const generateurs = [
     const numerateur = binomeLatex(a, b);
     const denominateur = `x${m<0?'+':'-'}${Math.abs(m)}`;
     return { enonce: `\\(\\dfrac{${numerateur}}{${denominateur}}=${k}\\), sachant que \\(x\\neq ${m}\\)`,
-             reponse: `${x}` };
+             reponse: `${x}`,
+             detail: { lignes: [
+               `\\dfrac{${numerateur}}{${denominateur}}=${k}`,
+               `\\iff ${numerateur} = ${k === 1 ? '' : k === -1 ? '-' : k}\\left(${denominateur}\\right)`,
+               `\\iff ${numerateur} = ${linL(k, -k * m)}`,
+               `\\iff ${linL(a - k, 0)} = ${-k * m - b}`,
+               `\\iff x = ${-k * m - b} \\div ${dP(a - k)} = ${x}`], final: `${x}` } };
   }},
   {id:"6.9 b)", type:"num", texteLibre:true, gen: () => {
     // a(x+b)^2 = c : racines entieres une fois sur deux, sinon -b +- racine d'un entier non carre
@@ -1100,7 +1158,18 @@ const generateurs = [
       c = a*N;
       reponse = `{${-b}-sqrt(${N});${-b}+sqrt(${N})}`;
     }
-    return { enonce:`\\(${a}(x${b>0?'+':'-'}${Math.abs(b)})^2=${c}\\)`, reponse };
+    const xb = `x${b>0?'+':'-'}${Math.abs(b)}`, carreCible = c / a;
+    const entier = Number.isInteger(Math.sqrt(carreCible)) && reponse.indexOf('sqrt') < 0;
+    const racine = entier ? `${Math.sqrt(carreCible)}` : `\\sqrt{${carreCible}}`;
+    const s1 = entier ? `${-b - Math.sqrt(carreCible)}` : `${-b}-\\sqrt{${carreCible}}`, s2 = entier ? `${-b + Math.sqrt(carreCible)}` : `${-b}+\\sqrt{${carreCible}}`;
+    const solL = `\\left\\{${s1}\\,;\\,${s2}\\right\\}`;
+    return { enonce:`\\(${a}(x${b>0?'+':'-'}${Math.abs(b)})^2=${c}\\)`, reponse,
+             detail: { lignes: [
+               `${a}(${xb})^2=${c}`,
+               `\\iff (${xb})^{2} = ${carreCible}`,
+               `\\iff ${xb} = ${racine} \\text{ ou } ${xb} = -${racine}`,
+               `\\iff x = ${-b}-${racine} \\text{ ou } x = ${-b}+${racine}`,
+               `S = ${solL}`], final: solL } };
   }},
   {id:"6.9 c)", type:"num", texteLibre:true, gen: () => {
     // A^2 - B^2 = 0 avec A et B affines : (A-B)(A+B) = 0, deux solutions fractionnaires distinctes
@@ -1110,7 +1179,16 @@ const generateurs = [
       x1 = (s - q) / (p - r); x2 = -(s + q) / (p + r);
     } while (p === r || x1 === x2);
     return { enonce:`\\((${binomeLatex(p,q)})^2-(${binomeLatex(r,s)})^2=0\\) (solutions sous forme irréductible)`,
-             reponse:`{${fractionTexte(s - q, p - r)};${fractionTexte(-(s + q), p + r)}}` };
+             reponse:`{${fractionTexte(s - q, p - r)};${fractionTexte(-(s + q), p + r)}}`,
+             detail: (() => {
+               const solL = ensembleL([{ v: x1, tex: Detail.fracTexte(s - q, p - r) }, { v: x2, tex: Detail.fracTexte(-(s + q), p + r) }]);
+               return { lignes: [
+                 `(${binomeLatex(p,q)})^2-(${binomeLatex(r,s)})^2=0`,
+                 `\\iff \\left((${binomeLatex(p,q)})-(${binomeLatex(r,s)})\\right)\\left((${binomeLatex(p,q)})+(${binomeLatex(r,s)})\\right)=0`,
+                 `\\iff ${linL(p - r, q - s)}=0 \\text{ ou } ${linL(p + r, q + s)}=0`,
+                 `\\iff x = ${Detail.fracTexte(s - q, p - r)} \\text{ ou } x = ${Detail.fracTexte(-(s + q), p + r)}`,
+                 `S = ${solL}`], final: solL };
+             })() };
   }},
   {id:"6.9 d)", type:"num", texteLibre:true, gen: () => {
     // A^2 - B^2 = C avec A = x+a et B = x+b : les termes en x^2 s'annulent, il reste une equation du premier degre
@@ -1118,7 +1196,13 @@ const generateurs = [
     const C = entierSigne(1,30);
     const xNum = C - a*a + b*b, xDen = 2*(a - b);
     return { enonce:`\\((x${a>0?'+':'-'}${Math.abs(a)})^2-(x${b>0?'+':'-'}${Math.abs(b)})^2=${C}\\) (solution sous forme irréductible)`,
-             reponse: fractionTexte(xNum, xDen) };
+             reponse: fractionTexte(xNum, xDen),
+             detail: { lignes: [
+               `(x${a>0?'+':'-'}${Math.abs(a)})^2-(x${b>0?'+':'-'}${Math.abs(b)})^2=${C}`,
+               `\\iff x^{2}${signeL(a)}${2 * Math.abs(a)}x+${a * a}-\\left(x^{2}${signeL(b)}${2 * Math.abs(b)}x+${b * b}\\right)=${C}`,
+               `\\iff ${linL(2 * (a - b), a * a - b * b)} = ${C}`,
+               `\\iff ${linL(2 * (a - b), 0)} = ${C - a * a + b * b}`,
+               `\\iff x = ${xNum} \\div ${dP(xDen)} = ${Detail.fracTexte(xNum, xDen)}`], final: Detail.fracTexte(xNum, xDen) } };
   }}
 ];
 
@@ -1142,13 +1226,16 @@ const IDS_SOLUTION_UNIQUE = new Set([
 ]);
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     const resultat = { ...modele, ...gen() };
     if (IDS_SOLUTION_UNIQUE.has(resultat.id)) resultat.solutionEquation = true;
     if (IDS_ENSEMBLE_IRREDUCTIBLE.has(resultat.id)) resultat.ensembleIrreductible = true;
     return resultat;
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2271,7 +2358,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

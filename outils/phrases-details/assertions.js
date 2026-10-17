@@ -219,5 +219,19 @@ module.exports = [
       const c = Number(m[1]), n = Number(m[3]), cc = m[2] === '' ? 1 : m[2] === '-' ? -1 : Number(m[2]);
       return c !== 0 && c === cc && n >= 2 && Math.pow(Math.round(Math.sqrt(n)), 2) !== n;
     }
+  },
+  {
+    nom: 'on-multiplie-par-un-nombre-negatif',
+    motif: /\\text\{On multiplie par \} -?\d+ \\lt/,
+    verifie: (l) => { const m = l.match(/\\text\{On multiplie par \}\s*(-?\d+)\s*\\lt\s*0/); return m ? Number(m[1]) < 0 : false; }
+  },
+  {
+    nom: 'la-borne-inferieure-depasse-la-borne-superieure',
+    // « \text{Comme } 5 \geqslant 3 \text{, aucun nombre ne convient} » : un nombre à la fois > p et < q n'existe pas si p >= q
+    motif: /\\text\{Comme \} -?\d+ (?:\\geqslant|>) -?\d+ \\text\{, aucun nombre ne convient\}/,
+    verifie: (l) => {
+      const m = l.match(/\\text\{Comme \} (-?\d+) (\\geqslant|>) (-?\d+) \\text/);
+      return m ? (m[2] === '>' ? Number(m[1]) > Number(m[3]) : Number(m[1]) >= Number(m[3])) : false;
+    }
   }
 ];

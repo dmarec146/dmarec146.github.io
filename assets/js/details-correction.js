@@ -140,8 +140,8 @@ const Detail = (() => {
     }
     return sortie;
   };
-  const couper = (ex, seuil = 34) => {
-    ex.forEach(e => { if (e.detail) e.detail.lignes = fusionnerChaines(e.detail.lignes).flatMap(l => couperLigne(l, seuil)); });
+  const couper = (ex, seuil = 34, filtre = () => true) => {
+    ex.forEach(e => { if (e.detail && filtre(e)) e.detail.lignes = fusionnerChaines(e.detail.lignes).flatMap(l => couperLigne(l, seuil)); });
     return ex;
   };
 

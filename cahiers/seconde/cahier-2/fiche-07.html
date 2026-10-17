@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261016"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"7.1 a)":0.5,"7.1 b)":0.5,"7.1 c)":0.5,"7.1 d)":0.5,"7.2 a)":0.5,"7.2 b)":0.5,"7.2 c)":0.5,"7.2 d)":0.5,"7.3 a)":0.75,"7.3 b)":0.75,"7.3 c)":0.75,"7.3 d)":0.75,"7.4 a)":0.75,"7.4 b)":0.75,"7.4 c)":1,"7.4 d)":1.5,"7.4 e)":1.25,"7.4 f)":1.25,"7.5 a)":0.75,"7.5 b)":1,"7.5 c)":1.25,"7.5 d)":1.5,"7.6 a)":1.5,"7.6 b)":1.75,"7.6 c)":1.75,"7.6 d)":2},"bonus":["7.6 a)","7.6 b)","7.6 c)","7.6 d)"]});
@@ -873,13 +874,40 @@ function polynomeXConst(coefX, constante) {
   const res = tx + tc;
   return res === '' ? '0' : res;
 }
+// ---- details de correction (16/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { dP, dPlus } = Detail;
+// c x + d en LaTeX : « 3x-5 », « -x+2 », « x », « -2 » ; jamais « 1x »
+const linL = (c, d, v = 'x') => {
+  let s = '';
+  if (c !== 0) s = c === 1 ? v : c === -1 ? `-${v}` : `${c}${v}`;
+  if (d !== 0) s += (s && d > 0 ? '+' : '') + d;
+  return s === '' ? '0' : s;
+};
+const signeL = v => (v < 0 ? '-' : '+');
+const OP_TEX = { '>': '>', '<': '<', '>=': '\\geqslant ', '<=': '\\leqslant ' };
+const OP_INV = { '>': '<', '<': '>', '>=': '<=', '<=': '>=' };
+// fin d'une inequation « A x op C » (A non nul) : division par A (sens inverse si A < 0), solution, intervalle
+function lignesFinIneq(A, op, C, x0, spec) {
+  const opF = A < 0 ? OP_INV[op] : op, lignes = [];
+  if (A < 0) lignes.push(`\\text{On divise par } ${A} < 0`, `\\text{donc le sens de l'inégalité change}`);
+  if (A !== 1) lignes.push(`\\iff x ${OP_TEX[opF]} ${C} \\div ${dP(A)}`);
+  lignes.push(`\\iff x ${OP_TEX[opF]} ${x0}`);
+  if (spec) lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return lignes;
+}
+// « a x op C » avec C = a x0 : detail complet (a non nul)
+function detailIneqProduit(a, op, x0) {
+  const spec = intervalleDemiDroite(a < 0 ? OP_INV[op] : op, x0);
+  return { lignes: [`${coefXTexte(a)} ${OP_TEX[op]} ${a * x0}`, ...lignesFinIneq(a, op, a * x0, x0, spec)], final: formaterIntervalleSpec(spec) };
+}
 // une distribution simple k(x+a) ou -k(x-a)... : signes de k et de a tires independamment
 function distribSimple() {
   const k = alea(2,9), kNeg = alea(0,1) === 0;
   const a = alea(2,12), aNeg = alea(0,1) === 0;
   const kAff = kNeg ? -k : k, aAff = aNeg ? -a : a;
   const enonce = `${kNeg ? '-' : ''}${k}(x${aNeg ? '-' : '+'}${a})`;
-  return { enonce, reponse: polynomeXConst(kAff, kAff * aAff) };
+  return { enonce, reponse: polynomeXConst(kAff, kAff * aAff),
+           detail: { lignes: [`${enonce} = ${kAff}\\times x+${dP(kAff)}\\times ${dP(aAff)} = ${linL(kAff, kAff * aAff)}`], final: linL(kAff, kAff * aAff) } };
 }
 // variante : un coefficient m>1 s'ajoute a l'interieur de la parenthese
 function distribAvecCoefInterne() {
@@ -888,7 +916,8 @@ function distribAvecCoefInterne() {
   const a = alea(2,10), aNeg = alea(0,1) === 0;
   const kAff = kNeg ? -k : k, aAff = aNeg ? -a : a;
   const enonce = `${kNeg ? '-' : ''}${k}(${m}x${aNeg ? '-' : '+'}${a})`;
-  return { enonce, reponse: polynomeXConst(kAff * m, kAff * aAff) };
+  return { enonce, reponse: polynomeXConst(kAff * m, kAff * aAff),
+           detail: { lignes: [`${enonce} = ${kAff}\\times ${m}x+${dP(kAff)}\\times ${dP(aAff)} = ${linL(kAff * m, kAff * aAff)}`], final: linL(kAff * m, kAff * aAff) } };
 }
 
 
@@ -898,7 +927,8 @@ const generateurs = [
     // reduire : deux termes en x a regrouper
     let a, c; do { a = alea(2,15); c = alea(2,15); } while (a === c);
     const b = alea(1,15), d = alea(1,15);
-    return { enonce:`${a}x+${b}-${c}x-${d}`, reponse: polynomeXConst(a - c, b - d) };
+    return { enonce:`${a}x+${b}-${c}x-${d}`, reponse: polynomeXConst(a - c, b - d),
+             detail: { lignes: [`${a}x+${b}-${c}x-${d} = (${a}-${c})x+(${b}-${d}) = ${linL(a - c, b - d)}`], final: linL(a - c, b - d) } };
   }},
   {id:"7.1 b)", type:"alg", gen: () => distribSimple()},
   {id:"7.1 c)", type:"alg", gen: () => distribAvecCoefInterne()},
@@ -906,20 +936,21 @@ const generateurs = [
     // plus exigeant : trois termes en x a regrouper
     let a, c, e; do { a = alea(2,10); c = alea(2,10); e = alea(2,10); } while (a + c === e);
     const b = alea(1,12), d = alea(1,12);
-    return { enonce:`${a}x-${b}+${c}x+${d}-${e}x`, reponse: polynomeXConst(a + c - e, d - b) };
+    return { enonce:`${a}x-${b}+${c}x+${d}-${e}x`, reponse: polynomeXConst(a + c - e, d - b),
+             detail: { lignes: [`${a}x-${b}+${c}x+${d}-${e}x = (${a}+${c}-${e})x+(${d}-${b}) = ${linL(a + c - e, d - b)}`], final: linL(a + c - e, d - b) } };
   }},
 
   // ---------- 7.2 : resoudre ax>b, a positif ----------
-  {id:"7.2 a)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\gt ${a*x}`, intervalleSpec: intervalleDemiDroite('>', x)}; }},
-  {id:"7.2 b)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\lt ${a*x}`, intervalleSpec: intervalleDemiDroite('<', x)}; }},
-  {id:"7.2 c)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\geqslant ${a*x}`, intervalleSpec: intervalleDemiDroite('>=', x)}; }},
-  {id:"7.2 d)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\leqslant ${a*x}`, intervalleSpec: intervalleDemiDroite('<=', x)}; }},
+  {id:"7.2 a)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\gt ${a*x}`, intervalleSpec: intervalleDemiDroite('>', x), detail: detailIneqProduit(a, '>', x)}; }},
+  {id:"7.2 b)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\lt ${a*x}`, intervalleSpec: intervalleDemiDroite('<', x), detail: detailIneqProduit(a, '<', x)}; }},
+  {id:"7.2 c)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\geqslant ${a*x}`, intervalleSpec: intervalleDemiDroite('>=', x), detail: detailIneqProduit(a, '>=', x)}; }},
+  {id:"7.2 d)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`${a}x\\leqslant ${a*x}`, intervalleSpec: intervalleDemiDroite('<=', x), detail: detailIneqProduit(a, '<=', x)}; }},
 
   // ---------- 7.3 : resoudre ax>b, a negatif (le signe s'inverse) ----------
-  {id:"7.3 a)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\gt ${-a*x}`, intervalleSpec: intervalleDemiDroite('<', x)}; }},
-  {id:"7.3 b)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\lt ${-a*x}`, intervalleSpec: intervalleDemiDroite('>', x)}; }},
-  {id:"7.3 c)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\geqslant ${-a*x}`, intervalleSpec: intervalleDemiDroite('<=', x)}; }},
-  {id:"7.3 d)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\leqslant ${-a*x}`, intervalleSpec: intervalleDemiDroite('>=', x)}; }},
+  {id:"7.3 a)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\gt ${-a*x}`, intervalleSpec: intervalleDemiDroite('<', x), detail: detailIneqProduit(-a, '>', x)}; }},
+  {id:"7.3 b)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\lt ${-a*x}`, intervalleSpec: intervalleDemiDroite('>', x), detail: detailIneqProduit(-a, '<', x)}; }},
+  {id:"7.3 c)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\geqslant ${-a*x}`, intervalleSpec: intervalleDemiDroite('<=', x), detail: detailIneqProduit(-a, '>=', x)}; }},
+  {id:"7.3 d)", type:"intervalle", gen: () => { const a=alea(2,9), x=entierSigne(1,12); return {enonce:`-${a}x\\leqslant ${-a*x}`, intervalleSpec: intervalleDemiDroite('>=', x), detail: detailIneqProduit(-a, '<=', x)}; }},
 
   // ---------- 7.4 : resoudre, ecrire la solution sous forme d'intervalle ----------
   {id:"7.4 a)", type:"intervalle", gen: () => {
@@ -930,13 +961,20 @@ const generateurs = [
     // sens de l'inegalite tire au hasard (le retrait de l'ancien 7.4 a) ne doit pas faire disparaitre un des deux sens)
     const inferieur = alea(0,1) === 0;
     const sensFinal = ((a-c) > 0) === inferieur ? '<' : '>';
-    return { enonce:`${coefXTexte(a)}+${b}${inferieur ? '\\lt ' : '>'}${coefXTexte(c)}${termeD}`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
+    const enonce = `${coefXTexte(a)}+${b}${inferieur ? '\\lt ' : '>'}${coefXTexte(c)}${termeD}`, op0 = inferieur ? '<' : '>', spec = intervalleDemiDroite(sensFinal, x), A = a - c;
+    return { enonce, intervalleSpec: spec,
+             detail: { lignes: [enonce,
+               `\\iff ${coefXTexte(a)}${c > 0 ? '-' : '+'}${Math.abs(c)}x ${OP_TEX[op0]} ${d} - ${b}`,
+               `\\iff ${linL(A, 0)} ${OP_TEX[op0]} ${d - b}`,
+               ...lignesFinIneq(A, op0, d - b, x, spec)], final: formaterIntervalleSpec(spec) } };
   }},
   {id:"7.4 b)", type:"intervalle", gen: () => {
     // plus delicat : coefficient fractionnaire devant x
     const a = alea(2,9), q = entierSigne(1,10), b = entierSigne(1,12);
     const x = a*q, c = q+b, termeB = b<0?`-${-b}`:`+${b}`;
-    return { enonce:`\\dfrac{x}{${a}}${termeB}>${c}`, intervalleSpec: intervalleDemiDroite('>', x) };
+    const spec = intervalleDemiDroite('>', x);
+    return { enonce:`\\dfrac{x}{${a}}${termeB}>${c}`, intervalleSpec: spec,
+             detail: { lignes: [`\\dfrac{x}{${a}}${termeB}>${c}`, `\\iff \\dfrac{x}{${a}} > ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff \\dfrac{x}{${a}} > ${q}`, `\\iff x > ${q}\\times ${a}`, `\\iff x > ${x}`, `S = ${formaterIntervalleSpec(spec)}`], final: formaterIntervalleSpec(spec) } };
   }},
   {id:"7.4 c)", type:"intervalle", gen: () => {
     // plus delicat : il faut distribuer un membre avant de rassembler les x (m signe)
@@ -944,14 +982,25 @@ const generateurs = [
     const p = m*(q+x) - x;
     const termeP = p<0?`-${-p}`:`+${p}`, termeQ = q<0?`-${-q}`:`+${q}`;
     const sensFinal = (1-m) > 0 ? '>' : '<';
-    return { enonce:`x${termeP}>${m}(x${termeQ})`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
+    const enonce = `x${termeP}>${m}(x${termeQ})`, spec = intervalleDemiDroite(sensFinal, x);
+    return { enonce, intervalleSpec: spec,
+             detail: { lignes: [enonce,
+               `\\iff x${termeP} > ${coefXTexte(m)}${signeL(m * q)}${Math.abs(m * q)}`,
+               `\\iff ${linL(1 - m, 0)} > ${m * q} ${p < 0 ? '+' : '-'} ${Math.abs(p)}`,
+               `\\iff ${linL(1 - m, 0)} > ${m * q - p}`,
+               ...lignesFinIneq(1 - m, '>', m * q - p, x, spec)], final: formaterIntervalleSpec(spec) } };
   }},
   {id:"7.4 d)", type:"intervalle", gen: () => {
     // encore plus delicat : coefficient fractionnaire ET x des deux cotes
     const a = alea(2,7), c = entierSigne(1,6), q = entierSigne(1,9), b = entierSigne(1,12);
     const x = a*q, d = q + b - c*x, termeB = b<0?`-${-b}`:`+${b}`, termeD = d<0?`-${-d}`:`+${d}`;
     const sensFinal = (1 - a*c) > 0 ? '>' : '<';
-    return { enonce:`\\dfrac{x}{${a}}${termeB}>${coefXTexte(c)}${termeD}`, intervalleSpec: intervalleDemiDroite(sensFinal, x) };
+    const enonce = `\\dfrac{x}{${a}}${termeB}>${coefXTexte(c)}${termeD}`, spec = intervalleDemiDroite(sensFinal, x);
+    return { enonce, intervalleSpec: spec,
+             detail: { lignes: [enonce,
+               `\\iff x${signeL(a * b)}${Math.abs(a * b)} > ${linL(a * c, a * d)}`,
+               `\\iff ${linL(1 - a * c, 0)} > ${a * d - a * b}`,
+               ...lignesFinIneq(1 - a * c, '>', a * d - a * b, x, spec)], final: formaterIntervalleSpec(spec) } };
   }},
   {id:"7.4 e)", type:"intervalle", gen: () => {
     // plus delicat : des parentheses des deux cotes, inegalite large, coefficients m et n signes
@@ -964,7 +1013,13 @@ const generateurs = [
     const superieur = alea(0,1) === 0;                 // m(x+p) >= n(x+q) ou <=
     const sens = ((m - n) > 0) === superieur ? '>=' : '<=';
     const terme = (c) => c > 0 ? `+${c}` : `-${-c}`;
-    return { enonce:`${m}(x${terme(p)})${superieur ? '\\geqslant ' : '\\leqslant '}${n}(x${terme(q)})`, intervalleSpec: intervalleDemiDroite(sens, x0) };
+    const enonce = `${m}(x${terme(p)})${superieur ? '\\geqslant ' : '\\leqslant '}${n}(x${terme(q)})`, op0 = superieur ? '>=' : '<=', spec = intervalleDemiDroite(sens, x0);
+    return { enonce, intervalleSpec: spec,
+             detail: { lignes: [enonce,
+               `\\iff ${coefXTexte(m)}${signeL(m * p)}${Math.abs(m * p)} ${OP_TEX[op0]} ${coefXTexte(n)}${signeL(n * q)}${Math.abs(n * q)}`,
+               `\\iff ${linL(m - n, 0)} ${OP_TEX[op0]} ${n * q} ${m * p < 0 ? '+' : '-'} ${Math.abs(m * p)}`,
+               `\\iff ${linL(m - n, 0)} ${OP_TEX[op0]} ${n * q - m * p}`,
+               ...lignesFinIneq(m - n, op0, n * q - m * p, x0, spec)], final: formaterIntervalleSpec(spec) } };
   }},
   {id:"7.4 f)", type:"intervalle", gen: () => {
     // egalement delicat : un signe moins devant une parenthese (a - (bx + c)), inegalite stricte
@@ -977,37 +1032,47 @@ const generateurs = [
     // -(b+d) x  OP  e - a + c : le sens s'inverse quand -(b+d) est negatif
     const sens = (-(b + d) > 0) === superieur ? '>' : '<';
     const terme = (v) => v > 0 ? `+${v}` : `-${-v}`;
-    return { enonce:`${a}-(${coefXTexte(b)}${terme(c)})${superieur ? '>' : '\\lt '}${coefXTexte(d)}${terme(e)}`, intervalleSpec: intervalleDemiDroite(sens, x0) };
+    const enonce = `${a}-(${coefXTexte(b)}${terme(c)})${superieur ? '>' : '\\lt '}${coefXTexte(d)}${terme(e)}`, op0 = superieur ? '>' : '<', spec = intervalleDemiDroite(sens, x0);
+    return { enonce, intervalleSpec: spec,
+             detail: { lignes: [enonce,
+               `\\iff ${a}-${coefXTexte(b)}${c > 0 ? '-' : '+'}${Math.abs(c)} ${OP_TEX[op0]} ${coefXTexte(d)}${terme(e)}`,
+               `\\iff ${linL(-b - d, 0)} ${OP_TEX[op0]} ${e - a + c}`,
+               ...lignesFinIneq(-(b + d), op0, e - a + c, x0, spec)], final: formaterIntervalleSpec(spec) } };
   }},
 
   // ---------- 7.5 : donner un encadrement (additionner, soustraire, multiplier un encadrement) : 4 exemples ----------
   {id:"7.5 a)", type:"encadrement", texteLibre:true, gen: () => {
     const a = alea(1,10), b = a + alea(1,10), c = alea(1,10), d = c + alea(1,10);
     return { enonce: `Encadrements : \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\). Expression : \\(x+y\\).`,
-             bas: a+c, haut: b+d, inclusBas:false, inclusHaut:false };
+             bas: a+c, haut: b+d, inclusBas:false, inclusHaut:false,
+             detail: { lignes: [`${a}+${c} < x+y < ${b}+${d}`, `${a+c}<x+y<${b+d}`], final: `${a+c}<x+y<${b+d}` } };
   }},
   {id:"7.5 b)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat : une soustraction, il faut d'abord encadrer -y (les bornes s'inversent)
     const a = alea(1,10), b = a + alea(1,10), c = alea(1,10), d = c + alea(1,10);
     return { enonce: `Encadrements : \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\). Expression : \\(x-y\\).`,
-             bas: a-d, haut: b-c, inclusBas:false, inclusHaut:false };
+             bas: a-d, haut: b-c, inclusBas:false, inclusHaut:false,
+             detail: { lignes: [`-${d} < -y < -${c}`, `${a}-${d} < x-y < ${b}-${c}`, `${a-d}<x-y<${b-c}`], final: `${a-d}<x-y<${b-c}` } };
   }},
   {id:"7.5 c)", type:"encadrement", texteLibre:true, gen: () => {
     // plus delicat : multiplier ou diviser par un reel negatif (les bornes s'inversent) ; les deux ecritures sont tirees
     if (alea(0,1) === 0) {
       const a = alea(1,9), b = a + alea(1,10), k = alea(2,6);
       return { enonce: `Encadrements : \\(${a}\\lt x\\lt ${b}\\). Expression : \\(-${k}x\\).`,
-               bas: -k*b, haut: -k*a, inclusBas:false, inclusHaut:false };
+               bas: -k*b, haut: -k*a, inclusBas:false, inclusHaut:false,
+               detail: { lignes: [`${a} < x < ${b}`, `\\text{On multiplie par } -${k} < 0`, `\\text{donc les inégalités changent de sens}`, `-${k}\\times ${a} > -${k}x > -${k}\\times ${b}`, `${-k*a} > -${k}x > ${-k*b}`, `${-k*b}<-${k}x<${-k*a}`], final: `${-k*b}<-${k}x<${-k*a}` } };
     }
     const div = alea(2,6), a0 = alea(1,8), b0 = a0 + alea(1,8), a = div*a0, b = div*b0;
     return { enonce: `Encadrements : \\(${a}\\lt x\\lt ${b}\\). Expression : \\(\\dfrac{x}{-${div}}\\).`,
-             bas: -b0, haut: -a0, inclusBas:false, inclusHaut:false };
+             bas: -b0, haut: -a0, inclusBas:false, inclusHaut:false,
+             detail: { lignes: [`${a} < x < ${b}`, `\\text{On divise par } -${div} < 0`, `\\text{donc les inégalités changent de sens}`, `${a} \\div (-${div}) > \\dfrac{x}{-${div}} > ${b} \\div (-${div})`, `${-a0} > \\dfrac{x}{-${div}} > ${-b0}`, `${-b0}<\\dfrac{x}{-${div}}<${-a0}`], final: `${-b0}<\\dfrac{x}{-${div}}<${-a0}` } };
   }},
   {id:"7.5 d)", type:"encadrement", texteLibre:true, gen: () => {
     // le plus delicat : mise a l'echelle ET soustraction combinees
     const a = alea(1,8), b = a + alea(1,8), c = alea(1,8), d = c + alea(1,8), k = alea(2,4);
     return { enonce: `Encadrements : \\(${a}\\lt x\\lt ${b}\\) et \\(${c}\\lt y\\lt ${d}\\). Expression : \\(${k}x-y\\).`,
-             bas: k*a-d, haut: k*b-c, inclusBas:false, inclusHaut:false };
+             bas: k*a-d, haut: k*b-c, inclusBas:false, inclusHaut:false,
+             detail: { lignes: [`${k}\\times ${a} < ${k}x < ${k}\\times ${b}`, `-${d} < -y < -${c}`, `${k*a}-${d} < ${k}x-y < ${k*b}-${c}`, `${k*a-d}<${k}x-y<${k*b-c}`], final: `${k*a-d}<${k}x-y<${k*b-c}` } };
   }},
 
   // ---------- 7.6 : calculs plus avances (aucune contextualisation : calcul plus complexe
@@ -1019,8 +1084,14 @@ const generateurs = [
     const a = b*s - x0, c = d*s - x0;
     const termeA = a<0?`-${-a}`:`+${a}`, termeC = c<0?`-${-c}`:`+${c}`;
     const sensFinal = (d-b) > 0 ? '<' : '>';
+    const spec = intervalleDemiDroite(sensFinal, x0);
     return { enonce: `Résoudre l'inéquation \\(\\dfrac{x${termeA}}{${b}}\\lt \\dfrac{x${termeC}}{${d}}\\).`,
-             intervalleSpec: intervalleDemiDroite(sensFinal, x0) };
+             intervalleSpec: spec,
+             detail: { lignes: [`\\dfrac{x${termeA}}{${b}} < \\dfrac{x${termeC}}{${d}}`,
+               `\\iff ${d}(x${termeA}) < ${b}(x${termeC})`,
+               `\\iff ${d}x${signeL(d * a)}${Math.abs(d * a)} < ${b}x${signeL(b * c)}${Math.abs(b * c)}`,
+               `\\iff ${linL(d - b, 0)} < ${b * c - d * a}`,
+               ...lignesFinIneq(d - b, '<', b * c - d * a, x0, spec)], final: formaterIntervalleSpec(spec) } };
   }},
   {id:"7.6 b)", type:"intervalle", texteLibre:true, gen: () => {
     // un systeme de deux inequations : l'ensemble solution est une intersection d'intervalles,
@@ -1034,15 +1105,36 @@ const generateurs = [
     const termeB1 = b1<0?`-${-b1}`:`+${b1}`, termeB2 = b2<0?`-${-b2}`:`+${b2}`;
     // bornes strictes (inegalites strictes des deux cotes) : intervalle ouvert des deux cotes
     const intervalleSpec = p >= q ? {type:'vide'} : {type:'intervalles', liste:[{bas:p, haut:q, inclusBas:false, inclusHaut:false}]};
+    const op1 = a1 > 0 ? '>' : '<', op2 = a2 > 0 ? '<' : '>';
     return { enonce: `Résoudre le système suivant : \\[\\begin{cases} ${coefXTexte(a1)}${termeB1}${symb1}${c1} \\\\ ${coefXTexte(a2)}${termeB2}${symb2}${c2} \\end{cases}\\]`,
-             intervalleSpec };
+             intervalleSpec,
+             detail: { lignes: [
+               `${coefXTexte(a1)}${termeB1} ${OP_TEX[op1]} ${c1}`,
+               `\\iff ${coefXTexte(a1)} ${OP_TEX[op1]} ${c1 - b1}`,
+               ...lignesFinIneq(a1, op1, c1 - b1, p, null),
+               `${coefXTexte(a2)}${termeB2} ${OP_TEX[op2]} ${c2}`,
+               `\\iff ${coefXTexte(a2)} ${OP_TEX[op2]} ${c2 - b2}`,
+               ...lignesFinIneq(a2, op2, c2 - b2, q, null),
+               `\\begin{cases} x > ${p} \\\\ x < ${q} \\end{cases}`,
+               ...(p >= q ? [`\\text{Comme } ${p} \\geqslant ${q} \\text{, aucun nombre ne convient}`] : []),
+               `S = ${formaterIntervalleSpec(intervalleSpec)}`], final: formaterIntervalleSpec(intervalleSpec) } };
   }},
   {id:"7.6 c)", type:"encadrement", texteLibre:true, gen: () => {
     // plus exigeant que le coeur : x est lui-meme mis a l'echelle avant la soustraction et la division
     const k = alea(2,5), n = alea(2,4), j = alea(1,4), m1 = entierSigne(1,8);
     const m2 = m1 + n*j, a = alea(1,10), b = a + k*j, p = k*m1 + n*b;
     return { enonce: `Encadrements : \\(${a}\\lt x\\lt ${b}\\). Expression : \\(\\dfrac{${p}-${n}x}{${k}}\\).`,
-             bas: m1, haut: m2, inclusBas:false, inclusHaut:false };
+             bas: m1, haut: m2, inclusBas:false, inclusHaut:false,
+             detail: { lignes: [
+               `${a} < x < ${b}`,
+               `\\text{On multiplie par } -${n} < 0`, `\\text{donc les inégalités changent de sens}`,
+               `-${n}\\times ${a} > -${n}x > -${n}\\times ${b}`,
+               `${-n*a} > -${n}x > ${-n*b}`,
+               `${-n*b} < -${n}x < ${-n*a}`,
+               `${p}${-n*b < 0 ? '-' : '+'}${Math.abs(n*b)} < ${p}-${n}x < ${p}${-n*a < 0 ? '-' : '+'}${Math.abs(n*a)}`,
+               `${p-n*b} < ${p}-${n}x < ${p-n*a}`,
+               `${p-n*b} \\div ${k} < \\dfrac{${p}-${n}x}{${k}} < ${p-n*a} \\div ${k}`,
+               `${m1}<\\dfrac{${p}-${n}x}{${k}}<${m2}`], final: `${m1}<\\dfrac{${p}-${n}x}{${k}}<${m2}` } };
   }},
   {id:"7.6 d)", type:"intervalle", texteLibre:true, gen: () => {
     // second systeme (remplace la factorisation de f(q) - f(p)) : inegalites de formes variees (x des deux cotes,
@@ -1070,15 +1162,22 @@ const generateurs = [
         let a, c; do { a = entierSigne(2,7); c = entierSigne(2,7); } while (a === c);
         const b = entierSigne(1,12), d = b + (a - c) * t;
         const op = (a - c) > 0 ? dir : inverse[dir];
-        return `${coefXTexte(a)}${terme(b)}${symbole[op]}${coefXTexte(c)}${terme(d)}`;
+        const texte = `${coefXTexte(a)}${terme(b)}${symbole[op]}${coefXTexte(c)}${terme(d)}`;
+        return { texte, lignes: [`${coefXTexte(a)}${terme(b)} ${OP_TEX[op]} ${coefXTexte(c)}${terme(d)}`,
+          `\\iff ${coefXTexte(a)}${c > 0 ? '-' : '+'}${Math.abs(c)}x ${OP_TEX[op]} ${d} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`,
+          `\\iff ${linL(a - c, 0)} ${OP_TEX[op]} ${d - b}`, ...lignesFinIneq(a - c, op, d - b, t, null)] };
       }
       if (f === 2) {              // x/k + m  op  n
         const k = choix(diviseurs), m = entierSigne(1,9), n = m + t / k;
-        return `\\dfrac{x}{${k}}${terme(m)}${symbole[dir]}${n}`;
+        return { texte: `\\dfrac{x}{${k}}${terme(m)}${symbole[dir]}${n}`,
+          lignes: [`\\dfrac{x}{${k}}${terme(m)} ${OP_TEX[dir]} ${n}`, `\\iff \\dfrac{x}{${k}} ${OP_TEX[dir]} ${n} ${m < 0 ? '+' : '-'} ${Math.abs(m)}`,
+            `\\iff \\dfrac{x}{${k}} ${OP_TEX[dir]} ${n - m}`, `\\iff x ${OP_TEX[dir]} ${n - m}\\times ${k}`, `\\iff x ${OP_TEX[dir]} ${t}`] };
       }
       const a = entierSigne(2,7), b = entierSigne(1,12), c = a * t + b;     // a x + b  op  c
       const op = a > 0 ? dir : inverse[dir];
-      return `${coefXTexte(a)}${terme(b)}${symbole[op]}${c}`;
+      return { texte: `${coefXTexte(a)}${terme(b)}${symbole[op]}${c}`,
+        lignes: [`${coefXTexte(a)}${terme(b)} ${OP_TEX[op]} ${c}`, `\\iff ${coefXTexte(a)} ${OP_TEX[op]} ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`,
+          `\\iff ${coefXTexte(a)} ${OP_TEX[op]} ${c - b}`, ...lignesFinIneq(a, op, c - b, t, null)] };
     };
     // intersection des deux demi-droites
     let lo = -Infinity, incLo = false, hi = Infinity, incHi = false;
@@ -1089,15 +1188,23 @@ const generateurs = [
     }
     const vide = lo > hi || (lo === hi && !(incLo && incHi));
     const intervalleSpec = vide ? {type:'vide'} : {type:'intervalles', liste:[{bas:lo, haut:hi, inclusBas:incLo, inclusHaut:incHi}]};
-    return { enonce: `Résoudre le système suivant : \\[\\begin{cases} ${ecrire(p, dirA)} \\\\ ${ecrire(q, dirB)} \\end{cases}\\]`, intervalleSpec };
+    const eA = ecrire(p, dirA), eB = ecrire(q, dirB), opTex = (d) => OP_TEX[d];
+    return { enonce: `Résoudre le système suivant : \\[\\begin{cases} ${eA.texte} \\\\ ${eB.texte} \\end{cases}\\]`, intervalleSpec,
+             detail: { lignes: [...eA.lignes, ...eB.lignes,
+               `\\begin{cases} x ${opTex(dirA)} ${p} \\\\ x ${opTex(dirB)} ${q} \\end{cases}`,
+               ...(vide && lo > hi ? [`\\text{Comme } ${lo} > ${hi} \\text{, aucun nombre ne convient}`] : []),
+               `S = ${formaterIntervalleSpec(intervalleSpec)}`], final: formaterIntervalleSpec(intervalleSpec) } };
   }}
 ];
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2272,7 +2379,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

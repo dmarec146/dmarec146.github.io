@@ -297,6 +297,15 @@ async function controlerDansLaPage(opts) {
       }
       return 'ok';
     }
+    // encadrement « a < expression < b » : seules les deux bornes et le caractère strict ou large de chaque côté comptent
+    if (e.type === 'encadrement') {
+      const m = String(F).replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').match(/^(.+?)(<=|<)(.+)(<=|<)(.+)$/);
+      if (!m) return 'faux';
+      try {
+        const bas = evaluer(m[1], 0), haut = evaluer(m[5], 0);
+        return (m[2] === '<=') === !!e.inclusBas && (m[4] === '<=') === !!e.inclusHaut && Math.abs(bas - e.bas) < 1e-9 && Math.abs(haut - e.haut) < 1e-9 ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
+    }
     if (typeof e.reponse !== 'string') return 'non-verifiable';
     // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
     if (e.type === 'texte') {
@@ -396,7 +405,7 @@ async function controlerDansLaPage(opts) {
           const cleEq = parties[i].trim() + '§' + parties[i + 1].trim();
           if (ctx.equivVues) { if (ctx.equivVues.has(cleEq)) continue; ctx.equivVues.add(cleEq); }
           const r = verifierEquivalence(parties[i], parties[i + 1]);
-          if (r.illisible) ctx.equivalencesIllisibles++; else { ctx.equivalences++; if (r.faux) noter('erreur', 'equivalence-fausse', parties[i] + '  ⟺  ' + parties[i + 1] + '   =>   ' + r.detail); }
+          if (r.illisible) { ctx.equivalencesIllisibles++; const ill = stats.illisiblesEx || (stats.illisiblesEx = {}); const o = ill[e.id + ' (équivalence)'] || (ill[e.id + ' (équivalence)'] = { n: 0, ex: parties[i].trim() + '  ⟺  ' + parties[i + 1].trim() }); o.n++; } else { ctx.equivalences++; if (r.faux) noter('erreur', 'equivalence-fausse', parties[i] + '  ⟺  ' + parties[i + 1] + '   =>   ' + r.detail); }
         }
       }
       // assertions propres aux phrases (outils/phrases-details/assertions.js) : la condition qu'une phrase affirme doit être vraie dans ce tirage
@@ -407,7 +416,8 @@ async function controlerDansLaPage(opts) {
         ctx.assertionsVerifiees = (ctx.assertionsVerifiees || 0) + 1;
         if (ok === false) noter('erreur', 'assertion-fausse : ' + A.nom, l);
       }
-      precedent = clauses.length === 1 ? l.split(/\\iff|\\Leftrightarrow/).pop() : null;
+      // une ligne réduite à un texte (« On divise par … ») n'interrompt pas l'enchaînement des équivalences
+      if (!(/^\s*\\text\{/.test(l) && !/=|\\iff/.test(l))) precedent = clauses.length === 1 ? l.split(/\\iff|\\Leftrightarrow/).pop() : null;
     }
     return trouves;
   }

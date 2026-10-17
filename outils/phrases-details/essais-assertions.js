@@ -87,6 +87,17 @@ const ESSAIS = {
     [false, '\\text{et } 0 \\neq 0 \\text{, donc } 0\\sqrt{7} \\text{ est irrationnel}', {}, env('')],
     [false, '\\text{et } 3 \\neq 0 \\text{, donc } 3\\sqrt{9} \\text{ est irrationnel}', {}, env('')]
   ],
+  'on-multiplie-par-un-nombre-negatif': [
+    [true, '\\text{On multiplie par } -3 \\lt  0', {}, env('')],
+    [false, '\\text{On multiplie par } 3 \\lt  0', {}, env('')]
+  ],
+  'la-borne-inferieure-depasse-la-borne-superieure': [
+    [true, '\\text{Comme } 5 \\geqslant 3 \\text{, aucun nombre ne convient}', {}, env('')],
+    [true, '\\text{Comme } -2 \\geqslant -2 \\text{, aucun nombre ne convient}', {}, env('')],
+    [false, '\\text{Comme } 2 \\geqslant 3 \\text{, aucun nombre ne convient}', {}, env('')],
+    [true, '\\text{Comme } -9 > -13 \\text{, aucun nombre ne convient}', {}, env('')],
+    [false, '\\text{Comme } 5 > 5 \\text{, aucun nombre ne convient}', {}, env('')]
+  ],
   'la-suite-est-arithmetique': [
     [true, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite arithmétique')],
     [false, '… \\quad \\text{(car } u_1+u_3 = 2u_2\\text{)}', {}, env('On considère l\'unique suite géométrique')]
