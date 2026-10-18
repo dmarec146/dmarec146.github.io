@@ -50,14 +50,14 @@ Thème **codé le 18/10/2026** (banque `fonctions`, voir `SUIVI-QCM-BAC.md` §8)
 
 ## Probabilités (27 questions)
 
-Thème **non encore codé**. Types : probabilité conditionnelle et intersection sur un arbre ; probabilités totales ; formule de
+Thème **codé le 18/10/2026** (banque `probabilites`, voir `SUIVI-QCM-BAC.md` §9). Types : probabilité conditionnelle et intersection sur un arbre ; probabilités totales ; formule de
 Bayes (`P_{R_1}(E_0)`) ; réunion `P(A∪F)` ; loi binomiale (`P(X=2)`, au moins un succès, plus petit `k` tel que
 `P(X ≤ k) ≥ 0,95`) ; loi binomiale de paramètre inconnu (`P(X=0)=1/125`) ; `P(3 < X ≤ 7)` ; espérance d'un jeu à gains ;
 tirages avec remise ; pannes indépendantes (« le bus ou le train »).
 
 ## Dénombrement, trigonométrie, intégrale
 
-Très peu en 2022 et 2023 (1 question de dénombrement). Voir `repartition-themes.md` pour 2024 à 2026.
+Très peu en 2022 et 2023 (1 question de dénombrement), mais 12 affirmations en 2024 à 2026 (`repartition-themes.md`). **Codé le 18/10/2026** (banque `denombrement`, `SUIVI-QCM-BAC.md` §9) : listes, permutations, combinaisons, parties, coefficients binomiaux, tirages simultanés, chemins.
 
 ## Remarque sur la forme
 

@@ -605,6 +605,188 @@ F['fonctions/equations-differentielles'] = q => {
   });
 };
 
+// ---------- banque « probabilités » : vérité recalculée par énumération ou loi binomiale exacte ----------
+const valeurOption = o => LX.valeur(LX.mathDe(o.affichage).replace(/\\binom\{(\d+)\}\{(\d+)\}/g, (_, a, b) => String(binomial(+a, +b))));
+const binomial = (n, k) => { if (k < 0 || k > n) return 0; let r = 1n; for (let i = 1n; i <= BigInt(k); i++) r = r * (BigInt(n) - BigInt(k) + i) / i; return Number(r); };
+const pmfB = (n, p, k) => binomial(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+const cdfB = (n, p, k) => { let t = 0; for (let i = 0; i <= Math.min(k, n); i++) t += pmfB(n, p, i); return t; };
+const arrondi = (x, nd) => Math.round(x * Math.pow(10, nd) + 1e-9) / Math.pow(10, nd);
+const egale = (a, b, t) => Math.abs(a - b) <= (t === undefined ? 1e-9 : t);
+function loiDe(o) { const mm = /\\mathcal\{B\}\\left\((.*?)\\,;(.*)\\right\)/.exec(LX.mathDe(o.affichage)); return { n: LX.valeur(mm[1]), p: LX.valeur(mm[2]) }; }
+F['probabilites/arbre'] = q => {
+  const M = q.meta; let e;
+  if (M.tipo === 'arbre2') {
+    const p = M.p / 100, q1 = M.q1 / 100, q2 = M.q2 / 100;
+    const J = { AB: p * q1, ABn: p * (1 - q1), nAB: (1 - p) * q2, nABn: (1 - p) * (1 - q2) };
+    const PB = J.AB + J.nAB, PnB = J.ABn + J.nABn, PA = J.AB + J.ABn;
+    e = { AB: J.AB, NAB: J.nAB, BnA: J.ABn / PA, NABn: J.nABn, B: PB, Bbar: PnB, AgB: J.AB / PB, NAgB: J.nAB / PB, AgNB: J.ABn / PnB, p: PA, q2: J.nAB / (1 - PA) }[M.ask];
+  } else {
+    const P = M.ps.map(x => x / 100), Qs = M.qs.map(x => x / 100), joint = P.map((x, i) => x * Qs[i]), PB = joint.reduce((a, b) => a + b, 0);
+    e = M.ask === 'B' ? PB : joint[M.k] / PB;
+  }
+  const attendu = arrondi(e, M.nd);
+  return q.options.map(o => egale(valeurOption(o), attendu, 1e-9));
+};
+F['probabilites/evenements'] = q => {
+  const M = q.meta;
+  if (M.tipo === 'claims') {
+    return q.options.map(o => {
+      const mm = LX.mathDe(o.affichage);
+      if (/indépendants/.test(o.affichage)) return egale(M.c, M.a * M.b);
+      if (/incompatibles/.test(o.affichage) && /overline/.test(o.affichage)) return egale(1 - (M.a + M.b - M.c), 0);
+      if (/incompatibles/.test(o.affichage)) return egale(M.c, 0);
+      if (/incluse/.test(o.affichage)) return egale(M.c, M.a);
+      throw new Error('affirmation inconnue : ' + o.affichage);
+    });
+  }
+  let e;
+  if (M.tipo === 'union') { const AnB = M.a - M.c, nAB = M.b - M.c, nAnB = 1 - M.a - M.b + M.c; e = { U: 1 - nAnB, AnB, NN: nAnB }[M.ask]; e = arrondi(e, 3); }
+  else if (M.tipo === 'indep') { e = { AB: M.a * M.b, U: 1 - (1 - M.a) * (1 - M.b), NN: (1 - M.a) * (1 - M.b) }[M.ask]; e = arrondi(e, 4); }
+  else if (M.tipo === 'composants') {
+    let t = 0; const n = M.ps.length;
+    for (let mask = 0; mask < (1 << n); mask++) { let pr = 1, ok = 0; for (let i = 0; i < n; i++) { const f = (mask >> i) & 1; pr *= f ? M.ps[i] : 1 - M.ps[i]; ok += f; } if (M.ask === 'au-moins' ? ok >= 1 : ok === n) t += pr; }
+    e = arrondi(t, 4);
+  } else if (M.tipo === 'urne' || M.tipo === 'urne3') {
+    const boules = [...Array(M.r).fill('R'), ...Array(M.b).fill('B')], nb = M.tipo === 'urne' ? 2 : 3;
+    let tot = 0, fav = 0;
+    const rec = (suite, utilises) => {
+      if (suite.length === nb) {
+        tot++; const R = suite.filter(c => c === 'R').length;
+        const ok = M.tipo === 'urne' ? { RR: R === 2, RB: R === 1, MC: R !== 1, une: R >= 1 }[M.ask] : (M.ask === 'au-moins-bleue' ? R < 3 : R === 2);
+        if (ok) fav++; return;
+      }
+      boules.forEach((c, i) => { if (!M.avec && utilises.includes(i)) return; rec(suite.concat(c), utilises.concat(i)); });
+    };
+    rec([], []); e = fav / tot;
+  } else throw new Error('type inconnu ' + M.tipo);
+  return q.options.map(o => egale(valeurOption(o), e, M.tipo === 'urne' || M.tipo === 'urne3' ? 1e-12 : 1e-9));
+};
+F['probabilites/binomiale'] = q => {
+  const M = q.meta, p = M.p ? M.p.n / M.p.d : M.p;
+  if (M.tipo === 'binom-loi') return q.options.map(o => { const L = loiDe(o); return egale(L.n, M.n) && egale(L.p, p); });
+  if (M.tipo === 'binom-esp') { const e = M.ask === 'esp' ? M.n * p : M.n * p * (1 - p); return q.options.map(o => egale(valeurOption(o), e)); }
+  if (M.tipo === 'binom-expr') {
+    const e = M.ask === 'egal' ? pmfB(M.n, p, M.k) : M.ask === 'au-moins' ? 1 - Math.pow(1 - p, M.n) : cdfB(M.n, p, 1);
+    return q.options.map(o => egale(valeurOption(o), e, 1e-9));
+  }
+  if (M.tipo === 'binom-intervalle') {
+    return q.options.map(o => {
+      const tex = LX.mathDe(o.affichage), [g, d] = tex.split('=');
+      const mm = /P\((\d+)\\(lt|le) X\\(lt|le) (\d+)\)/.exec(g);
+      const a = +mm[1], b = +mm[4]; let cible = 0;
+      for (let k = 0; k <= M.n; k++) if ((mm[2] === 'lt' ? k > a : k >= a) && (mm[3] === 'lt' ? k < b : k <= b)) cible += pmfB(M.n, M.p, k);
+      const rhs = d.replace(/P\(X\\le (-?\d+)\)/g, (_, i) => '(' + cdfB(M.n, M.p, +i).toFixed(15) + ')');
+      return egale(LX.valeur(rhs), cible, 1e-9);
+    });
+  }
+  throw new Error('type inconnu ' + M.tipo);
+};
+F['probabilites/binomiale-calcul'] = q => {
+  const M = q.meta;
+  if (M.tipo === 'binom-num') {
+    const e = M.ask === 'egal' ? pmfB(M.n, M.p, M.k) : M.ask === 'le' ? cdfB(M.n, M.p, M.k) : 1 - cdfB(M.n, M.p, M.k - 1);
+    return q.options.map(o => egale(valeurOption(o), arrondi(e, 3), 1e-9));
+  }
+  if (M.tipo === 'binom-seuil-n') { let n = 1; while (1 - Math.pow(1 - M.p, n) < M.alpha - 1e-12) n++; return q.options.map(o => egale(valeurOption(o), n)); }
+  if (M.tipo === 'binom-seuil-k') { let k = 0; while (cdfB(M.n, M.p, k) < M.alpha - 1e-12) k++; return q.options.map(o => egale(valeurOption(o), k)); }
+  if (M.tipo === 'binom-param') { const p = 1 - Math.pow(1 / M.den, 1 / M.n); return q.options.map(o => egale(valeurOption(o), p, 1e-9)); }
+  throw new Error('type inconnu ' + M.tipo);
+};
+F['probabilites/esperance'] = q => {
+  const M = q.meta;
+  if (M.tipo === 'variables') return F['probabilites/variables'](q);
+  const E = M.xs.reduce((a, x, i) => a + x * M.ws[i] / M.D, 0), E2 = M.xs.reduce((a, x, i) => a + x * x * M.ws[i] / M.D, 0);
+  const e = M.ask === 'E' ? E : E2 - E * E;
+  return q.options.map(o => egale(valeurOption(o), e, 1e-9));
+};
+F['probabilites/variables'] = q => {
+  const M = q.meta;
+  const e = { 'lin-E': () => M.a * M.e + M.b, 'lin-V': () => M.a * M.a * M.v, 'som-E': () => M.e1 + M.e2, 'som-V': () => M.v1 + M.v2, 'dif-V': () => M.v1 + M.v2, 'moy-E': () => M.mu, 'moy-V': () => M.v / M.n, bt: () => M.v / (M.a * M.a), 'bt-n': () => Math.ceil(M.v / (M.al * M.dl * M.dl) - 1e-9) }[M.kind]();
+  return q.options.map(o => egale(valeurOption(o), arrondi(e, 4), 1e-9));
+};
+
+// ---------- banque « dénombrement » : on DÉNOMBRE (énumération ou programmation dynamique), on ne recalcule pas la formule ----------
+function compterListes(n, k, pred) {
+  let total = 0; const L = new Array(k);
+  (function rec(i) { if (i === k) { if (pred(L)) total++; return; } for (let v = 0; v < n; v++) { L[i] = v; rec(i + 1); } })(0);
+  return total;
+}
+function compterPermutations(n, pred) {
+  let total = 0; const L = [], pris = new Array(n).fill(false);
+  (function rec() { if (L.length === n) { if (pred(L)) total++; return; } for (let v = 0; v < n; v++) { if (pris[v]) continue; pris[v] = true; L.push(v); rec(); L.pop(); pris[v] = false; } })();
+  return total;
+}
+// choisir k éléments dans des groupes (tailles `groupes`), élément par élément : « pris ou non » ; renvoie le nombre de choix par vecteur de compteurs
+function choixParGroupes(groupes, k) {
+  let etats = new Map([[JSON.stringify([...groupes.map(() => 0)]), 1]]);
+  groupes.forEach((taille, g) => {
+    for (let e = 0; e < taille; e++) {
+      const suivant = new Map();
+      for (const [cle, nb] of etats) {
+        suivant.set(cle, (suivant.get(cle) || 0) + nb);                                // l'élément n'est pas pris
+        const cpt = JSON.parse(cle); if (cpt.reduce((a, x) => a + x, 0) >= k) continue;
+        cpt[g]++; const c2 = JSON.stringify(cpt); suivant.set(c2, (suivant.get(c2) || 0) + nb);   // l'élément est pris
+      }
+      etats = suivant;
+    }
+  });
+  const res = []; for (const [cle, nb] of etats) { const cpt = JSON.parse(cle); if (cpt.reduce((a, x) => a + x, 0) === k) res.push([cpt, nb]); }
+  return res;
+}
+const sommePred = (res, pred) => res.filter(([c]) => pred(c)).reduce((a, [, nb]) => a + nb, 0);
+function triangle(n) { const T = [[1]]; for (let i = 1; i <= n; i++) { T.push([1]); for (let j = 1; j < i; j++) T[i].push(T[i - 1][j - 1] + T[i - 1][j]); T[i].push(1); } return T; }
+const PASCAL = triangle(40), Cp = (n, k) => (k < 0 || k > n ? 0 : PASCAL[n][k]);
+const cheminsGrille = (a, b, interdit) => { const g = Array.from({ length: a + 1 }, () => new Array(b + 1).fill(0)); g[0][0] = 1; for (let x = 0; x <= a; x++) for (let y = 0; y <= b; y++) { if (interdit && interdit(x, y)) { g[x][y] = 0; continue; } if (x || y) g[x][y] = (x ? g[x - 1][y] : 0) + (y ? g[x][y - 1] : 0); } return g[a][b]; };
+F['denombrement/listes'] = q => {
+  const M = q.meta;
+  const pred = { libre: () => true, distincts: L => new Set(L).size === L.length, premier: L => L[0] !== 0, sans: L => !L.includes(0), 'au-moins': L => L.includes(0), palin: L => L.every((v, i) => v === L[L.length - 1 - i]), croissants: L => L.every((v, i) => i === 0 || v > L[i - 1]) }[M.rule];
+  const e = compterListes(M.n, M.k, pred);
+  return q.options.map(o => egale(valeurOption(o), e));
+};
+F['denombrement/permutations'] = q => {
+  const M = q.meta; let e;
+  if (M.tipo === 'perm') e = compterPermutations(M.n, () => true);
+  else if (M.tipo === 'arr') { let t = 0; const L = [], pris = new Array(M.n).fill(false); (function rec() { if (L.length === M.k) { t++; return; } for (let v = 0; v < M.n; v++) { if (pris[v]) continue; pris[v] = true; L.push(v); rec(); L.pop(); pris[v] = false; } })(); e = t; }
+  else if (M.tipo === 'anag') { const lettres = M.mot.split(''), vus = new Set(), pris = new Array(lettres.length).fill(false), cur = []; (function rec() { if (cur.length === lettres.length) { vus.add(cur.join('')); return; } for (let i = 0; i < lettres.length; i++) { if (pris[i]) continue; pris[i] = true; cur.push(lettres[i]); rec(); cur.pop(); pris[i] = false; } })(); e = vus.size; }
+  else if (M.tipo === 'adj') e = compterPermutations(M.n, L => { const i0 = L.indexOf(0), i1 = L.indexOf(1); const i2 = L.indexOf(2); if (M.rule === 'trois') { const mx = Math.max(i0, i1, i2), mn = Math.min(i0, i1, i2); return mx - mn === 2; } if (M.rule === 'avant') return i0 < i1; if (M.rule === 'extremes') return L[0] === 0 && L[L.length - 1] === 1; return M.rule === 'premier' ? L[0] === 0 : M.rule === 'cote' ? Math.abs(i0 - i1) === 1 : Math.abs(i0 - i1) !== 1; });
+  else throw new Error('type inconnu ' + M.tipo);
+  return q.options.map(o => egale(valeurOption(o), e));
+};
+F['denombrement/combinaisons'] = q => {
+  const M = q.meta, res = choixParGroupes(M.groupes, M.k), c = M.cond;
+  const pred = { libre: () => true, exact: x => x[0] === c.j, 'au-moins': x => x[0] >= c.j, 'au-plus': x => x[0] <= c.j }[c.kind];
+  const e = sommePred(res, pred);
+  return q.options.map(o => egale(valeurOption(o), e));
+};
+F['denombrement/parties'] = q => {
+  const M = q.meta, pop = x => { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; };
+  const pred = { toutes: () => true, 'non-vides': x => x !== 0, k: x => pop(x) === M.k, contient: x => x & 1, propres: x => x !== 0 && x !== (1 << M.n) - 1, pair: x => pop(x) % 2 === 0, contient2: x => (x & 3) === 3, ni2: x => (x & 3) === 0, 'au-moins2': x => pop(x) >= 2 }[M.rule];
+  let e = 0; for (let x = 0; x < (1 << M.n); x++) if (pred(x)) e++;
+  return q.options.map(o => egale(valeurOption(o), e));
+};
+F['denombrement/binomiaux'] = q => {
+  const M = q.meta;
+  if (M.ask === 'val') return q.options.map(o => egale(valeurOption(o), Cp(M.n, M.k)));
+  if (M.ask === 'formule') return q.options.map(o => { const f = LX.fonction(LX.mathDe(o.affichage)); for (let n = M.k; n <= 12; n++) if (!egale(f(0, { n }), Cp(n, M.k), 1e-9)) return false; return true; });
+  return q.options.map(o => { const [g, d] = valeurDe(o).split('=').map(t => LX.valeur(t)); return egale(g, d); });
+};
+function valeurDe(o) { return LX.mathDe(o.affichage).replace(/\\binom\{(\d+)\}\{(\d+)\}/g, (_, a, b) => String(Cp(+a, +b))); }
+F['denombrement/tirage-simultane'] = q => {
+  const M = q.meta, res = choixParGroupes([M.r, M.b], M.k), tot = sommePred(res, () => true);
+  let e;
+  if (M.ask === 'total') e = tot;
+  else e = sommePred(res, M.ask === 'exact' ? c => c[0] === M.j : M.ask === 'au-moins' ? c => c[0] >= 1 : c => c[0] === M.k || c[0] === 0) / tot;
+  return q.options.map(o => egale(valeurOption(o), e, 1e-12));
+};
+F['denombrement/chemins'] = q => {
+  const M = q.meta; let e;
+  if (M.ask === 'mots') { const dp = Array.from({ length: M.n + 1 }, () => new Array(M.k + 2).fill(0)); dp[0][0] = 1; for (let i = 0; i < M.n; i++) for (let j = 0; j <= M.k; j++) { dp[i + 1][j] += dp[i][j]; dp[i + 1][j + 1] += dp[i][j]; } e = dp[M.n][M.k]; }
+  else if (M.ask === 'libre') e = cheminsGrille(M.a, M.b);
+  else if (M.ask === 'par') e = cheminsGrille(M.c, M.d) * cheminsGrille(M.a - M.c, M.b - M.d);
+  else e = cheminsGrille(M.a, M.b, (x, y) => x === M.c && y === M.d);
+  return q.options.map(o => egale(valeurOption(o), e));
+};
+
 // ---------- contrôle de rédaction ----------
 function redaction(q) {
   const pb = [];
@@ -612,7 +794,7 @@ function redaction(q) {
   for (const t of textes) {
     if (typeof t !== 'string') { pb.push('texte non chaîne'); continue; }
     if (/NaN|undefined|Infinity|null/.test(t)) pb.push('valeur invalide : ' + t.slice(0, 60));
-    if (/<[A-Za-z]/.test(t.replace(/<\/?(pre|code)\b[^>]*>/g, ''))) pb.push('< suivi d\'une lettre (balise HTML involontaire, écrire \\lt) : ' + t.slice(0, 80));
+    if (/<[A-Za-z]/.test(t.replace(/<\/?(pre|code|br)\b[^>]*>/g, ''))) pb.push('< suivi d\'une lettre (balise HTML involontaire, écrire \\lt) : ' + t.slice(0, 80));
     if (/\+-|-\+|--|\+\+|\^\{1\}|\(\)/.test(t.replace(/\\\(|\\\)/g, ''))) pb.push('signe collé ou exposant 1 : ' + t.slice(0, 80));
     if ((t.match(/\\\(/g) || []).length !== (t.match(/\\\)/g) || []).length) pb.push('\\( \\) non appariés : ' + t.slice(0, 60));
     if (/(^|[^\d.])1\\times\s*(\\left|\\dfrac|\\sqrt|[a-z])|\\left\(1\\,/.test(t)) pb.push('coefficient 1 : ' + t.slice(0, 60));

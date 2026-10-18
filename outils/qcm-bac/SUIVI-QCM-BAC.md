@@ -180,3 +180,34 @@ chargée par la page pilote `qcm-bac/fiche.html` (`?theme=fonctions` pour ne tra
   téléphone, aucune erreur console.
 - **Restent hors banque (pas de figure)** : lecture graphique (courbe de `f'`, de `f''`, tableau de variation), nombre de
   solutions de `f(x)=k`. Autres thèmes : probabilités et dénombrement (suite conseillée), intégrales, trigonométrie.
+
+## 9. Banques « Probabilités » et « Dénombrement », codées le 18/10/2026
+
+À la demande de David (« continue avec les probabilités et le dénombrement »). Fichiers : `qcm-bac/banques/04-probabilites.js`
+(identifiant `probabilites`) et `qcm-bac/banques/05-denombrement.js` (identifiant `denombrement`), chargés par `qcm-bac/fiche.html`
+(`?theme=probabilites`, `?theme=denombrement`). La page pilote tire désormais 2 thèmes parmi les 5 banques.
+
+- **Probabilités, 6 familles** : arbres pondérés (lecture, probabilités totales, Bayes, paramètre inconnu, partition à trois branches ;
+  contextes usine, test médical, lycée, abstrait) ; événements (réunion, indépendance, composants en série ou en parallèle, « le bus
+  ou le train », urnes avec ou sans remise, affirmations indépendants / incompatibles / inclus) ; loi binomiale, formules
+  (identification, espérance, variance, expression de `P(X=k)`, `P(X≥1)`, `P(X≤1)`, `P(a<X≤b)` par différences) ; loi binomiale,
+  calculs (à la calculatrice, plus petit `n` ou `k` pour un seuil, paramètre inconnu `P(X=0)=1/125`) ; espérance et variance d'une
+  loi donnée par un tableau, jeu équitable ; somme, moyenne, linéarité, `V(X−Y)`, Bienaymé-Tchebychev et taille d'échantillon.
+- **Dénombrement, 7 familles** : k-listes avec contraintes (au moins un, palindromes, premier élément imposé…) ; permutations,
+  arrangements et anagrammes (lettres répétées, personnes côte à côte, extrémités imposées) ; combinaisons (exactement, au moins,
+  au plus ; au niveau 3 les réponses sont des expressions en coefficients binomiaux, comme au bac) ; parties d'un ensemble ;
+  coefficients binomiaux (valeurs, relation de Pascal, symétrie, formules `C(n,2)`, `C(n,3)`) ; tirage simultané et probabilité ;
+  chemins dans un quadrillage (avec point imposé ou interdit) et mots binaires.
+- **Contrôle indépendant** : probabilités : énumération complète des issues (arbres, urnes, composants) ou loi binomiale exacte,
+  comparée à la valeur lue dans chaque option affichée (les expressions avec `\binom` sont évaluées numériquement) ; dénombrement :
+  on ne recalcule pas la formule, on **dénombre** (énumération de toutes les listes, permutations ou parties ; programmation
+  dynamique « chaque élément est pris ou non » pour les groupes ; programmation dynamique sur la grille pour les chemins).
+  `controle-banques.js` : 106 000 questions (cinq banques), 0 anomalie, erreurs volontaires détectées 6 350 / 6 350.
+- **Défauts attrapés** : réponses fausses numériquement égales à la bonne (loi symétrique `B(n ; 1/2)`, loi à deux modes quand
+  `(n+1)p` est entier, `P(X=6)=P(X=7)+P(X=8)` pour `B(13 ; 0,4)`, relation de Pascal et symétrie des coefficients binomiaux),
+  affirmation « `P_A(B)=P_B(A)` » vraie aussi pour des événements incompatibles, décimaux en notation exponentielle (`1e-7`).
+- **Variété** (énoncés distincts sur 3 000 tirages) : probabilités de 115 à plus de 2 000 ; dénombrement de 35 (parties, niveaux 1
+  et 3) à plus de 500 ; les familles de dénombrement sur un petit univers (parties d'un ensemble à n éléments) restent limitées.
+- **Essai navigateur** : 84 fiches tirées, plus de 5 000 formules, 0 erreur MathJax, pas de défilement horizontal sur téléphone.
+- **Restent hors banque** : intégrales, trigonométrie, lecture graphique (figure), sommes en Python, loi géométrique et loi de
+  Poisson (approfondissements).
