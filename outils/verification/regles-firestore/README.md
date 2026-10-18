@@ -24,8 +24,8 @@ Il faut un `firebase.json` à côté indiquant les règles et le port 8080 :
     { "firestore": { "rules": "../../../firestore.rules" },
       "emulators": { "firestore": { "port": 8080, "host": "127.0.0.1" }, "ui": { "enabled": false } } }
 
-Résultat attendu : « 45 réussis, 0 échecs » (29 cas initiaux + 16 pour
-`devoirsMasques`, 04/10/2026).
+Résultat attendu : « 53 réussis, 0 échecs » (29 cas initiaux + 16 pour
+`devoirsMasques`, 04/10/2026, + 8 pour `s_qcm_bac`, 18/10/2026).
 
 Si la CLI répond « `../../../firestore.rules` is outside of project
 directory » (firebase-tools 14 récent) : créer à la racine du dépôt un

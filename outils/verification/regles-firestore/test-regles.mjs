@@ -41,6 +41,18 @@ await cas('suppression d\'une page', false, updateDoc(doc(anonyme, 'statistiques
 await cas('clé inconnue ajoutée', false, setDoc(doc(anonyme, 'statistiques', ID), pageVue('premiere-f14', { pirate: 1 }), { merge: true }));
 await cas('écrasement complet du document', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: 1, pages: { accueil: 1 }, derniere: 'accueil' }));
 
+console.log('Partie « QCM Bac » (s_qcm_bac, 18/10/2026)');
+const ID_QCM = '2026-10-18_1';
+const pageQcm = (page, extra = {}) => ({ pv: increment(1), s_qcm_bac: increment(1), pages: { [page]: increment(1) }, derniere: page, ...extra });
+await cas('QCM Bac : création valide (anonyme)', true, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac-fiche', { visites: increment(1), a_telephone: increment(1) }), { merge: true }));
+await cas('QCM Bac : page vue suivante (anonyme)', true, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac'), { merge: true }));
+await cas('QCM Bac : élève connecté', true, setDoc(doc(eleve, 'statistiques', ID_QCM), pageQcm('qcm-bac-sujet-blanc'), { merge: true }));
+await cas('QCM Bac : s_qcm_bac +2', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_qcm_bac: increment(2) }), { merge: true }));
+await cas('QCM Bac : baisse du compteur', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_qcm_bac: increment(-1) }), { merge: true }));
+await cas('QCM Bac : création avec s_qcm_bac = 5', false, setDoc(doc(anonyme, 'statistiques', '2026-10-18_2'), { pv: 1, s_qcm_bac: 5, pages: { 'qcm-bac': 1 }, derniere: 'qcm-bac' }));
+await cas('QCM Bac : une autre partie inconnue reste refusée', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_pirate: increment(1) }), { merge: true }));
+await cas('QCM Bac : lecture refusée à l\'anonyme', false, getDoc(doc(anonyme, 'statistiques', ID_QCM)));
+
 console.log('Lecture et suppression');
 await cas('anonyme : lecture refusée', false, getDoc(doc(anonyme, 'statistiques', ID)));
 await cas('élève : lecture refusée', false, getDoc(doc(eleve, 'statistiques', ID)));

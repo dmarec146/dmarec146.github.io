@@ -327,6 +327,9 @@ depuis la réorganisation du 02/10/2026 »).
   firestore:rules`), ajouter `['qcm_bac', 'QCM Bac']` dans la liste des parties de `assets/js/frequentation.js` et la partie
   `qcm_bac` dans `decrirePage()` de `statistiques.js`. **Ne changer `statistiques.js` qu'après le déploiement des règles**, sinon
   les écritures de ces pages sont refusées (sans gêner la page, l'erreur est ignorée). Demandé par David le 18/10/2026.
+  **État (18/10/2026) : `s_qcm_bac` ajouté dans les trois fonctions de `firestore.rules`, testé dans l'émulateur (53 réussis, dont
+  8 nouveaux cas), mais PAS ENCORE PUBLIÉ dans la Console Firebase** (David le fait à la main). Restent, après sa confirmation :
+  `statistiques.js` (partie `qcm_bac`) et `frequentation.js` (`['qcm_bac', 'QCM Bac']`).
 
 Backlog de David pour après le travail sur les fiches : l'artefact
 **« Chantiers futurs »** (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad :
