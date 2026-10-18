@@ -31,12 +31,13 @@ function formaterDate(millis) {
 // Une fiche pointe directement dessus (ficheId, chemin absolu). Un devoir
 // d'automatismes n'a qu'une seule page qui se verrouille elle-meme sur le
 // devoir en cours : sujet-blanc.html (cible absente ou 'sujet-blanc') ou
-// fiche.html (cible 'fiche').
+// fiche.html (cible 'fiche') ; qcm-bac/fiche.html (cible 'qcm-bac').
 function lienPour(devoir) {
   // ?devoir=<id> (04/10/2026) : la fiche s'ouvre sur CE devoir -- necessaire
   // des qu'une fiche porte plusieurs devoirs (devoirs sur des calculs
   // differents) ; une fiche qui ne lit pas le parametre l'ignore.
   if (devoir.type === 'fiche') return `${devoir.ficheId}?devoir=${encodeURIComponent(devoir.id)}`;
+  if (devoir.cible === 'qcm-bac') return '/qcm-bac/fiche.html';     // QCM Bac de Terminale (18/10/2026)
   return devoir.cible === 'fiche' ? '/automatismes/premiere/fiche.html' : '/automatismes/premiere/sujet-blanc.html';
 }
 

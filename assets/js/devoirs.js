@@ -58,6 +58,22 @@ const THEMES_AUTOMATISMES = [
   { id: 'probabilites', titre: 'Probabilités et statistiques' },
 ];
 
+// Themes d'un devoir "QCM Bac" (Terminale, 18/10/2026) -- memes identifiants que la liste `banques` de
+// qcm-bac/fiche.html, memes intitules que le champ `titre` de chaque banque (qcm-bac/banques/). A tenir a jour a la main.
+const THEMES_QCM_BAC = [
+  { id: 'suites', titre: 'Suites' },
+  { id: 'geometrie-espace', titre: 'Géométrie dans l’espace' },
+  { id: 'fonctions', titre: 'Exponentielle et logarithme' },
+  { id: 'probabilites', titre: 'Probabilités' },
+  { id: 'denombrement', titre: 'Dénombrement' },
+  { id: 'integrales', titre: 'Calcul intégral' },
+  { id: 'trigonometrie', titre: 'Trigonométrie' },
+  { id: 'algorithmique', titre: 'Algorithmique et Python' },
+  { id: 'lectures-graphiques', titre: 'Lectures graphiques' },
+];
+// Liste de themes proposee selon le type choisi dans le formulaire.
+const themesDuType = (type) => (type === 'qcm-bac' ? THEMES_QCM_BAC : THEMES_AUTOMATISMES);
+
 const zoneChargement = document.getElementById('dev-chargement');
 const zoneErreur = document.getElementById('dev-erreur');
 const zoneContenu = document.getElementById('dev-contenu');
@@ -300,7 +316,7 @@ function remplirListeEleves(selectionnes) {
 // : themes deja cibles par le devoir en cours d'edition.
 function remplirListeThemes(selectionnes) {
   listeThemes.innerHTML = '';
-  for (const theme of THEMES_AUTOMATISMES) {
+  for (const theme of themesDuType(selectType.value)) {
     const ligne = document.createElement('label');
     ligne.className = 'dev-eleve-ligne';
     const case_ = document.createElement('input');
@@ -562,7 +578,7 @@ function remplirSelectClasse() {
 // niveau/mode/duree -- seule la fiche ciblee ajoute le champ themes (voir
 // listener ci-dessous).
 function estTypeAutomatismes(valeur) {
-  return valeur === 'automatismes' || valeur === 'automatismes-fiche';
+  return valeur === 'automatismes' || valeur === 'automatismes-fiche' || valeur === 'qcm-bac';
 }
 
 function mettreAJourChampDuree() {
@@ -573,7 +589,7 @@ selectType.addEventListener('change', () => {
   const valeur = selectType.value;
   const estFiche = valeur === 'fiche';
   const estAutomatismes = estTypeAutomatismes(valeur);
-  const estAutomatismesCible = valeur === 'automatismes-fiche';
+  const estAutomatismesCible = valeur === 'automatismes-fiche' || valeur === 'qcm-bac';
   champFiche.hidden = !estFiche;
   selectFiche.required = estFiche;
   champNiveau.hidden = !estAutomatismes;
@@ -758,8 +774,10 @@ function modifierDevoir(devoir) {
   // type "automatismes-fiche" du formulaire (concept purement cote UI, voir
   // le listener "submit" plus bas qui le retraduit en type:'automatismes',
   // cible:'fiche' a l'ecriture).
-  const estFicheCiblee = devoir.type === 'automatismes' && devoir.cible === 'fiche';
-  selectType.value = estFicheCiblee ? 'automatismes-fiche' : devoir.type;
+  // Meme principe pour cible:'qcm-bac' (18/10/2026) -> type "qcm-bac" du formulaire.
+  const estQcmBac = devoir.type === 'automatismes' && devoir.cible === 'qcm-bac';
+  const estFicheCiblee = (devoir.type === 'automatismes' && devoir.cible === 'fiche') || estQcmBac;
+  selectType.value = estQcmBac ? 'qcm-bac' : estFicheCiblee ? 'automatismes-fiche' : devoir.type;
   selectType.dispatchEvent(new Event('change'));
   if (devoir.type === 'automatismes') {
     selectNiveau.value = String(devoir.niveau);
@@ -838,14 +856,13 @@ formulaire.addEventListener('submit', async (evenement) => {
     const niveau = parseInt(selectNiveau.value, 10);
     const mode = selectMode.value;
     const libelleMode = mode === 'chrono' ? 'chrono' : 'fiche';
-    if (type === 'automatismes-fiche') {
+    if (type === 'automatismes-fiche' || type === 'qcm-bac') {
       const themes = [...listeThemes.querySelectorAll('input:checked')].map((c) => c.value);
       if (themes.length === 0) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir au moins un thème.'); return; }
-      const libellesThemes = THEMES_AUTOMATISMES.filter((t) => themes.includes(t.id)).map((t) => t.titre);
-      donnees = {
-        type: 'automatismes', cible: 'fiche', themes, niveau, mode,
-        titre: `Fiche d'automatismes — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})`,
-      };
+      const libellesThemes = themesDuType(type).filter((t) => themes.includes(t.id)).map((t) => t.titre);
+      donnees = type === 'qcm-bac'
+        ? { type: 'automatismes', cible: 'qcm-bac', themes, niveau, mode, titre: `QCM Bac — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` }
+        : { type: 'automatismes', cible: 'fiche', themes, niveau, mode, titre: `Fiche d'automatismes — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` };
     } else {
       donnees = { type: 'automatismes', cible: 'sujet-blanc', niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
     }

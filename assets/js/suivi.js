@@ -409,7 +409,9 @@ export async function enregistrerConnexion(uid) {
 }
 
 // Deux cibles possibles pour un devoir de type 'automatismes' (28/09/2026) :
-// 'sujet-blanc' (mix de tous les themes, comportement d'origine) ou 'fiche'
+// 'sujet-blanc' (mix de tous les themes, comportement d'origine), 'qcm-bac' (fiche QCM Bac de Terminale, 18/10/2026 : page
+// qcm-bac/fiche.html, themes choisis, note en points sur 10 avec penalite au niveau 3 ; filtre par cible, donc sans effet sur
+// les pages de Premiere) ou 'fiche'
 // (fiche d'automatismes ciblee, themes choisis par l'enseignant -- voir
 // automatismes/premiere/fiche.html). Stockee dans le champ `cible` du
 // document devoir ; absente sur tout devoir cree avant ce chantier, traitee

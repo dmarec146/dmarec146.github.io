@@ -297,3 +297,13 @@ Sur demande de David : bloc ajouté à la barre de navigation (pastille ambre «
 360 px), carte ambre sur l'accueil, page `qcm-bac/index.html` (fiche à deux thèmes tirés au sort + les neuf thèmes), fil d'Ariane et
 barre « Sommaire » sur `qcm-bac/fiche.html`, `nav-auth.js` et `statistiques.js` chargés. Accès libre à tous les élèves (aucune
 condition de classe ni de compte). Fusion dans `master` : à la demande de David seulement.
+
+## 13. Devoirs (18/10/2026)
+
+Un devoir « QCM Bac » s'attribue depuis `tableau-de-bord/devoirs.html` (type « QCM Bac ») : document `devoirs/{id}` avec `type:'automatismes'`,
+`cible:'qcm-bac'`, `themes`, `niveau`, `mode`, `duree` (chrono), `nbEssaisMax`, `echeance`, `classe`. La fiche `qcm-bac/fiche.html` se verrouille
+dessus (comme `automatismes/premiere/fiche.html`), enregistre la tentative en points sur 10 (1 point par bonne réponse, −0,25 point par erreur au
+niveau 3, note ≥ 0) dans `eleves/{uid}/devoirsTentatives`, garde un brouillon en mode fiche et affiche les fenêtres « dernière tentative », « essais
+épuisés », « échéance passée ». La vue « Résultats » et `/mes-devoirs/` affichent déjà `score / total` : sans changement. Le filtre par cible
+(`devoirAutomatismeActif('qcm-bac')`) empêche un devoir QCM Bac de verrouiller une page de Première. **Non testé avec Firebase** (impossible
+depuis la session cloud) : à valider avec `demo-eleve`.

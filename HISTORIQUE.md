@@ -8693,3 +8693,23 @@ Lot de trois fiches après la fiche 1 de Seconde, avant le push suivant.
 - **Outil** : une ligne qui commence par `=` reprend le dernier membre de la précédente ; `\left[…\right]` lu comme des parenthèses (les mises en facteur de la fiche 4 étaient « non lisibles », donc non vérifiées : elles le sont maintenant) ; `16\,384` lu comme un seul nombre ; option `--illisibles` (liste des chaînes non lues, par exercice) ; réponse textuelle comparée telle quelle. Un commentaire placé au milieu d'une chaîne de `.replace` avait neutralisé quatre remplacements de `versMathjs` entre deux corrections : retrouvé et corrigé.
 - **Assertions** (19 maintenant, 63 essais) : comparaison écrite vraie (`<`, `>`, `≤`, `≥`, grands entiers en BigInt, espaces fines), chiffres de la période décimale et longueur de période recalculés, facteur premier / dénominateur réduit, unités qui se répètent, `a^5` finit comme `a`, puissance finit comme sa réduite, signe de `x` de l'énoncé, `m` n'est pas un carré parfait, coefficient non nul avec racine irrationnelle. Les assertions sur `x \lt  0` ne s'appliquaient pas (deux espaces après `\lt`) : motif corrigé.
 - **Phrases** : cinq relectures indépendantes de l'agent pour ces fiches (10, 5 et 1 phrases en plus de la série de la fiche 1) ; refusés puis corrigés : « les chiffres des unités se répètent » sans la répétition visible, « tous les 4 exposants » (formulation), « le nombre … est irrationnel » non justifié, ligne circulaire pour un coefficient 1. Deux formulations validées avec la source `claude` (reprise exacte de la correction proposée par l'agent ; ligne supprimée dans le cas circulaire). Catalogue : toutes les phrases utilisées sont validées.
+
+## 2026-10-18 — Bloc « QCM Bac » (Terminale spécialité) : banques, navigation, devoirs
+
+Chantier mené sur la branche `claude/gifted-carson-92cmm8` (non fusionnée dans `master`, à la demande de David). Détail technique, sources et
+variété des banques : `outils/qcm-bac/SUIVI-QCM-BAC.md` (§5 à §13).
+
+- **Banques** : neuf thèmes (suites, géométrie dans l'espace, exponentielle et logarithme, probabilités, dénombrement, calcul intégral, trigonométrie,
+  algorithmique et Python, lectures graphiques), séries de 10 questions, trois niveaux (barème 1 point ; niveau 3 : −0,25 point par erreur, note ≥ 0).
+  Moteur `automatismes/assets/moteur.js` partagé avec Première (options `bareme.penalites` et `textesNiveau`). Contrôle indépendant
+  `outils/qcm-bac/controle-banques.js` : 44 160 questions, 0 anomalie, erreurs volontaires détectées 9 112 / 9 112 (le code Python affiché est exécuté ;
+  les figures sont relues et recalculées).
+- **Navigation** : pastille « QCM Bac » ambre (`#FBE9B7`, même fond que la carte) dans les 26 pages à en-tête standard, carte ambre à côté de la carte
+  Première sur l'accueil, page `qcm-bac/index.html`. Choix de la couleur validé par David. Fréquentation rangée dans la partie `automatismes` ;
+  **rappel à David** (`SUIVI-FIREBASE.md` §6) : règles Firestore à modifier pour une partie `s_qcm_bac`.
+- **Devoirs** (18/10/2026) : nouveau type de devoir « QCM Bac » (`type:'automatismes'`, `cible:'qcm-bac'`, thèmes choisis, niveau, mode fiche ou chrono,
+  durée, essais, échéance) ; la fiche `qcm-bac/fiche.html` se verrouille comme celle de Première (`devoirAutomatismeActif('qcm-bac')` filtre par cible,
+  donc aucun effet sur les pages de Première, même pour les thèmes de même identifiant), enregistre la tentative en POINTS sur 10 (pénalité comprise),
+  brouillon, fenêtres « essais épuisés » et « échéance passée ». `devoirs.js` (formulaire, modification), `mes-devoirs.js` (lien), `suivi.js` (commentaire).
+  Aucune modification de `firestore.rules`. Testé en navigateur avec des fonctions de suivi simulées (verrouillage, 3 bonnes et 2 fausses au niveau 3 →
+  2,5 / 10 enregistré) ; **non testé avec Firebase** : à valider par David avec `demo-eleve`.

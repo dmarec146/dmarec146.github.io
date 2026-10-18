@@ -12,6 +12,7 @@ window.MathJax = {
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-svg.min.js"></script>
+<script type="module" src="../assets/js/suivi.js"></script>
 <link rel="stylesheet" href="../automatismes/assets/automatismes.css?v=20261017">
 </head>
 <body>
@@ -44,6 +45,16 @@ window.MathJax = {
 
 <div id="app"></div>
 
+<!-- Pop-up d'information sur le devoir en cours (même principe que automatismes/premiere/fiche.html) -->
+<div id="modal-devoir" class="modal-devoir" hidden>
+  <div class="modal-devoir-contenu">
+    <button type="button" class="modal-devoir-fermer" data-role="fermer-modal-devoir" aria-label="Fermer">&times;</button>
+    <p class="modal-devoir-titre">Devoir</p>
+    <p class="modal-devoir-texte" id="modal-devoir-texte"></p>
+    <button type="button" class="modal-devoir-ok" data-role="fermer-modal-devoir">Compris</button>
+  </div>
+</div>
+
 <div class="barre-navigation">
   <a class="nav-btn nav-btn-sommaire" href="index.html">&#8962; Sommaire</a>
   <a class="nav-btn" href="../index.html">Accueil</a>
@@ -61,8 +72,52 @@ window.MathJax = {
 <script src="banques/08-algorithmique.js?v=20261018b"></script>
 <script src="banques/09-lectures-graphiques.js?v=20261018b"></script>
 <script>
-  // QCM Bac (17-18/10/2026) : fiche libre, sans suivi de devoir (pas de comptes de Terminale pour l'instant), ouverte à tous.
-  document.addEventListener('DOMContentLoaded', function () {
+  // QCM Bac (17-18/10/2026), devoirs ajoutés le 18/10/2026 : sans devoir en cours, fiche libre (rien n'est enregistré,
+  // ouverte à tous) ; avec un devoir attribué à la classe de l'élève (type 'automatismes', cible 'qcm-bac'), la page se
+  // verrouille sur le niveau, le mode, la durée et les thèmes du devoir, comme automatismes/premiere/fiche.html.
+  // Note du devoir : points du barème (1 point par bonne réponse, 0,25 point retiré par mauvaise réponse au niveau 3,
+  // note jamais négative), enregistrés sur 10 par suivi.js (enregistrerTentativeSujetBlancSiDevoir, qui prend des points).
+  function formaterEcheance(millis) {
+    return new Date(millis).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+  function afficherModaleDevoir(texte) {
+    const modale = document.getElementById('modal-devoir');
+    const zoneTexte = document.getElementById('modal-devoir-texte');
+    if (!modale || !zoneTexte) return;
+    zoneTexte.textContent = texte;
+    modale.hidden = false;
+  }
+  function fermerModaleDevoir() {
+    const modale = document.getElementById('modal-devoir');
+    if (modale) modale.hidden = true;
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.id === 'modal-devoir' || e.target.closest('[data-role="fermer-modal-devoir"]')) fermerModaleDevoir();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') fermerModaleDevoir();
+  });
+
+  // Attend DOMContentLoaded : suivi.js est un module (donc différé) et n'a attaché ses fonctions à window qu'à ce moment-là.
+  document.addEventListener('DOMContentLoaded', async function () {
+    let verrouille = null;
+    let brouillon = null;
+    if (window.devoirAutomatismeActif) {
+      try {
+        const devoir = await window.devoirAutomatismeActif('qcm-bac');
+        if (devoir && !devoir.bloque && Array.isArray(devoir.themes) && devoir.themes.length) {
+          verrouille = { id: devoir.id, niveau: devoir.niveau, mode: devoir.mode, duree: devoir.duree, themes: devoir.themes, titre: devoir.titre, echeanceTexte: formaterEcheance(devoir.echeance), essaisUtilises: devoir.essaisUtilises, nbEssaisMax: devoir.nbEssaisMax };
+          if (devoir.mode === 'fiche' && window.chargerBrouillonAutomatisme) {
+            try { brouillon = await window.chargerBrouillonAutomatisme(devoir.id); } catch (erreur) { brouillon = null; }
+          }
+        } else if (devoir && devoir.bloque) {
+          afficherModaleDevoir(`Tu as utilisé tes ${devoir.nbEssaisMax} tentatives pour ce devoir (« ${devoir.titre} ») — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement : ces séries ne comptent plus.`);
+        }
+      } catch (erreur) {
+        verrouille = null;
+      }
+    }
+
     Automatismes.demarrer({
       banques: ['suites', 'geometrie-espace', 'fonctions', 'probabilites', 'denombrement', 'integrales', 'trigonometrie', 'algorithmique', 'lectures-graphiques'],
       nbThemes: 2,
@@ -71,14 +126,47 @@ window.MathJax = {
       duree: 180,
       cible: '#app',
       labelNouvelle: 'Nouvelle fiche',
+      verrouille: verrouille,
+      brouillon: brouillon,
       // 1 point par bonne réponse ; au niveau 3 seulement, 0,25 point retiré par mauvaise réponse (sans réponse : rien)
       bareme: { parQuestion: 1, penalites: { 3: 0.25 } },
       textesNiveau: {
         1: 'Niveau 1 — les bases : une seule idée par question, des valeurs simples.',
         2: 'Niveau 2 — le niveau du baccalauréat : questions calquées sur les affirmations des sujets.',
         3: 'Niveau 3 — plus difficile : plusieurs étapes, pièges, notions d\'approfondissement. Chaque mauvaise réponse retire 0,25 point ; une question laissée sans réponse ne retire rien.'
+      },
+      // Fin d'une série : n'écrit que pour un devoir précis (par son id, connu dès le verrouillage). Une série libre
+      // n'écrit jamais rien. Même logique que automatismes/premiere/fiche.html, mais avec les POINTS du barème.
+      onFinSerie: async function (resultat) {
+        const devoirId = verrouille && verrouille.id;
+        let etatAvant = null;
+        if (devoirId && window.verifierEtatDevoirAutomatismeParId) {
+          try { etatAvant = await window.verifierEtatDevoirAutomatismeParId(devoirId); } catch (erreur) { etatAvant = null; }
+        }
+        if (devoirId && window.enregistrerTentativeSujetBlancSiDevoir) {
+          try {
+            await window.enregistrerTentativeSujetBlancSiDevoir(devoirId, resultat.bonnes, resultat.total, resultat.points, resultat.repondues, resultat.baremeTotal);
+          } catch (erreur) { /* déjà journalisé côté suivi.js */ }
+        }
+        if (etatAvant && etatAvant.echeance && etatAvant.echeance <= Date.now()) {
+          afficherModaleDevoir(`L'échéance de ce devoir (« ${etatAvant.titre} ») est passée : cette série n'est plus comptée. Tu peux continuer à t'entraîner librement.`);
+          if (verrouille) { verrouille = null; Automatismes.leverVerrouille(); }
+          return;
+        }
+        if (etatAvant && etatAvant.bloque) {
+          afficherModaleDevoir(`Tu as utilisé tes ${etatAvant.nbEssaisMax} tentatives pour ce devoir (« ${etatAvant.titre} ») — ta meilleure note a été retenue. Cette tentative ne compte plus pour le devoir.`);
+        } else if (verrouille && etatAvant) {
+          const essaisApresCetteTentative = etatAvant.essaisUtilises + 1;
+          verrouille.essaisUtilises = essaisApresCetteTentative;
+          if (essaisApresCetteTentative >= etatAvant.nbEssaisMax) {
+            afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatAvant.titre} », ${essaisApresCetteTentative}/${etatAvant.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux maintenant t'entraîner librement.`);
+            verrouille = null;
+            Automatismes.leverVerrouille();
+          }
+        }
       }
     });
+
     // titre adapté quand un thème unique est demandé dans l'adresse (fiche.html?theme=fonctions)
     (function () {
       const impose = Automatismes.etat.config.themeImpose;
@@ -88,6 +176,11 @@ window.MathJax = {
       document.getElementById('titre-fiche').textContent = titre;
       document.getElementById('sous-titre-fiche').textContent = 'QCM Bac — un seul thème, 10 questions';
     })();
+
+    // Ferme la pop-up de blocage (si affichée) dès qu'une nouvelle série démarre.
+    document.getElementById('app').addEventListener('click', function (e) {
+      if (e.target.closest('[data-action="nouvelle"], [data-action="nouvelle-memes-themes"]')) fermerModaleDevoir();
+    });
   });
 </script>
 <script type="module" src="../assets/js/nav-auth.js"></script>
