@@ -39,15 +39,16 @@ Les sources LaTeX sont préférées aux PDF (texte et formules exacts) ; les PDF
 - 2024 : https://www.apmep.fr/IMG/tex/Exercices_0_2024_FK_2.tex
 - 2025 : https://www.apmep.fr/IMG/tex/Annee_spe_2025_DV.tex
 - 2026 : https://www.apmep.fr/Annee-2026 (un fichier par sujet, à récupérer un par un)
-- Programme officiel de Terminale spécialité (attendus et approfondissements) : **pas encore déposé**.
+- Programme officiel de Terminale spécialité (attendus et approfondissements) : **déposé le 18/10/2026** dans
+  `outils/qcm-bac/sources/` (PDF et version texte, voir son `README.md`).
 
 ## 3. Prochaines étapes (dans l'ordre)
 
 1. **Accès aux sources** — *fait le 17/10/2026* : `www.apmep.fr` était refusé par la politique réseau du
    conteneur cloud (403 du proxy) ; David a modifié l'environnement et le téléchargement fonctionne.
    Fichiers `.tex` récupérés dans le dossier temporaire de la session (non conservés dans le dépôt).
-2. Programme officiel — *lu en entier le 17/10/2026* (fichier PDF donné par David dans la session cloud, non
-   déposé dans le dépôt) ; découpage en thèmes dans `outils/qcm-bac/pilote-suites.md` §1.
+2. Programme officiel — *lu en entier le 17/10/2026* (PDF donné par David dans la session cloud, copié le
+   18/10/2026 dans `outils/qcm-bac/sources/`) ; découpage en thèmes dans `outils/qcm-bac/pilote-suites.md` §1.
 3. `moteur.js` — *lu le 17/10/2026* : déjà générique (banques enregistrées par identifiant, QCM à 4 options,
    niveaux 1 à 3, modes fiche et chrono, barème par table). Propre à la Première : les pages, les 8 banques,
    `bareme-sujet-blanc.js` et le lien en dur de `assets/js/mes-devoirs.js` (ligne 40). Pas de copie du moteur.
