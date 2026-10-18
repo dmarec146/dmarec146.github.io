@@ -335,7 +335,7 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   `suivi.js` et se verrouille via `devoirAutomatismeActif('qcm-bac')` ; tentative enregistrée en points sur 10 (pénalité du niveau 3
   comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Pas encore testé
   avec Firebase** (à valider avec `demo-eleve`, classe `1ere-demo`). Comptes de Terminale : à créer par David (format de classe
-  conseillé `Tle-Gr 1`, même règle que `1ere-Gr N`).
+  à utiliser : `Tle-Gr 2` (groupe 2, précisé par David le 18/10/2026 ; même règle que `1ere-Gr N`).
   Fréquentation : `statistiques.js` range ces pages dans la partie `automatismes` (clés de page `qcm-bac`, `qcm-bac-fiche`), car
   les règles Firestore n'acceptent que des parties connues. Décisions, sources, état et points à valider dans
   `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options facultatives
