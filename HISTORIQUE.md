@@ -8731,3 +8731,10 @@ Lot de trois fiches après le push des fiches 1 à 4.
 - **Assertions** (21 maintenant, 70 essais) : `On multiplie par […]` négatif (motif limité aux `-n \lt 0`), `Comme p ≥ q` / `p > q` pour un ensemble vide.
 - **Phrases** : 4 relectures de l'agent pour ce lot, 2 phrases refusées puis corrigées (étape intermédiaire des bornes renversées ; « > » strict en 7.6 d) puisque les inégalités peuvent y être larges), puis acceptées. Catalogue : 14 phrases utilisées par les fiches 5 à 7 et 11 à 13, toutes validées.
 - **Contrôle robuste** : fiches 5, 6 et 7, 0 erreur ; 104 000 détails pour la fiche 7 dont 11 152 équivalences.
+
+## 2026-10-18 — Fréquentation du bloc QCM Bac : partie à part (règles Firestore publiées)
+
+- **Règles** : `s_qcm_bac` ajouté aux trois fonctions de statistiques de `firestore.rules` (`clesStatistiques`, `creationStatistiquesValide`, `miseAJourStatistiquesValide`). 8 cas ajoutés à `outils/verification/regles-firestore/test-regles.mjs` (création et mise à jour valides, +2, baisse, valeur initiale 5, partie inconnue, lecture refusée) : 53 réussis, 0 échec. **Publiées par David dans la Console Firebase le 18/10/2026**, avant la modification du code.
+- **Code** : `statistiques.js` range les pages `qcm-bac/` dans la partie `qcm_bac` (avant : `automatismes`) ; `frequentation.js` affiche la partie « QCM Bac » dans le tableau de bord. `decrirePage` vérifié sur `/qcm-bac/`, `fiche.html`, `sujet-blanc.html` (clés valides pour la règle `^[a-z0-9-]{1,40}$`).
+- Les visites antérieures au changement restent comptées dans « Automatismes ».
+- Même séance : rebase des détails de correction de Seconde 5, 6 et 7 sur les 24 commits du bloc QCM Bac (seul conflit : `HISTORIQUE.md`, deux entrées conservées), puis mise en ligne.

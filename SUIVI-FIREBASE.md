@@ -319,17 +319,10 @@ depuis la réorganisation du 02/10/2026 »).
   `outils/creer-comptes` ; elle apparaîtra d'elle-même dans la liste d'attribution. La carte « Terminale — Bientôt » de la page
   Automatismes est volontairement conservée (décision de David).
 
-- **RAPPEL À DAVID (à répéter à chaque ouverture de session, tant que ce n'est pas fait) — règles Firestore à modifier puis
-  déployer pour la fréquentation du bloc QCM Bac.** Aujourd'hui `assets/js/statistiques.js` range les pages `qcm-bac/` dans la
-  partie `automatismes` (clés `qcm-bac`, `qcm-bac-fiche`) parce que `firestore.rules` n'accepte que des parties connues
-  (`clesStatistiques()`, `creationStatistiquesValide()`, `miseAJourStatistiquesValide()`). Pour une partie à part (`s_qcm_bac`) :
-  ajouter `s_qcm_bac` dans ces trois fonctions des règles, déployer les règles (console Firebase ou `firebase deploy --only
-  firestore:rules`), ajouter `['qcm_bac', 'QCM Bac']` dans la liste des parties de `assets/js/frequentation.js` et la partie
-  `qcm_bac` dans `decrirePage()` de `statistiques.js`. **Ne changer `statistiques.js` qu'après le déploiement des règles**, sinon
-  les écritures de ces pages sont refusées (sans gêner la page, l'erreur est ignorée). Demandé par David le 18/10/2026.
-  **État (18/10/2026) : `s_qcm_bac` ajouté dans les trois fonctions de `firestore.rules`, testé dans l'émulateur (53 réussis, dont
-  8 nouveaux cas), mais PAS ENCORE PUBLIÉ dans la Console Firebase** (David le fait à la main). Restent, après sa confirmation :
-  `statistiques.js` (partie `qcm_bac`) et `frequentation.js` (`['qcm_bac', 'QCM Bac']`).
+- **Fréquentation du bloc QCM Bac : fait (18/10/2026).** `s_qcm_bac` est dans les trois fonctions de `firestore.rules` (testé dans
+  l'émulateur, 53 cas), règles **publiées par David dans la Console Firebase le 18/10/2026** ; `statistiques.js` range alors les pages
+  `qcm-bac/` dans la partie `qcm_bac` et `frequentation.js` l'affiche (« QCM Bac »). Les visites faites entre l'ouverture du bloc et ce
+  changement sont comptées dans « Automatismes » (clés `qcm-bac`, `qcm-bac-fiche`).
 
 Backlog de David pour après le travail sur les fiches : l'artefact
 **« Chantiers futurs »** (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad :
@@ -347,8 +340,7 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; **sujet blanc QCM Bac** (`qcm-bac/sujet-blanc.html`, 18/10/2026 : 12 questions, quatre thèmes tirés au sort parmi neuf, thèmes masqués sur les cartes, note sur 12) avec son propre type de devoir `cible:'qcm-bac-sujet'` (sans thèmes choisis) ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Pas encore testé
   avec Firebase** (à valider avec `demo-eleve`, classe `1ere-demo`). Comptes de Terminale : à créer par David (format de classe
   à utiliser : `Tle-Gr 2` (groupe 2, précisé par David le 18/10/2026 ; même règle que `1ere-Gr N`).
-  Fréquentation : `statistiques.js` range ces pages dans la partie `automatismes` (clés de page `qcm-bac`, `qcm-bac-fiche`), car
-  les règles Firestore n'acceptent que des parties connues. Décisions, sources, état et points à valider dans
+  Fréquentation : partie `qcm_bac` (clés de page `qcm-bac`, `qcm-bac-fiche`, `qcm-bac-sujet-blanc`). Décisions, sources, état et points à valider dans
   `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options facultatives
   nouvelles : `bareme.penalites` et `textesNiveau`.
 - **Première 14 (Probabilités) — à traiter après l'échéance de son devoir** (constat Firestore en lecture seule, 16/10/2026) :
