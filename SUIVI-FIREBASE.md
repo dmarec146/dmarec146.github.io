@@ -333,7 +333,7 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   compte** pour la pratique libre. **Devoirs QCM Bac (18/10/2026)** : type « QCM Bac » du formulaire d'attribution (`type:'automatismes'`,
   `cible:'qcm-bac'`, thèmes de `THEMES_QCM_BAC` dans `assets/js/devoirs.js`, à tenir à jour à la main) ; `qcm-bac/fiche.html` charge
   `suivi.js` et se verrouille via `devoirAutomatismeActif('qcm-bac')` ; tentative enregistrée en points sur 10 (pénalité du niveau 3
-  comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Pas encore testé
+  comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; **sujet blanc QCM Bac** (`qcm-bac/sujet-blanc.html`, 18/10/2026 : 12 questions, quatre thèmes tirés au sort parmi neuf, thèmes masqués sur les cartes, note sur 12) avec son propre type de devoir `cible:'qcm-bac-sujet'` (sans thèmes choisis) ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Pas encore testé
   avec Firebase** (à valider avec `demo-eleve`, classe `1ere-demo`). Comptes de Terminale : à créer par David (format de classe
   à utiliser : `Tle-Gr 2` (groupe 2, précisé par David le 18/10/2026 ; même règle que `1ere-Gr N`).
   Fréquentation : `statistiques.js` range ces pages dans la partie `automatismes` (clés de page `qcm-bac`, `qcm-bac-fiche`), car

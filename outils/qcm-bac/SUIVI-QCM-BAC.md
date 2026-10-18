@@ -307,3 +307,14 @@ niveau 3, note ≥ 0) dans `eleves/{uid}/devoirsTentatives`, garde un brouillon 
 épuisés », « échéance passée ». La vue « Résultats » et `/mes-devoirs/` affichent déjà `score / total` : sans changement. Le filtre par cible
 (`devoirAutomatismeActif('qcm-bac')`) empêche un devoir QCM Bac de verrouiller une page de Première. **Non testé avec Firebase** (impossible
 depuis la session cloud) : à valider avec `demo-eleve`.
+
+## 14. Sujet blanc (18/10/2026)
+
+Demande de David : un bouton « sujet blanc » comme pour les automatismes de Première, mêlant plusieurs thèmes mais pas tous (trois ou quatre).
+`qcm-bac/sujet-blanc.html` : **12 questions, quatre thèmes tirés au sort parmi neuf (trois questions par thème)**, ordre mêlé, 1 point par
+question (niveau 3 : −0,25 par erreur, note ≥ 0), note sur 12, thème et méthode de chaque question masqués jusqu'à la correction (options du moteur
+`masquerEtiquette` et `detailParTheme: false`), bandeau « Ce sujet couvre : … » ; le moteur ne propose plus « Nouvelle fiche (mêmes thèmes) » quand
+`masquerEtiquette` est actif. Réglages dans le script de la page : `nbThemes: 4`, `nb: 12` (pour 3 thèmes et 4 questions chacun : `nbThemes: 3`).
+Devoir : type « Sujet blanc QCM Bac » du formulaire d'attribution (`cible:'qcm-bac-sujet'`, niveau, mode, durée, essais, échéance, sans choix de
+thèmes : les quatre thèmes sont retirés au sort à chaque tentative), lien `/qcm-bac/sujet-blanc.html` dans « Mes devoirs ». Testé en navigateur avec
+des fonctions de suivi simulées (8 bonnes sur 12 → 8 / 12 enregistré) ; non testé avec Firebase.

@@ -37,6 +37,7 @@ function lienPour(devoir) {
   // des qu'une fiche porte plusieurs devoirs (devoirs sur des calculs
   // differents) ; une fiche qui ne lit pas le parametre l'ignore.
   if (devoir.type === 'fiche') return `${devoir.ficheId}?devoir=${encodeURIComponent(devoir.id)}`;
+  if (devoir.cible === 'qcm-bac-sujet') return '/qcm-bac/sujet-blanc.html';
   if (devoir.cible === 'qcm-bac') return '/qcm-bac/fiche.html';     // QCM Bac de Terminale (18/10/2026)
   return devoir.cible === 'fiche' ? '/automatismes/premiere/fiche.html' : '/automatismes/premiere/sujet-blanc.html';
 }

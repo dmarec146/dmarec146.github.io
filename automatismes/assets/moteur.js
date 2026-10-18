@@ -507,6 +507,7 @@
     const th = ETAT.questions.themes;
     if (!th || !th.length || !ETAT.config.nbThemes) return '';
     const libelle = ETAT.config.themeImpose ? 'Thème choisi'
+      : ETAT.config.masquerEtiquette ? 'Ce sujet couvre'      // sujet blanc à thèmes tirés au sort (QCM Bac, 18/10/2026)
       : th.length > 1 ? 'Thèmes de cette fiche' : 'Thème de cette fiche';
     return `<div class="themes-bandeau"><span class="themes-label">${libelle} :</span> ${th.map(t => `<span class="theme-puce">${echapper(t)}</span>`).join('')}</div>`;
   }
@@ -836,7 +837,7 @@
       <div class="barre-controle">
         <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
         ${boutonsControle}
-        ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
+        ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes && !ETAT.config.masquerEtiquette ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
         <button class="btn-secondaire" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
       </div>`;
   }
@@ -1147,7 +1148,7 @@
       return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}
           <div class="barre-controle">
             <button class="btn-secondaire" data-action="basculer-revue" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>Voir la correction détaillée</button>
-            ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
+            ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes && !ETAT.config.masquerEtiquette ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
             <button class="btn-principal" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
           </div>
         </div>

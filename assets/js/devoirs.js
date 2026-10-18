@@ -578,7 +578,7 @@ function remplirSelectClasse() {
 // niveau/mode/duree -- seule la fiche ciblee ajoute le champ themes (voir
 // listener ci-dessous).
 function estTypeAutomatismes(valeur) {
-  return valeur === 'automatismes' || valeur === 'automatismes-fiche' || valeur === 'qcm-bac';
+  return valeur === 'automatismes' || valeur === 'automatismes-fiche' || valeur === 'qcm-bac' || valeur === 'qcm-bac-sujet';
 }
 
 function mettreAJourChampDuree() {
@@ -776,8 +776,9 @@ function modifierDevoir(devoir) {
   // cible:'fiche' a l'ecriture).
   // Meme principe pour cible:'qcm-bac' (18/10/2026) -> type "qcm-bac" du formulaire.
   const estQcmBac = devoir.type === 'automatismes' && devoir.cible === 'qcm-bac';
+  const estQcmBacSujet = devoir.type === 'automatismes' && devoir.cible === 'qcm-bac-sujet';   // sujet blanc QCM Bac, sans thèmes choisis
   const estFicheCiblee = (devoir.type === 'automatismes' && devoir.cible === 'fiche') || estQcmBac;
-  selectType.value = estQcmBac ? 'qcm-bac' : estFicheCiblee ? 'automatismes-fiche' : devoir.type;
+  selectType.value = estQcmBacSujet ? 'qcm-bac-sujet' : estQcmBac ? 'qcm-bac' : estFicheCiblee ? 'automatismes-fiche' : devoir.type;
   selectType.dispatchEvent(new Event('change'));
   if (devoir.type === 'automatismes') {
     selectNiveau.value = String(devoir.niveau);
@@ -863,6 +864,8 @@ formulaire.addEventListener('submit', async (evenement) => {
       donnees = type === 'qcm-bac'
         ? { type: 'automatismes', cible: 'qcm-bac', themes, niveau, mode, titre: `QCM Bac — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` }
         : { type: 'automatismes', cible: 'fiche', themes, niveau, mode, titre: `Fiche d'automatismes — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` };
+    } else if (type === 'qcm-bac-sujet') {
+      donnees = { type: 'automatismes', cible: 'qcm-bac-sujet', niveau, mode, titre: `Sujet blanc QCM Bac — Niveau ${niveau} (mode ${libelleMode})` };
     } else {
       donnees = { type: 'automatismes', cible: 'sujet-blanc', niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
     }
