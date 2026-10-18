@@ -330,8 +330,12 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   `outils/qcm-bac/controle-banques.js`. **Lié depuis le site le 18/10/2026** (sur la branche `claude/gifted-carson-92cmm8`, pas
   encore fusionné dans `master`) : pastille « QCM Bac » ambre `#FBE9B7` (même fond que la carte `.bento-carte--ambre`, bordure `#F3CF7A`) / texte `#4A3300` (`.nav-vedette-ambre`) dans la barre de
   navigation des 26 pages à en-tête standard, carte ambre `.bento-carte--ambre` sur l'accueil, à côté de la carte Première dans la section « Automatismes et QCM Bac ». **Ouvert à tous les élèves, sans
-  compte, sans suivi de devoir** (pas de `suivi.js` sur ces pages ; comptes de Terminale et devoirs à faire plus tard : le code
-  distingue encore Seconde/Première et `assets/js/mes-devoirs.js` ligne 40 pointe en dur vers `/automatismes/premiere/`).
+  compte** pour la pratique libre. **Devoirs QCM Bac (18/10/2026)** : type « QCM Bac » du formulaire d'attribution (`type:'automatismes'`,
+  `cible:'qcm-bac'`, thèmes de `THEMES_QCM_BAC` dans `assets/js/devoirs.js`, à tenir à jour à la main) ; `qcm-bac/fiche.html` charge
+  `suivi.js` et se verrouille via `devoirAutomatismeActif('qcm-bac')` ; tentative enregistrée en points sur 10 (pénalité du niveau 3
+  comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Pas encore testé
+  avec Firebase** (à valider avec `demo-eleve`, classe `1ere-demo`). Comptes de Terminale : à créer par David (format de classe
+  conseillé `Tle-Gr 1`, même règle que `1ere-Gr N`).
   Fréquentation : `statistiques.js` range ces pages dans la partie `automatismes` (clés de page `qcm-bac`, `qcm-bac-fiche`), car
   les règles Firestore n'acceptent que des parties connues. Décisions, sources, état et points à valider dans
   `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options facultatives
