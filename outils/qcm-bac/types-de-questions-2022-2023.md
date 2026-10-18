@@ -55,7 +55,13 @@ Bayes (`P_{R_1}(E_0)`) ; réunion `P(A∪F)` ; loi binomiale (`P(X=2)`, au moins
 `P(X ≤ k) ≥ 0,95`) ; loi binomiale de paramètre inconnu (`P(X=0)=1/125`) ; `P(3 < X ≤ 7)` ; espérance d'un jeu à gains ;
 tirages avec remise ; pannes indépendantes (« le bus ou le train »).
 
-## Dénombrement, trigonométrie, intégrale
+## Intégrales et trigonométrie
+
+Codés le 18/10/2026 (banques `integrales` et `trigonometrie`, `SUIVI-QCM-BAC.md` §10) à partir du programme et des affirmations de 2024 à 2026
+(`∫ sin x`, intégration par parties, suites `I_n = ∫ e^{-nx} sin x`, valeur moyenne, aire entre deux courbes, `f'(x)=1+cos x` et concavité,
+`h'(x) = −2 sin x + cos x`, solutions `C e^x + 2 cos x + sin x`).
+
+## Dénombrement
 
 Très peu en 2022 et 2023 (1 question de dénombrement), mais 12 affirmations en 2024 à 2026 (`repartition-themes.md`). **Codé le 18/10/2026** (banque `denombrement`, `SUIVI-QCM-BAC.md` §9) : listes, permutations, combinaisons, parties, coefficients binomiaux, tirages simultanés, chemins.
 

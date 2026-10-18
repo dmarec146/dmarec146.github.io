@@ -39,7 +39,7 @@ function parse(src) {
     const t = peek(); if (!t) return false;
     if (t.t === 'num' || t.t === 'id') return true;
     if (t.t === 'sym') return t.v === '(' || t.v === '{';
-    if (t.t === 'cmd') return ['frac', 'ln', 'sqrt', 'exp', 'pi', 'infty'].includes(t.v);
+    if (t.t === 'cmd') return ['frac', 'ln', 'sqrt', 'exp', 'pi', 'infty', 'cos', 'sin', 'tan'].includes(t.v);
     return false;
   }
   function term() {
@@ -86,13 +86,14 @@ function parse(src) {
       if (t.v === 'sqrt') { const a = braced(); return (e) => Math.sqrt(a(e)); }
       if (t.v === 'pi') return () => Math.PI;
       if (t.v === 'infty') return () => Infinity;
-      if (t.v === 'ln' || t.v === 'exp') {
+      if (t.v === 'ln' || t.v === 'exp' || t.v === 'cos' || t.v === 'sin' || t.v === 'tan') {
         let a;
         if (isSym('(')) { next(); a = expr(); if (!isSym(')')) fail(')'); next(); }
         else if (peek() && peek().t === 'id') { const v = next(); a = varOuE(v.v); if (isSym('^')) fail('\\ln ' + v.v + '^… ambigu'); }
         else if (peek() && peek().t === 'num') { const v = next(); a = () => v.v; if (isSym('^')) fail('\\ln n^… ambigu'); }
         else fail('argument de ' + t.v);
-        return t.v === 'ln' ? (e) => Math.log(a(e)) : (e) => Math.exp(a(e));
+        const F = { ln: Math.log, exp: Math.exp, cos: Math.cos, sin: Math.sin, tan: Math.tan }[t.v];
+        return (e) => F(a(e));
       }
     }
     fail('jeton ' + JSON.stringify(t));

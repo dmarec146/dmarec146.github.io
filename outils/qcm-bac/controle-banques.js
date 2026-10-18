@@ -787,6 +787,159 @@ F['denombrement/chemins'] = q => {
   return q.options.map(o => egale(valeurOption(o), e));
 };
 
+// ---------- banque « calcul intégral » : l'intégrale est calculée NUMÉRIQUEMENT (Simpson) depuis le LaTeX affiché ----------
+function simpson(f, a, b, n) { n = n || 4000; if (n % 2) n++; const h = (b - a) / n; let t = f(a) + f(b); for (let i = 1; i < n; i++) t += f(a + i * h) * (i % 2 ? 4 : 2); return t * h / 3; }
+F['integrales/calcul'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), I = simpson(x => f(x), LX.valeur(M.aTex), LX.valeur(M.bTex));
+  return q.options.map(o => egale(valeurOption(o), I, 1e-8));
+};
+F['integrales/moyenne'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), a = LX.valeur(M.aTex), b = LX.valeur(M.bTex), moy = simpson(x => f(x), a, b) / (b - a);
+  return q.options.map(o => egale(valeurOption(o), moy, 1e-8));
+};
+F['integrales/aires'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), g = LX.fonction(M.gTex), a = LX.valeur(M.aTex), b = LX.valeur(M.bTex);
+  const A = simpson(x => Math.abs(f(x) - g(x)), a, b, 200000) * M.unite;
+  return q.options.map(o => egale(valeurOption(o), A, 1e-6));
+};
+const CAS_FONCTIONS = [['x', 'x'], ['x^2', 'x^2'], ['1', '1'], ['2-x', '2-x'], ['x-0.5', 'x-0.5'], ['\\sin(x)', '\\sin(x)'], ['e^{x}', 'e^{x}'], ['-x', '-x'], ['x^3-x', 'x^3-x']].map(([t]) => LX.fonction(t));
+const CAS_INTERVALLES = [[0, 1], [0, 2], [-1, 1], [1, 3], [0, 3]];
+const PRIMITIVES = [[LX.fonction('x^2'), LX.fonction('2x')], [LX.fonction('\\sin(x)'), LX.fonction('\\cos(x)')], [LX.fonction('e^{x}'), LX.fonction('e^{x}')], [LX.fonction('x^3'), LX.fonction('3x^2')]];
+function proprieteUniverselle(cle) {
+  const I = (f, a, b) => simpson(f, a, b, 4000), ech = (a, b) => Array.from({ length: 41 }, (_, i) => a + (b - a) * i / 40), tol = 1e-9;
+  for (const [a, b] of CAS_INTERVALLES) {
+    for (const f of CAS_FONCTIONS) for (const g of CAS_FONCTIONS) {
+      const ff = x => f(x), gg = x => g(x), If = I(ff, a, b), Ig = I(gg, a, b), pf = ech(a, b).every(x => ff(x) <= gg(x) + tol);
+      if (cle === 'mono' && pf && !(If <= Ig + 1e-7)) return false;
+      if (cle === 'mono-rec' && If <= Ig + 1e-7 && !pf) return false;
+      if (cle === 'somme' && !egale(I(x => ff(x) + gg(x), a, b), If + Ig, 1e-7)) return false;
+      if (cle === 'prod' && !egale(I(x => ff(x) * gg(x), a, b), If * Ig, 1e-7)) return false;
+    }
+    for (const f of CAS_FONCTIONS) {
+      const ff = x => f(x), If = I(ff, a, b), pos = ech(a, b).every(x => ff(x) >= -1e-9);
+      if (cle === 'pos' && pos && If < -1e-7) return false;
+      if (cle === 'pos-rec' && If >= -1e-7 && !pos) return false;
+      if (cle === 'carre' && !egale(If * If, I(x => ff(x) * ff(x), a, b), 1e-7)) return false;
+      if (cle === 'abs' && Math.abs(If) > I(x => Math.abs(ff(x)), a, b) + 1e-7) return false;
+      if (cle === 'lin' && !egale(I(x => 2 * ff(x), a, b), 2 * If, 1e-7)) return false;
+      if (cle === 'lin-bad' && !egale(I(x => ff(x) + 2, a, b), If + 2, 1e-7)) return false;
+      for (const c of [a + (b - a) / 3, a + 2 * (b - a) / 3]) {
+        if (cle === 'chasles' && !egale(If, I(ff, a, c) + I(ff, c, b), 1e-7)) return false;
+        if (cle === 'chasles-bad' && !egale(If, I(ff, a, c) - I(ff, c, b), 1e-7)) return false;
+      }
+    }
+    for (const [Fx, dF] of PRIMITIVES) {
+      if (cle === 'deriv' && !egale(I(x => dF(x), a, b), Fx(b) - Fx(a), 1e-7)) return false;
+      if (cle === 'deriv-bad' && !egale(I(x => dF(x), a, b), dF(b) - dF(a), 1e-7)) return false;
+    }
+  }
+  return true;
+}
+F['integrales/proprietes'] = q => {
+  const M = q.meta;
+  if (M.kind === 'claims') return q.options.map(o => proprieteUniverselle(o.cle));
+  if (M.kind === 'encadrement') return q.options.map(o => { const mm = /^(-?\d+)\\le I\\le (-?\d+)$/.exec(LX.mathDe(o.affichage)); return !!mm && +mm[1] === M.lo * M.L && +mm[2] === M.hi * M.L; });
+  const e = { chasles: () => M.u + M.v, inverse: () => -M.u, const: () => M.c * (M.b - M.a), moy: () => M.u / M.L, lin: () => M.al * M.u + M.be * M.v }[M.kind]();
+  return q.options.map(o => egale(valeurOption(o), e));
+};
+const SUITES_I = {
+  exp: n => simpson(x => Math.pow(x, n) * Math.exp(x), 0, 1, 6000), ln: n => simpson(x => Math.pow(Math.log(x), n), 1, Math.E, 6000),
+  inv: n => simpson(x => Math.pow(x, n) / (1 + x), 0, 1, 6000), sin: n => simpson(x => Math.exp(-n * x) * Math.sin(x), 0, Math.PI, 40000)
+};
+F['integrales/suites-integrales'] = q => {
+  const M = q.meta, I = SUITES_I[M.id];
+  if (M.ask === 'init') return q.options.map(o => egale(valeurOption(o), I(0), 1e-8));
+  if (M.ask === 'sens') { const v = Array.from({ length: 16 }, (_, n) => I(n)); const dec = v.every((x, i) => i === 0 || x < v[i - 1] - 1e-12), inc = v.every((x, i) => i === 0 || x > v[i - 1] + 1e-12), cst = v.every(x => Math.abs(x - v[0]) < 1e-12); return q.options.map(o => ({ dec, inc, cst, non: !dec && !inc && !cst })[o.cle]); }
+  if (M.ask === 'lim') { const a = I(20), b = I(40), conv = Math.abs(a - b) < 0.1; return q.options.map(o => ({ 0: conv && b < 0.1, 1: conv && Math.abs(b - 1) < 0.05, inf: b > 1e3, non: !conv })[o.cle]); }
+  const v = n => I(n);
+  return q.options.map(o => {
+    const tex = LX.mathDe(o.affichage).replace(/I_\{n\+1\}/g, 'J').replace(/I_n/g, 'I'), [g, d] = tex.split('=');
+    for (let n = 1; n <= 6; n++) { const env = { n, I: v(n), J: v(n + 1) }; if (!egale(LX.parse(g)(env), LX.parse(d)(env), 1e-7)) return false; }
+    return true;
+  });
+};
+F['integrales/integrale-variable'] = q => {
+  const M = q.meta, g = LX.parse(M.fTex), h = LX.fonction(M.haute);
+  const Fx = x => simpson(t => g({ t }), M.a, h(x), 4000);
+  return q.options.map(o => { const d = LX.fonction(droite(o)); return [0.3, 0.7, 1.1].every(x => egale((Fx(x + 1e-4) - Fx(x - 1e-4)) / 2e-4, d(x), 1e-5)); });
+};
+
+// ---------- banque « trigonométrie » : valeurs, racines et signes recalculés sur le LaTeX affiché ----------
+const FNT = { cos: Math.cos, sin: Math.sin, tan: Math.tan };
+F['trigonometrie/valeurs'] = q => {
+  const M = q.meta, e = FNT[M.fn](LX.valeur(M.angleTex));
+  return q.options.map(o => egale(valeurOption(o), e, 1e-9));
+};
+F['trigonometrie/equations'] = q => {
+  const M = q.meta, f = FNT[M.fn], c = LX.valeur(M.cTex), lo = LX.valeur(M.loTex), hi = LX.valeur(M.hiTex);
+  if (M.op === '=') {
+    const sol = racines(x => f(x) - c, x => x >= lo - 1e-12 && x <= hi + 1e-12);
+    for (let x = lo; x <= hi; x += 0.01) {              // racines tangentielles (sin x = 1…) : minima locaux de |f - c|
+      const g0 = Math.abs(f(x) - c), g1 = Math.abs(f(x - 0.01) - c), g2 = Math.abs(f(x + 0.01) - c);
+      if (g0 < 1e-3 && g0 <= g1 && g0 <= g2) { let a = Math.max(lo, x - 0.01), b = Math.min(hi, x + 0.01); for (let k = 0; k < 80; k++) { const m1 = a + (b - a) / 3, m2 = b - (b - a) / 3; if (Math.abs(f(m1) - c) < Math.abs(f(m2) - c)) b = m2; else a = m1; } const r = (a + b) / 2; if (Math.abs(f(r) - c) < 1e-12 && !sol.some(z => Math.abs(z - r) < 1e-6)) sol.push(r); }
+    }
+    for (const x of [lo, hi]) if (Math.abs(f(x) - c) < 1e-12 && !sol.some(r => Math.abs(r - x) < 1e-6)) sol.push(x);
+    return q.options.map(o => { const E = LX.ensemble(LX.mathDe(o.affichage)), pts = E.morceaux.filter(z => z.pt !== undefined).map(z => z.pt); return pts.length === sol.length && pts.every(p => sol.some(r => Math.abs(p - r) < 1e-6)) && sol.every(r => pts.some(p => Math.abs(p - r) < 1e-6)); });
+  }
+  const rel = (x, tol) => ({ '<=': f(x) <= c + tol, '>=': f(x) >= c - tol, '<': f(x) < c - tol, '>': f(x) > c + tol })[M.op];
+  return q.options.map(o => {
+    const E = LX.ensemble(LX.mathDe(o.affichage));
+    for (let x = lo + 0.00137; x < hi; x += 0.0113) { if (E.bornes().some(b => Math.abs(b - x) < 2e-3)) continue; if (E.contient(x) !== !!rel(x, 0)) return false; }
+    for (const b of E.bornes()) { const vraieFrontiere = !!rel(b - 1e-4, 0) !== !!rel(b + 1e-4, 0) && b - 1e-4 >= lo && b + 1e-4 <= hi; if (vraieFrontiere && E.contient(b) !== !!rel(b, 1e-9)) return false; }
+    return true;
+  });
+};
+F['trigonometrie/derivees'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), xs = points(M.dom);
+  return q.options.map(o => { const g = LX.fonction(droite(o)); return xs.every(x => proche(g(x), dnum(f, x), 1e-6)); });
+};
+F['trigonometrie/parite-periode'] = q => {
+  const M = q.meta;
+  if (M.tipo === 'parite') return q.options.map(o => { const f = LX.fonction(droite(o)); const sg = M.paire ? 1 : -1; return [0.3, 0.9, 1.7, 2.6, -1.1].every(x => proche(f(-x), sg * f(x), 1e-9)); });
+  const f = LX.fonction(M.fTex);
+  const periodique = T0 => [0.1, 0.77, 1.9, -2.3].every(x => proche(f(x + T0), f(x), 1e-9));
+  const err = t0 => Math.max(...[0.1, 0.77, 1.9, -2.3, 3.1].map(x => Math.abs(f(x + t0) - f(x))));
+  let Tmin = null, prec = err(1e-3), cour = err(2e-3);
+  for (let t = 2e-3; t < 7 * Math.PI && Tmin === null; t += 1e-3) {
+    const suiv = err(t + 1e-3);
+    if (cour < prec && cour <= suiv && cour < 0.05) { let a = t - 1e-3, b = t + 1e-3; for (let k = 0; k < 80; k++) { const m1 = a + (b - a) / 3, m2 = b - (b - a) / 3; if (err(m1) < err(m2)) b = m2; else a = m1; } if (err((a + b) / 2) < 1e-9) Tmin = (a + b) / 2; }
+    prec = cour; cour = suiv;
+  }
+  return q.options.map(o => Math.abs(LX.valeur(LX.mathDe(o.affichage)) - Tmin) < 2e-3);
+};
+F['trigonometrie/etude'] = q => {
+  const M = q.meta;
+  if (M.tipo === 'concavite') { const f = LX.fonction(M.fTex); return q.options.map(o => { const E = LX.ensemble(LX.mathDe(o.affichage)), b = E.bornes(); const [lo, hi] = [Math.min(...b), Math.max(...b)]; for (let x = lo + 0.01; x < hi; x += 0.0173) if (d2num(f, x) > 1e-5 * (1 + Math.abs(f(x)))) return false; return true; }); }
+  const f = LX.fonction(M.fTex), df = x => dnum(f, x);
+  if (M.ask === 'signe') return q.options.map(o => { const E = LX.ensemble(LX.mathDe(o.affichage)); for (let x = 0.0057; x < Math.PI; x += 0.0097) { if (E.bornes().some(b => Math.abs(b - x) < 2e-3)) continue; if (E.contient(x) !== (df(x) >= 0)) return false; } return true; });
+  const crit = []; for (let x = 0.01; x < Math.PI - 0.01; x += 0.001) if (df(x) * df(x + 0.001) < 0) crit.push(x + 0.0005);
+  return q.options.map(o => { const v = LX.valeur(LX.mathDe(o.affichage)); const c = crit.find(r => Math.abs(r - v) < 2e-3); if (c === undefined) return false; const avant = df(c - 0.01), apres = df(c + 0.01); return M.ask === 'max' ? avant > 0 && apres < 0 : avant < 0 && apres > 0; });
+};
+function limiteTrigo(fTex, at) {
+  const f = LX.fonction(fTex), echelles = at === 'inf' ? [1e3, 1e6, 1e9] : at === '0+' ? [1e-2, 1e-3, 1e-4] : [1e-2, 1e-3, 1e-4];
+  const classe = L => { const v = L.map(x => f(x)); if (v.some(z => !Number.isFinite(z))) return { type: 'nan' }; const d1 = Math.abs(v[1] - v[0]), d2 = Math.abs(v[2] - v[1]); if (d2 < 1e-6 || d2 < 0.25 * d1) return { type: 'lim', x: v[2] }; if (Math.abs(v[2]) > Math.abs(v[1]) && Math.abs(v[1]) > Math.abs(v[0]) && Math.abs(v[2]) > 10) return { type: v[2] > 0 ? 'inf' : '-inf' }; return { type: 'nolim' }; };
+  if (at === '0') { const a = classe(echelles), b = classe(echelles.map(x => -x)); return a.type === 'lim' && b.type === 'lim' && Math.abs(a.x - b.x) < 5e-3 ? a : { type: 'nolim' }; }
+  return classe(echelles);
+}
+F['trigonometrie/limites'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const L = limiteTrigo(M.fTex, M.at);
+  if (L.type === 'nan' || L.type === 'nolim') throw new Error('limite non classée : ' + M.fTex + ' en ' + M.at + ' -> ' + JSON.stringify(L));
+  return q.options.map(o => { const v = LX.valeur(LX.mathDe(o.affichage)); if (L.type === 'inf') return v === Infinity; if (L.type === '-inf') return v === -Infinity; return Number.isFinite(v) && Math.abs(v - L.x) < 5e-3 * (1 + Math.abs(L.x)); });
+};
+F['trigonometrie/formules'] = q => {
+  const M = q.meta;
+  if (M.tipo === 'connaissant') {
+    const c = M.cn / M.cd, s = (M.quad === 'haut' ? 1 : -1) * Math.sqrt(1 - c * c), e = { sin: s, cos2: Math.cos(2 * Math.acos(c) * (M.quad === 'haut' ? 1 : -1)), sin2: Math.sin(2 * Math.atan2(s, c)) }[M.ask];
+    return q.options.map(o => egale(valeurOption(o), e, 1e-9));
+  }
+  return q.options.map(o => { const [g, d] = LX.mathDe(o.affichage).split('='); const fg = LX.fonction(g), fd = LX.fonction(d); const paires = [[0.3, 1.1], [1.7, -0.4], [2.2, 0.9], [-1.3, 0.6], [0.8, 2.4]]; const vraie = paires.every(([x, y]) => proche(fg(x, { y }), fd(x, { y }), 1e-9)); return M.neg ? !vraie : vraie; });
+};
+
 // ---------- contrôle de rédaction ----------
 function redaction(q) {
   const pb = [];
@@ -795,7 +948,7 @@ function redaction(q) {
     if (typeof t !== 'string') { pb.push('texte non chaîne'); continue; }
     if (/NaN|undefined|Infinity|null/.test(t)) pb.push('valeur invalide : ' + t.slice(0, 60));
     if (/<[A-Za-z]/.test(t.replace(/<\/?(pre|code|br)\b[^>]*>/g, ''))) pb.push('< suivi d\'une lettre (balise HTML involontaire, écrire \\lt) : ' + t.slice(0, 80));
-    if (/\+-|-\+|--|\+\+|\^\{1\}|\(\)/.test(t.replace(/\\\(|\\\)/g, ''))) pb.push('signe collé ou exposant 1 : ' + t.slice(0, 80));
+    if (/\+-|-\+|--|\+\+|(?<!\}|_\w)\^\{1\}|\(\)/.test(t.replace(/\\\(|\\\)/g, ''))) pb.push('signe collé ou exposant 1 : ' + t.slice(0, 80));
     if ((t.match(/\\\(/g) || []).length !== (t.match(/\\\)/g) || []).length) pb.push('\\( \\) non appariés : ' + t.slice(0, 60));
     if (/(^|[^\d.])1\\times\s*(\\left|\\dfrac|\\sqrt|[a-z])|\\left\(1\\,/.test(t)) pb.push('coefficient 1 : ' + t.slice(0, 60));
     if (/\{,\}/.test(t.replace(/\\\(.*?\\\)/g, ''))) pb.push('{,} hors zone math');
@@ -818,7 +971,7 @@ for (const [idBanque, banque] of Object.entries(A.banques)) {
     const verif = F[idBanque + '/' + idFam];
     if (!verif) { manquants.push(idBanque + '/' + idFam); }
     for (const niveau of fam.niveaux || [1, 2, 3]) {
-      const vus = new Set(); let ok = 0, nuls = 0, mutOk = 0, mutN = 0;
+      const vus = new Set(), vusAvecOptions = new Set(); let ok = 0, nuls = 0, mutOk = 0, mutN = 0;
       for (let i = 0; i < ESSAIS; i++) {
         let q;
         try { q = fam.generer(niveau); } catch (e) { console.log(`ERREUR ${idBanque}/${idFam} N${niveau} : ${e.stack.split('\n').slice(0, 2).join(' ')}`); anomalies++; continue; }
@@ -843,9 +996,9 @@ for (const [idBanque, banque] of Object.entries(A.banques)) {
         }
         if (pb.length) { anomalies++; const cleFam = idBanque + '/' + idFam + niveau; montres[cleFam] = (montres[cleFam] || 0) + 1; if (montres[cleFam] <= 3) console.log(`ANOMALIE ${idBanque}/${idFam} N${niveau} : ${pb.join(' ; ')}\n    ${q.enonce.replace(/\s+/g, ' ').slice(0, 160)}`); }
         else ok++;
-        vus.add(q.enonce);
+        vus.add(q.enonce); vusAvecOptions.add(q.enonce + '||' + q.options.map(o => o.affichage).sort().join('|'));
       }
-      console.log(`${idBanque}/${idFam} N${niveau} : ${ok}/${ESSAIS} sans anomalie, ${vus.size} énoncés distincts${nuls ? `, ${nuls} tirages nuls` : ''}${MUTATION ? `, mutation détectée ${mutOk}/${mutN}` : ''}`);
+      console.log(`${idBanque}/${idFam} N${niveau} : ${ok}/${ESSAIS} sans anomalie, ${vus.size} énoncés distincts (${vusAvecOptions.size} avec leurs propositions)${nuls ? `, ${nuls} tirages nuls` : ''}${MUTATION ? `, mutation détectée ${mutOk}/${mutN}` : ''}`);
       if (APERCU) {
         for (let i = 0; i < APERCU; i++) { const q = fam.generer(niveau); if (q) console.log('   · ' + q.enonce.replace(/\\\(|\\\)/g, '$').replace(/\s+/g, ' ') + '\n       ✔ ' + q.options[0].affichage.replace(/\\\(|\\\)/g, '$') + '\n       ✘ ' + q.options.slice(1).map(o => o.affichage.replace(/\\\(|\\\)/g, '$')).join('  |  ')); }
       }

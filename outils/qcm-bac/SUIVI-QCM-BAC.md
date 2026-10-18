@@ -202,7 +202,7 @@ chargée par la page pilote `qcm-bac/fiche.html` (`?theme=fonctions` pour ne tra
   comparée à la valeur lue dans chaque option affichée (les expressions avec `\binom` sont évaluées numériquement) ; dénombrement :
   on ne recalcule pas la formule, on **dénombre** (énumération de toutes les listes, permutations ou parties ; programmation
   dynamique « chaque élément est pris ou non » pour les groupes ; programmation dynamique sur la grille pour les chemins).
-  `controle-banques.js` : 106 000 questions (cinq banques), 0 anomalie, erreurs volontaires détectées 6 350 / 6 350.
+  `controle-banques.js` : 106 000 questions (cinq banques), 0 anomalie, erreurs volontaires détectées 6 350 / 6 350 (§10 : 81 600 questions sur sept banques, 8 149 / 8 149).
 - **Défauts attrapés** : réponses fausses numériquement égales à la bonne (loi symétrique `B(n ; 1/2)`, loi à deux modes quand
   `(n+1)p` est entier, `P(X=6)=P(X=7)+P(X=8)` pour `B(13 ; 0,4)`, relation de Pascal et symétrie des coefficients binomiaux),
   affirmation « `P_A(B)=P_B(A)` » vraie aussi pour des événements incompatibles, décimaux en notation exponentielle (`1e-7`).
@@ -211,3 +211,37 @@ chargée par la page pilote `qcm-bac/fiche.html` (`?theme=fonctions` pour ne tra
 - **Essai navigateur** : 84 fiches tirées, plus de 5 000 formules, 0 erreur MathJax, pas de défilement horizontal sur téléphone.
 - **Restent hors banque** : intégrales, trigonométrie, lecture graphique (figure), sommes en Python, loi géométrique et loi de
   Poisson (approfondissements).
+
+## 10. Banques « Calcul intégral » et « Trigonométrie », codées le 18/10/2026
+
+À la demande de David (« continue avec les intégrales et la trigonométrie »). Fichiers : `qcm-bac/banques/06-integrales.js`
+(identifiant `integrales`) et `qcm-bac/banques/07-trigonometrie.js` (identifiant `trigonometrie`). La page pilote
+`qcm-bac/fiche.html` charge maintenant **sept banques** (2 thèmes tirés au sort, ou `?theme=…` pour un seul).
+
+- **Calcul intégral, 6 familles** : calcul d'intégrales (polynômes, `1/x`, `e^x`, `sin` et `cos` sur les intervalles usuels, `u'e^u`,
+  `u'/u`, intégration par parties : `(ax+b)e^{±x}`, `ln x`, `x ln x`, `x sin x`…) ; valeur moyenne ; propriétés (Chasles, linéarité,
+  encadrement par intégration d'une inégalité, quatorze affirmations vraies ou fausses) ; aires (entre la courbe et l'axe avec
+  changement de signe, entre deux courbes, avec une unité graphique en cm²) ; suites d'intégrales (`∫ x^n e^x`, `∫ (ln x)^n`,
+  `∫ x^n/(1+x)`, `∫ e^{-nx} sin x` : relation de récurrence, `I_0`, sens de variation, limite) ; dérivée d'une fonction définie
+  par une intégrale, avec borne supérieure `x`, `x²`, `x+1`…
+- **Trigonométrie, 7 familles** : valeurs exactes de `cos`, `sin`, `tan` (angles de la forme `kπ/6` et `kπ/4`, aussi hors de
+  `[−π, π]`) ; équations et inéquations sur `[−π, π]`, `[0, 2π]` ou `[0, π]` (réponses en ensembles de réels, réunions
+  d'intervalles) ; dérivées (composées, produits, quotients) ; parité et plus petite période ; extremum local, signe de `f'` et
+  concavité de `f(x) = ax + b sin x`… ; limites (`sin(ax)/x`, `(1−cos x)/x²`, `x sin(a/x)`, gendarmes) ; formules (supplémentaires,
+  duplication, addition, « laquelle est fausse ? ») et `sin x`, `cos 2x`, `sin 2x` connaissant `cos x` et l'intervalle.
+- **Contrôle indépendant** : intégrales : l'intégrale est calculée **numériquement** (méthode de Simpson) à partir de l'intégrande et
+  des bornes relus dans le LaTeX affiché, puis comparée à la valeur lue dans chaque option (`e-2`, `\dfrac{\pi}{2}-1`, `\ln 3`…) ;
+  les affirmations sur les propriétés sont éprouvées sur des familles de fonctions et d'intervalles (contre-exemples numériques) ;
+  les suites d'intégrales par intégration numérique de `I_n` ; trigonométrie : l'évaluateur LaTeX gère maintenant `\cos`, `\sin`,
+  `\tan` ; valeurs, racines (y compris les racines tangentielles, `sin x = 1`), signe, plus petite période (minimum de l'erreur
+  de périodicité raffiné) et limites sont recalculés numériquement.
+- **Défauts attrapés** : valeur de l'aire entre `e^x` et `x+1` fausse (`e−3/2` au lieu de `e−5/2`, erreur de calcul à la main
+  détectée par l'intégration numérique) ; base `ln 4` absente pour l'aire sous `e^x−4` ; candidats de dérivée égaux à la bonne quand
+  `g(0)=0` ; ensembles `{π/3 ; −π/3}` et `{−π/3 ; π/3}` proposés comme deux réponses différentes ; période `2π/a` non réduite ;
+  racines tangentielles ignorées par le contrôle ; `x ↦ tan x` proposée comme fonction impaire définie sur ℝ.
+- **Variété** : intégrales de 15 (suites d'intégrales) à plus de 2 000 énoncés distincts ; trigonométrie de 25 (équations,
+  limites) à plus de 800 en comptant les propositions. Plusieurs familles du niveau 3 restent à moins de 100.
+- **Contrôle global** : `controle-banques.js` sur les sept banques : 81 600 questions, 0 anomalie, erreurs volontaires détectées 8 149 / 8 149.
+- **Essai navigateur** : 84 fiches, plus de 5 800 formules, 0 erreur MathJax, pas de défilement horizontal sur téléphone.
+- **Reste hors banque** : lecture graphique (figure), méthode d'Euler, fonction tangente en détail, approximation d'aire par suites
+  adjacentes, trigonométrie en géométrie (`cos α = C'H/CH`).
