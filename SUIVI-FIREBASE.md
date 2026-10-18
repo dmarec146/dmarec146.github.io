@@ -310,6 +310,15 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 6. Pistes ouvertes / à faire
 
+- **RAPPEL À DAVID — tester les devoirs QCM Bac avec `demo-eleve` (classe `1ere-demo`)**, jamais testés avec Firebase (18/10/2026) :
+  attribuer un devoir « QCM Bac » (thèmes choisis), puis un « Sujet blanc QCM Bac » (4 thèmes tirés au sort), en mode fiche puis chrono ;
+  vérifier le verrouillage de la page, « Enregistrer mon avancement » et la reprise, la validation (note en points : ex. 3 bonnes et 2 fausses
+  au niveau 3 = 2,5 / 10 ; sujet blanc sur 12), la vue « Résultats » et « Mes devoirs ». Si quelque chose casse : `qcm-bac/fiche.html`,
+  `qcm-bac/sujet-blanc.html`, `assets/js/devoirs.js`, `assets/js/mes-devoirs.js` (cibles `qcm-bac` et `qcm-bac-sujet`).
+- **RAPPEL À DAVID — comptes élèves de Terminale** : classe **`Tle-Gr 2`** (groupe 2, précisé le 18/10/2026), à créer par David avec
+  `outils/creer-comptes` ; elle apparaîtra d'elle-même dans la liste d'attribution. La carte « Terminale — Bientôt » de la page
+  Automatismes est volontairement conservée (décision de David).
+
 - **RAPPEL À DAVID (à répéter à chaque ouverture de session, tant que ce n'est pas fait) — règles Firestore à modifier puis
   déployer pour la fréquentation du bloc QCM Bac.** Aujourd'hui `assets/js/statistiques.js` range les pages `qcm-bac/` dans la
   partie `automatismes` (clés `qcm-bac`, `qcm-bac-fiche`) parce que `firestore.rules` n'accepte que des parties connues
@@ -327,8 +336,7 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
 - **Bloc « QCM Bac » (Terminale spécialité)** — neuf banques codées les 17-18/10/2026 (`qcm-bac/banques/01…09`), page d'accueil
   `qcm-bac/index.html`, fiche `qcm-bac/fiche.html` (`?theme=<id>` pour un thème seul), contrôle
-  `outils/qcm-bac/controle-banques.js`. **Lié depuis le site le 18/10/2026** (sur la branche `claude/gifted-carson-92cmm8`, pas
-  encore fusionné dans `master`) : pastille « QCM Bac » ambre `#FBE9B7` (même fond que la carte `.bento-carte--ambre`, bordure `#F3CF7A`) / texte `#4A3300` (`.nav-vedette-ambre`) dans la barre de
+  `outils/qcm-bac/controle-banques.js`. **Lié depuis le site et fusionné dans `master` le 18/10/2026** (en ligne) : pastille « QCM Bac » ambre `#FBE9B7` (même fond que la carte `.bento-carte--ambre`, bordure `#F3CF7A`) / texte `#4A3300` (`.nav-vedette-ambre`) dans la barre de
   navigation des 26 pages à en-tête standard, carte ambre `.bento-carte--ambre` sur l'accueil, à côté de la carte Première dans la section « Automatismes et QCM Bac ». **Ouvert à tous les élèves, sans
   compte** pour la pratique libre. **Devoirs QCM Bac (18/10/2026)** : type « QCM Bac » du formulaire d'attribution (`type:'automatismes'`,
   `cible:'qcm-bac'`, thèmes de `THEMES_QCM_BAC` dans `assets/js/devoirs.js`, à tenir à jour à la main) ; `qcm-bac/fiche.html` charge

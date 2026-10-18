@@ -488,3 +488,7 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
   la fiche ; on relance jusqu'à 0 nouvelle et 0 refusée. Une phrase validée n'est jamais relue deux fois. Formulations retenues :
   conclusion d'une équation `S = {…}` (solutions en ordre croissant), pas de « Solutions : » ; jamais d'étiquette sans objet (« signe »
   seul) ; une méthode se nomme avant d'être appliquée (« on reconnaît une suite arithmétique de raison… »). David n'a rien à lancer.
+
+## QCM Bac (Terminale)
+
+Les banques du bloc QCM Bac (`qcm-bac/banques/`) ne sont pas des fiches de calcul : leurs règles (barème, niveaux, vérificateur indépendant avec test par mutation, lisibilité des figures) sont dans `outils/qcm-bac/SUIVI-QCM-BAC.md`. Les règles de rédaction ci-dessus (titres, vocabulaire, corrections) s'y appliquent aussi.

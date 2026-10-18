@@ -8696,7 +8696,7 @@ Lot de trois fiches après la fiche 1 de Seconde, avant le push suivant.
 
 ## 2026-10-18 — Bloc « QCM Bac » (Terminale spécialité) : banques, navigation, devoirs
 
-Chantier mené sur la branche `claude/gifted-carson-92cmm8` (non fusionnée dans `master`, à la demande de David). Détail technique, sources et
+Chantier mené sur la branche `claude/gifted-carson-92cmm8`, **fusionné dans `master` à la demande de David le 18/10/2026** (deux fusions en avance rapide : neuf banques, navigation et devoirs, puis sujet blanc). Détail technique, sources et
 variété des banques : `outils/qcm-bac/SUIVI-QCM-BAC.md` (§5 à §13).
 
 - **Banques** : neuf thèmes (suites, géométrie dans l'espace, exponentielle et logarithme, probabilités, dénombrement, calcul intégral, trigonométrie,
@@ -8713,3 +8713,9 @@ variété des banques : `outils/qcm-bac/SUIVI-QCM-BAC.md` (§5 à §13).
   brouillon, fenêtres « essais épuisés » et « échéance passée ». `devoirs.js` (formulaire, modification), `mes-devoirs.js` (lien), `suivi.js` (commentaire).
   Aucune modification de `firestore.rules`. Testé en navigateur avec des fonctions de suivi simulées (verrouillage, 3 bonnes et 2 fausses au niveau 3 →
   2,5 / 10 enregistré) ; **non testé avec Firebase** : à valider par David avec `demo-eleve`.
+- **Sujet blanc** (18/10/2026) : `qcm-bac/sujet-blanc.html`, 12 questions, quatre thèmes tirés au sort parmi neuf (trois par thème), ordre mêlé,
+  thème masqué jusqu'à la correction, note sur 12 ; type de devoir « Sujet blanc QCM Bac » (`cible:'qcm-bac-sujet'`, sans choix de thèmes).
+  Petite modification du moteur partagé : avec `masquerEtiquette`, bandeau « Ce sujet couvre » et plus de bouton « mêmes thèmes ».
+- **Classe de Terminale** : `Tle-Gr 2` (précisé par David). Carte « Terminale — Bientôt » de la page Automatismes conservée à sa demande.
+- **À faire par David** : tester les devoirs avec `demo-eleve`, créer les comptes de Terminale, modifier les règles Firestore pour la
+  fréquentation (rappels dans `SUIVI-FIREBASE.md` §6, répétés à l'ouverture de session par `CLAUDE.md`).
