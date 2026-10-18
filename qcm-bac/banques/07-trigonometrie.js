@@ -86,7 +86,7 @@
     const t = niveau === 2 ? aleaParmi(['cos-eq', 'cos-eq', 'sin-eq']) : aleaParmi(['cos-ineq', 'sin-ineq', 'cos-ineq', 'sin-eq']);
     const [c, cTex] = aleaParmi(COS_C);
     const fn = t.startsWith('cos') ? 'cos' : 'sin';
-    const [lo, hi] = fn === 'cos' ? aleaParmi([[-180, 180], [-180, 180], [0, 360]]) : (t === 'sin-ineq' ? aleaParmi([[0, 180], [0, 360], [-180, 180]]) : aleaParmi([[0, 360], [-180, 180], [0, 180]]));
+    const [lo, hi] = fn === 'cos' ? aleaParmi([[-180, 180], [-180, 180], [0, 360], [0, 180], [-90, 90], [90, 270], [-270, 90]]) : (t === 'sin-ineq' ? aleaParmi([[0, 180], [0, 360], [-180, 180], [-90, 90], [90, 270], [-270, 90]]) : aleaParmi([[0, 360], [-180, 180], [0, 180], [-90, 90], [90, 270], [-270, 90]]));
     const loTex = ang(lo), hiTex = ang(hi);
     const tex = (op) => `\\${fn}\\left(x\\right)${{ '=': '=', '<=': '\\le', '>=': '\\ge', '<': '\\lt', '>': '\\gt' }[op]} ${cTex}`;
     if (t.endsWith('eq')) {
@@ -101,13 +101,13 @@
       return qcm(`Quel est l'ensemble des solutions de l'équation ${m(tex('='))} dans l'intervalle ${m(IV(loTex, hiTex, true, true))} ?`, texOpt(vrai), unique.slice(0, 3).map(texOpt),
         { explication: fn === 'cos' ? `${m(tex('='))} : si ${m('\\alpha')} est une solution, ${m('-\\alpha')} l'est aussi (parité de ${m(T`\cos`)}), à ${m(T`2\pi`)} près. Sur ${m(IV(loTex, hiTex, true, true))} : ${m(vrai)}.` : `${m(tex('='))} : si ${m('\\alpha')} est une solution, ${m(T`\pi-\alpha`)} l'est aussi, à ${m(T`2\pi`)} près. Sur ${m(IV(loTex, hiTex, true, true))} : ${m(vrai)}.`, meta: { tipo: 'trig-eq', fn, cTex, op: '=', loTex, hiTex } });
     }
-    const op = aleaParmi(['<=', '>=']), morceaux = solIneq(fn, c, op, lo, hi); if (!morceaux.length) return null;
-    const vrai = texEns(morceaux, op, lo, hi), opInv = op === '<=' ? '>=' : '<=';
-    const autres = [texEns(solIneq(fn, c, opInv, lo, hi), opInv, lo, hi), texEns(solIneq(fn, c, op === '<=' ? '<' : '>', lo, hi), op === '<=' ? '<' : '>', lo, hi), texEns(solIneq(fn, -c, op, lo, hi), op, lo, hi), texEns(solIneq(fn, c, op === '<=' ? '>' : '<', lo, hi), op === '<=' ? '>' : '<', lo, hi),
+    const op = aleaParmi(['<=', '>=', '<', '>']), morceaux = solIneq(fn, c, op, lo, hi); if (!morceaux.length) return null;
+    const vrai = texEns(morceaux, op, lo, hi), opInv = { '<=': '>=', '>=': '<=', '<': '>', '>': '<' }[op], opNuance = { '<=': '<', '>=': '>', '<': '<=', '>': '>=' }[op], opCompl = { '<=': '>', '>=': '<', '<': '>=', '>': '<=' }[op];
+    const autres = [texEns(solIneq(fn, c, opInv, lo, hi), opInv, lo, hi), texEns(solIneq(fn, c, opNuance, lo, hi), opNuance, lo, hi), texEns(solIneq(fn, -c, op, lo, hi), op, lo, hi), texEns(solIneq(fn, c, opCompl, lo, hi), opCompl, lo, hi),
       texEns(morceaux.slice(0, 1), op, lo, hi), texEns(morceaux.map(([a, b]) => [Math.max(lo, a - 30), Math.min(hi, b - 30)]), op, lo, hi)].filter(x => x !== vrai && x !== T`\varnothing`);
     const unique = [...new Set(autres)]; if (unique.length < 3) return null;
     return qcm(`Quel est l'ensemble des solutions de l'inéquation ${m(tex(op))} dans l'intervalle ${m(IV(loTex, hiTex, true, true))} ?`, texOpt(vrai), unique.slice(0, 3).map(texOpt),
-      { explication: `On résout d'abord l'équation ${m(tex('='))} (valeurs ${racinesDeg(fn, c, lo, hi).map(d => m(ang(d))).join(', ')}), puis on lit sur le cercle (ou la courbe) les arcs où ${m(`\\${fn}\\left(x\\right)`)} est ${op === '<=' ? 'inférieur' : 'supérieur'} ou égal à ${m(cTex)} : ${m(vrai)}.`, meta: { tipo: 'trig-eq', fn, cTex, op, loTex, hiTex } });
+      { explication: `On résout d'abord l'équation ${m(tex('='))} (valeurs ${racinesDeg(fn, c, lo, hi).map(d => m(ang(d))).join(', ')}), puis on lit sur le cercle (ou la courbe) les arcs où ${m(`\\${fn}\\left(x\\right)`)} est ${op[0] === '<' ? 'inférieur' : 'supérieur'}${op.length === 2 ? ' ou égal' : ' (strictement)'} à ${m(cTex)} : ${m(vrai)}.`, meta: { tipo: 'trig-eq', fn, cTex, op, loTex, hiTex } });
   }
 
   // ==========================================================================
@@ -136,7 +136,7 @@
       () => { return { f: `\\left(\\cos x\\right)^2`, d: `-2\\sin x\\cos x`, faux: [`2\\cos x`, `-2\\sin x`, `2\\sin x\\cos x`, `-\\left(\\sin x\\right)^2`], expl: `${m(T`(u^2)'=2u'u`)} avec ${m(T`u=\cos x`)} et ${m(T`u'=-\sin x`)}.` }; },
       () => { const a = aleaParmi([2, 3]);
         return { f: `\\sin\\left(x^${a}\\right)`.replace('x^2', 'x^2'), d: `${a}x${a === 2 ? '' : '^2'}\\cos\\left(x^${a}\\right)`.replace('2x\\cos', '2x\\cos'), faux: [`\\cos\\left(x^${a}\\right)`, `${a}x${a === 2 ? '' : '^2'}\\sin\\left(x^${a}\\right)`, `-${a}x${a === 2 ? '' : '^2'}\\cos\\left(x^${a}\\right)`, `${a}\\cos\\left(x^${a}\\right)`], expl: `${m(T`(\sin u)'=u'\cos u`)} avec ${m(`u=x^${a}`)} et ${m(`u'=${a}x${a === 2 ? '' : '^2'}`)}.` }; },
-      () => { const a = aleaParmi([1, 2, 3]); return { f: fr('\\sin x', `x`), d: fr('x\\cos x-\\sin x', 'x^2'), faux: [fr('\\cos x', '1'), fr('x\\cos x+\\sin x', 'x^2'), fr('\\cos x', 'x^2'), fr('\\sin x-x\\cos x', 'x^2')], expl: `Quotient ${m(T`\dfrac{u}{v}`)} : ${m(T`\dfrac{u'v-uv'}{v^2}=\dfrac{x\cos x-\sin x}{x^2}`)}.` }; },
+      () => { const a = aleaParmi([1, 2, 3]); return { f: fr('\\sin x', `x`), d: fr('x\\cos x-\\sin x', 'x^2'), faux: [fr('\\cos x', '1'), fr('x\\cos x+\\sin x', 'x^2'), fr('\\cos x', 'x^2'), fr('\\sin x-x\\cos x', 'x^2')], expl: `Quotient ${m(T`\dfrac{u}{v}`)} : ${m(T`\dfrac{u'v-uv'}{v^2}=\dfrac{x\cos x-\sin x}{x^2}`)}.` , sur: IV('0', INF, false, false), dom: [0.3, 3] }; },
       () => { return { f: `\\ln\\left(2+\\cos x\\right)`, d: fr('-\\sin x', '2+\\cos x'), faux: [fr('\\sin x', '2+\\cos x'), fr('-\\sin x', '1'), fr('1', '2+\\cos x'), `-\\sin x\\ln\\left(2+\\cos x\\right)`], expl: `${m(T`(\ln u)'=\dfrac{u'}{u}`)} avec ${m(T`u=2+\cos x`)} et ${m(T`u'=-\sin x`)}.` }; },
       () => { return { f: `e^{\\sin x}`, d: `\\cos x\\,e^{\\sin x}`, faux: [`e^{\\sin x}`, `\\cos x\\,e^{\\cos x}`, `-\\cos x\\,e^{\\sin x}`, `\\sin x\\,e^{\\sin x}`], expl: `${m(T`(e^{u})'=u'e^{u}`)} avec ${m(T`u=\sin x`)}.` }; }
     ]
@@ -149,10 +149,10 @@
   );
   MODELES_DERIVEE[3].push(
     () => { const a = aleaParmi([1, 2, 3]); return { f: `${coef(a)}\\left(\\sin x\\right)^3`, d: `${3 * a}\\left(\\sin x\\right)^2\\cos x`, faux: [`${3 * a}\\left(\\sin x\\right)^2`, `${3 * a}\\left(\\cos x\\right)^2\\sin x`, `${3 * a}\\left(\\sin x\\right)^2\\sin x`, `${a}\\left(\\cos x\\right)^3`], expl: `${m(T`(u^3)'=3u'u^2`)} avec ${m(T`u=\sin x`)}.` }; },
-    () => { return { f: fr('\\cos x', '1+\\sin x'), d: fr('-1', '1+\\sin x'), faux: [fr('1', '1+\\sin x'), fr('-\\sin x', '1+\\sin x'), fr('-\\sin x-\\cos x', '\\left(1+\\sin x\\right)^2'), fr('\\sin x-1', '\\left(1+\\sin x\\right)^2')], expl: `Quotient : ${m(T`\dfrac{-\sin x(1+\sin x)-\cos x\cos x}{(1+\sin x)^2}=\dfrac{-\sin x-1}{(1+\sin x)^2}=\dfrac{-1}{1+\sin x}`)}.` }; },
-    () => { return { f: fr('1', '\\cos x'), d: fr('\\sin x', '\\left(\\cos x\\right)^2'), faux: [fr('-\\sin x', '\\left(\\cos x\\right)^2'), fr('1', '\\left(\\cos x\\right)^2'), fr('\\sin x', '\\cos x'), '-\\sin x'], expl: `${m(T`\left(\dfrac{1}{v}\right)'=-\dfrac{v'}{v^2}`)} avec ${m(T`v=\cos x`)}.` }; },
+    () => { return { f: fr('\\cos x', '1+\\sin x'), d: fr('-1', '1+\\sin x'), faux: [fr('1', '1+\\sin x'), fr('-\\sin x', '1+\\sin x'), fr('-\\sin x-\\cos x', '\\left(1+\\sin x\\right)^2'), fr('\\sin x-1', '\\left(1+\\sin x\\right)^2')], expl: `Quotient : ${m(T`\dfrac{-\sin x(1+\sin x)-\cos x\cos x}{(1+\sin x)^2}=\dfrac{-\sin x-1}{(1+\sin x)^2}=\dfrac{-1}{1+\sin x}`)}.` , sur: IV(T`-\dfrac{\pi}{2}`, T`\dfrac{\pi}{2}`, false, false), dom: [-1.2, 1.2] }; },
+    () => { return { f: fr('1', '\\cos x'), d: fr('\\sin x', '\\left(\\cos x\\right)^2'), faux: [fr('-\\sin x', '\\left(\\cos x\\right)^2'), fr('1', '\\left(\\cos x\\right)^2'), fr('\\sin x', '\\cos x'), '-\\sin x'], expl: `${m(T`\left(\dfrac{1}{v}\right)'=-\dfrac{v'}{v^2}`)} avec ${m(T`v=\cos x`)}.` , sur: IV(T`-\dfrac{\pi}{2}`, T`\dfrac{\pi}{2}`, false, false), dom: [-1.2, 1.2] }; },
     () => { const a = aleaParmi([1, 2, 3]); return { f: `e^{${a === 1 ? '' : a}x}\\sin x`, d: `e^{${a === 1 ? '' : a}x}\\left(${a === 1 ? '' : a}\\sin x+\\cos x\\right)`, faux: [`e^{${a === 1 ? '' : a}x}\\cos x`, `e^{${a === 1 ? '' : a}x}\\left(${a === 1 ? '' : a}\\sin x-\\cos x\\right)`, `${coef(a)}e^{${a === 1 ? '' : a}x}\\sin x`, `e^{${a === 1 ? '' : a}x}\\left(\\sin x+\\cos x\\right)`], expl: `Produit ${m('uv')} : ${m(`(uv)'=${coef(a)}e^{${a}x}\\sin x+e^{${a}x}\\cos x`.replace('{1x}', '{x}'))}.` }; },
-    () => { return { f: `\\ln\\left(\\sin x\\right)`, d: fr('\\cos x', '\\sin x'), faux: [fr('\\sin x', '\\cos x'), fr('1', '\\sin x'), '\\cos x', fr('-\\cos x', '\\sin x')], expl: `${m(T`(\ln u)'=\dfrac{u'}{u}`)} avec ${m(T`u=\sin x`)} (défini là où ${m(T`\sin x>0`)}).`, dom: [0.3, 2.8] }; }
+    () => { return { f: `\\ln\\left(\\sin x\\right)`, d: fr('\\cos x', '\\sin x'), faux: [fr('\\sin x', '\\cos x'), fr('1', '\\sin x'), '\\cos x', fr('-\\cos x', '\\sin x')], expl: `${m(T`(\ln u)'=\dfrac{u'}{u}`)} avec ${m(T`u=\sin x`)} (défini là où ${m(T`\sin x>0`)}).`, dom: [0.3, 2.8], sur: IV('0', T`\pi`, false, false) }; }
   );
   MODELES_DERIVEE[3].push(
     () => { const a = aleaParmi([2, 3, 4]), t = aleaParmi(['sin', 'cos']); const g = `${a}+\\${t} x`, dg = t === 'sin' ? '\\cos x' : '-\\sin x';
@@ -168,11 +168,33 @@
     () => { const k = aleaParmi([1, 2, 3]), b = aleaParmi([2, 3]); const e = `e^{${k === 1 ? '' : k}x}`; return { f: `${e}\\sin(${b}x)`, d: `${e}\\left(${coef(k)}\\sin(${b}x)+${b}\\cos(${b}x)\\right)`, faux: [`${e}\\left(${coef(k)}\\sin(${b}x)-${b}\\cos(${b}x)\\right)`, `${b}${e}\\cos(${b}x)`, `${e}\\left(\\sin(${b}x)+${b}\\cos(${b}x)\\right)`, `${e}\\left(${coef(k)}\\cos(${b}x)+${b}\\sin(${b}x)\\right)`].filter((t, i) => !(k === 1 && i === 2)), expl: `Produit ${m('uv')} : ${m(`(uv)'=${coef(k)}${e}\\sin(${b}x)+${e}\\times ${b}\\cos(${b}x)`)}.` }; },
     () => { const a = aleaParmi([1, 2, 3]); return { f: `(x^2+${a})\\cos x`, d: `2x\\cos x-(x^2+${a})\\sin x`, faux: [`2x\\cos x+(x^2+${a})\\sin x`, `-2x\\sin x`, `2x\\cos x-x^2\\sin x`, `(x^2+${a})\\cos x-2x\\sin x`], expl: `Produit ${m('uv')} avec ${m(`u=x^2+${a}`)} et ${m(T`v=\\cos x`)}.` }; }
   );
+  // modèles supplémentaires (18/10/2026) : plus de produits, quotients et composées, avec leur ensemble de définition
+  const XP = a => (a === 2 ? 'x' : `x^${a - 1}`);
+  const UNSURX = '\\dfrac{1}{x}', SUR_POS = IV('0', INF, false, false), SUR_PI = IV('0', T`\pi`, false, false), SUR_DEMI = IV(T`-\dfrac{\pi}{2}`, T`\dfrac{\pi}{2}`, false, false);
+  MODELES_DERIVEE[2].push(
+    () => { const a = aleaParmi([2, 3, 4]); return { f: `x^${a}\\sin x`, d: `${a}${XP(a)}\\sin x+x^${a}\\cos x`, faux: [`${a}${XP(a)}\\cos x`, `${a}${XP(a)}\\sin x-x^${a}\\cos x`, `x^${a}\\cos x`, `${a}${XP(a)}\\sin x+${a}${XP(a)}\\cos x`], expl: `Produit ${m('uv')} avec ${m(`u=x^${a}`)} et ${m(T`v=\sin x`)} : ${m(`(uv)'=${a}${XP(a)}\\sin x+x^${a}\\cos x`)}.` }; },
+    () => { const a = aleaParmi([2, 3, 4, 5]); return { f: `x\\cos(${a}x)`, d: `\\cos(${a}x)-${a}x\\sin(${a}x)`, faux: [`\\cos(${a}x)+${a}x\\sin(${a}x)`, `-${a}\\sin(${a}x)`, `\\cos(${a}x)-x\\sin(${a}x)`, `-${a}x\\sin(${a}x)`], expl: `Produit ${m('uv')} avec ${m('u=x')} et ${m(`v=\\cos(${a}x)`)} : ${m(`(uv)'=\\cos(${a}x)+x\\times(-${a}\\sin(${a}x))`)}.` }; },
+    () => { const a = aleaParmi([1, 2, 3, 4]); return { f: `${coef(a)}x\\sin x+${coef(a)}\\cos x`, d: `${coef(a)}x\\cos x`, faux: [`${coef(a)}\\sin x+${coef(a)}x\\cos x`, `${coef(a)}x\\cos x-${coef(a)}\\sin x`, `-${coef(a)}x\\cos x`, `${coef(a)}x\\sin x`], expl: `${m(`(${coef(a)}x\\sin x)'=${coef(a)}\\sin x+${coef(a)}x\\cos x`)} et ${m(`(${coef(a)}\\cos x)'=-${coef(a)}\\sin x`)} : les termes en ${m(T`\sin x`)} se compensent.` }; },
+    () => { const a = aleaParmi([1, 2, 3, 4]); return { f: `${coef(a)}\\sin x-${coef(a)}x\\cos x`, d: `${coef(a)}x\\sin x`, faux: [`${coef(a)}x\\cos x`, `${coef(a)}\\cos x-${coef(a)}x\\sin x`, `-${coef(a)}x\\sin x`, `${2 * a}\\cos x-${coef(a)}x\\sin x`], expl: `${m(`(${coef(a)}\\sin x)'=${coef(a)}\\cos x`)} et ${m(`(${coef(a)}x\\cos x)'=${coef(a)}\\cos x-${coef(a)}x\\sin x`)} : la différence vaut ${m(`${coef(a)}x\\sin x`)}.` }; },
+    () => { const a = aleaParmi([2, 3, 4, 5]), t = aleaParmi(['sin', 'cos']), u = T`\dfrac{x}{${a}}`, dd = t === 'sin' ? T`\dfrac{1}{${a}}\cos\left(${u}\right)` : T`-\dfrac{1}{${a}}\sin\left(${u}\right)`;
+      return { f: `\\${t}\\left(${u}\\right)`, d: dd, faux: [t === 'sin' ? `${a}\\cos\\left(${u}\\right)` : `-${a}\\sin\\left(${u}\\right)`, `\\${t === 'sin' ? 'cos' : 'sin'}\\left(${u}\\right)`, t === 'sin' ? T`-\dfrac{1}{${a}}\cos\left(${u}\right)` : T`\dfrac{1}{${a}}\sin\left(${u}\right)`, T`\dfrac{1}{${a}}\${t}\left(${u}\right)`], expl: `${m(T`(\${t} u)'=${t === 'sin' ? '' : '-'}u'\${t === 'sin' ? 'cos' : 'sin'} u`)} avec ${m(`u=${u}`)} et ${m(T`u'=\dfrac{1}{${a}}`)}.` }; },
+    () => { const a = aleaParmi([2, 3, 4]), b = aleaParmi([2, 3, 4]); return { f: `${a}x^2+\\cos(${b}x)`, d: `${2 * a}x-${b}\\sin(${b}x)`, faux: [`${2 * a}x+${b}\\sin(${b}x)`, `${a}x-${b}\\sin(${b}x)`, `${2 * a}x-\\sin(${b}x)`, `${2 * a}x-${b}\\cos(${b}x)`], expl: `${m(`(${a}x^2)'=${2 * a}x`)} et ${m(`(\\cos(${b}x))'=-${b}\\sin(${b}x)`)}.` }; }
+  );
+  MODELES_DERIVEE[3].push(
+    () => { return { f: fr('\\cos x', 'x'), d: fr('-x\\sin x-\\cos x', 'x^2'), faux: [fr('-\\sin x', 'x^2'), fr('-x\\sin x+\\cos x', 'x^2'), fr('x\\sin x-\\cos x', 'x^2'), fr('-\\sin x', '1')], expl: `Quotient : ${m(T`\dfrac{-\sin x\times x-\cos x\times 1}{x^2}`)}.`, sur: SUR_POS, dom: [0.3, 3] }; },
+    () => { return { f: fr('x', '\\sin x'), d: fr('\\sin x-x\\cos x', '\\left(\\sin x\\right)^2'), faux: [fr('\\sin x+x\\cos x', '\\left(\\sin x\\right)^2'), fr('x\\cos x-\\sin x', '\\left(\\sin x\\right)^2'), fr('1', '\\cos x'), fr('\\sin x-x\\cos x', '\\sin x')], expl: `Quotient : ${m(T`\dfrac{1\times\sin x-x\cos x}{(\sin x)^2}`)}.`, sur: SUR_PI, dom: [0.3, 2.8] }; },
+    () => { return { f: `\\ln\\left(\\cos x\\right)`, d: fr('-\\sin x', '\\cos x'), faux: [fr('\\sin x', '\\cos x'), fr('1', '\\cos x'), '-\\sin x', fr('-\\cos x', '\\sin x')], expl: `${m(T`(\ln u)'=\dfrac{u'}{u}`)} avec ${m(T`u=\cos x`)} (strictement positif sur cet intervalle).`, sur: SUR_DEMI, dom: [-1.2, 1.2] }; },
+    () => { const a = aleaParmi([2, 3, 4]), t = aleaParmi(['sin', 'cos']); return { f: `\\sqrt{${a}+\\${t} x}`, d: fr(t === 'sin' ? '\\cos x' : '-\\sin x', `2\\sqrt{${a}+\\${t} x}`), faux: [fr(t === 'sin' ? '\\cos x' : '-\\sin x', `\\sqrt{${a}+\\${t} x}`), fr(t === 'sin' ? '-\\cos x' : '\\sin x', `2\\sqrt{${a}+\\${t} x}`), fr('1', `2\\sqrt{${a}+\\${t} x}`), fr(t === 'sin' ? '\\cos x' : '-\\sin x', `2\\sqrt{${a}+${t === 'sin' ? '\\cos' : '\\sin'} x}`)], expl: `${m(T`(\sqrt{u})'=\dfrac{u'}{2\sqrt{u}}`)} avec ${m(`u=${a}+\\${t} x`)} (strictement positif).` }; },
+    () => { const t = aleaParmi(['sin', 'cos']), e = 'e^{-x}'; return { f: `\\${t} x\\,${e}`, d: t === 'sin' ? `${e}\\left(\\cos x-\\sin x\\right)` : `-${e}\\left(\\sin x+\\cos x\\right)`, faux: t === 'sin' ? [`${e}\\left(\\cos x+\\sin x\\right)`, `-${e}\\cos x`, `\\cos x\\,${e}`, `${e}\\left(\\sin x-\\cos x\\right)`] : [`${e}\\left(\\sin x-\\cos x\\right)`, `-\\sin x\\,${e}`, `${e}\\left(\\sin x+\\cos x\\right)`, `-${e}\\cos x`], expl: `Produit ${m('uv')} avec ${m(`u=\\${t} x`)} et ${m(`v=${e}`)} : ${m(`(uv)'=${t === 'sin' ? '\\cos x' : '-\\sin x'}${e}-\\${t} x\\,${e}`)}.` }; },
+    () => { const a = aleaParmi([2, 3]); return { f: `\\cos\\left(x^${a}\\right)`, d: `-${a}${a === 2 ? 'x' : 'x^2'}\\sin\\left(x^${a}\\right)`, faux: [`${a}${a === 2 ? 'x' : 'x^2'}\\sin\\left(x^${a}\\right)`, `-\\sin\\left(x^${a}\\right)`, `-${a}${a === 2 ? 'x' : 'x^2'}\\cos\\left(x^${a}\\right)`, `${a}${a === 2 ? 'x' : 'x^2'}\\cos\\left(x^${a}\\right)`], expl: `${m(T`(\cos u)'=-u'\sin u`)} avec ${m(`u=x^${a}`)} et ${m(`u'=${a}${a === 2 ? 'x' : 'x^2'}`)}.` }; },
+    () => { const t = aleaParmi(['sin', 'cos']), c = `\\${t}\\left(${UNSURX}\\right)`, o = `\\${t === 'sin' ? 'cos' : 'sin'}\\left(${UNSURX}\\right)`; return { f: c, d: t === 'sin' ? fr(`-${o}`, 'x^2') : fr(o, 'x^2'), faux: t === 'sin' ? [fr(o, 'x^2'), `-${o}`, fr(`-${c}`, 'x^2'), fr(`-${o}`, 'x')] : [fr(`-${o}`, 'x^2'), o, fr(c, 'x^2'), fr(o, 'x')], expl: `${m(t === 'sin' ? T`(\sin u)'=u'\cos u` : T`(\cos u)'=-u'\sin u`)} avec ${m(`u=${UNSURX}`)} et ${m(T`u'=-\dfrac{1}{x^2}`)}.`, sur: SUR_POS, dom: [0.3, 3] }; },
+    () => { const t = aleaParmi(['sin', 'cos']), o = `\\left(\\${t} x\\right)^2`, g = `1+${o}`; return { f: `\\ln\\left(${g}\\right)`, d: fr(t === 'sin' ? '2\\sin x\\cos x' : '-2\\sin x\\cos x', g), faux: [fr(t === 'sin' ? '2\\cos x' : '-2\\sin x', g), fr(t === 'sin' ? '\\sin x\\cos x' : '-\\sin x\\cos x', g), fr(t === 'sin' ? '2\\sin x\\cos x' : '-2\\sin x\\cos x', `\\left(${g}\\right)^2`), `${t === 'sin' ? '2\\sin x\\cos x' : '-2\\sin x\\cos x'}\\ln\\left(${g}\\right)`], expl: `${m(T`(\ln u)'=\dfrac{u'}{u}`)} avec ${m(`u=${g}`)} et ${m(`u'=${t === 'sin' ? '2\\sin x\\cos x' : '-2\\sin x\\cos x'}`)}.` }; }
+  );
   function derivee(niveau) {
-    const mo = aleaParmi(MODELES_DERIVEE[niveau])();
+    const mo = aleaParmi(niveau === 3 ? MODELES_DERIVEE[3].concat(MODELES_DERIVEE[2]) : MODELES_DERIVEE[niveau])();
     const faux = mo.faux.filter((t, i, a) => t !== mo.d && a.indexOf(t) === i);
     if (faux.length < 3) return null;
-    return qcm(`On considère la fonction ${m('f')} définie sur ${m(T`\mathbb{R}`)} par ${m(`f(x)=${mo.f}`)}. Quelle est l'expression de ${m("f'(x)")} ?`, texOpt(`f'(x)=${mo.d}`), faux.slice(0, 3).map(t => texOpt(`f'(x)=${t}`)), { explication: mo.expl, meta: { tipo: 'derivee', fTex: mo.f, dom: mo.dom || [-2.5, 2.5] } });
+    return qcm(`On considère la fonction ${m('f')} définie sur ${m(mo.sur || T`\mathbb{R}`)} par ${m(`f(x)=${mo.f}`)}. Quelle est l'expression de ${m("f'(x)")} ?`, texOpt(`f'(x)=${mo.d}`), faux.slice(0, 3).map(t => texOpt(`f'(x)=${t}`)), { explication: mo.expl, meta: { tipo: 'derivee', fTex: mo.f, dom: mo.dom || [-2.5, 2.5] } });
   }
 
   // ==========================================================================
@@ -207,29 +229,42 @@
     () => { return { f: `x-\\sqrt{2}\\sin x`, fp: `1-\\sqrt{2}\\cos x`, fpn: x => 1 - Math.SQRT2 * Math.cos(x), expl: `${m(T`f'(x)=1-\sqrt{2}\cos x`)}, qui s'annule lorsque ${m(T`\cos x=\dfrac{\sqrt{2}}{2}`)}.` }; },
     () => { return { f: `\\sqrt{3}x+2\\cos x`, fp: `\\sqrt{3}-2\\sin x`, fpn: x => Math.sqrt(3) - 2 * Math.sin(x), expl: `${m(T`f'(x)=\sqrt{3}-2\sin x`)}, qui s'annule lorsque ${m(T`\sin x=\dfrac{\sqrt{3}}{2}`)}.` }; },
     () => { return { f: `\\sqrt{3}x-2\\sin x`, fp: `\\sqrt{3}-2\\cos x`, fpn: x => Math.sqrt(3) - 2 * Math.cos(x), expl: `${m(T`f'(x)=\sqrt{3}-2\cos x`)}, qui s'annule lorsque ${m(T`\cos x=\dfrac{\sqrt{3}}{2}`)}.` }; },
-    () => { const k = aleaParmi([1, 2, 3]); return { f: `${coef(k)}x-${2 * k}\\sin x`, fp: `${k}-${2 * k}\\cos x`, fpn: x => k - 2 * k * Math.cos(x), expl: `${m(`f'(x)=${k}-${2 * k}\\cos x=${k}\\left(1-2\\cos x\\right)`)}.` }; }
+    () => { const k = aleaParmi([1, 2, 3]); return { f: `${coef(k)}x-${2 * k}\\sin x`, fp: `${k}-${2 * k}\\cos x`, fpn: x => k - 2 * k * Math.cos(x), expl: `${m(`f'(x)=${k}-${2 * k}\\cos x=${k}\\left(1-2\\cos x\\right)`)}.` }; },
+    () => { return { f: `\\sqrt{2}x+2\\cos x`, fp: `\\sqrt{2}-2\\sin x`, fpn: x => Math.SQRT2 - 2 * Math.sin(x), expl: `${m(T`f'(x)=\sqrt{2}-2\sin x`)}, qui s'annule lorsque ${m(T`\sin x=\dfrac{\sqrt{2}}{2}`)}.` }; },
+    () => { return { f: `\\sqrt{2}x-2\\sin x`, fp: `\\sqrt{2}-2\\cos x`, fpn: x => Math.SQRT2 - 2 * Math.cos(x), expl: `${m(T`f'(x)=\sqrt{2}-2\cos x`)}, qui s'annule lorsque ${m(T`\cos x=\dfrac{\sqrt{2}}{2}`)}.` }; },
+    () => { const k = aleaParmi([1, 2, 3]); return { f: `${coef(k)}\\sin x+${coef(k)}\\cos x`, fp: `${coef(k)}\\cos x-${coef(k)}\\sin x`, fpn: x => k * Math.cos(x) - k * Math.sin(x), expl: `${m(`f'(x)=${k === 1 ? '' : k}\\left(\\cos x-\\sin x\\right)`)}, qui s'annule lorsque ${m(T`\cos x=\sin x`)}.` }; },
+    () => { const k = aleaParmi([1, 2, 3]); return { f: `${coef(k)}\\sin x-${coef(k)}\\cos x`, fp: `${coef(k)}\\cos x+${coef(k)}\\sin x`, fpn: x => k * Math.cos(x) + k * Math.sin(x), expl: `${m(`f'(x)=${k === 1 ? '' : k}\\left(\\cos x+\\sin x\\right)`)}, qui s'annule lorsque ${m(T`\cos x=-\sin x`)}.` }; },
+    () => { return { f: `\\sin x\\cos x`, fp: `\\cos(2x)`, fpn: x => Math.cos(2 * x), expl: `${m(T`f'(x)=\cos^2x-\sin^2x=\cos(2x)`)}, qui s'annule lorsque ${m(T`2x=\dfrac{\pi}{2}+k\pi`)}.` }; },
+    () => { return { f: `\\sin(2x)-x`, fp: `2\\cos(2x)-1`, fpn: x => 2 * Math.cos(2 * x) - 1, expl: `${m(T`f'(x)=2\cos(2x)-1`)}, qui s'annule lorsque ${m(T`\cos(2x)=\dfrac{1}{2}`)}.` }; },
+    () => { return { f: `x-\\sin(2x)`, fp: `1-2\\cos(2x)`, fpn: x => 1 - 2 * Math.cos(2 * x), expl: `${m(T`f'(x)=1-2\cos(2x)`)}, qui s'annule lorsque ${m(T`\cos(2x)=\dfrac{1}{2}`)}.` }; },
+    () => { return { f: `\\left(\\sin x\\right)^2`, fp: `\\sin(2x)`, fpn: x => Math.sin(2 * x), expl: `${m(T`f'(x)=2\sin x\cos x=\sin(2x)`)}.` }; },
+    () => { const k = aleaParmi([1, 2, 3]); return { f: `${coef(k)}x+${2 * k}\\sin x`, fp: `${k}+${2 * k}\\cos x`, fpn: x => k + 2 * k * Math.cos(x), expl: `${m(`f'(x)=${k}+${2 * k}\\cos x=${k}\\left(1+2\\cos x\\right)`)}.` }; },
+    () => { const k = aleaParmi([1, 2, 3]); return { f: `${coef(k)}x-${2 * k}\\cos x`, fp: `${k}+${2 * k}\\sin x`, fpn: x => k + 2 * k * Math.sin(x), expl: `${m(`f'(x)=${k}+${2 * k}\\sin x=${k}\\left(1+2\\sin x\\right)`)}.` }; }
   ];
   function etude(niveau) {
     const mo = aleaParmi(MODELES_ETUDE)(), t = niveau === 2 ? aleaParmi(['extremum', 'extremum', 'signe']) : aleaParmi(['signe', 'extremum']);
-    const loTex = '0', hiTex = T`\pi`, d = x => mo.fpn(rad(x));
-    const rs = []; for (let x = 15; x < 180; x += 15) if (Math.abs(d(x)) < 1e-9) rs.push(x);
+    const [lo, hi] = aleaParmi(niveau === 2 ? [[0, 180], [0, 180], [-180, 180], [0, 360]] : [[0, 180], [-180, 180], [0, 360], [-90, 90]]);
+    const loTex = ang(lo), hiTex = ang(hi), d = x => mo.fpn(rad(x)), milieu = (lo + hi) / 2;
+    const rs = []; for (let x = lo + 15; x < hi; x += 15) if (Math.abs(d(x)) < 1e-9 && d(x - 1) * d(x + 1) < 0) rs.push(x);
     if (!rs.length) return null;
     const signeEn = x => d(x) >= 0;
+    const dans = x => x > lo && x < hi;
     if (t === 'extremum') {
-      const r = rs[0], estMax = d(r - 1) > 0 && d(r + 1) < 0, estMin = d(r - 1) < 0 && d(r + 1) > 0;
-      if (!estMax && !estMin) return null;
-      const vrai = ang(r), cl = [ang(180 - r), ang(r / 2), ang(r + 30 <= 180 ? r + 30 : r - 30), ang(90), ang(60), ang(30), ang(120), ang(45)].filter((x, i, A) => x !== vrai && A.indexOf(x) === i);
-      if (cl.length < 3) return null;
-      return qcm(`On considère la fonction ${m('f')} définie sur ${m(IV(loTex, hiTex, true, true))} par ${m(`f(x)=${mo.f}`)}. En quelle valeur ${m('x')} de ${m(IV(loTex, hiTex, false, false))} la fonction ${m('f')} admet-elle ${estMax ? 'un maximum local' : 'un minimum local'} ?`, texOpt(vrai), cl.slice(0, 3).map(texOpt),
-        { explication: `${mo.expl} Dans ${m(IV(loTex, hiTex, false, false))}, ${m("f'")} s'annule en ${m(vrai)} en passant de ${estMax ? 'positive à négative' : 'négative à positive'} : ${estMax ? 'maximum' : 'minimum'} local en ${m(vrai)}.`, meta: { tipo: 'etude', fTex: mo.f, fpTex: mo.fp, ask: estMax ? 'max' : 'min' } });
+      const maxima = rs.filter(r => d(r - 1) > 0 && d(r + 1) < 0), minima = rs.filter(r => d(r - 1) < 0 && d(r + 1) > 0);
+      const possibles = [].concat(maxima.length === 1 ? ['max'] : [], minima.length === 1 ? ['min'] : []); if (!possibles.length) return null;
+      const estMax = aleaParmi(possibles) === 'max', r = (estMax ? maxima : minima)[0];
+      const vrai = ang(r), val = x => ang(x), ok = [-r, lo + hi - r, r / 2, r + 30, r - 30, 90, 60, 30, 120, 45, -90, -30, -60, 150, 135, 0].concat(rs).filter(x => dans(x) && x !== r).map(val).filter((x, i, A) => A.indexOf(x) === i);
+      if (ok.length < 3) return null;
+      return qcm(`On considère la fonction ${m('f')} définie sur ${m(IV(loTex, hiTex, true, true))} par ${m(`f(x)=${mo.f}`)}. En quelle valeur ${m('x')} de ${m(IV(loTex, hiTex, false, false))} la fonction ${m('f')} admet-elle ${estMax ? 'un maximum local' : 'un minimum local'} ?`, texOpt(vrai), melanger(ok).slice(0, 3).map(texOpt),
+        { explication: `${mo.expl} Dans ${m(IV(loTex, hiTex, false, false))}, ${m("f'")} s'annule en ${rs.map(x => m(ang(x))).join(', ')} ; en ${m(vrai)} ${m("f'")} passe de ${estMax ? 'positive à négative' : 'négative à positive'} : ${estMax ? 'maximum' : 'minimum'} local en ${m(vrai)}.`, meta: { tipo: 'etude', fTex: mo.f, fpTex: mo.fp, ask: estMax ? 'max' : 'min', lo, hi } });
     }
-    const bords = [0].concat(rs, [180]), pos = [], neg = [];
+    const bords = [lo].concat(rs, [hi]), pos = [], neg = [];
     for (let i = 0; i + 1 < bords.length; i++) { const cible = signeEn((bords[i] + bords[i + 1]) / 2) ? pos : neg, dernier = cible[cible.length - 1]; if (dernier && dernier[1] === bords[i]) dernier[1] = bords[i + 1]; else cible.push([bords[i], bords[i + 1]]); }
     const mk = ms => { ms = ms.filter(([a, b]) => b > a); return ms.length ? UNION(...ms.map(([a, b]) => IV(ang(a), ang(b), true, true))) : null; };
-    const vrai = mk(pos), cl = [mk(neg), mk(pos.slice(0, 1)), mk(pos.map(([a, b]) => [Math.max(0, a - 30), Math.min(180, b - 30)])), mk(pos.map(([a, b]) => [a === 0 ? 0 : 180 - b, b === 180 ? 180 : 180 - a])), mk([[0, 90]]), mk([[90, 180]])].filter((x, i, A) => x && x !== vrai && A.indexOf(x) === i);
+    const vrai = mk(pos), cl = [mk(neg), mk(pos.slice(0, 1)), mk(pos.map(([a, b]) => [Math.max(lo, a - 30), Math.min(hi, b - 30)])), mk(pos.map(([a, b]) => [lo + hi - b, lo + hi - a])), mk([[lo, milieu]]), mk([[milieu, hi]]), mk(pos.map(([a, b]) => [Math.max(lo, a + 30), Math.min(hi, b + 30)]))].filter((x, i, A) => x && x !== vrai && A.indexOf(x) === i);
     if (!vrai || cl.length < 3) return null;
     return qcm(`On considère la fonction ${m('f')} définie sur ${m(IV(loTex, hiTex, true, true))} par ${m(`f(x)=${mo.f}`)}. Sur quel ensemble a-t-on ${m("f'(x)\\ge 0")} ?`, texOpt(vrai), cl.slice(0, 3).map(texOpt),
-      { explication: `${mo.expl} On étudie le signe de ${m("f'(x)")} : ${m("f'(x)\\ge 0")} sur ${m(vrai)}.`, meta: { tipo: 'etude', fTex: mo.f, fpTex: mo.fp, ask: 'signe' } });
+      { explication: `${mo.expl} On étudie le signe de ${m("f'(x)")} : ${m("f'(x)\\ge 0")} sur ${m(vrai)}.`, meta: { tipo: 'etude', fTex: mo.f, fpTex: mo.fp, ask: 'signe', lo, hi } });
   }
   function concavite() {
     const k = aleaParmi([1, 2, 3]), t = aleaParmi(['s', 'c']), signe = aleaParmi([1, -1]);

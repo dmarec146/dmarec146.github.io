@@ -199,6 +199,47 @@ F['suites/recurrence'] = q => {
   for (let i = 0; i <= 2000; i++) { const x = M.a + (M.b - M.a) * i / 2000, y = f(x); lo = Math.min(lo, y); hi = Math.max(hi, y); }
   return q.options.map(o => { const [l, h] = o.cle.slice(2).split(',').map(Number); return Math.abs(l - lo) < 1e-9 && Math.abs(h - hi) < 1e-9; });
 };
+// somme AFFICHÉE « \sum_{k=a}^{b} terme » : relue dans l'énoncé et recalculée terme à terme
+function sommeAffichee(q, indiceMath) {
+  const tex = LX.mathDe(q.enonce, indiceMath || 0), mm = /\\sum_\{k=(-?\d+)\}\^\{(\w+)\}(.*)$/.exec(tex);
+  if (!mm) throw new Error('somme non trouvée dans ' + tex);
+  const g = LX.fonction(mm[3]);
+  return { bas: Number(mm[1]), haut: mm[2], terme: k => g(0, { k }) };
+}
+F['suites/sommes'] = q => {
+  const M = q.meta;
+  switch (M.tipo) {
+    case 'valeur': {
+      const { bas, haut, terme } = sommeAffichee(q), H = Number(haut); let S = 0; for (let k = bas; k <= H; k++) S += terme(k);
+      return q.options.map(o => egale(valeurOption(o), S, 1e-9 * (1 + Math.abs(S))));
+    }
+    case 'forme': {
+      const { bas, terme } = sommeAffichee(q, 1);
+      return q.options.map(o => { const g = LX.fonction(LX.mathDe(o.affichage)); for (let n = 1; n <= 9; n++) { let S = 0; for (let k = bas; k <= n; k++) S += terme(k); if (!egale(g(0, { n }), S, 1e-9 * (1 + Math.abs(S)))) return false; } return true; });
+    }
+    case 'limite': {
+      const { bas, terme } = sommeAffichee(q, 0), N = 20000, cum = []; let S = 0;
+      for (let k = bas; k <= N + 3; k++) { S += terme(k); cum[k] = S; }
+      const comp = classer(n => cum[n], N);
+      return q.options.map(o => reclamation(o.cle, comp));
+    }
+    case 'bernoulli': {
+      return q.options.map(o => {
+        const [g, d] = LX.mathDe(o.affichage).split(/\\(?:ge|le)(?![a-z])/), sens = /\\ge(?![a-z])/.test(LX.mathDe(o.affichage)) ? 1 : -1, fg = LX.fonction(g), fd = LX.fonction(d);
+        const as = M.general ? [0.1, 0.5, 1, 2, 5] : [0];
+        for (const a of as) for (let n = 0; n <= 40; n++) if (sens * (fg(0, { n, a }) - fd(0, { n, a })) < -1e-9 * (1 + Math.abs(fg(0, { n, a })))) return false;
+        return true;
+      });
+    }
+    case 'rang': {
+      const pieces = [...q.enonce.matchAll(/\\\((.*?)\\\)/gs)].map(x => x[1]), rel = pieces.find(t => /^1\+.*n\\ge \d+$/.test(t)), bern = pieces.find(t => /^\\left\(1\+/.test(t));
+      const r = LX.relation(rel); let n0 = 0; while (!(r.gauche(0, { n: n0 }) >= r.droite(0, { n: n0 }) - 1e-12)) n0++;
+      const [bg, bd] = bern.split('\\ge'), a = r.gauche(0, { n: 1 }) - 1; if (Math.abs(LX.fonction(bg)(0, { n: 7 }) - Math.pow(1 + a, 7)) > 1e-9 || Math.abs(LX.fonction(bd)(0, { n: 7 }) - (1 + 7 * a)) > 1e-9) throw new Error('Bernoulli incohérent');
+      return q.options.map(o => egale(valeurOption(o), n0));
+    }
+    default: throw new Error('type inconnu');
+  }
+};
 F['suites/algorithme-seuil'] = q => {
   const Mt = q.meta;
   if (Mt.f !== undefined) {                       // seuil en contexte : plus petit n tel que v0 f^n dépasse (ou passe sous) la cible
@@ -916,9 +957,9 @@ F['trigonometrie/parite-periode'] = q => {
 F['trigonometrie/etude'] = q => {
   const M = q.meta;
   if (M.tipo === 'concavite') { const f = LX.fonction(M.fTex); return q.options.map(o => { const E = LX.ensemble(LX.mathDe(o.affichage)), b = E.bornes(); const [lo, hi] = [Math.min(...b), Math.max(...b)]; for (let x = lo + 0.01; x < hi; x += 0.0173) if (d2num(f, x) > 1e-5 * (1 + Math.abs(f(x)))) return false; return true; }); }
-  const f = LX.fonction(M.fTex), df = x => dnum(f, x);
-  if (M.ask === 'signe') return q.options.map(o => { const E = LX.ensemble(LX.mathDe(o.affichage)); for (let x = 0.0057; x < Math.PI; x += 0.0097) { if (E.bornes().some(b => Math.abs(b - x) < 2e-3)) continue; if (E.contient(x) !== (df(x) >= 0)) return false; } return true; });
-  const crit = []; for (let x = 0.01; x < Math.PI - 0.01; x += 0.001) if (df(x) * df(x + 0.001) < 0) crit.push(x + 0.0005);
+  const f = LX.fonction(M.fTex), df = x => dnum(f, x), A = (M.lo === undefined ? 0 : M.lo) * Math.PI / 180, B = (M.hi === undefined ? 180 : M.hi) * Math.PI / 180;
+  if (M.ask === 'signe') return q.options.map(o => { const E = LX.ensemble(LX.mathDe(o.affichage)); for (let x = A + 0.0057; x < B; x += 0.0097) { if (E.bornes().some(b => Math.abs(b - x) < 2e-3)) continue; if (E.contient(x) !== (df(x) >= 0)) return false; } return true; });
+  const crit = []; for (let x = A + 0.01; x < B - 0.01; x += 0.001) if (df(x) * df(x + 0.001) < 0) crit.push(x + 0.0005);
   return q.options.map(o => { const v = LX.valeur(LX.mathDe(o.affichage)); const c = crit.find(r => Math.abs(r - v) < 2e-3); if (c === undefined) return false; const avant = df(c - 0.01), apres = df(c + 0.01); return M.ask === 'max' ? avant > 0 && apres < 0 : avant < 0 && apres > 0; });
 };
 function limiteTrigo(fTex, at) {

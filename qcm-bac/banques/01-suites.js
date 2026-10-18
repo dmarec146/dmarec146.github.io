@@ -671,6 +671,130 @@
         meta: { a, p, q, large } });
   }
 
+  const retenter = gen => { for (let i = 0; i < 40; i++) { const q = gen(); if (q) return q; } return null; };
+
+  // ==========================================================================
+  // 10. Sommes de termes : valeur d'une somme, forme close, limite d'une somme, inégalité de Bernoulli
+  //     (le contrôle relit la somme AFFICHÉE et la recalcule terme à terme)
+  // ==========================================================================
+  const SIGMA = (bas, haut, terme) => T`\displaystyle\sum_{k=${bas}}^{${haut}} ${terme}`;
+  const puissK = qd => (qd.d === 1 && qd.v > 0 ? `${qd.n}^{k}` : T`\left(${qd.tex}\right)^{k}`);
+  const termeGeo = (c, qd) => (c === 1 ? '' : `${c}\\times `) + puissK(qd);
+  // somme exacte de c·(a/b)^k pour k = lo … hi (lo ≥ 0), en fraction irréductible
+  function sommeRat(a, b, c, lo, hi) {
+    if (hi < lo) return rat(0, 1);
+    let num = 0; for (let k = lo; k <= hi; k++) num += Math.pow(a, k) * Math.pow(b, hi - k);
+    return rat(c * num, Math.pow(b, hi));
+  }
+  const ratOpt = r => opt(m(r.tex), r.cle);
+  const completer3 = (bonne, candidats, expl, meta, enonce) => {              // 3 mauvaises valeurs distinctes de la bonne
+    const vus = new Set([bonne.cle]), faux = [];
+    for (const c of candidats) if (c && !vus.has(c.cle)) { vus.add(c.cle); faux.push(c); }
+    if (faux.length < 3) return null;
+    return qcm(enonce, ratOpt(bonne), faux.slice(0, 3).map(ratOpt), { explication: expl, meta });
+  };
+
+  function sommeGeoValeur(niveau) {
+    const [a, b] = aleaParmi(niveau === 1 ? [[2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [5, 1]] : [[2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [2, 3], [3, 2], [-2, 1], [-1, 2], [-1, 3], [3, 4], [-3, 1], [1, 4]]);
+    const n = alea(3, niveau === 1 ? 6 : 8), k0 = niveau === 1 ? 0 : aleaParmi([0, 0, 1]), c = niveau === 1 ? 1 : aleaParmi([1, 1, 2, 3]), qd = rat(a, b);
+    const S = (lo, hi) => sommeRat(a, b, c, lo, hi), vraie = S(k0, n);
+    return completer3(vraie, [S(k0, n - 1), S(k0, n + 1), k0 > 0 ? S(k0 - 1, n) : S(k0 + 1, n), S(k0 + 1, n)],
+      `La somme compte les termes de ${m(`k=${k0}`)} à ${m(`k=${n}`)}, soit ${m(String(n - k0 + 1))} termes ; pour une raison ${m(qd.tex)} on utilise ${m(T`\dfrac{\text{premier terme}\times\left(1-q^{\text{nombre de termes}}\right)}{1-q}`)} : on obtient ${m(vraie.tex)}.`,
+      { tipo: 'valeur' }, `Calculer ${m(SIGMA(k0, n, termeGeo(c, qd)))}.`);
+  }
+  const arithTerme = (a, b) => (b === 0 ? `${coef(a)}k` : T`\left(${coef(a)}k${sgn(b)}\right)`);
+  function sommeArith(niveau) {
+    const n = aleaParmi(niveau === 1 ? [10, 20, 30, 40, 50, 100] : [10, 12, 15, 20, 24, 30, 40, 50, 60, 100]), a = niveau === 1 ? alea(1, 3) : alea(1, 5), b = niveau === 1 ? alea(0, 2) : alea(-3, 4);
+    const v = a * n * (n + 1) / 2 + b * n;
+    return completer3(rat(v, 1), [rat(a * n * (n + 1) + b * n, 1), rat(a * n * (n - 1) / 2 + b * n, 1), rat(a * n * (n + 1) / 2 + b * (n + 1), 1), rat(a * n * (n + 1) / 2, 1)],
+      `On utilise ${m(T`1+2+\dots+n=\dfrac{n(n+1)}{2}`)} : ${m(T`${a === 1 ? '' : a + '\times '}\dfrac{${n}\times ${n + 1}}{2}${b ? sgn(b) + T`\times ${n}` : ''}=${v}`)}.`,
+      { tipo: 'valeur' }, `Calculer ${m(SIGMA(1, n, arithTerme(a, b)))}.`);
+  }
+
+  // forme close : les propositions sont des expressions de n, comparées à la somme pour n = 1 … 9
+  const termeQ = (c, qd) => termeGeo(c, qd);
+  function formeCloseGeo() {
+    const [a, b] = aleaParmi([[2, 1], [3, 1], [4, 1], [5, 1], [1, 2], [1, 3]]), c = aleaParmi([1, 1, 2, 3]), qd = rat(a, b), qv = a / b;
+    const cc = c === 1 ? '' : String(c), qn = e => (qd.d === 1 ? `${qd.n}^{${e}}` : T`\left(${qd.tex}\right)^{${e}}`);
+    const deux = qd.n === 2 && qd.d === 1, pre = c === 1 ? '' : `${c}\\times `;
+    const P = x => (c === 1 ? x : T`${c}\left(${x}\right)`);
+    const bonne = deux ? P('2^{n+1}-1') : qd.d === 1 ? T`\dfrac{${P(`${qn('n+1')}-1`)}}{${qd.n - 1}}` : T`${pre}\dfrac{1-${qn('n+1')}}{1-${qd.tex}}`;
+    const cands = deux ? [P('2^{n}-1'), P('2^{n+1}+1'), T`${pre}2^{n+1}`, P('2^{n}+1'), P('2^{n+2}-1')]
+      : qd.d === 1
+      ? [T`\dfrac{${P(`${qn('n')}-1`)}}{${qd.n - 1}}`, P(`${qn('n+1')}-1`), T`\dfrac{${P(`${qn('n+1')}-1`)}}{${qd.n}}`, T`\dfrac{${P(`1-${qn('n+1')}`)}}{${qd.n - 1}}`, T`\dfrac{${P(`${qn('n+1')}+1`)}}{${qd.n - 1}}`]
+      : [T`${pre}\dfrac{1-${qn('n')}}{1-${qd.tex}}`, T`${pre}\dfrac{1-${qn('n+1')}}{1+${qd.tex}}`, T`${pre}\dfrac{1}{1-${qd.tex}}`, T`${pre}\dfrac{${qn('n+1')}-1}{1-${qd.tex}}`, T`${pre}\left(1-${qn('n+1')}\right)`];
+    return formeQuestion(SIGMA(0, 'n', termeQ(c, qd)), bonne, cands,
+      `C'est une somme de ${m('n+1')} termes d'une suite géométrique de raison ${m(qd.tex)} et de premier terme ${m(String(c))} : ${m(T`\text{premier terme}\times\dfrac{1-q^{\text{nombre de termes}}}{1-q}`)}.`);
+  }
+  function formeCloseArith() {
+    const a = alea(1, 4), b = alea(-2, 3), un = a === 1 ? '' : String(a);
+    const fm = (num, den, reste) => T`\dfrac{${un}${num}}{${den}}${reste}`;
+    const reste = x => (x === 0 ? '' : x === 1 ? '+n' : x === -1 ? '-n' : `${sgn(x)}n`);
+    const bonne = fm('n(n+1)', 2, reste(b));
+    const cands = [fm('n(n+1)', 1, reste(b)), fm('n(n-1)', 2, reste(b)), fm('n(n+1)', 2, b === 0 ? '+1' : `${sgn(b)}\\left(n+1\\right)`), fm('n^{2}', 2, reste(b)), fm('(n+1)^{2}', 2, reste(b))];
+    return formeQuestion(SIGMA(1, 'n', arithTerme(a, b)), bonne, cands,
+      `${m(T`\sum_{k=1}^{n}k=\dfrac{n(n+1)}{2}`)} et ${m(T`\sum_{k=1}^{n}1=n`)} : la somme vaut ${m(bonne)}.`);
+  }
+  function formeCloseTelescope() {
+    const forme = aleaParmi([0, 1]), terme = forme === 0 ? T`\dfrac{1}{k(k+1)}` : T`\left(\dfrac{1}{k}-\dfrac{1}{k+1}\right)`;
+    const bonne = T`\dfrac{n}{n+1}`, cands = [T`\dfrac{n}{n+2}`, T`\dfrac{1}{n+1}`, T`1-\dfrac{1}{n}`, T`\dfrac{n+1}{n+2}`, T`\dfrac{n-1}{n}`];
+    return formeQuestion(SIGMA(1, 'n', terme), bonne, cands,
+      `${forme === 0 ? `On écrit ${m(T`\dfrac{1}{k(k+1)}=\dfrac{1}{k}-\dfrac{1}{k+1}`)} puis ` : ''}les termes se compensent deux à deux (somme télescopique) : il reste ${m(T`1-\dfrac{1}{n+1}=\dfrac{n}{n+1}`)}.`);
+  }
+  function formeQuestion(sigma, bonne, cands, expl) {
+    const vus = new Set([bonne]), faux = cands.filter(c => !vus.has(c) && vus.add(c));
+    if (faux.length < 3) return null;
+    return qcm(`Pour tout entier naturel ${m('n')} non nul, ${m(T`S_n=${sigma}`)}. Quelle est l'expression de ${m('S_n')} en fonction de ${m('n')} ?`, { affichage: m(bonne), cle: bonne }, faux.slice(0, 3).map(c => ({ affichage: m(c), cle: c })),
+      { explication: expl, meta: { tipo: 'forme' } });
+  }
+
+  // limite d'une somme géométrique (nombre de termes infini)
+  function limiteSomme(niveau) {
+    const [a, b] = aleaParmi(niveau === 2 ? [[1, 2], [1, 3], [2, 3], [3, 4], [1, 4], [2, 5], [1, 5]] : [[1, 2], [1, 3], [2, 3], [-1, 2], [-1, 1], [2, 1], [3, 2], [3, 4], [1, 4], [-1, 3], [-2, 3], [4, 3], [3, 1]]);
+    const c = niveau === 2 ? aleaParmi([1, 1, 2, 3]) : aleaParmi([1, 2, 3, 4, 5, 6]), k0 = niveau === 2 ? 0 : aleaParmi([0, 1]), qd = rat(a, b), qv = a / b;
+    const Lr = r => opt(`elle converge vers ${m(r.tex)}`, 'lim:' + r.cle), NOL = () => opt(`elle n'a pas de limite`, 'nolim');
+    let bonne, faux;
+    if (Math.abs(qv) < 1) {                                  // c q^k0 / (1 − q)
+      bonne = Lr(rat(c * Math.pow(a, k0) * b, Math.pow(b, k0) * (b - a)));
+      faux = [Lr(rat(c * b, b - a)), Lr(rat(Math.pow(a, k0) * b, Math.pow(b, k0) * (b - a))), Lr(rat(c * Math.pow(a, k0), Math.pow(b, k0))), PINF(), NOL()];
+    } else if (qv === -1) {
+      bonne = NOL();
+      faux = [PINF(), Lr(rat(0, 1)), Lr(rat(c, 2)), Lr(rat(c, 1))];
+    } else {
+      bonne = PINF();
+      faux = [Lr(rat(0, 1)), NOL(), Lr(rat(c * b, b - a)), Lr(rat(c, 1))];
+    }
+    const gen = unique(faux, [bonne.cle, bonne.cle === 'inf' ? '-inf' : '']);
+    const vus = new Set([bonne.cle + bonne.affichage]); const f3 = gen.filter(o => !vus.has(o.cle + o.affichage) && (vus.add(o.cle + o.affichage), true));
+    if (f3.length < 3) return null;
+    const expl = Math.abs(qv) < 1 ? `Somme géométrique de raison ${m(qd.tex)} avec ${m(String(Math.abs(qv)))}${m(T`\lt 1`)} : ${m('S_n')} tend vers ${m(T`\dfrac{\text{premier terme}}{1-q}`)}.`
+      : qv === -1 ? `Les sommes partielles valent alternativement ${m(String(c * (k0 === 0 ? 1 : -1)))} et ${m('0')} : ${m('S_n')} n'a pas de limite.` : `La raison ${m(qd.tex)} est supérieure à ${m('1')} : les termes sont positifs et tendent vers ${m(T`+\infty`)}, donc ${m('S_n')} aussi.`;
+    return qcm(`On pose ${m(T`S_n=${SIGMA(k0, 'n', termeGeo(c, qd))}`)}. Que peut-on dire de la suite ${m(T`(S_n)`)} ?`, bonne, f3.slice(0, 3), { explication: expl, meta: { tipo: 'limite' } });
+  }
+
+  // inégalité de Bernoulli
+  function bernoulliInegalite() {
+    const general = Math.random() < 0.5;
+    if (general) {
+      const bonne = T`\left(1+a\right)^{n}\ge 1+na`, cands = [T`\left(1+a\right)^{n}\le 1+na`, T`\left(1+a\right)^{n}\ge 1+na^{2}`, T`\left(1+a\right)^{n}\ge 1+n+a`, T`\left(1+a\right)^{n}\le 1+a^{n}`, T`\left(1+a\right)^{n}\le na`];
+      const f = melanger(cands).slice(0, 3);
+      return qcm(`Soit ${m('a')} un réel strictement positif. Quelle inégalité est vraie pour tout entier naturel ${m('n')} (inégalité de Bernoulli) ?`, { affichage: m(bonne), cle: bonne }, f.map(c => ({ affichage: m(c), cle: c })),
+        { explication: `L'inégalité de Bernoulli s'énonce ${m(T`\left(1+a\right)^{n}\ge 1+na`)} pour tout ${m(T`a\gt 0`)} (et tout ${m('n')} entier naturel). Elle se démontre par récurrence.`, meta: { tipo: 'bernoulli', general } });
+    }
+    const a = aleaParmi([0.01, 0.02, 0.05, 0.1, 0.2, 0.5]), A = decL(a), base = T`\left(1+${A}\right)^{n}`;
+    const bonne = T`${base}\ge 1+${A}n`, cands = [T`${base}\le 1+${A}n`, T`${base}\ge 1+${decL(1 + a)}n`, T`${base}\ge 1+${A}n^{2}`, T`${base}\ge ${decL(1 + a)}+n`, T`${base}\le ${A}n`];
+    const f = melanger(cands).slice(0, 3);
+    return qcm(`Quelle inégalité est vraie pour tout entier naturel ${m('n')} ? (Utiliser l'inégalité de Bernoulli.)`, { affichage: m(bonne), cle: bonne }, f.map(c => ({ affichage: m(c), cle: c })),
+      { explication: `D'après l'inégalité de Bernoulli avec ${m(`a=${A}`)} : ${m(bonne)}.`, meta: { tipo: 'bernoulli', general } });
+  }
+  function rangBernoulli() {
+    const k = aleaParmi([1, 2, 5, 10, 20, 50]), A = aleaParmi([10, 50, 100, 500, 1000]), a = k / 100;
+    const n0 = Math.ceil((A - 1) * 100 / k), as = decL(a);
+    return completer3(rat(n0, 1), [rat(n0 + 1, 1), rat(n0 - 1, 1), rat(Math.ceil(A * 100 / k), 1), rat(Math.floor((A - 1) * 100 / k), 1)],
+      `On résout ${m(`1+${as}n\\ge ${A}`)} : ${m(`n\\ge\\dfrac{${A - 1}}{${as}}`)}, soit ${m(`n\\ge ${(A - 1) * 100 / k}`)} ; le plus petit entier convenable est ${m(String(n0))}.`,
+      { tipo: 'rang' }, `Pour tout entier naturel ${m('n')}, ${m(T`\left(1+${as}\right)^{n}\ge 1+${as}n`)} (inégalité de Bernoulli). Quel est le plus petit entier ${m('n')} tel que ${m(`1+${as}n\\ge ${A}`)}, ce qui garantit alors ${m(T`\left(1+${as}\right)^{n}\ge ${A}`)} ?`);
+  }
+
   // ==========================================================================
   // Enregistrement
   // ==========================================================================
@@ -685,6 +809,7 @@
       'arithmetico-geometrique': famille({ nom: 'suite arithmético-géométrique', niveaux: [1, 2, 3], base: n => (n === 1 ? arithGeoN1() : arithGeoN2()), variantes3: [arithGeoLimite, arithGeoExpression], partBase3: 0.1 }),
       'convergence-monotone': famille({ nom: 'convergence monotone', niveaux: [2, 3], base: () => (Math.random() < 0.25 ? limiteInegalite() : monotoneN2()), variantes3: [adjacentes, limiteInegalite], partBase3: 0.4 }),
       'recurrence': famille({ nom: 'raisonnement par récurrence', niveaux: [2, 3], base: heredite, variantes3: [herediteRacine], partBase3: 0.4 }),
+      'sommes': famille({ nom: 'sommes de termes et inégalité de Bernoulli', niveaux: [1, 2, 3], base: n => retenter(() => (n === 1 ? aleaParmi([() => sommeGeoValeur(1), () => sommeArith(1)])() : aleaParmi([() => sommeGeoValeur(2), () => sommeArith(2), formeCloseGeo, formeCloseArith, bernoulliInegalite, () => limiteSomme(2)])())), variantes3: [() => retenter(() => limiteSomme(3)), () => retenter(formeCloseTelescope), () => retenter(rangBernoulli), () => retenter(formeCloseGeo), () => retenter(bernoulliInegalite)], partBase3: 0.1 }),
       'algorithme-seuil': famille({ nom: 'algorithme de seuil', niveaux: [2, 3], base: () => (Math.random() < 0.4 ? (Math.random() < 0.5 ? seuilContexte() : conditionBoucle()) : seuilPython(2)), variantes3: [() => seuilPython(3), seuilContexte, conditionBoucle], partBase3: 0.0 })
     }
   });

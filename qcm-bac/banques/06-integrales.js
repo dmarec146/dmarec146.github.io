@@ -366,11 +366,17 @@
     { f: T`\ln\left(1+t^2\right)`, d: u => (num(u) ? `\\ln ${1 + u * u}` : `\\ln\\left(1+${u}^2\\right)`) },
     { f: 'e^{t}\\sin t', d: u => `e^{${u}}\\sin ${u}` },
     { f: T`\dfrac{t}{1+t^2}`, d: u => (num(u) ? fr(u, String(1 + u * u)) : fr(u, `1+${u}^2`)) },
-    { f: '\\cos\\left(t^2\\right)', d: u => (num(u) ? `\\cos ${u * u}` : `\\cos\\left(${u}^2\\right)`) }
+    { f: '\\cos\\left(t^2\\right)', d: u => (num(u) ? `\\cos ${u * u}` : `\\cos\\left(${u}^2\\right)`) },
+    { f: T`\dfrac{e^{t}}{1+e^{t}}`, d: u => fr(`e^{${u}}`, `1+e^{${u}}`) },
+    { f: T`\sqrt{1+t^2}`, d: u => (num(u) ? `\\sqrt{${1 + u * u}}` : `\\sqrt{1+${u}^2}`) },
+    { f: '\\sin\\left(t^2\\right)', d: u => (num(u) ? `\\sin ${u * u}` : `\\sin\\left(${u}^2\\right)`) },
+    { f: 't^2e^{-t}', d: u => (num(u) ? (u === '1' ? 'e^{-1}' : `${u * u}e^{-${u}}`) : `${u}^2e^{-${u}}`) },
+    { f: T`\dfrac{1}{1+e^{t}}`, d: u => fr('1', `1+e^{${u}}`) },
+    { f: T`\dfrac{t^2}{1+t^2}`, d: u => (num(u) ? fr(String(u * u), String(1 + u * u)) : fr(`${u}^2`, `1+${u}^2`)) }
   ];
   function integraleVariable(niveau) {
-    const g = aleaParmi(INTEGRANDES), a = aleaParmi([0, 1, 2]), compose = niveau === 3 && Math.random() < 0.6;
-    const haute = compose ? aleaParmi([['x^2', '2x', 'x^2'], ['2x', '2', '2x'], ['x+1', '1', 'x+1']]) : ['x', '1', 'x'];
+    const g = aleaParmi(INTEGRANDES), a = aleaParmi([0, 1, 2, 3]), compose = niveau === 3 && Math.random() < 0.6;
+    const haute = compose ? aleaParmi([['x^2', '2x', 'x^2'], ['2x', '2', '2x'], ['x+1', '1', 'x+1'], ['x^3', '3x^2', 'x^3'], ['3x', '3', '3x'], ['x^2+1', '2x', 'x^2+1'], ['2x+1', '2', '2x+1'], ['x-1', '1', 'x-1']]) : ['x', '1', 'x'];
     const F = `F(x)=\\displaystyle\\int_{${a}}^{${haute[0]}} ${g.f}\\,\\mathrm{d}t`;
     const vrai = compose ? `${haute[1] === '1' ? '' : haute[1] + '\\times '}${g.d(`\\left(${haute[2]}\\right)`)}` : g.d('x');
     const pref = haute[1] === '1' ? '' : `${haute[1]}\\times `, ua = g.d(String(a)), gu = compose ? g.d(`\\left(${haute[2]}\\right)`) : g.d('x'), gx = g.d('x');
