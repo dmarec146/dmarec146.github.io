@@ -333,6 +333,9 @@
     exp: { nom: T`I_n=\int_0^1 x^{n}e^{x}\,\mathrm{d}x`, init: [[1, 1, 'e'], [-1, 1, '1']], rec: 'I_{n+1}=e-(n+1)I_n', faux: ['I_{n+1}=e-nI_n', 'I_{n+1}=e+(n+1)I_n', 'I_{n+1}=(n+1)I_n-e', 'I_{n+1}=\\dfrac{e-I_n}{n+1}', 'I_{n+1}=e-I_n'], sens: 'dec', lim: '0', expl: `Intégration par parties avec ${m('u=x^{n+1}')} et ${m("v'=e^{x}")} : ${m(T`I_{n+1}=\left[x^{n+1}e^{x}\right]_0^1-(n+1)\int_0^1 x^{n}e^{x}\,\mathrm{d}x=e-(n+1)I_n`)}. Pour ${m('x\\in[0\\,;1]')}, ${m(T`0\le x^{n+1}\le x^{n}`)}, donc la suite est décroissante, positive, et ${m(T`0\le I_n\le\dfrac{e}{n+1}`)} (gendarmes) : limite ${m('0')}.` },
     ln: { nom: T`I_n=\int_1^e \left(\ln x\right)^{n}\mathrm{d}x`, init: [[1, 1, 'e'], [-1, 1, '1']], rec: 'I_{n+1}=e-(n+1)I_n', faux: ['I_{n+1}=e-nI_n', 'I_{n+1}=e+(n+1)I_n', 'I_{n+1}=(n+1)I_n-e', 'I_{n+1}=\\dfrac{e-I_n}{n+1}', 'I_{n+1}=e-I_n'], sens: 'dec', lim: '0', expl: `Intégration par parties avec ${m('u=(\\ln x)^{n+1}')} et ${m("v'=1")} : ${m(T`I_{n+1}=\left[x(\ln x)^{n+1}\right]_1^e-(n+1)\int_1^e(\ln x)^{n}\,\mathrm{d}x=e-(n+1)I_n`)}. Sur ${m('[1\\,;e]')}, ${m(T`0\le\ln x\le 1`)} : la suite est décroissante, positive, de limite ${m('0')}.` },
     inv: { nom: T`I_n=\int_0^1 \dfrac{x^{n}}{1+x}\,\mathrm{d}x`, init: [[1, 1, 'ln2']], rec: 'I_{n+1}+I_n=\\dfrac{1}{n+1}', faux: ['I_{n+1}+I_n=\\dfrac{1}{n}', 'I_{n+1}-I_n=\\dfrac{1}{n+1}', 'I_{n+1}+I_n=n+1', 'I_{n+1}\\times I_n=\\dfrac{1}{n+1}', 'I_{n+1}+I_n=\\dfrac{1}{n+2}'], sens: 'dec', lim: '0', expl: `${m(T`I_{n+1}+I_n=\int_0^1\dfrac{x^{n+1}+x^{n}}{1+x}\,\mathrm{d}x=\int_0^1 x^{n}\,\mathrm{d}x=\dfrac{1}{n+1}`)}. Comme ${m(T`0\le\dfrac{x^{n+1}}{1+x}\le\dfrac{x^{n}}{1+x}`)}, la suite est décroissante ; ${m(T`0\le I_n\le\dfrac{1}{n+1}`)} donne la limite ${m('0')}.` },
+    expneg: { nom: T`I_n=\int_0^1 x^{n}e^{-x}\,\mathrm{d}x`, init: [[1, 1, '1'], [-1, 1, 'ie']], rec: 'I_{n+1}=(n+1)I_n-\\dfrac{1}{e}', faux: ['I_{n+1}=(n+1)I_n+\\dfrac{1}{e}', 'I_{n+1}=nI_n-\\dfrac{1}{e}', 'I_{n+1}=\\dfrac{1}{e}-(n+1)I_n', 'I_{n+1}=(n+1)I_n-e', 'I_{n+1}=\\dfrac{1}{e}-I_n'], sens: 'dec', lim: '0', expl: `Intégration par parties avec ${m('u=x^{n+1}')} et ${m("v'=e^{-x}")} : ${m(T`I_{n+1}=\left[-x^{n+1}e^{-x}\right]_0^1+(n+1)\int_0^1x^ne^{-x}\mathrm{d}x=-\dfrac{1}{e}+(n+1)I_n`)}.` },
+    expdec: { nom: T`I_n=\int_0^1 (1-x)^{n}e^{x}\,\mathrm{d}x`, init: [[1, 1, 'e'], [-1, 1, '1']], rec: 'I_{n+1}=(n+1)I_n-1', faux: ['I_{n+1}=nI_n-1', 'I_{n+1}=(n+1)I_n+1', 'I_{n+1}=1-(n+1)I_n', 'I_{n+1}=(n+1)I_n-e', 'I_{n+1}=nI_n+1'], sens: 'dec', lim: '0', expl: `Intégration par parties avec ${m('u=(1-x)^{n+1}')} et ${m("v'=e^{x}")} : ${m(T`I_{n+1}=\left[(1-x)^{n+1}e^{x}\right]_0^1+(n+1)\int_0^1(1-x)^ne^{x}\mathrm{d}x=-1+(n+1)I_n`)}.` },
+    atan: { nom: T`I_n=\int_0^1 \dfrac{x^{n}}{1+x^2}\,\mathrm{d}x`, init: [[1, 4, 'pi']], rec: 'I_{n+2}+I_n=\\dfrac{1}{n+1}', haut: 'I_{n+2}', how: 'en additionnant les deux intégrales', faux: ['I_{n+2}+I_n=\\dfrac{1}{n+2}', 'I_{n+2}-I_n=\\dfrac{1}{n+1}', 'I_{n+2}+I_n=n+1', 'I_{n+2}\\times I_n=\\dfrac{1}{n+1}', 'I_{n+2}+I_n=\\dfrac{1}{n}'], sens: 'dec', lim: '0', expl: `${m(T`I_{n+2}+I_n=\int_0^1\dfrac{x^{n+2}+x^{n}}{1+x^2}\mathrm{d}x=\int_0^1x^n\mathrm{d}x=\dfrac{1}{n+1}`)}.` },
     sin: { nom: T`I_n=\int_0^{\pi} e^{-nx}\sin x\,\mathrm{d}x`, init: [[2, 1, '1']], rec: null, faux: [], sens: 'dec', lim: '0', expl: `Pour ${m(T`x\in[0\,;\pi]`)}, ${m(T`0\le\sin x\le 1`)} donc ${m(T`0\le e^{-nx}\sin x\le e^{-nx}`)} ; on intègre : ${m(T`0\le I_n\le\dfrac{1-e^{-n\pi}}{n}`)}, de limite ${m('0')}. De plus ${m(T`e^{-(n+1)x}\le e^{-nx}`)} : la suite est décroissante. ${m(T`I_0=\int_0^{\pi}\sin x\,\mathrm{d}x=2`)}.` }
   };
   function suitesIntegrales() {
@@ -341,7 +344,7 @@
     const k = aleaParmi(kinds), nom = m(S.nom);
     if (k === 'rec') {
       const bonne = S.rec, cl = S.faux.filter((x, i, A) => x !== bonne && A.indexOf(x) === i);
-      return qcm(`On pose, pour tout entier naturel ${m('n')}, ${nom}. Quelle relation lie ${m('I_{n+1}')} et ${m('I_n')} (intégration par parties) ?`, texOpt(bonne), cl.slice(0, 3).map(texOpt), { explication: S.expl, meta: { tipo: 'suite', id, ask: 'rec' } });
+      return qcm(`On pose, pour tout entier naturel ${m('n')}, ${nom}. Quelle relation lie ${m(S.haut || 'I_{n+1}')} et ${m('I_n')} (${S.how || 'intégration par parties'}) ?`, texOpt(bonne), cl.slice(0, 3).map(texOpt), { explication: S.expl, meta: { tipo: 'suite', id, ask: 'rec' } });
     }
     if (k === 'init') {
       const bonne = exprTex(S.init), faux = autres(S.init);
@@ -375,7 +378,7 @@
     { f: T`\dfrac{t^2}{1+t^2}`, d: u => (num(u) ? fr(String(u * u), String(1 + u * u)) : fr(`${u}^2`, `1+${u}^2`)) }
   ];
   function integraleVariable(niveau) {
-    const g = aleaParmi(INTEGRANDES), a = aleaParmi([0, 1, 2, 3]), compose = niveau === 3 && Math.random() < 0.6;
+    const g = aleaParmi(INTEGRANDES), a = aleaParmi([0, 1, 2, 3]), compose = Math.random() < (niveau === 3 ? 0.6 : 0.25);
     const haute = compose ? aleaParmi([['x^2', '2x', 'x^2'], ['2x', '2', '2x'], ['x+1', '1', 'x+1'], ['x^3', '3x^2', 'x^3'], ['3x', '3', '3x'], ['x^2+1', '2x', 'x^2+1'], ['2x+1', '2', '2x+1'], ['x-1', '1', 'x-1']]) : ['x', '1', 'x'];
     const F = `F(x)=\\displaystyle\\int_{${a}}^{${haute[0]}} ${g.f}\\,\\mathrm{d}t`;
     const vrai = compose ? `${haute[1] === '1' ? '' : haute[1] + '\\times '}${g.d(`\\left(${haute[2]}\\right)`)}` : g.d('x');

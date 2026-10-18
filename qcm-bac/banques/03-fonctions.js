@@ -49,6 +49,8 @@
   // 1. Dérivées
   // ==========================================================================
   // un modèle renvoie { f, d, faux: [...], dom: [lo, hi] (pour le contrôle), domTex, expl }
+  // tirage d'un modèle : le niveau 3 reprend parfois des modèles du niveau 2 (35 %), le niveau 2 des modèles du niveau 1 (25 %)
+  const tirerModele = (M, niveau) => aleaParmi(niveau === 3 && M[2] && Math.random() < 0.35 ? M[2] : niveau === 2 && M[1] && Math.random() < 0.25 ? M[1] : M[niveau]);
   const MODELES_DERIVEE = {
     1: [
       () => {                                   // a e^{kx}
@@ -164,7 +166,7 @@
     ]
   };
   function derivee(niveau) {
-    const mo = aleaParmi(MODELES_DERIVEE[niveau])();
+    const mo = tirerModele(MODELES_DERIVEE, niveau)();
     const bonne = texOpt(`f'(x)=${mo.d}`);
     const faux = mo.faux.map(t => texOpt(`f'(x)=${t}`));
     return qcm(`On considère la fonction ${m('f')} définie sur ${m(mo.domTex)} par ${m(`f(x)=${mo.f}`)}. Quelle est l'expression de sa dérivée ${m("f'(x)")} ?`,
@@ -257,7 +259,7 @@
     ]
   };
   function primitive(niveau) {
-    const mo = aleaParmi(MODELES_PRIMITIVE[niveau])();
+    const mo = tirerModele(MODELES_PRIMITIVE, niveau)();
     const nom = x => texOpt(`F(x)=${x}`);
     const bonne = nom(mo.F), faux = mo.faux.map(nom);
     const enonce = mo.cond
@@ -515,7 +517,7 @@
     ]
   };
   function limite(niveau) {
-    const mo = aleaParmi(MODELES_LIMITE[niveau])();
+    const mo = tirerModele(MODELES_LIMITE, niveau)();
     if (mo.asym) {
       return epure(qcm(mo.q, texOpt(mo.bonneTex), mo.fauxTex.filter((t, i, a) => a.indexOf(t) === i && t !== mo.bonneTex).map(texOpt), { explication: mo.expl, meta: { fTex: mo.f, at: mo.at, asym: mo.asym } }));
     }
@@ -624,7 +626,7 @@
     ]
   };
   function tangente(niveau) {
-    const mo = aleaParmi(MODELES_TANGENTE[niveau])();
+    const mo = tirerModele(MODELES_TANGENTE, niveau)();
     const fauxL = mo.faux.filter((t, i, a) => a.indexOf(t) === i && t !== mo.bonne).map(texOpt);
     if (mo.horiz) {
       return epure(qcm(`On considère la fonction ${m('f')} définie sur ${m(mo.domTex)} par ${m(`f(x)=${mo.f}`)}. En quel point d'abscisse ${m('x')} la courbe représentative de ${m('f')} admet-elle une tangente horizontale ?`,
@@ -800,7 +802,7 @@
   function calcul(niveau) {
     if (niveau === 3 && Math.random() < 0.4) return inegalite();
     let mo = null, essais = 0;
-    while (!mo && essais++ < 20) mo = aleaParmi(MODELES_CALCUL[niveau])();
+    while (!mo && essais++ < 20) mo = tirerModele(MODELES_CALCUL, niveau)();
     if (!mo) return null;
     const dis = mo.faux.filter(([t, v], i, a) => t !== mo.bonne && a.findIndex(z => z[0] === t) === i && !(Number.isFinite(mo.v) && Number.isFinite(v) && Math.abs(v - mo.v) < 1e-9)).map(([t]) => t);
     return epure(qcm(mo.enonce, texOpt(mo.bonne), dis.map(texOpt), { explication: mo.expl, meta: { fTex: mo.f, calcul: true } }));
@@ -1292,6 +1294,63 @@
       return { enonce: `Pour tout réel ${m('x')}, ${m(`${fr('e^x', '1+e^x')}+${fr(String(a), '1+e^x')}`)} est égal à :`, bonne: fr(`e^x+${a}`, '1+e^x'), v: NaN, f: `${fr('e^x', '1+e^x')}+${fr(String(a), '1+e^x')}`,
         faux: [[fr(`e^x+${a}`, `2+2e^x`), 1], [fr(`${a}e^x`, '1+e^x'), 1], [fr(`e^x+${a}`, '\\left(1+e^x\\right)^2'), 1], [`1+${fr(String(a), '1+e^x')}`, 1], [fr(`e^x+${a}`, '1')], 1].slice(0, 5),
         expl: `Les deux fractions ont le même dénominateur : on additionne les numérateurs.` };
+    }
+  );
+  // modèles supplémentaires (18/10/2026) : identités valables pour tout réel x
+  MODELES_CALCUL[3].push(
+    () => {
+      const f = ln('e^{2x}+2e^{x}+1');
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: '2\\ln\\left(1+e^{x}\\right)', v: NaN, f,
+        faux: [['\\ln\\left(1+e^{2x}\\right)', 1], ['\\ln 2+2\\ln\\left(1+e^{x}\\right)', 1], ['2x+\\ln\\left(1+e^{x}\\right)', 1], ['\\ln\\left(1+e^{x}\\right)', 1], ['2x+2\\ln 2', 1]],
+        expl: `${m(T`e^{2x}+2e^{x}+1=\left(e^{x}+1\right)^2`)}, donc ${m(f)} ${m(T`=\ln\left(\left(1+e^{x}\right)^2\right)=2\ln\left(1+e^{x}\right)`)}.` };
+    },
+    () => {
+      const f = fr('e^{x}-e^{-x}', 'e^{x}+e^{-x}');
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: fr('e^{2x}-1', 'e^{2x}+1'), v: NaN, f,
+        faux: [[fr('e^{2x}+1', 'e^{2x}-1'), 1], [fr('e^{x}-1', 'e^{x}+1'), 1], [fr('1-e^{2x}', '1+e^{2x}'), 1], [fr('e^{2x}-1', 'e^{2x}-1').replace('e^{2x}-1}{e^{2x}-1', 'e^{2x}-1}{e^{x}+1'), 1], [fr('e^{2x}-1', '2e^{x}'), 1]],
+        expl: `On multiplie le numérateur et le dénominateur par ${m('e^{x}')} : ${m(T`\dfrac{e^{2x}-1}{e^{2x}+1}`)}.` };
+    },
+    () => {
+      const a = aleaParmi([2, 3, 4, 5, 6]), f = `e^{x+\\ln ${a}}`;
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: `${a}e^{x}`, v: NaN, f,
+        faux: [[`e^{x}+${a}`, 1], [`e^{x}+\\ln ${a}`, 1], [`e^{${a}x}`, 1], [`\\ln ${a}\\,e^{x}`, 1], [`x+${a}`, 1]],
+        expl: `${m(T`e^{x+\ln a}=e^{x}\times e^{\ln a}=ae^{x}`)} avec ${m(`a=${a}`)}.` };
+    },
+    () => {
+      const a = aleaParmi([2, 3, 4, 5, 6]), f = `e^{2x-\\ln ${a}}`;
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: fr('e^{2x}', String(a)), v: NaN, f,
+        faux: [[`e^{2x}-${a}`, 1], [fr('e^{2x}', `\\ln ${a}`), 1], [fr('e^{x}', String(a)), 1], [`${a}e^{2x}`, 1], [`e^{2x}-\\ln ${a}`, 1]],
+        expl: `${m(T`e^{2x-\ln a}=\dfrac{e^{2x}}{e^{\ln a}}=\dfrac{e^{2x}}{a}`)} avec ${m(`a=${a}`)}.` };
+    },
+    () => {
+      const f = ln(fr('e^{x}+1', 'e^{x}'));
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: '\\ln\\left(1+e^{-x}\\right)', v: NaN, f,
+        faux: [['\\ln\\left(1+e^{x}\\right)', 1], ['x-\\ln\\left(1+e^{x}\\right)', 1], ['\\ln\\left(1+e^{x}\\right)-1', 1], ['-\\ln\\left(1+e^{-x}\\right)', 1], ['1+e^{-x}', 1]],
+        expl: `${m(T`\dfrac{e^{x}+1}{e^{x}}=1+e^{-x}`)}, donc ${m(f)} ${m(T`=\ln\left(1+e^{-x}\right)`)}.` };
+    },
+    () => {
+      const f = T`\left(e^{x}+e^{-x}\right)^2-\left(e^{x}-e^{-x}\right)^2`;
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: '4', v: NaN, f,
+        faux: [['2', 1], ['2e^{2x}', 1], ['4e^{2x}', 1], ['0', 1], ['2e^{x}', 1]],
+        expl: `${m(T`(a+b)^2-(a-b)^2=4ab`)} avec ${m('a=e^{x}')} et ${m('b=e^{-x}')} : ${m(T`4e^{x}e^{-x}=4`)}.` };
+    },
+    () => {
+      const f = ln('e^{x}\\sqrt{e}');
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: T`x+\dfrac{1}{2}`, v: NaN, f,
+        faux: [['x+\\sqrt{e}', 1], [fr('x', '2'), 1], [fr('x+1', '2'), 1], ['x+e', 1], ['x\\sqrt{e}', 1]],
+        expl: `${m(T`\ln\left(e^{x}\sqrt{e}\right)=\ln\left(e^{x}\right)+\ln\left(e^{1/2}\right)=x+\dfrac{1}{2}`)}.` };
+    },
+    () => {
+      const a = aleaParmi([2, 3, 4, 5]), f = ln(`${a}e^{2x}`);
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: `2x+\\ln ${a}`, v: NaN, f,
+        faux: [[`2x\\ln ${a}`, 1], [`2x+${a}`, 1], [`x+2\\ln ${a}`, 1], [`${a}+2x`, 1], [`2\\ln ${a}+2x`, 1]],
+        expl: `${m(T`\ln\left(ae^{2x}\right)=\ln a+\ln\left(e^{2x}\right)=2x+\ln a`)} avec ${m(`a=${a}`)}.` };
+    },
+    () => {
+      const a = aleaParmi([2, 3, 4]), f = fr(`e^{${a}x}-e^{-${a}x}`, '2');
+      return { enonce: `Pour tout réel ${m('x')}, ${m(f)} est égal à :`, bonne: fr(`e^{${2 * a}x}-1`, `2e^{${a}x}`), v: NaN, f,
+        faux: [[fr(`e^{${2 * a}x}+1`, `2e^{${a}x}`), 1], [fr(`e^{${2 * a}x}-1`, '2'), 1], [fr(`e^{${a}x}-1`, `2e^{${a}x}`), 1], [fr(`1-e^{${2 * a}x}`, `2e^{${a}x}`), 1], [fr(`e^{${2 * a}x}-1`, `e^{${a}x}`), 1]],
+        expl: `On met au même dénominateur : ${m(`e^{-${a}x}=\\dfrac{1}{e^{${a}x}}`)}, donc ${m(f)} ${m(`=\\dfrac{e^{${2 * a}x}-1}{2e^{${a}x}}`)}.` };
     }
   );
   // équation différentielle : quelle équation vérifie la fonction donnée ?

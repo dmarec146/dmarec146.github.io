@@ -696,7 +696,7 @@
 
   function sommeGeoValeur(niveau) {
     const [a, b] = aleaParmi(niveau === 1 ? [[2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [5, 1]] : [[2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [2, 3], [3, 2], [-2, 1], [-1, 2], [-1, 3], [3, 4], [-3, 1], [1, 4]]);
-    const n = alea(3, niveau === 1 ? 6 : 8), k0 = niveau === 1 ? 0 : aleaParmi([0, 0, 1]), c = niveau === 1 ? 1 : aleaParmi([1, 1, 2, 3]), qd = rat(a, b);
+    const n = alea(3, niveau === 1 ? 7 : 8), k0 = aleaParmi([0, 0, 1]), c = niveau === 1 ? 1 : aleaParmi([1, 1, 2, 3]), qd = rat(a, b);
     const S = (lo, hi) => sommeRat(a, b, c, lo, hi), vraie = S(k0, n);
     return completer3(vraie, [S(k0, n - 1), S(k0, n + 1), k0 > 0 ? S(k0 - 1, n) : S(k0 + 1, n), S(k0 + 1, n)],
       `La somme compte les termes de ${m(`k=${k0}`)} à ${m(`k=${n}`)}, soit ${m(String(n - k0 + 1))} termes ; pour une raison ${m(qd.tex)} on utilise ${m(T`\dfrac{\text{premier terme}\times\left(1-q^{\text{nombre de termes}}\right)}{1-q}`)} : on obtient ${m(vraie.tex)}.`,

@@ -1,6 +1,6 @@
 /* Contrôle des banques du bloc « QCM Bac » (Terminale), sans navigateur ni dépendance.
 
-   Usage :  node outils/qcm-bac/controle-banques.js [--essais 300] [--banque suites] [--mutation] [--apercu N]
+   Usage :  node outils/qcm-bac/controle-banques.js [--essais 300] [--banque suites] [--famille calcul] [--niveau 3] [--mutation] [--apercu N]
 
    Pour chaque famille et chaque niveau, tire des questions BRUTES (avant mélange des options : l'option 0 est
    la bonne), puis :
@@ -23,6 +23,8 @@ const args = process.argv.slice(2);
 const opt = (nom, def) => { const i = args.indexOf(nom); return i >= 0 ? (args[i + 1] === undefined || args[i + 1].startsWith('--') ? true : args[i + 1]) : def; };
 const ESSAIS = Number(opt('--essais', 300));
 const BANQUE = opt('--banque', null);
+const FAMILLE = opt('--famille', null);
+const NIVEAU_SEUL = opt('--niveau', null);
 const MUTATION = args.includes('--mutation');
 const APERCU = Number(opt('--apercu', 0));
 
@@ -890,7 +892,7 @@ F['integrales/proprietes'] = q => {
 };
 const SUITES_I = {
   exp: n => simpson(x => Math.pow(x, n) * Math.exp(x), 0, 1, 6000), ln: n => simpson(x => Math.pow(Math.log(x), n), 1, Math.E, 6000),
-  inv: n => simpson(x => Math.pow(x, n) / (1 + x), 0, 1, 6000), sin: n => simpson(x => Math.exp(-n * x) * Math.sin(x), 0, Math.PI, 40000)
+  inv: n => simpson(x => Math.pow(x, n) / (1 + x), 0, 1, 6000), expneg: n => simpson(x => Math.pow(x, n) * Math.exp(-x), 0, 1, 6000), expdec: n => simpson(x => Math.pow(1 - x, n) * Math.exp(x), 0, 1, 6000), atan: n => simpson(x => Math.pow(x, n) / (1 + x * x), 0, 1, 6000), sin: n => simpson(x => Math.exp(-n * x) * Math.sin(x), 0, Math.PI, 40000)
 };
 F['integrales/suites-integrales'] = q => {
   const M = q.meta, I = SUITES_I[M.id];
@@ -899,8 +901,8 @@ F['integrales/suites-integrales'] = q => {
   if (M.ask === 'lim') { const a = I(20), b = I(40), conv = Math.abs(a - b) < 0.1; return q.options.map(o => ({ 0: conv && b < 0.1, 1: conv && Math.abs(b - 1) < 0.05, inf: b > 1e3, non: !conv })[o.cle]); }
   const v = n => I(n);
   return q.options.map(o => {
-    const tex = LX.mathDe(o.affichage).replace(/I_\{n\+1\}/g, 'J').replace(/I_n/g, 'I'), [g, d] = tex.split('=');
-    for (let n = 1; n <= 6; n++) { const env = { n, I: v(n), J: v(n + 1) }; if (!egale(LX.parse(g)(env), LX.parse(d)(env), 1e-7)) return false; }
+    const tex = LX.mathDe(o.affichage).replace(/I_\{n\+2\}/g, 'K').replace(/I_\{n\+1\}/g, 'J').replace(/I_n/g, 'I'), [g, d] = tex.split('=');
+    for (let n = 1; n <= 6; n++) { const env = { n, I: v(n), J: v(n + 1), K: v(n + 2) }; if (!egale(LX.parse(g)(env), LX.parse(d)(env), 1e-7)) return false; }
     return true;
   });
 };
@@ -1140,9 +1142,11 @@ const manquants = [];
 for (const [idBanque, banque] of Object.entries(A.banques)) {
   if (BANQUE && BANQUE !== idBanque) continue;
   for (const [idFam, fam] of Object.entries(banque.familles)) {
+    if (FAMILLE && FAMILLE !== idFam) continue;
     const verif = F[idBanque + '/' + idFam];
     if (!verif) { manquants.push(idBanque + '/' + idFam); }
     for (const niveau of fam.niveaux || [1, 2, 3]) {
+      if (NIVEAU_SEUL && Number(NIVEAU_SEUL) !== niveau) continue;
       const vus = new Set(), vusAvecOptions = new Set(); let ok = 0, nuls = 0, mutOk = 0, mutN = 0;
       for (let i = 0; i < (idBanque === 'algorithmique' ? Math.min(ESSAIS, 120) : ESSAIS); i++) {
         let q;

@@ -86,7 +86,7 @@
     const t = niveau === 2 ? aleaParmi(['cos-eq', 'cos-eq', 'sin-eq']) : aleaParmi(['cos-ineq', 'sin-ineq', 'cos-ineq', 'sin-eq']);
     const [c, cTex] = aleaParmi(COS_C);
     const fn = t.startsWith('cos') ? 'cos' : 'sin';
-    const [lo, hi] = fn === 'cos' ? aleaParmi([[-180, 180], [-180, 180], [0, 360], [0, 180], [-90, 90], [90, 270], [-270, 90]]) : (t === 'sin-ineq' ? aleaParmi([[0, 180], [0, 360], [-180, 180], [-90, 90], [90, 270], [-270, 90]]) : aleaParmi([[0, 360], [-180, 180], [0, 180], [-90, 90], [90, 270], [-270, 90]]));
+    const [lo, hi] = fn === 'cos' ? aleaParmi([[-180, 180], [-180, 180], [0, 360], [0, 180], [-90, 90], [90, 270], [-270, 90], [-90, 270], [180, 360], [-180, 0]]) : (t === 'sin-ineq' ? aleaParmi([[0, 180], [0, 360], [-180, 180], [-90, 90], [90, 270], [-270, 90]]) : aleaParmi([[0, 360], [-180, 180], [0, 180], [-90, 90], [90, 270], [-270, 90], [-90, 270], [180, 360], [-180, 0]]));
     const loTex = ang(lo), hiTex = ang(hi);
     const tex = (op) => `\\${fn}\\left(x\\right)${{ '=': '=', '<=': '\\le', '>=': '\\ge', '<': '\\lt', '>': '\\gt' }[op]} ${cTex}`;
     if (t.endsWith('eq')) {

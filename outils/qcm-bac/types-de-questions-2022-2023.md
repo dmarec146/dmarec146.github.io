@@ -17,8 +17,9 @@ paramétrable, avec trois mauvaises réponses qui reprennent des erreurs classiq
 | Premiers termes d'une suite récurrente | « la valeur de `u_2` est égale à… » | Fait |
 | Sens de variation | suite `e^{2n+1}`, `v_n = u_n + 60` | Fait |
 | Modélisation et seuil | « le volume diminue de 15 % par heure : au bout de combien d'heures est-il inférieur à… ? » ; division cellulaire ; action à +3 % par mois | Ajouté (seuil en contexte) |
-| Algorithme Python à compléter | « la ligne 4 est incomplète : la fonction doit renvoyer le plus petit `n` tel que `u_n > 10000` » | Ajouté (condition de boucle) |
-| Que renvoie un programme Python | `seuil(…)`, somme `1 + 1/2 + … + 1/100` | Fait (seuil) ; somme à faire |
+| Algorithme Python à compléter | « la ligne 4 est incomplète : la fonction doit renvoyer le plus petit `n` tel que `u_n > 10000` » | Ajouté (condition de boucle ; banque `algorithmique` : condition, retour, somme, schéma d'Euler) |
+| Somme géométrique ou arithmétique, forme close, limite de `S_n`, inégalité de Bernoulli | `Σ 2^k`, `Σ (ak+b)`, `Σ 1/(k(k+1))`, `(1+a)^n ≥ 1+na` | Ajouté (famille `sommes`, §11) |
+| Que renvoie un programme Python | `seuil(…)`, somme `1 + 1/2 + … + 1/100` | Fait (banque `algorithmique`, `SUIVI-QCM-BAC.md` §11 : seuil, sommes, factorielle, Fibonacci, Collatz…) |
 | Suite définie par `u_{n+1} = u_n / n` | « la suite `(w_n)` est… » | À faire |
 | Produit `v_n × v_{n+1} = k` (suite alternée ou constante) | Groupe I 19 mai 2022 | À faire |
 
@@ -36,7 +37,7 @@ paramétrable, avec trois mauvaises réponses qui reprennent des erreurs classiq
 
 ## Exponentielle, logarithme, dérivation, primitives, limites (43 + 19 + 4 questions)
 
-Thème **codé le 18/10/2026** (banque `fonctions`, voir `SUIVI-QCM-BAC.md` §8), sauf la lecture graphique (pas de figure). C'est le gros morceau des QCM de 2022 et 2023. Types rencontrés :
+Thème **codé le 18/10/2026** (banque `fonctions`, voir `SUIVI-QCM-BAC.md` §8), y compris la lecture graphique (banque `lectures-graphiques`, `SUIVI-QCM-BAC.md` §11, figures dessinées par `O.graph.repere`). C'est le gros morceau des QCM de 2022 et 2023. Types rencontrés :
 
 - Dérivée de `x²ln x`, de `(x+1)e^x`, de `ln(x²+x+1)`, de `x/e^x`, de `x e^{x²−3}`.
 - Primitive de `xe^x`, `(x+1)e^x`, `x e^{x²}`, `ln x`, `e^{2x+1}` avec condition `F(0)=1`, `3e^{−x²}+2`, `x/(1−x²)`.
@@ -45,7 +46,7 @@ Thème **codé le 18/10/2026** (banque `fonctions`, voir `SUIVI-QCM-BAC.md` §8)
 - Limites : `(e^x+1)/(e^x−1)`, `ln x /(3x²+1)`, `(x+1)/e^x`, `(e^{2x}−1)/(e^x−x)`, asymptotes d'une fraction rationnelle.
 - Simplification d'expressions (`ln 9 + ln(√3/3) + ln(1/9)`, `2 + (3e^{−x}−5)/(e^{−x}+1)`), inégalité `1+e^{2x} ≥ 2e^x`.
 - Tangente en un point (`xe^x` en 1, `x²−4x+3ln(2x−1)`), convexité (`e^x − x`, `ln(x²+2x+2)`, `x^{1000}+x`).
-- Lecture graphique : sens de variation, extrema, points d'inflexion à partir de la courbe de `f'` ou de `f''`.
+- Lecture graphique : sens de variation, extrema, points d'inflexion à partir de la courbe de `f'` ou de `f''` — **codé le 18/10/2026** (banque `lectures-graphiques`).
 - Équation différentielle et valeurs intermédiaires dans les affirmations.
 
 ## Probabilités (27 questions)

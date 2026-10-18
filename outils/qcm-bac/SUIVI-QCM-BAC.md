@@ -1,6 +1,6 @@
 # Bloc « QCM Bac » (Terminale spécialité mathématiques) — suivi du chantier
 
-**Statut au 17/10/2026 : pilote codé (suites + géométrie dans l'espace), non encore en ligne sur `master` ni lié depuis le site.** Décisions prises avec
+**Statut au 18/10/2026 : neuf banques codées (suites, géométrie dans l'espace, fonctions, probabilités, dénombrement, intégrales, trigonométrie, algorithmique, lectures graphiques) sur la branche `claude/gifted-carson-92cmm8`, non encore en ligne sur `master` ni liées depuis le site.** Décisions prises avec
 David lors d'une session cloud ; à tenir à jour à chaque étape (le récit détaillé
 d'un chantier terminé va à la fin de `HISTORIQUE.md`).
 
@@ -245,3 +245,47 @@ chargée par la page pilote `qcm-bac/fiche.html` (`?theme=fonctions` pour ne tra
 - **Essai navigateur** : 84 fiches, plus de 5 800 formules, 0 erreur MathJax, pas de défilement horizontal sur téléphone.
 - **Reste hors banque** : lecture graphique (figure), méthode d'Euler, fonction tangente en détail, approximation d'aire par suites
   adjacentes, trigonométrie en géométrie (`cos α = C'H/CH`).
+
+## 11. Banques « Algorithmique et Python » et « Lectures graphiques », famille « sommes », élargissement (18/10/2026)
+
+Deux nouvelles banques : `qcm-bac/banques/08-algorithmique.js` (identifiant `algorithmique`) et `qcm-bac/banques/09-lectures-graphiques.js`
+(identifiant `lectures-graphiques`), plus la famille `sommes` dans `01-suites.js`. La page pilote `qcm-bac/fiche.html` charge maintenant
+**neuf banques** (elle charge aussi `../automatismes/assets/graphiques.js` pour les figures ; 2 thèmes tirés au sort, ou `?theme=…`).
+
+- **Algorithmique et Python, 4 familles** : `lecture` (que renvoie ce programme : sommes avec `for`, suites, seuils avec `while`, factorielle,
+  Fibonacci, multiples, double boucle, Collatz, balayage, probabilités avec seuil…) ; `euler` (méthode d'Euler pour `y' = ay+b` :
+  formule, rapport entre deux termes, code, code avec un pas `t`) ; `rectangles` (somme de rectangles : le programme calcule-t-il un
+  minorant ou un majorant de l'intégrale ?) ; `completer` (condition de boucle, valeur retournée, somme, schéma d'Euler à compléter,
+  les propositions étant des fragments de code). Le code s'affiche en bloc `<pre>`, les fragments en `<code>`.
+- **Contrôle** : le programme Python affiché est **réellement exécuté** (`python3 -I`, délai 1,5 s, résultats mis en cache) ; pour
+  « compléter », chaque proposition est insérée dans le gabarit et le programme obtenu est comparé au programme de référence sur
+  plusieurs appels. Pour limiter le temps, le contrôle ne tire que 120 questions par famille et niveau pour cette banque.
+- **Lectures graphiques, 2 familles** : `courbe-de-f` (nombre de solutions de `f(x)=k` avec la droite tracée, sens de variation,
+  maximum ou minimum local, point d'inflexion, signe de `f`, tangente et `f'(a)`, encadrement d'une intégrale par les carreaux) ;
+  `courbe-de-fp` (variations, extremum ou convexité de `f` d'après la courbe de `f'`, convexité ou point d'inflexion d'après la courbe de `f''`).
+  Règle de lisibilité respectée : extremums, zéros et points d'inflexion sur des nœuds du quadrillage, courbe contenue dans la fenêtre,
+  origine visible, droite de la tangente passant par deux nœuds. Les intervalles proposés comme réponse sont toujours des intervalles
+  **maximaux ou sûrs** : un piège n'est jamais un sous-intervalle de la bonne réponse (ce serait une affirmation aussi vraie).
+- **Contrôle des figures** : chaque question porte la formule de la fonction tracée (`drawTex`) et un échantillon des points du tracé ;
+  le contrôle vérifie que le tracé suit la formule, reste dans la fenêtre, puis **recalcule** racines, signe, extremums, point
+  d'inflexion, pente de la tangente (et que la droite tracée est bien la tangente), intégrale (Simpson) à partir de cette formule.
+- **Famille `sommes` (suites, niveaux 1 à 3)** : valeur d'une somme géométrique ou arithmétique, forme close (`Σ q^k`, `Σ (ak+b)`,
+  somme télescopique `Σ 1/(k(k+1))`), limite de `S_n` (raison `|q|<1`, `q>1`, `q=−1` sans limite), inégalité de Bernoulli et rang à
+  partir duquel `1+na` dépasse un seuil. Le contrôle relit la somme **affichée** dans l'énoncé et la recalcule terme à terme.
+- **Élargissement des familles courtes** (au niveau 3, 35 % des modèles viennent du niveau 2 ; au niveau 2, 25 % du niveau 1, pour
+  les familles `fonctions` dérivées, primitives, limites, tangente, calcul) ; ajouts : neuf identités `ln`/`exp` (niveau 3), onze
+  intégrandes et huit composées de plus pour `F(x)=∫ f(t)dt`, trois suites d'intégrales (`x^n e^{-x}`, `(1−x)^n e^x`,
+  `x^n/(1+x²)`), dix modèles d'étude de `f'` en trigonométrie avec des intervalles `[0,2π]`, `[−π,π]`, `[−π/2,π/2]`, quatorze dérivées
+  trigonométriques de plus, intervalles et inégalités strictes pour les équations trigonométriques.
+- **Corrections au passage** : plusieurs dérivées trigonométriques étaient annoncées « définies sur ℝ » alors que la fonction ne l'est pas
+  (`sin x / x`, `1/cos x`, `cos x/(1+sin x)`, `ln(sin x)`) : l'ensemble de définition est maintenant écrit.
+- **Variété** (estimée sur 2 500 tirages, énoncés distincts, figure comprise ; avec les propositions différentes le nombre est plus grand) :
+  la plupart des familles dépassent 100 ; restent plus courtes : `sommes` niveau 1 (96), `suites-integrales` niveau 3 (27 énoncés,
+  200 avec propositions), `rectangles` niveau 3 (54 énoncés, 421 avec propositions), `formules` niveau 1 (2 énoncés mais ~700
+  jeux de propositions), `valeurs` niveau 1 (36 énoncés, 358 avec propositions).
+- **Contrôle global** : `controle-banques.js --mutation` sur les neuf banques : 44 160 questions, 0 anomalie, erreurs volontaires
+  détectées 9 112 / 9 112. Nouveaux paramètres du contrôle : `--famille` et `--niveau`.
+- **Essai navigateur** : thèmes `lectures-graphiques` et `algorithmique` : 42 fiches chacun, 0 erreur MathJax, pas de défilement horizontal
+  sur téléphone, figures affichées avec leur bouton d'agrandissement.
+- **Pas fait** : géométrie dans l'espace avec sphères (absentes des sources), fonction tangente en détail, approximation d'aire par suites
+  adjacentes, trigonométrie en géométrie.
