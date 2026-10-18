@@ -471,6 +471,147 @@
   }
 
   // ==========================================================================
+  // 9. Position relative de deux droites
+  // ==========================================================================
+  function deuxDroites() {
+    let A, u, B, v, cas, M0;
+    for (;;) {
+      cas = aleaParmi(['sec', 'sec', 'par', 'conf', 'noncop']);
+      u = randV(-3, 3);
+      if (cas === 'par' || cas === 'conf') {
+        const k = aleaParmi([2, -1, -2, 3]); v = mul(k, u); A = randP(-4, 4);
+        B = cas === 'conf' ? add(A, mul(aleaParmi([1, 2, -1, 3]), u)) : add(add(A, mul(2, u)), randV(-2, 2));
+        if (cas === 'par' && surDroite(B, A, u)) continue;
+      } else {
+        v = randV(-3, 3); if (col(u, v)) continue;
+        if (cas === 'sec') {
+          M0 = randP(-4, 4); const t0 = aleaParmi([-2, -1, 1, 2, 3]), s0 = aleaParmi([-3, -2, -1, 1, 2]);
+          A = sub(M0, mul(t0, u)); B = sub(M0, mul(s0, v));
+        } else {
+          A = randP(-4, 4); B = randP(-4, 4);
+          if (det(u, v, sub(B, A)) === 0) continue;
+        }
+      }
+      break;
+    }
+    const O = {
+      par: opt(`${m('d')} et ${m("d'")} sont strictement parallèles`, 'par'),
+      conf: opt(`${m('d')} et ${m("d'")} sont confondues`, 'conf'),
+      secq: opt(`${m('d')} et ${m("d'")} sont sécantes`, 'sec'),
+      sec: P => opt(`${m('d')} et ${m("d'")} sont sécantes en ${m(pt(P))}`, 'sec:' + cle(P)),
+      noncop: opt(`${m('d')} et ${m("d'")} ne sont pas coplanaires`, 'noncop')
+    };
+    let bonne, dist;
+    if (cas === 'sec') { bonne = O.sec(M0); dist = [O.sec(add(M0, [1, 0, 0])), O.par, O.noncop]; }
+    else if (cas === 'par') { bonne = O.par; dist = [O.conf, O.secq, O.noncop]; }
+    else if (cas === 'conf') { bonne = O.conf; dist = [O.par, O.secq, O.noncop]; }
+    else { bonne = O.noncop; dist = [O.secq, O.par, O.conf]; }
+    return qcm(`Dans un repère de l'espace, on considère les droites ${m('d')} et ${m("d'")} de représentations paramétriques ${m(repCases(A, u))}, ${m(T`t\in\mathbb{R}`)}, et ${m(repCases(B, v).replace(/t/g, 's'))}, ${m(T`s\in\mathbb{R}`)}. Quelle affirmation est vraie ?`,
+      bonne, dist,
+      { explication: cas === 'par' || cas === 'conf'
+        ? `Les vecteurs directeurs ${m(vec(u))} et ${m(vec(v))} sont colinéaires : les droites sont parallèles. ${cas === 'conf' ? 'Le point de ' + m("d'") + ' obtenu pour ' + m('s=0') + ' appartient à ' + m('d') + ' : elles sont confondues.' : 'Un point de ' + m("d'") + ' n\'appartient pas à ' + m('d') + ' : elles sont strictement parallèles.'}`
+        : cas === 'sec' ? `Les vecteurs directeurs ne sont pas colinéaires. Le système obtenu en égalant les coordonnées admet une solution : les droites se coupent en ${m(pt(M0))}.`
+        : 'Les vecteurs directeurs ne sont pas colinéaires et le système obtenu en égalant les coordonnées n\'a pas de solution : les droites ne sont ni parallèles, ni sécantes, donc non coplanaires.',
+      meta: { A, u, B, v } });
+  }
+  function intersectionDeuxDroites() {  // N3 : coordonnées du point d'intersection
+    let A, u, B, v, M0, t0, s0;
+    for (;;) {
+      u = randV(-3, 3); v = randV(-3, 3); if (col(u, v)) continue;
+      M0 = randP(-4, 4); t0 = aleaParmi([-2, -1, 1, 2, 3]); s0 = aleaParmi([-3, -2, -1, 1, 2]);
+      A = sub(M0, mul(t0, u)); B = sub(M0, mul(s0, v));
+      const cand = [A, B, add(A, mul(t0 + 1, u)), add(B, mul(s0 - 1, v)), mul(-1, M0), add(A, u), add(B, v)].filter(P => !egal(P, M0));
+      const choix = unique(cand.map(ptOpt), ['P:' + cle(M0)]).slice(0, 3);
+      if (choix.length < 3) continue;
+      return qcm(`Dans un repère de l'espace, on considère les droites ${m('d')} et ${m("d'")} de représentations paramétriques ${m(repCases(A, u))}, ${m(T`t\in\mathbb{R}`)}, et ${m(repCases(B, v).replace(/t/g, 's'))}, ${m(T`s\in\mathbb{R}`)}. Ces droites sont sécantes. Quelles sont les coordonnées de leur point d'intersection ?`,
+        ptOpt(M0), choix,
+        { explication: `On cherche ${m('t')} et ${m('s')} tels que les trois coordonnées soient égales : on trouve ${m(`t=${t0}`)} et ${m(`s=${s0}`)}, d'où le point ${m(pt(M0))}.`,
+          meta: { A, u, B, v } });
+    }
+  }
+
+  // ==========================================================================
+  // 10. Position relative de deux plans, intersection
+  // ==========================================================================
+  function deuxPlans() {
+    let n, d, n2, d2, cas;
+    for (;;) {
+      n = randV(-3, 3); d = alea(-6, 6); cas = aleaParmi(['par', 'conf', 'perp', 'sec']);
+      if (cas === 'par' || cas === 'conf') { const k = aleaParmi([2, -1, -2, 3]); n2 = mul(k, n); d2 = cas === 'conf' ? k * d : k * d + aleaParmi([-3, -2, -1, 1, 2, 3]); }
+      else if (cas === 'perp') { const w = randV(-2, 2); n2 = reduit(cross(n, w)); if (nul(n2) || col(n, n2)) continue; d2 = alea(-6, 6); }
+      else { n2 = randV(-3, 3); d2 = alea(-6, 6); if (col(n, n2) || dot(n, n2) === 0) continue; }
+      if (nul(n2)) continue;
+      break;
+    }
+    const O = { par: opt('les plans sont strictement parallèles', 'par'), conf: opt('les plans sont confondus', 'conf'), perp: opt('les plans sont sécants et perpendiculaires', 'perp'), sec: opt('les plans sont sécants et non perpendiculaires', 'sec') };
+    const ordre = ['par', 'conf', 'perp', 'sec'];
+    return qcm(`Dans un repère orthonormé de l'espace, on considère les plans ${m('\\mathcal{P}')} et ${m("\\mathcal{P}'")} d'équations ${m(plan([n[0], n[1], n[2], d]))} et ${m(plan([n2[0], n2[1], n2[2], d2]))}. Quelle affirmation est vraie ?`,
+      O[cas], ordre.filter(c => c !== cas).map(c => O[c]),
+      { explication: col(n, n2) ? `Les vecteurs normaux ${m(vec(n))} et ${m(vec(n2))} sont colinéaires : les plans sont parallèles. ${cas === 'conf' ? 'Les équations sont proportionnelles (constante comprise) : les plans sont confondus.' : 'Les équations ne sont pas proportionnelles (constante comprise) : les plans sont strictement parallèles.'}` : `Les vecteurs normaux ne sont pas colinéaires : les plans sont sécants. ${m(T`\vec{n}\cdot\vec{n'}=${dot(n, n2)}`)}${dot(n, n2) === 0 ? ' : ils sont perpendiculaires.' : ' : ils ne sont pas perpendiculaires.'}`,
+        meta: { n, d, n2, d2 } });
+  }
+  function droiteIntersectionPlans() {   // N3 : représentation paramétrique de l'intersection
+    let A, n, n2, u, d, d2;
+    for (;;) {
+      n = randV(-3, 3); n2 = randV(-3, 3); if (col(n, n2)) continue;
+      u = reduit(cross(n, n2)); if (nul(u) || Math.max(...u.map(Math.abs)) > 12) continue;
+      A = randP(-3, 3); d = -dot(n, A); d2 = -dot(n2, A);
+      const cand = [[A, n], [A, add(n, n2)], [A, [u[0], u[1], -u[2]]], [add(A, [1, 0, 0]), u], [[0, 0, 0], u], [A, cross(u, n)]].filter(([Q, D]) => !nul(D) && !(dot(n, sub(Q, A)) === 0 && dot(n2, sub(Q, A)) === 0 && dot(n, D) === 0 && dot(n2, D) === 0));
+      if (cand.length < 3) continue;
+      const choix = melanger(cand).slice(0, 3);
+      const vus = new Set([`${cle(A)}|${cle(u)}`]);
+      if (choix.some(([Q, D]) => { const k = `${cle(Q)}|${cle(D)}`; if (vus.has(k)) return true; vus.add(k); return false; })) continue;
+      return qcm(`Dans un repère orthonormé de l'espace, on considère les plans ${m('\\mathcal{P}')} et ${m("\\mathcal{P}'")} d'équations ${m(plan([n[0], n[1], n[2], d]))} et ${m(plan([n2[0], n2[1], n2[2], d2]))}. Ils sont sécants. Laquelle de ces représentations paramétriques est celle de leur droite d'intersection ? (${m(T`t\in\mathbb{R}`)})`,
+        repOpt(A, u), choix.map(([Q, D]) => repOpt(Q, D)),
+        { explication: `La droite d'intersection passe par ${m(`A${pt(A)}`)}, qui vérifie les deux équations, et son vecteur directeur est orthogonal aux deux vecteurs normaux ${m(vec(n))} et ${m(vec(n2))} : on trouve ${m(vec(u))}.`,
+          meta: { n, d, n2, d2 } });
+    }
+  }
+
+  // ==========================================================================
+  // 11. Angle de deux vecteurs, plan médiateur
+  // ==========================================================================
+  function angleAbc() {
+    let A, B, C, deg, cand;
+    for (;;) {
+      A = randP(-3, 3); B = randP(-3, 3); C = randP(-3, 3);
+      const u = sub(B, A), v = sub(C, A);
+      if (nul(u) || nul(v) || col(u, v)) continue;
+      const th = Math.acos(dot(u, v) / (Math.sqrt(dot(u, u)) * Math.sqrt(dot(v, v)))) * 180 / Math.PI;
+      if (Math.abs(th % 1 - 0.5) < 0.08 || th < 8 || th > 172) continue;
+      deg = Math.round(th);
+      const x = dot(u, v) / (Math.sqrt(dot(u, u)) + Math.sqrt(dot(v, v)));
+      cand = [180 - deg, Math.abs(90 - deg), Math.round(Math.acos(Math.max(-1, Math.min(1, x))) * 180 / Math.PI), deg + 10, deg - 10, Math.round(Math.asin(Math.abs(dot(u, v)) / (Math.sqrt(dot(u, u)) * Math.sqrt(dot(v, v)))) * 180 / Math.PI)]
+        .filter(d => d > 0 && d < 180 && d !== deg);
+      const choix = unique(cand.map(x => opt(m(`${x}^\\circ`), 'num:' + x)), ['num:' + deg]).slice(0, 3);
+      if (choix.length < 3) continue;
+      return qcm(`Dans un repère orthonormé de l'espace, on considère les points ${m(`A${pt(A)}`)}, ${m(`B${pt(B)}`)} et ${m(`C${pt(C)}`)}. Quelle est la mesure de l'angle ${m(T`\widehat{BAC}`)}, arrondie au degré ?`,
+        opt(m(`${deg}^\\circ`), 'num:' + deg), choix,
+        { explication: `${m(T`\cos\widehat{BAC}=\dfrac{\overrightarrow{AB}\cdot\overrightarrow{AC}}{AB\times AC}=\dfrac{${dot(u, v)}}{\sqrt{${dot(u, u)}}\times\sqrt{${dot(v, v)}}}`)}, d'où ${m(T`\widehat{BAC}\approx ${deg}^\circ`)}.`,
+          meta: { A, B, C } });
+    }
+  }
+  function planMediateur() {
+    let A, B, n, I2, c, d;
+    for (;;) {
+      A = randP(-4, 4); B = randP(-4, 4); n = sub(B, A); if (nul(n)) continue;
+      const nb = dot(B, B) - dot(A, A);              // (|B|² - |A|²) : n·X = nb/2 sur le plan médiateur
+      let coefs = [2 * n[0], 2 * n[1], 2 * n[2], -nb];
+      const g = pgcd(pgcd(pgcd(Math.abs(coefs[0]), Math.abs(coefs[1])), Math.abs(coefs[2])), Math.abs(coefs[3]));
+      coefs = coefs.map(x => x / g);
+      const dA = -dot(n, A), dB = -dot(n, B);
+      const cand = [[n[0], n[1], n[2], dA], [n[0], n[1], n[2], dB], [coefs[0], coefs[1], coefs[2], -coefs[3]], [A[0] + B[0], A[1] + B[1], A[2] + B[2], -nb], [coefs[0], coefs[1], coefs[2], coefs[3] + 1]].filter(e => !nul(e.slice(0, 3)));
+      const bonne = eqOpt(coefs);
+      const choix = unique(cand.map(eqOpt), [bonne.cle]).slice(0, 3);
+      if (choix.length < 3 || Math.max(...coefs.map(Math.abs)) > 60) continue;
+      return qcm(`Dans un repère orthonormé de l'espace, on considère les points ${m(`A${pt(A)}`)} et ${m(`B${pt(B)}`)}. Quelle est une équation du plan médiateur du segment ${m('[AB]')} ?`,
+        bonne, choix,
+        { explication: `Le plan médiateur est l'ensemble des points ${m('M')} tels que ${m('MA=MB')} : il passe par le milieu de ${m('[AB]')} et admet ${m(T`\overrightarrow{AB}${vec(n)}`)} pour vecteur normal. En écrivant ${m(T`MA^2=MB^2`)}, on obtient ${m(plan(coefs))}.`,
+          meta: { A, B } });
+    }
+  }
+
+  // ==========================================================================
   // Enregistrement
   // ==========================================================================
   Automatismes.enregistrerBanque('geometrie-espace', {
@@ -483,7 +624,10 @@
       'orthogonalite': famille({ nom: 'produit scalaire et orthogonalité', niveaux: [1, 2, 3], base: n => (n === 1 ? scalaireN1() : n === 2 ? orthogonalM() : triangleRectangle()) }),
       'plan': famille({ nom: 'plans : vecteur normal et équation', niveaux: [1, 2, 3], base: n => (n === 1 ? normalN1() : n === 2 ? equationPlanN2() : planABC()) }),
       'distance-projection': famille({ nom: 'distance et projeté orthogonal', niveaux: [3], base: () => (Math.random() < 0.5 ? distancePlan() : projeteOrthogonal()) }),
-      'position': famille({ nom: 'droite et plan', niveaux: [2, 3], base: n => (n === 2 ? positionDroitePlan() : intersectionDroitePlan()) })
+      'position': famille({ nom: 'droite et plan', niveaux: [2, 3], base: n => (n === 2 ? positionDroitePlan() : intersectionDroitePlan()) }),
+      'deux-droites': famille({ nom: 'deux droites', niveaux: [2, 3], base: n => (n === 2 ? deuxDroites() : intersectionDeuxDroites()) }),
+      'deux-plans': famille({ nom: 'deux plans', niveaux: [2, 3], base: n => (n === 2 ? deuxPlans() : droiteIntersectionPlans()) }),
+      'angle-plan-median': famille({ nom: 'angle et plan médiateur', niveaux: [3], base: () => (Math.random() < 0.5 ? angleAbc() : planMediateur()) })
     }
   });
 })();

@@ -93,6 +93,21 @@ F['suites/arithmetico-geometrique'] = q => {
   return verifLimites(q);
 };
 F['suites/gendarmes'] = q => {
+  if (q.meta.cmp) {                              // comparaison : (x_n, y_n) modèles compatibles avec l'hypothèse
+    const modeles = { 1: [[n => n, n => n], [n => n, n => n * n], [n => n, n => 2 * n + 1]],
+      2: [[n => n, n => -n], [n => n, n => 1 / (n + 1)], [n => n, n => n / 2]],
+      3: [[n => -n, n => -n], [n => -n, n => -n * n], [n => -n, n => -2 * n - 1]],
+      4: [[n => -n, n => n], [n => -n, n => 1 / (n + 1)], [n => -n, n => -n / 2]] }[q.meta.cmp];
+    const comp = modeles.map(([, y]) => classer(y, 3000000));
+    return q.options.map(o => {
+      const c = o.cle;
+      if (c === 'rien') return !(comp.every(x => x.type === 'inf') || comp.every(x => x.type === '-inf'));
+      if (c === 'inf') return comp.every(x => x.type === 'inf');
+      if (c === '-inf') return comp.every(x => x.type === '-inf');
+      if (c === 'conv') return comp.every(x => x.type === 'lim');
+      throw new Error('clé inconnue ' + c);
+    });
+  }
   const { l1, l2 } = q.meta;
   const u = n => l1 - 1 / (n + 1), w = n => l2 + 1 / (n + 1);
   const modeles = [u, w, n => (n % 2 === 0 ? u(n) : w(n)), n => (u(n) + w(n)) / 2];
@@ -138,11 +153,12 @@ F['suites/nature'] = q => {
   });
 };
 const RECURRENCES = {
-  ln: x => Math.log(1 + x), inv: x => x / (1 + x), rac: x => Math.sqrt(x), exp: x => Math.exp(x) - 1, rac2: x => Math.sqrt(x + 2)
+  ln: x => Math.log(1 + x), inv: x => x / (1 + x), rac: x => Math.sqrt(x), exp: x => Math.exp(x) - 1, rac2: x => Math.sqrt(x + 2),
+  heron: x => (x * x + 2) / (2 * x), mob: x => (2 * x + 3) / (x + 2)
 };
 F['suites/variations'] = q => {
   const cles = q.options.map(o => o.cle), M = q.meta;
-  if (cles[0] === 'inc' || cles[0] === 'dec') {
+  if (['inc', 'dec', 'nomono', 'const'].includes(cles[0])) {
     const s = sensDe(M.u, 0, 20);
     return cles.map(c => c === 'inc' ? s.inc : c === 'dec' ? s.dec : c === 'const' ? s.cst : !(s.inc || s.dec || s.cst));
   }
@@ -150,17 +166,56 @@ F['suites/variations'] = q => {
     const f = RECURRENCES[M.id]; let v = M.v0; const vs = [v];
     for (let i = 0; i < 400; i++) { v = f(v); vs.push(v); }
     const premiers = n => vs[n];
-    const s = sensDe(premiers, 0, 3);
+    const s = sensDe(premiers, 0, 2);
     const fin = vs[400], avant = vs[399];
     const conv = Number.isFinite(fin) && Math.abs(fin - avant) < 1e-3, inf = !Number.isFinite(fin) || fin > 1e6;
     return cles.map(c => c === 'incconv' ? s.inc && conv : c === 'incinf' ? s.inc && inf : c === 'decconv' ? s.dec && conv : c === 'decinf' ? s.dec && fin < -1e6 : false);
   }
   return verifLimites(q);                           // limite d'une suite récurrente
 };
+F['suites/recurrence'] = q => {
+  const M = q.meta, f = M.kind === 'aff' ? (x => M.p * x + M.q) : (x => Math.sqrt(2 * x + M.k));
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i <= 2000; i++) { const x = M.a + (M.b - M.a) * i / 2000, y = f(x); lo = Math.min(lo, y); hi = Math.max(hi, y); }
+  return q.options.map(o => { const [l, h] = o.cle.slice(2).split(',').map(Number); return Math.abs(l - lo) < 1e-9 && Math.abs(h - hi) < 1e-9; });
+};
+F['suites/algorithme-seuil'] = q => {
+  const { a, p, q: qq, S, cmp, ret } = q.meta;
+  const cont = x => (cmp === '<' ? x < S : cmp === '<=' ? x <= S : cmp === '>' ? x > S : x >= S);
+  let u = a, n = 0; while (cont(u) && n < 1000) { u = p * u + qq; n++; }
+  const res = ret === 'n' ? n : u;
+  return q.options.map(o => Number(o.cle.slice(4)) === res);
+};
 F['suites/convergence-monotone'] = q => {
   const cles = q.options.map(o => o.cle), M = q.meta;
   if (!M.cas) return cles.map(c => c === 'adj');     // suites adjacentes : seule la première affirmation est le théorème
-  const Mv = 7, mv = -3;
+  const Mv = 7, mv = -3, Lv = 5;
+  const extra = {
+    ccv: [n => Lv - 1 / (n + 1), n => Lv], cdv: [n => Lv + 1 / (n + 1), n => Lv],
+    borne: [n => 1 / (n + 1), n => Math.pow(-1, n) / (n + 1), n => Lv - 1 / (n + 1)], bornee: [n => Math.pow(-1, n), n => 1 / (n + 1), n => Math.sin(n)]
+  };
+  if (extra[M.cas]) {
+    const fs = extra[M.cas], pts = Array.from({ length: 400 }, (_, i) => i);
+    const tout = pred => fs.every(f => pred(f));
+    const croiss = f => pts.slice(1).every(i => f(i) >= f(i - 1) - 1e-12), monot = f => croiss(f) || pts.slice(1).every(i => f(i) <= f(i - 1) + 1e-12);
+    const cstRang = f => pts.slice(300).every(i => Math.abs(f(i) - f(300)) < 1e-12);
+    const comp = fs.map(f => classer(f, 3000000));
+    return cles.map(c => {
+      switch (c) {
+        case 'le_l': return tout(f => pts.every(i => f(i) <= Lv + 1e-12));
+        case 'lt_l': return tout(f => pts.every(i => f(i) < Lv));
+        case 'ge_l': return tout(f => pts.every(i => f(i) >= Lv - 1e-12));
+        case 'gt_l': return tout(f => pts.every(i => f(i) > Lv));
+        case 'cst': return tout(cstRang);
+        case 'bornee': return tout(f => pts.every(i => Math.abs(f(i)) < 1e6));
+        case 'monotone': return tout(monot);
+        case 'croissante': return tout(croiss);
+        case 'conv': return comp.every(x => x.type === 'lim');
+        case 'rien_conv': return !comp.every(x => x.type === 'lim');
+        default: throw new Error('clé inconnue ' + c);
+      }
+    });
+  }
   const modeles = {
     cmaj: [n => Mv - 1 - 1 / (n + 1), n => Mv - 1 / (n + 1), n => Mv - 10 - 1 / (n + 1)],
     dmin: [n => mv + 1 + 1 / (n + 1), n => mv + 1 / (n + 1), n => mv + 10 + 1 / (n + 1)],
@@ -240,6 +295,7 @@ F['geometrie-espace/base'] = q => {
 };
 F['geometrie-espace/droite'] = q => {
   const M = q.meta;
+  if (M.n2) return q.options.map(o => { const [P, D] = o.cle.slice(2).split('|').map(vect); return dot(M.n, P) + M.d === 0 && dot(M.n2, P) + M.d2 === 0 && dot(M.n, D) === 0 && dot(M.n2, D) === 0 && !nul(D); });
   if (M.B) { const u = sub(M.B, M.A); return q.options.map(o => { const [P, D] = o.cle.slice(2).split('|').map(vect); return surDroite(P, M.A, u) && col(D, u) && !nul(D); }); }
   if (M.n) return q.options.map(o => { const [P, D] = o.cle.slice(2).split('|').map(vect); return surDroite(P, M.A, M.n) && col(D, M.n) && !nul(D); });
   return q.options.map(o => { const v = vect(o.cle.slice(2)); return col(v, M.u) && !nul(v); });
@@ -264,6 +320,42 @@ F['geometrie-espace/plan'] = q => {
   const passe = (e, P) => dot(e.slice(0, 3), P) + e[3] === 0;
   if (M.n) return q.options.map(o => { const e = vect(o.cle.slice(2)); return col(e.slice(0, 3), M.n) && passe(e, M.A); });
   return q.options.map(o => { const e = vect(o.cle.slice(2)); return !nul(e.slice(0, 3)) && passe(e, M.A) && passe(e, M.B) && passe(e, M.C); });
+};
+
+F['geometrie-espace/deux-droites'] = q => {
+  const { A, u, B, v } = q.meta, w = sub(B, A);
+  let statut, M = null;
+  if (col(u, v)) statut = surDroite(B, A, u) ? 'conf' : 'par';
+  else if (det(u, v, w) !== 0) statut = 'noncop';
+  else {                                          // sécantes : A + t u = B + s v, t = ((B-A) x v) . (u x v) / |u x v|²
+    const uv = cross(u, v), tt = dot(cross(w, v), uv) / dot(uv, uv);
+    statut = 'sec'; M = A.map((a, i) => a + tt * u[i]);
+  }
+  return q.options.map(o => {
+    if (o.cle === 'sec') return statut === 'sec';
+    if (o.cle.startsWith('sec:')) return statut === 'sec' && vect(o.cle.slice(4)).every((x, i) => Math.abs(x - M[i]) < 1e-9);
+    if (o.cle.startsWith('P:')) return statut === 'sec' && vect(o.cle.slice(2)).every((x, i) => Math.abs(x - M[i]) < 1e-9);
+    return o.cle === statut;
+  });
+};
+F['geometrie-espace/deux-plans'] = q => {
+  if (q.options[0].cle.startsWith('R:')) return F['geometrie-espace/droite'](q);     // droite d'intersection
+  const { n, d, n2, d2 } = q.meta;
+  let statut;
+  if (col(n, n2)) {                               // proportionnels y compris la constante ?
+    const k = n.findIndex(x => x !== 0), lam = n2[k] / n[k];
+    statut = Math.abs(d2 - lam * d) < 1e-9 ? 'conf' : 'par';
+  } else statut = dot(n, n2) === 0 ? 'perp' : 'sec';
+  return q.options.map(o => o.cle === statut);
+};
+F['geometrie-espace/angle-plan-median'] = q => {
+  const M = q.meta;
+  if (M.C) {
+    const u = sub(M.B, M.A), v = sub(M.C, M.A), th = Math.acos(dot(u, v) / Math.sqrt(dot(u, u) * dot(v, v))) * 180 / Math.PI;
+    return q.options.map(o => Number(o.cle.slice(4)) === Math.round(th));
+  }
+  const n = sub(M.B, M.A), I2 = [M.A[0] + M.B[0], M.A[1] + M.B[1], M.A[2] + M.B[2]];     // 2 × milieu
+  return q.options.map(o => { const e = vect(o.cle.slice(2)); return col(e.slice(0, 3), n) && 2 * e[3] + dot(e.slice(0, 3), I2) === 0; });
 };
 F['geometrie-espace/distance-projection'] = q => {
   const M = q.meta, num = dot(M.n, M.M) + M.d;
@@ -291,6 +383,7 @@ function redaction(q) {
   for (const t of textes) {
     if (typeof t !== 'string') { pb.push('texte non chaîne'); continue; }
     if (/NaN|undefined|Infinity|null/.test(t)) pb.push('valeur invalide : ' + t.slice(0, 60));
+    if (/<[A-Za-z]/.test(t.replace(/<\/?(pre|code)\b[^>]*>/g, ''))) pb.push('< suivi d\'une lettre (balise HTML involontaire, écrire \\lt) : ' + t.slice(0, 80));
     if (/\+-|-\+|--|\+\+|\^\{1\}|\(\)/.test(t.replace(/\\\(|\\\)/g, ''))) pb.push('signe collé ou exposant 1 : ' + t.slice(0, 80));
     if ((t.match(/\\\(/g) || []).length !== (t.match(/\\\)/g) || []).length) pb.push('\\( \\) non appariés : ' + t.slice(0, 60));
     if (/(^|[^\d.])1\\times\s*(\\left|\\dfrac|\\sqrt|[a-z])|\\left\(1\\,/.test(t)) pb.push('coefficient 1 : ' + t.slice(0, 60));

@@ -16,11 +16,17 @@
 (function () {
   'use strict';
   const O = Automatismes.outils;
-  const { alea, aleaParmi, melanger, pgcd, m, qcm, famille, fracL } = O;
+  const { alea, aleaParmi, melanger, pgcd, m, qcm, famille, fracL, decL } = O;
   const T = String.raw;
 
   const opt = (aff, cle) => ({ affichage: aff, cle: cle });
+  const unique = (liste, aeviter) => {          // premiers éléments distincts (par clé) et différents de `aeviter`
+    const vus = new Set(aeviter.map(String)), res = [];
+    for (const x of liste) { const k = String(x.cle); if (!vus.has(k)) { vus.add(k); res.push(x); } }
+    return res;
+  };
   const sgn = n => (n < 0 ? '-' : '+') + Math.abs(n);              // « +3 », « -3 »
+  const dc = x => ({ n: Math.round(x * 100), d: 100, v: x, tex: decL(x), cle: String(x) });     // décimal affiché en écriture décimale
   const rat = (n, d) => { const g = pgcd(n, d); if (d < 0) { n = -n; d = -d; } n /= g; d /= g; return { n, d, v: n / d, tex: fracL(n, d), cle: d === 1 ? String(n) : n + '/' + d }; };
   const coef = c => (c === 1 ? '' : c === -1 ? '-' : String(c));      // coefficient devant une lettre
   // q^expo : parenthèses (\left\right) autour d'une fraction ou d'un négatif
@@ -42,24 +48,38 @@
   // 1. Limite d'une suite avec (-1)^n (Amérique du Sud 2024, exo 3, affirmation 1)
   // ==========================================================================
   function oscillanteN1() {
+    const forme = aleaParmi(['alt', 'alt', 'cos', 'sin', 'carre']);
     const k = aleaParmi([1, 1, 2, 3, 4, 5]), c = aleaParmi([0, 0, 1, 2, 3, 4, 5, 6]);
-    const num = k === 1 ? T`(-1)^n` : T`${k}(-1)^n`;
-    const den = c === 0 ? 'n' : `n+${c}`;
+    let num, den, u;
+    if (forme === 'cos' || forme === 'sin') {
+      const nom = forme === 'cos' ? T`\cos(n)` : T`\sin(n)`, f = forme === 'cos' ? Math.cos : Math.sin;
+      num = k === 1 ? nom : T`${k}${nom}`; den = c === 0 ? 'n' : `n+${c}`;
+      u = n => k * f(n) / (n + c);
+    } else if (forme === 'carre') {
+      num = k === 1 ? T`(-1)^n` : T`${k}(-1)^n`; den = c === 0 ? 'n^2' : `n^2+${c}`;
+      u = n => k * Math.pow(-1, n) / (n * n + c);
+    } else {
+      num = k === 1 ? T`(-1)^n` : T`${k}(-1)^n`; den = c === 0 ? 'n' : `n+${c}`;
+      u = n => k * Math.pow(-1, n) / (n + c);
+    }
+    const osc = forme === 'cos' ? T`\cos(n)` : forme === 'sin' ? T`\sin(n)` : T`(-1)^n`;
     return qcm(
       `Que peut-on dire de la suite ${m('(u_n)')} définie pour tout entier ${m(T`n\ge 1`)} par ${m(T`u_n=\dfrac{${num}}{${den}}`)} ?`,
-      LIM(0), [DIV(T`(-1)^n`), LIM(k), PINF(), LIM(-k)],
-      { explication: `${m(T`|u_n|\le \dfrac{${k}}{${den}}`)}, donc ${m('(u_n)')} converge vers ${m('0')} (théorème des gendarmes) : le facteur ${m('(-1)^n')} change le signe, pas la limite.`,
-        meta: { u: n => k * Math.pow(-1, n) / (n + c), n0: 1 } });
+      LIM(0), [DIV(osc), LIM(k), PINF(), LIM(-k)],
+      { explication: `${m(T`|u_n|\le \dfrac{${k}}{${den}}`)}, donc ${m('(u_n)')} converge vers ${m('0')} (théorème des gendarmes) : le facteur ${m(osc)} oscille mais reste borné, il ne change pas la limite.`,
+        meta: { u, n0: 1 } });
   }
   function oscillanteN2() {
-    const a = alea(10, 40), b = aleaParmi([1, 2, 3]), c = aleaParmi([0, 0, 0, 1, 2]);
-    const num = b === 1 ? `${a}+(-1)^n` : `${a}+${b}(-1)^n`;
+    const cos = Math.random() < 0.4;
+    const a = alea(10, 60), b = aleaParmi([1, 2, 3, 4]), c = aleaParmi([0, 0, 0, 1, 2, 3]);
+    const osc = cos ? T`\cos(n)` : T`(-1)^n`;
+    const num = b === 1 ? `${a}+${osc}` : `${a}+${b}${osc}`;
     const den = c === 0 ? 'n' : `n+${c}`;
     return qcm(
       `Que peut-on dire de la suite ${m('(u_n)')} définie pour tout entier ${m(T`n\ge 1`)} par ${m(T`u_n=\dfrac{${num}}{${den}}`)} ?`,
-      LIM(0), [DIV(T`(-1)^n`), PINF(), LIM(a)],
-      { explication: `${m(T`|u_n|\le \dfrac{${a + b}}{${den}}`)} : ${m('(u_n)')} converge vers ${m('0')} (gendarmes). Le numérateur oscille entre ${m(String(a - b))} et ${m(String(a + b))} mais le dénominateur tend vers ${m(T`+\infty`)}.`,
-        meta: { u: n => (a + b * Math.pow(-1, n)) / (n + c), n0: 1 } });
+      LIM(0), [DIV(osc), PINF(), LIM(a)],
+      { explication: `${m(T`|u_n|\le \dfrac{${a + b}}{${den}}`)} : ${m('(u_n)')} converge vers ${m('0')} (gendarmes). Le numérateur reste compris entre ${m(String(a - b))} et ${m(String(a + b))} mais le dénominateur tend vers ${m(T`+\infty`)}.`,
+        meta: { u: cos ? (n => (a + b * Math.cos(n)) / (n + c)) : (n => (a + b * Math.pow(-1, n)) / (n + c)), n0: 1 } });
   }
   function oscillanteN3a() {        // (-1)^n p + q/n : deux valeurs d'adhérence
     const p = aleaParmi([1, 2, 3]), q = alea(2, 9);
@@ -121,7 +141,7 @@
         meta: { u: n => k * n * n + c, n0: 0 } });
   }
   function natureInversion() {      // Amérique du Sud 2024, exo 3, affirmation 2
-    const a = aleaParmi([1, 1, 2, 3]), c = aleaParmi([1, 1, 2, 3, 4]);
+    const a = aleaParmi([1, 1, 2, 3, 4, 5]), c = aleaParmi([1, 1, 2, 3, 4, 5]);
     const kNum = Math.random() < 0.5 ? null : alea(2, 7);       // k littéral (comme au bac) ou nombre
     const ks = kNum === null ? 'k' : String(kNum);
     const rc = kNum === null ? (c === 1 ? 'k' : `${c}k`) : String(kNum * c);
@@ -162,11 +182,27 @@
   // 3. Sens de variation, suites récurrentes u_{n+1} = f(u_n)
   // ==========================================================================
   function sensN1() {
-    const a = aleaParmi([1, 2, 3, 4, -1, -2, -3]), qd = aleaParmi([rat(2, 1), rat(3, 1), rat(3, 2), rat(1, 2), rat(1, 3), rat(2, 3)]);
-    const croit = (a > 0) === (qd.v > 1);
+    const forme = aleaParmi(['aq', 'aq', 'ratio', 'alt']);
     const SENS = { inc: opt('elle est croissante', 'inc'), dec: opt('elle est décroissante', 'dec'), const: opt('elle est constante', 'const'), nomono: opt('elle n\'est ni croissante ni décroissante', 'nomono') };
-    return qcm(
-      `Quel est le sens de variation de la suite ${m('(u_n)')} définie pour tout entier naturel ${m('n')} par ${m(T`u_n=${fois(a, puiss(qd, 'n'))}`)} ?`,
+    const question = u => `Quel est le sens de variation de la suite ${m('(u_n)')} définie pour tout entier naturel ${m('n')} par ${m(u)} ?`;
+    if (forme === 'ratio') {
+      let c, d; do { c = alea(0, 9); d = alea(1, 6); } while (c === d);
+      const croit = d > c, e = x => (x === 0 ? 'n' : `n+${x}`);
+      return qcm(question(T`u_n=\dfrac{${e(c)}}{${e(d)}}`),
+        croit ? SENS.inc : SENS.dec, [croit ? SENS.dec : SENS.inc, SENS.const, SENS.nomono],
+        { explication: `${m(T`u_{n+1}-u_n=\dfrac{n+1+${c}}{n+1+${d}}-\dfrac{n+${c}}{n+${d}}=\dfrac{${d - c}}{(n+${d})(n+${d + 1})}`)} est ${croit ? 'positif' : 'négatif'}, donc la suite est ${croit ? 'croissante' : 'décroissante'}.`,
+        meta: { u: n => (n + c) / (n + d), n0: 0 } });
+    }
+    if (forme === 'alt') {
+      const a = aleaParmi([1, 2, 3, -1, -2, 5]), qd = aleaParmi([rat(-2, 1), rat(-3, 1), rat(-1, 2), rat(-1, 3), rat(-3, 2), rat(-2, 3)]);
+      return qcm(question(T`u_n=${fois(a, puiss(qd, 'n'))}`),
+        SENS.nomono, [SENS.inc, SENS.dec, SENS.const],
+        { explication: `La raison ${m(qd.tex)} est négative : les termes sont alternativement positifs et négatifs, la suite n'est ni croissante ni décroissante.`,
+          meta: { u: n => a * Math.pow(qd.v, n), n0: 0 } });
+    }
+    const a = aleaParmi([1, 2, 3, 4, 5, -1, -2, -3]), qd = aleaParmi([rat(2, 1), rat(3, 1), rat(3, 2), rat(1, 2), rat(1, 3), rat(2, 3), rat(4, 1), rat(5, 4), rat(3, 4)]);
+    const croit = (a > 0) === (qd.v > 1);
+    return qcm(question(T`u_n=${fois(a, puiss(qd, 'n'))}`),
       croit ? SENS.inc : SENS.dec, [croit ? SENS.dec : SENS.inc, SENS.const, SENS.nomono],
       { explication: `${m(T`u_{n+1}-u_n=${fois(a, puiss(qd, 'n'))}(${qd.tex}-1)`)} : le signe dépend de ${m(String(a))} (${a > 0 ? 'positif' : 'négatif'}) et de ${m(T`${qd.tex}-1`)} (${qd.v > 1 ? 'positif' : 'négatif'}).`,
         meta: { u: n => a * Math.pow(qd.v, n), n0: 0 } });
@@ -176,7 +212,9 @@
     inv:  { f: T`\dfrac{x}{1+x}`, ff: x => x / (1 + x), admet: true, sens: () => 'decconv' },
     rac:  { f: T`\sqrt{x}`, ff: x => Math.sqrt(x), admet: false, sens: v0 => (v0 > 1 ? 'decconv' : 'incconv') },
     exp:  { f: T`e^{x}-1`, ff: x => Math.exp(x) - 1, admet: true, sens: () => 'incinf' },
-    rac2: { f: T`\sqrt{x+2}`, ff: x => Math.sqrt(x + 2), admet: false, sens: v0 => (v0 > 2 ? 'decconv' : 'incconv') }
+    rac2: { f: T`\sqrt{x+2}`, ff: x => Math.sqrt(x + 2), admet: false, sens: v0 => (v0 > 2 ? 'decconv' : 'incconv') },
+    heron: { f: T`\dfrac{x^2+2}{2x}`, ff: x => (x * x + 2) / (2 * x), admet: true, sens: () => 'decconv' },
+    mob:  { f: T`\dfrac{2x+3}{x+2}`, ff: x => (2 * x + 3) / (x + 2), admet: true, sens: v0 => (v0 < Math.sqrt(3) ? 'incconv' : 'decconv') }
   };
   const REP = {
     incconv: opt('elle est croissante et majorée, donc elle converge', 'incconv'),
@@ -185,16 +223,18 @@
     decinf: opt(`elle est décroissante, donc elle tend vers ${m(T`-\infty`)}`, 'decinf')
   };
   function recurrenteN2() {         // Amérique du Sud 2024, exo 3, affirmation 3
-    const id = aleaParmi(['ln', 'inv', 'rac', 'exp', 'rac2']);
-    const R = RECURR[id];
+    const id = aleaParmi(['ln', 'inv', 'rac', 'exp', 'rac2', 'heron', 'mob']);
+    const R = RECURR[id], L = aleaParmi(['v', 'v', 'u', 'w', 's', 't']);
     let v0, v0tex;
     if (id === 'rac') { const d = aleaParmi([rat(1, 4), rat(1, 9), rat(1, 16), rat(1, 2), rat(1, 3), rat(2, 1), rat(3, 1), rat(4, 1), rat(5, 1), rat(9, 1), rat(16, 1)]); v0 = d.v; v0tex = d.tex; }
     else if (id === 'rac2') { v0 = aleaParmi([0, 1, 3, 4, 5, 6, 7, 10]); v0tex = String(v0); }
-    else { v0 = aleaParmi([1, 2, 3, 4, 5, 6]); v0tex = String(v0); }
+    else if (id === 'heron') { v0 = aleaParmi([2, 3, 4, 5, 6, 7, 8, 9]); v0tex = String(v0); }
+    else if (id === 'mob') { v0 = aleaParmi([0, 1, 3, 4, 5, 6, 7, 8, 9]); v0tex = String(v0); }
+    else { v0 = aleaParmi([1, 2, 3, 4, 5, 6, 7, 8]); v0tex = String(v0); }
     const vrai = R.sens(v0);
     const ordre = ['incconv', 'incinf', 'decconv', 'decinf'];
     return qcm(
-      `On pose ${m(T`v_0=${v0tex}`)} et, pour tout entier naturel ${m('n')}, ${m(T`v_{n+1}=${R.f.replace(/x/g, 'v_n')}`)}.${R.admet ? ` On admet que ${m(T`v_n>0`)} pour tout ${m('n')}.` : ''} Quelle affirmation sur la suite ${m('(v_n)')} est correcte ?`,
+      `On pose ${m(`${L}_0=${v0tex}`)} et, pour tout entier naturel ${m('n')}, ${m(`${L}_{n+1}=${R.f.replace(/x/g, L + '_n')}`)}.${R.admet ? ` On admet que ${m(`${L}_n>0`)} pour tout ${m('n')}.` : ''} Quelle affirmation sur la suite ${m(`(${L}_n)`)} est correcte ?`,
       REP[vrai], ordre.filter(c => c !== vrai).map(c => REP[c]),
       { explication: `Le signe de ${m(T`f(x)-x`)} donne le sens de variation, puis le théorème de convergence monotone conclut (une suite croissante majorée, ou décroissante minorée, converge).`,
         meta: { id, v0, vrai } });
@@ -213,53 +253,81 @@
     return qcm(
       `On pose ${m(T`u_0=${d.tex}`)} et, pour tout entier naturel ${m('n')}, ${m(T`u_{n+1}=u_n^2`)}. Que peut-on dire de la suite ${m('(u_n)')} ?`,
       verite, [d.v < 1 ? PINF() : LIM(0), LIM(1), LIM(d.tex === String(d.n) ? d.n : d.v)].map(o => o).filter(o => o.cle !== verite.cle),
-      { explication: d.v < 1 ? `${m(T`0<u_0<1`)} : la suite est décroissante, minorée par ${m('0')}, et sa limite ${m(T`\ell`)} vérifie ${m(T`\ell=\ell^2`)} ; comme ${m(T`\ell<1`)}, ${m(T`\ell=0`)}.` : `${m(T`u_0>1`)} : la suite est croissante ; elle ne peut converger vers ${m('1')} (${m(T`\ell=\ell^2`)} donnerait ${m(T`\ell\in\{0,1\}`)}, impossible pour des termes supérieurs à ${m(T`u_0`)}), donc elle tend vers ${m(T`+\infty`)}.`,
+      { explication: d.v < 1 ? `${m(T`0\lt u_0\lt 1`)} : la suite est décroissante, minorée par ${m('0')}, et sa limite ${m(T`\ell`)} vérifie ${m(T`\ell=\ell^2`)} ; comme ${m(T`\ell<1`)}, ${m(T`\ell=0`)}.` : `${m(T`u_0>1`)} : la suite est croissante ; elle ne peut converger vers ${m('1')} (${m(T`\ell=\ell^2`)} donnerait ${m(T`\ell\in\{0,1\}`)}, impossible pour des termes supérieurs à ${m(T`u_0`)}), donc elle tend vers ${m(T`+\infty`)}.`,
         meta: { u: null, rec: x => x * x, v0: d.v, n0: 0 } });
   }
 
   // ==========================================================================
   // 4. Théorème des gendarmes (Métropole 2024, exo 1, affirmations 3 et 4)
   // ==========================================================================
+  const NOMS3 = [['u', 'v', 'w'], ['a', 'b', 'c'], ['s', 't', 'r'], ['x', 'y', 'z']];
   function gendarmesN2() {
+    const [x, y, z] = aleaParmi(NOMS3), X = m(`(${x}_n)`), Y = m(`(${y}_n)`), Z = m(`(${z}_n)`);
     const egal = Math.random() < 0.3;
     let l1, l2;
-    if (egal) { l1 = l2 = aleaParmi([-3, -2, -1, 1, 2, 3, 4, 5]); }
-    else { l1 = alea(-5, 3); l2 = l1 + alea(1, 5); }
-    const cadre = `Soit ${m('(u_n)')}, ${m('(v_n)')} et ${m('(w_n)')} trois suites telles que, pour tout entier naturel ${m('n')}, ${m(T`u_n\le v_n\le w_n`)}. La suite ${m('(u_n)')} converge vers ${m(String(l1))} et la suite ${m('(w_n)')} converge vers ${m(String(l2))}.`;
+    if (egal) { l1 = l2 = aleaParmi([-3, -2, -1, 1, 2, 3, 4, 5, 6, -4]); }
+    else { l1 = alea(-6, 4); l2 = l1 + alea(1, 6); }
+    const cadre = `Soit ${X}, ${Y} et ${Z} trois suites telles que, pour tout entier naturel ${m('n')}, ${m(`${x}_n\\le ${y}_n\\le ${z}_n`)}. La suite ${X} converge vers ${m(String(l1))} et la suite ${Z} converge vers ${m(String(l2))}.`;
     if (egal) {
-      return qcm(`${cadre} Que peut-on affirmer sur ${m('(v_n)')} ?`,
+      return qcm(`${cadre} Que peut-on affirmer sur ${Y} ?`,
         LIM(l1), [opt('on ne peut pas conclure sur sa convergence', 'rien'), LIM(0), opt('elle diverge', 'div')],
-        { explication: `${m('(u_n)')} et ${m('(w_n)')} ont la même limite ${m(String(l1))} : par le théorème des gendarmes, ${m('(v_n)')} converge vers ${m(String(l1))}.`, meta: { l1, l2, egal } });
+        { explication: `${X} et ${Z} ont la même limite ${m(String(l1))} : par le théorème des gendarmes, ${Y} converge vers ${m(String(l1))}.`, meta: { l1, l2, egal } });
     }
     const mil = rat(l1 + l2, 2);
-    return qcm(`${cadre} Que peut-on affirmer sur ${m('(v_n)')} ?`,
+    return qcm(`${cadre} Que peut-on affirmer sur ${Y} ?`,
       opt('on ne peut pas conclure sur sa convergence', 'rien'),
       [opt(`elle converge vers ${m(mil.tex)}`, 'lim:' + mil.cle), opt(`elle converge vers un réel de l'intervalle ${m(T`[${l1}\,;${l2}]`)}`, 'conv'), opt(`elle converge vers ${m(String(l1))} ou vers ${m(String(l2))}`, 'ou')],
-      { explication: `Les deux limites sont différentes : le théorème des gendarmes ne s'applique pas. Par exemple, ${m('(v_n)')} peut alterner entre ${m('u_n')} et ${m('w_n')} et n'avoir alors aucune limite.`,
+      { explication: `Les deux limites sont différentes : le théorème des gendarmes ne s'applique pas. Par exemple, ${Y} peut alterner entre ${m(`${x}_n`)} et ${m(`${z}_n`)} et n'avoir alors aucune limite.`,
         meta: { l1, l2, egal } });
   }
-  function gendarmesMonotone() {    // N3 : u croissante, w décroissante
-    const l1 = alea(-5, 3), l2 = l1 + alea(2, 6);
+  function gendarmesMonotone() {    // N3 : x croissante, z décroissante
+    const [x, y, z] = aleaParmi(NOMS3), X = m(`(${x}_n)`), Y = m(`(${y}_n)`), Z = m(`(${z}_n)`);
+    const l1 = alea(-6, 3), l2 = l1 + alea(2, 7);
     return qcm(
-      `Soit ${m('(u_n)')}, ${m('(v_n)')} et ${m('(w_n)')} trois suites telles que, pour tout entier naturel ${m('n')}, ${m(T`u_n\le v_n\le w_n`)}. La suite ${m('(u_n)')} est strictement croissante et converge vers ${m(String(l1))} ; la suite ${m('(w_n)')} est strictement décroissante et converge vers ${m(String(l2))}. Quel encadrement de ${m('v_n')} est vrai pour tout entier naturel ${m('n')} ?`,
-      opt(m(T`u_0\le v_n\le w_0`), 'enc:u0,w0'),
-      [opt(m(T`${l1}\le v_n\le ${l2}`), 'enc:l1,l2'), opt(m(T`u_0\le v_n\le ${l2}`), 'enc:u0,l2'), opt(m(T`${l1}\le v_n\le w_0`), 'enc:l1,w0')],
-      { explication: `${m('(u_n)')} croissante donne ${m(T`u_0\le u_n\le v_n`)} ; ${m('(w_n)')} décroissante donne ${m(T`v_n\le w_n\le w_0`)}. Les bornes ${m(String(l1))} et ${m(String(l2))} sont des limites, pas des bornes de ${m('(v_n)')}.`,
+      `Soit ${X}, ${Y} et ${Z} trois suites telles que, pour tout entier naturel ${m('n')}, ${m(`${x}_n\\le ${y}_n\\le ${z}_n`)}. La suite ${X} est strictement croissante et converge vers ${m(String(l1))} ; la suite ${Z} est strictement décroissante et converge vers ${m(String(l2))}. Quel encadrement de ${m(`${y}_n`)} est vrai pour tout entier naturel ${m('n')} ?`,
+      opt(m(`${x}_0\\le ${y}_n\\le ${z}_0`), 'enc:u0,w0'),
+      [opt(m(`${l1}\\le ${y}_n\\le ${l2}`), 'enc:l1,l2'), opt(m(`${x}_0\\le ${y}_n\\le ${l2}`), 'enc:u0,l2'), opt(m(`${l1}\\le ${y}_n\\le ${z}_0`), 'enc:l1,w0')],
+      { explication: `${X} croissante donne ${m(`${x}_0\\le ${x}_n\\le ${y}_n`)} ; ${Z} décroissante donne ${m(`${y}_n\\le ${z}_n\\le ${z}_0`)}. Les bornes ${m(String(l1))} et ${m(String(l2))} sont des limites, pas des bornes de ${Y}.`,
         meta: { l1, l2 } });
+  }
+  function comparaisonInfinie() {   // théorèmes de comparaison pour les limites infinies
+    const [x, y] = aleaParmi([['u', 'v'], ['a', 'b'], ['s', 't'], ['x', 'y']]);
+    const X = m(`(${x}_n)`), Y = m(`(${y}_n)`);
+    const cas = aleaParmi([1, 2, 3, 4]);
+    const pose = { 1: [`${x}_n\\le ${y}_n`, T`+\infty`], 2: [`${y}_n\\le ${x}_n`, T`+\infty`], 3: [`${y}_n\\le ${x}_n`, T`-\infty`], 4: [`${x}_n\\le ${y}_n`, T`-\infty`] }[cas];
+    const rien = opt('on ne peut pas conclure sur la limite', 'rien');
+    const bonne = cas === 1 ? opt(`${Y} tend vers ${m(T`+\infty`)}`, 'inf') : cas === 3 ? opt(`${Y} tend vers ${m(T`-\infty`)}`, '-inf') : rien;
+    const dist = { 1: [rien, opt(`${Y} converge`, 'conv'), opt(`${Y} tend vers ${m(T`-\infty`)}`, '-inf')],
+      2: [opt(`${Y} tend vers ${m(T`+\infty`)}`, 'inf'), opt(`${Y} converge`, 'conv'), opt(`${Y} tend vers ${m(T`-\infty`)}`, '-inf')],
+      3: [rien, opt(`${Y} converge`, 'conv'), opt(`${Y} tend vers ${m(T`+\infty`)}`, 'inf')],
+      4: [opt(`${Y} tend vers ${m(T`-\infty`)}`, '-inf'), opt(`${Y} converge`, 'conv'), opt(`${Y} tend vers ${m(T`+\infty`)}`, 'inf')] }[cas];
+    const ex = { 1: `Si ${m(`${x}_n\\le ${y}_n`)} et ${m(`${x}_n`)} tend vers ${m(T`+\infty`)}, alors ${m(`${y}_n`)} tend vers ${m(T`+\infty`)} (théorème de comparaison).`,
+      2: `${m(`${y}_n`)} est majorée par une suite qui tend vers ${m(T`+\infty`)} : cela ne dit rien de sa limite (${m(`${y}_n`)} peut tendre vers ${m(T`-\infty`)}, converger ou tendre vers ${m(T`+\infty`)}).`,
+      3: `Si ${m(`${y}_n\\le ${x}_n`)} et ${m(`${x}_n`)} tend vers ${m(T`-\infty`)}, alors ${m(`${y}_n`)} tend vers ${m(T`-\infty`)}.`,
+      4: `${m(`${y}_n`)} est minorée par une suite qui tend vers ${m(T`-\infty`)} : on ne peut rien dire de sa limite.` }[cas];
+    return qcm(`Soit ${X} et ${Y} deux suites telles que, pour tout entier naturel ${m('n')}, ${m(pose[0])}. La suite ${X} tend vers ${m(pose[1])}. Que peut-on affirmer ?`,
+      bonne, dist, { explication: ex, meta: { cmp: cas } });
   }
 
   // ==========================================================================
   // 5. Suites géométriques et limites
   // ==========================================================================
   function geomN1() {
-    const q = aleaParmi([rat(1, 2), rat(1, 3), rat(1, 4), rat(2, 5), rat(3, 4), rat(4, 5), rat(-1, 2), rat(-2, 3), rat(2, 1), rat(3, 1), rat(4, 1), rat(5, 2), rat(4, 3), rat(-2, 1), rat(-3, 1), rat(-1, 1), rat(-3, 2)]);
+    const q = aleaParmi([rat(1, 2), rat(1, 3), rat(1, 4), rat(2, 5), rat(3, 4), rat(4, 5), rat(-1, 2), rat(-2, 3), rat(2, 1), rat(3, 1), rat(4, 1), rat(5, 2), rat(4, 3), rat(-2, 1), rat(-3, 1), rat(-1, 1), rat(-3, 2), rat(1, 1),
+      dc(0.9), dc(0.8), dc(0.95), dc(1.05), dc(1.2), dc(-0.9), dc(-1.1), dc(0.6)]);
+    const k = aleaParmi([1, 1, 1, 2, 3, 5, -2, -4]);
+    const absq = Math.abs(q.v);
     let verite;
-    if (Math.abs(q.v) < 1) verite = LIM(0); else if (q.v > 1) verite = PINF(); else verite = opt('elle n\'a pas de limite', 'nolim');
-    const pool = [LIM(0), PINF(), LIM(1), opt('elle n\'a pas de limite', 'nolim'), MINF()].filter(o => o.cle !== verite.cle);
-    return qcm(`Que peut-on dire de la suite ${m('(u_n)')} définie pour tout entier naturel ${m('n')} par ${m(T`u_n=${puiss(q, 'n')}`)} ?`,
+    if (absq < 1) verite = LIM(0);
+    else if (q.v === 1) verite = LIM(k);
+    else if (q.v > 1) verite = k > 0 ? PINF() : MINF();
+    else verite = opt('elle n\'a pas de limite', 'nolim');
+    const pool = [LIM(0), PINF(), MINF(), LIM(1), LIM(k), opt('elle n\'a pas de limite', 'nolim'), LIM(-1)].filter(o => o.cle !== verite.cle);
+    const expr = fois(k, puiss(q, 'n'));
+    return qcm(`Que peut-on dire de la suite ${m('(u_n)')} définie pour tout entier naturel ${m('n')} par ${m(T`u_n=${expr}`)} ?`,
       verite, pool,
-      { explication: Math.abs(q.v) < 1 ? `${m(T`-1<${q.tex}<1`)} : ${m(puiss(q, 'n'))} tend vers ${m('0')}.` : q.v > 1 ? `${m(T`${q.tex}>1`)} : ${m(puiss(q, 'n'))} tend vers ${m(T`+\infty`)}.` : `${m(T`${q.tex}\le -1`)} : ${m(puiss(q, 'n'))} change de signe sans se stabiliser, et n'a pas de limite.`,
-        meta: { u: n => Math.pow(q.v, n), n0: 0 } });
+      { explication: absq < 1 ? `${m(T`-1<${q.tex}<1`)} : ${m(puiss(q, 'n'))} tend vers ${m('0')}, donc ${m('u_n')} aussi.` : q.v === 1 ? `${m(T`1^n=1`)} : la suite est constante, égale à ${m(String(k))}.` : q.v > 1 ? `${m(T`${q.tex}>1`)} : ${m(puiss(q, 'n'))} tend vers ${m(T`+\infty`)}, donc ${m('u_n')} tend vers ${k > 0 ? m(T`+\infty`) : m(T`-\infty`)}.` : `${m(T`${q.tex}\le -1`)} : ${m(puiss(q, 'n'))} change de signe sans se stabiliser, et n'a pas de limite.`,
+        meta: { u: n => k * Math.pow(q.v, n), n0: 0 } });
   }
   function geomN2() {
     const a = aleaParmi([2, 3, 4, 5, 6, -2, -3, -4, -5]), b = aleaParmi([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7]);
@@ -286,7 +354,7 @@
     const q = aleaParmi([rat(1, 2), rat(2, 3), rat(3, 4), rat(1, 3)]);
     return qcm(`Que peut-on dire de la suite ${m('(u_n)')} définie pour tout entier naturel ${m('n')} par ${m(T`u_n=n\times ${puiss(q, 'n')}`)} ?`,
       LIM(0), [PINF(), LIM(1), opt('elle n\'a pas de limite', 'nolim')],
-      { explication: `Par croissances comparées, ${m(T`n\,q^n`)} tend vers ${m('0')} lorsque ${m(T`0<q<1`)} : la géométrique l'emporte sur ${m('n')}.`,
+      { explication: `Par croissances comparées, ${m(T`n\,q^n`)} tend vers ${m('0')} lorsque ${m(T`0\lt q\lt 1`)} : la géométrique l'emporte sur ${m('n')}.`,
         meta: { u: n => n * Math.pow(q.v, n), n0: 0 } });
   }
   function geomQuotient() {         // N3 : (a q^n + b)/(c q^n + d), q > 1
@@ -359,19 +427,19 @@
   // 7. Théorèmes de convergence monotone
   // ==========================================================================
   function monotoneN2() {
-    const cas = aleaParmi(['cmaj', 'dmin', 'cnonmaj', 'c']);
-    const L = aleaParmi(['u', 'v', 'w', 's', 't']), M = aleaParmi(['M', 'K', 'B']), mi = aleaParmi(['m', 'c', 'b']);
-    const u = m(`(${L}_n)`), tM = m(M), tm = m(mi), ell = m(T`\ell`);
+    const cas = aleaParmi(['cmaj', 'dmin', 'cnonmaj', 'c', 'ccv', 'cdv', 'borne', 'bornee']);
+    const L = aleaParmi(['u', 'v', 'w', 's', 't', 'a', 'b', 'x', 'y']), M = aleaParmi(['M', 'K', 'B', 'A']), mi = aleaParmi(['m', 'c', 'b', 'k']);
+    const u = m(`(${L}_n)`), un = `${L}_n`, tM = m(M), tm = m(mi), ell = m(T`\ell`);
     if (cas === 'cmaj') {
       return qcm(`Soit ${u} une suite croissante et majorée par un réel ${tM}. Que peut-on affirmer ?`,
         opt(`elle converge vers un réel ${ell} tel que ${m(T`\ell\le ${M}`)}`, 'conv_le_M'),
-        [opt(`elle converge vers ${tM}`, 'conv_M'), opt(`elle tend vers ${m(T`+\infty`)}`, 'inf'), opt(`elle converge vers un réel ${ell} tel que ${m(T`\ell<${M}`)}`, 'conv_lt_M')],
+        [opt(`elle converge vers ${tM}`, 'conv_M'), opt(`elle tend vers ${m(T`+\infty`)}`, 'inf'), opt(`elle converge vers un réel ${ell} tel que ${m(T`\ell\lt ${M}`)}`, 'conv_lt_M')],
         { explication: `Théorème de convergence monotone : une suite croissante et majorée converge, et sa limite est inférieure ou égale à tout majorant ; elle n'est pas forcément égale à ${tM}.`, meta: { cas } });
     }
     if (cas === 'dmin') {
       return qcm(`Soit ${u} une suite décroissante et minorée par un réel ${tm}. Que peut-on affirmer ?`,
         opt(`elle converge vers un réel ${ell} tel que ${m(T`\ell\ge ${mi}`)}`, 'conv_ge_m'),
-        [opt(`elle converge vers ${tm}`, 'conv_m'), opt(`elle tend vers ${m(T`-\infty`)}`, '-inf'), opt(`elle converge vers un réel ${ell} tel que ${m(T`\ell>${mi}`)}`, 'conv_gt_m')],
+        [opt(`elle converge vers ${tm}`, 'conv_m'), opt(`elle tend vers ${m(T`-\infty`)}`, '-inf'), opt(`elle converge vers un réel ${ell} tel que ${m(T`\ell\gt ${mi}`)}`, 'conv_gt_m')],
         { explication: 'Une suite décroissante et minorée converge, et sa limite est supérieure ou égale à tout minorant.', meta: { cas } });
     }
     if (cas === 'cnonmaj') {
@@ -380,10 +448,34 @@
         [opt('elle converge', 'conv'), opt('on ne peut rien affirmer sur sa limite', 'rien'), opt(`elle tend vers ${m(T`-\infty`)}`, '-inf')],
         { explication: `Une suite croissante non majorée tend vers ${m(T`+\infty`)} : pour tout réel ${m('A')}, elle dépasse ${m('A')} à partir d'un certain rang et ne redescend plus.`, meta: { cas } });
     }
-    return qcm(`Soit ${u} une suite croissante (on ne sait rien d'autre). Que peut-on affirmer ?`,
-      opt(`elle converge ou elle tend vers ${m(T`+\infty`)}`, 'conv_ou_inf'),
-      [opt('elle converge', 'conv'), opt(`elle tend vers ${m(T`+\infty`)}`, 'inf'), opt('elle diverge', 'div')],
-      { explication: `Deux cas : si elle est majorée, elle converge ; sinon elle tend vers ${m(T`+\infty`)}. On ne peut pas dire laquelle des deux est vraie sans plus d'information.`, meta: { cas } });
+    if (cas === 'c') {
+      return qcm(`Soit ${u} une suite croissante (on ne sait rien d'autre). Que peut-on affirmer ?`,
+        opt(`elle converge ou elle tend vers ${m(T`+\infty`)}`, 'conv_ou_inf'),
+        [opt('elle converge', 'conv'), opt(`elle tend vers ${m(T`+\infty`)}`, 'inf'), opt('elle diverge', 'div')],
+        { explication: `Deux cas : si elle est majorée, elle converge ; sinon elle tend vers ${m(T`+\infty`)}. On ne peut pas dire laquelle des deux est vraie sans plus d'information.`, meta: { cas } });
+    }
+    if (cas === 'ccv') {
+      return qcm(`Soit ${u} une suite croissante qui converge vers un réel ${ell}. Que peut-on affirmer ?`,
+        opt(`pour tout entier ${m('n')}, ${m(`${un}\\le \\ell`)}`, 'le_l'),
+        [opt(`pour tout entier ${m('n')}, ${m(`${un}\\lt \\ell`)}`, 'lt_l'), opt(`pour tout entier ${m('n')}, ${m(`${un}\\ge \\ell`)}`, 'ge_l'), opt('elle est constante à partir d\'un certain rang', 'cst')],
+        { explication: `Une suite croissante qui converge vers ${ell} est majorée par ${ell} (elle ne peut pas dépasser sa limite). L'inégalité stricte est fausse pour une suite constante, qui est croissante.`, meta: { cas } });
+    }
+    if (cas === 'cdv') {
+      return qcm(`Soit ${u} une suite décroissante qui converge vers un réel ${ell}. Que peut-on affirmer ?`,
+        opt(`pour tout entier ${m('n')}, ${m(`${un}\\ge \\ell`)}`, 'ge_l'),
+        [opt(`pour tout entier ${m('n')}, ${m(`${un}\\gt \\ell`)}`, 'gt_l'), opt(`pour tout entier ${m('n')}, ${m(`${un}\\le \\ell`)}`, 'le_l'), opt('elle est constante à partir d\'un certain rang', 'cst')],
+        { explication: `Une suite décroissante qui converge vers ${ell} est minorée par ${ell}. L'inégalité stricte est fausse pour une suite constante, qui est décroissante.`, meta: { cas } });
+    }
+    if (cas === 'borne') {
+      return qcm(`Soit ${u} une suite qui converge. Que peut-on affirmer ?`,
+        opt('elle est bornée', 'bornee'),
+        [opt('elle est monotone', 'monotone'), opt('elle est croissante', 'croissante'), opt('elle est constante à partir d\'un certain rang', 'cst')],
+        { explication: `Une suite convergente est bornée : à partir d'un certain rang, ses termes sont proches de la limite, et il n'y en a qu'un nombre fini avant. Elle n'est pas forcément monotone (exemple : ${m(T`\dfrac{(-1)^n}{n}`)}).`, meta: { cas } });
+    }
+    return qcm(`Soit ${u} une suite bornée. Que peut-on affirmer ?`,
+      opt('on ne peut rien affirmer sur sa convergence', 'rien_conv'),
+      [opt('elle converge', 'conv'), opt('elle est monotone', 'monotone'), opt('elle est constante à partir d\'un certain rang', 'cst')],
+      { explication: `Une suite bornée ne converge pas forcément : ${m(T`(-1)^n`)} est bornée et n'a pas de limite. Elle n'est pas non plus forcément monotone.`, meta: { cas } });
   }
   function adjacentes() {           // N3 : suites adjacentes (approfondissement du programme)
     return qcm(
@@ -392,6 +484,88 @@
       [opt('les deux suites convergent, mais pas forcément vers la même limite', 'adj_diff'), opt(`${m('(u_n)')} converge mais ${m('(v_n)')} peut diverger`, 'adj_u'), opt(`${m('(u_n)')} tend vers ${m(T`+\infty`)}`, 'adj_inf')],
       { explication: `${m('(u_n)')} est croissante et majorée par ${m('v_0')}, ${m('(v_n)')} est décroissante et minorée par ${m('u_0')} : elles convergent, et la différence des limites vaut ${m('0')}. On dit que ces suites sont adjacentes.`,
         meta: {} });
+  }
+
+
+  // ==========================================================================
+  // 8. Raisonnement par récurrence : hérédité
+  // ==========================================================================
+  const intervalle = (lo, hi, tex) => opt(m(tex), `I:${lo},${hi}`);
+  function herediteAffine() {       // f affine de pente |p| < 1 : l'intervalle [a, b] est stable, la récurrence fonctionne
+    const [p, mult] = aleaParmi([[rat(1, 2), 2], [rat(1, 3), 3], [rat(2, 3), 3], [rat(3, 4), 4], [rat(-1, 2), 2], [rat(-1, 3), 3], [rat(1, 4), 4]]);
+    let l, a, b, q;
+    for (;;) {
+      l = mult * alea(-2, 3);                       // point fixe
+      q = l * (p.d - p.n) / p.d;                    // q = l(1-p), entier
+      a = l - alea(1, 6); b = l + alea(1, 6);
+      const fa = (p.n * a + q * p.d) / p.d, fb = (p.n * b + q * p.d) / p.d;
+      if (Math.min(fa, fb) >= a && Math.max(fa, fb) <= b && Number.isInteger(q)) break;
+    }
+    const num = x => p.n * x + q * p.d;               // f(x) = num(x) / p.d
+    const lo = p.n > 0 ? rat(num(a), p.d) : rat(num(b), p.d), hi = p.n > 0 ? rat(num(b), p.d) : rat(num(a), p.d);
+    const iv = (L, H) => intervalle(L.v, H.v, T`${L.tex}\le u_{n+1}\le ${H.tex}`);
+    const ent = x => rat(x, 1);
+    const cand = [iv(rat(num(a), p.d), rat(num(b), p.d)), iv(ent(a + q), ent(b + q)), iv(rat(p.n * Math.min(a, b), p.d), rat(p.n * Math.max(a, b), p.d)),
+      iv(ent(a), ent(b)), iv(rat(num(a), p.d), ent(b + q)), iv(ent(q), rat(num(b), p.d)), iv(rat(Math.min(num(a), num(b)) - p.d, p.d), hi), iv(lo, rat(Math.max(num(a), num(b)) + p.d, p.d))].filter(o => { const [x, y] = o.cle.slice(2).split(',').map(Number); return x < y; });
+    const bonne = iv(lo, hi);
+    const pt = p.d === 1 ? String(p.n) : p.tex;
+    return qcm(`On considère la suite ${m('(u_n)')} définie par ${m(T`u_0=${a}`)} et, pour tout entier naturel ${m('n')}, ${m(T`u_{n+1}=${pt}\,u_n${sgn(q)}`)}. On démontre par récurrence que, pour tout entier naturel ${m('n')}, ${m(T`${a}\le u_n\le ${b}`)}. Dans l'étape d'hérédité, on suppose que ${m(T`${a}\le u_n\le ${b}`)} pour un entier ${m('n')} fixé. Quel est l'encadrement de ${m('u_{n+1}')} le plus précis que l'on en déduit ?`,
+      bonne, unique(cand, [bonne.cle]).slice(0, 3),
+      { explication: p.n > 0 ? `La fonction ${m(T`x\mapsto ${pt}x${sgn(q)}`)} est croissante : on multiplie les trois membres par ${m(pt)} puis on ajoute ${m(String(q))}, sans changer l'ordre. On obtient ${m(T`${lo.tex}\le u_{n+1}\le ${hi.tex}`)}, qui est bien contenu dans ${m(T`[${a}\,;${b}]`)}.` : `On multiplie par le nombre négatif ${m(pt)} : l'ordre des inégalités est inversé, puis on ajoute ${m(String(q))}. On obtient ${m(T`${lo.tex}\le u_{n+1}\le ${hi.tex}`)}, qui est bien contenu dans ${m(T`[${a}\,;${b}]`)}.`,
+        meta: { kind: 'aff', p: p.v, q, a, b } });
+  }
+  function heredite() { return herediteAffine(); }
+  function herediteRacine() {       // N3 : u_{n+1} = sqrt(2 u_n + k)
+    let s0, k, b;
+    do { s0 = aleaParmi([2, 3, 4, 5, 6]); k = alea(1, 12); b = (s0 * s0 - k) / 2; } while (!Number.isInteger(b) || b < 1 || b < s0);
+    const lo = Math.sqrt(k), hi = s0;
+    const iv = (l, h, tex) => intervalle(l, h, tex);
+    const rk = T`\sqrt{${k}}`;
+    const bonne = iv(lo, hi, T`${rk}\le u_{n+1}\le ${hi}`);
+    const cand = [iv(k, s0 * s0, T`${k}\le u_{n+1}\le ${s0 * s0}`), iv(lo, s0 * s0, T`${rk}\le u_{n+1}\le ${s0 * s0}`), iv(0, hi, T`0\le u_{n+1}\le ${hi}`), iv(lo, b, T`${rk}\le u_{n+1}\le ${b}`), iv(lo, hi + 1, T`${rk}\le u_{n+1}\le ${hi + 1}`), iv(1, hi, T`1\le u_{n+1}\le ${hi}`), iv(0, b, T`0\le u_{n+1}\le ${b}`)].filter(o => { const [l, h] = o.cle.slice(2).split(',').map(Number); return l < h; });
+    return qcm(`On considère la suite ${m('(u_n)')} définie par ${m(T`u_0=0`)} et, pour tout entier naturel ${m('n')}, ${m(T`u_{n+1}=\sqrt{2u_n+${k}}`)}. On démontre par récurrence que, pour tout entier naturel ${m('n')}, ${m(T`0\le u_n\le ${b}`)}. Dans l'étape d'hérédité, on suppose que ${m(T`0\le u_n\le ${b}`)} pour un entier ${m('n')} fixé. Quel est l'encadrement de ${m('u_{n+1}')} le plus précis que l'on en déduit ?`,
+      bonne, unique(cand, [bonne.cle]).slice(0, 3),
+      { explication: `${m(T`0\le u_n\le ${b}`)} donne ${m(T`${k}\le 2u_n+${k}\le ${2 * b + k}`)}, puis, la fonction racine carrée étant croissante, ${m(T`${rk}\le u_{n+1}\le ${hi}`)}.`,
+        meta: { kind: 'rac', k, a: 0, b } });
+  }
+
+  // ==========================================================================
+  // 9. Algorithme de seuil (Python)
+  // ==========================================================================
+  const CODE = lignes => `<pre style="margin:8px 0;padding:8px 12px;background:#F1EFE8;border-radius:6px;font-size:0.92em;line-height:1.35;overflow-x:auto;text-align:left;font-family:Consolas,'Courier New',monospace">${lignes.join('\n').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+  function seuilPython(niveau) {
+    const n3 = niveau === 3;
+    let a, p, q, S, cmp, ret, n, u, suite;
+    for (let essai = 0; essai < 200; essai++) {
+      const dec = n3 && Math.random() < 0.3;
+      if (!dec) { p = aleaParmi([1, 2, 2, 3]); q = p === 1 ? aleaParmi([2, 3, 4, 5]) : (n3 ? alea(-2, 4) : alea(0, 3)); a = alea(1, 5); }
+      else { p = 1; q = -aleaParmi([2, 3, 4, 5]); a = alea(30, 80); }
+      suite = [a]; for (let i = 0; i < 30; i++) suite.push(p * suite[i] + q);
+      const k = alea(2, 7);
+      if (!dec && (suite[k] <= suite[k - 1] || suite[k] > 2000)) continue;
+      if (dec && suite[k] < 0) continue;
+      const exact = Math.random() < 0.5;
+      cmp = dec ? (Math.random() < 0.5 ? '>' : '>=') : (n3 && Math.random() < 0.5 ? '<=' : '<');
+      S = exact ? suite[k] : (dec ? suite[k] + 1 : suite[k] - 1);       // exact : on atteint S
+      if (!dec && !exact && S <= suite[k - 1]) continue;
+      if (dec && !exact && S >= suite[k - 1]) continue;
+      ret = n3 && Math.random() < 0.4 ? 'u' : 'n';
+      u = a; n = 0;
+      const cont = x => (cmp === '<' ? x < S : cmp === '<=' ? x <= S : cmp === '>' ? x > S : x >= S);
+      while (cont(u) && n < 100) { u = p * u + q; n++; }
+      if (n < 2 || n > 9) continue;
+      break;
+    }
+    const expr = (p === 1 ? 'u' : `${p} * u`) + (q === 0 ? '' : q < 0 ? ` - ${-q}` : ` + ${q}`);
+    const code = ['def seuil(S):', '    n = 0', `    u = ${a}`, `    while u ${cmp} S:`, `        u = ${expr}`, '        n = n + 1', `    return ${ret}`];
+    const res = ret === 'n' ? n : u;
+    const nb = x => opt(m(String(x)), 'num:' + x);
+    const prec = suite[n - 1];
+    const cand = ret === 'n' ? [n - 1, n + 1, u, prec, n + 2].map(nb) : [n, prec, p * u + q, u - q, suite[n - 2]].map(nb);
+    return qcm(`On considère la fonction Python suivante.${CODE(code)}Que renvoie l'appel <code>seuil(${S})</code> ?`,
+      nb(res), unique(cand.filter(o => !String(o.cle).includes('NaN') && Number(o.cle.slice(4)) >= 0), ['num:' + res]),
+      { explication: `On calcule les termes de la suite ${m(T`u_0=${a}`)}, ${m(T`u_{k+1}=${p === 1 ? '' : p + T`\,`}u_k${q === 0 ? '' : sgn(q)}`)} tant que la condition ${m(T`u ${cmp === '<=' ? T`\le` : cmp === '>=' ? T`\ge` : cmp === '<' ? T`\lt` : T`\gt`} ${S}`)} est vraie : on s'arrête quand elle devient fausse, après ${m(String(n))} passage${n > 1 ? 's' : ''} dans la boucle (${m(T`u=${u}`)}), et la fonction renvoie ${ret === 'n' ? 'le compteur ' + m('n') : 'la valeur de ' + m('u')} : ${m(String(res))}.`,
+      meta: { a, p, q, S, cmp, ret } });
   }
 
   // ==========================================================================
@@ -403,10 +577,12 @@
       'oscillante': famille({ nom: 'limite avec (−1)ⁿ', niveaux: [1, 2, 3], base: n => (n === 1 ? oscillanteN1() : oscillanteN2()), variantes3: [oscillanteN3a, oscillanteN3b, oscillanteN3c], partBase3: 0.15 }),
       'nature': famille({ nom: 'nature d’une suite', niveaux: [1, 2, 3], base: n => (n === 1 ? natureN1() : natureInversion()), variantes3: [natureExpression, natureDecalage], partBase3: 0.2 }),
       'variations': famille({ nom: 'sens de variation', niveaux: [1, 2, 3], base: n => (n === 1 ? sensN1() : recurrenteN2()), variantes3: [recurrenteLimite, recurrenteCarre], partBase3: 0.2 }),
-      'gendarmes': famille({ nom: 'théorème des gendarmes', niveaux: [2, 3], base: gendarmesN2, variantes3: [gendarmesMonotone], partBase3: 0.4 }),
+      'gendarmes': famille({ nom: 'gendarmes et comparaison', niveaux: [2, 3], base: gendarmesN2, variantes3: [gendarmesMonotone, comparaisonInfinie], partBase3: 0.3 }),
       'geometrique': famille({ nom: 'suites géométriques et limites', niveaux: [1, 2, 3], base: n => (n === 1 ? geomN1() : geomN2()), variantes3: [geomSomme, geomCroissComparee, geomQuotient], partBase3: 0.1 }),
       'arithmetico-geometrique': famille({ nom: 'suite arithmético-géométrique', niveaux: [1, 2, 3], base: n => (n === 1 ? arithGeoN1() : arithGeoN2()), variantes3: [arithGeoLimite, arithGeoExpression], partBase3: 0.1 }),
-      'convergence-monotone': famille({ nom: 'convergence monotone', niveaux: [2, 3], base: monotoneN2, variantes3: [adjacentes], partBase3: 0.5 })
+      'convergence-monotone': famille({ nom: 'convergence monotone', niveaux: [2, 3], base: monotoneN2, variantes3: [adjacentes], partBase3: 0.5 }),
+      'recurrence': famille({ nom: 'raisonnement par récurrence', niveaux: [2, 3], base: heredite, variantes3: [herediteRacine], partBase3: 0.4 }),
+      'algorithme-seuil': famille({ nom: 'algorithme de seuil', niveaux: [2, 3], base: () => seuilPython(2), variantes3: [() => seuilPython(3)], partBase3: 0 })
     }
   });
 })();

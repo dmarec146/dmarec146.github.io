@@ -112,3 +112,26 @@ retire rien, la note ne descend pas sous 0) — valeur à confirmer par David, e
 - **Répartition par thème des affirmations et QCM (18/10/2026)** : `outils/qcm-bac/repartition-themes.md` — géométrie dans l'espace 36 %,
   suites 22 %, équations différentielles 9 %, probabilités 7 %, dénombrement 6 %, exponentielle et logarithme 6 %. Sert à ordonner
   les prochains thèmes.
+
+## 6. Enrichissement des banques du pilote (18/10/2026)
+
+À la demande de David : après la répartition par thème (`repartition-themes.md`), élargissement des deux banques.
+
+- **Suites : 9 familles** (7 avant). Nouvelles : *raisonnement par récurrence* (encadrement de `u_{n+1}` à l'hérédité, suites
+  affines de pente < 1 en valeur absolue et `u_{n+1}=√(2u_n+k)`, intervalle stable) et *algorithme de seuil* (fonction Python
+  affichée en bloc de code, `<`, `<=`, `>`, `>=`, retour du rang ou de la valeur). Élargies : `cos(n)` et `sin(n)` en plus de
+  `(-1)^n`, suites non monotones, suites `(n+c)/(n+d)`, `a·q^n` avec raisons décimales et `q=1`, comparaison pour les limites
+  infinies (en plus des gendarmes), 8 situations de convergence monotone (suite croissante qui converge est majorée par sa
+  limite, suite convergente bornée, suite bornée sans conclusion…), récurrences d'Héron et homographique, lettres variées.
+- **Géométrie dans l'espace : 12 familles** (8 avant). Nouvelles : *deux droites* (parallèles, confondues, sécantes avec
+  coordonnées, non coplanaires ; coordonnées de l'intersection), *deux plans* (parallèles, confondus, perpendiculaires,
+  sécants ; représentation de la droite d'intersection), *angle* `BAC` arrondi au degré, *plan médiateur*.
+- **Variété** (3 000 tirages par famille et niveau) : géométrie de 2 300 à 3 000 énoncés distincts partout ; suites au moins
+  126 partout (avant : 17 à 60), sauf quelques familles de niveau 1 autour de 140 à 160.
+- **Contrôle** : 92 000 questions tirées, 0 anomalie, détection des erreurs introduites volontairement 2 748 / 2 748.
+  Nouveau contrôle de rédaction : un `<` suivi d'une lettre (balise HTML involontaire, par exemple `0<u_0<1`) est signalé ;
+  quatre explications étaient concernées et ont été corrigées (`\lt`).
+- **Familles par niveau** : suites 5 (niveau 1) puis 9 (niveaux 2 et 3) ; géométrie 5, 9 et 9. Une fiche de 5 questions par
+  thème ne répète donc une famille que s'il y en a moins de 5 au niveau.
+- **Restent hors banque** (idées pour plus tard) : suites d'intégrales, suites définies par une somme, démonstration d'une
+  inégalité de Bernoulli ; sphères, barycentres, distance d'un point à une droite (approfondissements du programme).
