@@ -312,6 +312,7 @@
       const rect = Math.random() < 0.75;
       let Qq = Q; if (!rect) { Qq = Q.slice(); Qq[alea(0, 2)] += aleaParmi([-2, -1, 1, 2]); }
       const ordre = melanger([V, P, Qq]);
+      if (Math.max(...ordre.flat().map(Math.abs)) > 12) continue;
       pts = ordre;
       const dotAt = k => dot(sub(pts[(k + 1) % 3], pts[k]), sub(pts[(k + 2) % 3], pts[k]));
       const droits = [0, 1, 2].filter(k => dotAt(k) === 0);
@@ -612,6 +613,65 @@
   }
 
   // ==========================================================================
+  // 12. Nature d'un triangle, angle à partir d'un produit scalaire (QCM de 2022 et 2023)
+  // ==========================================================================
+  const carre = u => dot(u, u);
+  function categorie(P) {           // 'rect', 'iso', 'equi' ou 'quel' ; null si rectangle isocèle (cas écarté)
+    const [A, B, C] = P, ab = carre(sub(B, A)), bc = carre(sub(C, B)), ca = carre(sub(A, C));
+    const droit = dot(sub(B, A), sub(C, A)) === 0 || dot(sub(A, B), sub(C, B)) === 0 || dot(sub(A, C), sub(B, C)) === 0;
+    const iso = ab === bc || bc === ca || ca === ab, equi = ab === bc && bc === ca;
+    if (droit && iso) return null;
+    if (equi) return 'equi';
+    if (droit) return 'rect';
+    return iso ? 'iso' : 'quel';
+  }
+  function triangleNature() {
+    const voulu = aleaParmi(['rect', 'iso', 'equi', 'quel']);
+    for (let essai = 0; essai < 2000; essai++) {
+      let P;
+      if (voulu === 'equi') {
+        const T0 = randP(-3, 3), k = aleaParmi([1, 2, 3]) * aleaParmi([-1, 1]), perm = melanger([0, 1, 2]);
+        P = perm.map(i => { const v = [0, 0, 0]; v[i] = k; return add(T0, v); });
+      } else if (voulu === 'iso') {
+        const u = randV(-3, 3), v = melanger(u.slice()).map(x => x * aleaParmi([1, 1, -1])), A = randP(-3, 3);
+        P = [A, add(A, u), add(A, v)];
+      } else if (voulu === 'rect') {
+        const w = randV(-3, 3), a = randV(-3, 3), u = reduit(cross(w, a)); if (nul(u)) continue;
+        const v = reduit(cross(u, w)); if (nul(v)) continue;
+        const A = randP(-3, 3); P = [A, add(A, mul(aleaParmi([1, 2]), u)), add(A, mul(aleaParmi([1, 2]), v))];
+      } else P = [randP(-4, 4), randP(-4, 4), randP(-4, 4)];
+      if (col(sub(P[1], P[0]), sub(P[2], P[0])) || categorie(P) !== voulu) continue;
+      P = melanger(P);
+      const L = { rect: opt(`${m('ABC')} est rectangle`, 'tri:rect'), iso: opt(`${m('ABC')} est isocèle, sans être équilatéral`, 'tri:iso'), equi: opt(`${m('ABC')} est équilatéral`, 'tri:equi'), quel: opt(`${m('ABC')} est quelconque (ni rectangle, ni isocèle)`, 'tri:quel') };
+      const [A, B, C] = P;
+      const d = [carre(sub(B, A)), carre(sub(C, B)), carre(sub(A, C))];
+      return qcm(`Dans un repère orthonormé de l'espace, on considère les points ${m(`A${pt(A)}`)}, ${m(`B${pt(B)}`)} et ${m(`C${pt(C)}`)}. Quelle affirmation est vraie ?`,
+        L[voulu], ['rect', 'iso', 'equi', 'quel'].filter(c => c !== voulu).map(c => L[c]),
+        { explication: `${m(`AB^2=${d[0]}`)}, ${m(`BC^2=${d[1]}`)} et ${m(`CA^2=${d[2]}`)}. ${voulu === 'equi' ? 'Les trois côtés ont la même longueur.' : voulu === 'iso' ? 'Deux côtés ont la même longueur et les trois carrés ne vérifient pas le théorème de Pythagore.' : voulu === 'rect' ? 'La somme de deux de ces carrés est égale au troisième (réciproque du théorème de Pythagore), et les trois côtés sont différents.' : 'Les trois côtés sont différents et aucune somme de deux de ces carrés n\'égale le troisième.'}`,
+          meta: { P } });
+    }
+    return null;
+  }
+  function angleProduitScalaire() {
+    for (let essai = 0; essai < 2000; essai++) {
+      const u = randV(-4, 4), v = randV(-4, 4);
+      if (col(u, v)) continue;
+      const d0 = dot(u, v), na = carre(u), nb = carre(v);
+      const th = Math.acos(d0 / Math.sqrt(na * nb)) * 180 / Math.PI;
+      if (Math.abs(th % 1 - 0.5) < 0.08 || th < 8 || th > 172) continue;
+      const deg = Math.round(th);
+      const cand = [180 - deg, Math.abs(90 - deg), Math.round(Math.acos(Math.max(-1, Math.min(1, d0 / (na + nb)))) * 180 / Math.PI), Math.round(Math.acos(Math.max(-1, Math.min(1, d0 / Math.sqrt(na) / Math.sqrt(nb) / 2))) * 180 / Math.PI), deg + 10, deg - 10].filter(x => x > 0 && x < 180 && x !== deg);
+      const choix = unique(cand.map(x => opt(m(`${x}^\\circ`), 'num:' + x)), ['num:' + deg]).slice(0, 3);
+      if (choix.length < 3) continue;
+      return qcm(`Dans un repère orthonormé de l'espace, on considère trois points ${m('A')}, ${m('B')} et ${m('C')} tels que ${m(T`\overrightarrow{BA}\cdot\overrightarrow{BC}=${d0}`)}, ${m(`BA=\\sqrt{${na}}`)} et ${m(`BC=\\sqrt{${nb}}`)}. Quelle est la mesure de l'angle ${m(T`\widehat{ABC}`)}, arrondie au degré ?`,
+        opt(m(`${deg}^\\circ`), 'num:' + deg), choix,
+        { explication: `${m(T`\cos\widehat{ABC}=\dfrac{\overrightarrow{BA}\cdot\overrightarrow{BC}}{BA\times BC}=\dfrac{${d0}}{\sqrt{${na}}\times\sqrt{${nb}}}`)}, d'où ${m(T`\widehat{ABC}\approx ${deg}^\circ`)}.`,
+          meta: { d: d0, na, nb } });
+    }
+    return null;
+  }
+
+  // ==========================================================================
   // Enregistrement
   // ==========================================================================
   Automatismes.enregistrerBanque('geometrie-espace', {
@@ -621,13 +681,13 @@
       'base': famille({ nom: 'base de l’espace', niveaux: [2, 3], base: n => (n === 2 ? baseN2() : baseParametre()), partBase3: 0 }),
       'droite': famille({ nom: 'droites et représentations paramétriques', niveaux: [1, 2, 3], base: n => (n === 1 ? directeurN1() : n === 2 ? repAB() : perpendiculairePlan()) }),
       'appartenance': famille({ nom: 'appartenance à une droite ou à un plan', niveaux: [1, 2], base: n => (n === 1 ? appartenanceDroite() : appartenancePlan()) }),
-      'orthogonalite': famille({ nom: 'produit scalaire et orthogonalité', niveaux: [1, 2, 3], base: n => (n === 1 ? scalaireN1() : n === 2 ? orthogonalM() : triangleRectangle()) }),
+      'orthogonalite': famille({ nom: 'produit scalaire et orthogonalité', niveaux: [1, 2, 3], base: n => (n === 1 ? scalaireN1() : n === 2 ? orthogonalM() : (Math.random() < 0.5 ? triangleRectangle() : triangleNature())) }),
       'plan': famille({ nom: 'plans : vecteur normal et équation', niveaux: [1, 2, 3], base: n => (n === 1 ? normalN1() : n === 2 ? equationPlanN2() : planABC()) }),
       'distance-projection': famille({ nom: 'distance et projeté orthogonal', niveaux: [3], base: () => (Math.random() < 0.5 ? distancePlan() : projeteOrthogonal()) }),
       'position': famille({ nom: 'droite et plan', niveaux: [2, 3], base: n => (n === 2 ? positionDroitePlan() : intersectionDroitePlan()) }),
       'deux-droites': famille({ nom: 'deux droites', niveaux: [2, 3], base: n => (n === 2 ? deuxDroites() : intersectionDeuxDroites()) }),
       'deux-plans': famille({ nom: 'deux plans', niveaux: [2, 3], base: n => (n === 2 ? deuxPlans() : droiteIntersectionPlans()) }),
-      'angle-plan-median': famille({ nom: 'angle et plan médiateur', niveaux: [3], base: () => (Math.random() < 0.5 ? angleAbc() : planMediateur()) })
+      'angle-plan-median': famille({ nom: 'angle et plan médiateur', niveaux: [3], base: () => { const r = Math.random(); return r < 0.35 ? angleAbc() : r < 0.65 ? angleProduitScalaire() : planMediateur(); } })
     }
   });
 })();

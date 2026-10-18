@@ -93,6 +93,23 @@ F['suites/arithmetico-geometrique'] = q => {
   return verifLimites(q);
 };
 F['suites/gendarmes'] = q => {
+  if (q.meta.enc) {                              // encadrements explicites : modèles compatibles avec l'hypothèse
+    const M = q.meta;
+    const modeles = { 1: [n => (M.k === 1 ? n : M.k * n) + M.a + 0.5, n => (M.k * n) + M.b - 0.5, n => M.k * n + (M.a + M.b) / 2],
+      2: [n => M.a + Math.pow(1 / M.q, n), M.hi, n => (M.a + Math.pow(1 / M.q, n) + M.hi(n)) / 2],
+      3: [n => -1 - 1 / (n + 1), n => 0, n => -0.5 - 0.5 / (n + 1)] }[M.enc];
+    const comp = modeles.map(f => classer(f, 100000));
+    return q.options.map(o => {
+      const c = o.cle;
+      if (c === 'rien') return !(comp.every(x => x.type === 'inf') || comp.every(x => x.type === '-inf') || comp.every(x => x.type === 'lim' && Math.abs(x.x - comp[0].x) < 1e-3));
+      if (c === 'inf') return comp.every(x => x.type === 'inf');
+      if (c === '-inf') return comp.every(x => x.type === '-inf');
+      if (c === 'conv') return comp.every(x => x.type === 'lim');
+      if (c === 'div') return comp.every(x => x.type !== 'lim');
+      if (c.startsWith('lim:')) return comp.every(x => reclamation(c, x));
+      throw new Error('clé inconnue ' + c);
+    });
+  }
   if (q.meta.cmp) {                              // comparaison : (x_n, y_n) modèles compatibles avec l'hypothèse
     const modeles = { 1: [[n => n, n => n], [n => n, n => n * n], [n => n, n => 2 * n + 1]],
       2: [[n => n, n => -n], [n => n, n => 1 / (n + 1)], [n => n, n => n / 2]],
@@ -180,6 +197,25 @@ F['suites/recurrence'] = q => {
   return q.options.map(o => { const [l, h] = o.cle.slice(2).split(',').map(Number); return Math.abs(l - lo) < 1e-9 && Math.abs(h - hi) < 1e-9; });
 };
 F['suites/algorithme-seuil'] = q => {
+  const Mt = q.meta;
+  if (Mt.f !== undefined) {                       // seuil en contexte : plus petit n tel que v0 f^n dépasse (ou passe sous) la cible
+    let n = 0, v = Mt.v0; while (Mt.croit ? !(v > Mt.cible) : !(v < Mt.cible)) { v *= Mt.f; n++; }
+    return q.options.map(o => Number(o.cle.slice(4)) === n);
+  }
+  if (Mt.large !== undefined) {                   // condition de boucle : doit rendre le premier n tel que u_n >= S (ou > S), pour tout S
+    const u = n => { let x = Mt.a; for (let i = 0; i < n; i++) x = Mt.p * x + Mt.q; return x; };
+    const attendu = S => { let n = 0; while (Mt.large ? u(n) < S : u(n) <= S) n++; return n; };
+    return q.options.map(o => {
+      const cond = o.cle.slice(5);
+      const f = x => (cond === 'u < S' ? x < S0 : cond === 'u <= S' ? x <= S0 : cond === 'u > S' ? x > S0 : x >= S0);
+      let S0 = 0;
+      for (S0 = Mt.a; S0 <= 3000; S0++) {
+        let n = 0, x = Mt.a; while (f(x) && n < 100) { x = Mt.p * x + Mt.q; n++; }
+        if (n !== attendu(S0)) return false;
+      }
+      return true;
+    });
+  }
   const { a, p, q: qq, S, cmp, ret } = q.meta;
   const cont = x => (cmp === '<' ? x < S : cmp === '<=' ? x <= S : cmp === '>' ? x > S : x >= S);
   let u = a, n = 0; while (cont(u) && n < 1000) { u = p * u + qq; n++; }
@@ -189,6 +225,13 @@ F['suites/algorithme-seuil'] = q => {
 F['suites/convergence-monotone'] = q => {
   const cles = q.options.map(o => o.cle), M = q.meta;
   if (!M.cas) return cles.map(c => c === 'adj');     // suites adjacentes : seule la première affirmation est le théorème
+  if (M.cas === 'ineg') {
+    const b = M.b, min = M.sens === 'min';
+    const modeles = min ? [n => b + 1 + 1 / (n + 1), n => b + 1 / (n + 1), n => b + 2] : [n => b - 1 - 1 / (n + 1), n => b - 1 / (n + 1), n => b - 2];
+    const lim = modeles.map(f => classer(f, 3000000).x);
+    const rel = { ge: l => l >= b - 1e-3, gt: l => l > b + 1e-3, eq: l => Math.abs(l - b) < 1e-3, le: l => l <= b + 1e-3, lt: l => l < b - 1e-3 };
+    return cles.map(c => lim.every(rel[c.slice(4)]));
+  }
   const Mv = 7, mv = -3, Lv = 5;
   const extra = {
     ccv: [n => Lv - 1 / (n + 1), n => Lv], cdv: [n => Lv + 1 / (n + 1), n => Lv],
@@ -307,6 +350,12 @@ F['geometrie-espace/appartenance'] = q => {
 };
 F['geometrie-espace/orthogonalite'] = q => {
   const M = q.meta;
+  if (M.P && q.options[0].cle.startsWith('tri:')) {              // nature d'un triangle
+    const [A, B, C] = M.P, ab = dot(sub(B, A), sub(B, A)), bc = dot(sub(C, B), sub(C, B)), ca = dot(sub(A, C), sub(A, C));
+    const droit = dot(sub(B, A), sub(C, A)) === 0 || dot(sub(A, B), sub(C, B)) === 0 || dot(sub(A, C), sub(B, C)) === 0;
+    const iso = ab === bc || bc === ca || ca === ab, equi = ab === bc && bc === ca;
+    return q.options.map(o => ({ 'tri:rect': droit, 'tri:iso': iso && !equi, 'tri:equi': equi, 'tri:quel': !droit && !iso })[o.cle]);
+  }
   if (M.P) {
     const [A, B, C] = M.P, ang = { A: dot(sub(B, A), sub(C, A)) === 0, B: dot(sub(A, B), sub(C, B)) === 0, C: dot(sub(A, C), sub(B, C)) === 0 };
     return q.options.map(o => { const k = o.cle.slice(5); return k === 'none' ? !(ang.A || ang.B || ang.C) : ang[k]; });
@@ -350,6 +399,7 @@ F['geometrie-espace/deux-plans'] = q => {
 };
 F['geometrie-espace/angle-plan-median'] = q => {
   const M = q.meta;
+  if (M.na !== undefined) return q.options.map(o => Number(o.cle.slice(4)) === Math.round(Math.acos(M.d / Math.sqrt(M.na * M.nb)) * 180 / Math.PI));
   if (M.C) {
     const u = sub(M.B, M.A), v = sub(M.C, M.A), th = Math.acos(dot(u, v) / Math.sqrt(dot(u, u) * dot(v, v))) * 180 / Math.PI;
     return q.options.map(o => Number(o.cle.slice(4)) === Math.round(th));

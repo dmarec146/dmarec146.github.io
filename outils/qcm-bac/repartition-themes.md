@@ -45,3 +45,34 @@ presque tous de géométrie dans l'espace (Amérique du Nord J1 2024, Centres é
 - Les exercices de type QCM ont été classés à la main, question par question.
 - Une trentaine d'affirmations non classées par les mots-clés (géométrie surtout) ont été reprises en deuxième passe ; une douzaine ont été placées à la main d'après leur énoncé.
 - Les exercices rédigés dont seules une ou deux questions sont des affirmations ne sont pas comptés.
+
+
+## Mise à jour du 18/10/2026 : avec les sujets de 2022 et 2023
+
+2022 et 2023 ajoutent 149 questions (130 questions de QCM et 19 affirmations), soit **344 questions** sur 2022 à 2026.
+Leur profil diffère : ce sont des QCM qui balaient tout le programme, avec beaucoup d'exponentielle et de logarithme (primitives,
+dérivées, limites, équations) et de probabilités.
+
+| Thème | 2022-2023 | 2024-2026 | Total | Part |
+|---|---:|---:|---:|---:|
+| Géométrie dans l'espace | 16 | 70 | 86 | 25 % |
+| Suites | 28 | 42 | 70 | 20 % |
+| Exponentielle et logarithme | 43 | 11 | 54 | 16 % |
+| Probabilités | 27 | 13 | 40 | 12 % |
+| Dérivation et convexité | 19 | 7 | 26 | 8 % |
+| Équations différentielles et primitives | 3 | 18 | 21 | 6 % |
+| Dénombrement | 1 | 12 | 13 | 4 % |
+| Algorithmique (Python) | 8 | 3 | 11 | 3 % |
+| Limites et continuité | 4 | 5 | 9 | 3 % |
+| Trigonométrie | 0 | 5 | 5 | 1 % |
+| Calcul intégral | 0 | 4 | 4 | 1 % |
+| QCM mixte (Polynésie J2 2024) | 0 | 5 | 5 | 1 % |
+
+Remarques :
+- Le classement est par mots-clés : les questions de **primitives** et de **dérivées** de fonctions faisant intervenir `e^x` ou
+  `ln` (très nombreuses en 2022 et 2023, environ une dizaine) sont comptées dans « exponentielle et logarithme ». En les
+  regroupant, « fonctions : exponentielle, logarithme, primitives, dérivation, convexité, limites » pèse environ **35 %**.
+- Ordre conseillé révisé : (1) **exponentielle, logarithme, dérivation et primitives** (un seul gros thème « fonctions »,
+  réparti en plusieurs banques : calcul de dérivées et de primitives, équations et inéquations avec `ln` et `e`, limites,
+  convexité sur courbe, équations différentielles) ; (2) **probabilités** (arbres, loi binomiale, espérance) avec le
+  dénombrement ; (3) algorithmique en complément des suites ; (4) trigonométrie et intégrale à la fin.

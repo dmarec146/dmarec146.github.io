@@ -135,3 +135,21 @@ retire rien, la note ne descend pas sous 0) — valeur à confirmer par David, e
   thème ne répète donc une famille que s'il y en a moins de 5 au niveau.
 - **Restent hors banque** (idées pour plus tard) : suites d'intégrales, suites définies par une somme, démonstration d'une
   inégalité de Bernoulli ; sphères, barycentres, distance d'un point à une droite (approfondissements du programme).
+
+## 7. Sujets de 2023 et 2022 intégrés (18/10/2026)
+
+À la demande de David, mêmes opérations que pour 2024 à 2026 (téléchargement des intégrales de l'APMEP, index, répartition par
+thème), puis alimentation des banques.
+
+- **Constat** : en 2022 et 2023, chaque sujet contient presque toujours un exercice de **vrais QCM** (28 exercices, 130 questions),
+  alors que 2024 à 2026 ne donnent que des affirmations. Les thèmes sont aussi différents : exponentielle et logarithme,
+  dérivées, primitives et probabilités dominent. Détail : fin de `index-exercices.md`, mise à jour de `repartition-themes.md`
+  (344 questions sur 2022 à 2026) et **catalogue des types de questions** dans `types-de-questions-2022-2023.md`.
+- **Banques du pilote enrichies** (7 types repris des sujets) : suites, quotient de deux exponentielles de bases différentes,
+  passage à la limite dans une inégalité large (« minorée par 3 et converge vers ℓ »), encadrements explicites (`n < u_n < n+1`,
+  `1+(1/4)^n ≤ u_n ≤ 2−n/(n+1)`, `u_n ≤ u_{n+1} ≤ 1/n`), seuil en contexte (récipient à −15 % par heure, action à +3 % par
+  mois, population qui double), algorithme de seuil à compléter (condition de boucle) ; géométrie, nature d'un triangle (rectangle,
+  isocèle, équilatéral, quelconque) et angle `ABC` à partir de `BA·BC`, `BA` et `BC`.
+- **Contrôle** : 92 000 questions, 0 anomalie, détection des erreurs volontaires 2 747 / 2 747.
+- **Pas encore de banque** pour les thèmes qui dominent 2022 et 2023 : exponentielle, logarithme, dérivées, primitives, limites de
+  fonctions, probabilités. C'est la suite logique (voir « Ordre conseillé révisé » dans `repartition-themes.md`).

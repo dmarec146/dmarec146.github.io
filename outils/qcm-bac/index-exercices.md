@@ -125,3 +125,66 @@ de l'affirmation… » au milieu d'un exercice rédigé.
 - Total : 47 exercices entiers (14 en 2024, plus 4 des « Exercices 0 », 18 en 2025, 11 en 2026), soit de
   l'ordre de 190 affirmations ou questions de QCM. La répartition par thème n'est pas encore comptée.
   Les sujets de 2024 n'ont été parcourus que par le script : les cases « ? » restent à vérifier.
+
+
+---
+
+## Ajout du 18/10/2026 : sujets de 2023 et de 2022
+
+**Sources** (intégrales de l'APMEP, sujets seulement, sans corrigés ; les corrigés sont des fichiers séparés sur les pages
+`https://www.apmep.fr/Annee-2023` et `https://www.apmep.fr/Annee-2022`) :
+- 2023 : `https://www.apmep.fr/IMG/tex/annee_2023_spe_DV.tex` (21 sujets, 13 mars au 27 septembre 2023) ;
+- 2022 : `https://www.apmep.fr/IMG/tex/annee_2022_spe_DV.tex` (19 sujets, 4 mai au 27 octobre 2022).
+
+**Différence importante avec 2024 à 2026** : en 2022 et 2023, chaque sujet comporte presque toujours **un exercice de vrais QCM**
+(questionnaire à quatre propositions, une seule exacte, sans justification), qui balaie plusieurs thèmes à la fois. Ce sont
+exactement les questions que le bloc « QCM Bac » propose. Seuls quelques exercices sont des affirmations « vrai ou faux ».
+À partir de 2024, c'est l'inverse (voir plus haut).
+
+Le tableau donne, par exercice, le nombre de questions et leurs thèmes. Les nombres de questions sont ceux que j'ai pu extraire
+automatiquement (un exercice annonce 5 ou 6 questions, j'en retrouve parfois moins) ; les thèmes sont rangés par mots-clés.
+
+### 2023
+
+| Sujet | Exo (pts) | Type | Questions | Thèmes (nombre de questions) |
+|---|---|---|---:|---|
+| Centres étrangers J1 13 mars 2023 | 1 (5) | QCM | 5 | suites 1, exp/ln 1, limites 1, Python 1, dénombrement 1 |
+| Centres étrangers J2 14 mars 2023 | 1 (5) | QCM | 5 | exp/ln 2, dérivation et convexité 1, probabilités 1, Python 1 |
+| Métropole J1 20 mars 2023 | 1 (5) | QCM | 3 | probabilités 3 |
+| Métropole J2 21 mars 2023 | 1 (5) | QCM | 2 | probabilités 2 |
+| Centres étrangers 2 J1 21 mars 2023 | 3 (5) | QCM | 5 | suites 3, exp/ln 1, dérivation et convexité 1 |
+| Centres étrangers 2 J2 22 mars 2023 | 4 (5) | QCM | 3 | probabilités 3 |
+| Amérique du Nord J1 27 mars 2023 | 3 (5) | QCM | 5 | espace 5 |
+| La Réunion J1 28 mars 2023 | 3 (5) | QCM | 3 | suites 3 |
+| Amérique du Nord J2 28 mars 2023 | 4 (5) | QCM | 8 | probabilités 7, suites 1 |
+| La Réunion J2 29 mars 2023 | 4 (5) | QCM | 5 | exp/ln 4, dérivation et convexité 1 |
+| Nouvelle-Calédonie J1 28 août 2023 | 3 (5) | QCM | 1 | exp/ln 1 |
+| Nouvelle-Calédonie J2 29 août 2023 | 4 (5) | QCM | 5 | probabilités 5 |
+| Polynésie 7 septembre 2023 | 4 (5) | QCM | 5 | espace 5 |
+| Métropole J1 11 septembre 2023 | 1 (4) | QCM | 4 | suites 2, exp/ln 1, Python 1 |
+| Métropole J2 12 septembre 2023 | 4 (5) | QCM | 5 | espace 5 |
+| Centres étrangers J1 13 mars 2023 | 4 (3) | Affirmations | 3 | exp/ln 1, autre 1, suites 1 |
+| Polynésie J1 13 mars 2023 | 3 (5) | Affirmations | 5 | exp/ln 4, Python 1 |
+| Polynésie J2 14 mars 2023 | 4 (5) | Affirmations | 5 | suites 3, dérivation et convexité 1, Python 1 |
+
+### 2022
+
+| Sujet | Exo (pts) | Type | Questions | Thèmes (nombre de questions) |
+|---|---|---|---:|---|
+| Polynésie 4 mai 2022 | 1 (7) | QCM | 6 | exp/ln 2, Python 2, suites 1, dérivation et convexité 1 |
+| Polynésie 5 mai 2022 | 1 (7) | QCM | 6 | exp/ln 2, dérivation et convexité 2, limites 1, éq. diff. et primitives 1 |
+| Métropole 11 mai 2022 | 4 (7) | QCM | 6 | exp/ln 4, limites 1, dérivation et convexité 1 |
+| Centres étrangers 11 mai 2022 | 1 (7) | QCM | 6 | exp/ln 4, dérivation et convexité 2 |
+| Métropole 12 mai 2022 | 2 (7) | QCM | 6 | dérivation et convexité 3, suites 3 |
+| Centres étrangers 12 mai 2022 | 1 (7) | QCM | 6 | exp/ln 4, dérivation et convexité 2 |
+| Groupe I 18 mai 2022 | 2 (6) | QCM | 3 | suites 1, exp/ln 1, limites 1 |
+| Groupe I 19 mai 2022 | 3 (6) | QCM | 7 | suites 5, dérivation et convexité 2 |
+| Amérique du Nord 19 mai 2022 | 4 (7) | QCM | 6 | exp/ln 3, probabilités 2, éq. diff. et primitives 1 |
+| Métropole 9 septembre 2022 | 1 (7) | QCM | 6 | exp/ln 3, suites 2, dérivation et convexité 1 |
+| Métropole 10 septembre 2022 | 2 (7) | QCM | 3 | suites 1, éq. diff. et primitives 1, Python 1 |
+| Nouvelle-Calédonie 26 octobre 2022 | 4 (7) | QCM | 4 | probabilités 4 |
+| Nouvelle-Calédonie 27 octobre 2022 | 4 (7) | QCM | 1 | suites 1 |
+| Amérique du Nord 18 mai 2022 | 4 (7) | Affirmations | 6 | exp/ln 4, espace 1, dérivation et convexité 1 |
+
+Total : 28 exercices de QCM (130 questions repérées) et 4 exercices d'affirmations (19 affirmations) pour 2022 et 2023.
+Le catalogue des types de questions rencontrés, par thème, est dans `types-de-questions-2022-2023.md`.

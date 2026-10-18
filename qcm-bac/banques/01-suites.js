@@ -16,7 +16,7 @@
 (function () {
   'use strict';
   const O = Automatismes.outils;
-  const { alea, aleaParmi, melanger, pgcd, m, qcm, famille, fracL, decL } = O;
+  const { alea, aleaParmi, melanger, pgcd, m, qcm, famille, fracL, decL, dec } = O;
   const T = String.raw;
 
   const opt = (aff, cle) => ({ affichage: aff, cle: cle });
@@ -569,6 +569,109 @@
   }
 
   // ==========================================================================
+  // 10. Ajouts d'après les QCM de 2022 et 2023
+  // ==========================================================================
+  function geomQuotientBases() {    // (a p^n + b) / (c q^n + d), bases différentes
+    let p, qq, a, b, c, d;
+    for (;;) {
+      p = aleaParmi([2, 3, 4, 5]); qq = aleaParmi([2, 3, 4, 5]);
+      a = aleaParmi([1, 1, 2, 3, -1, -2]); b = aleaParmi([1, 2, 3, -1, -2, 4]); c = aleaParmi([1, 1, 2, 3, -1]); d = aleaParmi([1, 2, 3, 5, -2]);
+      let nul = p === qq;
+      for (let n = 0; n <= 30 && !nul; n++) if (c * Math.pow(qq, n) + d === 0) nul = true;
+      if (!nul) break;
+    }
+    const num = `${fois(a, p + '^n')}${sgn(b)}`, den = `${fois(c, qq + '^n')}${sgn(d)}`;
+    let verite;
+    if (p < qq) verite = LIM(0); else verite = (a > 0) === (c > 0) ? PINF() : MINF();
+    const ra = rat(a, c), rb = rat(b, d);
+    const pool = [LIM(0), PINF(), MINF(), opt(`elle converge vers ${m(ra.tex)}`, 'lim:' + ra.cle), opt(`elle converge vers ${m(rb.tex)}`, 'lim:' + rb.cle)].filter(o => o.cle !== verite.cle);
+    return qcm(`On considère la suite ${m('(u_n)')} définie pour tout entier naturel ${m('n')} par ${m(T`u_n=\dfrac{${num}}{${den}}`)}. Que peut-on dire de ${m('(u_n)')} ?`,
+      verite, pool,
+      { explication: p < qq ? `Au numérateur comme au dénominateur, la puissance domine. On factorise par ${m(`${qq}^n`)} : ${m(T`\left(\dfrac{${p}}{${qq}}\right)^n`)} tend vers ${m('0')}, donc le quotient tend vers ${m('0')}.` : `On factorise par ${m(`${p}^n`)} : le quotient se comporte comme ${m(T`${ra.d === 1 && Math.abs(ra.n) === 1 ? (ra.n < 0 ? '-' : '') : ra.tex}\left(\dfrac{${p}}{${qq}}\right)^n`)}, avec ${m(T`\dfrac{${p}}{${qq}}\gt 1`)}, donc il tend vers ${(a > 0) === (c > 0) ? m(T`+\infty`) : m(T`-\infty`)}.`,
+        meta: { u: n => (a * Math.pow(p, n) + b) / (c * Math.pow(qq, n) + d), n0: 0, N: 60 } });
+  }
+  function limiteInegalite() {      // passage à la limite dans une inégalité large
+    const min = Math.random() < 0.5, [L] = [aleaParmi(['u', 'v', 'w', 's', 't', 'a'])];
+    const b = alea(-5, 6), bt = Math.random() < 0.3 ? aleaParmi(['M', 'K', 'B']) : String(b), ell = m(T`\ell`);
+    const rel = { ge: [T`\ell\ge ${bt}`, 'rel:ge'], gt: [T`\ell\gt ${bt}`, 'rel:gt'], eq: [T`\ell=${bt}`, 'rel:eq'], le: [T`\ell\le ${bt}`, 'rel:le'], lt: [T`\ell\lt ${bt}`, 'rel:lt'] };
+    const O = k => opt(`on peut affirmer que ${m(rel[k][0])}`, rel[k][1]);
+    const juste = min ? 'ge' : 'le';
+    const dist = min ? ['gt', 'eq', 'le'] : ['lt', 'eq', 'ge'];
+    return qcm(`Soit ${m(`(${L}_n)`)} une suite ${min ? 'minorée' : 'majorée'} par ${m(bt)} qui converge vers un réel ${ell}. Que peut-on affirmer ?`,
+      O(juste), dist.map(O),
+      { explication: `Les inégalités larges se conservent par passage à la limite : ${m(`${L}_n\\${min ? 'ge' : 'le'} ${bt}`)} pour tout ${m('n')} donne ${m(rel[juste][0])}. L'inégalité stricte n'est pas conservée (la suite ${m(T`${bt}${min ? '+' : '-'}\dfrac{1}{n+1}`)} est strictement ${min ? 'supérieure' : 'inférieure'} à ${m(bt)}, mais sa limite est ${m(bt)}).`,
+        meta: { cas: 'ineg', sens: min ? 'min' : 'maj', b } });
+  }
+  function encadrementExplicite() { // encadrements du type de ceux des sujets
+    const cas = aleaParmi([1, 2, 3]);
+    const L = aleaParmi(['u', 'v', 'w']), un = `${L}_n`, U = m(`(${L}_n)`);
+    if (cas === 1) {                // n + a < u_n < n + b : tend vers +infini
+      const a = alea(-3, 2), b = a + alea(1, 3), k = aleaParmi([1, 1, 2, 3]);
+      const aff = c => (k === 1 ? 'n' : `${k}n`) + (c === 0 ? '' : sgn(c)), lo = aff(a), hi = aff(b);
+      return qcm(`On considère une suite ${U} telle que, pour tout entier naturel ${m('n')}, ${m(T`${lo}\lt ${un}\lt ${hi}`)}. On peut affirmer que :`,
+        opt(`${U} tend vers ${m(T`+\infty`)}`, 'inf'),
+        [opt(`${U} converge`, 'conv'), opt(`${U} tend vers ${m(T`-\infty`)}`, '-inf'), opt('on ne peut pas conclure sur sa limite', 'rien')],
+        { explication: `${m(T`${un}\gt ${lo}`)} et ${m(lo)} tend vers ${m(T`+\infty`)} : par comparaison, ${m(un)} tend vers ${m(T`+\infty`)}. La majoration ne sert pas.`,
+          meta: { enc: 1, a, b, k } });
+    }
+    if (cas === 2) {                // a + (1/q)^n <= u_n <= a + 1 - n/(n+1)
+      const a = alea(-3, 4), q = aleaParmi([2, 3, 4]);
+      const hi = aleaParmi([[T`${a + 1}-\dfrac{n}{n+1}`, n => a + 1 - n / (n + 1)], [T`${a}+\dfrac{1}{n+1}`, n => a + 1 / (n + 1)], [T`${a}+\dfrac{2}{n+2}`, n => a + 2 / (n + 2)]]);
+      return qcm(`On considère une suite ${U} telle que, pour tout entier naturel ${m('n')}, ${m(T`${a}+\left(\dfrac{1}{${q}}\right)^n\le ${un}\le ${hi[0]}`)}. On peut affirmer que :`,
+        opt(`${U} converge vers ${m(String(a))}`, 'lim:' + a),
+        [opt(`${U} converge vers ${m(String(a + 1))}`, 'lim:' + (a + 1)), opt('on ne peut pas conclure sur sa convergence', 'rien'), opt(`${U} diverge`, 'div')],
+        { explication: `Le minorant tend vers ${m(String(a))} car ${m(T`\left(\dfrac{1}{${q}}\right)^n`)} tend vers ${m('0')} ; le majorant tend aussi vers ${m(String(a))}. Par le théorème des gendarmes, ${U} converge vers ${m(String(a))}.`,
+          meta: { enc: 2, a, q, hi: hi[1] } });
+    }
+    const a = aleaParmi([-3, -2, -1, 0]);
+    return qcm(`On considère une suite ${U} telle que, pour tout entier naturel ${m(T`n\ge 1`)}, ${m(T`${un}\le ${L}_{n+1}\le \dfrac{1}{n}`)}. On peut alors affirmer que :`,
+      opt(`${U} converge`, 'conv'),
+      [opt(`${U} converge vers ${m('0')}`, 'lim:0'), opt(`${U} tend vers ${m(T`+\infty`)}`, 'inf'), opt(`${U} diverge`, 'div')],
+      { explication: `${U} est croissante et majorée (par ${m('1')}, puisque ${m(T`${un}\le \dfrac{1}{n}\le 1`)} donne ${m(T`${L}_{n+1}\le 1`)}) : elle converge (théorème de convergence monotone). Sa limite est inférieure ou égale à ${m('0')} mais n'est pas forcément ${m('0')}.`,
+        meta: { enc: 3 } });
+  }
+  function seuilContexte() {        // modélisation par une suite géométrique et seuil
+    const cas = aleaParmi(['baisse', 'hausse', 'double']);
+    let v0, taux, cible, texte, croit, nom;
+    for (let essai = 0; essai < 300; essai++) {
+      if (cas === 'baisse') { v0 = aleaParmi([1, 2, 5, 10, 20]); taux = aleaParmi([5, 8, 10, 12, 15, 20, 25]); cible = v0 * aleaParmi([0.5, 0.25, 0.1, 0.8]); croit = false; }
+      else if (cas === 'hausse') { v0 = aleaParmi([50, 57, 100, 200, 500, 1000]); taux = aleaParmi([2, 3, 4, 5, 8, 10]); cible = v0 * aleaParmi([1.5, 2, 3]); croit = true; }
+      else { v0 = aleaParmi([100, 200, 500, 1000]); taux = 100; cible = v0 * aleaParmi([50, 100, 500, 1000]); croit = true; }
+      const f = 1 + (croit ? 1 : -1) * taux / 100;
+      let v = v0, n = 0; while ((croit ? v <= cible : v >= cible) && n < 200) { v *= f; n++; }
+      const prec = v0 * Math.pow(f, n - 1);
+      if (n < 3 || n > 30 || Math.abs(v - cible) / cible < 1e-6 || Math.abs(prec - cible) / cible < 1e-6) continue;
+      const lin = Math.ceil(Math.abs(cible - v0) / (v0 * taux / 100));          // erreur classique : évolution linéaire
+      const ent = x => (Number.isInteger(x) ? String(x) : dec(x)), entm = x => (Number.isInteger(x) ? String(x) : decL(x));
+      nom = { baisse: `Un récipient contient ${ent(v0)} litre${v0 > 1 ? 's' : ''} d'eau. Chaque heure, le volume d'eau diminue de ${taux}\\,\\%. Au bout de combien d'heures entières le volume est-il strictement inférieur à ${ent(cible)} litre${cible > 1 ? 's' : ''} ?`,
+        hausse: `Une action est cotée ${ent(v0)}\\,€. Sa valeur augmente de ${taux}\\,\\% chaque mois. Au bout de combien de mois entiers sa valeur dépasse-t-elle strictement ${ent(cible)}\\,€ ?`,
+        double: `Une population de bactéries compte ${ent(v0)} individus et double toutes les heures. Au bout de combien d'heures entières la population dépasse-t-elle strictement ${ent(cible)} individus ?` }[cas];
+      const cand = (cas === 'double' ? [n - 1, n + 1, n + 3, n + 2, n - 2] : [n - 1, n + 1, lin, n + 2, n - 2]).filter(x => x > 0 && x !== n);
+      const nb = x => opt(m(String(x)), 'num:' + x);
+      const choix = unique(cand.map(nb), ['num:' + n]).slice(0, 3);
+      if (choix.length < 3) continue;
+      return qcm(nom.replace(/\\,/g, ' ').replace(/\\%/g, '%').replace(/€/g, '€'), nb(n), choix,
+        { explication: `Le modèle est une suite géométrique de raison ${m(decL(f))} et de premier terme ${m(entm(v0))} : on cherche le plus petit entier ${m('n')} tel que ${m(`${entm(v0)}\\times ${decL(f)}^n ${croit ? '\\gt' : '\\lt'} ${entm(cible)}`)}. À la calculatrice, on trouve ${m(`n=${n}`)}.`,
+          meta: { v0, f, cible, croit } });
+    }
+    return null;
+  }
+  function conditionBoucle() {      // algorithme de seuil à compléter
+    const p = aleaParmi([2, 3]), q = aleaParmi([0, 1, 2, 3]), a = alea(1, 5), S = alea(30, 400);
+    const large = Math.random() < 0.5;               // « u_n ≥ S » ou « u_n > S »
+    const expr = (p === 1 ? 'u' : `${p} * u`) + (q ? ` + ${q}` : '');
+    const code = ['def seuil(S):', '    n = 0', `    u = ${a}`, '    while ......... :', `        u = ${expr}`, '        n = n + 1', '    return n'];
+    const OP = ['u < S', 'u <= S', 'u > S', 'u >= S'];
+    const juste = large ? 'u < S' : 'u <= S';
+    const objectif = large ? `le plus petit entier ${m('n')} tel que ${m(T`u_n\ge S`)}` : `le plus petit entier ${m('n')} tel que ${m(T`u_n\gt S`)}`;
+    const opt2 = o => opt(`<code>${o.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>`, 'cond:' + o);
+    return qcm(`Dans la fonction Python suivante, ${m(T`u_0=${a}`)} et ${m(T`u_{n+1}=${p === 1 ? '' : p}u_n${q ? '+' + q : ''}`)}.${CODE(code)}La fonction doit renvoyer ${objectif}. Par quelle condition faut-il remplacer les pointillés ?`,
+      opt2(juste), OP.filter(o => o !== juste).map(opt2),
+      { explication: `La boucle doit continuer tant que l'objectif n'est pas atteint, donc tant que ${m(large ? T`u_n\lt S` : T`u_n\le S`)}. À la sortie, ${large ? m(T`u_n\ge S`) : m(T`u_n\gt S`)} est vrai pour la première fois.`,
+        meta: { a, p, q, large } });
+  }
+
+  // ==========================================================================
   // Enregistrement
   // ==========================================================================
   Automatismes.enregistrerBanque('suites', {
@@ -577,12 +680,12 @@
       'oscillante': famille({ nom: 'limite avec (−1)ⁿ', niveaux: [1, 2, 3], base: n => (n === 1 ? oscillanteN1() : oscillanteN2()), variantes3: [oscillanteN3a, oscillanteN3b, oscillanteN3c], partBase3: 0.15 }),
       'nature': famille({ nom: 'nature d’une suite', niveaux: [1, 2, 3], base: n => (n === 1 ? natureN1() : natureInversion()), variantes3: [natureExpression, natureDecalage], partBase3: 0.2 }),
       'variations': famille({ nom: 'sens de variation', niveaux: [1, 2, 3], base: n => (n === 1 ? sensN1() : recurrenteN2()), variantes3: [recurrenteLimite, recurrenteCarre], partBase3: 0.2 }),
-      'gendarmes': famille({ nom: 'gendarmes et comparaison', niveaux: [2, 3], base: gendarmesN2, variantes3: [gendarmesMonotone, comparaisonInfinie], partBase3: 0.3 }),
-      'geometrique': famille({ nom: 'suites géométriques et limites', niveaux: [1, 2, 3], base: n => (n === 1 ? geomN1() : geomN2()), variantes3: [geomSomme, geomCroissComparee, geomQuotient], partBase3: 0.1 }),
+      'gendarmes': famille({ nom: 'gendarmes et comparaison', niveaux: [2, 3], base: () => (Math.random() < 0.3 ? encadrementExplicite() : gendarmesN2()), variantes3: [gendarmesMonotone, comparaisonInfinie, encadrementExplicite], partBase3: 0.2 }),
+      'geometrique': famille({ nom: 'suites géométriques et limites', niveaux: [1, 2, 3], base: n => (n === 1 ? geomN1() : geomN2()), variantes3: [geomSomme, geomCroissComparee, geomQuotient, geomQuotientBases], partBase3: 0.1 }),
       'arithmetico-geometrique': famille({ nom: 'suite arithmético-géométrique', niveaux: [1, 2, 3], base: n => (n === 1 ? arithGeoN1() : arithGeoN2()), variantes3: [arithGeoLimite, arithGeoExpression], partBase3: 0.1 }),
-      'convergence-monotone': famille({ nom: 'convergence monotone', niveaux: [2, 3], base: monotoneN2, variantes3: [adjacentes], partBase3: 0.5 }),
+      'convergence-monotone': famille({ nom: 'convergence monotone', niveaux: [2, 3], base: () => (Math.random() < 0.25 ? limiteInegalite() : monotoneN2()), variantes3: [adjacentes, limiteInegalite], partBase3: 0.4 }),
       'recurrence': famille({ nom: 'raisonnement par récurrence', niveaux: [2, 3], base: heredite, variantes3: [herediteRacine], partBase3: 0.4 }),
-      'algorithme-seuil': famille({ nom: 'algorithme de seuil', niveaux: [2, 3], base: () => seuilPython(2), variantes3: [() => seuilPython(3)], partBase3: 0 })
+      'algorithme-seuil': famille({ nom: 'algorithme de seuil', niveaux: [2, 3], base: () => (Math.random() < 0.4 ? (Math.random() < 0.5 ? seuilContexte() : conditionBoucle()) : seuilPython(2)), variantes3: [() => seuilPython(3), seuilContexte, conditionBoucle], partBase3: 0.0 })
     }
   });
 })();
