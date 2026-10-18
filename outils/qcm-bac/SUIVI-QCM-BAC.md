@@ -108,3 +108,7 @@ retire rien, la note ne descend pas sous 0) — valeur à confirmer par David, e
 - **À valider par David** : la valeur de la pénalité, la lecture des questions des deux thèmes (surtout le niveau 3),
   l'équilibre 5 + 5, puis la suite : autres thèmes (exponentielle et logarithme, dérivation et convexité, intégration,
   probabilités et dénombrement, équations différentielles), puis navigation, accueil, comptes et devoirs.
+
+- **Répartition par thème des affirmations et QCM (18/10/2026)** : `outils/qcm-bac/repartition-themes.md` — géométrie dans l'espace 36 %,
+  suites 22 %, équations différentielles 9 %, probabilités 7 %, dénombrement 6 %, exponentielle et logarithme 6 %. Sert à ordonner
+  les prochains thèmes.
