@@ -328,8 +328,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 - **Bloc « QCM Bac » (Terminale spécialité)** — neuf banques codées les 17-18/10/2026 (`qcm-bac/banques/01…09`), page d'accueil
   `qcm-bac/index.html`, fiche `qcm-bac/fiche.html` (`?theme=<id>` pour un thème seul), contrôle
   `outils/qcm-bac/controle-banques.js`. **Lié depuis le site le 18/10/2026** (sur la branche `claude/gifted-carson-92cmm8`, pas
-  encore fusionné dans `master`) : pastille « QCM Bac » ambre `#F3CF7A` / texte `#4A3300` (`.nav-vedette-ambre`) dans la barre de
-  navigation des 26 pages à en-tête standard, carte ambre `.bento-carte--ambre` sur l'accueil. **Ouvert à tous les élèves, sans
+  encore fusionné dans `master`) : pastille « QCM Bac » ambre `#FBE9B7` (même fond que la carte `.bento-carte--ambre`, bordure `#F3CF7A`) / texte `#4A3300` (`.nav-vedette-ambre`) dans la barre de
+  navigation des 26 pages à en-tête standard, carte ambre `.bento-carte--ambre` sur l'accueil, à côté de la carte Première dans la section « Automatismes et QCM Bac ». **Ouvert à tous les élèves, sans
   compte, sans suivi de devoir** (pas de `suivi.js` sur ces pages ; comptes de Terminale et devoirs à faire plus tard : le code
   distingue encore Seconde/Première et `assets/js/mes-devoirs.js` ligne 40 pointe en dur vers `/automatismes/premiere/`).
   Fréquentation : `statistiques.js` range ces pages dans la partie `automatismes` (clés de page `qcm-bac`, `qcm-bac-fiche`), car
