@@ -15,6 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const LX = require('./latex-eval.js');
 
 const RACINE = path.join(__dirname, '..', '..');
 const args = process.argv.slice(2);
@@ -423,6 +424,184 @@ F['geometrie-espace/position'] = q => {
     if (k === 'inc') return nu === 0 && Ain;
     if (k === 'orth') return col(M.u, M.c);
     throw new Error('clé inconnue ' + k);
+  });
+};
+
+// ---------- banque « fonctions » : vérité recalculée depuis le LaTeX AFFICHÉ (outils/qcm-bac/latex-eval.js) ----------
+const dnum = (f, x) => { const h = 1e-5 * Math.max(1, Math.abs(x)); return (f(x + h) - f(x - h)) / (2 * h); };
+const d2num = (f, x) => { const h = 1e-3 * Math.max(1, Math.abs(x)); return (f(x + h) - 2 * f(x) + f(x - h)) / (h * h); };
+const points = (dom, n) => Array.from({ length: n || 9 }, (_, i) => dom[0] + (dom[1] - dom[0]) * (i + 0.5 + 0.0137 * i) / (n || 9));
+const proche = (a, b, tol) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= (tol || 1e-6) * (1 + Math.abs(a) + Math.abs(b));
+const droite = o => LX.membreDroit(LX.mathDe(o.affichage));
+function enonceContient(q, tex) { if (!q.enonce.includes(tex)) throw new Error('l\'énoncé ne contient pas fTex : ' + tex); }
+F['fonctions/derivees'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), xs = points(M.dom);
+  return q.options.map(o => { const g = LX.fonction(droite(o)); return xs.every(x => proche(g(x), dnum(f, x), 1e-6)); });
+};
+
+F['fonctions/primitives'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), xs = points(M.dom);
+  return q.options.map(o => {
+    const G = LX.fonction(droite(o));
+    return xs.every(x => proche(dnum(G, x), f(x), 1e-6)) && (!M.cond || proche(G(M.cond.x0), M.cond.y0, 1e-9));
+  });
+};
+
+// équations et inéquations : vérité d'un ensemble affiché (intervalles, réunions, ensembles finis) contre le prédicat de l'énoncé
+function racines(g, dom) {
+  const xs = [];
+  for (let i = -4000; i <= 4000; i++) xs.push(i * 0.0071);                         // grille linéaire
+  for (let i = 0; i <= 6000; i++) xs.push(Math.exp(-20 + 26 * i / 6000));            // grille logarithmique (racines proches de 0+)
+  xs.sort((a, b) => a - b);
+  const res = [];
+  for (let i = 0; i + 1 < xs.length; i++) {
+    const a = xs[i], b = xs[i + 1];
+    if (!dom(a) || !dom(b)) continue;
+    const ga = g(a), gb = g(b);
+    if (!Number.isFinite(ga) || !Number.isFinite(gb)) continue;
+    if (ga === 0 || ga * gb < 0) {
+      let lo = a, hi = b;
+      for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (g(lo) * g(mid) <= 0) hi = mid; else lo = mid; }
+      const r = (lo + hi) / 2;
+      if (!res.some(x => Math.abs(x - r) < 1e-7 * (1 + Math.abs(r)))) res.push(r);
+    }
+  }
+  return res;
+}
+F['fonctions/equations'] = q => {
+  const M = q.meta;
+  const args = (M.args || []).map(a => LX.fonction(a));
+  const dom = (x, marge) => args.every(a => { const v = a(x); return Number.isFinite(v) && v > (marge || 0); });
+  if (M.type !== 'dom') enonceContient(q, M.g);
+  const g = M.type === 'dom' ? null : LX.fonction(M.g), h = M.type === 'dom' ? null : LX.fonction(M.h);
+  if (M.type === 'dom') { const lncontenu = args.length; if (!lncontenu) throw new Error('domaine sans argument'); }
+  const sol = M.type === 'eq' ? racines(x => g(x) - h(x), dom) : null;
+  const rel = (x, tol) => { const d = g(x) - h(x); return { '=': Math.abs(d) <= tol, '<': d < -tol, '>': d > tol, '<=': d <= tol, '>=': d >= -tol }[M.op]; };
+  return q.options.map(o => {
+    const E = LX.ensemble(LX.mathDe(o.affichage));
+    if (M.type === 'eq') {
+      const pts = E.morceaux.filter(z => z.pt !== undefined).map(z => z.pt);
+      return pts.length === sol.length && pts.every(p => sol.some(r => Math.abs(p - r) < 1e-6 * (1 + Math.abs(r)))) && sol.every(r => pts.some(p => Math.abs(p - r) < 1e-6 * (1 + Math.abs(r))));
+    }
+    const pred = x => dom(x) && (M.type === 'dom' || rel(x, 0));
+    const predBord = x => dom(x, 1e-9) && (M.type === 'dom' || rel(x, 1e-9));
+    const xs = [];
+    for (let i = -3000; i <= 3000; i++) xs.push(i * 0.0113 + 0.00071);
+    for (const x of xs) { if (E.bornes().some(b => Math.abs(b - x) < 2e-3)) continue; if (E.contient(x) !== !!pred(x)) return false; }
+    for (const b of E.bornes()) {                                                    // bornes ouvertes / fermées : seulement aux vraies frontières
+      const vraieFrontiere = !!pred(b - 1e-4) !== !!pred(b + 1e-4);
+      if (vraieFrontiere && E.contient(b) !== !!predBord(b)) return false;
+    }
+    return true;
+  });
+};
+
+// limites de fonctions : échantillons à des distances croissantes ; « exp » si la formule contient e^
+function limiteFonction(fTex, at) {
+  const f = LX.fonction(fTex);
+  const echelles = at === 'inf' ? [[1e3, 1e6, 1e9], [30, 60, 120]] : at === '-inf' ? [[-1e3, -1e6, -1e9], [-30, -60, -120]] : at === '0+' ? [[1e-3, 1e-6, 1e-9]] : [[1e-3, 1e-5, 1e-7]];
+  const classe = (L) => {
+    const v = L.map(x => f(x));
+    if (v.some(z => !Number.isFinite(z))) return { type: 'nan' };
+    const d1 = Math.abs(v[1] - v[0]), d2 = Math.abs(v[2] - v[1]);
+    if (d2 < 1e-6 || d2 < 0.1 * d1) return { type: 'lim', x: v[2] };
+    if (Math.abs(v[2]) > Math.abs(v[1]) && Math.abs(v[1]) > Math.abs(v[0]) && Math.abs(v[2]) > 10 && Math.sign(v[0]) === Math.sign(v[2])) return { type: v[2] > 0 ? 'inf' : '-inf' };
+    return { type: 'nolim' };
+  };
+  for (const L of echelles) {                       // échelle large d'abord ; si débordement (e^1000…), échelle réduite
+    if (at === '0') { const a = classe(L), b = classe(L.map(x => -x)); return a.type === 'lim' && b.type === 'lim' && Math.abs(a.x - b.x) < 1e-3 ? a : { type: 'nolim' }; }
+    const r = classe(L);
+    if (r.type !== 'nan') return r;
+  }
+  return { type: 'nan' };
+}
+F['fonctions/limites'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const L = limiteFonction(M.fTex, M.at), f = LX.fonction(M.fTex);
+  if (L.type === 'nan' || L.type === 'nolim') throw new Error('limite non classée : ' + M.fTex + ' en ' + M.at + ' -> ' + JSON.stringify(L));
+  if (M.asym) {                                      // droites asymptotes d'un quotient affine
+    return q.options.map(o => {
+      const d = LX.mathDe(o.affichage), val = LX.valeur(LX.membreDroit(d));
+      if (d.startsWith('y=')) return L.type === 'lim' && Math.abs(val - L.x) < 1e-3 * (1 + Math.abs(val));
+      return false;
+    });
+  }
+  return q.options.map(o => {
+    const v = LX.valeur(LX.mathDe(o.affichage));
+    if (L.type === 'inf') return v === Infinity;
+    if (L.type === '-inf') return v === -Infinity;
+    return Number.isFinite(v) && Math.abs(v - L.x) < 2e-3 * (1 + Math.abs(L.x));
+  });
+};
+
+F['fonctions/tangente'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex);
+  if (M.horiz) return q.options.map(o => { const v = LX.valeur(droite(o)); return Number.isFinite(f(v)) && Math.abs(dnum(f, v)) <= 1e-6 * Math.abs(f(v)) + 1e-14; });
+  return q.options.map(o => {
+    const g = LX.fonction(droite(o)), a = M.a;
+    return proche(g(a), f(a), 1e-7) && proche(g(a + 1) - g(a), dnum(f, a), 1e-6);
+  });
+};
+
+F['fonctions/convexite'] = q => {
+  const M = q.meta; enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), tol = x => 1e-5 * (1 + Math.abs(f(x)));
+  if (M.inflexion !== undefined) {                  // M.fTex est ici f'' : on compte ses changements de signe
+    let n = 0, prec = 0;
+    for (let x = -6; x <= 6; x += 0.00731) { const v = f(x); if (Math.abs(v) < 1e-12) continue; const sg = Math.sign(v); if (prec && sg !== prec) n++; prec = sg; }
+    return q.options.map(o => Number(o.cle.slice(4)) === n);
+  }
+  if (M.cvxSet) {
+    return q.options.map(o => {
+      const E = LX.ensemble(LX.mathDe(o.affichage)), bornes = E.bornes();
+      for (let x = -12; x <= 12; x += 0.0173) {
+        if (bornes.some(b => Math.abs(b - x) < 0.02) || !E.contient(x)) continue;
+        if (d2num(f, x) < -tol(x)) return false;
+      }
+      return true;
+    });
+  }
+  const [lo, hi] = M.win, pas = (hi - lo) / 2400;
+  return q.options.map(o => {
+    const [genre, a] = o.cle.split(':'), A = Number(a);
+    for (let x = lo + pas / 2; x < hi; x += pas) {
+      const d = d2num(f, x), t = tol(x);
+      if (genre === 'cvx' && d < -t) return false;
+      if (genre === 'ccv' && d > t) return false;
+      if (genre === 'cc' && Math.abs(x - A) > 0.03 && ((x < A && d > t) || (x > A && d < -t))) return false;
+      if (genre === 'cv' && Math.abs(x - A) > 0.03 && ((x < A && d < -t) || (x > A && d > t))) return false;
+    }
+    return true;
+  });
+};
+F['fonctions/calcul'] = q => {
+  const M = q.meta;
+  if (M.ineg) {
+    const speciaux = [0, 1, -1, 2, -2, 3, 0.5].concat([2, 3, 4, 5, 6].flatMap(k => [Math.log(k), -Math.log(k), 1 / k, k, -k]));      // points d'égalité courants (ln k, 1/k…)
+    const dansDom = x => (M.dom === 'R' ? true : M.dom === 'pos' ? x > 0 : x > -1);
+    const xs = Array.from({ length: 40 }, (_, i) => (M.dom === 'R' ? -4 + i * 0.25 : M.dom === 'pos' ? 0.25 + i * 0.25 : -0.75 + i * 0.25)).concat(speciaux).filter(dansDom);
+    return q.options.map(o => {
+      const R = LX.relation(LX.mathDe(o.affichage));
+      return xs.every(x => { const a = R.gauche(x), b = R.droite(x), e = 1e-12 * (1 + Math.abs(a) + Math.abs(b)); return { '>=': a >= b - e, '<=': a <= b + e, '>': a > b + e, '<': a < b - e }[R.op]; });
+    });
+  }
+  enonceContient(q, M.fTex);
+  const f = LX.fonction(M.fTex), xs = [-1.7, -0.6, 0.3, 1.1, 2.2];
+  return q.options.map(o => { const g = LX.fonction(LX.mathDe(o.affichage)); return xs.every(x => proche(g(x), f(x), 1e-9)); });
+};
+F['fonctions/equations-differentielles'] = q => {
+  const M = q.meta, Cs = [1.3, -2.1];
+  if (M.odeInv) { enonceContient(q, M.fTex); const f = LX.fonction(M.fTex); return q.options.map(o => { const a = LX.fonction(droite(o))(0, { y: 1 }); return [-1, 0.4, 1.3].every(x => proche(dnum(f, x), a * f(x), 1e-6)); }); }
+  return q.options.map(o => {
+    const y = LX.fonction(droite(o)), xs = [-1, 0.4, 1.3];
+    const ok = Cs.every(C => xs.every(x => proche(dnum(t => y(t, { C }), x), M.a * y(x, { C }) + M.b, 1e-6)));
+    if (!ok) return false;
+    if (M.mode === 'gen') return Math.abs(y(0.5, { C: Cs[0] }) - y(0.5, { C: Cs[1] })) > 1e-6;
+    if (M.mode === 'cond') return proche(y(M.cond.x0, { C: 0 }), M.cond.y0, 1e-9);
+    return Math.abs(y(0.5, { C: Cs[0] }) - y(0.5, { C: Cs[1] })) < 1e-9;           // constante
   });
 };
 

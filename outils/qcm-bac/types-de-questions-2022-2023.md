@@ -36,7 +36,7 @@ paramétrable, avec trois mauvaises réponses qui reprennent des erreurs classiq
 
 ## Exponentielle, logarithme, dérivation, primitives, limites (43 + 19 + 4 questions)
 
-Thème **non encore codé** : c'est le gros morceau des QCM de 2022 et 2023. Types rencontrés :
+Thème **codé le 18/10/2026** (banque `fonctions`, voir `SUIVI-QCM-BAC.md` §8), sauf la lecture graphique (pas de figure). C'est le gros morceau des QCM de 2022 et 2023. Types rencontrés :
 
 - Dérivée de `x²ln x`, de `(x+1)e^x`, de `ln(x²+x+1)`, de `x/e^x`, de `x e^{x²−3}`.
 - Primitive de `xe^x`, `(x+1)e^x`, `x e^{x²}`, `ln x`, `e^{2x+1}` avec condition `F(0)=1`, `3e^{−x²}+2`, `x/(1−x²)`.

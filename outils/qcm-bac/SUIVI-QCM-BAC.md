@@ -153,3 +153,30 @@ thème), puis alimentation des banques.
 - **Contrôle** : 92 000 questions, 0 anomalie, détection des erreurs volontaires 2 747 / 2 747.
 - **Pas encore de banque** pour les thèmes qui dominent 2022 et 2023 : exponentielle, logarithme, dérivées, primitives, limites de
   fonctions, probabilités. C'est la suite logique (voir « Ordre conseillé révisé » dans `repartition-themes.md`).
+
+## 8. Banque « Exponentielle et logarithme » (fonctions), codée le 18/10/2026
+
+À la demande de David (« commence par la banque fonctions »). Fichier : `qcm-bac/banques/03-fonctions.js`, identifiant `fonctions`,
+chargée par la page pilote `qcm-bac/fiche.html` (`?theme=fonctions` pour ne travailler que ce thème).
+
+- **8 familles** : dérivées, primitives, équations et inéquations (ensemble de définition, `e^{ax+b}=k`, `ln`, équation du second degré
+  en `e^x` ou en `ln x`, inéquations avec les quatre symboles), limites (croissances comparées, quotients, asymptote horizontale,
+  quantité conjuguée, taux d'accroissement), tangente (équation réduite, tangente horizontale), convexité et points d'inflexion
+  (affirmations, intervalle de convexité, nombre de points d'inflexion), calcul avec `ln` et `exp` (simplifications, inégalités
+  classiques `e^x ≥ x+1`, `ln x ≤ x−1`…), équations différentielles `y'=ay+b` (solutions générales, condition initiale, solution
+  constante, fonction donnée → équation).
+- **Niveaux** : 1 = règle de base ; 2 = questions des sujets (produit, quotient, composée, croissances comparées, tangente) ;
+  3 = composées imbriquées, intégration par parties, inéquations, conditions initiales. Convexité : niveaux 2 et 3 seulement.
+- **Contrôle indépendant renforcé** : nouvel évaluateur LaTeX `outils/qcm-bac/latex-eval.js`. Pour cette banque, le contrôle ne se
+  fie à aucune clé annexe : il **relit le LaTeX affiché** (énoncé et chaque option), l'évalue numériquement (dérivée par
+  différences finies, racines par balayage, limites à trois distances, convexité par dérivée seconde, intervalles et ensembles
+  analysés) et recalcule si chaque option est vraie. `controle-banques.js` : 103 500 questions (toutes banques), 0 anomalie,
+  erreurs volontaires détectées 4 134 / 4 134.
+- **Défauts attrapés par ce contrôle** : réponses équivalentes parmi les mauvaises (`{e^3 ; e^{-3}}` quand les deux racines sont
+  opposées), tangente identique quand `f(1)=0`, intervalles « vacuously true » hors de la fenêtre testée, inégalité stricte vraie
+  sauf en un point d'égalité (`e^{2x}+4 > 4e^x`), valeur à tolérance trop large (tangente horizontale).
+- **Variété** (énoncés distincts sur 3 000 tirages) : de 52 (tangente N3) à plus de 1 000 ; la plupart des familles dépassent 120.
+- **Essai navigateur** : 42 fiches tirées (3 niveaux), 3 402 formules, 0 erreur MathJax, pas de défilement horizontal sur
+  téléphone, aucune erreur console.
+- **Restent hors banque (pas de figure)** : lecture graphique (courbe de `f'`, de `f''`, tableau de variation), nombre de
+  solutions de `f(x)=k`. Autres thèmes : probabilités et dénombrement (suite conseillée), intégrales, trigonométrie.

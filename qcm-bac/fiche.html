@@ -22,10 +22,10 @@ window.MathJax = {
 </p>
 
 <div class="entete">
-  <div class="badge" title="Deux thèmes, 10 questions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg></div>
+  <div class="badge" title="Deux thèmes tirés au sort, 10 questions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg></div>
   <div>
     <h1 id="titre-fiche">QCM Bac — Terminale spécialité</h1>
-    <p class="sous-titre" id="sous-titre-fiche">Pilote : suites et géométrie dans l'espace — 10 questions, 5 par thème</p>
+    <p class="sous-titre" id="sous-titre-fiche">Pilote : suites, géométrie dans l'espace, fonctions — 10 questions, 2 thèmes tirés au sort</p>
   </div>
 </div>
 <div class="filet"></div>
@@ -41,11 +41,12 @@ window.MathJax = {
 <script src="../automatismes/assets/moteur.js?v=20261017"></script>
 <script src="banques/01-suites.js?v=20261017"></script>
 <script src="banques/02-geometrie-espace.js?v=20261017"></script>
+<script src="banques/03-fonctions.js?v=20261018"></script>
 <script>
-  // Page pilote (17/10/2026) : fiche libre, sans suivi de devoir (pas de comptes de Terminale pour l'instant).
+  // Page pilote (17/10/2026, banque fonctions ajoutée le 18/10/2026) : fiche libre, sans suivi de devoir (pas de comptes de Terminale pour l'instant).
   document.addEventListener('DOMContentLoaded', function () {
     Automatismes.demarrer({
-      banques: ['suites', 'geometrie-espace'],
+      banques: ['suites', 'geometrie-espace', 'fonctions'],
       nbThemes: 2,
       nb: 10,
       modeDefaut: 'fiche',
@@ -60,6 +61,15 @@ window.MathJax = {
         3: 'Niveau 3 — plus difficile : plusieurs étapes, pièges, notions d\'approfondissement. Chaque mauvaise réponse retire 0,25 point ; une question laissée sans réponse ne retire rien.'
       }
     });
+    // titre adapté quand un thème unique est demandé dans l'adresse (fiche.html?theme=fonctions)
+    (function () {
+      const impose = Automatismes.etat.config.themeImpose;
+      if (!impose) return;
+      const titre = Automatismes.titreBanque(impose);
+      document.title = titre + ' — QCM Bac Terminale';
+      document.getElementById('titre-fiche').textContent = titre;
+      document.getElementById('sous-titre-fiche').textContent = 'QCM Bac — un seul thème, 10 questions';
+    })();
   });
 </script>
 </body>
