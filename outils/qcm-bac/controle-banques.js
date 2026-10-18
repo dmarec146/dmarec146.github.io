@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const LX = require('./latex-eval.js');
+const { spawnSync } = require('child_process');
 
 const RACINE = path.join(__dirname, '..', '..');
 const args = process.argv.slice(2);
@@ -31,6 +32,7 @@ contexte.window = contexte;
 vm.createContext(contexte);
 function charger(chemin) { vm.runInContext(fs.readFileSync(chemin, 'utf8'), contexte, { filename: chemin }); }
 charger(path.join(RACINE, 'automatismes/assets/moteur.js'));
+charger(path.join(RACINE, 'automatismes/assets/graphiques.js'));
 const dirBanques = path.join(RACINE, 'qcm-bac/banques');
 for (const f of fs.readdirSync(dirBanques).filter(f => f.endsWith('.js')).sort()) charger(path.join(dirBanques, f));
 const A = contexte.Automatismes;
@@ -940,15 +942,48 @@ F['trigonometrie/formules'] = q => {
   return q.options.map(o => { const [g, d] = LX.mathDe(o.affichage).split('='); const fg = LX.fonction(g), fd = LX.fonction(d); const paires = [[0.3, 1.1], [1.7, -0.4], [2.2, 0.9], [-1.3, 0.6], [0.8, 2.4]]; const vraie = paires.every(([x, y]) => proche(fg(x, { y }), fd(x, { y }), 1e-9)); return M.neg ? !vraie : vraie; });
 };
 
+// ---------- banque « algorithmique » : le programme Python affiché est EXÉCUTÉ (python3, mode isolé) ----------
+const cachePy = new Map();
+function pyEval(code, expr) {
+  const cle = code + '\u0000' + expr; if (cachePy.has(cle)) return cachePy.get(cle);
+  const r = spawnSync('python3', ['-I', '-c', code + '\nprint(repr(' + expr + '))'], { timeout: 1500, encoding: 'utf8' });
+  if (r.status !== 0) throw new Error('python : ' + String(r.stderr || r.error || 'délai dépassé').slice(0, 160));
+  const v = Number(r.stdout.trim()); cachePy.set(cle, v); return v;
+}
+const verifLecture = q => { const M = q.meta, v = pyEval(M.code, M.appel); return q.options.map(o => egale(valeurOption(o), v, 1e-9)); };
+F['algorithmique/lecture'] = verifLecture;
+F['algorithmique/euler'] = q => {
+  const M = q.meta; if (M.tipo === 'lecture') return verifLecture(q);
+  if (M.kind === 'formule') { const y1 = M.y0 + M.h * (M.a * M.y0 + M.b); return q.options.map(o => egale(valeurOption(o), y1, 1e-9)); }
+  let y = 1; const ys = [y]; for (let k = 0; k < 4; k++) { y = y + M.h * M.a * y; ys.push(y); }
+  return q.options.map(o => ys.slice(1).every((v, i) => egale(v / ys[i], valeurOption(o), 1e-9)));
+};
+F['algorithmique/rectangles'] = q => {
+  const M = q.meta; if (M.tipo === 'lecture') return verifLecture(q);
+  const f = LX.fonction(M.fTex), I = simpson(x => f(x), M.a, M.b, 20000);
+  const gauche = n => { const h = (M.b - M.a) / n; let s = 0; for (let k = 0; k < n; k++) s += h * f(M.a + k * h); return s; };
+  const mino = [4, 10, 50].every(n => gauche(n) < I - 1e-12), majo = [4, 10, 50].every(n => gauche(n) > I + 1e-12);
+  return q.options.map(o => ({ minorant: mino, majorant: majo, egal: false, rien: false })[o.cle]);
+};
+F['algorithmique/completer'] = q => {
+  const M = q.meta, ref = M.ref.join('\n');
+  const attendus = M.appelRef.map(a => pyEval(ref, a));
+  return q.options.map(o => {
+    const code = M.template.join('\n').replace('{}', o.cle);
+    try { return M.appels.every((a, i) => egale(pyEval(code, a), attendus[i], 1e-9 * (1 + Math.abs(attendus[i])))); } catch (e) { return false; }
+  });
+};
+
 // ---------- contrôle de rédaction ----------
 function redaction(q) {
   const pb = [];
   const textes = [q.enonce, q.explication || '', ...q.options.map(o => o.affichage)];
-  for (const t of textes) {
-    if (typeof t !== 'string') { pb.push('texte non chaîne'); continue; }
+  for (const t0 of textes) {
+    if (typeof t0 !== 'string') { pb.push('texte non chaîne'); continue; }
+    const t = t0.replace(/<pre[\s\S]*?<\/pre>/g, '').replace(/<code>[\s\S]*?<\/code>/g, '');          // le code Python est vérifié par exécution, pas par ces motifs
     if (/NaN|undefined|Infinity|null/.test(t)) pb.push('valeur invalide : ' + t.slice(0, 60));
     if (/<[A-Za-z]/.test(t.replace(/<\/?(pre|code|br)\b[^>]*>/g, ''))) pb.push('< suivi d\'une lettre (balise HTML involontaire, écrire \\lt) : ' + t.slice(0, 80));
-    if (/\+-|-\+|--|\+\+|(?<!\}|_\w)\^\{1\}|\(\)/.test(t.replace(/\\\(|\\\)/g, ''))) pb.push('signe collé ou exposant 1 : ' + t.slice(0, 80));
+    { const tt = t.replace(/\\\(|\\\)/g, ''), mm = /\+-|-\+|--|\+\+|(?<!\}|_\w)\^\{1\}|\(\)/.exec(tt); if (mm) pb.push('signe collé ou exposant 1 : …' + tt.slice(Math.max(0, mm.index - 40), mm.index + 40) + '…'); }
     if ((t.match(/\\\(/g) || []).length !== (t.match(/\\\)/g) || []).length) pb.push('\\( \\) non appariés : ' + t.slice(0, 60));
     if (/(^|[^\d.])1\\times\s*(\\left|\\dfrac|\\sqrt|[a-z])|\\left\(1\\,/.test(t)) pb.push('coefficient 1 : ' + t.slice(0, 60));
     if (/\{,\}/.test(t.replace(/\\\(.*?\\\)/g, ''))) pb.push('{,} hors zone math');
@@ -961,6 +996,102 @@ function redaction(q) {
   return pb;
 }
 
+// ---------- banque « lectures-graphiques » : la fonction tracée (drawTex) est relue et recalculée, indépendamment du générateur ----------
+function lectureGraphique(q) {
+  const M = q.meta, fn = LX.fonction(M.drawTex), pb = [];
+  for (const [x, y] of M.pts) {
+    if (Math.abs(fn(x) - y) > 1e-6) pb.push('le tracé ne suit pas la formule');
+    if (y < M.ymin - 1e-9 || y > M.ymax + 1e-9) pb.push('la courbe sort de la fenêtre');
+  }
+  if (!(M.xmin < 0 && M.xmax > 0 && M.ymin < 0 && M.ymax > 0)) pb.push('origine hors fenêtre');
+  if (!q.figure || !q.figure.includes('<polyline') && !q.figure.includes('<path')) pb.push('figure sans courbe');
+  return { fn, pb };
+}
+const enonceTexte = q => q.enonce.replace(/\\\(|\\\)/g, '');
+function monotone(g, a, b, sens) {            // g monotone (sens +1 croissante, -1 décroissante) sur [a, b]
+  let prec = g(a); for (let i = 1; i <= 400; i++) { const x = a + (b - a) * i / 400, v = g(x); if (sens * (v - prec) < -1e-9) return false; prec = v; }
+  return true;
+}
+function signeSur(g, a, b, sens) {            // g de signe sens (≥ 0 ou ≤ 0) sur [a, b]
+  for (let i = 0; i <= 400; i++) { const x = a + (b - a) * i / 400; if (sens * g(x) < -1e-9) return false; } return true;
+}
+function racinesDe(g, xmin, xmax, k) {
+  const r = []; const ajoute = x => { if (!r.length || x - r[r.length - 1] > 0.01) r.push(x); };
+  let prec = g(xmin) - k; if (Math.abs(prec) < 1e-9) ajoute(xmin);
+  for (let i = 1; i <= (xmax - xmin) * 1000; i++) { const x = xmin + i / 1000, v = g(x) - k; if (Math.abs(v) < 1e-9) ajoute(x); else if (Math.abs(prec) >= 1e-9 && prec * v < 0) ajoute(x); prec = v; }
+  return r;
+}
+function changementsDeSigne(g, xmin, xmax) {  // abscisses (entières ou non) où g change de signe : [{x, de: +1|-1}]
+  const res = []; let prec = g(xmin + 0.001);
+  for (let x = xmin + 0.002; x < xmax; x += 0.001) { const v = g(x); if (prec * v < 0 || (Math.abs(prec) < 1e-12 && false)) res.push({ x: Math.round(x * 100) / 100, de: Math.sign(prec) }); if (v !== 0) prec = v; }
+  return res;
+}
+const MATCH_TEXTE = {
+  cr: t => (/croissante/.test(t) && !/décroissante/.test(t) ? 1 : /décroissante/.test(t) ? -1 : 0),
+  ext: t => (/maximum local/.test(t) ? 1 : /minimum local/.test(t) ? -1 : 0),
+  cvx: t => (/convexe/.test(t) ? 1 : /concave/.test(t) ? -1 : 0)
+};
+const optionsIntervalles = (q, test) => q.options.map(o => { const e = LX.ensemble(o.cle); return e.morceaux.every(mc => test(mc.lo, mc.hi)); });
+const verifLG = (q, calcul) => {
+  const { fn, pb } = lectureGraphique(q); if (pb.length) throw new Error(pb[0]);
+  return calcul(fn, q.meta, enonceTexte(q));
+};
+F['lectures-graphiques/courbe-de-f'] = q => verifLG(q, (f, M, txt) => {
+  switch (M.tipo) {
+    case 'sol-k': {
+      const k = Number(/f\(x\)=(-?\d+)/.exec(txt)[1]); if (k !== M.k) throw new Error('k incohérent');
+      const n = racinesDe(f, M.xmin, M.xmax, k).length; return q.options.map(o => Number(o.cle) === n);
+    }
+    case 'var-f': { const s = MATCH_TEXTE.cr(txt); return optionsIntervalles(q, (a, b) => monotone(f, a, b, s)); }
+    case 'ext-f': {
+      const s = MATCH_TEXTE.ext(txt), ch = changementsDeSigne(x => (f(x + 1e-4) - f(x - 1e-4)), M.xmin + 0.01, M.xmax - 0.01);
+      const ext = ch.filter(c => c.de === s).map(c => f(c.x));   // maximum : la dérivée passe de + à −
+      if (ext.length !== 1) throw new Error('extremum non unique');
+      return q.options.map(o => Math.abs(Number(o.cle) - ext[0]) < 1e-6);
+    }
+    case 'infl-f': {
+      const ch = changementsDeSigne(x => (f(x + 1e-3) - 2 * f(x) + f(x - 1e-3)), M.xmin + 0.01, M.xmax - 0.01);
+      if (ch.length !== 1) throw new Error("point d'inflexion non unique");
+      return q.options.map(o => Math.abs(Number(o.cle) - ch[0].x) < 1e-6);
+    }
+    case 'signe-f': {
+      const pos = /\\ge 0/.test(q.enonce) ? 1 : -1;
+      return q.options.map(o => { const e = LX.ensemble(o.cle); for (let x = M.xmin; x <= M.xmax + 1e-9; x += 0.05) { if (e.contient(x, 1e-9) !== (pos * f(x) >= -1e-9)) return false; } for (const x of [M.xmin + 0.013, M.xmax - 0.013]) if (e.contient(x, 1e-9) !== (pos * f(x) >= -1e-9)) return false; return true; });
+    }
+    case 'tangente': {
+      const x0 = Number(/f'\((-?\d+)\)/.exec(txt)[1]), A = /A\((-?\d+)\\,;(-?\d+)\)/.exec(q.enonce);
+      if (x0 !== M.x0 || Number(A[1]) !== x0 || Math.abs(f(x0) - Number(A[2])) > 1e-9) throw new Error('point A incohérent');
+      const der = (f(x0 + 1e-5) - f(x0 - 1e-5)) / 2e-5;
+      if (Math.abs(M.tangente.a - der) > 1e-6 || Math.abs(M.tangente.a * x0 + M.tangente.b - f(x0)) > 1e-9) throw new Error('droite tracée ≠ tangente');
+      return q.options.map(o => Math.abs(Number(o.cle) - der) < 1e-6);
+    }
+    case 'integrale': {
+      const g = /\\int_\{(-?\d+)\}\^\{(-?\d+)\}/.exec(q.enonce); if (Number(g[1]) !== M.lo || Number(g[2]) !== M.hi) throw new Error('bornes incohérentes');
+      if (!signeSur(f, M.lo, M.hi, 1)) throw new Error('fonction non positive');
+      const I = simpson(x => f(x), M.lo, M.hi, 4000);
+      return q.options.map(o => { const mm = /^(-?\d+)\\le I\\le (-?\d+)$/.exec(o.cle); return I >= Number(mm[1]) && I <= Number(mm[2]); });
+    }
+    default: throw new Error('type inconnu ' + M.tipo);
+  }
+});
+F['lectures-graphiques/courbe-de-fp'] = q => verifLG(q, (g, M, txt) => {                // g est f' ou f''
+  switch (M.tipo) {
+    case 'var-fp': { const s = MATCH_TEXTE.cr(txt); return optionsIntervalles(q, (a, b) => signeSur(g, a, b, s)); }
+    case 'ext-fp': {
+      const s = MATCH_TEXTE.ext(txt), ch = changementsDeSigne(g, M.xmin, M.xmax).filter(c => c.de === s);
+      if (ch.length !== 1) throw new Error('extremum non unique');
+      return q.options.map(o => Math.abs(Number(o.cle) - ch[0].x) < 1e-6);
+    }
+    case 'conv-fp': { const s = MATCH_TEXTE.cvx(txt); return optionsIntervalles(q, (a, b) => monotone(g, a, b, s)); }       // f convexe ⇔ f' croissante
+    case 'infl-fpp': {
+      const ch = changementsDeSigne(g, M.xmin, M.xmax); if (ch.length !== 1) throw new Error('inflexion non unique');
+      return q.options.map(o => Math.abs(Number(o.cle) - ch[0].x) < 1e-6);
+    }
+    case 'conv-fpp': { const s = MATCH_TEXTE.cvx(txt); return optionsIntervalles(q, (a, b) => signeSur(g, a, b, s)); }      // f convexe ⇔ f'' ≥ 0
+    default: throw new Error('type inconnu ' + M.tipo);
+  }
+});
+
 // ---------- boucle principale ----------
 const montres = {};
 let anomalies = 0, tirages = 0, mutDetectees = 0, mutTotal = 0;
@@ -972,7 +1103,7 @@ for (const [idBanque, banque] of Object.entries(A.banques)) {
     if (!verif) { manquants.push(idBanque + '/' + idFam); }
     for (const niveau of fam.niveaux || [1, 2, 3]) {
       const vus = new Set(), vusAvecOptions = new Set(); let ok = 0, nuls = 0, mutOk = 0, mutN = 0;
-      for (let i = 0; i < ESSAIS; i++) {
+      for (let i = 0; i < (idBanque === 'algorithmique' ? Math.min(ESSAIS, 120) : ESSAIS); i++) {
         let q;
         try { q = fam.generer(niveau); } catch (e) { console.log(`ERREUR ${idBanque}/${idFam} N${niveau} : ${e.stack.split('\n').slice(0, 2).join(' ')}`); anomalies++; continue; }
         tirages++;
@@ -996,7 +1127,7 @@ for (const [idBanque, banque] of Object.entries(A.banques)) {
         }
         if (pb.length) { anomalies++; const cleFam = idBanque + '/' + idFam + niveau; montres[cleFam] = (montres[cleFam] || 0) + 1; if (montres[cleFam] <= 3) console.log(`ANOMALIE ${idBanque}/${idFam} N${niveau} : ${pb.join(' ; ')}\n    ${q.enonce.replace(/\s+/g, ' ').slice(0, 160)}`); }
         else ok++;
-        vus.add(q.enonce); vusAvecOptions.add(q.enonce + '||' + q.options.map(o => o.affichage).sort().join('|'));
+        vus.add(q.enonce + (q.figure ? '||' + q.figure : '')); vusAvecOptions.add(q.enonce + (q.figure ? '||' + q.figure : '') + '||' + q.options.map(o => o.affichage).sort().join('|'));
       }
       console.log(`${idBanque}/${idFam} N${niveau} : ${ok}/${ESSAIS} sans anomalie, ${vus.size} énoncés distincts (${vusAvecOptions.size} avec leurs propositions)${nuls ? `, ${nuls} tirages nuls` : ''}${MUTATION ? `, mutation détectée ${mutOk}/${mutN}` : ''}`);
       if (APERCU) {
