@@ -289,3 +289,11 @@ Deux nouvelles banques : `qcm-bac/banques/08-algorithmique.js` (identifiant `alg
   sur téléphone, figures affichées avec leur bouton d'agrandissement.
 - **Pas fait** : géométrie dans l'espace avec sphères (absentes des sources), fonction tangente en détail, approximation d'aire par suites
   adjacentes, trigonométrie en géométrie.
+
+## 12. Mise en navigation (18/10/2026)
+
+Sur demande de David : bloc ajouté à la barre de navigation (pastille ambre « QCM Bac » dans les 26 pages à en-tête standard, CSS
+`.nav-vedette-ambre`, resserrement des liens sous 400 px pour que les quatre liens et l'icône de profil tiennent sur une ligne à
+360 px), carte ambre sur l'accueil, page `qcm-bac/index.html` (fiche à deux thèmes tirés au sort + les neuf thèmes), fil d'Ariane et
+barre « Sommaire » sur `qcm-bac/fiche.html`, `nav-auth.js` et `statistiques.js` chargés. Accès libre à tous les élèves (aucune
+condition de classe ni de compte). Fusion dans `master` : à la demande de David seulement.

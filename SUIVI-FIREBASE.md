@@ -157,7 +157,7 @@ depuis la réorganisation du 02/10/2026 »).
 
 - **Conventions d'interface** (fixées avec David le 04/09/2026) : barre de navigation identique sur toutes les pages, la couleur
   appartient à la section (pas à la page courante) — « Cahiers de calcul » en pastille rouge `#E8695E` (`.nav-vedette`),
-  « Automatismes » en vert pastel `#B4DFC5` / texte `#17492E` (`.nav-vedette-vert`, fond de bandeau `#D8EEDF`, ne pas inventer
+  « QCM Bac » en ambre (`.nav-vedette-ambre`, ajouté le 18/10/2026) ; « Automatismes » en vert pastel `#B4DFC5` / texte `#17492E` (`.nav-vedette-vert`, fond de bandeau `#D8EEDF`, ne pas inventer
   un autre vert) ; l'accueil ne met en vedette que deux cahiers (le reste via « Voir tous les cahiers ») ; largeur de page des
   fiches `max-width: 980px`. Pour prévisualiser accueil et pages de cahier, passer par le serveur local (`file://` ne charge pas
   `assets/css/style.css`) ; les fiches, au CSS en ligne, s'ouvrent en `file://`.
@@ -316,10 +316,17 @@ plages de l'aléatoire, banque d'automatismes, devoirs partiels, barème
 personnalisé, correction détaillée), qui remplace `CHANTIERS-FUTURS.md`
 depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
-- **Bloc « QCM Bac » (Terminale spécialité) — pilote codé le 17/10/2026** (`qcm-bac/fiche.html`, banques suites et géométrie
-  dans l'espace, contrôle `outils/qcm-bac/controle-banques.js`) ; pas encore lié depuis le site. Décisions, sources, état et
-  points à valider dans `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options
-  facultatives nouvelles : `bareme.penalites` et `textesNiveau`.
+- **Bloc « QCM Bac » (Terminale spécialité)** — neuf banques codées les 17-18/10/2026 (`qcm-bac/banques/01…09`), page d'accueil
+  `qcm-bac/index.html`, fiche `qcm-bac/fiche.html` (`?theme=<id>` pour un thème seul), contrôle
+  `outils/qcm-bac/controle-banques.js`. **Lié depuis le site le 18/10/2026** (sur la branche `claude/gifted-carson-92cmm8`, pas
+  encore fusionné dans `master`) : pastille « QCM Bac » ambre `#F3CF7A` / texte `#4A3300` (`.nav-vedette-ambre`) dans la barre de
+  navigation des 26 pages à en-tête standard, carte ambre `.bento-carte--ambre` sur l'accueil. **Ouvert à tous les élèves, sans
+  compte, sans suivi de devoir** (pas de `suivi.js` sur ces pages ; comptes de Terminale et devoirs à faire plus tard : le code
+  distingue encore Seconde/Première et `assets/js/mes-devoirs.js` ligne 40 pointe en dur vers `/automatismes/premiere/`).
+  Fréquentation : `statistiques.js` range ces pages dans la partie `automatismes` (clés de page `qcm-bac`, `qcm-bac-fiche`), car
+  les règles Firestore n'acceptent que des parties connues. Décisions, sources, état et points à valider dans
+  `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options facultatives
+  nouvelles : `bareme.penalites` et `textesNiveau`.
 - **Première 14 (Probabilités) — à traiter après l'échéance de son devoir** (constat Firestore en lecture seule, 16/10/2026) :
   un seul devoir la vise, `KNhf6yAAyqjn1j6JvZYs` (ciblage individuel d'un élève, 3 essais, créé le 10/10/2026), **à rendre le
   16/10/2026 à 21 h (heure de Paris)** ; la fiche ne doit pas être modifiée avant. Ensuite : relire le devoir dans Firestore

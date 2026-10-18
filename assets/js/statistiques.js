@@ -50,6 +50,8 @@ function decrirePage(chemin) {
   if (c === '/cahiers/') return { partie: 'cahiers', page: 'cahiers' };
   m = c.match(/^\/automatismes\/(?:([a-z]+)\/)?(?:([a-z-]+)\.html)?$/);
   if (m) return { partie: 'automatismes', page: ['auto', m[1], m[2]].filter(Boolean).join('-') };
+  m = c.match(/^\/qcm-bac\/(?:([a-z-]+)\.html)?$/);
+  if (m) return { partie: 'automatismes', page: ['qcm-bac', m[1]].filter(Boolean).join('-') };     // 18/10/2026 : rangé dans « automatismes » (les règles Firestore n'acceptent que les parties connues)
   if (c === '/mes-devoirs/') return { partie: 'mes_devoirs', page: 'mes-devoirs' };
   if (c === '/connexion/') return { partie: 'connexion', page: 'connexion' };
   if (c === '/') return { partie: 'accueil', page: 'accueil' };
