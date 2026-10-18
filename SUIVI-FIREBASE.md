@@ -310,6 +310,15 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 6. Pistes ouvertes / à faire
 
+- **RAPPEL À DAVID (à répéter à chaque ouverture de session, tant que ce n'est pas fait) — règles Firestore à modifier puis
+  déployer pour la fréquentation du bloc QCM Bac.** Aujourd'hui `assets/js/statistiques.js` range les pages `qcm-bac/` dans la
+  partie `automatismes` (clés `qcm-bac`, `qcm-bac-fiche`) parce que `firestore.rules` n'accepte que des parties connues
+  (`clesStatistiques()`, `creationStatistiquesValide()`, `miseAJourStatistiquesValide()`). Pour une partie à part (`s_qcm_bac`) :
+  ajouter `s_qcm_bac` dans ces trois fonctions des règles, déployer les règles (console Firebase ou `firebase deploy --only
+  firestore:rules`), ajouter `['qcm_bac', 'QCM Bac']` dans la liste des parties de `assets/js/frequentation.js` et la partie
+  `qcm_bac` dans `decrirePage()` de `statistiques.js`. **Ne changer `statistiques.js` qu'après le déploiement des règles**, sinon
+  les écritures de ces pages sont refusées (sans gêner la page, l'erreur est ignorée). Demandé par David le 18/10/2026.
+
 Backlog de David pour après le travail sur les fiches : l'artefact
 **« Chantiers futurs »** (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad :
 plages de l'aléatoire, banque d'automatismes, devoirs partiels, barème

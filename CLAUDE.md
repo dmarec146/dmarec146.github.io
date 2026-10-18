@@ -47,6 +47,7 @@ demande.)
    à GitHub (à jour, ou mis à jour par `git pull` avec le nombre de commits
    récupérés, ou l'écart restant et pourquoi il n'a pas été comblé) ; rien
    d'inhabituel (fichiers non suivis, branches inattendues, conflits).
+   Y rappeler à David les points marqués « RAPPEL À DAVID » dans `SUIVI-FIREBASE.md` (§6).
    **Ce message doit refléter l'état réel constaté**, pas une formule
    automatique — si quelque chose ne va pas (par exemple GitHub
    injoignable), le dire clairement plutôt que de rassurer à tort.
