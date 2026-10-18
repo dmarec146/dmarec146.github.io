@@ -6,9 +6,9 @@ d'un chantier terminé va à la fin de `HISTORIQUE.md`).
 
 ## 0. Reste à faire (état du 18/10/2026, à lire en premier)
 
-1. **Tester les devoirs QCM Bac et le sujet blanc avec `demo-eleve`** (jamais testés avec Firebase) : voir §13 et §14 et les rappels de `SUIVI-FIREBASE.md` §6.
+1. **Devoirs QCM Bac avec `demo-eleve`** : un devoir enregistré puis validé, testé par David le 18/10/2026, « cela fonctionne » (c'était un sujet blanc en mode fiche ; devoir à thèmes, mode chrono, note, « Résultats » et « Mes devoirs » : non vérifiés) ; voir §13 et §14.
 2. **Comptes de Terminale** : classe `Tle-Gr 2`, à créer par David.
-3. **Règles Firestore pour la fréquentation** : partie `s_qcm_bac` (rappel détaillé dans `SUIVI-FIREBASE.md` §6) ; en attendant, ces pages comptent dans « automatismes ».
+3. **Fréquentation** : *fait le 18/10/2026* — règles publiées (`s_qcm_bac`), `statistiques.js` et `frequentation.js` branchés sur la partie `qcm_bac` ; comptage réel non encore vérifié (voir `SUIVI-FIREBASE.md` §6).
 4. **Banques** : lacunes connues (géométrie avec sphères, absente des sources ; fonction tangente en détail ; approximation d'aire par suites
    adjacentes ; trigonométrie en géométrie) ; familles plus courtes listées au §11. Le tirage des familles se règle dans chaque banque.
 5. **Sujet blanc** : 12 questions sur 4 thèmes (`nbThemes`, `nb` dans `qcm-bac/sujet-blanc.html`) ; David peut vouloir 3 thèmes ou une autre longueur.

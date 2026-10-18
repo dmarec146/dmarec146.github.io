@@ -310,11 +310,12 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 6. Pistes ouvertes / à faire
 
-- **RAPPEL À DAVID — tester les devoirs QCM Bac avec `demo-eleve` (classe `1ere-demo`)**, jamais testés avec Firebase (18/10/2026) :
-  attribuer un devoir « QCM Bac » (thèmes choisis), puis un « Sujet blanc QCM Bac » (4 thèmes tirés au sort), en mode fiche puis chrono ;
-  vérifier le verrouillage de la page, « Enregistrer mon avancement » et la reprise, la validation (note en points : ex. 3 bonnes et 2 fausses
-  au niveau 3 = 2,5 / 10 ; sujet blanc sur 12), la vue « Résultats » et « Mes devoirs ». Si quelque chose casse : `qcm-bac/fiche.html`,
+- **Devoirs QCM Bac testés par David avec `demo-eleve` (18/10/2026)** : un devoir enregistré puis validé, « cela fonctionne » (sa
+  formule ; c'était un sujet blanc de Terminale en mode fiche ; non précisé : s'il a regardé
+  la note, la vue « Résultats » et « Mes devoirs »). Le reste n'est pas vérifié : si quelque chose casse, `qcm-bac/fiche.html`,
   `qcm-bac/sujet-blanc.html`, `assets/js/devoirs.js`, `assets/js/mes-devoirs.js` (cibles `qcm-bac` et `qcm-bac-sujet`).
+  **Comptage de la fréquentation du bloc : non vérifié en réel** (David se fie au code) ; à regarder dans le tableau de bord
+  Fréquentation (partie « QCM Bac ») une fois que des élèves ou lui, hors compte enseignant, auront ouvert ces pages.
 - **RAPPEL À DAVID — comptes élèves de Terminale** : classe **`Tle-Gr 2`** (groupe 2, précisé le 18/10/2026), à créer par David avec
   `outils/creer-comptes` ; elle apparaîtra d'elle-même dans la liste d'attribution. La carte « Terminale — Bientôt » de la page
   Automatismes est volontairement conservée (décision de David).
@@ -337,8 +338,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   compte** pour la pratique libre. **Devoirs QCM Bac (18/10/2026)** : type « QCM Bac » du formulaire d'attribution (`type:'automatismes'`,
   `cible:'qcm-bac'`, thèmes de `THEMES_QCM_BAC` dans `assets/js/devoirs.js`, à tenir à jour à la main) ; `qcm-bac/fiche.html` charge
   `suivi.js` et se verrouille via `devoirAutomatismeActif('qcm-bac')` ; tentative enregistrée en points sur 10 (pénalité du niveau 3
-  comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; **sujet blanc QCM Bac** (`qcm-bac/sujet-blanc.html`, 18/10/2026 : 12 questions, quatre thèmes tirés au sort parmi neuf, thèmes masqués sur les cartes, note sur 12) avec son propre type de devoir `cible:'qcm-bac-sujet'` (sans thèmes choisis) ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Pas encore testé
-  avec Firebase** (à valider avec `demo-eleve`, classe `1ere-demo`). Comptes de Terminale : à créer par David (format de classe
+  comprise) par `enregistrerTentativeSujetBlancSiDevoir` ; **sujet blanc QCM Bac** (`qcm-bac/sujet-blanc.html`, 18/10/2026 : 12 questions, quatre thèmes tirés au sort parmi neuf, thèmes masqués sur les cartes, note sur 12) avec son propre type de devoir `cible:'qcm-bac-sujet'` (sans thèmes choisis) ; `mes-devoirs.js` renvoie vers `/qcm-bac/fiche.html`. **Un devoir enregistré puis validé avec
+  `demo-eleve` (classe `1ere-demo`) : OK (David, 18/10/2026)**. Comptes de Terminale : à créer par David (format de classe
   à utiliser : `Tle-Gr 2` (groupe 2, précisé par David le 18/10/2026 ; même règle que `1ere-Gr N`).
   Fréquentation : partie `qcm_bac` (clés de page `qcm-bac`, `qcm-bac-fiche`, `qcm-bac-sujet-blanc`). Décisions, sources, état et points à valider dans
   `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options facultatives
