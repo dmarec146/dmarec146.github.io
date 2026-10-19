@@ -209,7 +209,7 @@ les corrections ponctuelles d'une fiche).
   nouveau calcul dont le titre dit simplifier / développer / factoriser / calculer / « sous la forme » : ajouter l'entrée à
   la table et relancer le câblage.** Câblées le 13/10/2026 : 12 fiches (voir HISTORIQUE) ; restent les autres (dresser
   `connues.json` de l'audit pour repérer lesquelles). Le **corrigé est la référence** : la réponse attendue doit être
-  une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé.
+  une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé. **Le corrigé affiché suit aussi la forme du titre** (titre « sous forme décimale » : corrigé `0{,}61`, pas `\dfrac{61}{100}` ; Première 14.4, corrigé le 19/10/2026 par `correctionLatex` et `decLatexFromFrac`).
   **Pourcentages (14/10/2026)** : pour une question « Écrire … en pourcentage » (donnée = décimal ou fraction), le
   **signe % est exigé** (`exigerPourcent:true`), sinon recopier l'énoncé (0,06 ; 3/25) passait pour la réponse ; un
   pourcentage s'écrit avec un nombre (pas `3/4*100%`). Pour « Quel pourcentage… », 25 %, 0,25 ou 1/4 restent acceptés.
@@ -219,8 +219,8 @@ les corrections ponctuelles d'une fiche).
   l'avoir** (copier le bloc d'une fiche existante : de `// ---- Presentation du corrige` à
   `function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }`, et nommer
   `formaterReponseBrut` la fonction d'origine) ; l'audit le contrôle (style : signe au numérateur, fraction × lettre).
-  **Champs d'intervalle sans indication grisée** : pas de `]a;b[` en sous-brillance dans les champs de réponse (demandé par David en Seconde 8 ; **retiré de toutes les fiches le 16/10/2026, sauf Première 14** dont le devoir était en cours : à retirer lors de sa reprise). **Lectures graphiques au dixième (David, 15/10/2026)** : toute valeur choisie ou attendue pour une lecture sur un graphique (seuil `k` de `f(x)=k`, bornes d'un encadrement, racines de deux courbes) est un entier ou un demi-entier — au plus une décimale, **jamais au centième** (« tout est graphique, donc pas trop de précision ») ; le corrigé affiche les valeurs lues arrondies au dixième (`≈ -0,8 ou 1,2`), bornes d'intervalles en décimales (`[-1 ; -0,9]`), jamais en fraction. **Virgule décimale et ensembles (15/10/2026)** : `adoucirAffichage` convertit aussi tout point décimal du corrigé en
-  virgule (`6.2` → `6{,}2`), dans les 49 fiches hors Première 14 (devoir en cours) ; un ensemble en extension `{a;b}` doit être
+  **Champs d'intervalle sans indication grisée** : pas de `]a;b[` en sous-brillance dans les champs de réponse (demandé par David en Seconde 8 ; **retiré de toutes les fiches** : le 16/10/2026 pour 49 fiches, Première 14 le 19/10/2026, son devoir étant alors terminé). **Lectures graphiques au dixième (David, 15/10/2026)** : toute valeur choisie ou attendue pour une lecture sur un graphique (seuil `k` de `f(x)=k`, bornes d'un encadrement, racines de deux courbes) est un entier ou un demi-entier — au plus une décimale, **jamais au centième** (« tout est graphique, donc pas trop de précision ») ; le corrigé affiche les valeurs lues arrondies au dixième (`≈ -0,8 ou 1,2`), bornes d'intervalles en décimales (`[-1 ; -0,9]`), jamais en fraction. **Virgule décimale et ensembles (15/10/2026)** : `adoucirAffichage` convertit aussi tout point décimal du corrigé en
+  virgule (`6.2` → `6{,}2`), dans les 50 fiches (Première 14 le 19/10/2026) ; un ensemble en extension `{a;b}` doit être
   affiché avec de vraies accolades (`\left\{ … \right\}`, via `ensembleVersLatex`, présent dans les fiches 12, 14, 15, 17, 18,
   19, 20, 25 et sous forme équivalente dans la 13), sinon LaTeX les prend pour un groupe et les efface ; `{}` s'affiche `\emptyset`.
   **Quand exiger quoi (précisé par David le 13/10/2026)** : (1) titre qui impose une forme (simplifier, réduire,

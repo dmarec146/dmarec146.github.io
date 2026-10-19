@@ -17,6 +17,7 @@ window.MathJax = {
 <script src="https://unpkg.com/mathlive@0.111.0"></script>
 <script src="../../../assets/js/claviers.js?v=20261016c"></script>
 <script src="../../../assets/js/qcm-clic.js"></script>
+<script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
 <script>
@@ -1271,9 +1272,9 @@ function genererExercices() {
       pnAnB = 100 - pAB - pAnB - pnAB;
     } while (pnAnB < 5 || pnAnB > 60);
     const colA = pAB + pnAB, rowB = pAB + pAnB, colAbar = pAnB + pnAnB;
-    ex.push({id:"14.4 a)", type:"num", texteLibre:true, enonce:"\\(P(\\overline{A})\\)", reponse: fracStr(colAbar, 100)});
-    ex.push({id:"14.4 b)", type:"num", texteLibre:true, enonce:"\\(P(A\\cup B)\\)", reponse: fracStr(colA + rowB - pAB, 100)});
-    ex.push({id:"14.4 c)", type:"num", texteLibre:true, enonce:"\\(P(\\overline{A}\\cap B)\\)", reponse: fracStr(pAnB, 100)});
+    ex.push({id:"14.4 a)", type:"num", texteLibre:true, enonce:"\\(P(\\overline{A})\\)", reponse: fracStr(colAbar, 100), correctionLatex: decLatexFromFrac(colAbar, 100)});
+    ex.push({id:"14.4 b)", type:"num", texteLibre:true, enonce:"\\(P(A\\cup B)\\)", reponse: fracStr(colA + rowB - pAB, 100), correctionLatex: decLatexFromFrac(colA + rowB - pAB, 100)});
+    ex.push({id:"14.4 c)", type:"num", texteLibre:true, enonce:"\\(P(\\overline{A}\\cap B)\\)", reponse: fracStr(pAnB, 100), correctionLatex: decLatexFromFrac(pAnB, 100)});
     paramsAvances.g4 = {pAB, pAnB, pnAB, pnAnB};
   }
 
@@ -2150,6 +2151,38 @@ function passerEnEntrainementLibre(garderBandeau = true) {
   mettreAJourEtatBoutons();
 }
 
+// ---- Formes imposees par le titre du calcul (moteur-reponses.js) : table geree par outils/moteur-reponses/cabler-fiches.js
+// Cle : numero de calcul (« 4.2 ») ou id de question (« 4.8 c) »). Fonctions declarees (hissees) : utilisables partout.
+function formesCalcul() {
+  return {
+    "14.4": "decimal"
+  };
+}
+// forme deduite du premier mot de l'enonce (valeur "auto" de la table) : Developper/Reduire, Factoriser, Simplifier/Calculer
+function formeDepuisEnonce(ex) {
+  const t = String(ex.enonce || '').replace(/^\s*(\\\(|\\text\{)?\s*/, '');
+  if (/^(Développer|Réduire)/.test(t)) return 'developpe';
+  if (/^Factoriser/.test(t)) return 'factorise';
+  if (/^(Simplifier|Calculer|Résoudre)/.test(t)) return 'simplifie';
+  return null;
+}
+function parametresForme(ex) {
+  if (ex.forme) return { forme: ex.forme, formeOptions: ex.formeOptions || {} };
+  const t = formesCalcul();
+  let v = t[ex.id] || t[String(ex.id || '').split(' ')[0]];
+  if (!v) return null;
+  // gardes : un controle propre a la question (fraction irreductible, tolerance, lecture graphique), un arrondi,
+  // un ensemble de solutions ou un type autre qu'une valeur / expression restent geres par la fiche
+  if (ex.fractionIrreductible || ex.margeLecture || ex.tolerance != null || (ex.type !== 'num' && ex.type !== 'alg')) return null;
+  if (typeof ex.reponse !== 'string' || ex.reponse.trim().startsWith('{') || (typeof estTuple === 'function' && estTuple(ex))) return null;
+  if (/arrondi|valeur approchée|au (dixième|centième|millième)/i.test(String(ex.enonce || ''))) return null;
+  if (v === 'auto') v = formeDepuisEnonce(ex);
+  if (!v) return null;
+  return typeof v === 'string' ? { forme: v, formeOptions: {} } : { forme: v.forme, formeOptions: v.formeOptions || {} };
+}
+function exAvecForme(ex) { return { ...ex, ...parametresForme(ex) }; }
+// ---- fin des formes imposees
+
 function verifierUne(idx) {
   const ex = exercices[idx];
   const input = document.getElementById('input-' + idx);
@@ -2169,7 +2202,8 @@ function verifierUne(idx) {
     return null;
   }
   let ok;
-  if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
+  if (parametresForme(ex)) ok = MoteurReponses.verifier(exAvecForme(ex), input, val, () => checkEqualNumeric(val, ex.reponse));
+  else if (ex.type === 'ineq') ok = checkInequation(val, ex.sens, ex.seuil);
   else if (ex.type === 'encadrement') ok = checkEncadrement(val, ex.bas, ex.haut);
   else if (ex.type === 'cercle') ok = checkCercle(val, ex.cx, ex.cy, ex.r);
   else if (ex.type === 'vraifaux') ok = checkVraiFaux(val, ex.estVrai);
@@ -2582,8 +2616,31 @@ function formaterIntervalleSpec(spec) {
   return '';
 }
 
-function formaterReponse(ex) {
+// ---- Presentation du corrige (13/10/2026) : signe devant la fraction, pas de × entre une fraction et une lettre ----
+function adoucirAffichage(tex) {
+  if (typeof tex !== 'string') return tex;
+  // \dfrac{-3}{4} -> -\dfrac{3}{4} ; +\dfrac{-3}{4} -> -\dfrac{3}{4} ; -\dfrac{-3}{4} -> +\dfrac{3}{4} (jamais apres un \times ou \cdot)
+  let t = tex.replace(/(^|[+\-({\[=,;])(\s*)\\dfrac\{-\s*([^{}+\-]*)\}\{/g, (m, avant, espace, numerateur) => {
+    const debut = avant === '+' ? '-' : (avant === '-' ? '+' : avant + '-');
+    return debut + espace + '\\dfrac{' + numerateur + '}{';
+  });
+  // \dfrac{a}{b}\times x -> \dfrac{a}{b}x (lettre, \lambda, \sqrt, e^)
+  t = t.replace(/(\\dfrac\{[^{}]*\}\{[^{}]*\})\\times\s*(?=\{?\s*(?:[A-Za-z]|\\lambda|\\sqrt))/g, '$1');
+  // puissance 1 inutile : (2x+1)^{1} -> (2x+1) ; terme nul : +0e, -0e^{2}
+  t = t.replace(/\^\{1\}(?![0-9])/g, '');
+  t = t.replace(/[+\-]\s*0\s*e(\^\{[^{}]*\})?(?![A-Za-z0-9])/g, '');
+  // coefficient nul en tete : y=0e^{-2} x+3e^{-2} -> y=3e^{-2}
+  t = t.replace(/=\s*0\s*e(\^\{[^{}]*\})?\s*x\s*(\+\s*|(?=-))/g, '=');
+  t = t.replace(/=\s*0\s*e(\^\{[^{}]*\})?\s*x\s*$/, '=0');
+  // virgule decimale francaise : 6.2 -> 6{,}2 (jamais un point dans le corrige affiche)
+  t = t.replace(/(\d)\.(\d)/g, '$1{,}$2');
+  return t;
+}
+function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }
+function formaterReponseBrut(ex) {
   try {
+    if (typeof ex.reponse === 'string' && /^-?\d{5,}$/.test(ex.reponse.trim())) return ex.reponse.trim();   // grand entier : jamais en notation scientifique
+    if (ex.correctionLatex) return ex.correctionLatex;   // corrige impose par le generateur (14.4 : ecriture decimale)
     if (ex.type === 'ineq') {
       const symb = {'>':'>', '<':'<', '>=':'\\geqslant', '<=':'\\leqslant'}[ex.sens];
       return `x ${symb} ${ex.seuil}`;
@@ -2747,12 +2804,12 @@ function placeholderPour(ex) {
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
-  if (ex.type === 'intervalle') return ']a;b[';
   if (ex.type === 'texte') return 'réponse';
   return 'réponse';
 }
 
 function aideContextuellePour(ex) {
+  if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
   if (ex.fractionIrreductible) {
     return ex.facteurSymbolique === 'pi'
       ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
@@ -2795,6 +2852,7 @@ function aideContextuellePour(ex) {
 }
 
 function necessiteAide(ex) {
+  if (parametresForme(ex)) return true;
   if (ex.fractionIrreductible) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
