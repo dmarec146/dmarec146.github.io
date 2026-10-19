@@ -21,6 +21,7 @@ window.MathJax = {
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261018"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"8.1 a)":0.5,"8.1 b)":0.5,"8.1 c)":0.5,"8.1 d)":0.5,"8.2 a)":0.5,"8.2 b)":0.5,"8.2 c)":0.5,"8.2 d)":0.5,"8.3 a)":0.5,"8.3 b)":0.5,"8.3 c)":0.5,"8.3 d)":0.5,"8.4 a)":1,"8.4 b)":1.5,"8.4 c)":1,"8.4 d)":1.5,"8.5 a)":1,"8.5 b)":1,"8.5 c)":1,"8.5 d)":1,"8.6 a)":1,"8.6 b)":1,"8.6 c)":1.25,"8.6 d)":1.5,"8.7 a)":1,"8.7 b)":1,"8.7 c)":1.5,"8.7 d)":1.75,"8.8 a)":1.5,"8.8 b)":1.5,"8.8 c)":2,"8.8 d)":2},"bonus":["8.8 a)","8.8 b)","8.8 c)","8.8 d)"]});
@@ -556,7 +557,7 @@ Bareme.definir({"points":{"8.1 a)":0.5,"8.1 b)":0.5,"8.1 c)":0.5,"8.1 d)":0.5,"8
   .cs-seuil:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
   .cs-seuil.correct { border-color: var(--vert); background: var(--vert-clair); }
   .cs-seuil.incorrect { border-color: var(--rouge); background: var(--rouge-clair); }
-  .cs-corrige { border-collapse: collapse; font-family: Georgia, serif; font-size: 13px; margin: 4px 0; }
+  .cs-corrige { border-collapse: collapse; font-family: Georgia, serif; font-size: 13px; margin: 4px 0; display: block; max-width: 100%; overflow-x: auto; }
   .cs-corrige td { padding: 3px 8px; text-align: center; white-space: nowrap; border-left: 1px solid #ccc; }
   .cs-corrige td:first-child { border-left: none; }
   .cs-corrige .cs-label { text-align: left; font-weight: bold; padding-right: 10px; border-right: 1.5px solid #1a1a1a; }
@@ -1258,10 +1259,95 @@ function distribAvecCoefInterne() {
 }
 
 
+// ---- details de correction (18/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { dP, sommeTermes, fracTexte } = Detail;
+// c x + d en LaTeX : « 3x-5 », « -x+2 », « x », « -2 » ; jamais « 1x »
+const linL = (c, d, v = 'x') => {
+  let s = '';
+  if (c !== 0) s = c === 1 ? v : c === -1 ? `-${v}` : `${c}${v}`;
+  if (d !== 0) s += (s && d > 0 ? '+' : '') + d;
+  return s === '' ? '0' : s;
+};
+const OP_TEX = { '>': '>', '<': '<', '>=': '\\geqslant ', '<=': '\\leqslant ' };
+const OP_INV = { '>': '<', '<': '>', '>=': '<=', '<=': '>=' };
+// fin d'une inequation « A x op C » (A non nul) : division par A (sens inverse si A < 0), solution (LaTeX), intervalle
+function lignesFinIneq(A, op, C, x0Tex, spec) {
+  const opF = A < 0 ? OP_INV[op] : op, lignes = [];
+  if (A < 0) lignes.push(`\\text{On divise par } ${A} < 0`, `\\text{donc le sens de l'inégalité change}`);
+  lignes.push(`\\iff x ${OP_TEX[opF]} ${C} \\div ${dP(A)}`, `\\iff x ${OP_TEX[opF]} ${x0Tex}`, `S = ${formaterIntervalleSpec(spec)}`);
+  return lignes;
+}
+// « ax+b op 0 » (a non nul) : detail complet
+function detailAffineIneq(a, b, op) {
+  const spec = intervalleDemiDroite(a < 0 ? OP_INV[op] : op, -b / a);
+  return { lignes: [`${affineTexte(a, b)} ${OP_TEX[op]} 0`, `\\iff ${coefXTexte(a)} ${OP_TEX[op]} ${-b}`, ...lignesFinIneq(a, op, -b, fracTexte(-b, a), spec)], final: formaterIntervalleSpec(spec) };
+}
+// lignes « facteur = 0 ⟺ x = racine » (racines : {f: facteur, v: valeur, tex: LaTeX, interdit})
+function lignesRacines(racines) {
+  return racines.flatMap(r => (r.f === 'x' ? [`\\text{Le facteur } x \\text{ s'annule en } 0`]
+    : r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`]
+    : [`${r.f} = 0 \\iff x = ${r.tex}`]));
+}
+// etude du signe d'un produit ou d'un quotient : racines, tableau de signes (une ligne), conclusion en intervalles ; g = expression
+function detailSigne(avant, racines, g, op, spec, expr, quotient) {
+  const petit = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 30 ? '\\small ' + l : l);
+  const lignes = [...avant];
+  lignes.push(petit(quotient ? '\\text{Tableau de signes du quotient}' : `\\text{Tableau de signes de } ${expr}`));
+  lignes.push(Detail.tableauSignes(racines.map(r => ({ v: r.v, tex: r.tex, interdit: r.interdit })), g, 'signe'));
+  lignes.push('\\text{On cherche les valeurs de } x', `\\text{pour lesquelles ${quotient ? 'le quotient' : "l'expression"} est } ${OP_TEX[op]}\\ 0`);
+  racines.filter(r => r.interdit).forEach(r => lignes.push(petit(`\\text{La valeur interdite } ${r.tex} \\text{ est exclue dans tous les cas}`)));
+  lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes, final: formaterIntervalleSpec(spec) };
+}
+// tableau de signes complet (une ligne par facteur + ligne finale), construit a partir de la grille attendue ex.spec
+function tableauSignesComplet(ex, etiquetteFinale) {
+  const k = ex.spec.k, fs = ex.facteurs.map(f => ({ f, v: -f.b / f.a })).sort((p, q) => p.v - q.v);
+  const haut = ['x', '-\\infty'];
+  fs.forEach(o => haut.push('', fracTexte(-o.f.b, o.f.a)));
+  haut.push('', '+\\infty');
+  const marque = v => (v === '‖' ? '\\Vert' : v === '|' ? '' : v);
+  const ligne = (etiquette, valeurs) => {
+    const c = [etiquette, ''];
+    for (let i = 0; i < k; i++) c.push(valeurs[2 * i], marque(valeurs[2 * i + 1]));
+    c.push(valeurs[2 * k], '');
+    return c.join(' & ');
+  };
+  const lignes = ex.spec.lignes.map(l => ligne(l.label, l.valeurs));
+  if (ex.spec.finale) lignes.push(ligne(etiquetteFinale, ex.spec.finale));
+  return `${k >= 3 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * k + 3)}} ${haut.join(' & ')} \\\\ \\hline ${lignes.join(' \\\\ \\hline ')} \\end{array}`;
+}
+// detail d'un tableau de signes (8.2 et 8.4) : racine de chaque facteur, puis le tableau
+function detailTableau(ex, quotient) {
+  const rac = ex.facteurs.map(f => ({ f: f.label, tex: fracTexte(-f.b, f.a), interdit: !!f.denom }));
+  const lignes = ex.facteurs.length === 1
+    ? [`${rac[0].f} = 0 \\iff ${coefXTexte(ex.facteurs[0].a)} = ${-ex.facteurs[0].b}`, `\\iff x = ${rac[0].tex}`]
+    : rac.flatMap(r => (r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`] : [`${r.f} = 0 \\iff x = ${r.tex}`]));
+  const tab = tableauSignesComplet(ex, 'E(x)');
+  lignes.push(quotient ? '\\text{Tableau de signes du quotient}' : (ex.facteurs.length === 1 ? `\\text{Tableau de signes de } ${ex.facteurs[0].label}` : '\\text{Tableau de signes de } E(x)'), tab);
+  return { lignes, final: tab };
+}
+
+// facteurs affines [a, b] -> racines { f, v, tex, interdit } (interdit : indice du facteur du denominateur)
+const racAff = (paires, interdit = -1) => paires.map(([a, b], i) => ({ f: affineTexte(a, b), v: -b / a, tex: fracTexte(-b, a), interdit: i === interdit }));
+const produitAffL = paires => paires.map(([a, b]) => { const s = affineTexte(a, b); return s === 'x' ? 'x' : '(' + s + ')'; }).join('');
+const valeurProduit = (paires, x) => paires.reduce((acc, [a, b]) => acc * (a * x + b), 1);
+// produit de facteurs affines op 0
+function detailProduitAff(paires, op, spec) {
+  const R = racAff(paires);
+  return detailSigne(lignesRacines(R), R, x => valeurProduit(paires, x), op, spec, produitAffL(paires), false);
+}
+// quotient (produit de facteurs affines) / (facteur affine) op 0
+function detailQuotientAff(num, den, op, spec) {
+  const R = [...racAff(num), ...racAff([den], 0)];
+  return detailSigne(lignesRacines(R), R, x => valeurProduit(num, x) / (den[0] * x + den[1]), op, spec, '', true);
+}
+
 // tableau de signes d'un seul facteur ax+b (8.2) : la ligne du facteur EST la ligne du signe
 function tableauUnFacteur(a, b) {
   const facteurs = [{a, b, denom:false, label: affineTexte(a,b)}];
-  return { enonce:`\\(${affineTexte(a,b)}\\)`, facteurs, spec: construireSpecTableauSigne(facteurs) };
+  const ex = { enonce:`\\(${affineTexte(a,b)}\\)`, facteurs, spec: construireSpecTableauSigne(facteurs) };
+  ex.detail = detailTableau(ex, false);
+  return ex;
 }
 
 const generateurs = [
@@ -1269,24 +1355,29 @@ const generateurs = [
   {id:"8.1 a)", type:"alg", gen: () => {
     // produit de deux binomes unitaires (x+p)(x+q), p et q signes ; p = -q donne une difference de carres
     const p = entierSigne(1,9), q = entierSigne(1,9);
-    return { enonce:`(${affineTexte(1,p)})(${affineTexte(1,q)})`, reponse:`x^2${termeX(p+q, false)}${termeConst(p*q, false)}` };
+    return { enonce:`(${affineTexte(1,p)})(${affineTexte(1,q)})`, reponse:`x^2${termeX(p+q, false)}${termeConst(p*q, false)}`,
+             detail: { lignes: [`(${affineTexte(1,p)})(${affineTexte(1,q)}) = ${sommeTermes([[1, 'x^{2}'], [q, 'x'], [p, 'x'], [p*q, '']])} = ${sommeTermes([[1, 'x^{2}'], [p+q, 'x'], [p*q, '']])}`], final: sommeTermes([[1, 'x^{2}'], [p+q, 'x'], [p*q, '']]) } };
   }},
   {id:"8.1 b)", type:"alg", gen: () => {
     // facteur commun numerique : g(px+q) avec p et q premiers entre eux (factorisation complete)
     let g, p, q;
     do { g = alea(2,9); p = alea(1,9); q = entierSigne(1,9); } while (pgcd(p, q) !== 1);
-    return { enonce: affineTexte(g*p, g*q), reponse:`${g}*(${polynomeXConst(p, q)})` };
+    return { enonce: affineTexte(g*p, g*q), reponse:`${g}*(${polynomeXConst(p, q)})`,
+             detail: { lignes: [`${affineTexte(g*p, g*q)} = ${g}\\times ${coefXTexte(p)} ${q < 0 ? '-' : '+'} ${g}\\times ${Math.abs(q)} = ${g}\\left(${affineTexte(p, q)}\\right)`], final: `${g}\\left(${affineTexte(p, q)}\\right)` } };
   }},
   {id:"8.1 c)", type:"num", gen: () => {
     // ax+b=c, solution entiere signee
     const a = entierSigne(2,9), x0 = entierSigne(1,9), b = entierSigne(1,15);
-    return { enonce:`${affineTexte(a,b)}=${a*x0+b}`, reponse:String(x0) };
+    const c = a*x0 + b;
+    return { enonce:`${affineTexte(a,b)}=${c}`, reponse:String(x0),
+             detail: { lignes: [`${affineTexte(a,b)}=${c}`, `\\iff ${coefXTexte(a)} = ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff ${coefXTexte(a)} = ${a*x0}`, `\\iff x = ${a*x0} \\div ${dP(a)} = ${x0}`], final: `${x0}` } };
   }},
   {id:"8.1 d)", type:"num", texteLibre:true, gen: () => {
     // ax+b=cx+d, solution fractionnaire (jamais entiere), a donner sous forme irreductible
     let a, b, c, d;
     do { a = entierSigne(2,9); c = entierSigne(1,9); b = entierSigne(1,12); d = entierSigne(1,12); } while (a === c || (d - b) % (a - c) === 0);
-    return { enonce:`\\(${affineTexte(a,b)}=${affineTexte(c,d)}\\) (solution sous forme irréductible)`, reponse:fractionReduite(d - b, a - c) };
+    return { enonce:`\\(${affineTexte(a,b)}=${affineTexte(c,d)}\\) (solution sous forme irréductible)`, reponse:fractionReduite(d - b, a - c),
+             detail: { lignes: [`${affineTexte(a,b)}=${affineTexte(c,d)}`, `\\iff ${coefXTexte(a)} ${c < 0 ? '+' : '-'} ${c === 1 || c === -1 ? 'x' : Math.abs(c) + 'x'} = ${d} ${b < 0 ? '+' : '-'} ${Math.abs(b)}`, `\\iff ${linL(a - c, 0)} = ${d - b}`, `\\iff x = ${d - b} \\div ${dP(a - c)} = ${fracTexte(d - b, a - c)}`], final: fracTexte(d - b, a - c) } };
   }},
 
   // ---------- 8.2 : tableau de signes de ax+b (un seul facteur, donc pas de ligne finale) ----------
@@ -1315,17 +1406,17 @@ const generateurs = [
   {id:"8.3 a)", type:"intervalle", gen: () => {
     const a = alea(2,9), x0 = entierSigne(1,12), b = -a*x0;
     // a>0 : ax+b>0 <=> x>x0
-    return { enonce:`${affineTexte(a,b)}\\gt 0`, intervalleSpec: intervalleDemiDroite('>', x0) };
+    return { enonce:`${affineTexte(a,b)}\\gt 0`, intervalleSpec: intervalleDemiDroite('>', x0), detail: detailAffineIneq(a, b, '>') };
   }},
   {id:"8.3 b)", type:"intervalle", gen: () => {
     const a = -alea(2,9), x0 = entierSigne(1,12), b = -a*x0;
     // a<0 : ax+b>0 <=> x<x0 (le sens s'inverse)
-    return { enonce:`${affineTexte(a,b)}\\gt 0`, intervalleSpec: intervalleDemiDroite('<', x0) };
+    return { enonce:`${affineTexte(a,b)}\\gt 0`, intervalleSpec: intervalleDemiDroite('<', x0), detail: detailAffineIneq(a, b, '>') };
   }},
   {id:"8.3 c)", type:"intervalle", gen: () => {
     const a = -alea(2,9), x0 = entierSigne(1,12), b = -a*x0;
     // a<0 : ax+b<=0 <=> x>=x0
-    return { enonce:`${affineTexte(a,b)}\\leqslant 0`, intervalleSpec: intervalleDemiDroite('>=', x0) };
+    return { enonce:`${affineTexte(a,b)}\\leqslant 0`, intervalleSpec: intervalleDemiDroite('>=', x0), detail: detailAffineIneq(a, b, '<=') };
   }},
   {id:"8.3 d)", type:"intervalle", texteLibre:true, bornesIrreductibles:true, gen: () => {
     // plus delicat : la racine -b/a n'est pas entiere (borne fractionnaire, a donner sous forme irreductible) ;
@@ -1336,7 +1427,7 @@ const generateurs = [
     const inverse = { '>': '<', '>=': '<=', '<': '>', '<=': '>=' };
     const sens = a > 0 ? op : inverse[op];
     const symb = { '>':'\\gt', '>=':'\\geqslant', '<':'\\lt', '<=':'\\leqslant' }[op];
-    return { enonce: `\\(${affineTexte(a,b)}${symb} 0\\) (borne sous forme irréductible)`, intervalleSpec: intervalleDemiDroite(sens, -b / a) };
+    return { enonce: `\\(${affineTexte(a,b)}${symb} 0\\) (borne sous forme irréductible)`, intervalleSpec: intervalleDemiDroite(sens, -b / a), detail: detailAffineIneq(a, b, op) };
   }},
 
   // ---------- 8.4 : construire un tableau de signes complet (seuils places par l'eleve, puis
@@ -1352,7 +1443,9 @@ const generateurs = [
       {a:f2.a, b:f2.b, denom:false, label: affineTexte(f2.a,f2.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `\\(E(x)=(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})\\)`, facteurs, spec };
+    const ex = { enonce: `\\(E(x)=(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})\\)`, facteurs, spec };
+    ex.detail = detailTableau(ex, false);
+    return ex;
   }},
   {id:"8.4 b)", type:"tableauSigne", texteLibre:true, gen: () => {
     let f1, f2, f3;
@@ -1365,7 +1458,9 @@ const generateurs = [
       {a:f3.a, b:f3.b, denom:false, label: affineTexte(f3.a,f3.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `\\(E(x)=(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})(${affineTexte(f3.a,f3.b)})\\)`, facteurs, spec };
+    const ex = { enonce: `\\(E(x)=(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})(${affineTexte(f3.a,f3.b)})\\)`, facteurs, spec };
+    ex.detail = detailTableau(ex, false);
+    return ex;
   }},
   {id:"8.4 c)", type:"tableauSigne", texteLibre:true, gen: () => {
     let fn, fd;
@@ -1375,7 +1470,9 @@ const generateurs = [
       {a:fd.a, b:fd.b, denom:true, label: affineTexte(fd.a,fd.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `\\(E(x)=\\dfrac{${affineTexte(fn.a,fn.b)}}{${affineTexte(fd.a,fd.b)}}\\)`, facteurs, spec };
+    const ex = { enonce: `\\(E(x)=\\dfrac{${affineTexte(fn.a,fn.b)}}{${affineTexte(fd.a,fd.b)}}\\)`, facteurs, spec };
+    ex.detail = detailTableau(ex, true);
+    return ex;
   }},
   {id:"8.4 d)", type:"tableauSigne", texteLibre:true, gen: () => {
     // quotient de trois facteurs : deux au numerateur, un au denominateur
@@ -1389,7 +1486,9 @@ const generateurs = [
       {a:fd.a, b:fd.b, denom:true, label: affineTexte(fd.a,fd.b)}
     ];
     const spec = construireSpecTableauSigne(facteurs);
-    return { enonce: `\\(E(x)=\\dfrac{(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})}{${affineTexte(fd.a,fd.b)}}\\)`, facteurs, spec };
+    const ex = { enonce: `\\(E(x)=\\dfrac{(${affineTexte(f1.a,f1.b)})(${affineTexte(f2.a,f2.b)})}{${affineTexte(fd.a,fd.b)}}\\)`, facteurs, spec };
+    ex.detail = detailTableau(ex, true);
+    return ex;
   }},
 
   // ---------- 8.5 : tableau de signes d'un produit de deux facteurs affines (reponse directe en
@@ -1399,21 +1498,21 @@ const generateurs = [
     const a = alea(2,7), b = -a*x1, c = alea(2,7), d = -c*x2;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false}], '>');
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\gt 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\gt 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d]], '>', spec) };
   }},
   {id:"8.5 b)", type:"intervalle", gen: () => {
     let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
     const a = alea(2,7), b = -a*x1, c = -alea(2,7), d = -c*x2;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false}], '>');
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\gt 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\gt 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d]], '>', spec) };
   }},
   {id:"8.5 c)", type:"intervalle", gen: () => {
     let x1, x2; do { x1 = entierSigne(1,9); x2 = entierSigne(1,9); } while (x1 === x2);
     const a = -alea(2,7), b = -a*x1, c = -alea(2,7), d = -c*x2;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false}], '<');
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\lt 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})\\lt 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d]], '<', spec) };
   }},
   {id:"8.5 d)", type:"intervalle", gen: () => {
     // inegalite large, signes quelconques : bornes incluses (crochets fermes)
@@ -1422,7 +1521,7 @@ const generateurs = [
     const op = choix(['>=','<=']);
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false}], op);
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})${op === '>=' ? '\\geqslant' : '\\leqslant'} 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})${op === '>=' ? '\\geqslant' : '\\leqslant'} 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d]], op, spec) };
   }},
 
   // ---------- 8.6 : tableau de signes d'un produit de trois facteurs affines ----------
@@ -1431,21 +1530,21 @@ const generateurs = [
     const a=alea(2,6), b=-a*x1, c=alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d},{a:e,b:f}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false},{valeur:x3,interdit:false}], '>');
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\gt 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\gt 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d],[e,f]], '>', spec) };
   }},
   {id:"8.6 b)", type:"intervalle", gen: () => {
     let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
     const a=alea(2,6), b=-a*x1, c=-alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d},{a:e,b:f}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false},{valeur:x3,interdit:false}], '<');
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\lt 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\lt 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d],[e,f]], '<', spec) };
   }},
   {id:"8.6 c)", type:"intervalle", gen: () => {
     let x1,x2,x3; do { x1=entierSigne(1,9); x2=entierSigne(1,9); x3=entierSigne(1,9); } while (x1===x2||x1===x3||x2===x3);
     const a=-alea(2,6), b=-a*x1, c=-alea(2,6), d=-c*x2, e=alea(2,6), f=-e*x3;
     const spec = resoudreSigneParBalayage(produitAffine([{a,b},{a:c,b:d},{a:e,b:f}]),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false},{valeur:x3,interdit:false}], '>=');
-    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\geqslant 0`, intervalleSpec: spec };
+    return { enonce:`(${affineTexte(a,b)})(${affineTexte(c,d)})(${affineTexte(e,f)})\\geqslant 0`, intervalleSpec: spec, detail: detailProduitAff([[a,b],[c,d],[e,f]], '>=', spec) };
   }},
   {id:"8.6 d)", type:"intervalle", gen: () => {
     // un facteur x : 0 est l'un des trois seuils ; signes et sens de l'inegalite quelconques
@@ -1455,7 +1554,7 @@ const generateurs = [
     const symb = { '>':'\\gt', '<':'\\lt', '>=':'\\geqslant', '<=':'\\leqslant' }[op];
     const spec = resoudreSigneParBalayage(produitAffine([{a:1,b:0},{a,b},{a:c,b:d}]),
       [{valeur:0,interdit:false},{valeur:x1,interdit:false},{valeur:x2,interdit:false}], op);
-    return { enonce:`x(${affineTexte(a,b)})(${affineTexte(c,d)})${symb} 0`, intervalleSpec: spec };
+    return { enonce:`x(${affineTexte(a,b)})(${affineTexte(c,d)})${symb} 0`, intervalleSpec: spec, detail: detailProduitAff([[1,0],[a,b],[c,d]], op, spec) };
   }},
 
   // ---------- 8.7 : tableau de signes d'un quotient, valeurs interdites ----------
@@ -1464,14 +1563,14 @@ const generateurs = [
     const a=alea(2,7), b=-a*xn, c=alea(2,7), d=-c*xd;
     const spec = resoudreSigneParBalayage(x => (a*x+b)/(c*x+d),
       [{valeur:xn,interdit:false},{valeur:xd,interdit:true}], '>');
-    return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\gt 0`, intervalleSpec: spec };
+    return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\gt 0`, intervalleSpec: spec, detail: detailQuotientAff([[a,b]], [c,d], '>', spec) };
   }},
   {id:"8.7 b)", type:"intervalle", gen: () => {
     let xn, xd; do { xn = entierSigne(1,9); xd = entierSigne(1,9); } while (xn === xd);
     const a=alea(2,7), b=-a*xn, c=-alea(2,7), d=-c*xd;
     const spec = resoudreSigneParBalayage(x => (a*x+b)/(c*x+d),
       [{valeur:xn,interdit:false},{valeur:xd,interdit:true}], '<');
-    return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\lt 0`, intervalleSpec: spec };
+    return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\lt 0`, intervalleSpec: spec, detail: detailQuotientAff([[a,b]], [c,d], '<', spec) };
   }},
   {id:"8.7 c)", type:"intervalle", gen: () => {
     // op large (<=) : le seuil du DENOMINATEUR reste exclu malgre tout
@@ -1479,7 +1578,7 @@ const generateurs = [
     const a=alea(2,7), b=-a*xn, c=alea(2,7), d=-c*xd;
     const spec = resoudreSigneParBalayage(x => (a*x+b)/(c*x+d),
       [{valeur:xn,interdit:false},{valeur:xd,interdit:true}], '<=');
-    return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\leqslant 0`, intervalleSpec: spec };
+    return { enonce:`\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\leqslant 0`, intervalleSpec: spec, detail: detailQuotientAff([[a,b]], [c,d], '<=', spec) };
   }},
   {id:"8.7 d)", type:"intervalle", gen: () => {
     // quotient de trois facteurs (deux au numerateur, un au denominateur), op large
@@ -1487,7 +1586,7 @@ const generateurs = [
     const a=alea(2,6), b=-a*x1, c=alea(2,6), d=-c*x2, e=alea(2,6), f=-e*xd;
     const spec = resoudreSigneParBalayage(x => produitAffine([{a,b},{a:c,b:d}])(x) / (e*x+f),
       [{valeur:x1,interdit:false},{valeur:x2,interdit:false},{valeur:xd,interdit:true}], '>=');
-    return { enonce:`\\dfrac{(${affineTexte(a,b)})(${affineTexte(c,d)})}{${affineTexte(e,f)}}\\geqslant 0`, intervalleSpec: spec };
+    return { enonce:`\\dfrac{(${affineTexte(a,b)})(${affineTexte(c,d)})}{${affineTexte(e,f)}}\\geqslant 0`, intervalleSpec: spec, detail: detailQuotientAff([[a,b],[c,d]], [e,f], '>=', spec) };
   }},
 
   // ---------- 8.8 : calculs plus avances (aucune contextualisation : factoriser avant d'etudier
@@ -1499,7 +1598,9 @@ const generateurs = [
     const a = alea(2,40), op = choix(['>','<','>=','<=']);
     const spec = resoudreSigneParBalayage(x => x*x - a*a, [{valeur:-a,interdit:false},{valeur:a,interdit:false}], op);
     const symb = { '>':'\\gt', '<':'\\lt', '>=':'\\geqslant', '<=':'\\leqslant' }[op];
-    return { enonce: `\\(x^2-${a*a}${symb} 0\\)`, intervalleSpec: spec };
+    return { enonce: `\\(x^2-${a*a}${symb} 0\\)`, intervalleSpec: spec,
+      detail: detailSigne([`x^2-${a*a} = (x-${a})(x+${a})`, `x-${a} = 0 \\iff x = ${a}`, `x+${a} = 0 \\iff x = ${-a}`],
+        [{ v: -a, tex: `${-a}` }, { v: a, tex: `${a}` }], x => x*x - a*a, op, spec, `(x-${a})(x+${a})`, false) };
   }},
   {id:"8.8 b)", type:"intervalle", texteLibre:true, gen: () => {
     // facteur toujours positif (carre parfait) : ne change jamais de signe, s'annule sans "passer"
@@ -1507,7 +1608,11 @@ const generateurs = [
     const p = alea(2,6), q = -p*x1;
     const spec = resoudreSigneParBalayage(produitAffine([{a:1,b:-xc,carre:true},{a:p,b:q}]),
       [{valeur:xc,interdit:false},{valeur:x1,interdit:false}], '>');
-    return { enonce: `\\((${xMoinsTexte(xc)})^2(${affineTexte(p,q)})\\gt 0\\)`, intervalleSpec: spec };
+    return { enonce: `\\((${xMoinsTexte(xc)})^2(${affineTexte(p,q)})\\gt 0\\)`, intervalleSpec: spec,
+      detail: (() => {
+        const R = [{ f: `(${xMoinsTexte(xc)})^2`, v: xc, tex: `${xc}` }, { f: affineTexte(p, q), v: x1, tex: `${x1}` }];
+        return detailSigne(lignesRacines(R), R, produitAffine([{a:1,b:-xc,carre:true},{a:p,b:q}]), '>', spec, `(${xMoinsTexte(xc)})^2(${affineTexte(p, q)})`, false);
+      })() };
   }},
   {id:"8.8 c)", type:"intervalle", texteLibre:true, bornesIrreductibles:true, gen: () => {
     // ramener (ax+b)/(cx+d) >= k a une etude de signe : (ax+b)/(cx+d)-k >= 0 ; borne possiblement fractionnaire
@@ -1519,7 +1624,16 @@ const generateurs = [
     } while (aPrime === 0 || Math.abs((-(b - k*d))/aPrime - (-d/c)) < 1e-9);
     const spec = resoudreSigneParBalayage(x => (a*x+b)/(c*x+d) - k,
       [{valeur:(-(b - k*d))/aPrime, interdit:false},{valeur:-d/c, interdit:true}], '>=');
-    return { enonce: `\\(\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\geqslant ${k}\\) (bornes sous forme irréductible)`, intervalleSpec: spec };
+    return { enonce: `\\(\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\geqslant ${k}\\) (bornes sous forme irréductible)`, intervalleSpec: spec,
+      detail: (() => {
+        const A2 = a - k*c, B2 = b - k*d, nu = affineTexte(a, b), de = affineTexte(c, d), mk = Math.abs(k) === 1 ? '' : Math.abs(k);
+        const R = [{ f: linL(A2, B2), v: -B2 / A2, tex: fracTexte(-B2, A2) }, { f: de, v: -d / c, tex: String(-d / c), interdit: true }];
+        return detailSigne([`\\dfrac{${nu}}{${de}} \\geqslant ${k}`,
+          `\\iff \\dfrac{${nu}}{${de}} ${k > 0 ? '-' : '+'} ${Math.abs(k)} \\geqslant 0`,
+          `\\iff \\dfrac{${nu} ${k > 0 ? '-' : '+'} ${mk}(${de})}{${de}} \\geqslant 0`,
+          `\\iff \\dfrac{${linL(A2, B2)}}{${de}} \\geqslant 0`, ...lignesRacines(R)],
+          R, x => (A2*x + B2) / (c*x + d), '>=', spec, '', true);
+      })() };
   }},
   {id:"8.8 d)", type:"discussionParametre", texteLibre:true, gen: () => {
     // discussion VERITABLE : m est un reel quelconque (pas une valeur tiree au hasard) — le
@@ -1534,16 +1648,30 @@ const generateurs = [
     const facteurs = alea(0,1) === 0 ? `(x-m)(${affineTexte(1,-s)})` : `(${affineTexte(1,-s)})(x-m)`;
     return {
       enonce: `\\(${facteurs}${symb} 0\\), où \\(m\\) est un paramètre réel (solution à donner selon les valeurs de \\(m\\)).`,
-      parametre: 'm', seuilFixe: s, op
+      parametre: 'm', seuilFixe: s, op,
+      detail: (() => {
+        const facteur = affineTexte(1, -s), expr = '(x-m)(' + facteur + ')';
+        const final = formaterReponseBrut({ type: 'discussionParametre', seuilFixe: s, parametre: 'm', op });
+        return { lignes: [`${expr} ${OP_TEX[op]} 0`, 'x-m = 0 \\iff x = m', `${facteur} = 0 \\iff x = ${s}`,
+          `\\text{Tableau de signes de } ${expr}`,
+          `m \\lt ${s}\\ :`, Detail.tableauSignes([{ v: s - 1, tex: 'm' }, { v: s, tex: String(s) }], x => (x - (s - 1)) * (x - s)),
+          `m \\gt ${s}\\ :`, Detail.tableauSignes([{ v: s, tex: String(s) }, { v: s + 1, tex: 'm' }], x => (x - s) * (x - (s + 1))),
+          `m = ${s}\\ :\\ (x-${s})^2 ${OP_TEX[op]} 0`,
+          '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles l'expression est } ${OP_TEX[op]}\\ 0`,
+          final], final };
+      })()
     };
   }}
 ];
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2834,9 +2962,9 @@ function formaterReponseBrut(ex) {
         casSup = `[${s}\\,;\\,${p}]`;
         casEgal = `\\{${s}\\}`;
       }
-      return `\\text{si }${p}\\lt ${s}\\text{ : }${casInf}` +
-             `\\text{ ; si }${p}\\gt ${s}\\text{ : }${casSup}` +
-             `\\text{ ; si }${p}=${s}\\text{ : }${casEgal}`;
+      return `\\begin{array}{l}\\text{si }${p}\\lt ${s}\\text{ : }${casInf} \\\\ ` +
+             `\\text{si }${p}\\gt ${s}\\text{ : }${casSup} \\\\ ` +
+             `\\text{si }${p}=${s}\\text{ : }${casEgal}\\end{array}`;
     }
     if (ex.type === 'texte') {
       return `\\text{${ex.reponse}}`;
@@ -2872,10 +3000,10 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       if (ex.type === 'tableauSigne') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeSigneHTML(ex)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :${Detail.html(ex, idx)}</div>${tableCorrigeSigneHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

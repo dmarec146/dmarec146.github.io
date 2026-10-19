@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261018"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"9.1 a)":0.5,"9.1 b)":0.5,"9.1 c)":0.5,"9.1 d)":0.5,"9.2 a)":0.5,"9.2 b)":0.75,"9.2 c)":1,"9.2 d)":1.25,"9.3 a)":0.5,"9.3 b)":0.75,"9.3 c)":0.75,"9.3 d)":1,"9.4 a)":0.75,"9.4 b)":1.25,"9.5 a)":0.75,"9.5 b)":1,"9.5 c)":1.25,"9.5 d)":1.5,"9.6 a)":1,"9.6 b)":2,"9.7 a)":1.5,"9.7 b)":1.5,"9.7 c)":2,"9.7 d)":2},"bonus":["9.7 a)","9.7 b)","9.7 c)","9.7 d)"]});
@@ -1039,7 +1040,7 @@ function tableCorrigeCroiseHTML(ex) {
   const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
   const p = ex.pourcentageAttendu;
   const pctTxt = Number.isInteger(p) ? String(p) : String(p).replace('.','{,}');
-  return `${table}<p>Pourcentage attendu : \\(${pctTxt}\\,\\%\\)</p>`;
+  return `<div class="tc-scroll">${table}</div><p>Pourcentage attendu : \\(${pctTxt}\\,\\%\\)</p>`;
 }
 // construit un tableau croise 2x2 coherent, toutes les cases >= 5% de l'effectif ; l'effectif total
 // varie d'un tirage a l'autre (ne reste pas toujours 100) pour que le calcul de pourcentage soit un
@@ -1092,27 +1093,63 @@ let tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 4);
 // en preparation directe du reste de la fiche (une proportion se manipule comme une fraction) ----------
 // fraction irreductible n/d en texte (entier si d = 1), pour que le corrige donne la VALEUR et non l'expression
 function fractionTexte(n, d) { const g = pgcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : n + '/' + d; }
+// ---- details de correction (18/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { fracTexte, fracBrute, lignesSomme, produitFrac } = Detail;
+// decimal a la francaise, zeros inutiles retires : 12.5 -> « 12{,}5 », 0.07 -> « 0{,}07 »
+const dfr = (v, nd = 6) => String(Number(Number(v).toFixed(nd))).replace('.', '{,}');
+const pct = (v, nd = 6) => `${dfr(v, nd)}\\,\\%`;
+// « partie / tout » en pourcentage : valeur a 3 decimales puis arrondie au dixieme (p = valeur arrondie de l'exercice)
+// « = » quand la valeur est exacte a nd decimales, « \\approx » sinon
+const egOuApprox = (v, nd) => (Math.abs(v - Number(v.toFixed(nd))) < 1e-9 ? '=' : '\\approx');
+// gauche = valeur (nd decimales) puis arrondi ; une seule ligne si la valeur est deja l'arrondi cherche
+const lignesArrondies = (gauche, v, nd, vFinal, texteV, texteFinal) => (Math.abs(v - vFinal) < 1e-9
+  ? [gauche + ' = ' + texteFinal]
+  : [gauche + ' ' + egOuApprox(v, nd) + ' ' + texteV, '\\approx ' + texteFinal]);
+const lignesRatio = (partie, tout, p) => lignesArrondies('\\dfrac{' + partie + '}{' + tout + '}', partie / tout * 100, 4, p, pct(partie / tout * 100, 4), pct(p));
+// calcul d'une inconnue x telle que (fraction) x = valeur : division par la fraction, c'est-a-dire multiplication par son inverse
+const lignesInconnue = (num, den, valeur, resultat) => [`\\dfrac{${num}}{${den}}x = ${valeur}`, `\\iff x = ${valeur}\\times \\dfrac{${den}}{${num}}`, `\\iff x = ${resultat}`];
+// somme ou difference de deux fractions deja ecrites en une seule : liste de termes -> { lignes, final }
+const sommeF = termes => { const r = lignesSomme(termes); return { lignes: r.lignes, final: r.final }; };
+// premiere ligne « expression = nouvelle ecriture » suivie de la somme de fractions
+const ecritureEtSomme = (debut, termes) => { const r = lignesSomme(termes); return { lignes: [debut, ...r.lignes], final: r.final }; };
 const MODELES_CALCUL = [
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true }; },
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true,
+                   detail: sommeF([{ s: 1, n: a, d: b }, { s: 1, n: c, d: d }]) }; },
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true }; },
+          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true,
+                   detail: sommeF([{ s: 1, n: a, d: b }, { s: -1, n: c, d: d }]) }; },
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true }; },
+          const P = produitFrac(a, b, c, d);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true,
+                   detail: { lignes: P.lignes, final: P.final } }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}+\\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*f + e*b*d, b*d*f), fractionIrreductible:true }; },
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}+\\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*f + e*b*d, b*d*f), fractionIrreductible:true,
+                   detail: ecritureEtSomme(`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}+\\dfrac{${e}}{${f}} = ${fracBrute(a*c, b*d)}+\\dfrac{${e}}{${f}}`, [{ s: 1, n: a*c, d: b*d }, { s: 1, n: e, d: f }]) }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*d*f + c*e*b, b*d*f), fractionIrreductible:true }; },
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*d*f + c*e*b, b*d*f), fractionIrreductible:true,
+                   detail: ecritureEtSomme(`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}} = \\dfrac{${a}}{${b}}+${fracBrute(c*e, d*f)}`, [{ s: 1, n: a, d: b }, { s: 1, n: c*e, d: d*f }]) }; },
   () => { const c = alea(2,9), e = alea(2,9), b = alea(1,c-1), d = alea(1,e-1), a = alea(2,9);
-          return { enonce:`${a}\\times \\dfrac{${b}}{${c}}-\\dfrac{${d}}{${e}}`, reponse:fractionTexte(a*b*e - d*c, c*e), fractionIrreductible:true }; },
+          return { enonce:`${a}\\times \\dfrac{${b}}{${c}}-\\dfrac{${d}}{${e}}`, reponse:fractionTexte(a*b*e - d*c, c*e), fractionIrreductible:true,
+                   detail: ecritureEtSomme(`${a}\\times \\dfrac{${b}}{${c}}-\\dfrac{${d}}{${e}} = ${fracBrute(a*b, c)}-\\dfrac{${d}}{${e}}`, [{ s: 1, n: a*b, d: c }, { s: -1, n: d, d: e }]) }; },
   () => { const b = alea(2,9), e = alea(2,9), a = alea(1,b-1), d = alea(1,e-1), c = alea(2,9);
-          return { enonce:`\\dfrac{${a}}{${b}}-${c}\\times \\dfrac{${d}}{${e}}`, reponse:fractionTexte(a*e - c*d*b, b*e), fractionIrreductible:true }; },
+          return { enonce:`\\dfrac{${a}}{${b}}-${c}\\times \\dfrac{${d}}{${e}}`, reponse:fractionTexte(a*e - c*d*b, b*e), fractionIrreductible:true,
+                   detail: ecritureEtSomme(`\\dfrac{${a}}{${b}}-${c}\\times \\dfrac{${d}}{${e}} = \\dfrac{${a}}{${b}}-${fracBrute(c*d, e)}`, [{ s: 1, n: a, d: b }, { s: -1, n: c*d, d: e }]) }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\left(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte((a*d + c*b)*e, b*d*f), fractionIrreductible:true }; },
+          const S = lignesSomme([{ s: 1, n: a, d: b }, { s: 1, n: c, d: d }]);
+          // la somme entre parentheses est calculee d'abord ; si elle est entiere, le produit se calcule sans fraction de denominateur 1
+          const suite = S.d === 1
+            ? [`${S.n}\\times \\dfrac{${e}}{${f}} = ${fracBrute(S.n * e, f)}` + (fracTexte(S.n * e, f) === fracBrute(S.n * e, f) ? '' : ` = ${fracTexte(S.n * e, f)}`)]
+            : produitFrac(S.n, S.d, e, f).lignes;
+          return { enonce:`\\left(\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}\\right)\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte((a*d + c*b)*e, b*d*f), fractionIrreductible:true,
+                   detail: { lignes: [...S.lignes, ...suite], final: fracTexte((a*d + c*b)*e, b*d*f) } }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true }; },
+          const brute = fracBrute(a*c*e, b*d*f), simple = fracTexte(a*c*e, b*d*f);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true,
+                   detail: { lignes: [`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}} = \\dfrac{${a}\\times ${c}\\times ${e}}{${b}\\times ${d}\\times ${f}} = ${brute}` + (brute === simple ? '' : ` = ${simple}`)], final: simple } }; },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}-\\dfrac{${e}}{${f}}`, reponse:fractionTexte((a*d + c*b)*f - e*b*d, b*d*f), fractionIrreductible:true }; }
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}-\\dfrac{${e}}{${f}}`, reponse:fractionTexte((a*d + c*b)*f - e*b*d, b*d*f), fractionIrreductible:true,
+                   detail: sommeF([{ s: 1, n: a, d: b }, { s: 1, n: c, d: d }, { s: -1, n: e, d: f }]) }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 
@@ -1128,79 +1165,93 @@ const generateurs = [
     // classique : decimal -> pourcentage
     const p = alea(1,99);
     const dec = formatDecimalFr((p/100).toFixed(2));
-    return { enonce:`\\(${dec}\\) en pourcentage`, reponsePourcent:p };
+    return { enonce:`\\(${dec}\\) en pourcentage`, reponsePourcent:p,
+             detail: { lignes: [`${dec} = \\dfrac{${p}}{100} = ${pct(p)}`], final: pct(p) } };
   }},
   {id:"9.2 b)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     // pourcentage dont la fraction p/100 SE REDUIT reellement (pgcd(p,100) > 1) : sinon la question
     // se reduirait a ecrire p/100 (7 % -> 7/100, deja irreductible)
     let p, g;
     do { p = alea(1,99); g = pgcd(p,100); } while (g === 1);
-    return { enonce:`\\(${p}\\,\\%\\) sous forme de fraction irréductible`, reponse:`${p/g}/${100/g}` };
+    return { enonce:`\\(${p}\\,\\%\\) sous forme de fraction irréductible`, reponse:`${p/g}/${100/g}`,
+             detail: { lignes: [`${p}\\,\\% = \\dfrac{${p}}{100} = \\dfrac{${p}\\div ${g}}{100\\div ${g}} = \\dfrac{${p/g}}{${100/g}}`], final: `\\dfrac{${p/g}}{${100/g}}` } };
   }},
   {id:"9.2 c)", type:"pourcentage", texteLibre:true, exigerPourcent:true, gen: () => {
     // denominateur 8, 16 ou 40 : le pourcentage est decimal (12,5 % ; 6,25 % ; 2,5 %...) ; fraction irreductible
     const den = choix([8,16,40]); let num;
     do { num = alea(1,den-1); } while (pgcd(num,den) !== 1);
-    return { enonce:`\\(\\dfrac{${num}}{${den}}\\) en pourcentage`, reponsePourcent: num*100/den };
+    return { enonce:`\\(\\dfrac{${num}}{${den}}\\) en pourcentage`, reponsePourcent: num*100/den,
+             detail: { lignes: [`\\dfrac{${num}}{${den}} = ${num} \\div ${den} = ${dfr(num/den)} = ${pct(num*100/den)}`], final: pct(num*100/den) } };
   }},
   {id:"9.2 d)", type:"pourcentage", texteLibre:true, exigerPourcent:true, gen: () => {
     // fraction non reduite (une seule difficulte de plus) : pourcentage entier
     const [n,d,p] = choix(FRACTIONS_POURCENT.filter(t => Number.isInteger(t[2]))), k = alea(2,6);
-    return { enonce:`\\(\\dfrac{${n*k}}{${d*k}}\\) en pourcentage`, reponsePourcent:p };
+    return { enonce:`\\(\\dfrac{${n*k}}{${d*k}}\\) en pourcentage`, reponsePourcent:p,
+             detail: { lignes: [`\\dfrac{${n*k}}{${d*k}} = \\dfrac{${n}}{${d}} = ${dfr(p/100)} = ${pct(p)}`], final: pct(p) } };
   }},
 
   // ---------- 9.3 : calculer (pourcentage ou fraction d'une quantite) ----------
   {id:"9.3 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_USUELS), base = baseDivisiblePar(p);
-    return { enonce:`\\(${p}\\,\\%\\) de \\(${base}\\)`, reponse:`${valeurExacte(p*base/100)}` };
+    return { enonce:`\\(${p}\\,\\%\\) de \\(${base}\\)`, reponse:`${valeurExacte(p*base/100)}`,
+             detail: { lignes: [`${p}\\,\\%\\times ${base} = \\dfrac{${p}}{100}\\times ${base} = \\dfrac{${p*base}}{100} = ${dfr(p*base/100)}`], final: dfr(p*base/100) } };
   }},
   {id:"9.3 b)", type:"num", texteLibre:true, gen: () => {
     // pourcentage quelconque, resultat decimal
     const p = choix(POURCENTAGES_AUTRES);
     let base; do { base = alea(10,90); } while ((valeurExacte(p*base/100)) % 1 === 0);
-    return { enonce:`\\(${p}\\,\\%\\) de \\(${base}\\)`, reponse:`${valeurExacte(p*base/100)}` };
+    return { enonce:`\\(${p}\\,\\%\\) de \\(${base}\\)`, reponse:`${valeurExacte(p*base/100)}`,
+             detail: { lignes: [`${p}\\,\\%\\times ${base} = \\dfrac{${p}}{100}\\times ${base} = \\dfrac{${p*base}}{100} = ${dfr(p*base/100)}`], final: dfr(p*base/100) } };
   }},
   {id:"9.3 c)", type:"num", texteLibre:true, gen: () => {
     const den = alea(2,9), num = alea(1,den-1), base = den*alea(2,15);
-    return { enonce:`\\(\\dfrac{${num}}{${den}}\\) de \\(${base}\\)`, reponse:`${num*base/den}` };
+    return { enonce:`\\(\\dfrac{${num}}{${den}}\\) de \\(${base}\\)`, reponse:`${num*base/den}`,
+             detail: { lignes: [`\\dfrac{${num}}{${den}}\\times ${base} = \\dfrac{${num}\\times ${base}}{${den}} = \\dfrac{${num*base}}{${den}} = ${num*base/den}`], final: String(num*base/den) } };
   }},
   {id:"9.3 d)", type:"num", texteLibre:true, gen: () => {
     // pourcentage decimal (12,5 % ; 37,5 %...) d'une quantite choisie pour un resultat entier
     const [n,d,p] = choix(FRACTIONS_POURCENT_DECIMALES);
     const base = d*alea(2,15);
-    return { enonce:`\\(${formatDecimalFr(String(p))}\\,\\%\\) de \\(${base}\\)`, reponse:`${valeurExacte(p*base/100)}` };
+    return { enonce:`\\(${formatDecimalFr(String(p))}\\,\\%\\) de \\(${base}\\)`, reponse:`${valeurExacte(p*base/100)}`,
+             detail: { lignes: [`${dfr(p)}\\,\\%\\times ${base} = \\dfrac{${n}}{${d}}\\times ${base} = \\dfrac{${n}\\times ${base}}{${d}} = ${dfr(p*base/100)}`], final: dfr(p*base/100) } };
   }},
 
   // ---------- 9.4 : calculer le nombre cherche (une partie et le pourcentage ou la fraction sont connus) ----------
   {id:"9.4 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_NICE), nombre = baseDivisiblePar(p), partie = valeurExacte(p*nombre/100);
-    return { enonce:`\\(${p}\\,\\%\\) d'un nombre vaut \\(${partie}\\)`, reponse:`${nombre}` };
+    return { enonce:`\\(${p}\\,\\%\\) d'un nombre vaut \\(${partie}\\)`, reponse:`${nombre}`,
+             detail: { lignes: lignesInconnue(p, 100, partie, nombre), final: String(nombre) } };
   }},
   {id:"9.4 b)", type:"num", texteLibre:true, gen: () => {
     // une fraction (et non un pourcentage) : les 3/8 d'un nombre valent 45
     let den, num; do { den = alea(3,9); num = alea(2,den-1); } while (pgcd(num,den) !== 1);
     const k = alea(2,12);
-    return { enonce:`Les \\(\\dfrac{${num}}{${den}}\\) d'un nombre valent \\(${num*k}\\)`, reponse:`${den*k}` };
+    return { enonce:`Les \\(\\dfrac{${num}}{${den}}\\) d'un nombre valent \\(${num*k}\\)`, reponse:`${den*k}`,
+             detail: { lignes: lignesInconnue(num, den, num*k, den*k), final: String(den*k) } };
   }},
 
   // ---------- 9.5 : calculer le pourcentage demande (une partie et le tout sont connus) ----------
   {id:"9.5 a)", type:"pourcentage", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_USUELS), tout = baseDivisiblePar(p), partie = valeurExacte(p*tout/100);
-    return { enonce:`\\(${partie}\\) sur \\(${tout}\\)`, reponsePourcent:p };
+    return { enonce:`\\(${partie}\\) sur \\(${tout}\\)`, reponsePourcent:p,
+             detail: { lignes: [`\\dfrac{${partie}}{${tout}} = ${dfr(p/100)} = ${pct(p)}`], final: pct(p) } };
   }},
   {id:"9.5 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_AUTRES), tout = baseDivisiblePar(p), partie = valeurExacte(p*tout/100);
-    return { enonce:`\\(${partie}\\) sur \\(${tout}\\)`, reponsePourcent:p };
+    return { enonce:`\\(${partie}\\) sur \\(${tout}\\)`, reponsePourcent:p,
+             detail: { lignes: [`\\dfrac{${partie}}{${tout}} = ${dfr(p/100)} = ${pct(p)}`], final: pct(p) } };
   }},
   {id:"9.5 c)", type:"pourcentage", texteLibre:true, gen: () => {
     // pourcentage decimal (12,5 % ; 37,5 %...)
     const [n,d,p] = choix(FRACTIONS_POURCENT_DECIMALES), k = alea(2,15);
-    return { enonce:`\\(${n*k}\\) sur \\(${d*k}\\)`, reponsePourcent:p };
+    return { enonce:`\\(${n*k}\\) sur \\(${d*k}\\)`, reponsePourcent:p,
+             detail: { lignes: [`\\dfrac{${n*k}}{${d*k}} = \\dfrac{${n}}{${d}} = ${dfr(n/d)} = ${pct(p)}`], final: pct(p) } };
   }},
   {id:"9.5 d)", type:"pourcentage", texteLibre:true, gen: () => {
     const partie = alea(10,90), tout = alea(partie+10,200);
     const p = Math.round(partie/tout*1000)/10;
-    return { enonce:`\\(${partie}\\) sur \\(${tout}\\) (arrondi au dixième)`, reponsePourcent:p, tolerancePourcent:0.05 };
+    return { enonce:`\\(${partie}\\) sur \\(${tout}\\) (arrondi au dixième)`, reponsePourcent:p, tolerancePourcent:0.05,
+             detail: { lignes: lignesRatio(partie, tout, p), final: pct(p) } };
   }},
 
   // ---------- 9.6 : utiliser un tableau d'effectifs (lecture, puis tableau a completer) ----------
@@ -1209,7 +1260,8 @@ const generateurs = [
     const t = tirerTableauCroise(), ctx = tirageContextesTableau[0];
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
     const p = Math.round(t.a/t.totalL1*1000)/10;
-    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.ligne1} », quel pourcentage correspond à « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05 };
+    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}Parmi les cas « ${ctx.ligne1} », quel pourcentage correspond à « ${ctx.colonne1} » (arrondi au dixième) ?`, reponsePourcent:p, tolerancePourcent:0.05,
+             detail: { lignes: lignesRatio(t.a, t.totalL1, p), final: pct(p) } };
   }},
   {id:"9.6 b)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const t = tirerTableauCroise(), ctx = tirageContextesTableau[1];
@@ -1217,7 +1269,12 @@ const generateurs = [
     // autres cases sont de vraies cases a completer, puis un pourcentage se calcule a partir du
     // tableau une fois complet — deux etapes de la MEME question, pas deux questions separees.
     const pourcentageAttendu = Math.round(t.d/t.total*1000)/10;
-    return { enonce:`${introContexte(ctx,t.total)} Seuls les totaux par ligne et par colonne sont connus, ainsi que le fait que ${t.a} ${ctx.unite} correspondent à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} ». Compléter le tableau ci-dessous, puis calculer le pourcentage demandé.`, t, ctx, pourcentageAttendu };
+    return { enonce:`${introContexte(ctx,t.total)} Seuls les totaux par ligne et par colonne sont connus, ainsi que le fait que ${t.a} ${ctx.unite} correspondent à la fois à « ${ctx.ligne1} » et « ${ctx.colonne1} ». Compléter le tableau ci-dessous, puis calculer le pourcentage demandé.`, t, ctx, pourcentageAttendu,
+             // intitules du tableau en \textrm (donnees de l'enonce, pas des phrases de methode) : chaque case est nommee par sa ligne et sa colonne
+             detail: { lignes: [`\\text{On retranche une case déjà connue}`, `\\text{du total de sa ligne ou de sa colonne}`,
+                                `\\small\\textrm{«${ctx.ligne1} » et « ${ctx.colonne2} » :}`, `${t.totalL1} - ${t.a} = ${t.b}`,
+                                `\\small\\textrm{«${ctx.ligne2} » et « ${ctx.colonne1} » :}`, `${t.totalC1} - ${t.a} = ${t.c}`,
+                                `\\small\\textrm{«${ctx.ligne2} » et « ${ctx.colonne2} » :}`, `${t.total - t.totalL1} - ${t.c} = ${t.d}`, ...lignesRatio(t.d, t.total, pourcentageAttendu)], final: pct(pourcentageAttendu) } };
   }},
 
   // ---------- 9.7 : calculs plus avances (pourcentage de pourcentage emboite, tableaux d'effectifs plus delicats) ----------
@@ -1226,14 +1283,16 @@ const generateurs = [
     const g1 = 100/pgcd(p1,100), g2 = 100/pgcd(p2,100);
     const total = g1*g2*alea(1,4);
     const intermediaire = valeurExacte(p1*total/100), finalV = valeurExacte(p2*intermediaire/100);
-    return { enonce:`Un lycée compte \\(${total}\\) élèves. \\(${p1}\\,\\%\\) d'entre eux sont en filière générale, et parmi ceux-ci, \\(${p2}\\,\\%\\) suivent une spécialité mathématiques. Combien d'élèves suivent cette spécialité ?`, reponse:`${finalV}` };
+    return { enonce:`Un lycée compte \\(${total}\\) élèves. \\(${p1}\\,\\%\\) d'entre eux sont en filière générale, et parmi ceux-ci, \\(${p2}\\,\\%\\) suivent une spécialité mathématiques. Combien d'élèves suivent cette spécialité ?`, reponse:`${finalV}`,
+             detail: { lignes: [`${p1}\\,\\%\\times ${total} = ${intermediaire}`, `${p2}\\,\\%\\times ${intermediaire} = ${finalV}`], final: String(finalV) } };
   }},
   {id:"9.7 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const p1 = choix(POURCENTAGES_NICE), p2 = choix(POURCENTAGES_NICE);
     const g1 = 100/pgcd(p1,100), g2 = 100/pgcd(p2,100);
     const total = g1*g2*alea(1,4);
     const intermediaire = valeurExacte(p1*total/100), finalV = valeurExacte(p2*intermediaire/100);
-    return { enonce:`Dans un lycée, \\(${p1}\\,\\%\\) des \\(${total}\\) élèves sont en filière générale. Parmi eux, \\(${finalV}\\) suivent une spécialité mathématiques. Quel pourcentage des élèves de la filière générale cela représente-t-il ?`, reponsePourcent:p2 };
+    return { enonce:`Dans un lycée, \\(${p1}\\,\\%\\) des \\(${total}\\) élèves sont en filière générale. Parmi eux, \\(${finalV}\\) suivent une spécialité mathématiques. Quel pourcentage des élèves de la filière générale cela représente-t-il ?`, reponsePourcent:p2,
+             detail: { lignes: [`${p1}\\,\\%\\times ${total} = ${intermediaire}`, `\\dfrac{${finalV}}{${intermediaire}} = ${dfr(p2/100)} = ${pct(p2)}`], final: pct(p2) } };
   }},
   {id:"9.7 c)", type:"pourcentage", texteLibre:true, gen: () => {
     // aucune table : trois proportions a composer (une part du tout, puis deux pourcentages conditionnels) ; p1 multiple de 20
@@ -1243,7 +1302,9 @@ const generateurs = [
     let p2, p3; do { p2 = alea(2,18)*5; p3 = alea(2,18)*5; } while (p2 === p3);
     const P = (p1*p2 + (100-p1)*p3)/100;
     const nombreux = ctx.unite === 'locations' ? 'de nombreuses' : 'de nombreux';
-    return { enonce:`${ctx.intro.replace('{n}', nombreux)} ${p1} % des ${ctx.unite} correspondent à « ${ctx.ligne1} ». Parmi les ${ctx.unite} « ${ctx.ligne1} », ${p2} % correspondent à « ${ctx.colonne1} » et, parmi les ${ctx.unite} « ${ctx.ligne2} », ${p3} % correspondent à « ${ctx.colonne1} ». Quel pourcentage de l'ensemble des ${ctx.unite} correspond à « ${ctx.colonne1} » ?`, reponsePourcent:P };
+    return { enonce:`${ctx.intro.replace('{n}', nombreux)} ${p1} % des ${ctx.unite} correspondent à « ${ctx.ligne1} ». Parmi les ${ctx.unite} « ${ctx.ligne1} », ${p2} % correspondent à « ${ctx.colonne1} » et, parmi les ${ctx.unite} « ${ctx.ligne2} », ${p3} % correspondent à « ${ctx.colonne1} ». Quel pourcentage de l'ensemble des ${ctx.unite} correspond à « ${ctx.colonne1} » ?`, reponsePourcent:P,
+             detail: { lignes: [`${p1}\\,\\%\\times ${p2}\\,\\% = ${pct(p1*p2/100)}`, `${100-p1}\\,\\%\\times ${p3}\\,\\% = ${pct((100-p1)*p3/100)}`,
+                                `${pct(p1*p2/100)} + ${pct((100-p1)*p3/100)} = ${pct(P)}`], final: pct(P) } };
   }},
   {id:"9.7 d)", type:"pourcentage", texteLibre:true, gen: () => {
     // deux proportions conditionnelles a calculer puis a comparer : l'ecart se donne en points de pourcentage
@@ -1251,7 +1312,15 @@ const generateurs = [
     do { t = tirerTableauCroise(); ecart = (t.a/t.totalL1 - t.c/(t.total - t.totalL1))*100; } while (ecart < 2);
     const ctx = tirageContextesTableau[3];
     const table = construireTableauCroiseHTML(t.a,t.b,t.c,t.d,t.totalL1,t.totalC1,t.total,ctx);
-    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}De combien de points de pourcentage la proportion de « ${ctx.colonne1} » parmi les « ${ctx.ligne1} » dépasse-t-elle celle parmi les « ${ctx.ligne2} » (arrondi au dixième) ?`, reponsePoints:Math.round(ecart*10)/10, tolerancePoints:0.15 };
+    return { enonce:`${introContexte(ctx,t.total)} Les résultats sont résumés dans ce tableau :${table}De combien de points de pourcentage la proportion de « ${ctx.colonne1} » parmi les « ${ctx.ligne1} » dépasse-t-elle celle parmi les « ${ctx.ligne2} » (arrondi au dixième) ?`, reponsePoints:Math.round(ecart*10)/10, tolerancePoints:0.15,
+             detail: (() => {
+               const pa = t.a / t.totalL1 * 100, pc = (t.c / (t.total - t.totalL1)) * 100, e1 = Math.round(ecart*10)/10;
+               const diff5 = Number(pa.toFixed(5)) - Number(pc.toFixed(5));
+               const lignes = [`\\dfrac{${t.a}}{${t.totalL1}} ${egOuApprox(pa, 5)} ${pct(pa, 5)}`, `\\dfrac{${t.c}}{${t.total - t.totalL1}} ${egOuApprox(pc, 5)} ${pct(pc, 5)}`,
+                              `${dfr(pa, 5)} - ${dfr(pc, 5)} = ${dfr(diff5, 5)}`];
+               if (Math.abs(diff5 - e1) > 1e-9) lignes.push(`\\approx ${dfr(e1)}`);
+               return { lignes, final: dfr(e1) };
+             })() };
   }}
 ];
 
@@ -1259,10 +1328,13 @@ function genererExercices() {
   // on renouvelle le tirage des modeles de calcul et des contextes de tableau croise a chaque version de la fiche
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   tirageContextesTableau = melanger(CONTEXTES_TABLEAU_CROISE).slice(0, 4);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2234,10 +2306,10 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       if (ex.type === 'tableauCroiseRempli') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :${Detail.html(ex, idx)}</div>${tableCorrigeCroiseHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

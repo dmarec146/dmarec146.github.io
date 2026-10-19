@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261018"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"10.1 a)":0.5,"10.1 b)":0.5,"10.1 c)":0.5,"10.1 d)":0.5,"10.2 a)":0.5,"10.2 b)":0.5,"10.2 c)":0.75,"10.2 d)":1,"10.3 a)":0.75,"10.3 b)":1,"10.4 a)":0.75,"10.4 b)":1,"10.5 a)":0.75,"10.5 b)":1,"10.5 c)":1,"10.6 a)":1,"10.6 b)":1.25,"10.7 a)":1.25,"10.7 b)":1.5,"10.8 a)":1.5,"10.8 b)":1.25,"10.8 c)":1.25,"10.9 a)":2,"10.9 b)":2,"10.9 c)":2},"bonus":["10.9 a)","10.9 b)","10.9 c)"]});
@@ -1127,29 +1128,44 @@ function tableCorrigeSchemaHTML(t) {
 
 // ---------- vivier de calculs numeriques (groupe 10.1) : coefficients multiplicateurs et
 // pourcentages d'evolution, en preparation directe du reste de la fiche ----------
+// ---- details de correction (18/10/2026) : fonctions communes dans assets/js/details-correction.js ----
+const { dP, fracBrute, produitFrac } = Detail;
+// decimal a la francaise, zeros inutiles retires : 12.5 -> « 12{,}5 », 0.07 -> « 0{,}07 »
+const dfr = (v, nd = 6) => String(Number(Number(v).toFixed(nd))).replace('.', '{,}');
+const pct = (v, nd = 6) => `${dfr(v, nd)}\\,\\%`;
+const pcts = v => (v > 0 ? '+' : '') + pct(v);                  // taux d'evolution : le signe + est ecrit
+const signe = hausse => (hausse ? '+' : '-');
+// « = » quand la valeur est exacte a nd decimales, « \\approx » sinon
+const egOuApprox = (v, nd) => (Math.abs(v - Number(v.toFixed(nd))) < 1e-9 ? '=' : '\\approx');
+// gauche = valeur (nd decimales) puis arrondi ; une seule ligne si la valeur est deja l'arrondi cherche
+const lignesArrondies = (gauche, v, nd, vFinal, texteV, texteFinal) => (Math.abs(v - vFinal) < 1e-9
+  ? [gauche + ' = ' + texteFinal]
+  : [gauche + ' ' + egOuApprox(v, nd) + ' ' + texteV, '\\approx ' + texteFinal]);
 const MODELES_CALCUL = [
-  // base x coefficient multiplicateur (hausse ou baisse tiree)
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p), hausse=Math.random()<0.5, coef=arrondi(hausse?1+p/100:1-p/100);
-          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${arrondi(base*coef)}` }; },
-  // p % d'une quantite
+          return { enonce:`${base}\\times ${formatDecimalFr(String(coef))}`, reponse:`${arrondi(base*coef)}`,
+                   detail: { lignes: [`${base}\\times ${dfr(coef)} = ${base} ${signe(hausse)} ${base}\\times ${dfr(p/100)} = ${base} ${signe(hausse)} ${dfr(base*p/100)} = ${dfr(base*coef)}`], final: dfr(base*coef) } }; },
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), base=baseDivisiblePar(p);
-          return { enonce:`${p}\\,\\%\\text{ de }${base}`, reponse:`${arrondi(p/100*base)}` }; },
-  // priorites operatoires
+          return { enonce:`${p}\\,\\%\\text{ de }${base}`, reponse:`${arrondi(p/100*base)}`,
+                   detail: { lignes: [`${p}\\,\\%\\times ${base} = \\dfrac{${p}}{100}\\times ${base} = \\dfrac{${p*base}}{100} = ${dfr(p*base/100)}`], final: dfr(p*base/100) } }; },
   () => { const a=alea(2,20), b=alea(2,9), c=alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a-b*c}` }; },
-  // 1 +/- 0,0p : coefficient multiplicateur a partir d'un taux ecrit en decimal
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a-b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a}-${b*c} = ${a-b*c}`], final: `${a-b*c}` } }; },
   () => { const p=choix(POURCENTAGES_EVOL_SIMPLE), hausse=Math.random()<0.5;
-          return { enonce:`1${hausse?'+':'-'}${formatDecimalFr(String(arrondi(p/100)))}`, reponse:`${arrondi(hausse?1+p/100:1-p/100)}` }; },
-  // produit signe
+          return { enonce:`1${hausse?'+':'-'}${formatDecimalFr(String(arrondi(p/100)))}`, reponse:`${arrondi(hausse?1+p/100:1-p/100)}`,
+                   detail: { lignes: [`1${signe(hausse)}${dfr(p/100)} = ${dfr(hausse?1+p/100:1-p/100)}`], final: dfr(hausse?1+p/100:1-p/100) } }; },
   () => { const a=alea(2,9), b=alea(2,12), c=alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
-  // somme ou difference de decimaux
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b-c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
   () => { const x=alea(11,89)/10, y=alea(11,89)/10, plus=Math.random()<0.5, g=Math.max(x,y), pt=Math.min(x,y);
-          return plus ? { enonce:`${formatDecimalFr(String(x))}+${formatDecimalFr(String(y))}`, reponse:`${arrondi(x+y)}` }
-                      : { enonce:`${formatDecimalFr(String(g))}-${formatDecimalFr(String(pt))}`, reponse:`${arrondi(g-pt)}` }; },
-  // multiplication par 99, 101, 999...
+          return plus ? { enonce:`${formatDecimalFr(String(x))}+${formatDecimalFr(String(y))}`, reponse:`${arrondi(x+y)}`,
+                          detail: { lignes: [`${dfr(x)}+${dfr(y)} = \\dfrac{${Math.round(x*10)}+${Math.round(y*10)}}{10} = \\dfrac{${Math.round(x*10)+Math.round(y*10)}}{10} = ${dfr(arrondi(x+y))}`], final: dfr(arrondi(x+y)) } }
+                      : { enonce:`${formatDecimalFr(String(g))}-${formatDecimalFr(String(pt))}`, reponse:`${arrondi(g-pt)}`,
+                          detail: { lignes: [`${dfr(g)}-${dfr(pt)} = \\dfrac{${Math.round(g*10)}-${Math.round(pt*10)}}{10} = \\dfrac{${Math.round(g*10)-Math.round(pt*10)}}{10} = ${dfr(arrondi(g-pt))}`], final: dfr(arrondi(g-pt)) } }; },
   () => { const a=alea(3,25), m=choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; }
+          const base = m > 500 ? 1000 : 100, ecart = Math.abs(m - base), plus = m > base;
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe(plus)} ${ecart}) = ${a*base} ${signe(plus)} ${a*ecart} = ${a*m}`], final: `${a*m}` } }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 // sens (hausse ou baisse) de 10.3 a), tire une fois par version ; 10.3 b) prend le sens oppose
@@ -1163,7 +1179,9 @@ function coefficientGlobal(memeSens) {
   const h1 = Math.random() < 0.5, h2 = memeSens ? h1 : !h1;
   const c1 = arrondi(h1 ? 1+p1/100 : 1-p1/100), c2 = arrondi(h2 ? 1+p2/100 : 1-p2/100);
   const mot1 = h1 ? 'augmente' : 'diminue', mot2 = h2 ? 'augmente' : 'diminue';
-  return { enonce:`${sujet} ${mot1} de \\(${p1}\\,\\%\\) puis ${mot2} de \\(${p2}\\,\\%\\). Quel est le coefficient multiplicateur global de ces deux évolutions ?`, reponse:`${arrondi(c1*c2)}` };
+  return { enonce:`${sujet} ${mot1} de \\(${p1}\\,\\%\\) puis ${mot2} de \\(${p2}\\,\\%\\). Quel est le coefficient multiplicateur global de ces deux évolutions ?`, reponse:`${arrondi(c1*c2)}`,
+    detail: { lignes: [`1${signe(h1)}${dfr(p1/100)} = ${dfr(c1)}`, `1${signe(h2)}${dfr(p2/100)} = ${dfr(c2)}`,
+      `${dfr(c1)}\\times ${dfr(c2)} = \\dfrac{${Math.round(c1*10)}}{10}\\times \\dfrac{${Math.round(c2*10)}}{10} = \\dfrac{${Math.round(c1*10)*Math.round(c2*10)}}{100} = ${dfr(c1*c2)}`], final: dfr(c1*c2) } };
 }
 
 const generateurs = [
@@ -1177,64 +1195,76 @@ const generateurs = [
   // appliquer une evolution, coefficient -> taux) ----------
   {id:"10.2 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_ELARGIE);
-    return { enonce:`Donner le coefficient multiplicateur associé à une augmentation de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}` };
+    return { enonce:`Donner le coefficient multiplicateur associé à une augmentation de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}`,
+             detail: { lignes: [`1+\\dfrac{${p}}{100} = 1+${dfr(p/100)} = ${dfr(1+p/100)}`], final: dfr(1+p/100) } };
   }},
   {id:"10.2 b)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_ELARGIE);
-    return { enonce:`Donner le coefficient multiplicateur associé à une diminution de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1-p/100)}` };
+    return { enonce:`Donner le coefficient multiplicateur associé à une diminution de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1-p/100)}`,
+             detail: { lignes: [`1-\\dfrac{${p}}{100} = 1-${dfr(p/100)} = ${dfr(1-p/100)}`], final: dfr(1-p/100) } };
   }},
   {id:"10.2 c)", type:"num", texteLibre:true, gen: () => {
     // appliquer une evolution : hausse ou baisse tiree
     const p = choix(POURCENTAGES_EVOL_ELARGIE), base = baseDivisiblePar(p), hausse = Math.random() < 0.5;
-    return { enonce:`Calculer \\(${base}\\) ${hausse ? 'augmenté' : 'diminué'} de \\(${p}\\,\\%\\).`, reponse:`${arrondi(base*(hausse ? 1+p/100 : 1-p/100))}` };
+    return { enonce:`Calculer \\(${base}\\) ${hausse ? 'augmenté' : 'diminué'} de \\(${p}\\,\\%\\).`, reponse:`${arrondi(base*(hausse ? 1+p/100 : 1-p/100))}`,
+             detail: { lignes: [`${base}\\times \\left(1${signe(hausse)}\\dfrac{${p}}{100}\\right) = ${base}\\times ${dfr(hausse ? 1+p/100 : 1-p/100)} = ${dfr(base*(hausse ? 1+p/100 : 1-p/100))}`], final: dfr(base*(hausse ? 1+p/100 : 1-p/100)) } };
   }},
   {id:"10.2 d)", type:"pourcentage", texteLibre:true, exigerPourcent:true, gen: () => {
     // coefficient -> taux : hausse ou baisse tiree (le signe fait partie de la reponse)
     const p = choix(POURCENTAGES_EVOL_ELARGIE), hausse = Math.random() < 0.5, coef = arrondi(hausse ? 1+p/100 : 1-p/100);
-    return { enonce:`Un coefficient multiplicateur de \\(${formatDecimalFr(String(coef))}\\) correspond à quelle évolution en pourcentage (positif si augmentation, négatif si diminution) ?`, reponsePourcent: hausse ? p : -p };
+    return { enonce:`Un coefficient multiplicateur de \\(${formatDecimalFr(String(coef))}\\) correspond à quelle évolution en pourcentage (positif si augmentation, négatif si diminution) ?`, reponsePourcent: hausse ? p : -p,
+             detail: { lignes: [`${dfr(coef)} = 1 ${signe(hausse)} ${dfr(p/100)}`, `${signe(hausse)} ${dfr(p/100)} = ${pcts(hausse ? p : -p)}`], final: pcts(hausse ? p : -p) } };
   }},
 
   // ---------- 10.3 : variation absolue et taux d'evolution entre deux valeurs (2 exemples ; le sens, hausse ou baisse,
   // est tire une fois par version et inverse d'une question a l'autre : les deux cas apparaissent toujours) ----------
   {id:"10.3 a)", type:"num", texteLibre:true, gen: () => {
     const v1 = alea(100,450), v2 = tirageSens103 ? v1 + alea(10,150) : v1 - alea(10,70);
-    return { enonce:`Une grandeur passe de \\(${v1}\\) à \\(${v2}\\). Calculer sa variation absolue.`, reponse:`${v2-v1}` };
+    return { enonce:`Une grandeur passe de \\(${v1}\\) à \\(${v2}\\). Calculer sa variation absolue.`, reponse:`${v2-v1}`,
+             detail: { lignes: [`${v2}-${v1} = ${v2-v1}`], final: `${v2-v1}` } };
   }},
   {id:"10.3 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE), v1 = baseDivisiblePar(p), hausse = !tirageSens103;
     const v2 = arrondi(hausse ? v1 + p*v1/100 : v1 - p*v1/100);
-    return { enonce:`Une grandeur passe de \\(${v1}\\) à \\(${v2}\\). Calculer son taux d'évolution.`, reponsePourcent: hausse ? p : -p };
+    return { enonce:`Une grandeur passe de \\(${v1}\\) à \\(${v2}\\). Calculer son taux d'évolution.`, reponsePourcent: hausse ? p : -p,
+             detail: { lignes: [`\\dfrac{${v2}-${v1}}{${v1}} = ${fracBrute(v2-v1, v1)} = ${dfr((v2-v1)/v1)} = ${pcts(hausse ? p : -p)}`], final: pcts(hausse ? p : -p) } };
   }},
 
   // ---------- 10.4 : retrouver la valeur initiale connaissant l'evolution (2 exemples : une hausse, puis une baisse) ----------
   {id:"10.4 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_SIMPLE), v1 = baseDivisiblePar(p), v2 = arrondi(v1*(1+p/100));
-    return { enonce:`Après avoir augmenté de \\(${p}\\,\\%\\), une grandeur vaut \\(${v2}\\). Calculer sa valeur initiale.`, reponse:`${v1}` };
+    return { enonce:`Après avoir augmenté de \\(${p}\\,\\%\\), une grandeur vaut \\(${v2}\\). Calculer sa valeur initiale.`, reponse:`${v1}`,
+             detail: { lignes: [`V\\times ${dfr(arrondi(1+p/100))} = ${dfr(v2)}`, `\\iff V = ${dfr(v2)} \\div ${dfr(arrondi(1+p/100))}`, `\\iff V = ${v1}`], final: `${v1}` } };
   }},
   {id:"10.4 b)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_EVOL_ELARGIE), v1 = baseDivisiblePar(p), v2 = arrondi(v1*(1-p/100));
-    return { enonce:`Après avoir diminué de \\(${p}\\,\\%\\), une grandeur vaut \\(${v2}\\). Calculer sa valeur initiale.`, reponse:`${v1}` };
+    return { enonce:`Après avoir diminué de \\(${p}\\,\\%\\), une grandeur vaut \\(${v2}\\). Calculer sa valeur initiale.`, reponse:`${v1}`,
+             detail: { lignes: [`V\\times ${dfr(arrondi(1-p/100))} = ${dfr(v2)}`, `\\iff V = ${dfr(v2)} \\div ${dfr(arrondi(1-p/100))}`, `\\iff V = ${v1}`], final: `${v1}` } };
   }},
 
   // ---------- 10.5 : cas moins immediats (pourcentages decimaux, evolutions superieures a 100 %) ----------
   {id:"10.5 a)", type:"num", texteLibre:true, gen: () => {
     const p = choix(POURCENTAGES_DECIMAUX);
-    return { enonce:`Écrire le coefficient multiplicateur correspondant à une augmentation de \\(${formatDecimalFr(String(p))}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}` };
+    return { enonce:`Écrire le coefficient multiplicateur correspondant à une augmentation de \\(${formatDecimalFr(String(p))}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}`,
+             detail: { lignes: [`1+\\dfrac{${dfr(p)}}{100} = 1+${dfr(p/100)} = ${dfr(1+p/100)}`], final: dfr(1+p/100) } };
   }},
   {id:"10.5 b)", type:"pourcentage", texteLibre:true, exigerPourcent:true, gen: () => {
     const p = choix(POURCENTAGES_DECIMAUX), hausse = Math.random() < 0.5;
     const coef = arrondi(hausse ? 1+p/100 : 1-p/100);
-    return { enonce:`Un coefficient multiplicateur de \\(${formatDecimalFr(String(coef))}\\) correspond à quelle évolution en pourcentage ?`, reponsePourcent: hausse ? p : -p };
+    return { enonce:`Un coefficient multiplicateur de \\(${formatDecimalFr(String(coef))}\\) correspond à quelle évolution en pourcentage ?`, reponsePourcent: hausse ? p : -p,
+             detail: { lignes: [`${dfr(coef)} = 1 ${signe(hausse)} ${dfr(p/100)}`, `${signe(hausse)} ${dfr(p/100)} = ${pcts(hausse ? p : -p)}`], final: pcts(hausse ? p : -p) } };
   }},
   {id:"10.5 c)", type:"num", texteLibre:true, gen: () => {
     // evolution superieure a 100 % : dite en mots (double, triple...) ou en pourcentage (augmente de 150 %)
     if (Math.random() < 0.5) {
       const k = choix([2,3,4,5]);
       const mots = {2:'double', 3:'triple', 4:'quadruple', 5:'quintuple'};
-      return { enonce:`Écrire le coefficient multiplicateur correspondant à une grandeur qui ${mots[k]}.`, reponse:`${k}` };
+      return { enonce:`Écrire le coefficient multiplicateur correspondant à une grandeur qui ${mots[k]}.`, reponse:`${k}`,
+             detail: { lignes: [`1+${(k-1)*100}\\,\\% = 1+${k-1} = ${k}`], final: `${k}` } };
     }
     const p = choix([120,125,150,175,200,250,300,400]);
-    return { enonce:`Écrire le coefficient multiplicateur correspondant à une augmentation de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}` };
+    return { enonce:`Écrire le coefficient multiplicateur correspondant à une augmentation de \\(${p}\\,\\%\\).`, reponse:`${arrondi(1+p/100)}`,
+             detail: { lignes: [`1+\\dfrac{${p}}{100} = 1+${dfr(p/100)} = ${dfr(1+p/100)}`], final: dfr(1+p/100) } };
   }},
 
   // ---------- 10.6 : coefficient multiplicateur global de deux evolutions successives (2 exemples : meme sens, puis sens contraires).
@@ -1247,11 +1277,20 @@ const generateurs = [
   {id:"10.7 a)", type:"pourcentage", texteLibre:true, gen: () => {
     const sujet = choix(CONTEXTES_EVOLUTION), p = choix(POURCENTAGES_EVOL_SIMPLE);
     const reciproque = Math.round((1/(1+p/100)-1)*1000)/10;
-    return { enonce:`${sujet} augmente de \\(${p}\\,\\%\\). Quel pourcentage de diminution permettrait de retrouver sa valeur initiale (arrondi au dixième) ?`, reponsePourcent: reciproque, tolerancePourcent: 0.05 };
+    return { enonce:`${sujet} augmente de \\(${p}\\,\\%\\). Quel pourcentage de diminution permettrait de retrouver sa valeur initiale (arrondi au dixième) ?`, reponsePourcent: reciproque, tolerancePourcent: 0.05,
+             detail: (() => {
+               const inv = 1/(1+p/100), d4 = Number(inv.toFixed(4)) - 1;
+               return { lignes: [`\\dfrac{1}{${dfr(1+p/100)}} ${egOuApprox(inv, 4)} ${dfr(inv, 4)}`, `${dfr(inv, 4)} - 1 = ${dfr(d4, 4)}`,
+                                 Math.abs(d4*100 - reciproque) < 1e-9 ? `${dfr(d4, 4)} = ${pct(reciproque)}` : `\\approx ${pct(reciproque)}`], final: pct(reciproque) };
+             })() };
   }},
   {id:"10.7 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const sujet = choix(CONTEXTES_EVOLUTION), v = choix(TAUX_MOYEN_VIVIER);
-    return { enonce:`${sujet} a été multiplié(e) par \\(${formatDecimalFr(String(v.coef))}\\) en \\(${v.n}\\) ans, avec un taux d'évolution annuel constant. Calculer ce taux annuel.`, reponsePourcent: v.t0 };
+    return { enonce:`${sujet} a été multiplié(e) par \\(${formatDecimalFr(String(v.coef))}\\) en \\(${v.n}\\) ans, avec un taux d'évolution annuel constant. Calculer ce taux annuel.`, reponsePourcent: v.t0,
+             detail: (() => {
+               const q = arrondi(1 + v.t0/100), mult = Array(v.n).fill(dfr(q)).join('\\times ');
+               return { lignes: [`${mult} = ${dfr(v.coef)}`, `t = ${dfr(q)} - 1 = ${dfr(v.t0/100)} = ${pct(v.t0)}`], final: pct(v.t0) };
+             })() };
   }},
 
   // ---------- 10.8 : exercice bilan a plusieurs questions liees, sur le modele d'un devoir surveille
@@ -1260,16 +1299,23 @@ const generateurs = [
   // renouvele dans genererExercices(). ----------
   {id:"10.8 a)", type:"schemaEvolution", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
-    return { enonce:`Compléter le schéma ci-dessous représentant les évolutions successives : indiquer, pour chaque période, le taux d'évolution (en haut) et le coefficient multiplicateur (en bas) — à partir des informations données plus haut, jamais réécrites sur le schéma.`, t };
+    return { enonce:`Compléter le schéma ci-dessous représentant les évolutions successives : indiquer, pour chaque période, le taux d'évolution (en haut) et le coefficient multiplicateur (en bas) — à partir des informations données plus haut, jamais réécrites sur le schéma.`, t,
+             detail: (() => {
+               const tab = `\\small\\begin{array}{c|ccc} & P_1\\to P_2 & P_2\\to P_3 & P_3\\to P_4 \\\\ \\hline \\mathrm{Taux} & ${pcts(t.h1 ? t.p1 : -t.p1)} & ${pcts(t.taux2)} & ${pcts(t.h3 ? t.p3 : -t.p3)} \\\\ \\mathrm{CM} & ${dfr(t.c1)} & ${dfr(t.c2)} & ${dfr(t.c3)} \\end{array}`;
+               return { lignes: [`1 ${signe(t.h1)} ${dfr(t.p1/100)} = ${dfr(t.c1)}`, `${dfr(t.c2)} = 1 ${signe(t.h2)} ${dfr(t.p2/100)}`, `${signe(t.h2)} ${dfr(t.p2/100)} = ${pcts(t.taux2)}`,
+                                 `1 ${signe(t.h3)} ${dfr(t.p3/100)} = ${dfr(t.c3)}`, tab], final: tab };
+             })() };
   }},
   {id:"10.8 b)", type:"pourcentage", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
-    return { enonce:`Déterminer si ${t.ctx.sujetRef} a augmenté ou diminué de la période 1 à la période 4, en donnant le taux d'évolution global (arrondi au dixième).`, reponsePourcent: t.tauxGlobal, tolerancePourcent: 0.05 };
+    return { enonce:`Déterminer si ${t.ctx.sujetRef} a augmenté ou diminué de la période 1 à la période 4, en donnant le taux d'évolution global (arrondi au dixième).`, reponsePourcent: t.tauxGlobal, tolerancePourcent: 0.05,
+             detail: { lignes: [`${dfr(t.c1)}\\times ${dfr(t.c2)}\\times ${dfr(t.c3)} = ${dfr(t.coefGlobal)}`, `${dfr(t.coefGlobal)} - 1 = ${dfr(t.coefGlobal - 1)}`, `${dfr(t.coefGlobal - 1)} ${Math.abs((t.coefGlobal - 1)*100 - t.tauxGlobal) < 1e-9 ? '=' : '\\approx'} ${pcts(t.tauxGlobal)}`], final: pcts(t.tauxGlobal) } };
   }},
   {id:"10.8 c)", type:"num", texteLibre:true, gen: () => {
     const t = tirageGroupe107;
     const reciproqueArrondi = Math.round(t.reciproque*100)/100;
-    return { enonce:`On suppose qu'à la période 5, ${t.ctx.sujetRef} est revenu(e) à sa valeur de la période 1. Quel est le coefficient réciproque associé à cette dernière évolution (arrondi au centième, calculatrice interdite) ?`, reponse:String(reciproqueArrondi), toleranceNumerique: 0.005 };
+    return { enonce:`On suppose qu'à la période 5, ${t.ctx.sujetRef} est revenu(e) à sa valeur de la période 1. Quel est le coefficient réciproque associé à cette dernière évolution (arrondi au centième, calculatrice interdite) ?`, reponse:String(reciproqueArrondi), toleranceNumerique: 0.005,
+             detail: { lignes: lignesArrondies(`\\dfrac{1}{${dfr(t.coefGlobal)}}`, t.reciproque, 4, reciproqueArrondi, dfr(t.reciproque, 4), dfr(reciproqueArrondi)), final: dfr(reciproqueArrondi) } };
   }},
 
   // ---------- 10.9 : calculs avances (sur le modele des exercices 2 et 4 d'un devoir surveille reel) ----------
@@ -1279,7 +1325,13 @@ const generateurs = [
     const num = numG/g, den = denG/g, k = alea(2,10);
     const aireInitiale = den*k, aireFinale = num*k;
     const mot1 = e1.h?'augmente':'diminue', mot2 = e2.h?'augmente':'diminue';
-    return { enonce:`ABC est un triangle rectangle en A. Lorsqu'on ${mot1} la longueur du côté [AB] de \\(${e1.p}\\,\\%\\) et qu'on ${mot2} la longueur du côté [AC] de \\(${e2.p}\\,\\%\\), l'aire de ABC est de \\(${aireFinale}\\text{ cm}^2\\). Déterminer l'aire du triangle ABC avant ces évolutions.`, reponse:`${aireInitiale}` };
+    return { enonce:`ABC est un triangle rectangle en A. Lorsqu'on ${mot1} la longueur du côté [AB] de \\(${e1.p}\\,\\%\\) et qu'on ${mot2} la longueur du côté [AC] de \\(${e2.p}\\,\\%\\), l'aire de ABC est de \\(${aireFinale}\\text{ cm}^2\\). Déterminer l'aire du triangle ABC avant ces évolutions.`, reponse:`${aireInitiale}`,
+             detail: (() => {
+               const lignes = [`1${signe(e1.h)}${dfr(e1.p/100)} = \\dfrac{${e1.num}}{${e1.den}}`, `1${signe(e2.h)}${dfr(e2.p/100)} = \\dfrac{${e2.num}}{${e2.den}}`, ...produitFrac(e1.num, e1.den, e2.num, e2.den).lignes];
+               if (den === 1) lignes.push(`A = ${aireFinale}`);   // coefficient global egal a 1 : l'aire ne change pas
+               else lignes.push(`\\dfrac{${num}}{${den}}A = ${aireFinale}`, `\\iff A = ${aireFinale}\\times \\dfrac{${den}}{${num}}`, `\\iff A = ${aireInitiale}`);
+               return { lignes, final: `${aireInitiale}` };
+             })() };
   }},
   {id:"10.9 b)", type:"num", texteLibre:true, gen: () => {
     const t = choix(POURCENTAGES_EVOL_SIMPLE), hausse = Math.random() < 0.5;
@@ -1287,10 +1339,13 @@ const generateurs = [
     const aireInitiale = choix([16,20,25,36,40,49,50,64,80,100]);
     const aireFinale = Math.round(aireInitiale*coef*coef*100)/100;
     const mot = hausse ? 'augmente' : 'diminue';
-    return { enonce:`L'aire d'un disque est de \\(${aireInitiale}\\text{ m}^2\\). Son rayon ${mot} de \\(${t}\\,\\%\\). Quelle est la valeur de la nouvelle aire (arrondie au centième) ?`, reponse:String(aireFinale), toleranceNumerique: 0.005 };
+    return { enonce:`L'aire d'un disque est de \\(${aireInitiale}\\text{ m}^2\\). Son rayon ${mot} de \\(${t}\\,\\%\\). Quelle est la valeur de la nouvelle aire (arrondie au centième) ?`, reponse:String(aireFinale), toleranceNumerique: 0.005,
+             detail: { lignes: [`1${signe(hausse)}${dfr(t/100)} = ${dfr(coef)}`, `${dfr(coef)}^{2} = ${dfr(coef*coef)}`, `${aireInitiale}\\times ${dfr(coef*coef)} = ${dfr(aireInitiale*coef*coef)}`,
+                                 ...(Math.abs(aireInitiale*coef*coef - aireFinale) > 1e-9 ? [`\\approx ${dfr(aireFinale)}`] : [])], final: dfr(aireFinale) } };
   }},
   {id:"10.9 c)", type:"num", texteLibre:true, gen: () => {
-    return { enonce:`Une grandeur augmente de \\(t\\,\\%\\) puis diminue de \\(t\\,\\%\\) (le même taux, \\(t\\gt 0\\)). Exprimer, en fonction de \\(t\\), le taux d'évolution global de cette double évolution (en %). Vérifier que ce nombre est toujours négatif : une hausse suivie d'une baisse du même taux ne ramène jamais à la valeur de départ.`, reponse:`-t^2/100` };
+    return { enonce:`Une grandeur augmente de \\(t\\,\\%\\) puis diminue de \\(t\\,\\%\\) (le même taux, \\(t\\gt 0\\)). Exprimer, en fonction de \\(t\\), le taux d'évolution global de cette double évolution (en %). Vérifier que ce nombre est toujours négatif : une hausse suivie d'une baisse du même taux ne ramène jamais à la valeur de départ.`, reponse:`-t^2/100`,
+             detail: { lignes: [`\\left(1+\\dfrac{t}{100}\\right)\\left(1-\\dfrac{t}{100}\\right) = 1-\\dfrac{t^{2}}{10000}`, `\\left(1-\\dfrac{t^{2}}{10000}\\right) - 1 = -\\dfrac{t^{2}}{10000}`, `-\\dfrac{t^{2}}{10000}\\times 100 = -\\dfrac{t^{2}}{100}`], final: `-\\dfrac{t^{2}}{100}` } };
   }}
 ];
 
@@ -1300,10 +1355,13 @@ function genererExercices() {
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   tirageSens103 = Math.random() < 0.5;
   tirageGroupe107 = tirer107();
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2250,10 +2308,10 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       if (ex.type === 'schemaEvolution') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — schéma attendu :</div>${tableCorrigeSchemaHTML(ex.t)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — schéma attendu :${Detail.html(ex, idx)}</div>${tableCorrigeSchemaHTML(ex.t)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

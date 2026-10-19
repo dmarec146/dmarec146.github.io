@@ -114,6 +114,9 @@ const ESSAIS = {
   'la-valeur-citee-annule-le-denominateur': [
     [true, 'x-1 = 0 \\iff x = 1 \\text{ (valeur interdite)}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
     [false, 'x-1 = 0 \\iff x = 2 \\text{ (valeur interdite)}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
+    [true, '-4x+1 = 0 \\iff x = \\dfrac{1}{4} \\text{ (valeur interdite)}', { enonce: 'E(x)=\\dfrac{2*x-3}{-4*x+1}' }, env('')],
+    [true, '2x+3 = 0 \\iff x = -\\dfrac{3}{2} \\text{ (valeur interdite)}', { enonce: 'E(x)=\\dfrac{x-5}{2*x+3}' }, env('')],
+    [false, '2x+3 = 0 \\iff x = \\dfrac{3}{2} \\text{ (valeur interdite)}', { enonce: 'E(x)=\\dfrac{x-5}{2*x+3}' }, env('')],
     [true, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }\\geqslant \\ 0 \\text{ ; la valeur interdite }1 \\text{ est exclue dans tous les cas}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
     [false, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }\\geqslant \\ 0 \\text{ ; la valeur interdite }3 \\text{ est exclue dans tous les cas}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')]
   ],
@@ -121,7 +124,9 @@ const ESSAIS = {
     [true, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }\\geqslant \\ 0 \\text{ ; la valeur interdite }1 \\text{ est exclue dans tous les cas}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
     [false, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }\\leqslant \\ 0 \\text{ ; la valeur interdite }1 \\text{ est exclue dans tous les cas}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
     [true, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }\\lt \\ 0 \\text{ ; la valeur interdite }1', { enonce: '\\dfrac{x^2-1}{x-1}\\lt 0' }, env('')],
-    [false, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }> \\ 0 \\text{ ; la valeur interdite }1', { enonce: '\\dfrac{x^2-1}{x-1}\\lt 0' }, env('')]
+    [false, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }> \\ 0 \\text{ ; la valeur interdite }1', { enonce: '\\dfrac{x^2-1}{x-1}\\lt 0' }, env('')],
+    [true, '\\text{pour lesquelles l\'expression est } >\\ 0', { enonce: '\\((2x-6)(x+1)\\gt 0\\)' }, env('')],
+    [false, '\\text{pour lesquelles l\'expression est } >\\ 0', { enonce: '\\((2x-6)(x+1)\\lt 0\\)' }, env('')]
   ]
 };
 let echecs = 0, essais = 0;

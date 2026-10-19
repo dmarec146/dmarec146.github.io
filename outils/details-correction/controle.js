@@ -79,7 +79,7 @@ async function controlerDansLaPage(opts) {
   // ---------- LaTeX -> mathjs ----------
   const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'abs', 'pi', 'e', 'Infinity', 'nthRoot']);
   function versMathjs(tex) {
-    let t = String(tex).replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
+    let t = String(tex).replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
       .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
       .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '');
@@ -306,6 +306,14 @@ async function controlerDansLaPage(opts) {
         return (m[2] === '<=') === !!e.inclusBas && (m[4] === '<=') === !!e.inclusHaut && Math.abs(bas - e.bas) < 1e-9 && Math.abs(haut - e.haut) < 1e-9 ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
     }
+    // pourcentages et écarts en points : la valeur écrite (sans « % ») est comparée au nombre attendu, à la tolérance de la fiche près
+    const cibleNum = e.reponsePourcent !== undefined ? e.reponsePourcent : e.reponsePoints != null ? e.reponsePoints : e.pourcentageAttendu !== undefined ? e.pourcentageAttendu : undefined;
+    if (cibleNum !== undefined) {
+      try {
+        const v = evaluer(String(F).replace(/\\approx\s*/g, '').replace(/\\,?\s*\\%/g, ''), 0);
+        return Math.abs(v - cibleNum) <= Math.max(e.tolerancePourcent || 0, e.tolerancePoints ? 0.05 : 0, 1e-6) ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
+    }
     if (typeof e.reponse !== 'string') return 'non-verifiable';
     // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
     if (e.type === 'texte') {
@@ -455,7 +463,7 @@ async function controlerDansLaPage(opts) {
           styler(e, l);
           // phrase « en clair » : le texte des \text{…} dans l'ordre, les formules étant remplacées par […]
           if (/\\text\{/.test(l)) {
-            const clair = String(l).split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
+            const clair = String(l).replace(/^\\small\s*/, '').split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
             if (!phrases.has(clair)) phrases.set(clair, { ids: new Set(), exemple: l, enonce: String(e.enonce).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), lignes: D.lignes.slice() });
             phrases.get(clair).ids.add(e.id);
           }
@@ -495,7 +503,7 @@ async function controlerDansLaPage(opts) {
         const dernier = segs[segs.length - 1]; const n = chiffreAlterne(dernier); if (!n || n === dernier) return;
         const r0 = verifierChaine(l); if (!r0 || !r0.ok) return;
         const M = copie(); M.lignes[i] = segs.slice(0, -1).join('=') + '=' + n;
-        compte('chaine-modifiee', () => { const r = verifierChaine(M.lignes[i]); return r && r.faux; });
+        compte('chaine-modifiee', () => { const r = verifierChaine(M.lignes[i]); return r && r.faux; }, `${e.id} : ${l}`);
       });
       // M3 : un nombre de la seconde partie d'une équivalence est modifié
       D.lignes.forEach((l) => {
@@ -553,7 +561,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const avecDetail = exercices.map((e, i) => ({ e, i })).filter((x) => x.e.detail && (typeof DevoirPartiel === 'undefined' || DevoirPartiel.retenu(x.e)));
       // 1. la réponse finale du détail, saisie comme le ferait un élève, doit être acceptée par la validation de la fiche
       const versTexte = (tex) => {
-        let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
+        let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\%/g, '%').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
           .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\(?:times|cdot)/g, '*')
           .replace(/\\(?:emptyset|varnothing)/g, '∅').replace(/\\mathbb\{R\}/g, 'ℝ');
         for (let k = 0; k < 6; k++) a = a.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
@@ -562,13 +570,22 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const refus = [];
       for (const { e, i } of avecDetail) {
         const inp = document.getElementById('input-' + i); if (!inp) continue;
+        if (e.type === 'discussionParametre') continue;   // réponse « si m<s alors … » : la fiche la contrôle elle-même (audit-reponses)
         if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = versTexte(e.detail.final);
         await dormir(25);
         let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }
         if (ok !== true) refus.push({ id: e.id, final: e.detail.final, resultat: String(ok) });
       }
       // 2. réponse volontairement fausse dans chaque champ
-      for (const { i } of avecDetail) { const inp = document.getElementById('input-' + i); if (!inp) continue; if (inp.tagName === 'MATH-FIELD') inp.setValue('999'); else inp.value = '999'; }
+      for (const { i } of avecDetail) {
+        const inp = document.getElementById('input-' + i);
+        if (!inp) {   // tableau de signes (widget) : seuils faux et cases remplies d'un « + »
+          document.querySelectorAll('[id^="cs-seuil-' + i + '-"]').forEach((el) => { el.value = '999'; });
+          document.querySelectorAll('[id^="cs-cell-' + i + '-"]').forEach((el) => { el.textContent = '+'; });
+          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="se-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });   // tableau croisé ou schéma d'évolution à compléter
+          continue;
+        }
+        if (inp.tagName === 'MATH-FIELD') inp.setValue('999'); else inp.value = '999'; }
       await dormir(100);
       verifierTout();
       await dormir(200);
@@ -591,7 +608,17 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
           mesures.push({ id: bloc.id, num: numLigne, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"], mjx-merror') });
         }
       }
-      return { attendus, trouves: boutons.length, mesures, debordement: document.documentElement.scrollWidth - window.innerWidth,
+      // éléments qui dépassent à droite de l'écran sans être dans un conteneur à défilement (pour localiser un débordement)
+      const fautifs = [];
+      if (document.documentElement.scrollWidth - window.innerWidth > 2) {
+        for (const el of document.body.querySelectorAll('*')) {
+          const rc = el.getBoundingClientRect(); if (rc.width === 0 || rc.right <= window.innerWidth + 2) continue;
+          let p = el.parentElement, defile = false;
+          while (p && p !== document.body) { const o = getComputedStyle(p); if (/(auto|scroll|hidden)/.test(o.overflowX)) { defile = true; break; } p = p.parentElement; }
+          if (!defile && fautifs.length < 3) fautifs.push(el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : '') + ' (droite à ' + Math.round(rc.right) + ' px, dans ' + (() => { const c = []; for (let q = el.parentElement; q && q !== document.body && c.length < 4; q = q.parentElement) c.push(q.tagName.toLowerCase() + (q.id ? '#' + q.id : '') + (typeof q.className === 'string' && q.className ? '.' + q.className.split(' ')[0] : '')); return c.join(' < '); })() + ')');
+        }
+      }
+      return { attendus, trouves: boutons.length, mesures, fautifs, debordement: document.documentElement.scrollWidth - window.innerWidth,
         sansReponse: document.querySelectorAll('.correction-ligne .details').length, refus };
     });
     const tag = `${viewport.width}px`;
@@ -605,7 +632,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const seuil = 1.1;   // David (16/10/2026) : le moins de défilement possible, même sur téléphone
       if (m.largeur !== undefined && m.largeur > seuil) anomalies.push({ gravite: 'style', motif: 'ligne-trop-longue-' + (viewport.width < 600 ? 'telephone' : 'ordinateur'), id: m.id.replace('details-', 'ex.#'), exemple: `ligne ${m.num} : ${m.largeur.toFixed(2)} fois la largeur disponible (${tag})` });
     }
-    if (res.debordement > 2) anomalies.push({ gravite: 'erreur', motif: 'debordement-horizontal', id: '(interface ' + tag + ')', exemple: res.debordement + ' px de trop' });
+    if (res.debordement > 2) anomalies.push({ gravite: 'erreur', motif: 'debordement-horizontal', id: '(interface ' + tag + ')', exemple: res.debordement + ' px de trop' + (res.fautifs.length ? ' — ' + res.fautifs.join(' ; ') : '') });
   }
   page.off('console', ecouteur);
   for (const m of new Set(erreursPage)) anomalies.push({ gravite: 'erreur', motif: 'erreur-de-page', id: '(interface ' + viewport.width + 'px)', exemple: m });

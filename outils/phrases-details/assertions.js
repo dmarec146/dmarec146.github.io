@@ -43,9 +43,11 @@ module.exports = [
     motif: /\(valeur interdite\)|est exclue dans tous les cas/,
     verifie: (l, e) => {
       const den = String(e.enonce).match(/\\dfrac\{[^{}]*\}\{([^{}]*)\}/);
-      const p = l.match(/x = (-?\d+) \\text\{ \(valeur interdite\)/) || l.match(/[Ll]a valeur interdite \}\s*(-?\d+)\s*\\text\{ est exclue dans tous les cas/);
+      const val = '(-?(?:\\\\dfrac\\{\\d+\\}\\{\\d+\\}|\\d+))';
+      const p = l.match(new RegExp('x = ' + val + ' \\\\text\\{ \\(valeur interdite\\)')) || l.match(new RegExp('[Ll]a valeur interdite \\}\\s*' + val + '\\s*\\\\text\\{ est exclue dans tous les cas'));
       if (!den || !p) return false;
-      return Math.abs(math.evaluate(den[1].replace(/x/g, '(' + p[1] + ')'))) < 1e-9;
+      const nombre = p[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (m, s, n, d) => s + '(' + n + '/' + d + ')');
+      return Math.abs(math.evaluate(den[1].replace(/x/g, '(' + nombre + ')'))) < 1e-9;
     }
   },
   {
@@ -53,7 +55,7 @@ module.exports = [
     motif: /pour lesquelles (?:le quotient|l'expression) est \}/,
     verifie: (l, e) => {
       const norme = (s) => (/leqslant/.test(s) ? '<=' : /geqslant/.test(s) ? '>=' : /(lt|<)/.test(s) ? '<' : '>');
-      const dansLigne = l.match(/pour lesquelles (?:le quotient|l'expression) est \}\s*(\\leqslant|\\geqslant|\\lt|<|>)/), rels = String(e.enonce).match(/\\leqslant|\\geqslant|\\lt|<|>/g);
+      const dansLigne = l.match(/pour lesquelles (?:le quotient|l'expression) est \}\s*(\\leqslant|\\geqslant|\\lt|\\gt|<|>)/), rels = String(e.enonce).match(/\\leqslant|\\geqslant|\\lt|\\gt|<|>/g);
       return !!(dansLigne && rels && rels.length === 1) && norme(dansLigne[1]) === norme(rels[0]);
     }
   },

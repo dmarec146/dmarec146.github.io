@@ -63,7 +63,7 @@ const Detail = (() => {
     bs.forEach((r, i) => { haut.push('', r.tex); bas.push(signe(i), r.interdit ? '\\Vert' : '0'); });
     haut.push('', '+\\infty');
     bas.push(signe(n), '');
-    return `\\small\\begin{array}{c|${'c'.repeat(2 * n + 3)}} ${haut.join(' & ')} \\\\ \\hline ${bas.join(' & ')} \\end{array}`;
+    return `${n >= 3 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * n + 3)}} ${haut.join(' & ')} \\\\ \\hline ${bas.join(' & ')} \\end{array}`;
   };
 
   const ppcm = (u, v) => u * v / pgcdD(u, v);
