@@ -201,7 +201,7 @@ les corrections ponctuelles d'une fiche).
   **réduites** (fractions irréductibles, aucun terme nul) : le moteur refuse une
   forme non réduite. Tests : `node outils/verification/test-moteur-reponses.js`.
   **Formes générales (13/10/2026)** : `simplifie` (« Simplifier / Calculer / Réduire » : plus rien à
-  simplifier, l'énoncé recopié est refusé), `factorise` (un produit, facteurs sans facteur numérique commun,
+  simplifier, l'énoncé recopié est refusé ; un terme ou un facteur égal à 0, `x+0` ou `0*x`, l'est aussi depuis le 15/10/2026), `factorise` (un produit, facteurs sans facteur numérique commun,
   factorisation complète), `decimal` (notation décimale exigée). Elles ne se déclarent pas question par question :
   **table par fiche** `outils/moteur-reponses/formes-par-fiche.json` (clé = numéro de calcul « 4.2 » ou id « 4.8 c) »)
   puis `node outils/moteur-reponses/cabler-fiches.js` (branche la fiche : balise, table, aiguillage, aide ; idempotent).
@@ -219,7 +219,7 @@ les corrections ponctuelles d'une fiche).
   l'avoir** (copier le bloc d'une fiche existante : de `// ---- Presentation du corrige` à
   `function formaterReponse(ex) { return adoucirAffichage(formaterReponseBrut(ex)); }`, et nommer
   `formaterReponseBrut` la fonction d'origine) ; l'audit le contrôle (style : signe au numérateur, fraction × lettre).
-  **Champs d'intervalle sans indication grisée** : pas de `]a;b[` en sous-brillance dans les champs de réponse (demandé par David en Seconde 8, appliqué aux fiches 12 à 15 ; à étendre aux fiches suivantes lors de leur reprise). **Lectures graphiques au dixième (David, 15/10/2026)** : toute valeur choisie ou attendue pour une lecture sur un graphique (seuil `k` de `f(x)=k`, bornes d'un encadrement, racines de deux courbes) est un entier ou un demi-entier — au plus une décimale, **jamais au centième** (« tout est graphique, donc pas trop de précision ») ; le corrigé affiche les valeurs lues arrondies au dixième (`≈ -0,8 ou 1,2`), bornes d'intervalles en décimales (`[-1 ; -0,9]`), jamais en fraction. **Virgule décimale et ensembles (15/10/2026)** : `adoucirAffichage` convertit aussi tout point décimal du corrigé en
+  **Champs d'intervalle sans indication grisée** : pas de `]a;b[` en sous-brillance dans les champs de réponse (demandé par David en Seconde 8 ; **retiré de toutes les fiches le 16/10/2026, sauf Première 14** dont le devoir était en cours : à retirer lors de sa reprise). **Lectures graphiques au dixième (David, 15/10/2026)** : toute valeur choisie ou attendue pour une lecture sur un graphique (seuil `k` de `f(x)=k`, bornes d'un encadrement, racines de deux courbes) est un entier ou un demi-entier — au plus une décimale, **jamais au centième** (« tout est graphique, donc pas trop de précision ») ; le corrigé affiche les valeurs lues arrondies au dixième (`≈ -0,8 ou 1,2`), bornes d'intervalles en décimales (`[-1 ; -0,9]`), jamais en fraction. **Virgule décimale et ensembles (15/10/2026)** : `adoucirAffichage` convertit aussi tout point décimal du corrigé en
   virgule (`6.2` → `6{,}2`), dans les 49 fiches hors Première 14 (devoir en cours) ; un ensemble en extension `{a;b}` doit être
   affiché avec de vraies accolades (`\left\{ … \right\}`, via `ensembleVersLatex`, présent dans les fiches 12, 14, 15, 17, 18,
   19, 20, 25 et sous forme équivalente dans la 13), sinon LaTeX les prend pour un groupe et les efface ; `{}` s'affiche `\emptyset`.

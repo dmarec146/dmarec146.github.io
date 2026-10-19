@@ -55,8 +55,8 @@ Ces contrôles ont été testés sur des copies volontairement défectueuses des
 crochets ignorés, tolérances trop larges, signe % non exigé, calcul accepté, case ignorée dans le tableau d'effectifs ou
 dans le schéma d'évolution) : tous les défauts sont détectés.
 
-**Non couvert** : les autres types (QCM, vrai/faux, paire, vecteur, triplet,
-tableaux de variations, cercle…) ; ni les autres
+**Non couvert** : les autres types (QCM, vrai/faux cliquables, vecteurs nommés, combinaisons de vecteurs,
+équations de droites…) ; ni les autres
 écritures possibles d'un même intervalle (seule la forme du corrigé est essayée).
 
 **Il ne vérifie pas que le corrigé est mathématiquement juste** (recalcul indépendant à faire fiche par fiche),

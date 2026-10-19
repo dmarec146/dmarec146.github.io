@@ -45,8 +45,8 @@ depuis la réorganisation du 02/10/2026 »).
 
 - **50 fiches de calcul** autonomes, `cahiers/{premiere|seconde}/cahier-N/fiche-NN.html` :
   Première 26 (fiches 1 à 26, réorganisées le 30/09/2026), Seconde 24
-  (fiches 1 à 25, la 24 n'existe pas encore — à ajouter aussi dans
-  `assets/js/manifeste-fiches.js` le jour où elle sera créée).
+  (fiches 1 à 24 : l'ancienne fiche 25 « Équations de droites » du cahier 8 a été
+  renumérotée 24 le 15/10/2026, faute de fiche 24 ; `assets/js/manifeste-fiches.js` est à jour).
   Chaque fiche porte son propre CSS et son propre JavaScript (générateurs
   aléatoires, `groupes`, `construireGrilles()`, vérificateurs, aide « ? »,
   corrigé) : un correctif fait dans une fiche ne s'applique pas aux autres.
@@ -66,7 +66,7 @@ depuis la réorganisation du 02/10/2026 »).
   - `assets/js/widgets-saisie.js` (script classique, 04/10/2026) : aides de
     saisie des 14 fiches de Seconde à widgets (cahier 2 fiche 8, cahier 3
     fiches 9-10, cahier 5 fiches 14-17, cahier 6 fiches 18-19, cahier 7
-    fiche 20, cahier 8 fiches 21-23 et 25) — message « Réponse enregistrée »
+    fiche 20, cahier 8 fiches 21-24) — message « Réponse enregistrée »
     après « Valider ce tableau » (surtout utile en devoir, où rien d'autre ne
     s'affiche), passage à la question suivante, envoi du focus sur un widget
     depuis le champ précédent (enveloppe `allerChampSuivant`, qui plantait
@@ -74,7 +74,7 @@ depuis la réorganisation du 02/10/2026 »).
     autre retouche des fiches que la balise `<script>`. Une nouvelle fiche à
     widget doit l'inclure.
   - `assets/js/bareme.js` (script classique, 05/10/2026) : **barème en points**
-    des fiches de calcul, fiches à barème : Première 1 à 24, Seconde 1 et 5 (les autres n'ont pas de
+    des fiches de calcul, fiches à barème : Première 1 à 24 et Seconde 1, 3 à 24 (Seconde 2 et Première 25-26 n'ont pas de
     `Bareme.definir`, donc inchangées ; marche à suivre dans `outils/bareme/README.md`). **Uniquement dans un devoir** : affiche la note de chaque question et
     « Total : N points (+ M points de calculs avancés) » en tête (rien d'autre pour
     l'élève), et rien en entraînement libre ; `Bareme.calculer`
@@ -117,17 +117,17 @@ depuis la réorganisation du 02/10/2026 »).
     fiche `outils/moteur-reponses/formes-par-fiche.json` + câblage automatique `outils/moteur-reponses/cabler-fiches.js`
     (balise, bloc `formesCalcul()/parametresForme()/exAvecForme()`, aiguillage en tête de `verifierUne`, crochets d'aide ;
     si le moteur ne sait pas lire la réponse attendue, la fiche se rabat sur la valeur — l'audit le signale :
-    `reference-illisible`). Câblées (lots 0 et 1, 13/10/2026) : Seconde 1, 3 à 8, 10 à 23 (sauf 9, 21.4 et 23.6 laissés en valeur seule) et 25, et Première 2 à 13, 15 à 26 (calculs choisis; reste Première 14, devoir en cours jusqu au 16/10) (Seconde 9 : corrigés
-    corrigés, fractions irréductibles). Affichage du corrigé : `adoucirAffichage()` dans chaque fiche (voir REGLES-FICHES.md §4). Reste : Première 14 après le 16/10/2026.
+    `reference-illisible`). Câblées (lots 0 et 1, 13/10/2026 ; Seconde 21 à 24 recâblées au fil de leur reprise, 15-16/10/2026) : Seconde 1, 3 à 8, 10 à 24 (sauf 9) et Première 2 à 13, 15 à 26 (calculs choisis ; reste Première 14, devoir échu le 16/10, voir §6) (Seconde 9 : corrigés
+    corrigés, fractions irréductibles). Affichage du corrigé : `adoucirAffichage()` dans chaque fiche (voir REGLES-FICHES.md §4). Depuis le 15/10/2026, `simplifie` refuse aussi un terme ou un facteur égal à 0 (`x+0`, `0*x`). Reste : Première 14 (voir §6).
   - `outils/audit-reponses/` (13/10/2026) : **audit permanent de la validation des réponses**, script Node qui pilote le
     Chrome installé (playwright-core, `npm install` une fois par machine). `node outils/audit-reponses/audit.js` (fiches
     modifiées) ou `--toutes`. Corrigé retapé dans les vrais champs, énoncé recopié / nombre calculé refusés, corrigés
     décimaux ou réductibles repérés. `connues.json` = anomalies existantes à la création (liste de travail) ; seules les
     nouvelles font échouer le script. Voir son `README.md`. **Étendu le 14/10/2026** aux intervalles saisis, à la
     discussion selon un paramètre, aux tableaux de signes, aux pourcentages (dont écarts en points), aux tableaux
-    d'effectifs à compléter et aux schémas d'évolution (corrigé accepté, variantes fausses refusées) ; ne couvre toujours ni QCM, ni vrai/faux à cliquer, ni
-    paire/vecteur/triplet, ni tableaux de variations (liste dans le README) ; oui/non, encadrements, inégalités et
-    ensembles en extension ajoutés le 15/10/2026.
+    d'effectifs à compléter et aux schémas d'évolution (corrigé accepté, variantes fausses refusées) ; ne couvre toujours ni QCM, ni vrai/faux à cliquer, ni vecteurs nommés ni
+    combinaisons de vecteurs (liste dans le README) ; oui/non, encadrements, inégalités,
+    ensembles en extension, lectures approchées, comparaisons, tableaux de programme et de variations, couples et points ajoutés les 15 et 16/10/2026. **Audit complet du 16/10/2026** : 48 fiches sur 50 sans anomalie ; deux anomalies de style connues dans `connues.json` (Première 14.2 et 15.14 c).
   - `assets/js/claviers.js` : claviers de saisie (accolades et intégrale à
     bornes sur le clavier MathLive, quatre opérations ajoutées à tout
     clavier simplifié, focus conservé sur les `<math-field>`, politique
@@ -314,7 +314,7 @@ depuis la réorganisation du 02/10/2026 »).
   formule ; c'était un sujet blanc de Terminale en mode fiche ; non précisé : s'il a regardé
   la note, la vue « Résultats » et « Mes devoirs »). Le reste n'est pas vérifié : si quelque chose casse, `qcm-bac/fiche.html`,
   `qcm-bac/sujet-blanc.html`, `assets/js/devoirs.js`, `assets/js/mes-devoirs.js` (cibles `qcm-bac` et `qcm-bac-sujet`).
-  **Comptage de la fréquentation du bloc : non vérifié en réel** (David se fie au code) ; à regarder dans le tableau de bord
+  **Comptage de la fréquentation du bloc : l'essai de David du 19/10/2026 n'apparaît pas** (voir la puce « Fréquentation QCM Bac — essai de David » plus bas) ; à regarder dans le tableau de bord
   Fréquentation (partie « QCM Bac ») une fois que des élèves ou lui, hors compte enseignant, auront ouvert ces pages.
 - **RAPPEL À DAVID — comptes élèves de Terminale** : classe **`Tle-Gr 2`** (groupe 2, précisé le 18/10/2026), à créer par David avec
   `outils/creer-comptes` ; elle apparaîtra d'elle-même dans la liste d'attribution. La carte « Terminale — Bientôt » de la page
@@ -324,6 +324,16 @@ depuis la réorganisation du 02/10/2026 »).
   l'émulateur, 53 cas), règles **publiées par David dans la Console Firebase le 18/10/2026** ; `statistiques.js` range alors les pages
   `qcm-bac/` dans la partie `qcm_bac` et `frequentation.js` l'affiche (« QCM Bac »). Les visites faites entre l'ouverture du bloc et ce
   changement sont comptées dans « Automatismes » (clés `qcm-bac`, `qcm-bac-fiche`).
+
+- **Fréquentation QCM Bac — essai de David du 19/10/2026 non compté** : un QCM ouvert « en personne libre » (sans connexion élève) n'apparaît pas dans
+  le tableau de bord. Contrôles faits en lecture seule (19/10/2026) : le `statistiques.js` en ligne contient la partie `qcm_bac` ; les trois pages
+  `qcm-bac/` chargent le script ; les règles publiées (18/10/2026, 19 h 16 GMT) sont **identiques** à `firestore.rules` et contiennent `s_qcm_bac` ;
+  le tableau de bord a sa ligne « QCM Bac » ; les compteurs du 18/10 montrent des visites de `qcm-bac*` comptées sous « Automatismes » (avant le
+  changement) et aucune après. **Cause la plus probable, voulue et non confirmée par un essai** : la mesure **exclut tout navigateur où l'enseignant s'est
+  connecté une fois** (marque `stats-exclu` dans le localStorage) ; le tableau de bord exigeant cette connexion, le navigateur de David n'est jamais
+  compté, même déconnecté. Pour tester : ouvrir `qcm-bac/` dans une **fenêtre de navigation privée** (ou sur un autre appareil jamais connecté en
+  enseignant), puis regarder la partie « QCM Bac » des parties du site. Les navigateurs pilotés (`navigator.webdriver`) sont aussi exclus : un test
+  automatisé ne compte pas. Limite connue : « Fiches les plus ouvertes » ne liste que les fiches de calcul (pas les pages `qcm-bac*`).
 
 Backlog de David pour après le travail sur les fiches : l'artefact
 **« Chantiers futurs »** (https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad :
@@ -344,7 +354,7 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   Fréquentation : partie `qcm_bac` (clés de page `qcm-bac`, `qcm-bac-fiche`, `qcm-bac-sujet-blanc`). Décisions, sources, état et points à valider dans
   `outils/qcm-bac/SUIVI-QCM-BAC.md` (à lire avant d'y toucher). Le moteur des automatismes a deux options facultatives
   nouvelles : `bareme.penalites` et `textesNiveau`.
-- **Première 14 (Probabilités) — à traiter après l'échéance de son devoir** (constat Firestore en lecture seule, 16/10/2026) :
+- **Première 14 (Probabilités) — échéance passée depuis le 16/10/2026 à 21 h, à traiter maintenant après une relecture du devoir dans Firestore** (constat Firestore en lecture seule, 16/10/2026) :
   un seul devoir la vise, `KNhf6yAAyqjn1j6JvZYs` (ciblage individuel d'un élève, 3 essais, créé le 10/10/2026), **à rendre le
   16/10/2026 à 21 h (heure de Paris)** ; la fiche ne doit pas être modifiée avant. Ensuite : relire le devoir dans Firestore
   (échéance passée, aucune dérogation), câbler ses calculs « Calcul numérique » (`formes-par-fiche.json` puis
