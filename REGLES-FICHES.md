@@ -212,7 +212,7 @@ les corrections ponctuelles d'une fiche).
   une valeur ou une écriture finale, jamais l'énoncé ni un calcul non terminé. **Le corrigé affiché suit aussi la forme du titre** (titre « sous forme décimale » : corrigé `0{,}61`, pas `\dfrac{61}{100}` ; Première 14.4, corrigé le 19/10/2026 par `correctionLatex` et `decLatexFromFrac`).
   **Pourcentages (14/10/2026)** : pour une question « Écrire … en pourcentage » (donnée = décimal ou fraction), le
   **signe % est exigé** (`exigerPourcent:true`), sinon recopier l'énoncé (0,06 ; 3/25) passait pour la réponse ; un
-  pourcentage s'écrit avec un nombre (pas `3/4*100%`). Pour « Quel pourcentage… », 25 %, 0,25 ou 1/4 restent acceptés.
+  pourcentage s'écrit avec un nombre (pas `3/4*100%`). Pour « Quel pourcentage… », 25 %, 0,25 ou 1/4 restent acceptés. **Quand la question demande un pourcentage arrondi (« arrondi au dixième »), la valeur doit être donnée arrondie, en notation décimale** (`65,7 %`, ou `0,657`) : une fraction (`90/137`), un calcul ou une valeur non arrondie (`65,69 %`) sont refusés (David, 19/10/2026 ; `checkPourcentage` avec tolérance 0,05, Seconde 9 et 10) ; l'aide « ? » le dit.
   **Présentation du corrigé** : chaque fiche passe le LaTeX du corrigé par `adoucirAffichage` (appelée par
   `formaterReponse`) — signe devant la fraction (`-\dfrac{3}{4}`, pas `\dfrac{-3}{4}`), pas de `×` entre une
   fraction et une lettre (`\dfrac{1}{4}x`), pas de `^{1}` ni de terme nul (`+0e`). **Toute nouvelle fiche doit
@@ -455,6 +455,7 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Données** : chaque exercice concerné porte `detail: { lignes: [LaTeX…], final: LaTeX }` à côté de `enonce` et `reponse`. Les
   lignes sont écrites **avec les valeurs du tirage**, dans le générateur, jamais à la main. `final` est la réponse telle qu'elle est
   écrite à la dernière ligne.
+- **Signe d'une expression affine \(ax+b\)** (David, 19/10/2026) : quand un détail donne ce signe (tableau de signes, produit ou quotient de facteurs affines, discussion), l'équation \(ax+b=0\) ne suffit pas : on **résout \(ax+b>0\)** (mêmes étapes et mêmes phrases que pour une inéquation du premier degré, « On divise par … < 0 » puis « donc le sens de l'inégalité change » si \(a<0\)), car c'est cette inéquation qui justifie le signe ; la valeur interdite d'un dénominateur garde en plus sa ligne « = 0 ». Fiche pilote : Seconde 8 (`lignesSigneAffine`) ; les détails de Première 11 à 13, à tableau de signes, restent à revoir selon cette règle.
 - **Style des étapes** : la relation générale de la suite (`u_n = u_k + (n-k)\times r`, choix de David) puis la substitution avec
   les nombres, puis le résultat, de 2 à 5 lignes courtes ; la méthode n'est jamais dans l'énoncé mais peut figurer dans le détail ;
   un nombre négatif est entre parenthèses dans un produit ; la fraction a son signe devant ; pas de fraction de dénominateur 1 ; la

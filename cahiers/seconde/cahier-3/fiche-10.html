@@ -939,6 +939,14 @@ function checkPourcentage(userInput, valeurPourcent, tolerance, exigerSigne) {
   const mPourcent = s.match(/^(.+?)\s*%$/);
   // « quelle évolution en pourcentage ? » : recopier le coefficient ou une écriture décimale ne suffit pas, le signe % est exigé
   if (exigerSigne && !mPourcent) return false;
+  // « arrondi au dixième » (tolérance 0,05) : le pourcentage doit être donné ARRONDI, en notation décimale — ni fraction (90/137), ni calcul,
+  // ni valeur non arrondie (65,69 %) ; la même valeur écrite en proportion décimale (0,657) reste acceptée (David, 19/10/2026)
+  if (tolerance > 1e-5 && tolerance <= 0.05 + 1e-9) {
+    const nombre = (mPourcent ? mPourcent[1] : s).trim().replace(/^[−–]/, '-');
+    if (!/^[+-]?\d+(\.\d+)?$/.test(nombre)) return false;
+    const v = mPourcent ? Number(nombre) : Number(nombre) * 100;
+    return Math.abs(v - valeurPourcent) < 1e-6;
+  }
   // un pourcentage s'écrit avec un nombre (éventuellement signé), pas avec un calcul à terminer comme 40/2%
   if (mPourcent && !/^[+-]?\d+(\.\d+)?$/.test(mPourcent[1].trim())) return false;
   let val;
@@ -1388,6 +1396,9 @@ function necessiteAide(ex) {
 
 function aideContextuellePour(ex) {
   if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
+  if (ex.type === 'pourcentage' && ex.tolerancePourcent && ex.tolerancePourcent <= 0.05) {
+    return "Écrire le pourcentage <strong>arrondi au dixième</strong>, en notation décimale, avec le symbole <code>%</code> (par exemple <code>65,7%</code>) : une fraction ou un calcul comme <code>90/137</code> ne convient pas, ni une valeur non arrondie comme <code>65,69%</code>.";
+  }
   if (ex.exigerPourcent) {
     return "La réponse doit s'écrire avec le symbole <code>%</code> (par exemple <code>8%</code> ou <code>-8%</code>) : recopier le coefficient ou un nombre décimal ne convient pas. Une diminution se répond par un nombre négatif.";
   }

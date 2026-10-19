@@ -149,6 +149,8 @@ async function auditerDansLaPage(opts) {
   // corrige LaTeX d'un intervalle, d'une reunion ou d'une discussion « si m<3 alors ... » -> texte qu'un eleve taperait
   const corrigeVersTexte = (tex) => {
     let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',');
+    // corrige d'une discussion affiche sur plusieurs lignes (tableau LaTeX) : l'enveloppe disparait, les sauts de ligne deviennent de simples separateurs
+    a = a.replace(/\\begin\{array\}\{[a-z]*\}|\\end\{array\}/g, ' ').replace(/\\\\/g, ' ');
     a = a.replace(/\\text\{\s*:\s*\}/g, '§A§').replace(/\\text\{\s*;?\s*si\s*\}/g, '§S§');
     a = a.replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{/g, '§{§').replace(/\\\}/g, '§}§')
       .replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\gt\s*/g, '>')

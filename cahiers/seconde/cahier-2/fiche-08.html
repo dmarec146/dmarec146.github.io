@@ -1283,10 +1283,22 @@ function detailAffineIneq(a, b, op) {
   return { lignes: [`${affineTexte(a, b)} ${OP_TEX[op]} 0`, `\\iff ${coefXTexte(a)} ${OP_TEX[op]} ${-b}`, ...lignesFinIneq(a, op, -b, fracTexte(-b, a), spec)], final: formaterIntervalleSpec(spec) };
 }
 // lignes « facteur = 0 ⟺ x = racine » (racines : {f: facteur, v: valeur, tex: LaTeX, interdit})
+// signe d'un facteur affine ax+b (a non nul) : c'est l'inequation ax+b > 0 qui le justifie, pas la seule equation ax+b = 0
+// (David, 19/10/2026) ; memes phrases que pour une inequation du premier degre (8.3)
+function lignesSigneAffine(a, b) {
+  const lignes = [`${affineTexte(a, b)} > 0`];
+  if (a !== 1 && b !== 0) lignes.push(`\\iff ${coefXTexte(a)} > ${-b}`);
+  if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0`, `\\text{donc le sens de l'inégalité change}`);
+  lignes.push(`\\iff x ${a < 0 ? '<' : '>'} ${fracTexte(-b, a)}`);
+  return lignes;
+}
+// lignes « facteur = 0 ⟺ x = racine », puis « facteur > 0 ⟺ … » quand a et b sont connus (racines : {f, v, tex, interdit, a, b})
 function lignesRacines(racines) {
-  return racines.flatMap(r => (r.f === 'x' ? [`\\text{Le facteur } x \\text{ s'annule en } 0`]
-    : r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`]
-    : [`${r.f} = 0 \\iff x = ${r.tex}`]));
+  return racines.flatMap(r => [
+    ...(r.f === 'x' ? [`\\text{Le facteur } x \\text{ s'annule en } 0`]
+      : r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`]
+      : [`${r.f} = 0 \\iff x = ${r.tex}`]),
+    ...(r.a !== undefined ? lignesSigneAffine(r.a, r.b) : [])]);
 }
 // etude du signe d'un produit ou d'un quotient : racines, tableau de signes (une ligne), conclusion en intervalles ; g = expression
 function detailSigne(avant, racines, g, op, spec, expr, quotient) {
@@ -1318,17 +1330,17 @@ function tableauSignesComplet(ex, etiquetteFinale) {
 }
 // detail d'un tableau de signes (8.2 et 8.4) : racine de chaque facteur, puis le tableau
 function detailTableau(ex, quotient) {
-  const rac = ex.facteurs.map(f => ({ f: f.label, tex: fracTexte(-f.b, f.a), interdit: !!f.denom }));
+  const rac = ex.facteurs.map(f => ({ f: f.label, tex: fracTexte(-f.b, f.a), interdit: !!f.denom, a: f.a, b: f.b }));
   const lignes = ex.facteurs.length === 1
-    ? [`${rac[0].f} = 0 \\iff ${coefXTexte(ex.facteurs[0].a)} = ${-ex.facteurs[0].b}`, `\\iff x = ${rac[0].tex}`]
-    : rac.flatMap(r => (r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`] : [`${r.f} = 0 \\iff x = ${r.tex}`]));
+    ? [`${rac[0].f} = 0 \\iff ${coefXTexte(ex.facteurs[0].a)} = ${-ex.facteurs[0].b}`, `\\iff x = ${rac[0].tex}`, ...lignesSigneAffine(rac[0].a, rac[0].b)]
+    : lignesRacines(rac);
   const tab = tableauSignesComplet(ex, 'E(x)');
   lignes.push(quotient ? '\\text{Tableau de signes du quotient}' : (ex.facteurs.length === 1 ? `\\text{Tableau de signes de } ${ex.facteurs[0].label}` : '\\text{Tableau de signes de } E(x)'), tab);
   return { lignes, final: tab };
 }
 
 // facteurs affines [a, b] -> racines { f, v, tex, interdit } (interdit : indice du facteur du denominateur)
-const racAff = (paires, interdit = -1) => paires.map(([a, b], i) => ({ f: affineTexte(a, b), v: -b / a, tex: fracTexte(-b, a), interdit: i === interdit }));
+const racAff = (paires, interdit = -1) => paires.map(([a, b], i) => ({ f: affineTexte(a, b), v: -b / a, tex: fracTexte(-b, a), interdit: i === interdit, a, b }));
 const produitAffL = paires => paires.map(([a, b]) => { const s = affineTexte(a, b); return s === 'x' ? 'x' : '(' + s + ')'; }).join('');
 const valeurProduit = (paires, x) => paires.reduce((acc, [a, b]) => acc * (a * x + b), 1);
 // produit de facteurs affines op 0
@@ -1599,7 +1611,7 @@ const generateurs = [
     const spec = resoudreSigneParBalayage(x => x*x - a*a, [{valeur:-a,interdit:false},{valeur:a,interdit:false}], op);
     const symb = { '>':'\\gt', '<':'\\lt', '>=':'\\geqslant', '<=':'\\leqslant' }[op];
     return { enonce: `\\(x^2-${a*a}${symb} 0\\)`, intervalleSpec: spec,
-      detail: detailSigne([`x^2-${a*a} = (x-${a})(x+${a})`, `x-${a} = 0 \\iff x = ${a}`, `x+${a} = 0 \\iff x = ${-a}`],
+      detail: detailSigne([`x^2-${a*a} = (x-${a})(x+${a})`, `x-${a} = 0 \\iff x = ${a}`, ...lignesSigneAffine(1, -a), `x+${a} = 0 \\iff x = ${-a}`, ...lignesSigneAffine(1, a)],
         [{ v: -a, tex: `${-a}` }, { v: a, tex: `${a}` }], x => x*x - a*a, op, spec, `(x-${a})(x+${a})`, false) };
   }},
   {id:"8.8 b)", type:"intervalle", texteLibre:true, gen: () => {
@@ -1610,7 +1622,7 @@ const generateurs = [
       [{valeur:xc,interdit:false},{valeur:x1,interdit:false}], '>');
     return { enonce: `\\((${xMoinsTexte(xc)})^2(${affineTexte(p,q)})\\gt 0\\)`, intervalleSpec: spec,
       detail: (() => {
-        const R = [{ f: `(${xMoinsTexte(xc)})^2`, v: xc, tex: `${xc}` }, { f: affineTexte(p, q), v: x1, tex: `${x1}` }];
+        const R = [{ f: `(${xMoinsTexte(xc)})^2`, v: xc, tex: `${xc}` }, { f: affineTexte(p, q), v: x1, tex: `${x1}`, a: p, b: q }];
         return detailSigne(lignesRacines(R), R, produitAffine([{a:1,b:-xc,carre:true},{a:p,b:q}]), '>', spec, `(${xMoinsTexte(xc)})^2(${affineTexte(p, q)})`, false);
       })() };
   }},
@@ -1627,7 +1639,7 @@ const generateurs = [
     return { enonce: `\\(\\dfrac{${affineTexte(a,b)}}{${affineTexte(c,d)}}\\geqslant ${k}\\) (bornes sous forme irréductible)`, intervalleSpec: spec,
       detail: (() => {
         const A2 = a - k*c, B2 = b - k*d, nu = affineTexte(a, b), de = affineTexte(c, d), mk = Math.abs(k) === 1 ? '' : Math.abs(k);
-        const R = [{ f: linL(A2, B2), v: -B2 / A2, tex: fracTexte(-B2, A2) }, { f: de, v: -d / c, tex: String(-d / c), interdit: true }];
+        const R = [{ f: linL(A2, B2), v: -B2 / A2, tex: fracTexte(-B2, A2), a: A2, b: B2 }, { f: de, v: -d / c, tex: String(-d / c), interdit: true, a: c, b: d }];
         return detailSigne([`\\dfrac{${nu}}{${de}} \\geqslant ${k}`,
           `\\iff \\dfrac{${nu}}{${de}} ${k > 0 ? '-' : '+'} ${Math.abs(k)} \\geqslant 0`,
           `\\iff \\dfrac{${nu} ${k > 0 ? '-' : '+'} ${mk}(${de})}{${de}} \\geqslant 0`,
@@ -1652,7 +1664,7 @@ const generateurs = [
       detail: (() => {
         const facteur = affineTexte(1, -s), expr = '(x-m)(' + facteur + ')';
         const final = formaterReponseBrut({ type: 'discussionParametre', seuilFixe: s, parametre: 'm', op });
-        return { lignes: [`${expr} ${OP_TEX[op]} 0`, 'x-m = 0 \\iff x = m', `${facteur} = 0 \\iff x = ${s}`,
+        return { lignes: [`${expr} ${OP_TEX[op]} 0`, 'x-m = 0 \\iff x = m', 'x-m > 0', '\\iff x > m', `${facteur} = 0 \\iff x = ${s}`, ...lignesSigneAffine(1, -s),
           `\\text{Tableau de signes de } ${expr}`,
           `m \\lt ${s}\\ :`, Detail.tableauSignes([{ v: s - 1, tex: 'm' }, { v: s, tex: String(s) }], x => (x - (s - 1)) * (x - s)),
           `m \\gt ${s}\\ :`, Detail.tableauSignes([{ v: s, tex: String(s) }, { v: s + 1, tex: 'm' }], x => (x - s) * (x - (s + 1))),

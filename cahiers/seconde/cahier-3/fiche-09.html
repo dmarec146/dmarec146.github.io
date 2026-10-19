@@ -914,6 +914,14 @@ function checkPourcentage(userInput, valeurPourcent, tolerance, exigerSigne) {
   const mPourcent = s.match(/^(.+?)\s*%$/);
   // « Écrire ... en pourcentage » : recopier la fraction ou le décimal de l'énoncé ne suffit pas, le signe % est exigé
   if (exigerSigne && !mPourcent) return false;
+  // « arrondi au dixième » (tolérance 0,05) : le pourcentage doit être donné ARRONDI, en notation décimale — ni fraction (90/137), ni calcul,
+  // ni valeur non arrondie (65,69 %) ; la même valeur écrite en proportion décimale (0,657) reste acceptée (David, 19/10/2026)
+  if (tolerance > 1e-5 && tolerance <= 0.05 + 1e-9) {
+    const nombre = (mPourcent ? mPourcent[1] : s).trim().replace(/^[−–]/, '-');
+    if (!/^[+-]?\d+(\.\d+)?$/.test(nombre)) return false;
+    const v = mPourcent ? Number(nombre) : Number(nombre) * 100;
+    return Math.abs(v - valeurPourcent) < 1e-6;
+  }
   // un pourcentage s'écrit avec un nombre (pas avec un calcul à terminer comme 3/4*100%)
   if (mPourcent && !/^\d+(\.\d+)?$/.test(mPourcent[1].trim())) return false;
   let val;
@@ -1366,6 +1374,9 @@ function aideContextuellePour(ex) {
   if (ex.reponsePoints != null) {
     return "Donner l'écart sous la forme d'un nombre de points de pourcentage, par exemple <code>12,5</code> (sans le signe <code>%</code>, puisqu'il s'agit d'une différence de pourcentages).";
   }
+  if (ex.type === 'pourcentage' && ex.tolerancePourcent && ex.tolerancePourcent <= 0.05) {
+    return "Écrire le pourcentage <strong>arrondi au dixième</strong>, en notation décimale, avec le symbole <code>%</code> (par exemple <code>65,7%</code>) : une fraction ou un calcul comme <code>90/137</code> ne convient pas, ni une valeur non arrondie comme <code>65,69%</code>.";
+  }
   if (ex.exigerPourcent) {
     return "La réponse doit s'écrire avec le symbole <code>%</code> (par exemple <code>25%</code> ou <code>12,5%</code>) : recopier la fraction ou le nombre décimal de l'énoncé ne convient pas.";
   }
@@ -1373,7 +1384,7 @@ function aideContextuellePour(ex) {
     return "Écrire la réponse avec le symbole <code>%</code> (par exemple <code>25%</code>), ou sous forme décimale (<code>0,25</code>) ou fractionnaire (<code>1/4</code>) — jamais un nombre seul sans le signe %, qui serait compris comme une valeur décimale (<code>25</code> ≠ <code>25%</code>).";
   }
   if (ex.type === 'tableauCroiseRempli') {
-    return "Compléter chaque case vide du tableau par un nombre entier, puis indiquer le pourcentage demandé (avec le symbole <code>%</code>, ou sous forme décimale/fractionnaire) dans le champ prévu — avant de cliquer sur « Valider ce tableau ».";
+    return "Compléter chaque case vide du tableau par un nombre entier, puis indiquer le pourcentage demandé, <strong>arrondi au dixième</strong>, en notation décimale avec le symbole <code>%</code> (par exemple <code>65,7%</code> ; ni fraction ni calcul), dans le champ prévu — avant de cliquer sur « Valider ce tableau ».";
   }
   return "";
 }
