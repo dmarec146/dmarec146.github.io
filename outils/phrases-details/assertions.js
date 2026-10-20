@@ -137,11 +137,43 @@ module.exports = [
     motif: /\\overline\{\d+\}/,
     verifie: (l) => {
       const m = l.match(/^\\dfrac\{1\}\{(\d+)\} = 0\{,\}\\overline\{(\d+)\}$/);
-      if (!m) return false;
+      if (!m) return null;     // autre ecriture d'un developpement periodique (voir les assertions suivantes)
       const b = Number(m[1]);
       let reste = 1, chiffres = '', n = 0;
       do { reste *= 10; chiffres += Math.floor(reste / b); reste %= b; n++; } while (reste !== 1 && n < 500);
       return chiffres === m[2];
+    }
+  },
+  {
+    nom: 'decalage-periodique-exact',
+    // « 100x = 18{,}\overline{18} » : multiplier x = 0,\overline{18} par 10^L (L = longueur de la période) donne P,\overline{P} avec P = 18
+    motif: /^\d+x = \d+\{,\}\\overline\{\d+\}$/,
+    verifie: (l, e) => {
+      const m = l.match(/^(\d+)x = (\d+)\{,\}\\overline\{(\d+)\}$/), enonce = String(e.enonce).match(/0\{,\}\\overline\{(\d+)\}/);
+      if (!m || !enonce) return false;
+      const motif = enonce[1];
+      return m[3] === motif && Number(m[1]) === Math.pow(10, motif.length) && Number(m[2]) === Number(motif);
+    }
+  },
+  {
+    nom: 'soustraction-periodique-exacte',
+    // « 100x - x = 18{,}\overline{18} - 0{,}\overline{18} = 18 » : les deux développements ont la même période et la différence est P
+    motif: /^\d+x - x = \d+\{,\}\\overline\{\d+\} - 0\{,\}\\overline\{\d+\} = \d+$/,
+    verifie: (l, e) => {
+      const m = l.match(/^(\d+)x - x = (\d+)\{,\}\\overline\{(\d+)\} - 0\{,\}\\overline\{(\d+)\} = (\d+)$/), enonce = String(e.enonce).match(/0\{,\}\\overline\{(\d+)\}/);
+      if (!m || !enonce) return false;
+      const motif = enonce[1];
+      return m[3] === motif && m[4] === motif && Number(m[1]) === Math.pow(10, motif.length) && Number(m[2]) === Number(motif) && Number(m[5]) === Number(motif);
+    }
+  },
+  {
+    nom: 'la-reponse-oui-non-est-celle-de-l-exercice',
+    motif: /\\text\{Réponse : (oui|non)\}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Réponse : (oui|non)\}/);
+      if (!m) return false;
+      const attendu = typeof e.reponseOuiNon === 'boolean' ? (e.reponseOuiNon ? 'oui' : 'non') : e.reponse;
+      return m[1] === attendu;
     }
   },
   {

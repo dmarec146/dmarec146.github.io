@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"11.1 a)":0.5,"11.1 b)":0.5,"11.1 c)":0.5,"11.1 d)":0.5,"11.2 a)":0.5,"11.2 b)":0.75,"11.2 c)":1,"11.2 d)":1.25,"11.3 a)":0.5,"11.3 b)":0.5,"11.3 c)":0.75,"11.3 d)":1,"11.4 a)":0.5,"11.4 b)":0.75,"11.4 c)":1,"11.4 d)":1.25,"11.5 a)":0.5,"11.5 b)":0.75,"11.5 c)":1,"11.5 d)":1,"11.6 a)":0.5,"11.6 b)":0.5,"11.6 c)":0.5,"11.6 d)":0.5,"11.7 a)":2,"11.7 b)":2,"11.7 c)":1},"bonus":["11.7 a)","11.7 b)","11.7 c)"]});
@@ -876,10 +877,11 @@ function normaliserMantisseExposant(mantisse, exposant) {
 // bas = true : mantisse dans [1 ; 2,49] (l'ordre de grandeur est l'exposant) ; bas = false : mantisse dans [5 ; 9,99] (exposant + 1)
 function ordreGrandeurCas(bas, expMin, expMax) {
   const mantisse = bas ? arrondi(alea(100, 249) / 100) : arrondi(alea(500, 999) / 100);
-  const exposant = alea(expMin, expMax);
-  return { enonce: `\\(${formatDecimalFr(construireDecimal(mantisse, exposant))}\\)`, reponse: `${bas ? exposant : exposant + 1}` };
+  const exposant = alea(expMin, expMax), n = bas ? exposant : exposant + 1;
+  const nombre = formatDecimalFr(construireDecimal(mantisse, exposant));
+  return { enonce: `\\(${nombre}\\)`, reponse: `${n}`,
+    detail: { lignes: [`${nombre} = ${formatDecimalFr(String(mantisse))}\\times 10^{${exposant}}`, `${formatDecimalFr(String(mantisse))} ${bas ? '\\lt' : '\\geqslant'} 5 \\text{ donc } 10^{${n}}`], final: `${n}` } };
 }
-
 // ---------- Appartenance a un ensemble de nombres (vivier hand-verifie, au moins 8 nombres par ensemble) ----------
 const CLASSIFICATION_VIVIER = {
   N: ['0','1','7','8','12','25','43','60','100','250','365','2024'],
@@ -898,18 +900,21 @@ function enonceEnsemble(tex) {
 }
 
 // ---------- Vraisemblance : grandeurs factuelles/administratives, jamais liees a une personne ----------
+// (donne : valeur proposee, reel : valeur reelle environ -- pour le detail de correction)
 const VRAISEMBLANCE_VIVIER = [
-  { phrase: `Un exercice donne comme population de la France \\(6,7\\times 10^{10}\\) habitants.`, ok: false },
-  { phrase: `Un exercice donne comme distance Terre-Lune \\(3,8\\times 10^{5}\\) km.`, ok: true },
-  { phrase: `Un exercice donne comme prix d'une baguette de pain \\(9\\times 10^{2}\\) euros.`, ok: false },
-  { phrase: `Un exercice donne comme vitesse de la lumière \\(3\\times 10^{8}\\) m/s.`, ok: true },
-  { phrase: `Un exercice donne comme effectif d'une classe de seconde \\(3\\times 10^{1}\\) élèves.`, ok: true },
-  { phrase: `Un exercice donne comme hauteur de la tour Eiffel \\(3\\times 10^{4}\\) m.`, ok: false },
-  { phrase: `Un exercice donne comme masse d'une pomme \\(1,5\\times 10^{3}\\) kg.`, ok: false },
-  { phrase: `Un exercice donne comme durée d'un trajet Paris-Marseille en TGV \\(3\\times 10^{0}\\) heures.`, ok: true },
-  { phrase: `Un exercice donne comme superficie de la France \\(5,5\\times 10^{5}\\) km².`, ok: true },
-  { phrase: `Un exercice donne comme nombre de secondes dans une année \\(3,2\\times 10^{3}\\) secondes.`, ok: false }
+  { phrase: `Un exercice donne comme population de la France \\(6,7\\times 10^{10}\\) habitants.`, ok: false, donne: '6{,}7\\times 10^{10}\\text{ habitants}', reel: '6{,}8\\times 10^{7}\\text{ habitants}' },
+  { phrase: `Un exercice donne comme distance Terre-Lune \\(3,8\\times 10^{5}\\) km.`, ok: true, donne: '3{,}8\\times 10^{5}\\text{ km}', reel: '3{,}84\\times 10^{5}\\text{ km}' },
+  { phrase: `Un exercice donne comme prix d'une baguette de pain \\(9\\times 10^{2}\\) euros.`, ok: false, donne: '9\\times 10^{2}\\text{ euros}', reel: '1\\text{ euro}' },
+  { phrase: `Un exercice donne comme vitesse de la lumière \\(3\\times 10^{8}\\) m/s.`, ok: true, donne: '3\\times 10^{8}\\text{ m/s}', reel: '3{,}0\\times 10^{8}\\text{ m/s}' },
+  { phrase: `Un exercice donne comme effectif d'une classe de seconde \\(3\\times 10\\) élèves.`, ok: true, donne: '3\\times 10\\text{ élèves}', reel: '3{,}5\\times 10\\text{ élèves}' },
+  { phrase: `Un exercice donne comme hauteur de la tour Eiffel \\(3\\times 10^{4}\\) m.`, ok: false, donne: '3\\times 10^{4}\\text{ m}', reel: '3{,}3\\times 10^{2}\\text{ m}' },
+  { phrase: `Un exercice donne comme masse d'une pomme \\(1,5\\times 10^{3}\\) kg.`, ok: false, donne: '1{,}5\\times 10^{3}\\text{ kg}', reel: '1{,}5\\times 10^{-1}\\text{ kg}' },
+  { phrase: `Un exercice donne comme durée d'un trajet Paris-Marseille en TGV \\(3\\times 10^{0}\\) heures.`, ok: true, donne: '3\\times 10^{0}\\text{ heures}', reel: '3{,}2\\times 10^{0}\\text{ heures}' },
+  { phrase: `Un exercice donne comme superficie de la France métropolitaine \\(5,5\\times 10^{5}\\) km².`, ok: true, donne: '5{,}5\\times 10^{5}\\text{ km}^{2}', reel: '5{,}5\\times 10^{5}\\text{ km}^{2}' },
+  { phrase: `Un exercice donne comme nombre de secondes dans une année \\(3,2\\times 10^{3}\\) secondes.`, ok: false, donne: '3{,}2\\times 10^{3}\\text{ secondes}', reel: '3{,}15\\times 10^{7}\\text{ secondes}' }
 ];
+const detailVraisemblance = t => ({ lignes: [`\\text{Valeur réelle : environ } ${t.reel}`, `\\text{Valeur proposée : } ${t.donne}`, `\\text{Réponse : ${t.ok ? 'oui' : 'non'}}`], final: t.ok ? 'oui' : 'non' });
+
 
 // ---------- Développements décimaux périodiques (vivier hand-verifie) ----------
 const DEV_PERIODIQUE_VIVIER = [
@@ -937,29 +942,97 @@ function estDecimalFini(n) {
   return n === 1;
 }
 
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const decFr = s => formatDecimalFr(String(s));                                  // '0.0045' -> '0{,}0045'
+const p10 = e => (e === 1 ? '10' : `10^{${e}}`);                               // jamais d'exposant 1 ecrit
+const sci = (m, e) => `${decFr(m)}\\times ${p10(e)}`;                           // ecriture scientifique m x 10^e
+const dixPuiss = e => decFr(construireDecimal(1, e));                           // 10^e en ecriture decimale : 1000, 0{,}001
+const decimalDe = x => decFr(String(Math.round(x * 1e9) / 1e9));                // nombre -> ecriture decimale francaise
+const premiersDe = n => { const f = []; let r = n; for (let p = 2; p * p <= r; p++) { let e = 0; while (r % p === 0) { r /= p; e++; } if (e) f.push([p, e]); } if (r > 1) f.push([r, 1]); return f; };
+// fraction n/d (d divise une puissance de 10) -> ecriture decimale : on amplifie jusqu'au denominateur 10^p
+function lignesFractionVersDecimal(n, d) {
+  let p = 0; while (Math.pow(10, p) % d !== 0) p++;
+  const val = decimalDe(n / d), den = Math.pow(10, p);
+  if (den === d) return [`\\dfrac{${n}}{${d}} = ${val}`];
+  const k = den / d;
+  return [`\\dfrac{${n}}{${d}} = \\dfrac{${n}\\times ${k}}{${d}\\times ${k}} = \\dfrac{${n * k}}{${den}}`, `\\dfrac{${n * k}}{${den}} = ${val}`];
+}
+// decimal (au plus 5 decimales, signe eventuel) -> fraction irreductible
+function lignesDecimalVersFraction(x) {
+  const signe = x < 0 ? '-' : '', a = Math.abs(x);
+  const q = (String(a).split('.')[1] || '').length, den = Math.pow(10, q), num = Math.round(a * den), g = pgcd(num, den);
+  const lignes = [`${signe}${decimalDe(a)} = ${signe}\\dfrac{${num}}{${den}}`];
+  const fin = Detail.fracTexte(x < 0 ? -num / g : num / g, den / g);
+  if (g > 1) lignes.push(`${signe}\\dfrac{${num}}{${den}} = ${signe}\\dfrac{${num / g}\\times ${g}}{${den / g}\\times ${g}} = ${fin}`);
+  return { lignes, final: fin };
+}
+// valeur numerique d'un nombre ecrit en LaTeX dans les viviers (entiers, decimaux a virgule, fractions, racines)
+function valeurDeTex(tex) {
+  let t = tex.replace(/\{,\}/g, '.');
+  for (let i = 0; i < 4; i++) t = t.replace(/\\dfrac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)');
+  return math.evaluate(t);
+}
+// plus petit ensemble de nombres (N, Z, D, Q, R) contenant un nombre : les etapes qui montrent qu'il n'appartient pas a l'ensemble precedent
+function detailEnsemble(tex, f) {
+  const v = Math.round(valeurDeTex(tex) * 1e9) / 1e9, lignes = [];
+  const avecRacine = /\\sqrt/.test(tex);
+  const nom = g => `\\mathbb{${g}}`;
+  if (f === 'R') {
+    const n = Number((tex.match(/\\sqrt\{(\d+)\}/) || [])[1]);
+    lignes.push(`\\text{Comme } ${n} \\text{ n'est pas un carré parfait,}`, `${tex} \\text{ est irrationnel}`, `${tex} \\in ${nom('R')}`);
+  } else if (f === 'Q') {
+    const m = tex.match(/\\dfrac\{(\d+)\}\{(\d+)\}/), br = Number(m[2]) / pgcd(Number(m[1]), Number(m[2])), fac = premiersDe(br);
+    if (fac.length > 1 || fac[0][1] > 1) lignes.push(`${br} = ${fac.map(([p, e]) => (e > 1 ? `${p}^{${e}}` : `${p}`)).join('\\times ')}`);
+    else lignes.push(`\\text{Le dénominateur } ${br} \\text{ est un nombre premier}`);
+    lignes.push(`\\text{Le dénominateur a le facteur premier } ${fac.map(x => x[0]).find(p => p !== 2 && p !== 5)} \\text{, autre que 2 et 5}`, `${tex} \\notin ${nom('D')}`, `${tex} \\in ${nom('Q')}`);
+  } else {
+    if (avecRacine) lignes.push(`${tex} = ${f === 'D' ? decimalDe(v) : v}`);
+    const w = f === 'D' ? decimalDe(v) : String(v);
+    if (f === 'N') lignes.push(`${w} \\in ${nom('N')}`);
+    else if (f === 'Z') lignes.push(`${w} \\notin ${nom('N')}`, `${w} \\in ${nom('Z')}`);
+    else {
+      const q = (String(Math.abs(v)).split('.')[1] || '').length, den = Math.pow(10, q), num = Math.round(Math.abs(v) * den);
+      lignes.push(`${w} \\notin ${nom('Z')}`, `${w} = ${v < 0 ? '-' : ''}\\dfrac{${num}}{${den}}`, `${w} \\in ${nom('D')}`);
+    }
+  }
+  return { lignes, final: nom(f) };
+}
+
 let tirageGroupe117 = [];
 
 // ---------- 11.1 (automatismes) : vivier de 8 calculs numeriques de nature differente (puissances, puissances de 10,
 // racine d'un carre parfait <= 144, carre d'un decimal, fraction -> decimal) ; 4 modeles tires sans remise ----------
 const MODELES_CALCUL = [
   () => { const [a, n] = choix([[2,3],[2,4],[2,5],[2,6],[3,2],[3,3],[3,4],[4,2],[4,3],[5,2],[5,3],[6,2],[7,2],[10,3]]);
-          return { enonce:`${a}^{${n}}`, reponse:`${a**n}` }; },
+          return { enonce:`${a}^{${n}}`, reponse:`${a**n}`,
+                   detail: { lignes: [`${a}^{${n}} = ${Array(n).fill(a).join('\\times ')} = ${a**n}`], final: `${a**n}` } }; },
   () => { const a = choix([2,3,4,5]), n = alea(2,4);
-          return { enonce:`(-${a})^{${n}}`, reponse:`${(-a)**n}` }; },
+          return { enonce:`(-${a})^{${n}}`, reponse:`${(-a)**n}`,
+                   detail: { lignes: [`(-${a})^{${n}} = ${Array(n).fill(`(-${a})`).join('\\times ')} = ${(-a)**n}`], final: `${(-a)**n}` } }; },
   () => { let a, b; do { a = alea(-4,4); b = alea(-4,4); } while (a + b < -4 || a + b > 5 || a + b === 0);
-          return { enonce:`10^{${a}}\\times 10^{${b}}`, reponse: construireDecimal(1, a + b) }; },
+          const lignes = [`${p10(a)}\\times ${p10(b)} = 10^{${a}${b < 0 ? '' : '+'}${b}} = ${p10(a + b)}`];
+          if (a + b !== 1) lignes.push(`${p10(a + b)} = ${dixPuiss(a + b)}`);
+          return { enonce:`${p10(a)}\\times ${p10(b)}`, reponse: construireDecimal(1, a + b), detail: { lignes, final: dixPuiss(a + b) } }; },
   () => { let a, b; do { a = alea(-3,5); b = alea(-3,5); } while (a - b < -4 || a - b > 5 || a - b === 0);
-          return { enonce:`\\dfrac{10^{${a}}}{10^{${b}}}`, reponse: construireDecimal(1, a - b) }; },
+          const lignes = [`\\dfrac{${p10(a)}}{${p10(b)}} = 10^{${a}-${b < 0 ? `(${b})` : b}} = ${p10(a - b)}`];
+          if (a - b !== 1) lignes.push(`${p10(a - b)} = ${dixPuiss(a - b)}`);
+          return { enonce:`\\dfrac{${p10(a)}}{${p10(b)}}`, reponse: construireDecimal(1, a - b), detail: { lignes, final: dixPuiss(a - b) } }; },
   () => { const {mantisse, exposant} = tirerEcritureSci(-3, 4);
-          return { enonce:`${formatDecimalFr(String(mantisse))}\\times 10^{${exposant}}`, reponse: construireDecimal(mantisse, exposant) }; },
+          const res = decFr(construireDecimal(mantisse, exposant));
+          return { enonce:`${formatDecimalFr(String(mantisse))}\\times ${p10(exposant)}`, reponse: construireDecimal(mantisse, exposant),
+                   detail: { lignes: [exposant === 1 ? `${decFr(mantisse)}\\times 10 = ${res}` : `${decFr(mantisse)}\\times 10^{${exposant}} = ${decFr(mantisse)}\\times ${dixPuiss(exposant)} = ${res}`], final: res } }; },
   () => { const k = alea(2,12);
-          return { enonce:`\\sqrt{${k*k}}`, reponse:`${k}` }; },
+          return { enonce:`\\sqrt{${k*k}}`, reponse:`${k}`,
+                   detail: { lignes: [`\\sqrt{${k*k}} = \\sqrt{${k}^{2}} = ${k}`], final: `${k}` } }; },
   () => { const x = choix([0.2,0.3,0.4,0.5,0.6,0.7,1.1,1.2,1.5,2.5]);
-          return { enonce:`(${formatDecimalFr(String(x))})^{2}`, reponse:`${arrondi(x*x)}` }; },
+          return { enonce:`(${formatDecimalFr(String(x))})^{2}`, reponse:`${arrondi(x*x)}`,
+                   detail: { lignes: [`(${decimalDe(x)})^{2} = ${decimalDe(x)}\\times ${decimalDe(x)} = ${decimalDe(x*x)}`], final: decimalDe(x*x) } }; },
   () => { const d = choix([2,4,5,8,10,20,25]), n = alea(1,d-1);
-          return { enonce:`\\dfrac{${n}}{${d}}`, reponse:`${arrondi(n/d)}` }; }
+          return { enonce:`\\dfrac{${n}}{${d}}`, reponse:`${arrondi(n/d)}`,
+                   detail: { lignes: lignesFractionVersDecimal(n, d), final: decimalDe(n / d) } }; }
 ];
 let tirageCalculs = tirerSansRemise(MODELES_CALCUL, 4);
+
 
 const generateurs = [
   // ---------- 11.1 : automatismes (4 modeles distincts du vivier ci-dessus) ----------
@@ -971,11 +1044,15 @@ const generateurs = [
   // ---------- 11.2 : ecriture scientifique (decimal grand, decimal petit, nombre mal ecrit, produit ou quotient) ----------
   {id:"11.2 a)", type:"ecritureSci", gen: () => {
     const {mantisse, exposant} = tirerEcritureSci(3, 6);
-    return { enonce: formatDecimalFr(construireDecimal(mantisse, exposant)), mantisse, exposant };
+    const nombre = formatDecimalFr(construireDecimal(mantisse, exposant));
+    return { enonce: nombre, mantisse, exposant,
+      detail: { lignes: [`${nombre} = ${decFr(mantisse)}\\times ${dixPuiss(exposant)} = ${decFr(mantisse)}\\times ${p10(exposant)}`], final: `${decFr(mantisse)}\\times ${p10(exposant)}` } };
   }},
   {id:"11.2 b)", type:"ecritureSci", gen: () => {
     const {mantisse, exposant} = tirerEcritureSci(-5, -2);
-    return { enonce: formatDecimalFr(construireDecimal(mantisse, exposant)), mantisse, exposant };
+    const nombre = formatDecimalFr(construireDecimal(mantisse, exposant));
+    return { enonce: nombre, mantisse, exposant,
+      detail: { lignes: [`${nombre} = ${decFr(mantisse)}\\times ${dixPuiss(exposant)} = ${decFr(mantisse)}\\times ${p10(exposant)}`], final: `${decFr(mantisse)}\\times ${p10(exposant)}` } };
   }},
   {id:"11.2 c)", type:"ecritureSci", gen: () => {
     // nombre « mal ecrit » : mantisse >= 10 (a) ou < 1 (b), a remettre sous forme scientifique
@@ -983,15 +1060,20 @@ const generateurs = [
     const chiffresDecalage = decalage === 10 ? 1 : 2;
     if (Math.random() < 0.5) {
       const cible = tirerEcritureSci(3, 7);
+      const mp = arrondi(cible.mantisse * decalage), ep = cible.exposant - chiffresDecalage;
+      const puissanceK = chiffresDecalage === 1 ? '10' : '10^{2}', fin = `${decFr(cible.mantisse)}\\times ${p10(cible.exposant)}`;
       return {
-        enonce: `${formatDecimalFr(String(arrondi(cible.mantisse * decalage)))}\\times 10^{${cible.exposant - chiffresDecalage}}`,
-        mantisse: cible.mantisse, exposant: cible.exposant
+        enonce: `${formatDecimalFr(String(mp))}\\times ${p10(ep)}`,
+        mantisse: cible.mantisse, exposant: cible.exposant,
+        detail: { lignes: [`${decFr(mp)}\\times ${p10(ep)} = ${decFr(cible.mantisse)}\\times ${puissanceK}\\times ${p10(ep)} = ${fin}`], final: fin }
       };
     }
     const cible = tirerEcritureSci(-6, 2);
+    const mp = arrondi(cible.mantisse / decalage), ep = cible.exposant + chiffresDecalage, fin = `${decFr(cible.mantisse)}\\times ${p10(cible.exposant)}`;
     return {
-      enonce: `${formatDecimalFr(String(arrondi(cible.mantisse / decalage)))}\\times 10^{${cible.exposant + chiffresDecalage}}`,
-      mantisse: cible.mantisse, exposant: cible.exposant
+      enonce: `${formatDecimalFr(String(mp))}\\times ${p10(ep)}`,
+      mantisse: cible.mantisse, exposant: cible.exposant,
+      detail: { lignes: [`${decFr(mp)}\\times ${p10(ep)} = ${decFr(cible.mantisse)}\\times 10^{-${chiffresDecalage}}\\times ${p10(ep)} = ${fin}`], final: fin }
     };
   }},
   {id:"11.2 d)", type:"ecritureSci", gen: () => {
@@ -1000,10 +1082,15 @@ const generateurs = [
       const MANTISSES_PRODUIT = [2,3,4,5,6,7,8,9];
       const a1 = choix(MANTISSES_PRODUIT), a2 = choix(MANTISSES_PRODUIT);
       const e1 = alea(2, 6), e2 = alea(-4, 3);
-      const norm = normaliserMantisseExposant(arrondi(a1 * a2), e1 + e2);
+      const P = a1 * a2, S = e1 + e2;
+      const norm = normaliserMantisseExposant(arrondi(P), S);
+      const fin = `${decFr(norm.mantisse)}\\times ${p10(norm.exposant)}`;
+      const lignes = [`(${a1}\\times ${p10(e1)})\\times(${a2}\\times ${p10(e2)}) = ${a1}\\times ${a2}\\times ${p10(e1)}\\times ${p10(e2)} = ${P}\\times ${p10(S)}`];
+      if (P >= 10) lignes.push(`${P}\\times ${p10(S)} = ${decFr(P / 10)}\\times 10\\times ${p10(S)} = ${fin}`);
       return {
-        enonce: `(${a1}\\times 10^{${e1}})\\times(${a2}\\times 10^{${e2}})`,
-        mantisse: norm.mantisse, exposant: norm.exposant
+        enonce: `(${a1}\\times ${p10(e1)})\\times(${a2}\\times ${p10(e2)})`,
+        mantisse: norm.mantisse, exposant: norm.exposant,
+        detail: { lignes, final: fin }
       };
     }
     // quotient
@@ -1012,52 +1099,63 @@ const generateurs = [
     const diviseurMantisse = choix([2,3,4,5]);
     const diviseurExposant = alea(-4, 4);
     const normDividende = normaliserMantisseExposant(arrondi(resultatMantisse * diviseurMantisse), resultatExposant + diviseurExposant);
+    const A = normDividende.mantisse, E = normDividende.exposant, q = arrondi(A / diviseurMantisse), S = E - diviseurExposant;
+    const fin = `${decFr(resultatMantisse)}\\times ${p10(resultatExposant)}`;
+    const lignes = [`\\dfrac{${decFr(A)}\\times ${p10(E)}}{${diviseurMantisse}\\times ${p10(diviseurExposant)}} = \\dfrac{${decFr(A)}}{${diviseurMantisse}}\\times 10^{${E}-${diviseurExposant < 0 ? `(${diviseurExposant})` : diviseurExposant}} = ${decFr(q)}\\times ${p10(S)}`];
+    if (q < 1) lignes.push(`${decFr(q)}\\times ${p10(S)} = ${decFr(resultatMantisse)}\\times 10^{-1}\\times ${p10(S)} = ${fin}`);
     return {
-      enonce: `\\dfrac{${formatDecimalFr(String(normDividende.mantisse))}\\times 10^{${normDividende.exposant}}}{${diviseurMantisse}\\times 10^{${diviseurExposant}}}`,
-      mantisse: resultatMantisse, exposant: resultatExposant
+      enonce: `\\dfrac{${formatDecimalFr(String(A))}\\times ${p10(E)}}{${diviseurMantisse}\\times ${p10(diviseurExposant)}}`,
+      mantisse: resultatMantisse, exposant: resultatExposant,
+      detail: { lignes, final: fin }
     };
   }},
 
   // ---------- 11.3 : plus petit ensemble contenant un nombre (entier, decimal, rationnel non decimal, racine) ----------
   {id:"11.3 a)", type:"ensembleNombre", texteLibre:true, gen: () => {
-    const f = choix(['N','Z']);
-    return { enonce: enonceEnsemble(choix(CLASSIFICATION_VIVIER[f])), ensemble: f };
+    const f = choix(['N','Z']), t = choix(CLASSIFICATION_VIVIER[f]);
+    return { enonce: enonceEnsemble(t), ensemble: f, detail: detailEnsemble(t, f) };
   }},
   {id:"11.3 b)", type:"ensembleNombre", texteLibre:true, gen: () => {
-    return { enonce: enonceEnsemble(choix(CLASSIFICATION_VIVIER.D)), ensemble: 'D' };
+    const t = choix(CLASSIFICATION_VIVIER.D);
+    return { enonce: enonceEnsemble(t), ensemble: 'D', detail: detailEnsemble(t, 'D') };
   }},
   {id:"11.3 c)", type:"ensembleNombre", texteLibre:true, gen: () => {
-    return { enonce: enonceEnsemble(choix(CLASSIFICATION_VIVIER.Q)), ensemble: 'Q' };
+    const t = choix(CLASSIFICATION_VIVIER.Q);
+    return { enonce: enonceEnsemble(t), ensemble: 'Q', detail: detailEnsemble(t, 'Q') };
   }},
   {id:"11.3 d)", type:"ensembleNombre", texteLibre:true, gen: () => {
     // nombre avec une racine carree : carre parfait (N, Z, D) ou irrationnel (R)
-    const f = choix(['N','Z','D','R']);
-    return { enonce: enonceEnsemble(choix(RACINES_VIVIER[f])), ensemble: f };
+    const f = choix(['N','Z','D','R']), t = choix(RACINES_VIVIER[f]);
+    return { enonce: enonceEnsemble(t), ensemble: f, detail: detailEnsemble(t, f) };
   }},
 
   // ---------- 11.4 : ecriture decimale / fraction irreductible, cas moins immediats ----------
   {id:"11.4 a)", type:"num", gen: () => {
     const d = choix(DENOMINATEURS_DECIMAUX_ETENDUS);
     const n = aleaNonNul(1, d - 1);
-    return { enonce: `\\dfrac{${n}}{${d}}`, reponse: `${Math.round(n / d * 1e6) / 1e6}` };
+    return { enonce: `\\dfrac{${n}}{${d}}`, reponse: `${Math.round(n / d * 1e6) / 1e6}`,
+      detail: { lignes: lignesFractionVersDecimal(n, d), final: decimalDe(n / d) } };
   }},
   {id:"11.4 b)", type:"num", fractionIrreductible:true, gen: () => {
     const d = choix(DENOMINATEURS_DECIMAUX_ETENDUS);
     const n = aleaNonNul(1, d - 1);
     const g = pgcd(n, d);
-    return { enonce: `${formatDecimalFr(String(n / d))}`, reponse: `${n/g}/${d/g}` };
+    const det = lignesDecimalVersFraction(n / d);
+    return { enonce: `${formatDecimalFr(String(n / d))}`, reponse: `${n/g}/${d/g}`, detail: { lignes: det.lignes, final: det.final } };
   }},
   {id:"11.4 c)", type:"num", fractionIrreductible:true, gen: () => {
     const [n, d] = choix(PAIRES_COPREMIERES);
     const k = alea(2, 6);
-    return { enonce: `\\dfrac{${n*k}}{${d*k}}`, reponse: `${n}/${d}` };
+    return { enonce: `\\dfrac{${n*k}}{${d*k}}`, reponse: `${n}/${d}`,
+      detail: { lignes: [`\\dfrac{${n*k}}{${d*k}} = \\dfrac{${n}\\times ${k}}{${d}\\times ${k}} = \\dfrac{${n}}{${d}}`], final: `\\dfrac{${n}}{${d}}` } };
   }},
   {id:"11.4 d)", type:"num", fractionIrreductible:true, gen: () => {
     const d = choix(DENOMINATEURS_DECIMAUX_ETENDUS);
     const n = aleaNonNul(1, d - 1);
     const g = pgcd(n, d);
     const signe = choix([-1, 1]);
-    return { enonce: `${formatDecimalFr(String(signe * n / d))}`, reponse: `${signe*n/g}/${d/g}` };
+    const det = lignesDecimalVersFraction(signe * n / d);
+    return { enonce: `${formatDecimalFr(String(signe * n / d))}`, reponse: `${signe*n/g}/${d/g}`, detail: { lignes: det.lignes, final: det.final } };
   }},
 
   // ---------- 11.5 : ordre de grandeur (4 cas imposes : grand nombre a mantisse < 5, grand nombre a mantisse >= 5, puis petits nombres) ----------
@@ -1069,46 +1167,76 @@ const generateurs = [
   // ---------- 11.6 : vraisemblance d'un resultat (tirage sans remise partage par le groupe) ----------
   {id:"11.6 a)", type:"ouiNon", texteLibre:true, gen: () => {
     const t = tirageGroupe117[0];
-    return { enonce: t.phrase, reponseOuiNon: t.ok };
+    return { enonce: t.phrase, reponseOuiNon: t.ok, detail: detailVraisemblance(t) };
   }},
   {id:"11.6 b)", type:"ouiNon", texteLibre:true, gen: () => {
     const t = tirageGroupe117[1];
-    return { enonce: t.phrase, reponseOuiNon: t.ok };
+    return { enonce: t.phrase, reponseOuiNon: t.ok, detail: detailVraisemblance(t) };
   }},
   {id:"11.6 c)", type:"ouiNon", texteLibre:true, gen: () => {
     const t = tirageGroupe117[2];
-    return { enonce: t.phrase, reponseOuiNon: t.ok };
+    return { enonce: t.phrase, reponseOuiNon: t.ok, detail: detailVraisemblance(t) };
   }},
   {id:"11.6 d)", type:"ouiNon", texteLibre:true, gen: () => {
     const t = tirageGroupe117[3];
-    return { enonce: t.phrase, reponseOuiNon: t.ok };
+    return { enonce: t.phrase, reponseOuiNon: t.ok, detail: detailVraisemblance(t) };
   }},
 
   // ---------- 11.7 : calculs plus avances ----------
   {id:"11.7 a)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     const t = choix(DEV_PERIODIQUE_VIVIER);
-    return { enonce: `Écrire \\(${t.tex}\\) sous forme de fraction irréductible.`, reponse: t.fraction };
+    const motif = t.tex.match(/overline\{(\d+)\}/)[1], L = motif.length, P = Number(motif), M = Math.pow(10, L), den = M - 1, g = pgcd(P, den);
+    const lignes = [`x = ${t.tex}`, `${M}x = ${P}{,}\\overline{${motif}}`, `${M}x - x = ${P}{,}\\overline{${motif}} - ${t.tex} = ${P}`, `${den}x = ${P}`, `\\iff x = \\dfrac{${P}}{${den}}`];
+    if (g > 1) lignes.push(`\\dfrac{${P}}{${den}} = \\dfrac{${P / g}\\times ${g}}{${den / g}\\times ${g}} = \\dfrac{${P / g}}{${den / g}}`);
+    return { enonce: `Écrire \\(${t.tex}\\) sous forme de fraction irréductible.`, reponse: t.fraction,
+      detail: { lignes, final: `\\dfrac{${P / g}}{${den / g}}` } };
   }},
   {id:"11.7 b)", type:"num", texteLibre:true, gen: () => {
     const c = choix(COTES_GEOM);
     if (alea(0,1) === 0) {
-      return { enonce: `Un carré a pour côté \\(${c}\\) cm. Quelle est la longueur exacte de sa diagonale, en cm (sous la forme \\(a\\sqrt{2}\\)) ?`, reponse: `${c}*sqrt(2)` };
+      return { enonce: `Un carré a pour côté \\(${c}\\) cm. Quelle est la longueur exacte de sa diagonale, en cm (sous la forme \\(a\\sqrt{2}\\)) ?`, reponse: `${c}*sqrt(2)`,
+        detail: { lignes: [`\\text{D'après le théorème de Pythagore}`, `d^{2} = ${c}^{2} + ${c}^{2} = ${2*c*c}`, `d = \\sqrt{${2*c*c}} = \\sqrt{${c*c}\\times 2} = ${c}\\sqrt{2}`], final: `${c}\\sqrt{2}` } };
     }
-    return { enonce: `Un triangle équilatéral a pour côté \\(${c}\\) cm. Quelle est sa hauteur exacte, en cm (sous la forme \\(a\\sqrt{3}\\) ou \\(\\dfrac{a\\sqrt{3}}{b}\\)) ?`, reponse: c === 2 ? 'sqrt(3)' : (c % 2 === 0 ? `${c/2}*sqrt(3)` : `${c}*sqrt(3)/2`) };
+    const lignes = [`\\text{La hauteur coupe le côté en son milieu}`, `\\text{D'après le théorème de Pythagore}`];
+    let fin;
+    if (c % 2 === 0) {
+      const m = c / 2;
+      lignes.push(`h^{2} = ${c}^{2} - ${m}^{2} = ${c*c - m*m}`);
+      if (m === 1) { fin = '\\sqrt{3}'; lignes.push(`h = \\sqrt{3}`); }
+      else { fin = `${m}\\sqrt{3}`; lignes.push(`h = \\sqrt{${3*m*m}} = \\sqrt{${m*m}\\times 3} = ${fin}`); }
+    } else {
+      fin = `\\dfrac{${c}\\sqrt{3}}{2}`;
+      lignes.push(`h^{2} = ${c}^{2} - \\left(\\dfrac{${c}}{2}\\right)^{2} = ${c*c} - \\dfrac{${c*c}}{4} = \\dfrac{${3*c*c}}{4}`, `h = \\dfrac{\\sqrt{${3*c*c}}}{2} = \\dfrac{\\sqrt{${c*c}\\times 3}}{2} = ${fin}`);
+    }
+    return { enonce: `Un triangle équilatéral a pour côté \\(${c}\\) cm. Quelle est sa hauteur exacte, en cm (sous la forme \\(a\\sqrt{3}\\) ou \\(\\dfrac{a\\sqrt{3}}{b}\\)) ?`, reponse: c === 2 ? 'sqrt(3)' : (c % 2 === 0 ? `${c/2}*sqrt(3)` : `${c}*sqrt(3)/2`),
+      detail: { lignes, final: fin } };
   }},
   {id:"11.7 c)", type:"ouiNon", texteLibre:true, gen: () => {
-    const n = choix(VALEURS_1_SUR_N);
-    return { enonce: `L'écriture décimale de \\(\\dfrac{1}{${n}}\\) est-elle finie (nombre fini de décimales, sans partie périodique) ?`, reponseOuiNon: estDecimalFini(n) };
+    const n = choix(VALEURS_1_SUR_N), fini = estDecimalFini(n), fac = premiersDe(n), lignes = [];
+    if (fac.length > 1 || fac[0][1] > 1) lignes.push(`${n} = ${fac.map(([p, e]) => (e > 1 ? `${p}^{${e}}` : `${p}`)).join('\\times ')}`);
+    else lignes.push(`\\text{Le dénominateur } ${n} \\text{ est un nombre premier}`);
+    if (fini) {
+      const k = Math.max(...fac.map(([p, e]) => e)), s = String(Math.pow(10, k) / n).padStart(k + 1, '0');
+      lignes.push(`\\text{Le dénominateur } ${n} \\text{ n'a pas d'autre facteur premier que 2 ou 5}`, `\\dfrac{1}{${n}} = ${s.slice(0, s.length - k)}{,}${s.slice(s.length - k).replace(/0+$/, '')}`);
+    } else {
+      lignes.push(`\\text{Le dénominateur a le facteur premier } ${fac.map(x => x[0]).find(p => p !== 2 && p !== 5)} \\text{, autre que 2 et 5}`);
+    }
+    lignes.push(`\\text{Réponse : ${fini ? 'oui' : 'non'}}`);
+    return { enonce: `L'écriture décimale de \\(\\dfrac{1}{${n}}\\) est-elle finie (nombre fini de décimales, sans partie périodique) ?`, reponseOuiNon: fini,
+      detail: { lignes, final: fini ? 'oui' : 'non' } };
   }}
 ];
 
 function genererExercices() {
   tirageCalculs = tirerSansRemise(MODELES_CALCUL, 4);
   tirageGroupe117 = tirerSansRemise(VRAISEMBLANCE_VIVIER, 4);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -1520,10 +1648,11 @@ function checkEcritureSci(userInput, mantisseAttendue, exposantAttendu) {
   const s = normaliserSaisie(userInput).replace(/\s/g, '');
   // le champ etant un math-field, un exposant negatif ou a plusieurs chiffres est exporte
   // entre parentheses par MathLive (ex: "4.5*10^(-3)") : on les accepte, optionnelles.
-  const m = s.match(/^(-?\d+(?:\.\d+)?)\*10\^\(?(-?\d+)\)?$/);
+  // « 7,2*10 » (exposant 1 sous-entendu) est une écriture scientifique correcte : exposant 1 par défaut
+  const m = s.match(/^(-?\d+(?:\.\d+)?)\*10(?:\^\(?(-?\d+)\)?)?$/);
   if (!m) return false;
   const mantisse = parseFloat(m[1]);
-  const exposant = parseInt(m[2], 10);
+  const exposant = m[2] === undefined ? 1 : parseInt(m[2], 10);
   if (Math.abs(mantisse) < 1 || Math.abs(mantisse) >= 10) return false;
   if (exposant !== exposantAttendu) return false;
   return Math.abs(mantisse - mantisseAttendue) < 1e-9;
@@ -2118,7 +2247,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

@@ -315,6 +315,15 @@ async function controlerDansLaPage(opts) {
         return Math.abs(v - cibleNum) <= Math.max(e.tolerancePourcent || 0, e.tolerancePoints ? 0.05 : 0, 1e-6) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
     }
+    // oui / non (reponseOuiNon booléen) ; plus petit ensemble de nombres (\mathbb{N}, \mathbb{Z}, \mathbb{D}, \mathbb{Q}, \mathbb{R}) ;
+    // écriture scientifique a\times 10^{n} : mantisse et exposant exacts (20/10/2026)
+    if (e.type === 'ouiNon' && typeof e.reponseOuiNon === 'boolean') return String(F).replace(/\\text\{([^{}]*)\}/g, '$1').trim().toLowerCase() === (e.reponseOuiNon ? 'oui' : 'non') ? 'ok' : 'faux';
+    if (e.type === 'ensembleNombre') return String(F).replace(/\s/g, '') === '\\mathbb{' + e.ensemble + '}' ? 'ok' : 'faux';
+    if (e.type === 'ecritureSci') {
+      const m = String(F).replace(/\s/g, '').match(/^(-?[\d{},]+)\\times10(?:\^\{(-?\d+)\})?$/);          // « a\times 10 » : exposant 1
+      if (!m) return 'faux';
+      return Math.abs(Number(m[1].replace('{,}', '.')) - e.mantisse) < 1e-9 && (m[2] === undefined ? 1 : Number(m[2])) === e.exposant ? 'ok' : 'faux';
+    }
     if (typeof e.reponse !== 'string') return 'non-verifiable';
     // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
     if (e.type === 'texte') {
@@ -326,7 +335,7 @@ async function controlerDansLaPage(opts) {
       try {
         const A = rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x)).sort((p, q) => p - q);
         const interieur = String(F).replace(/\\left\\\{|\\right\\\}/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{|\\\}/g, '');
-        const B = interieur.split(';').filter((s) => s.trim()).map((x) => evaluer(x, 0)).sort((p, q) => p - q);
+        const B = /^\s*(\\emptyset|\\varnothing)\s*$/.test(String(F)) ? [] : interieur.split(';').filter((s) => s.trim()).map((x) => evaluer(x, 0)).sort((p, q) => p - q);
         return A.length === B.length && A.every((v, i) => egal(v, B[i])) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
     }
@@ -646,7 +655,8 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       for (const { e, i } of avecDetail) {
         const inp = document.getElementById('input-' + i); if (!inp) continue;
         if (e.type === 'discussionParametre') continue;   // réponse « si m<s alors … » : la fiche la contrôle elle-même (audit-reponses)
-        if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = versTexte(e.detail.final);
+        const ensembleSeul = e.detail.final.match(/^\\mathbb\{([NZDQR])\}$/);   // « \mathbb{N} » : l'élève tape la lettre dans un champ texte
+        if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
         await dormir(25);
         let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }
         if (ok !== true) refus.push({ id: e.id, final: e.detail.final, resultat: String(ok) });

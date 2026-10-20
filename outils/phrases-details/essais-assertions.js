@@ -50,6 +50,23 @@ const ESSAIS = {
     [true, '\\dfrac{1}{7} = 0{,}\\overline{142857}', {}, env('')],
     [false, '\\dfrac{1}{7} = 0{,}\\overline{142858}', {}, env('')]
   ],
+  'decalage-periodique-exact': [
+    [true, '100x = 18{,}\\overline{18}', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')],
+    [false, '10x = 18{,}\\overline{18}', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')],
+    [false, '100x = 81{,}\\overline{18}', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')],
+    [false, '100x = 18{,}\\overline{81}', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')]
+  ],
+  'soustraction-periodique-exacte': [
+    [true, '100x - x = 18{,}\\overline{18} - 0{,}\\overline{18} = 18', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')],
+    [false, '100x - x = 18{,}\\overline{18} - 0{,}\\overline{18} = 17', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')],
+    [false, '10x - x = 18{,}\\overline{18} - 0{,}\\overline{18} = 18', { enonce: 'Écrire \\(0{,}\\overline{18}\\) sous forme de fraction irréductible.' }, env('')]
+  ],
+  'la-reponse-oui-non-est-celle-de-l-exercice': [
+    [true, '\\text{Réponse : oui}', { reponseOuiNon: true }, env('')],
+    [false, '\\text{Réponse : non}', { reponseOuiNon: true }, env('')],
+    [true, '\\text{Réponse : non}', { reponse: 'non' }, env('')],
+    [false, '\\text{Réponse : oui}', { reponse: 'non' }, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
