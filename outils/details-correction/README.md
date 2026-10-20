@@ -32,6 +32,7 @@ anomalie de gravité « erreur ».
 | chaque chaîne d'égalités : deux membres numériques voisins égaux ; deux membres littéraux voisins égaux pour toute valeur des lettres (identité) | `chaine-d-egalites-fausse` | erreur |
 | chaque équivalence `P ⟺ Q` entre équations ou inéquations (y compris « x = a ou x = b » et les doubles inégalités) a les mêmes solutions, par résolution numérique sur [-30 ; 30] ; une ligne qui commence par ⟺ prolonge la précédente | `equivalence-fausse` | erreur |
 | le LaTeX de chaque ligne compile dans MathJax | `latex-invalide` | erreur |
+| **tableau de signes** (20/10/2026) : chaque ligne de facteur (étiquette = expression de x) a le signe de cette expression entre les racines de l'en-tête et un 0 sous sa seule racine ; la ligne finale est le produit des lignes, avec 0 ou double barre sous les racines des facteurs ; l'ensemble de solutions lu sur la ligne finale (racines comprises, sens large ou strict) est celui de la réponse attendue (`intervalleSpec`) ; un tableau à racine littérale (discussion selon un paramètre) n'est pas vérifiable et est ignoré | `tableau-de-signes-incorrect` | erreur |
 | la réponse finale du détail, saisie comme le ferait un élève dans le vrai champ, est acceptée par la validation de la fiche | `reponse-finale-refusee-par-la-fiche` | erreur |
 | les assertions des phrases (`outils/phrases-details/assertions.js`) : la condition qu'une phrase affirme est vraie dans le tirage | `assertion-fausse : <nom>` | erreur |
 | le texte libre coupe une ligne en morceaux de formules, chacun contrôlé comme une chaîne d'égalités | (même motifs que ci-dessus) | erreur |
@@ -78,6 +79,8 @@ signalé comme erreur de l'outil.
 6. **La lisibilité et le sens pédagogique** : relecture de `exemples.html`.
 
 ## Étendre l'outil
+
+Auto-test des tableaux de signes : `tableau-signe-final-inverse` (un signe de la ligne finale est inversé) et `tableau-signe-facteur-inverse` (un signe d'une ligne de facteur est inversé) ; tous les tableaux vérifiables sont mutés (100 % détectés le 20/10/2026 : Seconde 8, Première 11, 12, 13).
 
 Les contrôles sont dans la fonction `controlerDansLaPage` (code exécuté dans la page) ; l'interface est dans `controlerInterface`.
 Un nouveau contrôle s'accompagne d'une mutation dans la section « auto-test », pour prouver qu'il détecte bien l'erreur qu'il vise.

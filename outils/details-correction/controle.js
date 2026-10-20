@@ -9,7 +9,8 @@
 //   2. chaque chaîne d'égalités « A = B = C » est exacte (évaluée en plusieurs valeurs des lettres) ;
 //   3. chaque équivalence « P ⟺ Q » entre deux équations / inéquations a les mêmes solutions (résolution numérique) ;
 //   4. le style (coefficient 1, signes doublés, exposant 1, fraction de dénominateur 1 ou 0, « < » brut, espaces avant %, NaN…) ;
-//   5. le LaTeX compile dans MathJax (aucune erreur de syntaxe) ;
+//   5. le LaTeX compile dans MathJax (aucune erreur de syntaxe) ; chaque tableau de signes est relu (20/10/2026) : signe et zéro de chaque
+//      ligne de facteur, ligne finale = produit des lignes, ensemble de solutions lu sur la ligne finale = réponse attendue ;
 //   6. l'interface : bouton « Détails » présent pour chaque réponse fausse, étapes dépliables, aucune erreur de page, aucune ligne
 //      réduite à moins de 85 % de sa taille ni débordement horizontal, sur ordinateur et sur téléphone (375 px).
 // Rapports : rapport.txt (anomalies), phrases.txt (toutes les phrases de méthode, à relire), exemples.html (deux exemples par
@@ -67,7 +68,7 @@ function demarrerServeur() {
 async function controlerDansLaPage(opts) {
   const anomalies = [], cles = new Set();
   const stats = { tirages: 0, exercices: 0, avecDetail: 0, lignes: 0, chaines: 0, chainesIllisibles: 0, equivalences: 0, equivalencesIllisibles: 0,
-    finalVerifie: 0, finalNonVerifiable: 0, motifsLaTeX: 0 };
+    finalVerifie: 0, finalNonVerifiable: 0, motifsLaTeX: 0, tableaux: 0 };
   const ajouter = (gravite, motif, e, exemple) => {
     const cle = e.id + '|' + motif;
     if (cles.has(cle)) return;
@@ -369,6 +370,59 @@ async function controlerDansLaPage(opts) {
     for (const [gr, motif] of m) ajouter(gr, motif, e, l);
   }
 
+  // ---------- tableaux de signes (20/10/2026) : lignes de facteurs, produit, ensemble de solutions ----------
+  // Un tableau `\begin{array}{c|…} x & -\infty & … \\ \hline étiquette & … \\ \hline …` est relu. Chaque ligne dont l'étiquette est une
+  // expression de x (3x+14, (x-2)^2…) doit avoir le signe de cette expression entre les racines de l'en-tête et un 0 sous sa seule
+  // racine ; la ligne finale (étiquette \text{signe}, E(x)…) est le produit des lignes de facteurs, avec 0 ou double barre exactement
+  // sous les racines des facteurs ; enfin, si l'exercice porte un intervalleSpec et une ligne « pour lesquelles … op 0 », l'ensemble
+  // de solutions lu sur la ligne finale (racines comprises, selon le sens large ou strict) est celui de la réponse attendue.
+  function problemesTableauSignes(e, tex, lignes) {
+    const probl = [];
+    const corps = tex.replace(/^\\(?:small|scriptsize)\s*\\begin\{array\}\{[^}]*\}/, '').replace(/\\end\{array\}\s*$/, '');
+    const L = corps.split('\\\\ \\hline ').map((r) => r.replace(/\\\\\s*$/, '').split(' & ').map((c) => c.trim()));
+    const entete = L[0];
+    if (L.length < 2 || entete[0] !== 'x') return null;                 // null : tableau non vérifiable automatiquement
+    const racinesTex = []; for (let j = 3; j < entete.length - 2; j += 2) racinesTex.push(entete[j]);
+    if (racinesTex.some((t) => /[A-Za-z]/.test(t.replace(/\\[a-zA-Z]+/g, '')))) return null;     // racine littérale (discussion selon un paramètre)
+    let racines; try { racines = racinesTex.map((t) => evaluer(t, 0)); } catch (er) { return ['racine illisible']; }
+    const k = racines.length;
+    if (!k) return null;
+    for (let j = 1; j < k; j++) if (!(racines[j] > racines[j - 1])) probl.push('racines non croissantes');
+    const echant = (i) => (i === 0 ? racines[0] - 1 : i === k ? racines[k - 1] + 1 : (racines[i - 1] + racines[i]) / 2);
+    const corpsLignes = L.slice(1);
+    if (corpsLignes.some((r) => r.length !== 2 * k + 4)) return ['ligne de longueur inattendue'];
+    const evalX = (label, x) => { const v = math.evaluate(versMathjs(label), { x }); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; };
+    // une étiquette « \text{signe} » ou « E(x) » (math.js lit E comme le nombre d'Euler) désigne la ligne finale, pas un facteur
+    const estFacteur = (label) => { if (/^\\text\{|^[A-Za-z]\(x\)$/.test(label)) return false; try { evalX(label, 1.7); return true; } catch (er) { return false; } };
+    const signesDe = (r) => { const s = []; for (let i = 0; i <= k; i++) s.push(r[2 + 2 * i]); return s; };
+    const marquesDe = (r) => { const m = []; for (let j = 0; j < k; j++) m.push(r[3 + 2 * j]); return m; };
+    const eq = (u, v) => Math.abs(u - v) < 1e-9;
+    const rangees = corpsLignes.filter((r) => estFacteur(r[0]));
+    const finale = estFacteur(corpsLignes[corpsLignes.length - 1][0]) ? null : corpsLignes[corpsLignes.length - 1];
+    rangees.forEach((r) => {
+      const s = signesDe(r), m = marquesDe(r);
+      for (let i = 0; i <= k; i++) { const v = evalX(r[0], echant(i)); if ((v > 0 ? '+' : '-') !== s[i]) probl.push('signe de ' + r[0] + ' sur l\'intervalle ' + (i + 1)); }
+      for (let j = 0; j < k; j++) { const estZero = Math.abs(evalX(r[0], racines[j])) < 1e-9; if ((m[j] === '0') !== estZero) probl.push('zéro de ' + r[0] + ' sous la racine ' + (j + 1)); }
+    });
+    if (finale) {
+      const s = signesDe(finale), m = marquesDe(finale);
+      for (let i = 0; i <= k; i++) { let p = 1; rangees.forEach((r) => { p *= signesDe(r)[i] === '+' ? 1 : -1; }); if ((p > 0 ? '+' : '-') !== s[i]) probl.push('signe de la ligne finale sur l\'intervalle ' + (i + 1)); }
+      for (let j = 0; j < k; j++) { const aZero = rangees.some((r) => marquesDe(r)[j] === '0'); if (aZero !== (m[j] === '0' || m[j] === '\\Vert')) probl.push('marque de la ligne finale sous la racine ' + (j + 1)); }
+      const spec = e.intervalleSpec, ligneOp = lignes.find((l) => /pour lesquelles/.test(l));
+      const mo = ligneOp && ligneOp.match(/(\\geqslant|\\leqslant|\\lt|>|<)\s*\\ 0\s*$/);
+      if (spec && spec.liste && mo) {
+        const positif = mo[1] === '>' || mo[1] === '\\geqslant', large = mo[1] === '\\geqslant' || mo[1] === '\\leqslant';
+        const dans = (t) => spec.liste.some((iv) => {
+          const bas = iv.bas == null ? -Infinity : iv.bas, haut = iv.haut == null ? Infinity : iv.haut;
+          return (t > bas + 1e-9 || (eq(t, bas) && iv.inclusBas)) && (t < haut - 1e-9 || (eq(t, haut) && iv.inclusHaut));
+        });
+        for (let i = 0; i <= k; i++) if (((s[i] === '+') === positif) !== dans(echant(i))) probl.push('intervalle ' + (i + 1) + ' : la ligne finale ne donne pas la réponse attendue');
+        for (let j = 0; j < k; j++) if ((m[j] === '0' && large) !== dans(racines[j])) probl.push('racine ' + (j + 1) + ' : la ligne finale ne donne pas la réponse attendue');
+      }
+    }
+    return probl;
+  }
+
   // ---------- vérification complète d'un détail (sans effet de bord) ----------
   function verifierDetail(e, D, ctx) {
     const trouves = [];
@@ -381,6 +435,13 @@ async function controlerDansLaPage(opts) {
     const cmp = comparerFinal({ ...e, detail: D });
     if (cmp === 'faux') noter('erreur', 'final-different-de-la-reponse', 'final = ' + D.final + '  /  reponse = ' + (e.reponse !== undefined ? e.reponse : '') );
     ctx.finalVerifie += cmp === 'ok' ? 1 : 0; ctx.finalNonVerifiable += cmp === 'non-verifiable' ? 1 : 0;
+    for (const lt of D.lignes) {
+      if (!/^\\(?:small|scriptsize)\s*\\begin\{array\}\{c\|/.test(lt)) continue;
+      const pb = problemesTableauSignes(e, lt, D.lignes);
+      if (pb === null) continue;
+      if (pb.length) noter('erreur', 'tableau-de-signes-incorrect', pb.slice(0, 2).join(' ; ') + '  —  ' + lt.slice(0, 110));
+      else ctx.tableaux = (ctx.tableaux || 0) + 1;
+    }
     let precedent = null;       // dernière partie de la ligne précédente : une ligne qui commence par ⟺ la prolonge
     let dernierMembre = null;     // dernier membre de la ligne précédente : une ligne qui commence par « = » le reprend
     for (const [idxL, l0] of D.lignes.entries()) {
@@ -523,6 +584,20 @@ async function controlerDansLaPage(opts) {
         const l = D.lignes.find((x) => x.includes('}')); const mut = l.replace(/\}([^}]*)$/, '$1');
         compte('accolade-supprimee', () => { try { const nn = (MathJax.tex2svg || MathJax.tex2chtml)(mut); return !!nn.querySelector('[data-mml-node="merror"], mjx-merror'); } catch (er) { return true; } });
       }
+      // M6 : un signe de la ligne finale, puis d'une ligne de facteur, est inversé dans un tableau de signes => le tableau doit être refusé
+      D.lignes.forEach((l, i) => {
+        const mt = l.match(/^(\\(?:small|scriptsize)\s*\\begin\{array\}\{c\|[^}]*\})(.*)\\end\{array\}\s*$/);
+        const avant = mt ? problemesTableauSignes(e, l, D.lignes) : null;
+        if (!avant || avant.length) return;                                           // seulement un tableau vérifiable et jugé correct avant la mutation
+        const rows = mt[2].split('\\\\ \\hline ').map((r) => r.replace(/\\\\\s*$/, '').trim().split(' & '));
+        if (rows.length < 2) return;
+        [rows.length - 1, 1].forEach((li, nom) => {
+          const R = rows.map((r) => r.slice()); const c = R[li][2]; if (c !== '+' && c !== '-') return;
+          R[li][2] = c === '+' ? '-' : '+';
+          const M = copie(); M.lignes[i] = mt[1] + R.map((r) => r.join(' & ')).join(' \\\\ \\hline ') + ' \\end{array}';
+          compte(nom === 0 ? 'tableau-signe-final-inverse' : 'tableau-signe-facteur-inverse', () => verifierDetail(e, M, ctx).some((t) => t.motif === 'tableau-de-signes-incorrect'), `${e.id} : ${l.slice(0, 80)}`);
+        });
+      });
       // M5 : un coefficient 1 est introduit
       { const l = D.lignes[0]; if (/[a-z]/.test(l)) compte('coefficient-1-ajoute', () => { const avant = anomalies.length; const x = { id: '#autotest' + anomalies.length }; styler(x, '1\\,r + ' + l); return anomalies.length > avant; }); }
     }
@@ -687,7 +762,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
     erreurs += nbE; avertissements += nbS;
     if (couvertureSeule) { await contexte.close(); continue; }
     lignesRapport.push(`${nbE ? 'ERREURS ' : nbS ? 'style    ' : 'OK       '} ${fiche} : ${r.avecDetail.length} exercice(s) à détail sur ${r.avecDetail.length + r.sansDetail.length}, ${s.avecDetail} détails contrôlés ` +
-      `(${s.chaines} chaînes d'égalités, ${s.equivalences} équivalences, ${s.assertionsVerifiees || 0} assertions de phrases, ${s.finalVerifie} réponses finales vérifiées${s.finalNonVerifiable ? ', ' + s.finalNonVerifiable + ' non vérifiables automatiquement' : ''}, ` +
+      `(${s.chaines} chaînes d'égalités, ${s.equivalences} équivalences, ${s.assertionsVerifiees || 0} assertions de phrases, ${s.tableaux || 0} tableaux de signes, ${s.finalVerifie} réponses finales vérifiées${s.finalNonVerifiable ? ', ' + s.finalNonVerifiable + ' non vérifiables automatiquement' : ''}, ` +
       `${s.motifsLaTeX} formes LaTeX compilées${s.chainesIllisibles || s.equivalencesIllisibles ? ', ' + s.chainesIllisibles + ' chaînes et ' + s.equivalencesIllisibles + ' équivalences non lisibles' : ''})`);
     if (process.argv.includes('--illisibles')) for (const [id, o] of Object.entries(s.illisiblesEx || {})) lignesRapport.push(`      chaîne non lisible ${id} (×${o.n}) : ${o.ex}`);
     for (const a of anomalies) lignesRapport.push(`      [${a.gravite}] ${a.id} — ${a.motif}${a.n > 1 ? ' (×' + a.n + ')' : ''} : ${a.exemple}`);
