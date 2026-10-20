@@ -104,6 +104,37 @@ const ESSAIS = {
     [false, "\\text{de la courbe en dessous de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\gt0\\).' }, env('')],
     [false, "\\text{de la courbe au-dessus de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\leqslant0\\).' }, env('')]
   ],
+  'la-droite-citee-est-celle-de-l-enonce': [
+    [true, '\\text{de la droite } y = 1{,}5', { enonce: '\\(f(x)\\geqslant1,5\\)' }, env('')],
+    [true, '\\text{de la droite } y = -0{,}5', { enonce: '\\(f(x)\\lt-0,5\\)' }, env('')],
+    [true, '\\text{de la droite } y = 2', { enonce: '\\(f(x)\\gt2\\)' }, env('')],
+    [false, '\\text{de la droite } y = 2', { enonce: '\\(f(x)\\gt1,5\\)' }, env('')]
+  ],
+  'la-courbe-entre-les-droites-est-stricte-ou-large': [
+    [true, '\\text{de la courbe entre}', { enonce: '\\(1\\lt\\,f(x)\\lt2\\)' }, env('')],
+    [true, '\\text{de la courbe sur ou entre}', { enonce: '\\(1,5\\leqslant\\,f(x)\\leqslant2\\)' }, env('')],
+    [false, '\\text{de la courbe entre}', { enonce: '\\(1\\leqslant\\,f(x)\\leqslant2\\)' }, env('')],
+    [false, '\\text{de la courbe sur ou entre}', { enonce: '\\(1\\lt\\,f(x)\\lt2\\)' }, env('')]
+  ],
+  'les-droites-citees-sont-celles-de-l-enonce': [
+    [true, '\\text{les droites } y = 1{,}5 \\text{ et } y = 2', { enonce: '\\(1,5\\leqslant\\,f(x)\\leqslant2\\)' }, env('')],
+    [true, '\\text{les droites } y = -1 \\text{ et } y = 0{,}5', { enonce: '\\(-1\\lt\\,f(x)\\lt0,5\\)' }, env('')],
+    [false, '\\text{les droites } y = 1 \\text{ et } y = 2', { enonce: '\\(1,5\\leqslant\\,f(x)\\leqslant2\\)' }, env('')],
+    [false, '\\text{les droites } y = 2 \\text{ et } y = 1{,}5', { enonce: '\\(1,5\\leqslant\\,f(x)\\leqslant2\\)' }, env('')]
+  ],
+  'la-courbe-de-f-est-du-bon-cote-de-celle-de-g': [
+    [true, '\\text{est en dessous de celle de } g', { enonce: "À l'aide du graphique, résoudre l'inéquation \\(f(x)\\lt g(x)\\)." }, env('')],
+    [true, '\\text{est au-dessus de celle de } g', { enonce: 'résoudre l\'inéquation \\(f(x)-g(x)\\gt0\\).' }, env('')],
+    [true, '\\text{est en dessous de celle de } g', { enonce: 'résoudre l\'inéquation \\(f(x)-g(x)\\lt0\\).' }, env('')],
+    [false, '\\text{est au-dessus de celle de } g', { enonce: "résoudre l'inéquation \\(f(x)\\lt g(x)\\)." }, env('')],
+    [false, '\\text{est en dessous de celle de } g', { enonce: 'résoudre l\'inéquation \\(f(x)-g(x)\\gt0\\).' }, env('')]
+  ],
+  'la-courbe-coupe-l-axe-aux-solutions': [
+    [true, '\\text{en } -2 \\text{ et } 2', { reponse: '{-2;2}' }, env('')],
+    [true, '\\text{en } 1 \\text{ et } 3', { reponse: '{3;1}' }, env('')],
+    [false, '\\text{en } -2 \\text{ et } 3', { reponse: '{-2;2}' }, env('')],
+    [false, '\\text{en } 2 \\text{ et } -2', { reponse: '{-2;2}' }, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],

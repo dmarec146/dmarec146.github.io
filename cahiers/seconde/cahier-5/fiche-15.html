@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"15.1 a)":0.5,"15.1 b)":0.5,"15.2 a)":0.75,"15.2 b)":0.75,"15.3 a)":1,"15.3 b)":1,"15.3 c)":1,"15.3 d)":1.25,"15.3 e)":1.25,"15.3 f)":1.25,"15.4 a)":1.25,"15.4 b)":1.25,"15.5 a)":1.25,"15.5 b)":1.5,"15.6 a)":1.75,"15.6 b)":1.75,"15.7 a)":2,"15.7 b)":1.75,"15.7 c)":1.75},"bonus":["15.7 a)","15.7 b)","15.7 c)"]});
@@ -2140,14 +2141,16 @@ function racinesEquation(params, k) {
 function ensembleLecture(racines) { return '{' + racines.map(arrondiDixieme).join(';') + '}'; }
 function genererEquationLecture() {
   const params = paramsGraphiqueEq;
-  const k = valeurLectureEq(params);
-  return { enonce:`\\(f(x)=${fmtGraduation(k)}\\)`, type:'num', reponse: ensembleLecture(racinesEquation(params, k)) };
+  const k = valeurLectureEq(params), racines = racinesEquation(params, k), S = ensembleLuDetail(racines);
+  return { enonce:`\\(f(x)=${fmtGraduation(k)}\\)`, type:'num', reponse: ensembleLecture(racines),
+    detail: { lignes: ['\\text{On lit les abscisses des points}', `\\text{de la courbe d'ordonnée } ${decT(k)}`, S.ligne], final: S.texte } };
 }
 // f(x) = r : le sommet de la parabole (une seule solution) ; sur la cubique, trois solutions (dont p) : tout est a lire
 function genererEquationParticuliereLecture() {
   const params = paramsGraphiqueEq;
-  const k = params.r;
-  return { enonce:`\\(f(x)=${k}\\)`, type:'num', reponse: ensembleLecture(racinesEquation(params, k)) };
+  const k = params.r, racines = racinesEquation(params, k), S = ensembleLuDetail(racines);
+  return { enonce:`\\(f(x)=${k}\\)`, type:'num', reponse: ensembleLecture(racines),
+    detail: { lignes: ['\\text{On lit les abscisses des points}', `\\text{de la courbe d'ordonnée } ${k}`, S.ligne], final: S.texte } };
 }
 function genererInequationLecture() {
   const params = paramsGraphiqueEq;
@@ -2155,8 +2158,11 @@ function genererInequationLecture() {
   const opSymb = {'>':'\\gt','>=':'\\geqslant','<':'\\lt','<=':'\\leqslant'}[op];
   const k = valeurLectureEq(params);
   const spec = resoudreInequationCourbe(params, op, k);
-  return { enonce:`\\(f(x)${opSymb}${fmtGraduation(k)}\\)`, intervalleSpec: spec, tolerance: 0.2 };
+  const S = intervallesLusDetail(spec), dessus = (op === '>' || op === '>='), large = (op === '>=' || op === '<=');
+  return { enonce:`\\(f(x)${opSymb}${fmtGraduation(k)}\\)`, intervalleSpec: spec, tolerance: 0.2,
+    detail: { lignes: ['\\text{Les solutions sont les abscisses des points}', `\\text{de la courbe ${large ? 'sur ou ' : ''}${dessus ? 'au-dessus' : 'en dessous'}}`, `\\text{de la droite } y = ${decT(k)}`, S.ligne], final: S.texte } };
 }
+
 // encadrement k1 < f(x) < k2 : les deux inegalites strictes (strict) ou les deux larges ; les deux items de 15.4 prennent chacun un des deux cas (ordre tire)
 let encadrementStrictEnPremier = true;
 function genererEncadrementLecture(strict) {
@@ -2167,7 +2173,9 @@ function genererEncadrementLecture(strict) {
   const op1 = strict ? '>' : '>=', op2 = strict ? '<' : '<=';
   const symb1 = strict ? '\\lt' : '\\leqslant', symb2 = strict ? '\\lt' : '\\leqslant';
   const spec = intersectionIntervalles(resoudreInequationCourbe(params, op1, k1), resoudreInequationCourbe(params, op2, k2));
-  return { enonce:`\\(${fmtGraduation(k1)}${symb1}\\,f(x)${symb2}${fmtGraduation(k2)}\\)`, intervalleSpec: spec, tolerance: 0.2 };
+  const S = intervallesLusDetail(spec);
+  return { enonce:`\\(${fmtGraduation(k1)}${symb1}\\,f(x)${symb2}${fmtGraduation(k2)}\\)`, intervalleSpec: spec, tolerance: 0.2,
+    detail: { lignes: ['\\text{Les solutions sont les abscisses des points}', `\\text{de la courbe ${strict ? '' : 'sur ou '}entre}`, `\\text{les droites } y = ${decT(k1)} \\text{ et } y = ${decT(k2)}`, S.ligne], final: S.texte } };
 }
 // corrige d'un intervalle lu sur un graphique : bornes decimales arrondies au dixieme (« 1,6 », pas une fraction ni 1,5858)
 function formaterIntervalleLecture(spec) {
@@ -2176,60 +2184,156 @@ function formaterIntervalleLecture(spec) {
   return spec.liste.map(iv => `${iv.inclusBas ? '[' : ']'}${borne(iv.bas)}\\,;\\,${borne(iv.haut)}${iv.inclusHaut ? ']' : '['}`).join('\\ \\cup\\ ');
 }
 
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, sommeTermes } = Detail;
+// polynome en LaTeX, coefficients par degre CROISSANT : polyL([5, 3]) -> « 3x+5 » ; jamais « 1x », signes propres
+function polyL(coefs, v = 'x') {
+  let s = '';
+  for (let p = coefs.length - 1; p >= 0; p--) {
+    const c = coefs[p];
+    if (c === 0) continue;
+    const abs = Math.abs(c), base = p === 0 ? '' : (p === 1 ? v : `${v}^{${p}}`);
+    s += (c < 0 ? '-' : (s === '' ? '' : '+')) + (p === 0 ? `${abs}` : (abs === 1 ? base : `${abs}${base}`));
+  }
+  return s === '' ? '0' : s;
+}
+// nombre decimal a la francaise en LaTeX : 1.5 -> 1{,}5 ; valeur lue au dixieme
+const decT = v => String(Math.round(v * 1000) / 1000).replace('.', '{,}');
+const lectureT = v => decT(Math.round(v * 10) / 10);
+const surGrille = v => Math.abs(v - Math.round(v * 10) / 10) < 1e-6;
+// ligne longue : police reduite
+const ptLigne = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 17 ? '\\small ' + l : l);
+// ensemble de racines lues : « \{-1{,}6\,;\,0{,}6\,;\,2\} », avec « = » si les racines sont exactes (sur la grille du dixieme) et « \approx » sinon
+function ensembleLuDetail(racines) {
+  const xs = racines.map(x => Math.round(x * 10) / 10 || 0);
+  const texte = `\\{${xs.map(decT).join('\\,;\\,')}\\}`, egal = racines.every(surGrille) ? '=' : '\\approx';
+  return { texte, egal, ligne: ptLigne(`S ${egal} ${texte}`) };
+}
+// intervalles lus au dixieme (memes bornes que la reponse attendue)
+function intervallesLusDetail(spec) {
+  const texte = adouci(formaterIntervalleLecture(spec));
+  const exact = spec.type !== 'intervalles' || spec.liste.every(iv => [iv.bas, iv.haut].every(b => !isFinite(b) || surGrille(b)));
+  const egal = exact ? '=' : '\\approx';
+  return { texte, egal, ligne: ptLigne(`S ${egal} ${texte}`) };
+}
+const adouci = s => String(s).replace(/(\d)\.(\d)/g, '$1{,}$2');
+// tableau de signes lu sur un graphique : une ligne par fonction (racines connues), puis le produit ; seuils = toutes les racines internes
+// lignes : [{ label, f, racines }] ; la derniere ligne (produit) est ajoutee si produit = true
+function tableauSignesGraphique(xmin, xmax, lignes, produit) {
+  const tous = [];
+  lignes.forEach(l => l.racines.forEach(r => { if (r > xmin + 1e-6 && r < xmax - 1e-6 && !tous.some(t => Math.abs(t - r) < 1e-6)) tous.push(r); }));
+  tous.sort((a, b) => a - b);
+  const n = tous.length, bornes = [xmin, ...tous, xmax];
+  const signeSur = (f, i) => (f((bornes[i] + bornes[i + 1]) / 2) > 0 ? '+' : '-');
+  const zeroEn = (l, r) => (l.racines.some(q => Math.abs(q - r) < 1e-6) ? '0' : '');
+  const haut = ['x', lectureT(xmin)];
+  tous.forEach(r => haut.push('', lectureT(r)));
+  haut.push('', lectureT(xmax));
+  const rangee = (label, signes, zeros) => { const c = [label, '']; for (let i = 0; i <= n; i++) { c.push(signes[i]); if (i < n) c.push(zeros[i]); } c.push(''); return c; };
+  const rangees = lignes.map(l => rangee(l.label, Array.from({length: n + 1}, (_, i) => signeSur(l.f, i)), tous.map(r => zeroEn(l, r))));
+  if (produit) rangees.push(rangee(produit, Array.from({length: n + 1}, (_, i) => lignes.reduce((acc, l) => acc * (signeSur(l.f, i) === '+' ? 1 : -1), 1) > 0 ? '+' : '-'),
+    tous.map(r => (lignes.some(l => zeroEn(l, r) === '0') ? '0' : ''))));
+  const corps = [haut, ...rangees].map(r => r.join(' & ')).join(' \\\\ \\hline ');
+  return `${n >= 4 ? '\\tiny' : n >= 3 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * n + 3)}} ${corps} \\end{array}`;
+}
+// tableau de variations : seuils [{x, y}] ; fleches \nearrow / \searrow entre deux valeurs consecutives
+function tableauVariationsDetail(seuils) {
+  const k = seuils.length, haut = ['x'], bas = ['g(x)'];
+  seuils.forEach((s, j) => {
+    haut.push(decT(s.x)); bas.push(decT(s.y));
+    if (j < k - 1) { haut.push(''); bas.push(seuils[j + 1].y > s.y ? '\\nearrow' : '\\searrow'); }
+  });
+  return `${k >= 4 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * k - 1)}} ${haut.join(' & ')} \\\\ \\hline ${bas.join(' & ')} \\end{array}`;
+}
+// image de k par un polynome (coeffs du plus haut degre au plus bas) n'est pas utilise ici
+
 // ---------- vivier des modeles de developpement (15.2) : deux tires sans remise parmi cinq ----------
 const MODELES_DEVELOPPEMENT = [
   () => {
     const k = alea(2,9), a = alea(2,6), b = entierSigne(1,12);
-    return { enonce:`${k}(${a}x${b>=0?'+':''}${b})`, reponse:`${k*a}*x${k*b>=0?'+':''}${k*b}` };
+    const res = polyL([k*b, k*a]);
+    return { enonce:`${k}(${a}x${b>=0?'+':''}${b})`, reponse:`${k*a}*x${k*b>=0?'+':''}${k*b}`,
+      detail: { lignes: [`${k}(${a}x${b>=0?'+':''}${b}) = ${k}\\times ${a}x+${k}\\times ${dP(b)} = ${res}`], final: res } };
   },
   () => {
     let a, b; do { a = entierSigne(1,9); b = entierSigne(1,9); } while (a + b === 0);
-    const somme = a+b, produit = a*b;
-    return { enonce:`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}` };
+    const somme = a+b, produit = a*b, res = polyL([produit, somme, 1]);
+    return { enonce:`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}`,
+      detail: { lignes: [`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b}) = ${sommeTermes([[1, 'x^{2}'], [b, 'x'], [a, 'x'], [produit, '']])} = ${res}`], final: res } };
   },
   () => {
-    const a = alea(2,9), s = choix([1,-1]);
-    return { enonce:`(x${s>0?'+':'-'}${a})^2`, reponse:`x^2${s>0?'+':'-'}${2*a}*x+${a*a}` };
+    const a = alea(2,9), s = choix([1,-1]), res = polyL([a*a, 2*s*a, 1]);
+    return { enonce:`(x${s>0?'+':'-'}${a})^2`, reponse:`x^2${s>0?'+':'-'}${2*a}*x+${a*a}`,
+      detail: { lignes: [`(x${s>0?'+':'-'}${a})^{2} = (x${s>0?'+':'-'}${a})(x${s>0?'+':'-'}${a}) = ${sommeTermes([[1, 'x^{2}'], [s*a, 'x'], [s*a, 'x'], [a*a, '']])} = ${res}`], final: res } };
   },
   () => {
-    const a = alea(2,9);
-    return { enonce:`(x+${a})(x-${a})`, reponse:`x^2-${a*a}` };
+    const a = alea(2,9), res = polyL([-a*a, 0, 1]);
+    return { enonce:`(x+${a})(x-${a})`, reponse:`x^2-${a*a}`,
+      detail: { lignes: [`(x+${a})(x-${a}) = ${sommeTermes([[1, 'x^{2}'], [-a, 'x'], [a, 'x'], [-a*a, '']])} = ${res}`], final: res } };
   },
   () => {
     let a, b, c, d, milieu;
     do { a = alea(2,4); c = alea(2,4); b = entierSigne(1,9); d = entierSigne(1,9); milieu = a*d + b*c; } while (milieu === 0);
-    return { enonce:`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d})`, reponse:`${a*c}*x^2${milieu>=0?'+':''}${milieu}*x${b*d>=0?'+':''}${b*d}` };
+    const res = polyL([b*d, milieu, a*c]);
+    return { enonce:`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d})`, reponse:`${a*c}*x^2${milieu>=0?'+':''}${milieu}*x${b*d>=0?'+':''}${b*d}`,
+      detail: { lignes: [`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d}) = ${sommeTermes([[a*c, 'x^{2}'], [a*d, 'x'], [b*c, 'x'], [b*d, '']])} = ${res}`], final: res } };
   }
 ];
 let tirageDeveloppement = melanger(MODELES_DEVELOPPEMENT).slice(0, 2);
 // ---------- vivier de calculs numeriques (groupe 15.1), identique a celui des fiches 8, 12 et 14 ----------
 const MODELES_CALCUL = [
   () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
-  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a} - ${b*c} = ${a - b*c}`], final: `${a - b*c}` } }; },
+  // produit d'un negatif par une difference
+  () => { let a, b, c; do { a = alea(2,9); b = alea(2,12); c = alea(2,15); } while (b === c);
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b - c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
+  // carre puis soustraction
   () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
-  () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}`,
+                   detail: { lignes: [`${a}^2-${b}\\times ${c} = ${a*a} - ${b*c} = ${a*a - b*c}`], final: `${a*a - b*c}` } }; },
+  // double negation
+  () => { let a, b; do { a = alea(2,15); b = alea(2,15); } while (a === b);
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}`,
+                   detail: { lignes: [`-${a}-(-${b}) = -${a} + ${b} = ${-a + b}`], final: `${-a + b}` } }; },
+  // produit de trois facteurs signes
   () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}`,
+                   detail: { lignes: [`${a}\\times (-${b})\\times (-${c}) = (${-a*b})\\times (-${c}) = ${a*b*c}`], final: `${a*b*c}` } }; },
+  // quotient exact suivi d'une addition
   () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}`,
+                   detail: { lignes: [`\\dfrac{${b*q}}{${b}}+${c} = ${q}+${c} = ${q + c}`], final: `${q + c}` } }; },
+  // quotient d'une somme : la barre de fraction joue le role d'une parenthese
   () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}}{${c}} = \\dfrac{${a + b}}{${c}} = ${q}`], final: `${q}` } }; },
+  // moyenne de trois entiers
   () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}+${c}}{3} = \\dfrac{${3*q}}{3} = ${q}`], final: `${q}` } }; },
+  // suite d'additions et de soustractions
   () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}`,
+                   detail: { lignes: [`${a}-${b}+${c}-${d} = ${a - b}+${c}-${d} = ${a - b + c}-${d} = ${a - b + c - d}`], final: `${a - b + c - d}` } }; },
+  // distributivite mentale : a x 99 = a x 100 - a
   () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+          const base = m > 500 ? 1000 : 100, ecart = base - m, signe = ecart > 0 ? '-' : '+', k = Math.abs(ecart);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe} ${k}) = ${a*base} ${signe} ${a*k} = ${a*m}`], final: `${a*m}` } }; },
+  // cube et difference
   () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}`,
+                   detail: { lignes: [`${a}^3-${b} = ${a*a*a} - ${b} = ${a*a*a - b}`], final: `${a*a*a - b}` } }; },
+  // priorites imbriquees
   () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}`,
+                   detail: { lignes: [`${a}\\times (${b}+${c})-${d} = ${a}\\times ${b + c}-${d} = ${a*(b+c)}-${d} = ${a*(b+c) - d}`], final: `${a*(b+c) - d}` } }; },
+  // double et moitie
   () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}`,
+                   detail: { lignes: [`\\dfrac{${a}}{2}+${b}\\times 2 = ${q}+${2*b} = ${q + 2*b}`], final: `${q + 2*b}` } }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 2);
 
@@ -2264,25 +2368,32 @@ const generateurs = [
     const { racines } = paramsGraphiqueDeux;
     // lecture approchee (racines pouvant etre au quart d'entier pres) : tolerance plus fine qu'en fiche 14
     // grace aux sous-graduations dediees du graphique (voir TOLERANCE_GRAPHIQUE_DEUX).
-    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
+    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'équation \\(f(x)=g(x)\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: TOLERANCE_GRAPHIQUE_DEUX,
+      detail: { lignes: ['\\text{On lit les abscisses des points}', "\\text{d'intersection des deux courbes}", racines.map(r => `x = ${decT(r)}`).join(' \\text{ ou } ')], final: decT(racines[0]) } };
   }},
   {id:"15.5 b)", type:"intervalle", texteLibre:true, gen: () => {
     const { xmin, xmax, racines, a } = paramsGraphiqueDeux;
     // f(x)<g(x) <=> g(x)-f(x)>0 <=> a*(x-r1)*...*(x-rk) > 0 — algebre exacte, racines connues.
     const spec = specSigneGMoinsF(xmin, xmax, racines, a, true);
-    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'inéquation \\(f(x)\\lt g(x)\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
+    const S = intervallesLusDetail(spec);
+    return { enonce:`À l'aide du graphique ci-dessus, résoudre l'inéquation \\(f(x)\\lt g(x)\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX,
+      detail: { lignes: ["\\text{On cherche les abscisses où la courbe de } f", "\\text{est en dessous de celle de } g", S.ligne], final: S.texte } };
   }},
 
   // ---------- 15.6 : tableau de variations a completer, sur une courbe INDEPENDANTE et propre a chaque item ----------
   {id:"15.6 a)", type:"tableauVariations", texteLibre:true, gen: () => {
     const paramsVar = genererParametresGraphiqueVar();
     const seuils = seuilsGraphiqueVar(paramsVar);
-    return { enonce:`La fonction \\(g\\) est définie sur \\([${paramsVar.xmin}\\,;\\,${paramsVar.xmax}]\\).`, paramsVar, seuils };
+    const tab = tableauVariationsDetail(seuils);
+    return { enonce:`La fonction \\(g\\) est définie sur \\([${paramsVar.xmin}\\,;\\,${paramsVar.xmax}]\\).`, paramsVar, seuils,
+      detail: { lignes: ['\\text{On relève les extremums de la courbe}', "\\text{et les bornes de l'intervalle de définition}", tab], final: tab } };
   }},
   {id:"15.6 b)", type:"tableauVariations", texteLibre:true, gen: () => {
     const paramsVar = genererParametresGraphiqueVar();
     const seuils = seuilsGraphiqueVar(paramsVar);
-    return { enonce:`La fonction \\(g\\) est définie sur \\([${paramsVar.xmin}\\,;\\,${paramsVar.xmax}]\\).`, paramsVar, seuils };
+    const tab = tableauVariationsDetail(seuils);
+    return { enonce:`La fonction \\(g\\) est définie sur \\([${paramsVar.xmin}\\,;\\,${paramsVar.xmax}]\\).`, paramsVar, seuils,
+      detail: { lignes: ['\\text{On relève les extremums de la courbe}', "\\text{et les bornes de l'intervalle de définition}", tab], final: tab } };
   }},
 
   // ---------- 15.7 : calculs avances — confronter lecture graphique et calcul exact (a), signe du produit f(x)*g(x) (b) puis de la difference f(x)-g(x) (c) sur les deux courbes du calcul 15.5 ----------
@@ -2291,16 +2402,32 @@ const generateurs = [
     const f = x => a*(x-p)*(x-p) - a*n*n;
     const xmin = p-n-1, xmax = p+n+1;
     const svg = genererSVGCourbeGrande(f, xmin, xmax, -a*n*n-1, f(xmin)+1, 480, 300);
+    const t = xMoinsTexte(p), cA = a === 1 ? '' : a, final = `\\{${p-n}\\,;\\,${p+n}\\}`;
+    const carre = p === 0 ? 'x^{2}' : `(${t})^{2}`;   // (x-p)^2, ou x^2 quand p = 0
+    const lignes = [`${cA}${carre}-${a*n*n} = 0`];
+    if (a > 1) lignes.push(`\\iff ${a}${carre} = ${a*n*n}`);
+    lignes.push(`\\iff ${carre} = ${n*n}`, `\\iff ${t} = ${n} \\text{ ou } ${t} = -${n}`);
+    if (p !== 0) lignes.push(`\\iff x = ${p+n} \\text{ ou } x = ${p-n}`);
+    lignes.push("\\text{La courbe coupe l'axe des abscisses}", `\\text{en } ${p-n} \\text{ et } ${p+n}`, `S = ${final}`);
     return {
       enonce:`On donne \\(f(x)=${a===1?'':a}(${xMoinsTexte(p)})^2-${a*n*n}\\), représentée ci-dessous sur \\([${xmin}\\,;\\,${xmax}]\\).<div class="figure-centree"><span class="figure-avec-curseur">${svg}${boutonCurseurHTML()}</span></div>Résoudre par le calcul l'équation \\(f(x)=0\\), et vérifier la cohérence du résultat avec le graphique.`,
-      reponse:`{${p-n};${p+n}}`
+      reponse:`{${p-n};${p+n}}`, detail: { lignes, final }
     };
   }},
   {id:"15.7 b)", type:"intervalle", texteLibre:true, gen: () => {
     const op = choix(['<','>']);
     const opSymb = op === '<' ? '\\lt' : '\\gt';
     const spec = resoudreSigneProduit(paramsGraphiqueDeux, op === '>');
-    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.5, résoudre l'inéquation \\(f(x)\\times g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
+    const { xmin, xmax } = paramsGraphiqueDeux;
+    const { f, g } = fonctionsGraphiqueDeux(paramsGraphiqueDeux);
+    const racineF = -paramsGraphiqueDeux.ordonnee / paramsGraphiqueDeux.pente;
+    const tab = tableauSignesGraphique(xmin, xmax, [
+      { label: 'f(x)', f, racines: [racineF] },
+      { label: 'g(x)', f: g, racines: racinesApprochees(g, xmin, xmax, 0) }
+    ], 'f(x)\\times g(x)');
+    const S = intervallesLusDetail(spec);
+    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.5, résoudre l'inéquation \\(f(x)\\times g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX,
+      detail: { lignes: ['\\text{Signes de } f(x) \\text{ et } g(x) \\text{ lus sur le graphique :}', tab, '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles l'expression est } ${opSymb}\\ 0`, S.ligne], final: S.texte } };
   }},
   {id:"15.7 c)", type:"intervalle", texteLibre:true, gen: () => {
     const { xmin, xmax, racines, a } = paramsGraphiqueDeux;
@@ -2309,10 +2436,11 @@ const generateurs = [
     // f(x)-g(x) op 0 <=> g(x)-f(x) (op inverse) 0 : specSigneGMoinsF resout deja le signe de g-f
     // (algebre exacte, racines connues) — f(x)-g(x)<0 <=> g(x)-f(x)>0, et inversement.
     const spec = specSigneGMoinsF(xmin, xmax, racines, a, op === '<');
-    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.5, résoudre l'inéquation \\(f(x)-g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX };
+    const S = intervallesLusDetail(spec);
+    return { enonce:`En reprenant le graphique de \\(f\\) et \\(g\\) du calcul 15.5, résoudre l'inéquation \\(f(x)-g(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: TOLERANCE_GRAPHIQUE_DEUX,
+      detail: { lignes: ["\\text{On cherche les abscisses où la courbe de } f", `\\text{est ${op === '<' ? 'en dessous' : 'au-dessus'} de celle de } g`, S.ligne], final: S.texte } };
   }}
 ];
-
 
 function genererExercices() {
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 2);
@@ -2320,10 +2448,13 @@ function genererExercices() {
   encadrementStrictEnPremier = alea(0, 1) === 1;
   genererParametresGraphiqueEq();
   genererParametresGraphiqueDeux();
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -3566,10 +3697,10 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       if (ex.type === 'tableauVariations') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :${Detail.html(ex, idx)}</div>${tableCorrigeVariationsHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

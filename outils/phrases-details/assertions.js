@@ -210,12 +210,57 @@ module.exports = [
     nom: 'la-courbe-est-du-bon-cote-de-l-axe',
     // « de la courbe au-dessus (en dessous) de l'axe des abscisses » : f(x) > 0 ou >= 0 (au-dessus), f(x) < 0 ou <= 0 (en dessous)
     // « sur ou au-dessus » (resp. « sur ou en dessous ») pour une inégalité large (>= 0, <= 0), « au-dessus » (resp. « en dessous ») pour une inégalité stricte
-    motif: /de la courbe (?:sur ou )?(?:au-dessus|en dessous) de l'axe/,
+    motif: /de la courbe (?:sur ou )?(?:au-dessus|en dessous)/,
     verifie: (l, e) => {
-      const m = l.match(/de la courbe (sur ou )?(au-dessus|en dessous) de l'axe/), r = String(e.enonce).match(/\\(gt|geqslant|lt|leqslant)\s*0/);
+      const m = l.match(/de la courbe (sur ou )?(au-dessus|en dessous)/), r = String(e.enonce).match(/\\(gt|geqslant|lt|leqslant)/);
       if (!m || !r) return false;
       const large = r[1] === 'geqslant' || r[1] === 'leqslant';
       return (m[2] === 'au-dessus') === (r[1] === 'gt' || r[1] === 'geqslant') && !!m[1] === large;
+    }
+  },
+  {
+    nom: 'la-droite-citee-est-celle-de-l-enonce',
+    // « de la droite y = 1{,}5 » : le niveau k de l'inéquation f(x) op k
+    motif: /^\\text\{de la droite \} y = /,
+    verifie: (l, e) => {
+      const m = l.match(/y = (-?[\d{},]+)$/), k = String(e.enonce).match(/\\(?:gt|geqslant|lt|leqslant)\s*(-?[\d,]+)/);
+      const n = (s) => String(s).replace(/\{,\}/g, '.').replace(',', '.');
+      return !!(m && k) && n(m[1]) === n(k[1]);
+    }
+  },
+  {
+    nom: 'la-courbe-entre-les-droites-est-stricte-ou-large',
+    // « de la courbe entre » (inégalités strictes) / « de la courbe sur ou entre » (inégalités larges)
+    motif: /de la courbe (?:sur ou )?entre\}/,
+    verifie: (l, e) => { const m = l.match(/de la courbe (sur ou )?entre\}/); return !!m && (!!m[1]) === /leqslant/.test(String(e.enonce)); }
+  },
+  {
+    nom: 'les-droites-citees-sont-celles-de-l-enonce',
+    // « les droites y = 1{,}5 et y = 2 » : k1 et k2 de l'encadrement k1 op f(x) op k2
+    motif: /^\\text\{les droites \} y = /,
+    verifie: (l, e) => {
+      const m = l.match(/y = (-?[\d{},]+) \\text\{ et \} y = (-?[\d{},]+)$/), k = String(e.enonce).match(/\\\((-?[\d,]+)\\(?:lt|leqslant)\\,f\(x\)\\(?:lt|leqslant)(-?[\d,]+)\\\)/);
+      const n = (s) => String(s).replace(/\{,\}/g, '.').replace(',', '.');
+      return !!(m && k) && n(m[1]) === n(k[1]) && n(m[2]) === n(k[2]);
+    }
+  },
+  {
+    nom: 'la-courbe-de-f-est-du-bon-cote-de-celle-de-g',
+    // « est en dessous (au-dessus) de celle de g » : f(x) < g(x) ou f(x) - g(x) < 0 (en dessous), > (au-dessus)
+    motif: /est (?:en dessous|au-dessus) de celle de/,
+    verifie: (l, e) => {
+      const m = l.match(/est (en dessous|au-dessus) de celle de/), r = String(e.enonce).match(/f\(x\)\\(lt|gt)\s*g\(x\)|f\(x\)-g\(x\)\\(lt|gt)\s*0/);
+      if (!m || !r) return false;
+      return (m[1] === 'en dessous') === ((r[1] || r[2]) === 'lt');
+    }
+  },
+  {
+    nom: 'la-courbe-coupe-l-axe-aux-solutions',
+    // « en -2 et 2 » : les deux solutions de l'équation f(x) = 0 attendues
+    motif: /^\\text\{en \} -?\d+ \\text\{ et \} -?\d+$/,
+    verifie: (l, e) => {
+      const m = l.match(/^\\text\{en \} (-?\d+) \\text\{ et \} (-?\d+)$/), att = String(e.reponse).replace(/[{}]/g, '').split(';').map(Number).sort((p, q) => p - q);
+      return !!m && att.length === 2 && Number(m[1]) === att[0] && Number(m[2]) === att[1];
     }
   },
   {

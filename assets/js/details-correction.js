@@ -154,7 +154,8 @@ const Detail = (() => {
     if (!segs || segs.length < 2) return [l];
     const lignes = []; let courant = segs[0];
     for (let k = 1; k < segs.length; k++) {
-      if (longueurVisible(courant + segs[k]) > seuil) { lignes.push(courant); courant = `= ${segs[k]}`; }
+      // (pas de coupure juste après un membre de gauche réduit à une lettre : « S » seul sur une ligne, puis « = … », serait absurde)
+      if (longueurVisible(courant + segs[k]) > seuil && longueurVisible(courant) > 3) { lignes.push(courant); courant = `= ${segs[k]}`; }
       else courant += ` = ${segs[k]}`;
     }
     lignes.push(courant);

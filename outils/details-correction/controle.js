@@ -320,6 +320,20 @@ async function controlerDansLaPage(opts) {
         return (Array.isArray(e.valeurApprox) ? e.valeurApprox : [e.valeurApprox]).some((c) => Math.abs(v - c) <= tol) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
     }
+    // tableau de variations : seuils x, valeurs g(x) et flèches \nearrow / \searrow
+    if (e.type === 'tableauVariations' && e.seuils) {
+      const corps = String(F).replace(/^\\(?:small|scriptsize)\s*\\begin\{array\}\{[^}]*\}/, '').replace(/\\end\{array\}\s*$/, '');
+      const lg = corps.split('\\\\ \\hline ').map((r) => r.split(' & ').map((c) => c.trim()));
+      const k = e.seuils.length;
+      if (lg.length !== 2 || lg[0].length !== 2 * k || lg[1].length !== 2 * k) return 'faux';
+      try {
+        for (let j = 0; j < k; j++) {
+          if (!egal(evaluer(lg[0][1 + 2 * j], 0), e.seuils[j].x) || !egal(evaluer(lg[1][1 + 2 * j], 0), e.seuils[j].y)) return 'faux';
+          if (j < k - 1 && lg[1][2 + 2 * j] !== (e.seuils[j + 1].y > e.seuils[j].y ? '\\nearrow' : '\\searrow')) return 'faux';
+        }
+        return 'ok';
+      } catch (er) { return 'non-verifiable'; }
+    }
     // tableau de programme de calcul : « image \text{ et } antécédent »
     if (e.type === 'tableauProgramme') {
       const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/);
@@ -386,10 +400,11 @@ async function controlerDansLaPage(opts) {
     const rep = e.reponse.trim();
     if (rep.startsWith('{')) {
       try {
-        const A = rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x)).sort((p, q) => p - q);
+        const A = rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x.replace(',', '.'))).sort((p, q) => p - q);
         const interieur = String(F).replace(/\\left\\\{|\\right\\\}/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{|\\\}/g, '');
         const B = /^\s*(\\emptyset|\\varnothing)\s*$/.test(String(F)) ? [] : interieur.split(';').filter((s) => s.trim()).map((x) => evaluer(x, 0)).sort((p, q) => p - q);
-        return A.length === B.length && A.every((v, i) => egal(v, B[i])) ? 'ok' : 'faux';
+        const tol = e.margeLecture ? e.margeLecture + 1e-9 : 0;      // lecture graphique : valeurs lues au dixième
+        return A.length === B.length && A.every((v, i) => (tol ? Math.abs(v - B[i]) <= tol : egal(v, B[i]))) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
     }
     try {
@@ -428,7 +443,7 @@ async function controlerDansLaPage(opts) {
     if (/\\dfrac\{[^{}]*\}\{[^{}]*\}\\times\s*\{?\s*(?:[A-Za-z]|\\sqrt)/.test(sansTexte)) m.push(['style', 'multiplication-apres-fraction']);
     if (/\\text\{[^{}]*\d [%€][^{}]*\}/.test(l) || /\\text\{[^{}]*\d%[^{}]*\}/.test(l)) m.push(['style', 'espace-avant-pourcent']);
     if (/\\text\{[^{}]*\{,\}[^{}]*\}/.test(l)) m.push(['style', 'virgule-latex-en-texte']);
-    if (l.replace(/\s+/g, '').length > 170) m.push(['style', 'ligne-tres-longue']);
+    if (l.replace(/\s+/g, '').length > 170 && !/\\begin\{array\}/.test(l)) m.push(['style', 'ligne-tres-longue']);   // (un tableau ne se raccourcit pas)
     for (const [gr, motif] of m) ajouter(gr, motif, e, l);
   }
 
@@ -460,6 +475,7 @@ async function controlerDansLaPage(opts) {
     const marquesDe = (r) => { const m = []; for (let j = 0; j < k; j++) m.push(r[3 + 2 * j]); return m; };
     const eq = (u, v) => Math.abs(u - v) < 1e-9;
     const rangees = corpsLignes.filter((r) => estFacteur(r[0]));
+    if (!rangees.length) return null;      // lignes f(x), g(x)… lues sur un graphique : signes non recalculables ici (vérifiés par l'essai indépendant de la fiche)
     const finale = estFacteur(corpsLignes[corpsLignes.length - 1][0]) ? null : corpsLignes[corpsLignes.length - 1];
     rangees.forEach((r) => {
       const s = signesDe(r), m = marquesDe(r);
@@ -615,7 +631,7 @@ async function controlerDansLaPage(opts) {
       const ctx = { finalVerifie: 0, finalNonVerifiable: 0, lignes: 0, chaines: 0, chainesIllisibles: 0, equivalences: 0, equivalencesIllisibles: 0, equivActif: false };
       const copie = () => ({ lignes: D.lignes.slice(), final: D.final });
       // M1 : la réponse finale (dernière ligne et final) est décalée
-      if (e.type !== 'intervalle' && !Array.isArray(e.valeurApprox) && comparerFinal({ ...e, detail: D }) === 'ok') {   // (plusieurs antécédents possibles : le chiffre décalé peut en être un autre)
+      if (e.type !== 'intervalle' && !Array.isArray(e.valeurApprox) && !e.margeLecture && !e.tolerance && comparerFinal({ ...e, detail: D }) === 'ok') {   // (plusieurs antécédents possibles : le chiffre décalé peut en être un autre)
         const M = copie(); const n = chiffreAlterne(D.final);
         if (n && n !== D.final) { M.final = n; M.lignes[M.lignes.length - 1] = D.lignes[D.lignes.length - 1].replace(D.final, n); compte('reponse-finale-decalee', () => verifierDetail(e, M, ctx).some((t) => t.motif === 'final-different-de-la-reponse')); }
       }
@@ -722,7 +738,9 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         if (!inp) {   // tableau de signes (widget) : seuils faux et cases remplies d'un « + »
           document.querySelectorAll('[id^="cs-seuil-' + i + '-"]').forEach((el) => { el.value = '999'; });
           document.querySelectorAll('[id^="cs-cell-' + i + '-"]').forEach((el) => { el.textContent = '+'; });
-          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="se-"][id$="-' + i + '"], [id^="tp-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });   // tableau croisé ou schéma d'évolution à compléter
+          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="se-"][id$="-' + i + '"], [id^="tp-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });
+          document.querySelectorAll('[id^="tv-x-' + i + '-"], [id^="tv-y-' + i + '-"]').forEach((el) => { el.value = '999'; });   // tableau de variations
+          document.querySelectorAll('[id^="tv-fleche-' + i + '-"]').forEach((el) => { el.textContent = '↗'; });   // tableau croisé ou schéma d'évolution à compléter
           continue;
         }
         if (inp.tagName === 'MATH-FIELD') inp.setValue('999'); else inp.value = '999'; }
