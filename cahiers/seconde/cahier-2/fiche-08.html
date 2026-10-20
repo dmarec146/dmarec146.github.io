@@ -21,7 +21,7 @@ window.MathJax = {
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
-<script src="../../../assets/js/details-correction.js?v=20261018"></script>
+<script src="../../../assets/js/details-correction.js?v=20261020"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"8.1 a)":0.5,"8.1 b)":0.5,"8.1 c)":0.5,"8.1 d)":0.5,"8.2 a)":0.5,"8.2 b)":0.5,"8.2 c)":0.5,"8.2 d)":0.5,"8.3 a)":0.5,"8.3 b)":0.5,"8.3 c)":0.5,"8.3 d)":0.5,"8.4 a)":1,"8.4 b)":1.5,"8.4 c)":1,"8.4 d)":1.5,"8.5 a)":1,"8.5 b)":1,"8.5 c)":1,"8.5 d)":1,"8.6 a)":1,"8.6 b)":1,"8.6 c)":1.25,"8.6 d)":1.5,"8.7 a)":1,"8.7 b)":1,"8.7 c)":1.5,"8.7 d)":1.75,"8.8 a)":1.5,"8.8 b)":1.5,"8.8 c)":2,"8.8 d)":2},"bonus":["8.8 a)","8.8 b)","8.8 c)","8.8 d)"]});
@@ -1285,13 +1285,7 @@ function detailAffineIneq(a, b, op) {
 // lignes « facteur = 0 ⟺ x = racine » (racines : {f: facteur, v: valeur, tex: LaTeX, interdit})
 // signe d'un facteur affine ax+b (a non nul) : c'est l'inequation ax+b > 0 qui le justifie, pas la seule equation ax+b = 0
 // (David, 19/10/2026) ; memes phrases que pour une inequation du premier degre (8.3)
-function lignesSigneAffine(a, b) {
-  const lignes = [`${affineTexte(a, b)} > 0`];
-  if (a !== 1 && b !== 0) lignes.push(`\\iff ${coefXTexte(a)} > ${-b}`);
-  if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0`, `\\text{donc le sens de l'inégalité change}`);
-  lignes.push(`\\iff x ${a < 0 ? '<' : '>'} ${fracTexte(-b, a)}`);
-  return lignes;
-}
+const lignesSigneAffine = Detail.lignesSigneAffine;   // partagé avec Première 11 à 13 (assets/js/details-correction.js)
 // lignes « facteur = 0 ⟺ x = racine », puis « facteur > 0 ⟺ … » quand a et b sont connus (racines : {f, v, tex, interdit, a, b})
 function lignesRacines(racines) {
   return racines.flatMap(r => [

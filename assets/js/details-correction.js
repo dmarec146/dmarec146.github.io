@@ -157,6 +157,19 @@ const Detail = (() => {
       + `<div class="details" id="details-${idx}" hidden>${ex.detail.lignes.map(l => `<div>\\(${l}\\)</div>`).join('')}</div>`
     : '');
 
+  // signe d'un facteur affine ax+b (a non nul, pas le facteur x seul) : c'est l'inéquation ax+b > 0 qui le justifie, et non la seule
+  // équation ax+b = 0 (David, 19/10/2026) ; mêmes étapes et mêmes phrases que pour une inéquation du premier degré
+  // (« On divise par … < 0 », « donc le sens de l'inégalité change » si a < 0)
+  const coefXaffine = a => (a === 1 ? 'x' : a === -1 ? '-x' : `${a}x`);
+  const lignesSigneAffine = (a, b) => {
+    const f = coefXaffine(a) + (b > 0 ? `+${b}` : b < 0 ? `${b}` : '');
+    const lignes = [`${f} > 0`];
+    if (a !== 1 && b !== 0) lignes.push(`\\iff ${coefXaffine(a)} > ${-b}`);
+    if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0`, `\\text{donc le sens de l'inégalité change}`);
+    lignes.push(`\\iff x ${a < 0 ? '<' : '>'} ${fracTexte(-b, a)}`);
+    return lignes;
+  };
+
   // styles : bouton à droite de la réponse attendue, étapes dépliables dessous ; une ligne trop longue pour l'écran garde sa
   // taille et défile horizontalement (sinon MathJax la réduit à 50-60 %, illisible)
   const style = document.createElement('style');
@@ -171,7 +184,7 @@ const Detail = (() => {
     .correction-ligne .details[hidden] { display: none; }`;
   document.head.appendChild(style);
 
-  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
+  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, lignesSigneAffine, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
 })();
 
 function basculerDetails(idx, bouton) {

@@ -20,7 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
-<script src="../../../assets/js/details-correction.js?v=20261018"></script>
+<script src="../../../assets/js/details-correction.js?v=20261020"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"12.1 a)":0.75,"12.1 b)":1,"12.2 a)":0.5,"12.2 b)":0.75,"12.3 a)":0.5,"12.3 b)":0.5,"12.4 a)":0.5,"12.4 b)":0.5,"12.4 c)":0.75,"12.4 d)":0.75,"12.4 e)":1,"12.4 f)":1,"12.5 a)":1,"12.5 b)":1.25,"12.6 a)":1,"12.6 b)":1.25,"12.6 c)":1.25,"12.7 a)":1.5,"12.7 b)":1.25,"12.8 a)":1.75,"12.8 b)":1.5,"12.9 a)":1.75,"12.9 b)":1.5},"bonus":["12.8 a)","12.8 b)","12.9 a)","12.9 b)"]});
@@ -1147,7 +1147,9 @@ function genererExercices() {
       detail: { lignes: [
         `x^2-${m*m} = (x-${m})(x+${m})`,
         `(x-${m})(x+${m}) = 0 \\iff x = ${-m} \\text{ ou } x = ${m}`,
+        ...Detail.lignesSigneAffine(1, -m), ...Detail.lignesSigneAffine(1, m),
         `${fmtLin(1,-p,false)} = 0 \\iff x = ${p} \\text{ (valeur interdite)}`,
+        ...(p !== 0 ? Detail.lignesSigneAffine(1, -p) : []),
         `\\text{Tableau de signes du quotient}`,
         tableau,
         `\\text{On cherche les valeurs de } x`,
