@@ -88,6 +88,22 @@ const ESSAIS = {
     [false, "\\text{donc l'équation n'a pas de solution}", { reponse: '{-3;3}' }, env('')],
     [false, "\\text{donc l'équation n'a pas de solution}", {}, env('')]
   ],
+  'aucun-point-de-la-courbe-si-aucun-antecedent': [
+    [true, '\\text{La courbe reste au-dessus}', { reponse: '{}' }, env('')],
+    [true, "\\text{donc aucun point n'a pour ordonnée } -4", { reponse: '{}' }, env('')],
+    [false, '\\text{La courbe reste au-dessus}', { reponse: '{-1;3}' }, env('')],
+    [false, "\\text{donc aucun point n'a pour ordonnée } -4", {}, env('')]
+  ],
+  'la-courbe-est-du-bon-cote-de-l-axe': [
+    [true, "\\text{de la courbe au-dessus de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\gt0\\).' }, env('')],
+    [true, "\\text{de la courbe sur ou au-dessus de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\geqslant0\\).' }, env('')],
+    [true, "\\text{de la courbe sur ou en dessous de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\leqslant0\\).' }, env('')],
+    [false, "\\text{de la courbe au-dessus de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\geqslant0\\).' }, env('')],
+    [false, "\\text{de la courbe sur ou au-dessus de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\gt0\\).' }, env('')],
+    [true, "\\text{de la courbe en dessous de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\lt0\\).' }, env('')],
+    [false, "\\text{de la courbe en dessous de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\gt0\\).' }, env('')],
+    [false, "\\text{de la courbe au-dessus de l'axe des abscisses}", { enonce: 'Résoudre \\(f(x)\\leqslant0\\).' }, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],

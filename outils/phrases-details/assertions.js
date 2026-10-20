@@ -201,6 +201,24 @@ module.exports = [
     verifie: (l, e) => String(e.reponse).trim() === '{}'
   },
   {
+    nom: 'aucun-point-de-la-courbe-si-aucun-antecedent',
+    // « La courbe reste au-dessus / de la droite d'équation y = … / donc aucun point n'a pour ordonnée … » : la réponse attendue est l'ensemble vide
+    motif: /La courbe reste au-dessus\}|aucun point n'a pour ordonnée/,
+    verifie: (l, e) => String(e.reponse).trim() === '{}'
+  },
+  {
+    nom: 'la-courbe-est-du-bon-cote-de-l-axe',
+    // « de la courbe au-dessus (en dessous) de l'axe des abscisses » : f(x) > 0 ou >= 0 (au-dessus), f(x) < 0 ou <= 0 (en dessous)
+    // « sur ou au-dessus » (resp. « sur ou en dessous ») pour une inégalité large (>= 0, <= 0), « au-dessus » (resp. « en dessous ») pour une inégalité stricte
+    motif: /de la courbe (?:sur ou )?(?:au-dessus|en dessous) de l'axe/,
+    verifie: (l, e) => {
+      const m = l.match(/de la courbe (sur ou )?(au-dessus|en dessous) de l'axe/), r = String(e.enonce).match(/\\(gt|geqslant|lt|leqslant)\s*0/);
+      if (!m || !r) return false;
+      const large = r[1] === 'geqslant' || r[1] === 'leqslant';
+      return (m[2] === 'au-dessus') === (r[1] === 'gt' || r[1] === 'geqslant') && !!m[1] === large;
+    }
+  },
+  {
     nom: 'la-longueur-de-periode-annoncee-est-exacte',
     // « \text{Période de } 6 \text{ chiffres} » : longueur de la période de 1/b (b lu dans l'énoncé)
     motif: /\\text\{Période de \} \d+ \\text\{ chiffres?\}/,

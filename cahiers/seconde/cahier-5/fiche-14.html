@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"14.1 a)":0.5,"14.1 b)":0.5,"14.1 c)":0.5,"14.1 d)":0.5,"14.2 a)":0.5,"14.2 b)":0.5,"14.2 c)":0.75,"14.2 d)":1,"14.3 a)":0.5,"14.3 b)":0.5,"14.3 c)":0.75,"14.3 d)":1,"14.4 a)":0.5,"14.4 b)":1.25,"14.5 a)":0.5,"14.5 b)":1,"14.5 c)":0.75,"14.5 d)":1.25,"14.6 a)":0.5,"14.6 b)":0.75,"14.6 c)":0.75,"14.6 d)":1.25,"14.7 a)":1,"14.7 b)":1.75,"14.7 c)":1.25,"14.7 d)":2},"bonus":["14.7 a)","14.7 b)","14.7 c)","14.7 d)"]});
@@ -1551,6 +1552,39 @@ function tableCorrigeProgrammeHTML(ex) {
   return `<table style="border-collapse:collapse;margin:10px auto;"><tr><td style="border:1px solid #999;padding:6px 10px;font-weight:bold;background:#f1efe8;">Nombre choisi</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${k2}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${k3}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${x0}</td></tr><tr><td style="border:1px solid #999;padding:6px 10px;font-weight:bold;background:#f1efe8;">Résultat</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${resultatK2}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${resultatK3}</td><td style="border:1px solid #999;padding:6px 10px;text-align:center;">${resultatAntecedent}</td></tr></table>`;
 }
 
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, sommeTermes } = Detail;
+// polynome en LaTeX, coefficients par degre CROISSANT : polyL([5, 3]) -> « 3x+5 » ; jamais « 1x », signes propres
+function polyL(coefs, v = 'x') {
+  let s = '';
+  for (let p = coefs.length - 1; p >= 0; p--) {
+    const c = coefs[p];
+    if (c === 0) continue;
+    const abs = Math.abs(c), base = p === 0 ? '' : (p === 1 ? v : `${v}^{${p}}`);
+    s += (c < 0 ? '-' : (s === '' ? '' : '+')) + (p === 0 ? `${abs}` : (abs === 1 ? base : `${abs}${base}`));
+  }
+  return s === '' ? '0' : s;
+}
+// chiffres decimaux a la francaise dans un texte LaTeX : 1.5 -> 1{,}5
+const adouci = s => String(s).replace(/(\d)\.(\d)/g, '$1{,}$2');
+// image de k par f(x) = polynome (coeffs du plus haut degre au plus bas) : substitution, puis valeurs, puis resultat
+function lignesImage(coeffs, k) {
+  const deg = coeffs.length - 1;
+  const subst = sommeTermes(coeffs.map((c, i) => { const d = deg - i; return [c, d === 0 ? '' : d === 1 ? dP(k) : `${dP(k)}^{${d}}`]; }));
+  const vals = sommeTermes(coeffs.map((c, i) => { const d = deg - i; return [c * Math.pow(k, d), '']; }));
+  const res = polyEval(coeffs, k);
+  const chaine = [`f(${k}) = ${subst}`, vals !== subst ? vals : null, `${res}`].filter(x => x !== null);
+  return { lignes: [chaine.join(' = ')], final: `${res}` };
+}
+// arrondi d'une valeur lue (au dixieme)
+const dixieme = v => Math.round(v * 10) / 10;
+// ensemble solution lu sur le graphique : memes bornes arrondies que la reponse attendue
+function ensembleLu(spec) {
+  const texte = adouci(formaterIntervalleLecture(spec));
+  const exact = spec.type === 'intervalles' && spec.liste.every(iv => [iv.bas, iv.haut].every(b => !isFinite(b) || Math.abs(b - Math.round(b)) < 1e-6));
+  return { texte, egal: exact ? '=' : '\\approx' };
+}
+
 const generateurs = [
   // ---------- 14.1 : calcul numerique (vivier partage avec les autres fiches) ----------
   {id:"14.1 a)", type:"num", gen: () => tirageCalculs[0]()},
@@ -1561,58 +1595,75 @@ const generateurs = [
   // ---------- 14.2 : developper et reduire (consigne dans le titre ; quatre modeles differents) ----------
   {id:"14.2 a)", type:"num", gen: () => {
     const k = alea(2,9), a = alea(2,6), b = entierSigne(1,12);
-    return { enonce:`${k}(${a}x${b>=0?'+':''}${b})`, reponse:`${k*a}*x${k*b>=0?'+':''}${k*b}` };
+    const res = polyL([k*b, k*a]);
+    return { enonce:`${k}(${a}x${b>=0?'+':''}${b})`, reponse:`${k*a}*x${k*b>=0?'+':''}${k*b}`,
+      detail: { lignes: [`${k}(${a}x${b>=0?'+':''}${b}) = ${k}\\times ${a}x+${k}\\times ${dP(b)} = ${res}`], final: res } };
   }},
   {id:"14.2 b)", type:"num", gen: () => {
     let a, b; do { a = entierSigne(1,9); b = entierSigne(1,9); } while (a + b === 0);
-    const somme = a+b, produit = a*b;
-    return { enonce:`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}` };
+    const somme = a+b, produit = a*b, res = polyL([produit, somme, 1]);
+    return { enonce:`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}`,
+      detail: { lignes: [`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b}) = ${sommeTermes([[1, 'x^{2}'], [b, 'x'], [a, 'x'], [produit, '']])} = ${res}`], final: res } };
   }},
   {id:"14.2 c)", type:"num", gen: () => {
     // identite remarquable : carre d'une somme, d'une difference, ou produit (x+a)(x-a), a l'aveugle
     const a = alea(2,9), cas = alea(0,2);
-    if (cas === 2) return { enonce:`(x+${a})(x-${a})`, reponse:`x^2-${a*a}` };
-    const s = cas === 0 ? 1 : -1;
-    return { enonce:`(x${s>0?'+':'-'}${a})^2`, reponse:`x^2${s>0?'+':'-'}${2*a}*x+${a*a}` };
+    if (cas === 2) { const res = polyL([-a*a, 0, 1]);
+      return { enonce:`(x+${a})(x-${a})`, reponse:`x^2-${a*a}`, detail: { lignes: [`(x+${a})(x-${a}) = ${sommeTermes([[1, 'x^{2}'], [-a, 'x'], [a, 'x'], [-a*a, '']])} = ${res}`], final: res } }; }
+    const s = cas === 0 ? 1 : -1, res = polyL([a*a, 2*s*a, 1]);
+    return { enonce:`(x${s>0?'+':'-'}${a})^2`, reponse:`x^2${s>0?'+':'-'}${2*a}*x+${a*a}`,
+      detail: { lignes: [`(x${s>0?'+':'-'}${a})^{2} = (x${s>0?'+':'-'}${a})(x${s>0?'+':'-'}${a}) = ${sommeTermes([[1, 'x^{2}'], [s*a, 'x'], [s*a, 'x'], [a*a, '']])} = ${res}`], final: res } };
   }},
   {id:"14.2 d)", type:"num", gen: () => {
     // produit de deux binomes a coefficients : (ax+b)(cx+d), terme en x non nul
     let a, b, c, d, milieu;
     do { a = alea(2,4); c = alea(2,4); b = entierSigne(1,9); d = entierSigne(1,9); milieu = a*d + b*c; } while (milieu === 0);
-    return { enonce:`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d})`, reponse:`${a*c}*x^2${milieu>=0?'+':''}${milieu}*x${b*d>=0?'+':''}${b*d}` };
+    const res = polyL([b*d, milieu, a*c]);
+    return { enonce:`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d})`, reponse:`${a*c}*x^2${milieu>=0?'+':''}${milieu}*x${b*d>=0?'+':''}${b*d}`,
+      detail: { lignes: [`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d}) = ${sommeTermes([[a*c, 'x^{2}'], [a*d, 'x'], [b*c, 'x'], [b*d, '']])} = ${res}`], final: res } };
   }},
 
   // ---------- 14.3 : image d'un nombre par une fonction (consigne dans le titre ; quatre cas : affine croissante,
   // affine decroissante, second degre, troisieme degre) ----------
   {id:"14.3 a)", type:"num", texteLibre:true, gen: () => {
     const a = alea(2,9), b = entierSigne(1,20), k = entierSigne(1,10);
-    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), image de \\(${k}\\).`, reponse:`${a*k+b}` };
+    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), image de \\(${k}\\).`, reponse:`${a*k+b}`, detail: lignesImage([a, b], k) };
   }},
   {id:"14.3 b)", type:"num", texteLibre:true, gen: () => {
     const a = -alea(2,9), b = entierSigne(1,20), k = entierSigne(1,10);
-    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), image de \\(${k}\\).`, reponse:`${a*k+b}` };
+    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), image de \\(${k}\\).`, reponse:`${a*k+b}`, detail: lignesImage([a, b], k) };
   }},
   {id:"14.3 c)", type:"num", texteLibre:true, gen: () => {
     const coeffs = [entierSigne(1,5), entierSigne(1,9), entierSigne(1,9)];
     const k = entierSigne(1,6);
-    return { enonce:`\\(f(x)=${polyTexte(coeffs)}\\), image de \\(${k}\\).`, reponse:`${polyEval(coeffs,k)}` };
+    return { enonce:`\\(f(x)=${polyTexte(coeffs)}\\), image de \\(${k}\\).`, reponse:`${polyEval(coeffs,k)}`, detail: lignesImage(coeffs, k) };
   }},
   {id:"14.3 d)", type:"num", texteLibre:true, gen: () => {
     const coeffs = [aleaNonNul(1,4), entierSigne(1,6), entierSigne(1,9), entierSigne(1,9)];
     const k = entierSigne(1,4);
-    return { enonce:`\\(f(x)=${polyTexte(coeffs)}\\), image de \\(${k}\\).`, reponse:`${polyEval(coeffs,k)}` };
+    return { enonce:`\\(f(x)=${polyTexte(coeffs)}\\), image de \\(${k}\\).`, reponse:`${polyEval(coeffs,k)}`, detail: lignesImage(coeffs, k) };
   }},
 
 
   // ---------- 14.4 : programme de calcul a trois etapes (parametres partages) ----------
   {id:"14.4 a)", type:"num", texteLibre:true, gen: () => {
     const { a, b, c, k1 } = paramsProgramme;
-    return { enonce:`Voici un programme de calcul : ${texteProgramme14(a,b,c)}. Appliquer ce programme au nombre \\(${k1}\\). Quel résultat obtient-on ?`, reponse:`${c*(a*k1+b)}` };
+    const res = c*(a*k1+b);
+    return { enonce:`Voici un programme de calcul : ${texteProgramme14(a,b,c)}. Appliquer ce programme au nombre \\(${k1}\\). Quel résultat obtient-on ?`, reponse:`${res}`,
+      detail: { lignes: [`${c}\\times (${a}\\times ${dP(k1)}${b>=0?'+':'-'}${Math.abs(b)}) = ${c}\\times (${a*k1}${b>=0?'+':'-'}${Math.abs(b)}) = ${c}\\times ${dP(a*k1+b)} = ${res}`], final: `${res}` } };
   }},
   {id:"14.4 b)", type:"tableauProgramme", texteLibre:true, gen: () => {
     const { a, b, c, k2, k3, x0 } = paramsProgramme;
     const resultatK2 = c*(a*k2+b), resultatK3 = c*(a*k3+b), resultatAntecedent = c*(a*x0+b);
-    return { enonce:`Avec le même programme de calcul, compléter le tableau suivant : une image à calculer, un antécédent à déterminer.`, k2, k3, resultatK2, resultatK3, x0, resultatAntecedent };
+    const affine = `${coefXTexte(a)}${b>=0?'+':'-'}${Math.abs(b)}`;
+    return { enonce:`Avec le même programme de calcul, compléter le tableau suivant : une image à calculer, un antécédent à déterminer.`, k2, k3, resultatK2, resultatK3, x0, resultatAntecedent,
+      detail: { lignes: [
+        `${c}\\times (${a}\\times ${dP(k3)}${b>=0?'+':'-'}${Math.abs(b)}) = ${c}\\times (${a*k3}${b>=0?'+':'-'}${Math.abs(b)}) = ${c}\\times ${dP(a*k3+b)} = ${resultatK3}`,
+        `${c}(${affine}) = ${resultatAntecedent}`,
+        `\\iff ${affine} = ${resultatAntecedent} \\div ${c} = ${a*x0+b}`,
+        `\\iff ${coefXTexte(a)} = ${a*x0}`,
+        `\\iff x = ${a*x0} \\div ${dP(a)} = ${x0}`,
+        `${resultatK3} \\text{ et } ${x0}`], final: `${resultatK3} \\text{ et } ${x0}` } };
   }},
 
   // ---------- 14.5 : lecture graphique sur la courbe partagee (degre 2 exact, degre 3 approche pour l'image/l'antecedent quelconque — voir genererParametresGraphique14/racinesApprochees). Une image (a), deux antecedents (b, c), une inequation f(x) op 0 (d). Lecture a 0,2 pres partout (regle des lectures graphiques) ----------
@@ -1623,12 +1674,15 @@ const generateurs = [
     if (params.degre === 2) {
       const { r } = params;
       const decalage = choix([-3,-2,-1,1,2,3]);
-      return { enonce:`Déterminer \\(f(${p+decalage})\\).`, type:'num', reponse:`${r+decalage*decalage}` };
+      const v = r+decalage*decalage;
+      return { enonce:`Déterminer \\(f(${p+decalage})\\).`, type:'num', reponse:`${v}`,
+        detail: { lignes: ["\\text{On lit l'ordonnée du point}", `\\text{de la courbe d'abscisse } ${p+decalage}`, `f(${p+decalage}) = ${v}`], final: `${v}` } };
     }
     const decalage = choix([-2,-1,0,1,2]);
     const x0 = p + decalage;
     const valeur = f(x0);
-    return { enonce:`Déterminer \\(f(${x0})\\).`, type:'approx', valeurApprox: valeur, tolerance: 0.2 };
+    return { enonce:`Déterminer \\(f(${x0})\\).`, type:'approx', valeurApprox: valeur, tolerance: 0.2,
+      detail: { lignes: ["\\text{On lit l'ordonnée du point}", `\\text{de la courbe d'abscisse } ${x0}`, `f(${x0}) = ${valeur}`], final: `${valeur}` } };
   }},
   {id:"14.5 b)", type:"num", texteLibre:true, margeLecture:0.2, gen: () => {
     const params = paramsGraphique14;
@@ -1637,13 +1691,16 @@ const generateurs = [
     if (params.degre === 2) {
       const { r } = params;
       const decalage = choix([1,2,3]);
-      return { enonce:`Déterminer le ou les antécédents de \\(${r+decalage*decalage}\\) par \\(f\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}` };
+      const y0 = r+decalage*decalage;
+      return { enonce:`Déterminer le ou les antécédents de \\(${y0}\\) par \\(f\\).`, type:'num', reponse:`{${p-decalage};${p+decalage}}`,
+        detail: { lignes: ['\\text{On lit les abscisses des points}', `\\text{de la courbe d'ordonnée } ${y0}`, `S = \\{${p-decalage}\\,;\\,${p+decalage}\\}`], final: `\\{${p-decalage}\\,;\\,${p+decalage}\\}` } };
     }
     const decalage = choix([-2,-1,1,2]);
     const x0 = p + decalage;
     const cible = f(x0);
     const racines = racinesApprochees(f, xmin, xmax, cible);
-    return { enonce:`Déterminer un antécédent de \\(${cible}\\) par \\(f\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.2 };
+    return { enonce:`Déterminer un antécédent de \\(${cible}\\) par \\(f\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.2,
+      detail: { lignes: ["\\text{On lit l'abscisse d'un point}", `\\text{de la courbe d'ordonnée } ${cible}`, `x = ${x0}`], final: `${x0}` } };
   }},
   {id:"14.5 c)", type:"num", texteLibre:true, margeLecture:0.2, gen: () => {
     const params = paramsGraphique14;
@@ -1652,13 +1709,15 @@ const generateurs = [
     if (params.degre === 2) {
       const { r } = params;
       const cible = r - choix([1,2]);
-      return { enonce:`Déterminer le ou les antécédents de \\(${cible}\\) par \\(f\\).`, type:'num', reponse:`{}` };
+      return { enonce:`Déterminer le ou les antécédents de \\(${cible}\\) par \\(f\\).`, type:'num', reponse:`{}`,
+        detail: { lignes: ['\\text{La courbe reste au-dessus}', `\\text{de la droite d'équation } y = ${cible}`, `\\text{donc aucun point n'a pour ordonnée } ${cible}`, 'S = \\emptyset'], final: '\\emptyset' } };
     }
     let decalage = choix([-2,0,2]);
     const x0 = p + decalage;
     const cible = f(x0);
     const racines = racinesApprochees(f, xmin, xmax, cible);
-    return { enonce:`Déterminer un antécédent de \\(${cible}\\) par \\(f\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.2 };
+    return { enonce:`Déterminer un antécédent de \\(${cible}\\) par \\(f\\).`, type:'approx', typeApprox:'racine', valeurApprox: racines, tolerance: 0.2,
+      detail: { lignes: ["\\text{On lit l'abscisse d'un point}", `\\text{de la courbe d'ordonnée } ${cible}`, `x = ${x0}`], final: `${x0}` } };
   }},
   {id:"14.5 d)", type:"intervalle", texteLibre:true, gen: () => {
     const params = paramsGraphique14;
@@ -1715,25 +1774,33 @@ const generateurs = [
       }
       spec = pieces.length === 0 ? {type:'vide'} : {type:'intervalles', liste: pieces};
     }
-    return { enonce:`Résoudre \\(f(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: 0.2 };
+    const lu = ensembleLu(spec), dessus = (op === '>' || op === '>=');
+    return { enonce:`Résoudre \\(f(x)${opSymb}0\\).`, intervalleSpec: spec, tolerance: 0.2,
+      detail: { lignes: ['\\text{Les solutions sont les abscisses des points}', `\\text{de la courbe ${inclus ? 'sur ou ' : ''}${dessus ? 'au-dessus' : 'en dessous'} de l'axe des abscisses}`, `S ${lu.egal} ${lu.texte}`], final: lu.texte } };
   }},
 
   // ---------- 14.6 : trouver un antecedent par le calcul — affine, x^2=A (carre parfait), x^2=A<0 (aucun), puis (x-p)^2=A ou A n'est pas un carre parfait (reponse avec racine carree) ----------
   {id:"14.6 a)", type:"num", texteLibre:true, gen: () => {
     const a = entierSigne(2,9), b = entierSigne(1,25), x0 = entierSigne(1,12), c = a*x0+b;
-    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), antécédent de \\(${c}\\).`, reponse:`${x0}` };
+    return { enonce:`\\(f(x)=${affineTexte(a,b)}\\), antécédent de \\(${c}\\).`, reponse:`${x0}`,
+      detail: { lignes: [`f(x) = ${c}`, `\\iff ${affineTexte(a,b)} = ${c}`, `\\iff ${coefXTexte(a)} = ${c - b}`, `\\iff x = ${c - b} \\div ${dP(a)} = ${x0}`], final: `${x0}` } };
   }},
   {id:"14.6 b)", type:"num", texteLibre:true, gen: () => {
     const n = alea(2,20), A = n*n;
-    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{-${n};${n}}` };
+    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{-${n};${n}}`,
+      detail: { lignes: [`g(x) = ${A}`, `\\iff x^{2} = ${A}`, `\\iff x = \\sqrt{${A}} \\text{ ou } x = -\\sqrt{${A}}`, `\\iff x = ${n} \\text{ ou } x = -${n}`, `S = \\{-${n}\\,;\\,${n}\\}`], final: `\\{-${n}\\,;\\,${n}\\}` } };
   }},
   {id:"14.6 c)", type:"num", texteLibre:true, gen: () => {
     const A = -alea(1,40);
-    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{}` };
+    return { enonce:`\\(g(x)=x^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{}`,
+      detail: { lignes: [`g(x) = ${A}`, `\\iff x^{2} = ${A}`, '\\text{Un carré est positif ou nul,}', `${A} \\lt 0`, "\\text{donc l'équation n'a pas de solution}", 'S = \\emptyset'], final: '\\emptyset' } };
   }},
   {id:"14.6 d)", type:"num", texteLibre:true, gen: () => {
     const p = entierSigne(1,9), A = choix([2,3,5,6,7,8,10,11,12,13]);
-    return { enonce:`\\(h(x)=(${xMoinsTexte(p)})^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{${p}-sqrt(${A});${p}+sqrt(${A})}` };
+    const gauche = `${p}-\\sqrt{${A}}`, droite = `${p}+\\sqrt{${A}}`;
+    return { enonce:`\\(h(x)=(${xMoinsTexte(p)})^2\\), antécédent(s) de \\(${A}\\).`, reponse:`{${p}-sqrt(${A});${p}+sqrt(${A})}`,
+      detail: { lignes: [`h(x) = ${A}`, `\\iff (${xMoinsTexte(p)})^{2} = ${A}`, `\\iff ${xMoinsTexte(p)} = \\sqrt{${A}} \\text{ ou } ${xMoinsTexte(p)} = -\\sqrt{${A}}`,
+        `\\iff x = ${droite} \\text{ ou } x = ${gauche}`, `S = \\{${gauche}\\,;\\,${droite}\\}`], final: `\\{${gauche}\\,;\\,${droite}\\}` } };
   }},
 
   // ---------- 14.7 : exploiter y=f(x) : appartenance, abscisses d'un point d'ordonnee donnee, comparaison ----------
@@ -1742,55 +1809,93 @@ const generateurs = [
     const vraiPoint = a*x0+b;
     const appartient = alea(0,1) === 1;
     const y0 = appartient ? vraiPoint : vraiPoint + choix([1,-1,2,-2,3,-3]);
-    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${affineTexte(a,b)}\\). Le point de coordonnées \\((${x0}\\,;\\,${y0})\\) appartient-il à la courbe de \\(f\\) ?`, reponseOuiNon: appartient };
+    return { enonce:`On considère la fonction \\(f\\) définie par \\(f(x)=${affineTexte(a,b)}\\). Le point de coordonnées \\((${x0}\\,;\\,${y0})\\) appartient-il à la courbe de \\(f\\) ?`, reponseOuiNon: appartient,
+      detail: { lignes: [`f(${x0}) = ${sommeTermes([[a, dP(x0)], [b, '']])} = ${sommeTermes([[a*x0, ''], [b, '']])} = ${vraiPoint}`, `${vraiPoint} ${appartient ? '=' : '\\neq'} ${y0}`, `\\text{Réponse : ${appartient ? 'oui' : 'non'}}`], final: appartient ? 'oui' : 'non' } };
   }},
   {id:"14.7 b)", type:"num", texteLibre:true, gen: () => {
     const a = entierSigne(1,9), b = entierSigne(1,10), n = alea(1,8);
-    const y0 = b + n*n;
-    return { enonce:`Un point de la courbe de \\(g\\), où \\(g(x)=(${xMoinsTexte(-a)})^2${b>=0?'+':'-'}${Math.abs(b)}\\), a pour ordonnée \\(${y0}\\). Quelle(s) est/sont son ou ses abscisse(s) ?`, reponse:`{${-a-n};${-a+n}}` };
+    const y0 = b + n*n, t = xMoinsTexte(-a);
+    return { enonce:`Un point de la courbe de \\(g\\), où \\(g(x)=(${t})^2${b>=0?'+':'-'}${Math.abs(b)}\\), a pour ordonnée \\(${y0}\\). Quelle(s) est/sont son ou ses abscisse(s) ?`, reponse:`{${-a-n};${-a+n}}`,
+      detail: { lignes: [`g(x) = ${y0}`, `\\iff (${t})^{2}${b>=0?'+':'-'}${Math.abs(b)} = ${y0}`, `\\iff (${t})^{2} = ${n*n}`, `\\iff ${t} = ${n} \\text{ ou } ${t} = -${n}`,
+        `\\iff x = ${-a+n} \\text{ ou } x = ${-a-n}`, `S = \\{${-a-n}\\,;\\,${-a+n}\\}`], final: `\\{${-a-n}\\,;\\,${-a+n}\\}` } };
   }},
   {id:"14.7 c)", type:"texte", comparaison:true, nomFonction:"f", texteLibre:true, gen: () => {
     const a = entierSigne(1,20), b = entierSigne(1,15);
-    const symbole = a>0 ? '<' : '>';
-    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=${affineTexte(a,b)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\).`, reponse: `f(x1)${symbole}f(x2)` };
+    const symbole = a>0 ? '<' : '>', sym = a>0 ? '\\lt' : '\\gt', symInv = a>0 ? '\\lt' : '\\gt';
+    const ax = (i) => `${coefXTexte(a)}`.replace('x', `x_{${i}}`);
+    const lignes = ['x_{1} \\lt x_{2}'];
+    if (a < 0) lignes.push(`\\text{On multiplie par } ${a} < 0`, "\\text{donc le sens de l'inégalité change}");
+    lignes.push(`\\iff ${ax(1)} ${sym} ${ax(2)}`, `\\iff ${ax(1)}${b>0?'+':''}${b} ${sym} ${ax(2)}${b>0?'+':''}${b}`, `\\iff f(x_{1}) ${sym} f(x_{2})`);
+    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=${affineTexte(a,b)}\\). Sachant que \\(x_1\\lt x_2\\), comparer \\(f(x_1)\\) et \\(f(x_2)\\).`, reponse: `f(x1)${symbole}f(x2)`,
+      detail: { lignes, final: `f(x_{1}) ${sym} f(x_{2})` } };
   }},
   {id:"14.7 d)", type:"texte", comparaison:true, nomFonction:"g", texteLibre:true, gen: () => {
     const p = entierSigne(1,9);
     let d1 = alea(1,6), d2 = alea(1,6);
     while (d2 === d1) d2 = alea(1,6);
-    const symbole = d1<d2 ? '<' : '>';
-    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(|${xIndiceMoinsTexte(1,p)}|=${d1}\\) et que \\(|${xIndiceMoinsTexte(2,p)}|=${d2}\\). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer.`, reponse: `g(x1)${symbole}g(x2)` };
+    const symbole = d1<d2 ? '<' : '>', sym = d1<d2 ? '\\lt' : '\\gt';
+    const t1 = xIndiceMoinsTexte(1,p), t2 = xIndiceMoinsTexte(2,p);
+    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(|${t1}|=${d1}\\) et que \\(|${t2}|=${d2}\\). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer.`, reponse: `g(x1)${symbole}g(x2)`,
+      detail: { lignes: [`g(x_{1}) = (${t1.replace(/_(\d)/, '_{$1}')})^{2} = |${t1.replace(/_(\d)/, '_{$1}')}|^{2} = ${d1}^{2} = ${d1*d1}`, `g(x_{2}) = (${t2.replace(/_(\d)/, '_{$1}')})^{2} = |${t2.replace(/_(\d)/, '_{$1}')}|^{2} = ${d2}^{2} = ${d2*d2}`,
+        `${d1*d1} ${d1<d2 ? '\\lt' : '>'} ${d2*d2}`, `g(x_{1}) ${sym} g(x_{2})`], final: `g(x_{1}) ${sym} g(x_{2})` } };
   }}
 ];
+
 
 // ---------- vivier de calculs numeriques (groupe 14.1), identique a celui des fiches 8/12 ----------
 const MODELES_CALCUL = [
   () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
-  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a} - ${b*c} = ${a - b*c}`], final: `${a - b*c}` } }; },
+  // produit d'un negatif par une difference
+  () => { let a, b, c; do { a = alea(2,9); b = alea(2,12); c = alea(2,15); } while (b === c);
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b - c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
+  // carre puis soustraction
   () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
-  () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}`,
+                   detail: { lignes: [`${a}^2-${b}\\times ${c} = ${a*a} - ${b*c} = ${a*a - b*c}`], final: `${a*a - b*c}` } }; },
+  // double negation
+  () => { let a, b; do { a = alea(2,15); b = alea(2,15); } while (a === b);
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}`,
+                   detail: { lignes: [`-${a}-(-${b}) = -${a} + ${b} = ${-a + b}`], final: `${-a + b}` } }; },
+  // produit de trois facteurs signes
   () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}`,
+                   detail: { lignes: [`${a}\\times (-${b})\\times (-${c}) = (${-a*b})\\times (-${c}) = ${a*b*c}`], final: `${a*b*c}` } }; },
+  // quotient exact suivi d'une addition
   () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}`,
+                   detail: { lignes: [`\\dfrac{${b*q}}{${b}}+${c} = ${q}+${c} = ${q + c}`], final: `${q + c}` } }; },
+  // quotient d'une somme : la barre de fraction joue le role d'une parenthese
   () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}}{${c}} = \\dfrac{${a + b}}{${c}} = ${q}`], final: `${q}` } }; },
+  // moyenne de trois entiers
   () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}+${c}}{3} = \\dfrac{${3*q}}{3} = ${q}`], final: `${q}` } }; },
+  // suite d'additions et de soustractions
   () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}`,
+                   detail: { lignes: [`${a}-${b}+${c}-${d} = ${a - b}+${c}-${d} = ${a - b + c}-${d} = ${a - b + c - d}`], final: `${a - b + c - d}` } }; },
+  // distributivite mentale : a x 99 = a x 100 - a
   () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+          const base = m > 500 ? 1000 : 100, ecart = base - m, signe = ecart > 0 ? '-' : '+', k = Math.abs(ecart);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe} ${k}) = ${a*base} ${signe} ${a*k} = ${a*m}`], final: `${a*m}` } }; },
+  // cube et difference
   () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}`,
+                   detail: { lignes: [`${a}^3-${b} = ${a*a*a} - ${b} = ${a*a*a - b}`], final: `${a*a*a - b}` } }; },
+  // priorites imbriquees
   () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}`,
+                   detail: { lignes: [`${a}\\times (${b}+${c})-${d} = ${a}\\times ${b + c}-${d} = ${a*(b+c)}-${d} = ${a*(b+c) - d}`], final: `${a*(b+c) - d}` } }; },
+  // double et moitie
   () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}`,
+                   detail: { lignes: [`\\dfrac{${a}}{2}+${b}\\times 2 = ${q}+${2*b} = ${q + 2*b}`], final: `${q + 2*b}` } }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 
@@ -1798,10 +1903,13 @@ function genererExercices() {
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   genererParametresProgramme();
   genererParametresGraphique14();
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2329,6 +2437,8 @@ function verifierLectureGraphique(ex, val) {
   }
   if (ex.reponse && String(ex.reponse).trim().startsWith('{')) {
     const liste = (s) => String(s).replace(/[{}]/g, '').split(';').map((x) => x.trim()).filter((x) => x !== '');
+    // ensemble vide attendu : « {} », « ∅ », « vide », « aucune »… sont acceptés comme dans checkEnsemble (20/10/2026 : « ∅ » était refusé)
+    if (liste(ex.reponse).length === 0) { const n = String(val).trim().toLowerCase().replace(/\s/g, ''); return n === '' || n === '{}' || n === '∅' || n === 'o/' || n === 'vide' || n === 'aucune' || n === 'aucunesolution' || n === 'aucunantecedent'; }
     const u = liste(normaliserSaisie(String(val))).map(nombreLu), c = liste(ex.reponse).map(nombreLu);
     if (u.length !== c.length || u.some((v) => v === null) || c.some((v) => v === null)) return false;
     u.sort((a, b) => a - b); c.sort((a, b) => a - b);
@@ -3050,10 +3160,10 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       if (ex.type === 'tableauProgramme') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeProgrammeHTML(ex)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :${Detail.html(ex, idx)}</div>${tableCorrigeProgrammeHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

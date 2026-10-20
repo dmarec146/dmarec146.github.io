@@ -293,7 +293,38 @@ async function controlerDansLaPage(opts) {
   function comparerFinal(e) {
     const D = e.detail;
     const F = D.final;
-    if (e.type === 'intervalle' && e.intervalleSpec) return F === formaterIntervalleSpec(e.intervalleSpec) ? 'ok' : 'faux';
+    if (e.type === 'intervalle' && e.intervalleSpec) {
+      const exact = formaterIntervalleSpec(e.intervalleSpec);
+      if (!e.tolerance) return F === exact || F === exact.replace(/(\d)\.(\d)/g, '$1{,}$2') ? 'ok' : 'faux';
+      // lecture graphique : bornes lues au dixième, comparées à la réponse exacte à 0,06 près, crochets identiques
+      const spec = e.intervalleSpec;
+      if (spec.type === 'vide') return F === '\\emptyset' ? 'ok' : 'faux';
+      if (spec.type === 'tout') return F === '\\mathbb{R}' ? 'ok' : 'faux';
+      const morceaux = String(F).split(/\\\s*\\cup\\\s*/).map((m) => m.trim());
+      if (morceaux.length !== spec.liste.length) return 'faux';
+      const borne = (t) => (/\\infty/.test(t) ? (t.includes('-') ? -Infinity : Infinity) : evaluer(t, 0));
+      try {
+        for (let i = 0; i < morceaux.length; i++) {
+          const m = morceaux[i].match(/^([\[\]])(.+?)\\,;\\,(.+?)([\[\]])$/); if (!m) return 'faux';
+          const iv = spec.liste[i], bas = borne(m[2]), haut = borne(m[3]);
+          if ((m[1] === '[') !== !!iv.inclusBas || (m[4] === ']') !== !!iv.inclusHaut) return 'faux';
+          if (!(bas === iv.bas || Math.abs(bas - iv.bas) <= 0.06) || !(haut === iv.haut || Math.abs(haut - iv.haut) <= 0.06)) return 'faux';
+        }
+        return 'ok';
+      } catch (er) { return 'non-verifiable'; }
+    }
+    // valeur lue sur un graphique (type approx) : à la tolérance près de la valeur attendue (ou de l'une des valeurs possibles)
+    if (e.type === 'approx' && e.valeurApprox !== undefined) {
+      try {
+        const v = evaluer(String(F).replace(/\\approx\s*/g, ''), 0), tol = (e.tolerance || 0) + 1e-9;
+        return (Array.isArray(e.valeurApprox) ? e.valeurApprox : [e.valeurApprox]).some((c) => Math.abs(v - c) <= tol) ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
+    }
+    // tableau de programme de calcul : « image \text{ et } antécédent »
+    if (e.type === 'tableauProgramme') {
+      const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/);
+      return m && Number(m[1]) === e.resultatK3 && Number(m[2]) === e.x0 ? 'ok' : 'faux';
+    }
     // couples, vecteurs, triplets : « (a ; b) »
     const liste = (s) => String(s).replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ' ').replace(/^\s*\(|\)\s*$/g, '').split(/;/).map((x) => x.trim());
     const cibleListe = e.type === 'paire' ? [e.pa, e.pb] : e.type === 'vecteur' ? [e.vx, e.vy] : e.type === 'triplet' ? [e.ta, e.tb, e.tc] : null;
@@ -349,7 +380,7 @@ async function controlerDansLaPage(opts) {
     if (typeof e.reponse !== 'string') return 'non-verifiable';
     // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
     if (e.type === 'texte') {
-      const norm = (s) => String(s).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\lt\s*/g, '<').replace(/\s+/g, '').toLowerCase();
+      const norm = (s) => String(s).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\gt\s*/g, '>').replace(/_\{(\d)\}/g, '$1').replace(/\s+/g, '').toLowerCase();
       return norm(F) === norm(e.reponse) ? 'ok' : 'faux';
     }
     const rep = e.reponse.trim();
@@ -584,7 +615,7 @@ async function controlerDansLaPage(opts) {
       const ctx = { finalVerifie: 0, finalNonVerifiable: 0, lignes: 0, chaines: 0, chainesIllisibles: 0, equivalences: 0, equivalencesIllisibles: 0, equivActif: false };
       const copie = () => ({ lignes: D.lignes.slice(), final: D.final });
       // M1 : la réponse finale (dernière ligne et final) est décalée
-      if (e.type !== 'intervalle' && comparerFinal({ ...e, detail: D }) === 'ok') {
+      if (e.type !== 'intervalle' && !Array.isArray(e.valeurApprox) && comparerFinal({ ...e, detail: D }) === 'ok') {   // (plusieurs antécédents possibles : le chiffre décalé peut en être un autre)
         const M = copie(); const n = chiffreAlterne(D.final);
         if (n && n !== D.final) { M.final = n; M.lignes[M.lignes.length - 1] = D.lignes[D.lignes.length - 1].replace(D.final, n); compte('reponse-finale-decalee', () => verifierDetail(e, M, ctx).some((t) => t.motif === 'final-different-de-la-reponse')); }
       }
@@ -670,7 +701,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       // 1. la réponse finale du détail, saisie comme le ferait un élève, doit être acceptée par la validation de la fiche
       const versTexte = (tex) => {
         let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\%/g, '%').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
-          .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/\\(?:times|cdot)/g, '*')
+          .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/_\{(\d)\}/g, '$1').replace(/\\(?:times|cdot)/g, '*')
           .replace(/\\(?:emptyset|varnothing)/g, '∅').replace(/\\mathbb\{R\}/g, 'ℝ');
         for (let k = 0; k < 6; k++) a = a.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
         return a.replace(/\s+/g, '');
@@ -691,7 +722,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         if (!inp) {   // tableau de signes (widget) : seuils faux et cases remplies d'un « + »
           document.querySelectorAll('[id^="cs-seuil-' + i + '-"]').forEach((el) => { el.value = '999'; });
           document.querySelectorAll('[id^="cs-cell-' + i + '-"]').forEach((el) => { el.textContent = '+'; });
-          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="se-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });   // tableau croisé ou schéma d'évolution à compléter
+          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="se-"][id$="-' + i + '"], [id^="tp-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });   // tableau croisé ou schéma d'évolution à compléter
           continue;
         }
         if (inp.tagName === 'MATH-FIELD') inp.setValue('999'); else inp.value = '999'; }
