@@ -21,7 +21,7 @@ window.MathJax = {
 <script src="../../../assets/js/widgets-saisie.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
-<script src="../../../assets/js/details-correction.js?v=20261020"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"8.1 a)":0.5,"8.1 b)":0.5,"8.1 c)":0.5,"8.1 d)":0.5,"8.2 a)":0.5,"8.2 b)":0.5,"8.2 c)":0.5,"8.2 d)":0.5,"8.3 a)":0.5,"8.3 b)":0.5,"8.3 c)":0.5,"8.3 d)":0.5,"8.4 a)":1,"8.4 b)":1.5,"8.4 c)":1,"8.4 d)":1.5,"8.5 a)":1,"8.5 b)":1,"8.5 c)":1,"8.5 d)":1,"8.6 a)":1,"8.6 b)":1,"8.6 c)":1.25,"8.6 d)":1.5,"8.7 a)":1,"8.7 b)":1,"8.7 c)":1.5,"8.7 d)":1.75,"8.8 a)":1.5,"8.8 b)":1.5,"8.8 c)":2,"8.8 d)":2},"bonus":["8.8 a)","8.8 b)","8.8 c)","8.8 d)"]});
@@ -1292,14 +1292,17 @@ function lignesRacines(racines) {
     ...(r.f === 'x' ? [`\\text{Le facteur } x \\text{ s'annule en } 0`]
       : r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`]
       : [`${r.f} = 0 \\iff x = ${r.tex}`]),
-    ...(r.a !== undefined ? lignesSigneAffine(r.a, r.b) : [])]);
+    ...(r.a !== undefined && r.f !== 'x' ? lignesSigneAffine(r.a, r.b) : [])]);
 }
 // etude du signe d'un produit ou d'un quotient : racines, tableau de signes (une ligne), conclusion en intervalles ; g = expression
 function detailSigne(avant, racines, g, op, spec, expr, quotient) {
   const petit = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 30 ? '\\small ' + l : l);
   const lignes = [...avant];
   lignes.push(petit(quotient ? '\\text{Tableau de signes du quotient}' : `\\text{Tableau de signes de } ${expr}`));
-  lignes.push(Detail.tableauSignes(racines.map(r => ({ v: r.v, tex: r.tex, interdit: r.interdit })), g, 'signe'));
+  // tableau complet (une ligne par facteur) quand chaque facteur est affine ou un carré ; sinon une seule ligne de signe
+  lignes.push(racines.every(r => r.carre || r.a !== undefined)
+    ? Detail.tableauSignesFacteurs(racines.map(r => ({ label: r.f, v: r.v, tex: r.tex, sgn: r.a === undefined ? 1 : Math.sign(r.a), denom: !!r.interdit, carre: !!r.carre })), 'signe')
+    : Detail.tableauSignes(racines.map(r => ({ v: r.v, tex: r.tex, interdit: r.interdit })), g, 'signe'));
   lignes.push('\\text{On cherche les valeurs de } x', `\\text{pour lesquelles ${quotient ? 'le quotient' : "l'expression"} est } ${OP_TEX[op]}\\ 0`);
   racines.filter(r => r.interdit).forEach(r => lignes.push(petit(`\\text{La valeur interdite } ${r.tex} \\text{ est exclue dans tous les cas}`)));
   lignes.push(`S = ${formaterIntervalleSpec(spec)}`);
@@ -1606,7 +1609,7 @@ const generateurs = [
     const symb = { '>':'\\gt', '<':'\\lt', '>=':'\\geqslant', '<=':'\\leqslant' }[op];
     return { enonce: `\\(x^2-${a*a}${symb} 0\\)`, intervalleSpec: spec,
       detail: detailSigne([`x^2-${a*a} = (x-${a})(x+${a})`, `x-${a} = 0 \\iff x = ${a}`, ...lignesSigneAffine(1, -a), `x+${a} = 0 \\iff x = ${-a}`, ...lignesSigneAffine(1, a)],
-        [{ v: -a, tex: `${-a}` }, { v: a, tex: `${a}` }], x => x*x - a*a, op, spec, `(x-${a})(x+${a})`, false) };
+        [{ f: `x+${a}`, v: -a, tex: `${-a}`, a: 1, b: a }, { f: `x-${a}`, v: a, tex: `${a}`, a: 1, b: -a }], x => x*x - a*a, op, spec, `(x-${a})(x+${a})`, false) };
   }},
   {id:"8.8 b)", type:"intervalle", texteLibre:true, gen: () => {
     // facteur toujours positif (carre parfait) : ne change jamais de signe, s'annule sans "passer"
@@ -1616,7 +1619,7 @@ const generateurs = [
       [{valeur:xc,interdit:false},{valeur:x1,interdit:false}], '>');
     return { enonce: `\\((${xMoinsTexte(xc)})^2(${affineTexte(p,q)})\\gt 0\\)`, intervalleSpec: spec,
       detail: (() => {
-        const R = [{ f: `(${xMoinsTexte(xc)})^2`, v: xc, tex: `${xc}` }, { f: affineTexte(p, q), v: x1, tex: `${x1}`, a: p, b: q }];
+        const R = [{ f: `(${xMoinsTexte(xc)})^2`, v: xc, tex: `${xc}`, carre: true }, { f: affineTexte(p, q), v: x1, tex: `${x1}`, a: p, b: q }];
         return detailSigne(lignesRacines(R), R, produitAffine([{a:1,b:-xc,carre:true},{a:p,b:q}]), '>', spec, `(${xMoinsTexte(xc)})^2(${affineTexte(p, q)})`, false);
       })() };
   }},
@@ -1660,8 +1663,8 @@ const generateurs = [
         const final = formaterReponseBrut({ type: 'discussionParametre', seuilFixe: s, parametre: 'm', op });
         return { lignes: [`${expr} ${OP_TEX[op]} 0`, 'x-m = 0 \\iff x = m', 'x-m > 0', '\\iff x > m', `${facteur} = 0 \\iff x = ${s}`, ...lignesSigneAffine(1, -s),
           `\\text{Tableau de signes de } ${expr}`,
-          `m \\lt ${s}\\ :`, Detail.tableauSignes([{ v: s - 1, tex: 'm' }, { v: s, tex: String(s) }], x => (x - (s - 1)) * (x - s)),
-          `m \\gt ${s}\\ :`, Detail.tableauSignes([{ v: s, tex: String(s) }, { v: s + 1, tex: 'm' }], x => (x - s) * (x - (s + 1))),
+          `m \\lt ${s}\\ :`, Detail.tableauSignesFacteurs([{ label: 'x-m', v: s - 1, tex: 'm', sgn: 1 }, { label: facteur, v: s, tex: String(s), sgn: 1 }]),
+          `m \\gt ${s}\\ :`, Detail.tableauSignesFacteurs([{ label: 'x-m', v: s + 1, tex: 'm', sgn: 1 }, { label: facteur, v: s, tex: String(s), sgn: 1 }]),
           `m = ${s}\\ :\\ (x-${s})^2 ${OP_TEX[op]} 0`,
           '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles l'expression est } ${OP_TEX[op]}\\ 0`,
           final], final };

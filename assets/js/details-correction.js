@@ -66,6 +66,36 @@ const Detail = (() => {
     return `${n >= 3 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * n + 3)}} ${haut.join(' & ')} \\\\ \\hline ${bas.join(' & ')} \\end{array}`;
   };
 
+  // tableau de signes COMPLET d'un produit ou d'un quotient : une ligne par facteur, puis la ligne du produit (ou du quotient)
+  // (David, 20/10/2026 : « un tableau complet avec toutes les lignes »). facteurs = [{label: LaTeX du facteur, v: sa racine (nombre),
+  // tex: la racine en LaTeX, sgn: signe du facteur à droite de sa racine (+1 si a > 0, -1 si a < 0), denom: facteur du dénominateur
+  // (double barre sur la ligne finale), carre: facteur élevé au carré (toujours positif)}] ; 0 sous la racine de chaque facteur,
+  // 0 ou double barre sous cette racine sur la ligne finale.
+  const tableauSignesFacteurs = (facteurs, etiquetteFinale) => {
+    const colonnes = [];
+    facteurs.forEach(f => { if (!colonnes.some(c => Math.abs(c.v - f.v) < 1e-9)) colonnes.push({ v: f.v, tex: f.tex }); });
+    colonnes.sort((p, q) => p.v - q.v);
+    const k = colonnes.length;
+    const rang = f => colonnes.findIndex(c => Math.abs(c.v - f.v) < 1e-9);
+    const signeSur = (f, i) => (f.carre ? 1 : (i > rang(f) ? f.sgn : -f.sgn));      // signe du facteur sur l'intervalle i (0 à k)
+    const sym = s => (s > 0 ? '+' : '-');
+    const ligne = (etiquette, signeIntervalle, marque) => {
+      const c = [etiquette, ''];
+      for (let i = 0; i < k; i++) c.push(signeIntervalle(i), marque(i));
+      c.push(signeIntervalle(k), '');
+      return c.join(' & ');
+    };
+    const lignes = facteurs.map(f => ligne(f.label, i => sym(signeSur(f, i)), i => (i === rang(f) ? '0' : '')));
+    lignes.push(ligne(`\\text{${etiquetteFinale || 'signe'}}`, i => sym(facteurs.reduce((p, f) => p * signeSur(f, i), 1)), i => {
+      const ici = facteurs.filter(f => rang(f) === i);
+      return ici.some(f => f.denom) ? '\\Vert' : (ici.length ? '0' : '');
+    }));
+    const haut = ['x', '-\\infty'];
+    colonnes.forEach(c => haut.push('', c.tex));
+    haut.push('', '+\\infty');
+    return `${k >= 3 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * k + 3)}} ${haut.join(' & ')} \\\\ \\hline ${lignes.join(' \\\\ \\hline ')} \\end{array}`;
+  };
+
   const ppcm = (u, v) => u * v / pgcdD(u, v);
   // ---- sommes, produits et comparaisons de fractions écrits en ligne (consigne de David, 16/10/2026) ----
   // Écriture en ligne, comme au cahier (consigne de David, 16/10/2026) : 1/2 + 3/7 = 1x7/2x7 + 3x2/7x2 = 7/14 + 6/14 = 13/14
@@ -184,7 +214,7 @@ const Detail = (() => {
     .correction-ligne .details[hidden] { display: none; }`;
   document.head.appendChild(style);
 
-  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, lignesSigneAffine, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
+  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, tableauSignesFacteurs, lignesSigneAffine, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
 })();
 
 function basculerDetails(idx, bouton) {
