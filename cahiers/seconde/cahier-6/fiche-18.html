@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"18.1 a)":0.75,"18.1 b)":1,"18.2 a)":0.75,"18.2 b)":0.75,"18.3 a)":0.75,"18.3 b)":1,"18.3 c)":1,"18.3 d)":1.25,"18.4 a)":0.75,"18.4 b)":0.75,"18.4 c)":1,"18.4 d)":1.25,"18.5 a)":0.5,"18.5 b)":0.75,"18.5 c)":1,"18.5 d)":1.25,"18.6 a)":1.75,"18.6 b)":1.5,"18.6 c)":2,"18.6 d)":2,"18.7 a)":1.5,"18.7 b)":1.5,"18.8 a)":1.25,"18.8 b)":1.25,"18.9 a)":1.25,"18.9 b)":1.75},"bonus":["18.6 a)","18.6 b)","18.6 c)","18.6 d)"]});
@@ -2055,6 +2056,87 @@ function genererBoite(label, depart, nbCrans, pas) {
   return { label, min: f(rMin), q1: f(rQ1), mediane: f(rMed), q3: f(rQ3), max: f(rMax) };
 }
 
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracDP, fracTexte, fracBrute, sommeTermes, fr, ptLigne, quotientBrut } = Detail;
+// decimal a la francaise, zeros inutiles retires : 12.5 -> « 12{,}5 »
+const dfr = (v, nd = 6) => String(Number(Number(v).toFixed(nd))).replace('.', '{,}');
+const pct = (v, nd = 6) => `${dfr(v, nd)}\\,\\%`;
+const pcts = v => (v > 0 ? '+' : '') + pct(v);                  // taux d'evolution : le signe + est ecrit
+const listeT = vals => vals.join('\\,;\\,');
+const OP18 = { '>': '\\gt', '>=': '\\geqslant', '<': '\\lt', '<=': '\\leqslant' };
+const OP18_INV = { '>': '<', '<': '>', '>=': '<=', '<=': '>=' };
+// inequation du premier degre : premiere ligne donnee, puis (si b non nul) « ax op -b », division par a (sens inverse si a < 0), solution, intervalle
+function detailInequation18(premiere, a, c, op, x0, spec, avecEtape) {
+  const opF = a < 0 ? OP18_INV[op] : op, lignes = [premiere];
+  if (avecEtape) lignes.push(`\\iff ${coefXTexte(a)} ${OP18[op]} ${c}`);
+  if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0`, "\\text{donc le sens de l'inégalité change}");
+  lignes.push(`\\iff x ${OP18[opF]} ${c} \\div ${dP(a)}`, `\\iff x ${OP18[opF]} ${x0}`, `S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes, final: formaterIntervalleSpec(spec) };
+}
+// moyenne d'une liste de valeurs : « m = \dfrac{somme}{n} = … »
+function lignesMoyenne18(vals) {
+  const n = vals.length, S = vals.reduce((a, v) => a + v, 0), m = fr(S, n);
+  const brut = `\\dfrac{${sommeTermes(vals.map(v => [v, '']))}}{${n}}`, etape = fracBrute(S, n), fin = fracD(m);
+  const suite = [brut, etape !== brut ? etape : null, fin !== etape ? fin : null].filter(x => x !== null);
+  return { lignes: [`m = ${suite.join(' = ')}`], m };
+}
+// mediane d'une serie triee : rang(s), valeur(s), mediane ; renvoie { lignes, mediane } (fraction)
+function lignesMediane18(tri) {
+  const n = tri.length;
+  if (n % 2 === 1) {
+    const r = (n + 1) / 2;
+    return { lignes: ['\\text{Rang de la médiane :}', `\\dfrac{${n}+1}{2} = ${r}`, `M_{e} = ${tri[r - 1]}`], mediane: fr(tri[r - 1]) };
+  }
+  const r = n / 2, a = tri[r - 1], b = tri[r], med = fr(a + b, 2);
+  const brut = `\\dfrac{${sommeTermes([[a, ''], [b, '']])}}{2}`, etape = fracBrute(a + b, 2), fin = fracD(med);
+  const suite = [brut, etape !== brut ? etape : null, fin !== etape ? fin : null].filter(x => x !== null);
+  return { lignes: ['\\text{Rangs de la médiane :}', `\\dfrac{${n}}{2} = ${r} \\text{ et } ${r}+1 = ${r + 1}`, `M_{e} = ${suite.join(' = ')}`], mediane: med };
+}
+// rang d'un quartile (methode du rang, n k / 4 arrondi a l'entier superieur) : « \dfrac{9}{4} = 2{,}25 \text{ donc le rang est } 3 »
+function ligneRangQuartile18(n, k) {
+  const brut = k === 1 ? `\\dfrac{${n}}{4}` : `\\dfrac{${k}\\times ${n}}{4}`, v = n * k / 4;
+  return `${brut} = ${dfr(v)} \\text{ donc le rang est } ${Math.ceil(v - 1e-9)}`;
+}
+// quartiles Q1 et Q3 d'une serie triee : lignes et valeurs
+function lignesQuartiles18(tri) {
+  const n = tri.length, q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
+  return { lignes: [ligneRangQuartile18(n, 1), `Q_{1} = ${q1}`, ligneRangQuartile18(n, 3), `Q_{3} = ${q3}`], q1, q3 };
+}
+// moyenne ponderee : « \dfrac{v1 x e1 + … }{N} = \dfrac{S}{N} = … » ; termes = [[valeur, effectif]]
+function lignesMoyennePonderee18(termes) {
+  const N = termes.reduce((s, [, e]) => s + e, 0), S = termes.reduce((s, [v, e]) => s + v * e, 0), m = fr(S, N);
+  const brut = `\\dfrac{${termes.map(([v, e]) => `${v}\\times ${e}`).join('+')}}{${N}}`, etape = `\\dfrac{${S}}{${N}}`, fin = fracD(m);
+  const suite = [brut, etape, fin !== etape ? fin : null].filter(x => x !== null);
+  return { lignes: [`N = ${termes.map(([, e]) => e).join('+')} = ${N}`, ptLigne(`m = ${suite.join(' = ')}`)], m, N };
+}
+// moyenne et mediane d'une serie brute : moyenne de la liste donnee, puis serie triee et mediane
+function detailMoyenneMediane18(brut) {
+  const tri = [...brut].sort((a, b) => a - b), M = lignesMoyenne18(brut), D = lignesMediane18(tri);
+  const fin = `\\left(${fracD(M.m)}\\,;\\,${fracD(D.mediane)}\\right)`;
+  return { lignes: ['\\text{Moyenne :}', ...M.lignes, '\\text{Série triée :}', listeT(tri), ...D.lignes, fin], final: fin };
+}
+// diagramme en batons : effectif total, moyenne ponderee, etendue, effectifs cumules, mediane
+function detailBatons18(valeurs, effectifs) {
+  const paires = valeurs.map((v, i) => [v, effectifs[i]]).sort((a, b) => a[0] - b[0]);
+  const P = lignesMoyennePonderee18(paires), N = P.N;
+  const tri = []; paires.forEach(([v, e]) => { for (let i = 0; i < e; i++) tri.push(v); });
+  const D = lignesMediane18(tri), cum = []; let c = 0; paires.forEach(([, e]) => { c += e; cum.push(c); });
+  const etendue = paires[paires.length - 1][0] - paires[0][0];
+  const fin = `\\left(${fracD(P.m)}\\,;\\,${etendue}\\,;\\,${fracD(D.mediane)}\\right)`;
+  return { lignes: ['\\text{On lit les effectifs :}', ...P.lignes, '\\text{Étendue :}', `${paires[paires.length - 1][0]}-${paires[0][0]} = ${etendue}`,
+    '\\text{Effectifs cumulés :}', listeT(cum), ...D.lignes, fin], final: fin };
+}
+// diagramme circulaire : effectif = pourcentage x total, pourcentage = effectif / total x 100
+function detailCirculaire18(valeurs, pourcentages, effectifs, N, i1, i2, iCache) {
+  const fin = `\\left(${effectifs[i1]}\\,;\\,${effectifs[i2]}\\,;\\,${pourcentages[iCache]}\\right)`;
+  return { lignes: [`\\text{Effectif de la valeur } ${valeurs[i1]} \\text{ :}`, `\\dfrac{${pourcentages[i1]}}{100}\\times ${N} = ${effectifs[i1]}`, `\\text{Effectif de la valeur } ${valeurs[i2]} \\text{ :}`, `\\dfrac{${pourcentages[i2]}}{100}\\times ${N} = ${effectifs[i2]}`,
+    `\\text{Pourcentage de la valeur } ${valeurs[iCache]} \\text{ :}`, `\\dfrac{${effectifs[iCache]}}{${N}}\\times 100 = ${pourcentages[iCache]}`, fin], final: fin };
+}
+// lecture d'une boite : minimum, Q1, mediane, Q3, maximum
+function lignesLectureBoite18(s) {
+  return [`\\min = ${s.min} \\quad Q_{1} = ${s.q1} \\quad M_{e} = ${s.mediane}`, `Q_{3} = ${s.q3} \\quad \\max = ${s.max}`];
+}
+
 // ---------- inequations de degre 1 du calcul 18.1 (extraites de l'ancien vivier d'automatismes) : a) ax+b op 0, b) ax op b ----------
 const MODELES_INEQUATION_DEGRE1 = [
   // inequation degre 1, regroupee a 0 : ax+b op 0
@@ -2070,7 +2152,7 @@ const MODELES_INEQUATION_DEGRE1 = [
     const spec = auDessus
       ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
       : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
-    return { enonce:`${affineTexte(a,b)}${opSymb}0`, type:'intervalle', intervalleSpec: spec };
+    return { enonce:`${affineTexte(a,b)}${opSymb}0`, type:'intervalle', intervalleSpec: spec, detail: detailInequation18(`${affineTexte(a,b)} ${opSymb} 0`, a, -b, op, x0, spec, b !== 0) };
   },
   // meme famille, presentee sans regrouper a 0 : ax op b (division directe, attention au signe de a).
   () => {
@@ -2085,7 +2167,7 @@ const MODELES_INEQUATION_DEGRE1 = [
     const spec = auDessus
       ? { type:'intervalles', liste:[{ bas:x0, haut:Infinity, inclusBas:inclus, inclusHaut:false }] }
       : { type:'intervalles', liste:[{ bas:-Infinity, haut:x0, inclusBas:false, inclusHaut:inclus }] };
-    return { enonce:`${coefXTexte(a)}${opSymb}${bDroite}`, type:'intervalle', intervalleSpec: spec };
+    return { enonce:`${coefXTexte(a)}${opSymb}${bDroite}`, type:'intervalle', intervalleSpec: spec, detail: detailInequation18(`${coefXTexte(a)} ${opSymb} ${bDroite}`, a, bDroite, op, x0, spec, false) };
   }
 ];
 
@@ -2117,7 +2199,8 @@ let sens182 = true;
 function tauxEvolution18(hausse) {
   const p = choix(POURCENTAGES_EVOL_SIMPLE), v1 = baseDivisiblePar(p);
   const v2 = arrondi(hausse ? v1 + p * v1 / 100 : v1 - p * v1 / 100);
-  return { enonce:`Valeur initiale \\(${v1}\\), valeur finale \\(${v2}\\)`, reponsePourcent: hausse ? p : -p, exigerPourcent: true };
+  return { enonce:`Valeur initiale \\(${v1}\\), valeur finale \\(${v2}\\)`, reponsePourcent: hausse ? p : -p, exigerPourcent: true,
+    detail: { lignes: [`\\dfrac{${v2}-${v1}}{${v1}} = ${fracBrute(v2-v1, v1)} = ${dfr((v2-v1)/v1)} = ${pcts(hausse ? p : -p)}`], final: pcts(hausse ? p : -p) } };
 }
 // clavier d'un taux d'evolution : chiffres, signe moins, %
 function genererClavierPourcentage(idx) {
@@ -2151,12 +2234,12 @@ const generateurs = [
   {id:"18.3 a)", type:"num", texteLibre:true, gen: () => {
     const brut = tirerDistincts(5, 0, 20);
     const { moyenne, mediane } = calculerMoyenneMediane(brut);
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})`, detail: detailMoyenneMediane18(brut) };
   }},
   {id:"18.3 b)", type:"num", texteLibre:true, gen: () => {
     const brut = tirerDistincts(6, 0, 20);
     const { moyenne, mediane } = calculerMoyenneMediane(brut);
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})`, detail: detailMoyenneMediane18(brut) };
   }},
   {id:"18.3 c)", type:"num", texteLibre:true, gen: () => {
     let brut;
@@ -2166,7 +2249,7 @@ const generateurs = [
       brut = [...s];
     } while (!brut.some((v) => v < 0));   // au moins une valeur negative (c'est ce qui rend ce cas plus delicat)
     const { moyenne, mediane } = calculerMoyenneMediane(brut);
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})` };
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${moyenne};${mediane})`, detail: detailMoyenneMediane18(brut) };
   }},
   {id:"18.3 d)", type:"num", texteLibre:true, gen: () => {
     let M, v1, v2, v3, v4, v5;
@@ -2175,7 +2258,9 @@ const generateurs = [
       v1 = alea(1, 20); v2 = alea(1, 20); v3 = alea(1, 20); v4 = alea(1, 20);
       v5 = 5 * M - (v1 + v2 + v3 + v4);
     } while (v5 < -10 || v5 > 30);
-    return { enonce:`Une série statistique de 5 valeurs a pour moyenne \\(${M}\\). Quatre d'entre elles sont \\(${v1}\\,;\\,${v2}\\,;\\,${v3}\\,;\\,${v4}\\). Calculer la cinquième valeur.`, reponse:`${v5}` };
+    const s4 = v1 + v2 + v3 + v4;
+    return { enonce:`Une série statistique de 5 valeurs a pour moyenne \\(${M}\\). Quatre d'entre elles sont \\(${v1}\\,;\\,${v2}\\,;\\,${v3}\\,;\\,${v4}\\). Calculer la cinquième valeur.`, reponse:`${v5}`,
+      detail: { lignes: [`\\dfrac{${v1}+${v2}+${v3}+${v4}+x}{5} = ${M}`, `\\iff ${v1}+${v2}+${v3}+${v4}+x = 5\\times ${M}`, `\\iff x+${s4} = ${5*M}`, `\\iff x = ${5*M}-${s4} = ${v5}`], final: `${v5}` } };
   }},
 
   // ---------- 17.4 : quartiles (methode du rang, ceil(n*k/4)), etendue et ecart interquartile,
@@ -2187,21 +2272,25 @@ const generateurs = [
     const brut = tirerDistincts(n, 0, 25);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${q1};${q3})` };
+    const Q = lignesQuartiles18(tri), fin = `\\left(${q1}\\,;\\,${q3}\\right)`;
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${q1};${q3})`, detail: { lignes: ['\\text{Série triée :}', listeT(tri), ...Q.lignes, fin], final: fin } };
   }},
   {id:"18.4 b)", type:"num", texteLibre:true, gen: () => {
     const n = 9;
     const brut = tirerDistincts(n, 0, 30);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${q1};${q3})` };
+    const Q = lignesQuartiles18(tri), fin = `\\left(${q1}\\,;\\,${q3}\\right)`;
+    return { enonce:`\\(${brut.join('\\,;\\,')}\\)`, reponse:`(${q1};${q3})`, detail: { lignes: ['\\text{Série triée :}', listeT(tri), ...Q.lignes, fin], final: fin } };
   }},
   {id:"18.4 c)", type:"num", texteLibre:true, gen: () => {
     const n = 12;
     const brut = tirerDistincts(n, 0, 40);
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
-    return { enonce:`Calculer l'écart interquartile de la série suivante : \\(${brut.join('\\,;\\,')}\\).`, reponse:`${q3 - q1}` };
+    const Q = lignesQuartiles18(tri);
+    return { enonce:`Calculer l'écart interquartile de la série suivante : \\(${brut.join('\\,;\\,')}\\).`, reponse:`${q3 - q1}`,
+      detail: { lignes: ['\\text{Série triée :}', listeT(tri), ...Q.lignes, `Q_{3}-Q_{1} = ${q3}-${q1} = ${q3 - q1}`], final: `${q3 - q1}` } };
   }},
   {id:"18.4 d)", type:"num", texteLibre:true, gen: () => {
     const n = 11;
@@ -2209,7 +2298,9 @@ const generateurs = [
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
     const etendue = tri[n - 1] - tri[0];
-    return { enonce:`Calculer l'étendue et l'écart interquartile de la série suivante : \\(${brut.join('\\,;\\,')}\\).`, reponse:`(${etendue};${q3 - q1})` };
+    const Q = lignesQuartiles18(tri), fin = `\\left(${etendue}\\,;\\,${q3 - q1}\\right)`;
+    return { enonce:`Calculer l'étendue et l'écart interquartile de la série suivante : \\(${brut.join('\\,;\\,')}\\).`, reponse:`(${etendue};${q3 - q1})`,
+      detail: { lignes: ['\\text{Série triée :}', listeT(tri), '\\text{Étendue :}', `${tri[n - 1]}-${tri[0]} = ${etendue}`, ...Q.lignes, `Q_{3}-Q_{1} = ${q3}-${q1} = ${q3 - q1}`, fin], final: fin } };
   }},
 
   // ---------- 17.5 : moyenne ponderee a partir d'un tableau d'effectifs (a/b) ou de frequences
@@ -2225,16 +2316,16 @@ const generateurs = [
     const N = choix([12, 15, 16, 18]);
     const effectifs = repartirEffectifs(4, N, 1);
     const somme = valeurs.reduce((s, v, i) => s + v * effectifs[i], 0);
-    const moyenne = fracSimplifiee(somme, N);
-    return { enonce: tableauDonnees('Valeur', valeurs, 'Effectif', effectifs), reponse: moyenne };
+    const moyenne = fracSimplifiee(somme, N), P = lignesMoyennePonderee18(valeurs.map((v, i) => [v, effectifs[i]]));
+    return { enonce: tableauDonnees('Valeur', valeurs, 'Effectif', effectifs), reponse: moyenne, detail: { lignes: P.lignes, final: fracD(P.m) } };
   }},
   {id:"18.5 b)", type:"num", texteLibre:true, gen: () => {
     const valeurs = tirerDistincts(5, 0, 20);
     const N = choix([15, 16, 18, 20]);
     const effectifs = repartirEffectifs(5, N, 1);
     const somme = valeurs.reduce((s, v, i) => s + v * effectifs[i], 0);
-    const moyenne = fracSimplifiee(somme, N);
-    return { enonce: tableauDonnees('Valeur', valeurs, 'Effectif', effectifs), reponse: moyenne };
+    const moyenne = fracSimplifiee(somme, N), P = lignesMoyennePonderee18(valeurs.map((v, i) => [v, effectifs[i]]));
+    return { enonce: tableauDonnees('Valeur', valeurs, 'Effectif', effectifs), reponse: moyenne, detail: { lignes: P.lignes, final: fracD(P.m) } };
   }},
   {id:"18.5 c)", type:"num", texteLibre:true, gen: () => {
     const valeurs = tirerDistincts(4, 0, 20);
@@ -2243,16 +2334,32 @@ const generateurs = [
     const somme = valeurs.reduce((s, v, i) => s + v * numerateurs[i], 0);
     const moyenne = fracSimplifiee(somme, D);
     const ligneFreq = numerateurs.map(n => fracSimplifiee(n, D));
-    return { enonce: tableauDonnees('Valeur', valeurs, 'Fréquence', ligneFreq), reponse: moyenne };
+    const dec = numerateurs.map(n => dfr(n / D));
+    const termes = valeurs.map((v, i) => `${v}\\times ${dec[i]}`).join('+'), produits = valeurs.map((v, i) => dfr(v * numerateurs[i] / D)).join('+');
+    return { enonce: tableauDonnees('Valeur', valeurs, 'Fréquence', ligneFreq), reponse: moyenne,
+      detail: { lignes: [ptLigne(`m = ${termes}`), ptLigne(`= ${produits} = ${dfr(somme / D)}${fracD(fr(somme, D)) !== dfr(somme / D) ? ' = ' + fracD(fr(somme, D)) : ''}`)], final: fracD(fr(somme, D)) } };
   }},
   {id:"18.5 d)", type:"num", texteLibre:true, gen: () => {
-    const valeurs = tirerDistincts(4, 0, 20);
-    const N = choix([12, 15, 16, 18]);
-    const [e1, e2, e3, e4] = repartirEffectifs(4, N, 1);
-    const somme = valeurs[0]*e1 + valeurs[1]*e2 + valeurs[2]*e3 + valeurs[3]*e4;
+    // la moyenne doit differer de la valeur dont l'effectif est inconnu : sinon l'equation est vraie pour tout effectif (exercice indetermine)
+    let valeurs, N, e1, e2, e3, e4, somme;
+    do {
+      valeurs = tirerDistincts(4, 0, 20);
+      N = choix([12, 15, 16, 18]);
+      [e1, e2, e3, e4] = repartirEffectifs(4, N, 1);
+      somme = valeurs[0]*e1 + valeurs[1]*e2 + valeurs[2]*e3 + valeurs[3]*e4;
+    } while (somme === valeurs[3] * N);
     const moyenne = fracSimplifiee(somme, N);
     const tableau = tableauDonnees('Valeur', valeurs, 'Effectif', [e1, e2, e3, '?']);
-    return { enonce:`${tableau}Sachant que la moyenne de cette série vaut \\(${moyenne}\\), calculer l'effectif de la valeur \\(${valeurs[3]}\\) (indiqué par un « ? » dans le tableau).`, reponse:`${e4}` };
+    // equation (S0 + V x) / (N0 + x) = M, x effectif inconnu
+    const S0 = valeurs[0]*e1 + valeurs[1]*e2 + valeurs[2]*e3, N0 = e1 + e2 + e3, V = valeurs[3], M = fr(somme, N);
+    const Mn0 = math.multiply(M, fr(N0)), Vm = math.subtract(fr(V), M), reste = math.subtract(Mn0, fr(S0));
+    const coefX = f => (f.n === 1 && f.d === 1 ? (f.s < 0 ? '-x' : 'x') : `${fracD(f)}x`), fois = (f, t) => (f.n === 1 && f.d === 1 && f.s > 0 ? t : `${fracDP(f)}\\times ${t}`);
+    const gauche = `${S0}${V > 0 ? '+' + coefX(fr(V)) : ''}`;
+    const num = `${valeurs[0]}\\times ${e1}+${valeurs[1]}\\times ${e2}+${valeurs[2]}\\times ${e3}${V > 0 ? '+' + coefX(fr(V)) : ''}`;
+    const lignes = [ptLigne(`\\dfrac{${num}}{${e1}+${e2}+${e3}+x} = ${fracD(M)}`), ptLigne(`\\iff ${gauche} = ${fois(M, `(${N0}+x)`)}`),
+      ptLigne(`\\iff ${gauche} = ${fracD(Mn0)}+${coefX(M)}`), ptLigne(`\\iff ${coefX(Vm)} = ${fracD(reste)}`),
+      Vm.n === 1 && Vm.d === 1 && Vm.s > 0 ? `\\iff x = ${e4}` : `\\iff x = ${fracD(reste)} \\div ${fracDP(Vm)} = ${e4}`];
+    return { enonce:`${tableau}Sachant que la moyenne de cette série vaut \\(${moyenne}\\), calculer l'effectif de la valeur \\(${valeurs[3]}\\) (indiqué par un « ? » dans le tableau).`, reponse:`${e4}`, detail: { lignes, final: `${e4}` } };
   }},
 
   // ---------- 17.6 : calculs avances, tous sur des series DISCRETES (les series groupees en
@@ -2269,20 +2376,26 @@ const generateurs = [
     const N = choix([20, 24, 25, 30]);
     const [n1, n2] = repartirEffectifs(2, N, 6);
     const M1 = alea(5, 18), M2 = alea(5, 18);
-    const moyenne = fracSimplifiee(n1*M1 + n2*M2, N);
-    return { enonce:`Une série statistique de \\(${n1}\\) valeurs a pour moyenne \\(${M1}\\). Une seconde série de \\(${n2}\\) valeurs a pour moyenne \\(${M2}\\). Calculer la moyenne de la série obtenue en réunissant les deux séries.`, reponse: moyenne };
+    const moyenne = fracSimplifiee(n1*M1 + n2*M2, N), S = n1*M1 + n2*M2, brut = `\\dfrac{${n1}\\times ${M1}+${n2}\\times ${M2}}{${n1}+${n2}}`, m = fr(S, N);
+    const suite = [brut, `\\dfrac{${S}}{${N}}`, fracD(m) !== `\\dfrac{${S}}{${N}}` ? fracD(m) : null].filter(x => x !== null);
+    return { enonce:`Une série statistique de \\(${n1}\\) valeurs a pour moyenne \\(${M1}\\). Une seconde série de \\(${n2}\\) valeurs a pour moyenne \\(${M2}\\). Calculer la moyenne de la série obtenue en réunissant les deux séries.`, reponse: moyenne,
+      detail: { lignes: [`m = ${suite.join(' = ')}`], final: fracD(m) } };
   }},
   {id:"18.6 b)", type:"num", texteLibre:true, gen: () => {
     const M = alea(10, 60), s = alea(1, 6);
     const valeurs = melanger([M-s, M-s, M+s, M+s]);
-    return { enonce:`On considère la série statistique \\(${valeurs.join('\\,;\\,')}\\). Calculer l'écart type de cette série.`, reponse:`${s}` };
+    const ecarts = valeurs.map(v => `${dP(v - M)}^{2}`).join('+');
+    return { enonce:`On considère la série statistique \\(${valeurs.join('\\,;\\,')}\\). Calculer l'écart type de cette série.`, reponse:`${s}`,
+      detail: { lignes: [ptLigne(`m = \\dfrac{${sommeTermes(valeurs.map(v => [v, '']))}}{4} = ${M}`), ptLigne(`V = \\dfrac{${ecarts}}{4} = \\dfrac{${4*s*s}}{4} = ${s*s}`), `\\sigma = \\sqrt{${s*s}} = ${s}`], final: `${s}` } };
   }},
   {id:"18.6 c)", type:"num", texteLibre:true, gen: () => {
     const M = alea(5, 20), S = alea(2, 8);
     const k = choix([2, 3, 4, -2, -3]);
     const c = entierSigne(1, 10);
-    const nouvelleMoyenne = k*M + c, nouvelEcart = Math.abs(k) * S;
-    return { enonce:`Une série statistique a pour moyenne \\(${M}\\) et écart type \\(${S}\\). On multiplie chaque valeur de cette série par \\(${k}\\), puis on ajoute \\(${c}\\) à chaque résultat obtenu. Donner la moyenne et l'écart type de la nouvelle série.`, reponse:`(${nouvelleMoyenne};${nouvelEcart})` };
+    const nouvelleMoyenne = k*M + c, nouvelEcart = Math.abs(k) * S, fin = `\\left(${nouvelleMoyenne}\\,;\\,${nouvelEcart}\\right)`;
+    return { enonce:`Une série statistique a pour moyenne \\(${M}\\) et écart type \\(${S}\\). On multiplie chaque valeur de cette série par \\(${k}\\), puis on ajoute \\(${c}\\) à chaque résultat obtenu. Donner la moyenne et l'écart type de la nouvelle série.`, reponse:`(${nouvelleMoyenne};${nouvelEcart})`,
+      detail: { lignes: ['\\text{Moyenne :}', `${k}\\times ${M} ${dPlus(c)} = ${k*M} ${dPlus(c)} = ${nouvelleMoyenne}`, "\\text{Ajouter un nombre ne change pas l'écart type,}", '\\text{Multiplier par } k \\text{ multiplie par } |k|',
+        `|${k}|\\times ${S} = ${Math.abs(k)}\\times ${S} = ${nouvelEcart}`, fin], final: fin } };
   }},
   {id:"18.6 d)", type:"num", texteLibre:true, gen: () => {
     const n = choix([7, 9, 11]);
@@ -2290,8 +2403,10 @@ const generateurs = [
     const tri = [...brut].sort((a, b) => a - b);
     const q1 = tri[rangQuartile(n, 1) - 1], q3 = tri[rangQuartile(n, 3) - 1];
     const mediane = tri[(n - 1) / 2];
-    const c = entierSigne(1, 10);
-    return { enonce:`Une série statistique de ${n} valeurs est donnée par \\(${brut.join('\\,;\\,')}\\). On ajoute \\(${c}\\) à chacune de ses valeurs pour former une nouvelle série. Sans retrier ni recalculer toute la série, donner la médiane et l'écart interquartile de cette nouvelle série.`, reponse:`(${mediane + c};${q3 - q1})` };
+    const c = entierSigne(1, 10), Q = lignesQuartiles18(tri), fin = `\\left(${mediane + c}\\,;\\,${q3 - q1}\\right)`;
+    return { enonce:`Une série statistique de ${n} valeurs est donnée par \\(${brut.join('\\,;\\,')}\\). On ajoute \\(${c}\\) à chacune de ses valeurs pour former une nouvelle série. Sans retrier ni recalculer toute la série, donner la médiane et l'écart interquartile de cette nouvelle série.`, reponse:`(${mediane + c};${q3 - q1})`,
+      detail: { lignes: ['\\text{Série triée :}', listeT(tri), `M_{e} = ${mediane}`, ...Q.lignes, '\\text{Ajouter un nombre à chaque valeur}', "\\text{l'ajoute aussi à la médiane :}", `${mediane} ${dPlus(c)} = ${mediane + c}`,
+        '\\text{Les écarts entre les valeurs ne changent pas,}', '\\text{donc l\'écart interquartile est inchangé :}', `Q_{3}-Q_{1} = ${q3}-${q1} = ${q3 - q1}`, fin], final: fin } };
   }},
 
   // ---------- 17.7 : meme diagramme en batons utilise pour les trois indicateurs a la fois
@@ -2305,7 +2420,7 @@ const generateurs = [
     const N = k === 4 ? choix([12,16,18]) : choix([16,18,20]);
     const effectifs = repartirEffectifs(k, N, 1);
     const { moyenne, etendue, mediane } = statsDepuisDiagramme(valeurs, effectifs);
-    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`(${moyenne};${etendue};${mediane})` };
+    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`(${moyenne};${etendue};${mediane})`, detail: detailBatons18(valeurs, effectifs) };
   }},
   {id:"18.7 b)", type:"num", texteLibre:true, gen: () => {
     const k = choix([4,5]);
@@ -2313,7 +2428,7 @@ const generateurs = [
     const N = k === 4 ? choix([11,13,15]) : choix([15,17,19]);
     const effectifs = repartirEffectifs(k, N, 1);
     const { moyenne, etendue, mediane } = statsDepuisDiagramme(valeurs, effectifs);
-    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`(${moyenne};${etendue};${mediane})` };
+    return { enonce:`${svgDiagrammeBatons(valeurs, effectifs)}Voici le diagramme en bâtons d'une série statistique (effectif en fonction de la valeur). Calculer la moyenne, l'étendue et la médiane de cette série.`, reponse:`(${moyenne};${etendue};${mediane})`, detail: detailBatons18(valeurs, effectifs) };
   }},
 
   // ---------- 17.8 : diagramme circulaire, pourcentage affiche sur chaque secteur. Comme pour
@@ -2333,7 +2448,8 @@ const generateurs = [
     const pourcentages = parts.map(p => p * (100 / D));
     const effectifs = parts.map(p => p * M);
     const [i1, i2, iCache] = melanger([...Array(k).keys()]).slice(0, 3);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`(${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]})` };
+    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`(${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]})`,
+      detail: detailCirculaire18(valeurs, pourcentages, effectifs, N, i1, i2, iCache) };
   }},
   {id:"18.8 b)", type:"num", texteLibre:true, gen: () => {
     const D = choix([4,5,10]);
@@ -2345,7 +2461,8 @@ const generateurs = [
     const pourcentages = parts.map(p => p * (100 / D));
     const effectifs = parts.map(p => p * M);
     const [i1, i2, iCache] = melanger([...Array(k).keys()]).slice(0, 3);
-    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`(${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]})` };
+    return { enonce:`${svgDiagrammeCirculaire(valeurs, pourcentages, N, iCache)}Calculer les effectifs associés aux valeurs \\(${valeurs[i1]}\\) et \\(${valeurs[i2]}\\), puis le pourcentage associé à la valeur \\(${valeurs[iCache]}\\) (masqué par un « ? », sachant que son effectif vaut \\(${effectifs[iCache]}\\)).`, reponse:`(${effectifs[i1]};${effectifs[i2]};${pourcentages[iCache]})`,
+      detail: detailCirculaire18(valeurs, pourcentages, effectifs, N, i1, i2, iCache) };
   }},
 
   // ---------- 17.9 : diagramme en boite -- meme principe qu'en 17.7/17.8 (David, 2026-09-20) : UN
@@ -2358,26 +2475,31 @@ const generateurs = [
     const pas = 5, nbCrans = choix([7,8,9]);
     const s = genererBoite('', 0, nbCrans, pas);
     const etendue = s.max - s.min, ecart = s.q3 - s.q1;
-    const xmax = nbCrans * pas;
-    return { enonce:`${svgDiagrammeBoite([s], -pas, xmax, pas)}Le diagramme en boîte ci-dessus représente une série statistique. Donner l'étendue de cette série, son écart interquartile \\(Q_3-Q_1\\), puis sa médiane.`, reponse:`(${etendue};${ecart};${s.mediane})` };
+    const xmax = nbCrans * pas, fin = `\\left(${etendue}\\,;\\,${ecart}\\,;\\,${s.mediane}\\right)`;
+    return { enonce:`${svgDiagrammeBoite([s], -pas, xmax, pas)}Le diagramme en boîte ci-dessus représente une série statistique. Donner l'étendue de cette série, son écart interquartile \\(Q_3-Q_1\\), puis sa médiane.`, reponse:`(${etendue};${ecart};${s.mediane})`,
+      detail: { lignes: ['\\text{On lit sur le diagramme :}', ...lignesLectureBoite18(s), '\\text{Étendue :}', `${s.max}-${s.min} = ${etendue}`, '\\text{Écart interquartile :}', `Q_{3}-Q_{1} = ${s.q3}-${s.q1} = ${ecart}`, `M_{e} = ${s.mediane}`, fin], final: fin } };
   }},
   {id:"18.9 b)", type:"num", texteLibre:true, margeLecture:0.2, gen: () => {
     const pas = 5, nbCrans = choix([8,9,10]);
     const sA = genererBoite('Série A', 0, nbCrans, pas);
     const sB = genererBoite('Série B', 0, nbCrans, pas);
     const xmax = nbCrans * pas;
-    const ecartA = sA.q3 - sA.q1, ecartB = sB.q3 - sB.q1;
-    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner la médiane et l'écart interquartile de la série A, puis la médiane et l'écart interquartile de la série B.`, reponse:`(${sA.mediane};${ecartA};${sB.mediane};${ecartB})` };
+    const ecartA = sA.q3 - sA.q1, ecartB = sB.q3 - sB.q1, fin = `\\left(${sA.mediane}\\,;\\,${ecartA}\\,;\\,${sB.mediane}\\,;\\,${ecartB}\\right)`;
+    return { enonce:`${svgDiagrammeBoite([sA, sB], -pas, xmax, pas)}Les diagrammes en boîte ci-dessus représentent deux séries statistiques, notées A et B, sur un même axe. Donner la médiane et l'écart interquartile de la série A, puis la médiane et l'écart interquartile de la série B.`, reponse:`(${sA.mediane};${ecartA};${sB.mediane};${ecartB})`,
+      detail: { lignes: ['\\text{Série A :}', ...lignesLectureBoite18(sA), `Q_{3}-Q_{1} = ${sA.q3}-${sA.q1} = ${ecartA}`, '\\text{Série B :}', ...lignesLectureBoite18(sB), `Q_{3}-Q_{1} = ${sB.q3}-${sB.q1} = ${ecartB}`, fin], final: fin } };
   }}
 ];
 
 
 function genererExercices() {
   sens182 = alea(0, 1) === 1;
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -3708,7 +3830,7 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

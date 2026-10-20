@@ -336,6 +336,11 @@ async function controlerDansLaPage(opts) {
     }
     // deux droites parallèles distinctes : aucun point d'intersection
     if (e.type === 'paire' && e.aucunPoint) return F === "\\text{aucun point d'intersection}" ? 'ok' : 'faux';
+    // tableau croisé à compléter : « effectif de A \text{ et } effectif de B »
+    if (e.type === 'tableauCroiseRempli' && e.tcr) {
+      const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/), att = e.tcr.aCompleter.map(({ i, j }) => e.tcr.cellules[i][j]);
+      return m && att.length === 2 && Number(m[1]) === att[0] && Number(m[2]) === att[1] ? 'ok' : 'faux';
+    }
     // tableau de programme de calcul : « image \text{ et } antécédent »
     if (e.type === 'tableauProgramme') {
       const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/);
@@ -746,7 +751,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         if (!inp) {   // tableau de signes (widget) : seuils faux et cases remplies d'un « + »
           document.querySelectorAll('[id^="cs-seuil-' + i + '-"]').forEach((el) => { el.value = '999'; });
           document.querySelectorAll('[id^="cs-cell-' + i + '-"]').forEach((el) => { el.textContent = '+'; });
-          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="se-"][id$="-' + i + '"], [id^="tp-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });
+          document.querySelectorAll('[id^="tc-"][id$="-' + i + '"], [id^="tc-' + i + '-"], [id^="se-"][id$="-' + i + '"], [id^="tp-"][id$="-' + i + '"]').forEach((el) => { el.value = '999'; });
           document.querySelectorAll('[id^="tv-x-' + i + '-"], [id^="tv-y-' + i + '-"]').forEach((el) => { el.value = '999'; });   // tableau de variations
           document.querySelectorAll('[id^="tv-fleche-' + i + '-"]').forEach((el) => { el.textContent = '↗'; });   // tableau croisé ou schéma d'évolution à compléter
           continue;

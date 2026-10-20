@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"19.1 a)":0.75,"19.1 b)":0.75,"19.2 a)":0.75,"19.2 b)":0.75,"19.3 a)":1.25,"19.3 b)":1.25,"19.4 a)":1.5,"19.4 b)":1.5,"19.5 a)":1,"19.5 b)":1,"19.6 a)":1,"19.6 b)":1,"19.6 c)":1.25,"19.6 d)":1.25,"19.7 a)":2,"19.7 b)":2,"19.8 a)":1.75,"19.8 b)":1.75},"bonus":["19.7 a)","19.7 b)","19.8 a)","19.8 b)"]});
@@ -2062,6 +2063,56 @@ function tableauCroiseHTML(nomsLignes, nomsColonnes, cellules, masquer, optionsT
   return html;
 }
 
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracDP, fracTexte, fracBrute, sommeTermes, fr, ptLigne, lignesSomme, produitFrac } = Detail;
+// decimal a la francaise, zeros inutiles retires : 12.5 -> « 12{,}5 »
+const dfr = (v, nd = 6) => String(Number(Number(v).toFixed(nd))).replace('.', '{,}');
+const pct = (v, nd = 6) => `${dfr(v, nd)}\\,\\%`;
+const pcts = v => (v > 0 ? '+' : '') + pct(v);                  // taux d'evolution : le signe + est ecrit
+const listeT = vals => vals.join('\\,;\\,');
+const classeT = ([b0, b1]) => `[${b0}\\,;\\,${b1}[`;
+// effectif total et moyenne d'une serie groupee en classes (chaque classe est representee par son centre) ; renvoie { lignes, N, m }
+function lignesClasses19(classes, effectifs) {
+  const centres = classes.map(([b0, b1]) => (b0 + b1) / 2), N = effectifs.reduce((a, e) => a + e, 0), S = centres.reduce((s, c, i) => s + c * effectifs[i], 0), m = fr(S, N);
+  const brut = `\\dfrac{${centres.map((c, i) => `${c}\\times ${effectifs[i]}`).join('+')}}{${N}}`, etape = `\\dfrac{${S}}{${N}}`, fin = fracD(m);
+  const suite = [brut, etape, fin !== etape ? fin : null].filter(x => x !== null);
+  return { lignes: [`N = ${effectifs.join('+')} = ${N}`, '\\text{Chaque classe est représentée par son centre :}', listeT(centres), ptLigne(`m = ${suite.join(' = ')}`)], N, m };
+}
+// effectifs cumules, classe mediane : lignes et indices
+function lignesCumuls19(classes, effectifs, iCible) {
+  const N = effectifs.reduce((a, e) => a + e, 0), cumul = []; let acc = 0; effectifs.forEach(e => { acc += e; cumul.push(acc); });
+  const iMed = cumul.findIndex(c => c >= N / 2);
+  const lignes = [`N = ${effectifs.join('+')} = ${N}`, `\\text{Effectif cumulé à la fin de la classe } ${classeT(classes[iCible])} \\text{ :}`, `${effectifs.slice(0, iCible + 1).join('+')} = ${cumul[iCible]}`,
+    '\\text{Effectifs cumulés :}', listeT(cumul), `\\dfrac{${N}}{2} = ${dfr(N / 2)}`, '\\text{La classe médiane est la première classe dont}', "\\text{l'effectif cumulé atteint } \\dfrac{N}{2}",
+    `\\text{Classe médiane : } ${classeT(classes[iMed])}`];
+  return { lignes, cumul: cumul[iCible], borne: classes[iMed][0] };
+}
+// frequence : « \dfrac{a}{b} = fraction reduite »
+function lignesFrequence19(a, b) {
+  const brut = fracBrute(a, b), fin = fracD(fr(a, b));
+  return `${brut}${brut !== fin ? ' = ' + fin : ''}`;
+}
+// produit de trois fractions
+function lignesProduit3(a, b, c, d, e, f) {
+  const n = a * c * e, m = b * d * f, brute = fracBrute(n, m), simple = fracTexte(n, m);
+  return [ptLigne(`${fracBrute(a, b)}\\times ${fracBrute(c, d)}\\times ${fracBrute(e, f)} = \\dfrac{${a}\\times ${c}\\times ${e}}{${b}\\times ${d}\\times ${f}} = ${brute}${brute !== simple ? ' = ' + simple : ''}`)];
+}
+// mediane estimee par interpolation dans la classe mediane (repartition uniforme)
+function detailMedianeClasse19(classes, effectifs, m, mediane) {
+  const N = effectifs.reduce((a, e) => a + e, 0), X = N / 2, cumulAvant = effectifs.slice(0, m).reduce((a, e) => a + e, 0), k = X - cumulAvant, a = classes[m][0], eff = effectifs[m], w = classes[m][1] - a;
+  return { lignes: [`N = ${effectifs.join('+')} = ${N}`, `\\dfrac{${N}}{2} = ${dfr(X)}`, `\\text{Classe médiane : } ${classeT(classes[m])}`,
+    '\\text{Effectif cumulé avant cette classe :}', m === 1 ? `${cumulAvant}` : `${effectifs.slice(0, m).join('+')} = ${cumulAvant}`, '\\text{Rang de la médiane dans la classe :}', `${dfr(X)}-${cumulAvant} = ${k}`,
+    '\\text{Répartition uniforme dans la classe :}', ptLigne(`${a}+\\dfrac{${k}}{${eff}}\\times ${w} = ${a}+${k} = ${mediane}`)], final: `${mediane}` };
+}
+// tableau croise a completer : total de la colonne masquee par soustraction, puis effectif de A par la frequence, puis effectif de B par difference
+function detailTableauCroise19(cellules, j, freqTexte) {
+  const N = cellules.reduce((s, ligne) => s + ligne.reduce((a, v) => a + v, 0), 0), autres = [0, 1, 2].filter(c => c !== j).map(c => cellules[0][c] + cellules[1][c]);
+  const colTot = N - autres[0] - autres[1], a = cellules[0][j], b = cellules[1][j], [fn, fd] = freqTexte.split('/').map(Number);
+  const fin = `${a} \\text{ et } ${b}`;
+  return { lignes: [`\\text{Total de la colonne } ${j + 1} \\text{ :}`, `${N}-${autres[0]}-${autres[1]} = ${colTot}`, '\\text{Effectif de la catégorie A :}', `${fracBrute(fn, fd)}\\times ${colTot} = ${a}`,
+    '\\text{Effectif de la catégorie B :}', `${colTot}-${a} = ${b}`, fin], final: fin };
+}
+
 // ---------- taux d'evolution (19.1), repris de la fiche 10 : pourcentages simples (pgcd(p,100) assez grand pour une base raisonnable) ----------
 const POURCENTAGES_EVOL_SIMPLE = [2,4,5,8,10,12,15,20,25,30,40,50];
 // arrondit a 9 decimales pour eliminer le bruit flottant
@@ -2090,7 +2141,8 @@ let sens191 = true;
 function tauxEvolution19(hausse) {
   const p = choix(POURCENTAGES_EVOL_SIMPLE), v1 = baseDivisiblePar(p);
   const v2 = arrondi(hausse ? v1 + p * v1 / 100 : v1 - p * v1 / 100);
-  return { enonce:`Valeur initiale \\(${v1}\\), valeur finale \\(${v2}\\)`, reponsePourcent: hausse ? p : -p, exigerPourcent: true };
+  return { enonce:`Valeur initiale \\(${v1}\\), valeur finale \\(${v2}\\)`, reponsePourcent: hausse ? p : -p, exigerPourcent: true,
+    detail: { lignes: [`\\dfrac{${v2}-${v1}}{${v1}} = ${fracBrute(v2-v1, v1)} = ${dfr((v2-v1)/v1)} = ${pcts(hausse ? p : -p)}`], final: pcts(hausse ? p : -p) } };
 }
 // clavier d'un taux d'evolution : chiffres, signe moins, %
 function genererClavierPourcentage(idx) {
@@ -2111,15 +2163,18 @@ function genererClavierPourcentage(idx) {
 function fractionTexte(n, d) { const g = pgcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : n + '/' + d; }
 const MODELES_SOMME_FRACTIONS = [
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true }; },
+          { const S = lignesSomme([{s: 1, n: a, d: b}, {s: 1, n: c, d}]);
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true, detail: { lignes: S.lignes, final: S.final } }; } },
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true }; }
+          { const S = lignesSomme([{s: 1, n: a, d: b}, {s: -1, n: c, d}]);
+          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true, detail: { lignes: S.lignes, final: S.final } }; } }
 ];
 const MODELES_PRODUIT_FRACTIONS = [
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true }; },
+          { const P = produitFrac(a, b, c, d);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true, detail: { lignes: P.lignes, final: P.final } }; } },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true }; }
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true, detail: { lignes: lignesProduit3(a, b, c, d, e, f), final: fracTexte(a*c*e, b*d*f) } }; }
 ];
 
 const generateurs = [
@@ -2148,7 +2203,8 @@ const generateurs = [
     const somme = centres.reduce((s,c,i)=>s+c*effectifs[i],0);
     const moyenne = fracSimplifiee(somme, N);
     const labelsClasses = classes.map(([b0,b1]) => `[${b0}\\,;\\,${b1}[`);
-    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs), reponse:`(${N};${moyenne})` };
+    const C = lignesClasses19(classes, effectifs), fin = `\\left(${N}\\,;\\,${fracD(C.m)}\\right)`;
+    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs), reponse:`(${N};${moyenne})`, detail: { lignes: [...C.lignes, fin], final: fin } };
   }},
   {id:"19.3 b)", type:"num", texteLibre:true, gen: () => {
     const w = 10;
@@ -2161,7 +2217,8 @@ const generateurs = [
     const somme = centres.reduce((s,c,i)=>s+c*effectifs[i],0);
     const moyenne = fracSimplifiee(somme, N);
     const labelsClasses = classes.map(([b0,b1]) => `[${b0}\\,;\\,${b1}[`);
-    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs), reponse:`(${N};${moyenne})` };
+    const C = lignesClasses19(classes, effectifs), fin = `\\left(${N}\\,;\\,${fracD(C.m)}\\right)`;
+    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs), reponse:`(${N};${moyenne})`, detail: { lignes: [...C.lignes, fin], final: fin } };
   }},
 
   // ---------- 18.4 : meme lecture que 18.3 (effectif total + moyenne par les centres de classes),
@@ -2176,7 +2233,8 @@ const generateurs = [
     const effectifs = repartirEffectifs(k, N, 1);
     const somme = centres.reduce((s,c,i)=>s+c*effectifs[i],0);
     const moyenne = fracSimplifiee(somme, N);
-    return { enonce: svgHistogramme(classes, effectifs), reponse:`(${N};${moyenne})` };
+    const C = lignesClasses19(classes, effectifs), fin = `\\left(${N}\\,;\\,${fracD(C.m)}\\right)`;
+    return { enonce: svgHistogramme(classes, effectifs), reponse:`(${N};${moyenne})`, detail: { lignes: ["\\text{On lit les effectifs sur l'histogramme :}", ...C.lignes, fin], final: fin } };
   }},
   {id:"19.4 b)", type:"num", texteLibre:true, gen: () => {
     const w = 10;
@@ -2188,7 +2246,8 @@ const generateurs = [
     const effectifs = repartirEffectifs(k, N, 1);
     const somme = centres.reduce((s,c,i)=>s+c*effectifs[i],0);
     const moyenne = fracSimplifiee(somme, N);
-    return { enonce: svgHistogramme(classes, effectifs), reponse:`(${N};${moyenne})` };
+    const C = lignesClasses19(classes, effectifs), fin = `\\left(${N}\\,;\\,${fracD(C.m)}\\right)`;
+    return { enonce: svgHistogramme(classes, effectifs), reponse:`(${N};${moyenne})`, detail: { lignes: ["\\text{On lit les effectifs sur l'histogramme :}", ...C.lignes, fin], final: fin } };
   }},
 
   // ---------- 18.5 : effectifs cumules et classe mediane, a partir d'un tableau de classes (k=5,
@@ -2206,7 +2265,8 @@ const generateurs = [
     const iMed = cumul.findIndex(c => c >= N/2);
     const borneInfMed = classes[iMed][0];
     const labelsClasses = classes.map(([b0,b1]) => `[${b0}\\,;\\,${b1}[`);
-    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `Donner l'effectif cumulé à la fin de la classe \\(${labelsClasses[iCible]}\\), puis la borne inférieure de la classe médiane.`, reponse:`(${cumul[iCible]};${borneInfMed})` };
+    const Cu = lignesCumuls19(classes, effectifs, iCible), fin = `\\left(${cumul[iCible]}\\,;\\,${borneInfMed}\\right)`;
+    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `Donner l'effectif cumulé à la fin de la classe \\(${labelsClasses[iCible]}\\), puis la borne inférieure de la classe médiane.`, reponse:`(${cumul[iCible]};${borneInfMed})`, detail: { lignes: [...Cu.lignes, fin], final: fin } };
   }},
   {id:"19.5 b)", type:"num", texteLibre:true, gen: () => {
     const w = 10, k = 5;
@@ -2220,7 +2280,8 @@ const generateurs = [
     const iMed = cumul.findIndex(c => c >= N/2);
     const borneInfMed = classes[iMed][0];
     const labelsClasses = classes.map(([b0,b1]) => `[${b0}\\,;\\,${b1}[`);
-    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `Donner l'effectif cumulé à la fin de la classe \\(${labelsClasses[iCible]}\\), puis la borne inférieure de la classe médiane.`, reponse:`(${cumul[iCible]};${borneInfMed})` };
+    const Cu = lignesCumuls19(classes, effectifs, iCible), fin = `\\left(${cumul[iCible]}\\,;\\,${borneInfMed}\\right)`;
+    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `Donner l'effectif cumulé à la fin de la classe \\(${labelsClasses[iCible]}\\), puis la borne inférieure de la classe médiane.`, reponse:`(${cumul[iCible]};${borneInfMed})`, detail: { lignes: [...Cu.lignes, fin], final: fin } };
   }},
 
   // ---------- 18.6 : tableau croise de deux variables qualitatives (2 lignes x 3 colonnes,
@@ -2245,7 +2306,9 @@ const generateurs = [
     const freqConditionnelle = fracSimplifiee(cellulesA[jCible], totColonnes[jCible]);
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules);
-    return { enonce: table + `Calculer la fréquence marginale de la colonne « ${noms[jCible]} », puis la fréquence conditionnelle de la catégorie A parmi les individus du « ${noms[jCible]} ».`, reponse:`(${freqMarginale};${freqConditionnelle})` };
+    const fin = `\\left(${fracD(fr(totColonnes[jCible], N))}\\,;\\,${fracD(fr(cellulesA[jCible], totColonnes[jCible]))}\\right)`;
+    return { enonce: table + `Calculer la fréquence marginale de la colonne « ${noms[jCible]} », puis la fréquence conditionnelle de la catégorie A parmi les individus du « ${noms[jCible]} ».`, reponse:`(${freqMarginale};${freqConditionnelle})`,
+      detail: { lignes: ['\\text{Fréquence marginale :}', lignesFrequence19(totColonnes[jCible], N), '\\text{Fréquence conditionnelle :}', lignesFrequence19(cellulesA[jCible], totColonnes[jCible]), fin], final: fin } };
   }},
   {id:"19.6 b)", type:"num", texteLibre:true, gen: () => {
     const N = choix([18,25,28]);
@@ -2259,7 +2322,9 @@ const generateurs = [
     const freqConditionnelle = fracSimplifiee(cellulesB[jCible], totColonnes[jCible]);
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules);
-    return { enonce: table + `Calculer la fréquence marginale de la colonne « ${noms[jCible]} », puis la fréquence conditionnelle de la catégorie B parmi les individus du « ${noms[jCible]} ».`, reponse:`(${freqMarginale};${freqConditionnelle})` };
+    const fin = `\\left(${fracD(fr(totColonnes[jCible], N))}\\,;\\,${fracD(fr(cellulesB[jCible], totColonnes[jCible]))}\\right)`;
+    return { enonce: table + `Calculer la fréquence marginale de la colonne « ${noms[jCible]} », puis la fréquence conditionnelle de la catégorie B parmi les individus du « ${noms[jCible]} ».`, reponse:`(${freqMarginale};${freqConditionnelle})`,
+      detail: { lignes: ['\\text{Fréquence marginale :}', lignesFrequence19(totColonnes[jCible], N), '\\text{Fréquence conditionnelle :}', lignesFrequence19(cellulesB[jCible], totColonnes[jCible]), fin], final: fin } };
   }},
   {id:"19.6 c)", type:"num", texteLibre:true, gen: () => {
     const N = choix([20,24,30]);
@@ -2273,7 +2338,9 @@ const generateurs = [
     const freqConditionnelleA = fracSimplifiee(cellulesA[jCible], totColonnes[jCible]);
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules);
-    return { enonce: table + `Quelle fréquence des individus appartiennent à la catégorie A ? Quelle fréquence des individus du « ${noms[jCible]} » appartiennent à la catégorie A ?`, reponse:`(${freqMarginaleA};${freqConditionnelleA})` };
+    const fin = `\\left(${fracD(fr(totA, N))}\\,;\\,${fracD(fr(cellulesA[jCible], totColonnes[jCible]))}\\right)`;
+    return { enonce: table + `Quelle fréquence des individus appartiennent à la catégorie A ? Quelle fréquence des individus du « ${noms[jCible]} » appartiennent à la catégorie A ?`, reponse:`(${freqMarginaleA};${freqConditionnelleA})`,
+      detail: { lignes: ['\\text{Parmi tous les individus :}', lignesFrequence19(totA, N), '\\text{Parmi les individus de ce groupe :}', lignesFrequence19(cellulesA[jCible], totColonnes[jCible]), fin], final: fin } };
   }},
   {id:"19.6 d)", type:"num", texteLibre:true, gen: () => {
     const N = choix([18,25,28]);
@@ -2287,7 +2354,9 @@ const generateurs = [
     const freqCondLigne = fracSimplifiee(cellulesB[jCible], totB);
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const table = tableauCroiseHTML(['Catégorie A','Catégorie B'], noms, cellules);
-    return { enonce: table + `Quelle fréquence des individus font partie du « ${noms[jCible]} » ? Quelle fréquence des individus de catégorie B font partie du « ${noms[jCible]} » ?`, reponse:`(${freqMarginaleColonne};${freqCondLigne})` };
+    const fin = `\\left(${fracD(fr(totColonnes[jCible], N))}\\,;\\,${fracD(fr(cellulesB[jCible], totB))}\\right)`;
+    return { enonce: table + `Quelle fréquence des individus font partie du « ${noms[jCible]} » ? Quelle fréquence des individus de catégorie B font partie du « ${noms[jCible]} » ?`, reponse:`(${freqMarginaleColonne};${freqCondLigne})`,
+      detail: { lignes: ['\\text{Parmi tous les individus :}', lignesFrequence19(totColonnes[jCible], N), '\\text{Parmi les individus de catégorie B :}', lignesFrequence19(cellulesB[jCible], totB), fin], final: fin } };
   }},
 
   // ---------- 18.7 (avance, etait 18.8) : estimation de la mediane par repartition uniforme dans la classe
@@ -2315,7 +2384,8 @@ const generateurs = [
     const classes = [0,1,2,3].map(i => [base+i*w, base+(i+1)*w]);
     const labelsClasses = classes.map(([b0,b1]) => `[${b0}\\,;\\,${b1}[`);
     const medianeEstimee = classes[m][0] + k;
-    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `En supposant une répartition uniforme des valeurs à l'intérieur de la classe médiane, estimer la médiane de cette série.`, reponse:`${medianeEstimee}` };
+    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `En supposant une répartition uniforme des valeurs à l'intérieur de la classe médiane, estimer la médiane de cette série.`, reponse:`${medianeEstimee}`,
+      detail: detailMedianeClasse19(classes, effectifs, m, medianeEstimee) };
   }},
   {id:"19.7 b)", type:"num", texteLibre:true, gen: () => {
     const w = 10;
@@ -2338,7 +2408,8 @@ const generateurs = [
     const classes = [0,1,2,3].map(i => [base+i*w, base+(i+1)*w]);
     const labelsClasses = classes.map(([b0,b1]) => `[${b0}\\,;\\,${b1}[`);
     const medianeEstimee = classes[m][0] + k;
-    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `En supposant une répartition uniforme des valeurs à l'intérieur de la classe médiane, estimer la médiane de cette série.`, reponse:`${medianeEstimee}` };
+    return { enonce: tableauDonnees('Classe', labelsClasses, 'Effectif', effectifs) + `En supposant une répartition uniforme des valeurs à l'intérieur de la classe médiane, estimer la médiane de cette série.`, reponse:`${medianeEstimee}`,
+      detail: detailMedianeClasse19(classes, effectifs, m, medianeEstimee) };
   }},
 
   // ---------- 18.8 (avance, etait 18.9) : completer un tableau croise a partir d'une frequence
@@ -2361,7 +2432,8 @@ const generateurs = [
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const cellules = [[cellA1,cellA2,cellA3],[cellB1,cellB2,cellB3]];
     return { enonce:`Le tableau ci-dessous est incomplet. Sachant que, parmi les individus du « Groupe 1 », la fréquence de la catégorie A vaut \\(${freqA1}\\), compléter les effectifs manquants.`,
-      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:0},{i:1,j:0}], colonneTotalMasquee: 0 } };
+      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:0},{i:1,j:0}], colonneTotalMasquee: 0 },
+      detail: detailTableauCroise19(cellules, 0, freqA1) };
   }},
   {id:"19.8 b)", type:"tableauCroiseRempli", texteLibre:true, gen: () => {
     const D = choix([4,5,10]);
@@ -2376,17 +2448,21 @@ const generateurs = [
     const noms = ['Groupe 1','Groupe 2','Groupe 3'];
     const cellules = [[cellA1,cellA2,cellA3],[cellB1,cellB2,cellB3]];
     return { enonce:`Le tableau ci-dessous est incomplet. Sachant que, parmi les individus du « Groupe 2 », la fréquence de la catégorie A vaut \\(${freqA2}\\), compléter les effectifs manquants.`,
-      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:1},{i:1,j:1}], colonneTotalMasquee: 1 } };
+      tcr: { nomsLignes:['Catégorie A','Catégorie B'], nomsColonnes: noms, cellules, aCompleter:[{i:0,j:1},{i:1,j:1}], colonneTotalMasquee: 1 },
+      detail: detailTableauCroise19(cellules, 1, freqA2) };
   }}
 ];
 
 
 function genererExercices() {
   sens191 = alea(0, 1) === 1;
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -3686,10 +3762,10 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
       }
       if (ex.type === 'tableauCroiseRempli') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :${Detail.html(ex, idx)}</div>${tableCorrigeCroiseHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
