@@ -264,6 +264,64 @@ module.exports = [
     }
   },
   {
+    nom: 'la-droite-est-du-bon-cote-de-l-axe',
+    // « La droite est au-dessus (en dessous) de l'axe » : le sens demandé par l'énoncé (« : au-dessus » ou « : en dessous »)
+    motif: /^\\text\{est (?:au-dessus|en dessous) de l'axe des abscisses\}$/,
+    verifie: (l, e) => { const m = l.match(/^\\text\{est (au-dessus|en dessous) de l'axe des abscisses\}$/), r = String(e.enonce).match(/: (au-dessus|en dessous)\s*$/); return !!(m && r) && m[1] === r[1]; }
+  },
+  {
+    nom: 'le-signe-de-f-est-celui-de-la-position',
+    // « lorsque f(x) > 0 » pour « au-dessus », « lorsque f(x) < 0 » pour « en dessous »
+    motif: /^\\text\{lorsque \} f\(x\) \\(?:gt|lt) 0$/,
+    verifie: (l, e) => { const m = l.match(/^\\text\{lorsque \} f\(x\) \\(gt|lt) 0$/), r = String(e.enonce).match(/: (au-dessus|en dessous)\s*$/); return !!(m && r) && (m[1] === 'gt') === (r[1] === 'au-dessus'); }
+  },
+  {
+    nom: 'droites-paralleles-distinctes-si-aucun-point',
+    // phrases de deux droites parallèles distinctes : seulement quand la réponse attendue est « aucun point d'intersection »
+    motif: /^\\text\{Les deux droites ont le même\}$|^\\text\{coefficient directeur\}$|mais des ordonnées à l'origine différentes|Elles sont parallèles et distinctes|aucun point d'intersection\}$/,
+    verifie: (l, e) => e.aucunPoint === true
+  },
+  {
+    nom: 'determinant-non-nul-si-une-unique-solution',
+    // « Ce nombre est non nul » : ab' - a'b du système de l'énoncé
+    motif: /\\text\{Le nombre \} ab'-a'b \\text\{ est non nul\}$|^\\text\{donc une unique solution\}$/,
+    verifie: (l, e) => {
+      const m = String(e.enonce).match(/begin\{cases\}(.+?)\\\\(.+?)\\end\{cases\}/); if (!m) return false;
+      const eq = (t) => { const q = t.match(/^(-?\d*)x([+-]\d*)y=(-?\d+)$/); if (!q) return null; const c = (v) => (v === '' ? 1 : v === '-' ? -1 : Number(v)); return { a: c(q[1]), b: q[2] === '+' ? 1 : q[2] === '-' ? -1 : Number(q[2]), c: Number(q[3]) }; };
+      const e1 = eq(m[1]), e2 = eq(m[2]); return !!(e1 && e2) && e1.a * e2.b - e2.a * e1.b !== 0;
+    }
+  },
+  {
+    nom: 'determinant-nul-annonce',
+    // « Ce nombre est nul » : ab' - a'b = 0
+    motif: /^\\text\{Le nombre \} ab'-a'b \\text\{ est nul\}$/,
+    verifie: (l, e) => {
+      const m = String(e.enonce).match(/begin\{cases\}(.+?)\\\\(.+?)\\end\{cases\}/); if (!m) return false;
+      const eq = (t) => { const q = t.match(/^(-?\d*)x([+-]\d*)y=(-?\d+)$/); if (!q) return null; const c = (v) => (v === '' ? 1 : v === '-' ? -1 : Number(v)); return { a: c(q[1]), b: q[2] === '+' ? 1 : q[2] === '-' ? -1 : Number(q[2]), c: Number(q[3]) }; };
+      const e1 = eq(m[1]), e2 = eq(m[2]); return !!(e1 && e2) && e1.a * e2.b - e2.a * e1.b === 0;
+    }
+  },
+  {
+    nom: 'aucune-solution-si-seconds-membres-non-proportionnels',
+    // « Ce nombre n'est pas nul : aucune solution » : ab' - a'b = 0 et cb' - c'b != 0
+    motif: /Seul \} ab'-a'b \\text\{ est nul\}$|^\\text\{donc aucune solution\}$/,
+    verifie: (l, e) => {
+      const m = String(e.enonce).match(/begin\{cases\}(.+?)\\\\(.+?)\\end\{cases\}/); if (!m) return false;
+      const eq = (t) => { const q = t.match(/^(-?\d*)x([+-]\d*)y=(-?\d+)$/); if (!q) return null; const c = (v) => (v === '' ? 1 : v === '-' ? -1 : Number(v)); return { a: c(q[1]), b: q[2] === '+' ? 1 : q[2] === '-' ? -1 : Number(q[2]), c: Number(q[3]) }; };
+      const e1 = eq(m[1]), e2 = eq(m[2]); return !!(e1 && e2) && e1.a * e2.b - e2.a * e1.b === 0 && e1.c * e2.b - e2.c * e1.b !== 0;
+    }
+  },
+  {
+    nom: 'infinite-de-solutions-si-seconds-membres-proportionnels',
+    // « Ce nombre est nul : une infinité de solutions » : ab' - a'b = 0 et cb' - c'b = 0
+    motif: /Les deux nombres sont nuls\}$|^\\text\{donc une infinité de solutions\}$/,
+    verifie: (l, e) => {
+      const m = String(e.enonce).match(/begin\{cases\}(.+?)\\\\(.+?)\\end\{cases\}/); if (!m) return false;
+      const eq = (t) => { const q = t.match(/^(-?\d*)x([+-]\d*)y=(-?\d+)$/); if (!q) return null; const c = (v) => (v === '' ? 1 : v === '-' ? -1 : Number(v)); return { a: c(q[1]), b: q[2] === '+' ? 1 : q[2] === '-' ? -1 : Number(q[2]), c: Number(q[3]) }; };
+      const e1 = eq(m[1]), e2 = eq(m[2]); return !!(e1 && e2) && e1.a * e2.b - e2.a * e1.b === 0 && e1.c * e2.b - e2.c * e1.b === 0;
+    }
+  },
+  {
     nom: 'la-longueur-de-periode-annoncee-est-exacte',
     // « \text{Période de } 6 \text{ chiffres} » : longueur de la période de 1/b (b lu dans l'énoncé)
     motif: /\\text\{Période de \} \d+ \\text\{ chiffres?\}/,

@@ -135,6 +135,44 @@ const ESSAIS = {
     [false, '\\text{en } -2 \\text{ et } 3', { reponse: '{-2;2}' }, env('')],
     [false, '\\text{en } 2 \\text{ et } -2', { reponse: '{-2;2}' }, env('')]
   ],
+  'la-droite-est-du-bon-cote-de-l-axe': [
+    [true, "\\text{est au-dessus de l'axe des abscisses}", { enonce: '\\(f(x)=2x-8\\) : au-dessus' }, env('')],
+    [true, "\\text{est en dessous de l'axe des abscisses}", { enonce: '\\(f(x)=2x-8\\) : en dessous' }, env('')],
+    [false, "\\text{est en dessous de l'axe des abscisses}", { enonce: '\\(f(x)=2x-8\\) : au-dessus' }, env('')]
+  ],
+  'le-signe-de-f-est-celui-de-la-position': [
+    [true, '\\text{lorsque } f(x) \\gt 0', { enonce: '\\(f(x)=2x-8\\) : au-dessus' }, env('')],
+    [true, '\\text{lorsque } f(x) \\lt 0', { enonce: '\\(f(x)=2x-8\\) : en dessous' }, env('')],
+    [false, '\\text{lorsque } f(x) \\lt 0', { enonce: '\\(f(x)=2x-8\\) : au-dessus' }, env('')],
+    [false, '\\text{lorsque } f(x) \\gt 0', { enonce: '\\(f(x)=2x-8\\) : en dessous' }, env('')]
+  ],
+  'droites-paralleles-distinctes-si-aucun-point': [
+    [true, '\\text{Elles sont parallèles et distinctes}', { aucunPoint: true }, env('')],
+    [true, "\\text{aucun point d'intersection}", { aucunPoint: true }, env('')],
+    [false, '\\text{Elles sont parallèles et distinctes}', { pa: '1', pb: '2' }, env('')],
+    [false, "\\text{aucun point d'intersection}", { aucunPoint: false }, env('')]
+  ],
+  'determinant-non-nul-si-une-unique-solution': [
+    [true, "\\text{Le nombre } ab'-a'b \\text{ est non nul}", { enonce: 'Le système \\(\\begin{cases}3x-2y=5\\\\-4x+5y=4\\end{cases}\\) admet-il' }, env('')],
+    [true, '\\text{donc une unique solution}', { enonce: 'Le système \\(\\begin{cases}3x-2y=5\\\\-4x+5y=4\\end{cases}\\) admet-il' }, env('')],
+    [false, "\\text{Le nombre } ab'-a'b \\text{ est non nul}", { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')],
+    [false, '\\text{donc une unique solution}', { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')]
+  ],
+  'determinant-nul-annonce': [
+    [true, "\\text{Le nombre } ab'-a'b \\text{ est nul}", { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')],
+    [false, "\\text{Le nombre } ab'-a'b \\text{ est nul}", { enonce: 'Le système \\(\\begin{cases}3x-2y=5\\\\-4x+5y=4\\end{cases}\\) admet-il' }, env('')]
+  ],
+  'aucune-solution-si-seconds-membres-non-proportionnels': [
+    [true, "\\text{Seul } ab'-a'b \\text{ est nul}", { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')],
+    [true, '\\text{donc aucune solution}', { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')],
+    [false, '\\text{donc aucune solution}', { enonce: 'Le système \\(\\begin{cases}-x-y=5\\\\-2x-2y=10\\end{cases}\\) admet-il' }, env('')],
+    [false, "\\text{Seul } ab'-a'b \\text{ est nul}", { enonce: 'Le système \\(\\begin{cases}3x-2y=5\\\\-4x+5y=4\\end{cases}\\) admet-il' }, env('')]
+  ],
+  'infinite-de-solutions-si-seconds-membres-proportionnels': [
+    [true, '\\text{Les deux nombres sont nuls}', { enonce: 'Le système \\(\\begin{cases}-x-y=5\\\\-2x-2y=10\\end{cases}\\) admet-il' }, env('')],
+    [true, '\\text{donc une infinité de solutions}', { enonce: 'Le système \\(\\begin{cases}-x-y=5\\\\-2x-2y=10\\end{cases}\\) admet-il' }, env('')],
+    [false, '\\text{donc une infinité de solutions}', { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],

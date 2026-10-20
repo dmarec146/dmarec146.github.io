@@ -475,7 +475,7 @@ aussi. Le nombre de questions par série et le barème : voir `SUIVI-FIREBASE.md
 - **Outil** : `node outils/details-correction/controle.js cahiers/<niveau>/<cahier>/fiche-NN.html` (mode d'emploi, liste des contrôles et
   limites : `outils/details-correction/README.md`) lance tout ce qui suit sans crédits, plus l'interface sur ordinateur et téléphone
   et un auto-test ; `phrases.txt` et `exemples.html` sont à relire à la main. `--couverture` donne l'avancement (16/10/2026 : 23
-  exercices avec détail sur 1 284 ; Seconde fiches 1 à 13 faites au 20/10/2026).
+  exercices avec détail sur 1 284 ; Seconde fiches 1 à 16 faites au 20/10/2026). **Lectures graphiques** (choix de David, 20/10/2026) : le détail explique la méthode de lecture (« On lit les abscisses des points / de la courbe d'ordonnée … ») puis la valeur lue, au dixième avec « ≈ » si elle est approchée ; « sur ou au-dessus » / « sur ou en dessous » pour une inégalité large, « au-dessus » / « en dessous » pour une inégalité stricte (assertions automatiques).
 - **Contrôle obligatoire** (à relancer pour chaque fiche) : sur un millier de tirages, `final` converti en nombre doit égaler
   `reponse` (ensembles inclus, expressions en `a` évaluées en un point), la dernière ligne doit contenir `final`, et toute chaîne
   d'égalités purement numérique d'une ligne (`A = B = C`) doit avoir des membres égaux ; le contrôle doit échouer si on décale

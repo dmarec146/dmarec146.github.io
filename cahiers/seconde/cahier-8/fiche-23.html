@@ -3252,6 +3252,8 @@ function verifierLectureGraphique(ex, val) {
   }
   if (ex.reponse && String(ex.reponse).trim().startsWith('{')) {
     const liste = (s) => String(s).replace(/[{}]/g, '').split(';').map((x) => x.trim()).filter((x) => x !== '');
+    // ensemble vide attendu : « {} », « ∅ », « vide », « aucune »… sont acceptés comme dans checkEnsemble (20/10/2026 : « ∅ » était refusé)
+    if (liste(ex.reponse).length === 0) { const n = String(val).trim().toLowerCase().replace(/\s/g, ''); return n === '' || n === '{}' || n === '∅' || n === 'o/' || n === 'vide' || n === 'aucune' || n === 'aucunesolution' || n === 'aucunantecedent'; }
     const u = liste(normaliserSaisie(String(val))).map(nombreLu), c = liste(ex.reponse).map(nombreLu);
     if (u.length !== c.length || u.some((v) => v === null) || c.some((v) => v === null)) return false;
     u.sort((a, b) => a - b); c.sort((a, b) => a - b);

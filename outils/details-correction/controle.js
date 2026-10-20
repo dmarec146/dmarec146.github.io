@@ -144,7 +144,7 @@ async function controlerDansLaPage(opts) {
   // équation ou une substitution et n'est pas comparable. Un membre qui reprend l'énoncé (équation à résoudre) est ignoré.
   function verifierChaine(partie, enonce, dansEquivalence) {
     if (enonce && nz(partie).length >= 5 && nz(enonce).includes(nz(partie))) return null;
-    const segs = partie.split('=').map((s) => s.trim()).filter(Boolean).filter((s) => !estSymboleSeul(s) && !/\\Delta/.test(s) && !aIndice(s) && !estApplication(s));
+    const segs = partie.split('=').map((s) => s.trim()).filter(Boolean).filter((s) => !estSymboleSeul(s) && !/\\Delta/.test(s) && !aIndice(s) && !estApplication(s) && !/[A-Za-z]'/.test(s));   // (a', b', c' : coefficients nommés, pas des valeurs)
     if (segs.length < 2) return null;
     let verifie = 0;
     for (let i = 0; i + 1 < segs.length; i++) {
@@ -334,6 +334,8 @@ async function controlerDansLaPage(opts) {
         return 'ok';
       } catch (er) { return 'non-verifiable'; }
     }
+    // deux droites parallèles distinctes : aucun point d'intersection
+    if (e.type === 'paire' && e.aucunPoint) return F === "\\text{aucun point d'intersection}" ? 'ok' : 'faux';
     // tableau de programme de calcul : « image \text{ et } antécédent »
     if (e.type === 'tableauProgramme') {
       const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/);
@@ -409,7 +411,7 @@ async function controlerDansLaPage(opts) {
     }
     try {
       for (let k = 0; k < NB_PORTEES; k++) {
-        const m = versMathjs(F), sc = portee(m + ' + ' + rep, k);
+        const m = versMathjs(String(F).replace(/^\s*y\s*=\s*/, '')), sc = portee(m + ' + ' + rep, k);     // équation réduite « y = mx + p » : on compare mx + p
         const a = math.evaluate(rep, sc), b = math.evaluate(m, sc);
         if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b)) return 'non-verifiable';
         if (!egal(a, b)) return 'faux';
