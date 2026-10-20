@@ -280,6 +280,62 @@ const ESSAIS = {
     [false, '\\text{On cherche les valeurs de } x \\text{ pour lesquelles le quotient est }> \\ 0 \\text{ ; la valeur interdite }1', { enonce: '\\dfrac{x^2-1}{x-1}\\lt 0' }, env('')],
     [true, '\\text{pour lesquelles l\'expression est } >\\ 0', { enonce: '\\((2x-6)(x+1)\\gt 0\\)' }, env('')],
     [false, '\\text{pour lesquelles l\'expression est } >\\ 0', { enonce: '\\((2x-6)(x+1)\\lt 0\\)' }, env('')]
+  ],
+  'le-rang-du-quartile-est-l-entier-superieur': [
+    [true, '\\dfrac{9}{4} = 2{,}25 \\text{ donc le rang est } 3', {}, env('')],
+    [false, '\\dfrac{9}{4} = 2{,}25 \\text{ donc le rang est } 2', {}, env('')],
+    [true, '\\dfrac{3\\times 9}{4} = 6{,}75 \\text{ donc le rang est } 7', {}, env('')],
+    [false, '\\dfrac{3\\times 9}{4} = 6{,}75 \\text{ donc le rang est } 6', {}, env('')],
+    [true, '\\dfrac{8}{4} = 2 \\text{ donc le rang est } 2', {}, env('')],
+    [false, '\\dfrac{8}{4} = 3 \\text{ donc le rang est } 3', {}, env('')]
+  ],
+  'les-numeros-pairs-ou-impairs-cites-sont-ceux-de-l-enonce': [
+    [true, '\\text{Numéros pairs : } 2\\,;\\,4\\,;\\,6', { enonce: "Calculer la probabilité de l'événement « le jeton obtenu porte un numéro pair »." }, env('')],
+    [false, '\\text{Numéros impairs : } 2\\,;\\,4\\,;\\,6', { enonce: "Calculer la probabilité de l'événement « le jeton obtenu porte un numéro pair »." }, env('')],
+    [true, '\\text{Numéros impairs : } 1\\,;\\,3\\,;\\,5', { enonce: "Calculer la probabilité de l'événement « le jeton obtenu porte un numéro impair »." }, env('')],
+    [false, '\\text{Numéros impairs : } 1\\,;\\,3', { enonce: "Calculer la probabilité de l'événement « le jeton obtenu porte un numéro impair »." }, env('')],
+    [false, '\\text{Numéros pairs : } 2\\,;\\,4\\,;\\,5', { enonce: "Calculer la probabilité de l'événement « le jeton obtenu porte un numéro pair »." }, env('')]
+  ],
+  'les-numeros-superieurs-cites-sont-ceux-du-seuil-de-l-enonce': [
+    [true, '\\text{Numéros } > 4 \\text{ : } 5\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 4 »." }, env('')],
+    [false, '\\text{Numéros } > 4 \\text{ : } 4\\,;\\,5\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 4 »." }, env('')],
+    [false, '\\text{Numéros } > 3 \\text{ : } 4\\,;\\,5\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 4 »." }, env('')],
+    [true, '\\text{Numéros } > 3 \\text{ : } 4\\,;\\,5\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieure à 3 »." }, env('')]
+  ],
+  'les-numeros-retenus-sont-pairs-ou-superieurs-au-seuil': [
+    [true, '\\text{Numéros retenus : } 2\\,;\\,4\\,;\\,5\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 4 »." }, env('')],
+    [false, '\\text{Numéros retenus : } 2\\,;\\,4\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 4 »." }, env('')],
+    [true, '\\text{Numéros retenus : } 2\\,;\\,4\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 5 »." }, env('')],
+    [false, '\\text{Numéros retenus : } 2\\,;\\,3\\,;\\,4\\,;\\,5\\,;\\,6', { enonce: "porte un numéro pair, ou est strictement supérieur à 4 »." }, env('')]
+  ],
+  'les-multiples-de-3-cites-sont-ceux-de-l-enonce': [
+    [true, '\\text{Multiples de 3 : } 3\\,;\\,6', { enonce: "est un multiple de 3 ». Calculer" }, env('')],
+    [false, '\\text{Multiples de 3 : } 3\\,;\\,5', { enonce: "est un multiple de 3 ». Calculer" }, env('')],
+    [false, '\\text{Multiples de 3 : } 3\\,;\\,6', { enonce: "est un multiple de 2 ». Calculer" }, env('')]
+  ],
+  'la-branche-citee-est-celle-de-l-enonce': [
+    [true, '\\text{Probabilité de la branche qui mène à } C \\text{ :}', { enonce: "la probabilité \\(P(C)\\)." }, env('')],
+    [false, '\\text{Probabilité de la branche qui mène à } D \\text{ :}', { enonce: "la probabilité \\(P(C)\\)." }, env('')],
+    [true, '\\text{Branche qui part de } \\overline{C} \\text{ et mène à } S \\text{ :}', { enonce: "la probabilité \\(P_{\\overline{C}}(S)\\)." }, env('')],
+    [false, '\\text{Branche qui part de } C \\text{ et mène à } S \\text{ :}', { enonce: "la probabilité \\(P_{\\overline{C}}(S)\\)." }, env('')],
+    [false, '\\text{Branche qui part de } \\overline{C} \\text{ et mène à } R \\text{ :}', { enonce: "la probabilité \\(P_{\\overline{C}}(S)\\)." }, env('')],
+    [true, '\\text{Branche qui part de } C \\text{ et mène à } S \\text{ :}', { enonce: "la probabilité \\(P_{C}(S)\\)." }, env('')]
+  ],
+  'le-chemin-multiplie-est-celui-de-l-enonce': [
+    [true, '\\text{On multiplie le long du chemin } \\overline{E} \\text{ puis } R \\text{ :}', { enonce: "Calculer \\(P(\\overline{E} \\cap R)\\)." }, env('')],
+    [false, '\\text{On multiplie le long du chemin } E \\text{ puis } R \\text{ :}', { enonce: "Calculer \\(P(\\overline{E} \\cap R)\\)." }, env('')],
+    [false, '\\text{On multiplie le long du chemin } E \\text{ puis } S \\text{ :}', { enonce: "Calculer \\(P(E \\cap R)\\)." }, env('')],
+    [true, '\\text{On multiplie le long du chemin } E \\text{ puis } R \\text{ :}', { enonce: "Calculer \\(P(E \\cap R)\\)." }, env('')]
+  ],
+  'les-deux-chemins-menent-a-l-evenement-de-l-enonce': [
+    [true, '\\text{Deux chemins mènent à } R \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')],
+    [false, '\\text{Deux chemins mènent à } E \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')]
+  ],
+  'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
+    [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
+    [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
+    [true, '\\text{Parmi les individus de } B \\text{, ceux de } A \\text{ :}', { enonce: "dans cet ordre, \\(P_{A}(B)\\) puis \\(P_{B}(A)\\)." }, env('')],
+    [false, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "dans cet ordre, \\(P_{A}(B)\\) puis \\(P_{B}(A)\\)." }, env('')]
   ]
 };
 let echecs = 0, essais = 0;

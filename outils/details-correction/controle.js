@@ -336,10 +336,11 @@ async function controlerDansLaPage(opts) {
     }
     // deux droites parallèles distinctes : aucun point d'intersection
     if (e.type === 'paire' && e.aucunPoint) return F === "\\text{aucun point d'intersection}" ? 'ok' : 'faux';
-    // tableau croisé à compléter : « effectif de A \text{ et } effectif de B »
+    // tableau croisé à compléter : les effectifs des cases à compléter, dans l'ordre de aCompleter
+    // (« 28 \text{ et } 12 », ou « \left(28\,;\,12\,;\,6\,;\,54\right) » ; les milliers « 2\,700 » sont recollés)
     if (e.type === 'tableauCroiseRempli' && e.tcr) {
-      const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/), att = e.tcr.aCompleter.map(({ i, j }) => e.tcr.cellules[i][j]);
-      return m && att.length === 2 && Number(m[1]) === att[0] && Number(m[2]) === att[1] ? 'ok' : 'faux';
+      const nombres = (String(F).replace(/(\d)\\,(\d{3})(?!\d)/g, '$1$2').match(/-?\d+/g) || []).map(Number), att = e.tcr.aCompleter.map(({ i, j }) => e.tcr.cellules[i][j]);
+      return nombres.length === att.length && nombres.every((v, k) => v === att[k]) ? 'ok' : 'faux';
     }
     // tableau de programme de calcul : « image \text{ et } antécédent »
     if (e.type === 'tableauProgramme') {

@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"20.1 a)":0.75,"20.1 b)":0.75,"20.2 a)":0.5,"20.2 b)":0.75,"20.3 b)":1,"20.3 c)":1.25,"20.4 a)":0.5,"20.4 b)":0.75,"20.4 c)":1,"20.5 a)":0.5,"20.5 b)":0.75,"20.6 a)":1,"20.6 b)":1,"20.6 c)":1.5,"20.7 a)":1.5,"20.8 a)":0.75,"20.8 b)":1,"20.8 c)":1.25,"20.8 d)":1.5,"20.9 a)":1.75,"20.10 a)":1.5,"20.11 a)":1.75,"20.11 b)":2,"20.12 a)":2},"bonus":["20.9 a)","20.10 a)","20.11 a)","20.11 b)","20.12 a)"]});
@@ -2310,33 +2311,71 @@ const VOYELLES19 = "AEIOUY";
 // "l'enonce est similaire, donc unifier avant les questions de cette section").
 let contexteLoi19_3, contexteArbre19_5, contexteArbre19_6, contexteArbre19_7, contexteTableau19_10, contexteTest19_11;
 
+// ---------- details de correction (21/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracDP, fracTexte, fracBrute, sommeTermes, fr, ptLigne, lignesSomme, produitFrac } = Detail;
+// decimal a la francaise, zeros inutiles retires : 0.5 -> « 0{,}5 »
+const dfr = (v, nd = 6) => String(Number(Number(v).toFixed(nd))).replace('.', '{,}');
+// entier avec espace fine pour les milliers : 97000 -> « 97\,000 »
+const milliers = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\\,');
+const listeT = vals => vals.join('\\,;\\,');
+// frequence ou probabilite a/b : « \dfrac{a}{b} = fraction reduite »
+function lignesFrequence20(a, b) {
+  const brut = fracBrute(a, b), fin = fracD(fr(a, b));
+  return `${brut}${brut !== fin ? ' = ' + fin : ''}`;
+}
+// produit de deux decimaux a/10 et b/10 (a et b entiers) : 0,3 x 0,4 = 3/10 x 4/10 = 12/100 = 0,12
+function produitDixiemes20(a, b) {
+  const p = a * b;
+  return [`${dfr(a / 10)}\\times ${dfr(b / 10)}`, `\\dfrac{${a}}{10}\\times \\dfrac{${b}}{10}`, `\\dfrac{${p}}{100}`, dfr(p / 100)].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+// somme de decimaux [{s: +1|-1, v}] : « 0,4+0,5-0,2 = 0,7 »
+function sommeDecimaux20(termes) {
+  const total = termes.reduce((t, x) => t + x.s * x.v, 0);
+  return `${termes.map((x, i) => (i === 0 ? (x.s < 0 ? '-' : '') : (x.s > 0 ? '+' : '-')) + dfr(x.v)).join('')} = ${dfr(total)}`;
+}
+// somme de probabilites de meme denominateur D : 3/20+5/20+2/20 = (3+5+2)/20 = 10/20 = 1/2
+function sommeProbas20(nums, D) {
+  const S = nums.reduce((a, n) => a + n, 0), brute = fracBrute(S, D), fin = fracD(fr(S, D));
+  const suite = [nums.map(n => fracBrute(n, D)).join('+'), `\\dfrac{${nums.join('+')}}{${D}}`, brute, fin].filter((t, i, tab) => i === 0 || t !== tab[i - 1]);
+  return suite.join(' = ');
+}
+// produit de trois fractions
+function lignesProduit3(a, b, c, d, e, f) {
+  const n = a * c * e, m = b * d * f, brute = fracBrute(n, m), simple = fracTexte(n, m);
+  return [ptLigne(`${fracBrute(a, b)}\\times ${fracBrute(c, d)}\\times ${fracBrute(e, f)} = \\dfrac{${a}\\times ${c}\\times ${e}}{${b}\\times ${d}\\times ${f}} = ${brute}${brute !== simple ? ' = ' + simple : ''}`)];
+}
+
+
 // ---------- calculs de fractions (20.1), repris de la fiche 9 : a) somme ou difference, b) produit de deux ou de trois fractions ----------
 // fraction irreductible n/d en texte (entier si d = 1), pour que le corrige donne la VALEUR et non l'expression
 function fractionTexte(n, d) { const g = pgcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : n + '/' + d; }
 const MODELES_SOMME_FRACTIONS = [
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true }; },
+          { const S = lignesSomme([{s: 1, n: a, d: b}, {s: 1, n: c, d}]);
+          return { enonce:`\\dfrac{${a}}{${b}}+\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d + c*b, b*d), fractionIrreductible:true, detail: { lignes: S.lignes, final: S.final } }; } },
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true }; }
+          { const S = lignesSomme([{s: 1, n: a, d: b}, {s: -1, n: c, d}]);
+          return { enonce:`\\dfrac{${a}}{${b}}-\\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*d - c*b, b*d), fractionIrreductible:true, detail: { lignes: S.lignes, final: S.final } }; } }
 ];
 const MODELES_PRODUIT_FRACTIONS = [
   () => { const b = alea(2,9), d = alea(2,9), a = alea(1,b-1), c = alea(1,d-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true }; },
+          { const P = produitFrac(a, b, c, d);
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}`, reponse:fractionTexte(a*c, b*d), fractionIrreductible:true, detail: { lignes: P.lignes, final: P.final } }; } },
   () => { const b = alea(2,9), d = alea(2,9), f = alea(2,9), a = alea(1,b-1), c = alea(1,d-1), e = alea(1,f-1);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true }; }
+          return { enonce:`\\dfrac{${a}}{${b}}\\times \\dfrac{${c}}{${d}}\\times \\dfrac{${e}}{${f}}`, reponse:fractionTexte(a*c*e, b*d*f), fractionIrreductible:true, detail: { lignes: lignesProduit3(a, b, c, d, e, f), final: fracTexte(a*c*e, b*d*f) } }; }
 ];
 // ---------- calculs sur des probabilites decimales (20.2) : complement, produit, somme, produit puis somme ; deux modeles tires sans remise ----------
 const MODELES_DECIMAUX_PROBA = [
   () => { const x = alea(1,19) * 5 / 100;
-          return { enonce:`1-${formatDecimalFr(x)}`, reponse:`${arrondi2(1 - x)}` }; },
+          return { enonce:`1-${formatDecimalFr(x)}`, reponse:`${arrondi2(1 - x)}`, detail: { lignes: [sommeDecimaux20([{s: 1, v: 1}, {s: -1, v: x}])], final: dfr(arrondi2(1 - x)) } }; },
   () => { const a = alea(2,9), b = alea(2,9);
-          return { enonce:`0{,}${a}\\times 0{,}${b}`, reponse:`${arrondi2(a*b/100)}` }; },
+          return { enonce:`0{,}${a}\\times 0{,}${b}`, reponse:`${arrondi2(a*b/100)}`, detail: { lignes: [produitDixiemes20(a, b)], final: dfr(a * b / 100) } }; },
   () => { const a = alea(1,6), b = alea(1,6);
-          return { enonce:`0{,}${a}+0{,}${b}`, reponse:`${arrondi2((a + b) / 10)}` }; },
+          return { enonce:`0{,}${a}+0{,}${b}`, reponse:`${arrondi2((a + b) / 10)}`, detail: { lignes: [sommeDecimaux20([{s: 1, v: a / 10}, {s: 1, v: b / 10}])], final: dfr((a + b) / 10) } }; },
   () => { const a = alea(1,9), b = alea(2,9), c = alea(2,9);
-          return { enonce:`0{,}${a}+0{,}${b}\\times 0{,}${c}`, reponse:`${arrondi2(a/10 + b*c/100)}` }; },
+          return { enonce:`0{,}${a}+0{,}${b}\\times 0{,}${c}`, reponse:`${arrondi2(a/10 + b*c/100)}`, detail: { lignes: ["\\text{On calcule d'abord le produit :}", produitDixiemes20(b, c), sommeDecimaux20([{s: 1, v: a / 10}, {s: 1, v: b * c / 100}])], final: dfr(a / 10 + b * c / 100) } }; },
   () => { const a = alea(2,9), b = alea(2,9);
-          return { enonce:`1-0{,}${a}\\times 0{,}${b}`, reponse:`${arrondi2(1 - a*b/100)}` }; }
+          return { enonce:`1-0{,}${a}\\times 0{,}${b}`, reponse:`${arrondi2(1 - a*b/100)}`, detail: { lignes: ["\\text{On calcule d'abord le produit :}", produitDixiemes20(a, b), sommeDecimaux20([{s: 1, v: 1}, {s: -1, v: a * b / 100}])], final: dfr(1 - a * b / 100) } }; }
 ];
 let tirageDecimaux = melanger(MODELES_DECIMAUX_PROBA).slice(0, 2);
 
@@ -2366,7 +2405,8 @@ const generateurs = [
     const somme = indices.reduce((s,i)=>s+nums[i],0);
     const reponse = fracSimplifiee(somme, D);
     const mot = pair ? 'pair' : 'impair';
-    return { enonce: `Calculer la probabilité de l'événement « ${ctx.issue} ${ctx.obtenu} porte un numéro ${mot} ».`, reponse, contexteTexte: texteIntroLoi(ctx), contexteFigure: tableauDonnees('Valeur', [1,2,3,4,5,6], 'Probabilité', nums.map(n => fracLatex(n,D))) };
+    return { enonce: `Calculer la probabilité de l'événement « ${ctx.issue} ${ctx.obtenu} porte un numéro ${mot} ».`, reponse, contexteTexte: texteIntroLoi(ctx), contexteFigure: tableauDonnees('Valeur', [1,2,3,4,5,6], 'Probabilité', nums.map(n => fracLatex(n,D))),
+      detail: { lignes: [`\\text{Numéros ${mot}s : } ${listeT(indices.map(i => i + 1))}`, sommeProbas20(indices.map(i => nums[i]), D)], final: fracD(fr(somme, D)) } };
   }},
   {id:"20.3 c)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     const { ctx, D, nums } = contexteLoi19_3;
@@ -2375,7 +2415,9 @@ const generateurs = [
     for (let v=1; v<=6; v++) { if (v%2===0 || v>seuil) indicesSet.add(v-1); }
     const somme = [...indicesSet].reduce((s,i)=>s+nums[i],0);
     const reponse = fracSimplifiee(somme, D);
-    return { enonce: `Calculer la probabilité de l'événement « ${ctx.issue} ${ctx.obtenu} porte un numéro pair, ou est strictement ${ctx.sup} à ${seuil} ».`, reponse };
+    const indicesSeuil = [4,5,6].filter(v => v > seuil), indicesRetenus = [...indicesSet].map(i => i + 1).sort((x, y) => x - y);
+    return { enonce: `Calculer la probabilité de l'événement « ${ctx.issue} ${ctx.obtenu} porte un numéro pair, ou est strictement ${ctx.sup} à ${seuil} ».`, reponse,
+      detail: { lignes: [`\\text{Numéros pairs : } ${listeT([2,4,6])}`, `\\text{Numéros } > ${seuil} \\text{ : } ${listeT(indicesSeuil)}`, `\\text{Numéros retenus : } ${listeT(indicesRetenus)}`, sommeProbas20(indicesRetenus.map(v => nums[v - 1]), D)], final: fracD(fr(somme, D)) } };
   }},
 
   // ---------- 19.4 (ex-19.5) : evenement contraire ----------
@@ -2383,7 +2425,8 @@ const generateurs = [
     const centiemes = choix([10,20,25,30,40,60,70,75,80,90]);
     const p = centiemes/100;
     const compl = arrondi2(1-p);
-    return { enonce:`On sait que \\(P(A)=${formatDecimalFr(p)}\\). Calculer \\(P(\\overline{A})\\), la probabilité de l'événement contraire de \\(A\\).`, reponse:`${compl}` };
+    return { enonce:`On sait que \\(P(A)=${formatDecimalFr(p)}\\). Calculer \\(P(\\overline{A})\\), la probabilité de l'événement contraire de \\(A\\).`, reponse:`${compl}`,
+      detail: { lignes: ['\\text{Probabilité de l\'événement contraire :}', sommeDecimaux20([{s: 1, v: 1}, {s: -1, v: p}])], final: dfr(compl) } };
   }},
   {id:"20.4 b)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     const u = choix(CTX_URNE);
@@ -2392,7 +2435,8 @@ const generateurs = [
     const eff = [a,b,c];
     const k = alea(0,2);
     const reponse = fracSimplifiee(N-eff[k], N);
-    return { enonce:`${maj(u.contenant)} contient ${a} ${u.objet}s ${u.coul[0]}, ${b} ${u.objet}s ${u.coul[1]} et ${c} ${u.objet}s ${u.coul[2]}. On tire ${u.art} ${u.objet} au hasard. Calculer la probabilité qu'${u.pron} ne soit pas ${u.sing[k]}.`, reponse };
+    return { enonce:`${maj(u.contenant)} contient ${a} ${u.objet}s ${u.coul[0]}, ${b} ${u.objet}s ${u.coul[1]} et ${c} ${u.objet}s ${u.coul[2]}. On tire ${u.art} ${u.objet} au hasard. Calculer la probabilité qu'${u.pron} ne soit pas ${u.sing[k]}.`, reponse,
+      detail: { lignes: [`\\text{Nombre total :}`, `${a}+${b}+${c} = ${N}`, `\\text{Nombre de cas favorables :}`, `${eff.filter((_, i) => i !== k).join('+')} = ${N - eff[k]}`, '\\text{Cas favorables sur nombre total :}', lignesFrequence20(N - eff[k], N)], final: fracD(fr(N - eff[k], N)) } };
   }},
   {id:"20.4 c)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     const ctx = choix(CTX_LOI);
@@ -2403,7 +2447,8 @@ const generateurs = [
     const indices = [2,5];
     const sommeA = indices.reduce((s,i)=>s+nums[i],0);
     const reponse = fracSimplifiee(D-sommeA, D);
-    return { enonce: table + `${ctx.intro} On note \\(A\\) l'événement « ${ctx.issue} ${ctx.obtenu} est un multiple de 3 ». Calculer \\(P(\\overline{A})\\).`, reponse };
+    return { enonce: table + `${ctx.intro} On note \\(A\\) l'événement « ${ctx.issue} ${ctx.obtenu} est un multiple de 3 ». Calculer \\(P(\\overline{A})\\).`, reponse,
+      detail: { lignes: [`\\text{Multiples de 3 : } ${listeT([3,6])}`, '\\text{Probabilité de } A \\text{ :}', sommeProbas20(indices.map(i => nums[i]), D), '\\text{Probabilité de l\'événement contraire :}', `1-\\dfrac{${sommeA}}{${D}} = \\dfrac{${D}}{${D}}-\\dfrac{${sommeA}}{${D}} = ${lignesFrequence20(D - sommeA, D)}`], final: fracD(fr(D - sommeA, D)) } };
   }},
 
   // ---------- 19.5 : lecture d'un arbre pondere, notation P_A(B). Un seul arbre pour tout le
@@ -2416,14 +2461,16 @@ const generateurs = [
     const c = choix(CTX_ARBRE);
     const { a, b1, b2 } = coefsArbreDixiemes();
     contexteArbre19_5 = { c, a, b1, b2 };
-    return { enonce: `Donner, en la lisant directement sur l'arbre ci-dessus, la probabilité \\(P(${c.nomA})\\).`, reponse:`${a/10}`, contexteTexte: texteIntroArbre(c), contexteFigure: figureArbre19(c, a, b1, b2, null, true) };
+    return { enonce: `Donner, en la lisant directement sur l'arbre ci-dessus, la probabilité \\(P(${c.nomA})\\).`, reponse:`${a/10}`, contexteTexte: texteIntroArbre(c), contexteFigure: figureArbre19(c, a, b1, b2, null, true),
+      detail: { lignes: [`\\text{Probabilité de la branche qui mène à } ${c.nomA} \\text{ :}`, dfr(a / 10)], final: dfr(a / 10) } };
   }},
   {id:"20.5 b)", type:"num", texteLibre:true, gen: () => {
     const { c, b1, b2 } = contexteArbre19_5;
     const haut = alea(0,1)===1;
     const nomCond = haut ? c.nomA : `\\overline{${c.nomA}}`;
     const valeur = haut ? b1 : b2;
-    return { enonce: `Donner, en la lisant directement sur l'arbre ci-dessus, la probabilité \\(P_{${nomCond}}(${c.nomB})\\).`, reponse:`${valeur/10}` };
+    return { enonce: `Donner, en la lisant directement sur l'arbre ci-dessus, la probabilité \\(P_{${nomCond}}(${c.nomB})\\).`, reponse:`${valeur/10}`,
+      detail: { lignes: [`\\text{Branche qui part de } ${nomCond} \\text{ et mène à } ${c.nomB} \\text{ :}`, dfr(valeur / 10)], final: dfr(valeur / 10) } };
   }},
 
   // ---------- 19.6 : produit le long d'un chemin, probabilite totale. Un seul arbre pour tout le
@@ -2435,17 +2482,21 @@ const generateurs = [
     const { a, b1, b2 } = coefsArbreDixiemes();
     contexteArbre19_6 = { c, a, b1, b2 };
     const valeur = arrondi2(a*b1/100);
-    return { enonce: `Calculer \\(P(${c.nomA} \\cap ${c.nomB})\\).`, reponse:`${valeur}`, contexteTexte: texteIntroArbre(c), contexteFigure: figureArbre19(c, a, b1, b2, null, true) };
+    return { enonce: `Calculer \\(P(${c.nomA} \\cap ${c.nomB})\\).`, reponse:`${valeur}`, contexteTexte: texteIntroArbre(c), contexteFigure: figureArbre19(c, a, b1, b2, null, true),
+      detail: { lignes: [`\\text{On multiplie le long du chemin } ${c.nomA} \\text{ puis } ${c.nomB} \\text{ :}`, produitDixiemes20(a, b1)], final: dfr(valeur) } };
   }},
   {id:"20.6 b)", type:"num", texteLibre:true, gen: () => {
     const { a, b2, c } = contexteArbre19_6;
     const valeur = arrondi2((10-a)*b2/100);
-    return { enonce: `Calculer \\(P(\\overline{${c.nomA}} \\cap ${c.nomB})\\).`, reponse:`${valeur}` };
+    return { enonce: `Calculer \\(P(\\overline{${c.nomA}} \\cap ${c.nomB})\\).`, reponse:`${valeur}`,
+      detail: { lignes: [`\\text{On multiplie le long du chemin } \\overline{${c.nomA}} \\text{ puis } ${c.nomB} \\text{ :}`, produitDixiemes20(10 - a, b2)], final: dfr(valeur) } };
   }},
   {id:"20.6 c)", type:"num", texteLibre:true, gen: () => {
     const { a, b1, b2, c } = contexteArbre19_6;
     const valeur = arrondi2((a*b1 + (10-a)*b2)/100);
-    return { enonce: `Calculer \\(P(${c.nomB})\\).`, reponse:`${valeur}` };
+    return { enonce: `Calculer \\(P(${c.nomB})\\).`, reponse:`${valeur}`,
+      detail: { lignes: [`\\text{Deux chemins mènent à } ${c.nomB} \\text{ :}`, `\\text{Chemin } ${c.nomA} \\text{ puis } ${c.nomB} \\text{ :}`, produitDixiemes20(a, b1), `\\text{Chemin } \\overline{${c.nomA}} \\text{ puis } ${c.nomB} \\text{ :}`, produitDixiemes20(10 - a, b2),
+        '\\text{On additionne les deux :}', sommeDecimaux20([{s: 1, v: a * b1 / 100}, {s: 1, v: (10 - a) * b2 / 100}])], final: dfr(valeur) } };
   }},
 
   // ---------- 19.7 : passage arbre pondere -> tableau croise, tableau entierement vide (y compris
@@ -2462,7 +2513,12 @@ const generateurs = [
     const arbre = figureArbre19(c, a, b1, b2, null, true);
     const cellules = [[effAB, effANonB],[effAbarB, effAbarNonB]];
     return { enonce: arbre + `Sur une population de ${N} individus, compléter entièrement le tableau croisé des effectifs correspondant (y compris les totaux).`,
-      tcr: { nomsLignes:[c.nomA, `\\(\\overline{${c.nomA}}\\)`], nomsColonnes:[c.nomB, `\\(\\overline{${c.nomB}}\\)`], cellules, aCompleter:[{i:0,j:0},{i:0,j:1},{i:1,j:0},{i:1,j:1}], masquerTotaux:true }, contexteTexte: texteIntroArbre(c) };
+      tcr: { nomsLignes:[c.nomA, `\\(\\overline{${c.nomA}}\\)`], nomsColonnes:[c.nomB, `\\(\\overline{${c.nomB}}\\)`], cellules, aCompleter:[{i:0,j:0},{i:0,j:1},{i:1,j:0},{i:1,j:1}], masquerTotaux:true }, contexteTexte: texteIntroArbre(c),
+      detail: { lignes: [`\\text{Effectif de } ${c.nomA} \\text{ :}`, `${N}\\times ${dfr(a / 10)} = ${effA}`, `\\text{Effectif de } ${c.nomA} \\cap ${c.nomB} \\text{ :}`, `${effA}\\times ${dfr(b1 / 10)} = ${effAB}`,
+        `\\text{Effectif de } ${c.nomA} \\cap \\overline{${c.nomB}} \\text{ :}`, `${effA}-${effAB} = ${effANonB}`, `\\text{Effectif de } \\overline{${c.nomA}} \\text{ :}`, `${N}-${effA} = ${effAbar}`,
+        `\\text{Effectif de } \\overline{${c.nomA}} \\cap ${c.nomB} \\text{ :}`, `${effAbar}\\times ${dfr(b2 / 10)} = ${effAbarB}`, `\\text{Effectif de } \\overline{${c.nomA}} \\cap \\overline{${c.nomB}} \\text{ :}`, `${effAbar}-${effAbarB} = ${effAbarNonB}`,
+        `\\text{Total de la colonne } ${c.nomB} \\text{ :}`, `${effAB}+${effAbarB} = ${effAB + effAbarB}`, `\\text{Total de la colonne } \\overline{${c.nomB}} \\text{ :}`, `${effANonB}+${effAbarNonB} = ${effANonB + effAbarNonB}`,
+        '\\text{Cases du tableau, ligne par ligne :}', `\\left(${listeT([effAB, effANonB, effAbarB, effAbarNonB])}\\right)`], final: `\\left(${listeT([effAB, effANonB, effAbarB, effAbarNonB])}\\right)` } };
   }},
 
   // ---------- 19.8 (avance) : denombrement par un tableau a double entree ou par un arbre. Items a)
@@ -2484,7 +2540,9 @@ const generateurs = [
     const cellNonXNonY = rowNonXTotal - clueA;
     const colYTotal = cellXY + clueA;
     const reponse = fracSimplifiee(clueA, colYTotal);
-    return { enonce: `${c.intro} ${c.tirage} On note \\(${c.nomA}\\) l'événement « ${c.descA} » et \\(${c.nomB}\\) l'événement « ${c.descB} ». Sur ${N} individus au total, ${rowXTotal} vérifient \\(${c.nomA}\\), ${clueB} vérifient à la fois \\(${c.nomA}\\) et \\(\\overline{${c.nomB}}\\), et ${clueA} vérifient à la fois \\(\\overline{${c.nomA}}\\) et \\(${c.nomB}\\). En reconstituant le tableau croisé des effectifs, calculer \\(P_{${c.nomB}}(\\overline{${c.nomA}})\\).`, reponse };
+    return { enonce: `${c.intro} ${c.tirage} On note \\(${c.nomA}\\) l'événement « ${c.descA} » et \\(${c.nomB}\\) l'événement « ${c.descB} ». Sur ${N} individus au total, ${rowXTotal} vérifient \\(${c.nomA}\\), ${clueB} vérifient à la fois \\(${c.nomA}\\) et \\(\\overline{${c.nomB}}\\), et ${clueA} vérifient à la fois \\(\\overline{${c.nomA}}\\) et \\(${c.nomB}\\). En reconstituant le tableau croisé des effectifs, calculer \\(P_{${c.nomB}}(\\overline{${c.nomA}})\\).`, reponse,
+      detail: { lignes: [`\\text{Effectif de } ${c.nomA} \\cap ${c.nomB} \\text{ :}`, `${rowXTotal}-${clueB} = ${cellXY}`, `\\text{Effectif de } ${c.nomB} \\text{ :}`, `${cellXY}+${clueA} = ${colYTotal}`,
+        `\\text{Parmi les individus de } ${c.nomB} \\text{, ceux de } \\overline{${c.nomA}} \\text{ :}`, lignesFrequence20(clueA, colYTotal)], final: fracD(fr(clueA, colYTotal)) } };
   }},
 
   // ---------- 19.10 (avance) : distinguer P_A(B) et P_B(A). Item b) d'origine (meme question sur un
@@ -2500,7 +2558,9 @@ const generateurs = [
     const table = tableauCroiseHTML([c.nomA,'non '+c.nomA],[c.nomB,'non '+c.nomB],[[n11,n12],[n21,n22]]);
     const pAB = fracSimplifiee(n11,l1);
     const pBA = fracSimplifiee(n11,c1);
-    return { enonce: table + `Calculer, dans cet ordre, \\(P_{${c.nomA}}(${c.nomB})\\) puis \\(P_{${c.nomB}}(${c.nomA})\\).`, reponse:`(${pAB};${pBA})`, contexteTexte: texteIntroTableau(c, N) };
+    return { enonce: table + `Calculer, dans cet ordre, \\(P_{${c.nomA}}(${c.nomB})\\) puis \\(P_{${c.nomB}}(${c.nomA})\\).`, reponse:`(${pAB};${pBA})`, contexteTexte: texteIntroTableau(c, N),
+      detail: { lignes: [`\\text{Parmi les individus de } ${c.nomA} \\text{, ceux de } ${c.nomB} \\text{ :}`, lignesFrequence20(n11, l1), `\\text{Parmi les individus de } ${c.nomB} \\text{, ceux de } ${c.nomA} \\text{ :}`, lignesFrequence20(n11, c1),
+        `\\left(${fracD(fr(n11, l1))}\\,;\\,${fracD(fr(n11, c1))}\\right)`], final: `\\left(${fracD(fr(n11, l1))}\\,;\\,${fracD(fr(n11, c1))}\\right)` } };
   }},
 
   // ---------- 19.11 (avance) : test de depistage, sensibilite, specificite, faux positifs. Les 2
@@ -2516,13 +2576,18 @@ const generateurs = [
     contexteTest19_11 = { prevalence, sensibilite, specificite, N, effVP, effFN, effVN, effFP };
     const cellules = [[effVP, effFN],[effFP, effVN]];
     return { enonce: `Compléter le tableau croisé des effectifs attendus.`,
-      tcr: { nomsLignes:['Malade','Non malade'], nomsColonnes:['Test positif','Test négatif'], cellules, aCompleter:[{i:0,j:0},{i:0,j:1},{i:1,j:0},{i:1,j:1}] }, contexteTexte: texteIntroTest(prevalence, sensibilite, specificite, N) };
+      tcr: { nomsLignes:['Malade','Non malade'], nomsColonnes:['Test positif','Test négatif'], cellules, aCompleter:[{i:0,j:0},{i:0,j:1},{i:1,j:0},{i:1,j:1}] }, contexteTexte: texteIntroTest(prevalence, sensibilite, specificite, N),
+      detail: { lignes: ['\\text{Personnes malades :}', `${milliers(N)}\\times \\dfrac{${prevalence}}{100} = ${milliers(effMalade)}`, '\\text{Malades dont le test est positif :}', `${milliers(effMalade)}\\times \\dfrac{${sensibilite}}{100} = ${milliers(effVP)}`,
+        '\\text{Malades dont le test est négatif :}', `${milliers(effMalade)}-${milliers(effVP)} = ${milliers(effFN)}`, '\\text{Personnes non malades :}', `${milliers(N)}-${milliers(effMalade)} = ${milliers(effSain)}`,
+        '\\text{Non-malades dont le test est négatif :}', `${milliers(effSain)}\\times \\dfrac{${specificite}}{100} = ${milliers(effVN)}`, '\\text{Non-malades dont le test est positif :}', `${milliers(effSain)}-${milliers(effVN)} = ${milliers(effFP)}`,
+        "\\text{Cases du tableau, ligne par ligne :}", `\\left(${listeT([milliers(effVP), milliers(effFN), milliers(effFP), milliers(effVN)])}\\right)`], final: `\\left(${listeT([milliers(effVP), milliers(effFN), milliers(effFP), milliers(effVN)])}\\right)` } };
   }},
   {id:"20.11 b)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
     const { prevalence, sensibilite, specificite, N, effVP, effFP } = contexteTest19_11;
     const totalPositifs = effVP+effFP;
     const reponse = fracSimplifiee(effVP, totalPositifs);
-    return { enonce:`Parmi les personnes testées positives, quelle proportion sont réellement malades (c'est la valeur prédictive positive du test) ? On pourra commencer par dénombrer séparément les malades correctement détectés et les non-malades faussement détectés positifs.`, reponse, contexteTexte: texteIntroTest(prevalence, sensibilite, specificite, N) };
+    return { enonce:`Parmi les personnes testées positives, quelle proportion sont réellement malades (c'est la valeur prédictive positive du test) ? On pourra commencer par dénombrer séparément les malades correctement détectés et les non-malades faussement détectés positifs.`, reponse, contexteTexte: texteIntroTest(prevalence, sensibilite, specificite, N),
+      detail: { lignes: ['\\text{Personnes testées positives :}', `${milliers(effVP)}+${milliers(effFP)} = ${milliers(totalPositifs)}`, '\\text{Parmi elles, les malades :}', `\\dfrac{${milliers(effVP)}}{${milliers(totalPositifs)}}${fracD(fr(effVP, totalPositifs)) !== fracBrute(effVP, totalPositifs) ? ' = ' + fracD(fr(effVP, totalPositifs)) : ''}`], final: fracD(fr(effVP, totalPositifs)) } };
   }},
 
   // ---------- 19.12 (avance) : reunion de deux evenements, P(A union B) = P(A) + P(B) - P(A inter
@@ -2536,7 +2601,8 @@ const generateurs = [
       union = a + b - inter;
     } while (union > 10);
     const pA = a/10, pB = b/10, pInter = inter/10, pUnion = union/10;
-    return { contexteTexte: "\\(A\\) et \\(B\\) sont deux événements d'une expérience aléatoire.", enonce:`On sait que \\(P(A)=${formatDecimalFr(pA)}\\), \\(P(B)=${formatDecimalFr(pB)}\\) et \\(P(A\\cap B)=${formatDecimalFr(pInter)}\\). Calculer \\(P(A\\cup B)\\).`, reponse:`${pUnion}` };
+    return { contexteTexte: "\\(A\\) et \\(B\\) sont deux événements d'une expérience aléatoire.", enonce:`On sait que \\(P(A)=${formatDecimalFr(pA)}\\), \\(P(B)=${formatDecimalFr(pB)}\\) et \\(P(A\\cap B)=${formatDecimalFr(pInter)}\\). Calculer \\(P(A\\cup B)\\).`, reponse:`${pUnion}`,
+      detail: { lignes: ['\\text{Formule de la réunion :}', 'P(A\\cup B) = P(A)+P(B)-P(A\\cap B)', sommeDecimaux20([{s: 1, v: pA}, {s: 1, v: pB}, {s: -1, v: pInter}])], final: dfr(pUnion) } };
   }},
   {id:"20.8 b)", type:"num", texteLibre:true, gen: () => {
     let a, cond, b, inter, union;
@@ -2546,7 +2612,9 @@ const generateurs = [
       union = arrondi2(a/10 + b/10 - inter);
     } while (inter > b/10 + 1e-9 || union > 1 || union < 0.1);
     const pA = a/10, pAB = cond/10, pB = b/10;
-    return { enonce:`On sait que \\(P(A)=${formatDecimalFr(pA)}\\), \\(P_A(B)=${formatDecimalFr(pAB)}\\) et \\(P(B)=${formatDecimalFr(pB)}\\). Calculer \\(P(A\\cup B)\\).`, reponse:`${union}` };
+    return { enonce:`On sait que \\(P(A)=${formatDecimalFr(pA)}\\), \\(P_A(B)=${formatDecimalFr(pAB)}\\) et \\(P(B)=${formatDecimalFr(pB)}\\). Calculer \\(P(A\\cup B)\\).`, reponse:`${union}`,
+      detail: { lignes: ['\\text{Probabilité de l\'intersection :}', 'P(A\\cap B) = P(A)\\times P_A(B)', produitDixiemes20(a, cond), '\\text{Formule de la réunion :}', 'P(A\\cup B) = P(A)+P(B)-P(A\\cap B)',
+        sommeDecimaux20([{s: 1, v: pA}, {s: 1, v: pB}, {s: -1, v: inter}])], final: dfr(union) } };
   }},
   // items c)/d) (delicats) : la reunion est donnee, il faut retrouver P(B) inconnu -- inspire d'un
   // automatisme de Premiere de David.
@@ -2558,7 +2626,9 @@ const generateurs = [
       union = 10*a + 10*PB - inter;
     } while (inter > 10*PB || union > 100 || union < 1);
     const pA = a/10, pAB = cond/10, pUnion = union/100;
-    return { enonce:`On sait que \\(P(A\\cup B)=${formatDecimalFr(pUnion)}\\), \\(P(A)=${formatDecimalFr(pA)}\\) et \\(P_A(B)=${formatDecimalFr(pAB)}\\). Calculer \\(P(B)\\).`, reponse:`${PB/10}` };
+    return { enonce:`On sait que \\(P(A\\cup B)=${formatDecimalFr(pUnion)}\\), \\(P(A)=${formatDecimalFr(pA)}\\) et \\(P_A(B)=${formatDecimalFr(pAB)}\\). Calculer \\(P(B)\\).`, reponse:`${PB/10}`,
+      detail: { lignes: ['\\text{Probabilité de l\'intersection :}', 'P(A\\cap B) = P(A)\\times P_A(B)', produitDixiemes20(a, cond), '\\text{On isole } P(B) \\text{ dans la formule de la réunion :}', 'P(B) = P(A\\cup B)-P(A)+P(A\\cap B)',
+        sommeDecimaux20([{s: 1, v: union / 100}, {s: -1, v: pA}, {s: 1, v: inter / 100}])], final: dfr(PB / 10) } };
   }},
   // item d) (delicat) : la donnee de depart est le complementaire de A (pas A directement), il faut
   // donc d'abord retrouver P(A) par complement avant de pouvoir appliquer la formule de la reunion.
@@ -2570,7 +2640,9 @@ const generateurs = [
       union = 10*a + 10*PB - inter;
     } while (inter > 10*PB || union > 100 || union < 1);
     const pABar = aBar/10, pAB = cond/10, pUnion = union/100;
-    return { enonce:`On sait que \\(P(A\\cup B)=${formatDecimalFr(pUnion)}\\), \\(P(\\overline{A})=${formatDecimalFr(pABar)}\\) et \\(P_A(B)=${formatDecimalFr(pAB)}\\). Calculer \\(P(B)\\).`, reponse:`${PB/10}` };
+    return { enonce:`On sait que \\(P(A\\cup B)=${formatDecimalFr(pUnion)}\\), \\(P(\\overline{A})=${formatDecimalFr(pABar)}\\) et \\(P_A(B)=${formatDecimalFr(pAB)}\\). Calculer \\(P(B)\\).`, reponse:`${PB/10}`,
+      detail: { lignes: ['\\text{Probabilité de l\'événement contraire :}', sommeDecimaux20([{s: 1, v: 1}, {s: -1, v: pABar}]).replace(/^/, 'P(A) = '), '\\text{Probabilité de l\'intersection :}', 'P(A\\cap B) = P(A)\\times P_A(B)', produitDixiemes20(a, cond),
+        '\\text{On isole } P(B) \\text{ dans la formule de la réunion :}', 'P(B) = P(A\\cup B)-P(A)+P(A\\cap B)', sommeDecimaux20([{s: 1, v: union / 100}, {s: -1, v: a / 10}, {s: 1, v: inter / 100}])], final: dfr(PB / 10) } };
   }},
 
   // ---------- 19.13 (avance, dernier exemple) : arbre a 2 branches puis 3 (B, C, D), toutes les
@@ -2584,17 +2656,22 @@ const generateurs = [
     const pAC = p*probasA[1];
     const pC = p*probasA[1] + (10-p)*probasAbar[1];
     const reponse = fracSimplifiee(pAC, pC);
-    return { enonce: arbre + `Un arbre pondéré modélise une expérience aléatoire dont \\(A\\), \\(B\\), \\(C\\) et \\(D\\) sont des événements. Toutes les probabilités sont indiquées sur l'arbre ci-dessus. Calculer \\(P_{C}(A)\\).`, reponse };
+    return { enonce: arbre + `Un arbre pondéré modélise une expérience aléatoire dont \\(A\\), \\(B\\), \\(C\\) et \\(D\\) sont des événements. Toutes les probabilités sont indiquées sur l'arbre ci-dessus. Calculer \\(P_{C}(A)\\).`, reponse,
+      detail: { lignes: ['\\text{Chemin } A \\text{ puis } C \\text{ :}', produitDixiemes20(p, probasA[1]), '\\text{Chemin } \\overline{A} \\text{ puis } C \\text{ :}', produitDixiemes20(10 - p, probasAbar[1]), '\\text{Probabilité de } C \\text{ :}',
+        sommeDecimaux20([{s: 1, v: pAC / 100}, {s: 1, v: (pC - pAC) / 100}]), 'P_C(A) = \\dfrac{P(A\\cap C)}{P(C)}', `\\dfrac{${dfr(pAC / 100)}}{${dfr(pC / 100)}} = ${lignesFrequence20(pAC, pC)}`], final: fracD(fr(pAC, pC)) } };
   }}
 ];
 
 
 function genererExercices() {
   tirageDecimaux = melanger(MODELES_DECIMAUX_PROBA).slice(0, 2);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -3920,10 +3997,10 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
       }
       if (ex.type === 'tableauCroiseRempli') {
-        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
+        return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :${Detail.html(ex, idx)}</div>${tableCorrigeCroiseHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

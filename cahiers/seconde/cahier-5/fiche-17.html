@@ -2008,7 +2008,13 @@ const generateurs = [
     while (d2 === d1) d2 = alea(1,8);
     const symbole = d1<d2 ? '<' : '>';
     return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=\\sqrt{${xMoinsTexte(p)}}\\). On considère \\(x_1=${p+d1}\\) et \\(x_2=${p+d2}\\).`, reponse: `g(x1)${symbole}g(x2)`,
-      detail: detailComparaisonValeurs17('g', p+d1, p+d2, '\\text{La fonction racine carrée est croissante}', symbole) };
+      detail: (() => {
+        const base = detailComparaisonValeurs17('g', p+d1, p+d2, '\\text{La fonction racine carrée est croissante}', symbole);
+        if (p === 0) return base;
+        // valeurs sous la racine (x - p), comparées avant d'appliquer la croissance de la racine carrée
+        const sous = [`${p+d1} ${dPlus(-p)} = ${d1}`, `${p+d2} ${dPlus(-p)} = ${d2}`, `${d1} ${d1 < d2 ? '\\lt' : '>'} ${d2}`];
+        return { lignes: [...sous, ...base.lignes.slice(1)], final: base.final };
+      })() };
   }},
   {id:"17.5 c)", type:"texte", comparaison:true, nomFonction:"h", texteLibre:true, gen: () => {
     let x1 = entierSigne(1,8), x2; do { x2 = entierSigne(1,8); } while (x2 === x1);
@@ -2067,7 +2073,7 @@ const generateurs = [
       ? { type:'intervalles', liste:[{bas:0, haut:1, inclusBas:false, inclusHaut:false}] }
       : { type:'intervalles', liste:[{bas:1, haut:Infinity, inclusBas:false, inclusHaut:false}] };
     const opSymb = veutInf ? '\\lt' : '\\gt', fin = formaterIntervalleSpec(spec);
-    const lignes = [`x^{2} ${opSymb} x`, `\\iff x^{2}-x ${opSymb} 0`, `\\iff x(x-1) ${opSymb} 0`, '\\text{Le produit est nul pour } x = 0', "\\text{donc } 0 \\text{ n'est pas solution}", '\\text{Pour } x \\gt 0 \\text{ , le signe du produit}', '\\text{est celui de } x-1',
+    const lignes = [`x^{2} ${opSymb} x`, `\\iff x^{2}-x ${opSymb} 0`, `\\iff x(x-1) ${opSymb} 0`, '\\text{Le produit est nul pour } x = 0', "\\text{donc } 0 \\text{ n'est pas solution}", '\\text{Pour } x \\gt 0 \\text{, le signe du produit}', '\\text{est celui de } x-1',
       `x-1 ${opSymb} 0`, `\\iff x ${opSymb} 1`, `S = ${fin}`];
     return { enonce:`En reprenant le graphique de \\(y=x\\) et \\(y=x^2\\), résoudre sur \\([0\\,;\\,+\\infty[\\) l'inéquation \\(x^2${opSymb}\\,x\\).`, intervalleSpec: spec, detail: { lignes, final: fin } };
   }},

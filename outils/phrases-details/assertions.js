@@ -460,5 +460,93 @@ module.exports = [
       const m = l.match(/\\text\{Comme \} (-?\d+) (\\geqslant|>) (-?\d+) \\text/);
       return m ? (m[2] === '>' ? Number(m[1]) > Number(m[3]) : Number(m[1]) >= Number(m[3])) : false;
     }
+  },
+  {
+    nom: 'le-rang-du-quartile-est-l-entier-superieur',
+    // « \dfrac{9}{4} = 2{,}25 \text{ donc le rang est } 3 » ou « \dfrac{3\times 9}{4} = 6{,}75 \text{ donc le rang est } 7 » : rang = n k / 4 arrondi à l'entier supérieur
+    motif: /\\text\{ donc le rang est \}/,
+    verifie: (l) => {
+      const m = l.match(/\\dfrac\{(?:(\d+)\\times )?(\d+)\}\{4\} = (\d+(?:\{,\}\d+)?) \\text\{ donc le rang est \} (\d+)/);
+      if (!m) return false;
+      const k = m[1] ? Number(m[1]) : 1, n = Number(m[2]), v = Number(m[3].replace('{,}', '.')), r = Number(m[4]);
+      return Math.abs(k * n / 4 - v) < 1e-9 && r === Math.ceil(v - 1e-9);
+    }
+  },
+  {
+    nom: 'les-numeros-pairs-ou-impairs-cites-sont-ceux-de-l-enonce',
+    // « \text{Numéros pairs : } 2\,;\,4\,;\,6 » : la parité annoncée est celle de l'énoncé et la liste est complète
+    motif: /\\text\{Numéros (?:pairs|impairs) : \}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Numéros (pairs|impairs) : \} ([\d\\,;]+)$/), mot = String(e.enonce).match(/numéro (pair|impair)\b/);
+      if (!m || !mot || m[1] !== mot[1] + 's') return false;
+      const liste = m[2].split('\\,;\\,').map(Number), attendu = [1, 2, 3, 4, 5, 6].filter((v) => (v % 2 === 0) === (mot[1] === 'pair'));
+      return liste.join(',') === attendu.join(',');
+    }
+  },
+  {
+    nom: 'les-numeros-superieurs-cites-sont-ceux-du-seuil-de-l-enonce',
+    // « \text{Numéros } > 4 \text{ : } 5\,;\,6 »
+    motif: /\\text\{Numéros \} > \d+ \\text\{ : \}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Numéros \} > (\d+) \\text\{ : \} ([\d\\,;]+)$/), seuil = String(e.enonce).match(/strictement \S+ à (\d+)/);
+      if (!m || !seuil || Number(m[1]) !== Number(seuil[1])) return false;
+      return m[2].split('\\,;\\,').map(Number).join(',') === [1, 2, 3, 4, 5, 6].filter((v) => v > Number(m[1])).join(',');
+    }
+  },
+  {
+    nom: 'les-numeros-retenus-sont-pairs-ou-superieurs-au-seuil',
+    // « \text{Numéros retenus : } 2\,;\,4\,;\,5\,;\,6 » : réunion des numéros pairs et des numéros strictement supérieurs au seuil de l'énoncé
+    motif: /\\text\{Numéros retenus : \}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Numéros retenus : \} ([\d\\,;]+)$/), seuil = String(e.enonce).match(/numéro pair, ou est strictement \S+ à (\d+)/);
+      if (!m || !seuil) return false;
+      return m[1].split('\\,;\\,').map(Number).join(',') === [1, 2, 3, 4, 5, 6].filter((v) => v % 2 === 0 || v > Number(seuil[1])).join(',');
+    }
+  },
+  {
+    nom: 'les-multiples-de-3-cites-sont-ceux-de-l-enonce',
+    motif: /\\text\{Multiples de 3 : \}/,
+    verifie: (l, e) => /multiple de 3/.test(String(e.enonce)) && /\\text\{Multiples de 3 : \} 3\\,;\\,6$/.test(l)
+  },
+  {
+    nom: 'la-branche-citee-est-celle-de-l-enonce',
+    // « \text{Probabilité de la branche qui mène à } C \text{ :} » (énoncé P(C)) ;
+    // « \text{Branche qui part de } \overline{C} \text{ et mène à } S \text{ :} » (énoncé P_{\overline{C}}(S))
+    motif: /\\text\{Probabilité de la branche qui mène à \}|\\text\{Branche qui part de \}/,
+    verifie: (l, e) => {
+      const simple = l.match(/\\text\{Probabilité de la branche qui mène à \} (\w+) \\text\{ :\}$/), cond = l.match(/\\text\{Branche qui part de \} (\\overline\{\w+\}|\w+) \\text\{ et mène à \} (\w+) \\text\{ :\}$/);
+      if (simple) { const p = String(e.enonce).match(/probabilité \\\(P\((\w+)\)\\\)/); return !!p && p[1] === simple[1]; }
+      if (cond) { const p = String(e.enonce).match(/probabilité \\\(P_\{(\\overline\{\w+\}|\w+)\}\((\w+)\)\\\)/); return !!p && p[1] === cond[1] && p[2] === cond[2]; }
+      return false;
+    }
+  },
+  {
+    nom: 'le-chemin-multiplie-est-celui-de-l-enonce',
+    // « \text{On multiplie le long du chemin } \overline{E} \text{ puis } R \text{ :} » (énoncé P(\overline{E} \cap R))
+    motif: /\\text\{On multiplie le long du chemin \}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{On multiplie le long du chemin \} (\\overline\{\w+\}|\w+) \\text\{ puis \} (\w+) \\text\{ :\}$/), p = String(e.enonce).match(/\\\(P\((\\overline\{\w+\}|\w+) \\cap (\w+)\)\\\)/);
+      return !!m && !!p && m[1] === p[1] && m[2] === p[2];
+    }
+  },
+  {
+    nom: 'les-deux-chemins-menent-a-l-evenement-de-l-enonce',
+    // « \text{Deux chemins mènent à } R \text{ :} » (énoncé P(R))
+    motif: /\\text\{Deux chemins mènent à \}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Deux chemins mènent à \} (\w+) \\text\{ :\}$/), p = String(e.enonce).match(/\\\(P\((\w+)\)\\\)/);
+      return !!m && !!p && m[1] === p[1];
+    }
+  },
+  {
+    nom: 'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce',
+    // « \text{Parmi les individus de } B \text{, ceux de } \overline{A} \text{ :} » : le couple (X, Y) est celui d'un P_{X}(Y) de l'énoncé
+    motif: /\\text\{Parmi les individus de \} .* \\text\{, ceux de \}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Parmi les individus de \} (\\overline\{\w+\}|\w+) \\text\{, ceux de \} (\\overline\{\w+\}|\w+) \\text\{ :\}$/);
+      if (!m) return false;
+      const echap = (s) => s.replace(/[\\{}]/g, '\\$&');
+      return new RegExp('P_\\{' + echap(m[1]) + '\\}\\(' + echap(m[2]) + '\\)').test(String(e.enonce));
+    }
   }
 ];
