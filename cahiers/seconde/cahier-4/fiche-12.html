@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"12.1 a)":0.5,"12.1 b)":0.5,"12.1 c)":0.5,"12.1 d)":0.5,"12.2 a)":0.5,"12.2 b)":0.75,"12.2 c)":0.5,"12.2 d)":0.5,"12.3 a)":0.5,"12.3 b)":0.75,"12.3 c)":0.5,"12.3 d)":0.5,"12.4 a)":0.75,"12.4 b)":0.75,"12.4 c)":1,"12.4 d)":1,"12.5 a)":0.75,"12.5 b)":0.75,"12.5 c)":1,"12.5 d)":0.75,"12.6 a)":0.75,"12.6 b)":0.75,"12.6 c)":1.25,"12.6 d)":1.25,"12.7 a)":1.25,"12.7 b)":1.5,"12.8 a)":2,"12.8 b)":1,"12.8 c)":1.5,"12.8 d)":2},"bonus":["12.8 a)","12.8 b)","12.8 c)","12.8 d)"]});
@@ -854,34 +855,129 @@ function coefXTexte(coefX) {
   return `${coefX}x`;
 }
 
-// ---------- vivier de calculs numeriques (groupe 12.1), identique a celui des fiches 3-7 ----------
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP } = Detail;
+// ligne longue : police reduite (comme en Seconde 8)
+const ptLigne = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 17 ? '\\small ' + l : l);
+// borne d'un intervalle en LaTeX (texBas / texHaut quand la borne est irrationnelle)
+const borneTex = (iv, cote) => (cote === 'bas' ? (iv.texBas || formaterUneBorne(iv.bas)) : (iv.texHaut || formaterUneBorne(iv.haut)));
+// condition sur x qui traduit l'appartenance a l'intervalle : « -5 \lt x \leqslant 2 », « x \gt 3 »
+function condIv(iv) {
+  const bas = iv.bas !== -Infinity, haut = iv.haut !== Infinity;
+  if (bas && haut) return `${borneTex(iv, 'bas')} ${iv.inclusBas ? '\\leqslant' : '\\lt'} x ${iv.inclusHaut ? '\\leqslant' : '\\lt'} ${borneTex(iv, 'haut')}`;
+  if (bas) return `x ${iv.inclusBas ? '\\geqslant' : '\\gt'} ${borneTex(iv, 'bas')}`;
+  return `x ${iv.inclusHaut ? '\\leqslant' : '\\lt'} ${borneTex(iv, 'haut')}`;
+}
+const cleIv = iv => `${iv.bas}|${iv.haut}|${!!iv.inclusBas}|${!!iv.inclusHaut}`;
+// inegalite -> intervalle (12.2 a et b)
+function detailConversion(spec) {
+  const fin = formaterIntervalleSpec(spec);
+  return { lignes: [condIv(spec.liste[0]), `x \\in ${fin}`], final: fin };
+}
+// intersection d'intervalles : chaque intervalle traduit en inegalites, conjonction, conclusion
+function detailInter(ivs, noms, spec, avant = []) {
+  const lignes = ivs.map((iv, i) => `x \\in ${noms[i]} \\iff ${condIv(iv)}`);
+  lignes.push(...avant);
+  lignes.push(ptLigne(ivs.map(condIv).join(' \\text{ et } ')));
+  if (spec.type === 'vide') lignes.push('\\text{Aucun réel ne convient}');
+  else lignes.push(ptLigne(`\\iff ${condIv(spec.liste[0])}`));
+  const final = formaterIntervalleSpec(spec);
+  lignes.push(`${noms.join(' \\cap ')} = ${final}`);
+  return { lignes, final };
+}
+// reunion d'intervalles : meme demarche ; la ligne « \iff » n'apparait que si la reunion se simplifie
+function detailUnion(ivs, noms, spec) {
+  const lignes = ivs.map((iv, i) => `x \\in ${noms[i]} \\iff ${condIv(iv)}`);
+  // un point commun aux deux bornes, exclu des deux intervalles, n'appartient pas a la reunion
+  for (let i = 0; i < ivs.length; i++) for (let j = 0; j < ivs.length; j++) {
+    if (i !== j && ivs[i].haut === ivs[j].bas && !ivs[i].inclusHaut && !ivs[j].inclusBas && isFinite(ivs[i].haut)) lignes.push(`${borneTex(ivs[i], 'haut')} \\notin ${noms[i]} \\text{ et } ${borneTex(ivs[i], 'haut')} \\notin ${noms[j]}`);
+  }
+  lignes.push(ptLigne(ivs.map(condIv).join(' \\text{ ou } ')));
+  const final = formaterIntervalleSpec(spec);
+  if (spec.type === 'tout') lignes.push('\\iff x \\in \\mathbb{R}');
+  else {
+    const donnes = ivs.map(cleIv).sort().join(), obtenus = spec.liste.map(cleIv).sort().join();
+    if (donnes !== obtenus) lignes.push(ptLigne(`\\iff ${spec.liste.map(condIv).join(' \\text{ ou } ')}`));
+  }
+  lignes.push(`${noms.join(' \\cup ')} = ${final}`);
+  return { lignes, final };
+}
+// appartenance d'un nombre x a un intervalle iv : la comparaison qui decide, puis la conclusion
+function detailAppartenance(x, iv, appartient) {
+  const xt = formaterUneBorne(x), a = formaterUneBorne(iv.bas), b = formaterUneBorne(iv.haut);
+  let decisive;
+  if (x === iv.bas) decisive = iv.inclusBas ? `${xt} \\leqslant ${xt}` : `${xt} \\nless ${xt}`;
+  else if (x === iv.haut) decisive = iv.inclusHaut ? `${xt} \\leqslant ${xt}` : `${xt} \\nless ${xt}`;
+  else if (x > iv.bas && x < iv.haut) decisive = `${a} \\lt ${xt} \\lt ${b}`;
+  else if (x < iv.bas) decisive = `${xt} \\lt ${a}`;
+  else decisive = `${xt} \\gt ${b}`;
+  return { lignes: [`x \\in ${texIv(iv)} \\iff ${condIv(iv)}`, decisive, `${xt} ${appartient ? '\\in' : '\\notin'} ${texIv(iv)}`, `\\text{Réponse : ${appartient ? 'oui' : 'non'}}`], final: appartient ? 'oui' : 'non' };
+}
+// inequation « a x + b op c » (a non nul) resolue : renvoie { lignes, sens, x0 } ; op ecrit en LaTeX (\gt ou \lt)
+const OP_INV_TEX = { '\\gt': '\\lt', '\\lt': '\\gt' };
+function resoudreInequation(a, b, c, op) {
+  const cx = coefXTexte(a), opF = a < 0 ? OP_INV_TEX[op] : op, x0 = (c - b) / a;
+  const lignes = [`${cx}+${b} ${op} ${c}`, `\\iff ${cx} ${op} ${c - b}`];
+  if (a < 0) lignes.push(`\\text{On divise par } ${a} < 0`, `\\text{donc le sens de l'inégalité change}`);
+  if (Math.abs(a) !== 1) lignes.push(`\\iff x ${opF} ${c - b} \\div ${dP(a)}`);
+  lignes.push(`\\iff x ${opF} ${x0}`);
+  return { lignes, cond: `x ${opF} ${x0}`, x0, opF };
+}
+
+// ---------- vivier de calculs numeriques (groupe 12.1), identique a celui des fiches 3-7 (avec les details de la fiche 3) ----------
 const MODELES_CALCUL = [
   () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
-  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a} - ${b*c} = ${a - b*c}`], final: `${a - b*c}` } }; },
+  // produit d'un negatif par une difference
+  () => { let a, b, c; do { a = alea(2,9); b = alea(2,12); c = alea(2,15); } while (b === c);
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b - c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
+  // carre puis soustraction
   () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
-  () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}`,
+                   detail: { lignes: [`${a}^2-${b}\\times ${c} = ${a*a} - ${b*c} = ${a*a - b*c}`], final: `${a*a - b*c}` } }; },
+  // double negation
+  () => { let a, b; do { a = alea(2,15); b = alea(2,15); } while (a === b);
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}`,
+                   detail: { lignes: [`-${a}-(-${b}) = -${a} + ${b} = ${-a + b}`], final: `${-a + b}` } }; },
+  // produit de trois facteurs signes
   () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}`,
+                   detail: { lignes: [`${a}\\times (-${b})\\times (-${c}) = (${-a*b})\\times (-${c}) = ${a*b*c}`], final: `${a*b*c}` } }; },
+  // quotient exact suivi d'une addition
   () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}`,
+                   detail: { lignes: [`\\dfrac{${b*q}}{${b}}+${c} = ${q}+${c} = ${q + c}`], final: `${q + c}` } }; },
+  // quotient d'une somme : la barre de fraction joue le role d'une parenthese
   () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}}{${c}} = \\dfrac{${a + b}}{${c}} = ${q}`], final: `${q}` } }; },
+  // moyenne de trois entiers
   () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}+${c}}{3} = \\dfrac{${3*q}}{3} = ${q}`], final: `${q}` } }; },
+  // suite d'additions et de soustractions
   () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}`,
+                   detail: { lignes: [`${a}-${b}+${c}-${d} = ${a - b}+${c}-${d} = ${a - b + c}-${d} = ${a - b + c - d}`], final: `${a - b + c - d}` } }; },
+  // distributivite mentale : a x 99 = a x 100 - a
   () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+          const base = m > 500 ? 1000 : 100, ecart = base - m, signe = ecart > 0 ? '-' : '+', k = Math.abs(ecart);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe} ${k}) = ${a*base} ${signe} ${a*k} = ${a*m}`], final: `${a*m}` } }; },
+  // cube et difference
   () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}`,
+                   detail: { lignes: [`${a}^3-${b} = ${a*a*a} - ${b} = ${a*a*a - b}`], final: `${a*a*a - b}` } }; },
+  // priorites imbriquees
   () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}`,
+                   detail: { lignes: [`${a}\\times (${b}+${c})-${d} = ${a}\\times ${b + c}-${d} = ${a*(b+c)}-${d} = ${a*(b+c) - d}`], final: `${a*(b+c) - d}` } }; },
+  // double et moitie
   () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}`,
+                   detail: { lignes: [`\\dfrac{${a}}{2}+${b}\\times 2 = ${q}+${2*b} = ${q + 2*b}`], final: `${q + 2*b}` } }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
 // 12.3 c) et d) : une affirmation vraie et une fausse, dans un ordre tire au hasard (renouvele a chaque version)
@@ -1025,7 +1121,7 @@ function tirerAppartenanceSimple(casForce) {
   else if (cas === 'interieur') { x = a + alea(1, largeur-1); appartient = true; }
   else { x = choix([a - alea(1,4), b + alea(1,4)]); appartient = false; }
   const cg = inclusBas?'[':']', cd = inclusHaut?']':'[';
-  return { x, tex: `${cg}${a}\\,;\\,${b}${cd}`, appartient };
+  return { x, tex: `${cg}${a}\\,;\\,${b}${cd}`, appartient, iv: {bas:a, haut:b, inclusBas, inclusHaut} };
 }
 
 // ---------- appartenance a un intervalle : bornes demi-entieres (12.5, coeur) ----------
@@ -1043,22 +1139,29 @@ function tirerAppartenanceRiche(casForce) {
   else { x = choix([a - alea(1,4)/2, b + alea(1,4)/2]); appartient = false; }
   const cg = inclusBas?'[':']', cd = inclusHaut?']':'[';
   const tex = `${cg}${formaterUneBorne(a)}\\,;\\,${formaterUneBorne(b)}${cd}`;
-  return { x, tex, appartient };
+  return { x, tex, appartient, iv: {bas:a, haut:b, inclusBas, inclusHaut} };
 }
 
 // ---------- inclusion / emboitement N⊂Z⊂D⊂Q⊂R (vivier hand-verifie) ----------
 const INCLUSIONS_VIVIER = [
   { tex: '\\mathbb{N}\\subset\\mathbb{Z}', vrai: true },
-  { tex: '\\mathbb{Z}\\subset\\mathbb{N}', vrai: false },
+  { tex: '\\mathbb{Z}\\subset\\mathbb{N}', vrai: false, contre: '-1 \\in \\mathbb{Z} \\text{ mais } -1 \\notin \\mathbb{N}' },
   { tex: '\\mathbb{Z}\\subset\\mathbb{D}', vrai: true },
-  { tex: '\\mathbb{D}\\subset\\mathbb{Z}', vrai: false },
+  { tex: '\\mathbb{D}\\subset\\mathbb{Z}', vrai: false, contre: '0{,}5 \\in \\mathbb{D} \\text{ mais } 0{,}5 \\notin \\mathbb{Z}' },
   { tex: '\\mathbb{D}\\subset\\mathbb{Q}', vrai: true },
-  { tex: '\\mathbb{Q}\\subset\\mathbb{D}', vrai: false },
+  { tex: '\\mathbb{Q}\\subset\\mathbb{D}', vrai: false, contre: '\\dfrac{1}{3} \\in \\mathbb{Q} \\text{ mais } \\dfrac{1}{3} \\notin \\mathbb{D}' },
   { tex: '\\mathbb{Q}\\subset\\mathbb{R}', vrai: true },
-  { tex: '\\mathbb{R}\\subset\\mathbb{Q}', vrai: false },
+  { tex: '\\mathbb{R}\\subset\\mathbb{Q}', vrai: false, contre: '\\sqrt{2} \\in \\mathbb{R} \\text{ mais } \\sqrt{2} \\notin \\mathbb{Q}' },
   { tex: '\\mathbb{N}\\subset\\mathbb{Q}', vrai: true },
   { tex: '\\mathbb{Z}\\subset\\mathbb{R}', vrai: true }
 ];
+// detail d'une inclusion : l'emboitement des ensembles, puis (si elle est fausse) un contre-exemple
+function detailInclusion(t) {
+  const lignes = ['\\mathbb{N} \\subset \\mathbb{Z} \\subset \\mathbb{D} \\subset \\mathbb{Q} \\subset \\mathbb{R}'];
+  if (!t.vrai) lignes.push(t.contre);
+  lignes.push(`\\text{Réponse : ${t.vrai ? 'oui' : 'non'}}`);
+  return { lignes, final: t.vrai ? 'oui' : 'non' };
+}
 
 // ---------- outils de construction des questions sur les intervalles (12.4 a 12.6) ----------
 const alea01 = () => alea(0,1) === 1;
@@ -1085,25 +1188,38 @@ function reunionDisjointe() {
   const a1 = entierSigne(1,7), b1 = a1 + alea(1,4), a2 = b1 + alea(1,4), b2 = a2 + alea(1,4);
   const I = {bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:alea01()}, J = {bas:a2, haut:b2, inclusBas:alea01(), inclusHaut:alea01()};
   const [x, y] = ordreAleatoire(I, J);
-  return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[I, J]} };
+  const intervalleSpec = {type:'intervalles', liste:[I, J]};
+  return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailUnion([x, y], ['I','J'], intervalleSpec) };
 }
 function reunionChevauchement() {
   const a1 = entierSigne(1,6), a2 = a1 + alea(1,3), b1 = a2 + alea(1,3), b2 = b1 + alea(1,3);
   const I = {bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:alea01()}, J = {bas:a2, haut:b2, inclusBas:alea01(), inclusHaut:alea01()};
   const [x, y] = ordreAleatoire(I, J);
-  return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[{bas:a1, haut:b2, inclusBas:I.inclusBas, inclusHaut:J.inclusHaut}]} };
+  const intervalleSpec = {type:'intervalles', liste:[{bas:a1, haut:b2, inclusBas:I.inclusBas, inclusHaut:J.inclusHaut}]};
+  return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailUnion([x, y], ['I','J'], intervalleSpec) };
 }
 
 const ivMoins = (haut, inclusHaut) => ({ bas: -Infinity, haut, inclusBas: false, inclusHaut });
 const ivPlus = (bas, inclusBas) => ({ bas, haut: Infinity, inclusBas, inclusHaut: false });
 
 // une inequation a1*x + b1 (>|<) c1 dont le seuil est x : borne inferieure (x > ...) ou superieure (x < ...) selon le signe du coefficient
+// (renvoie le texte a afficher et sa resolution detaillee)
 function ligneInequation(x, inferieure) {
   const a = entierSigne(2,7), b = alea(1,15), c = a*x + b;
   const symb = inferieure ? (a > 0 ? '\\gt' : '\\lt') : (a > 0 ? '\\lt' : '\\gt');
-  return `${coefXTexte(a)}+${b}${symb}${c}`;
+  return { tex: `${coefXTexte(a)}+${b}${symb}${c}`, resolution: resoudreInequation(a, b, c, symb) };
 }
 const texSysteme = (lignes) => `\\[\\begin{cases} ${lignes.join(' \\\\ ')} \\end{cases}\\]`;
+// detail d'un systeme : chaque inequation resolue (dans l'ordre de l'enonce), conjonction des solutions, conclusion
+function detailSysteme(inequations, spec) {
+  const lignes = inequations.flatMap(q => q.resolution.lignes);
+  lignes.push(ptLigne(inequations.map(q => q.resolution.cond).join(' \\text{ et } ')));
+  if (spec.type === 'vide') lignes.push('\\text{Aucun réel ne convient}');
+  else lignes.push(`\\iff ${condIv(spec.liste[0])}`);
+  const final = formaterIntervalleSpec(spec);
+  lignes.push(`S = ${final}`);
+  return { lignes, final };
+}
 // systeme avec des bornes inferieures et UNE borne superieure (2 inequations : nbInferieures = 1 ; 3 inequations : nbInferieures = 2) ;
 // ensemble vide environ une fois sur dix ; lignes melangees
 function genSysteme(nbInferieures) {
@@ -1111,19 +1227,19 @@ function genSysteme(nbInferieures) {
   const infs = Array.from({length: nbInferieures}, () => alea(-8,5));
   const maxP = Math.max(...infs);
   const q = vide ? maxP - alea(0,3) : maxP + alea(2,8);
-  const lignes = melanger([...infs.map(p => ligneInequation(p, true)), ligneInequation(q, false)]);
+  const inequations = melanger([...infs.map(p => ligneInequation(p, true)), ligneInequation(q, false)]);
   const intervalleSpec = vide ? {type:'vide'} : {type:'intervalles', liste:[{bas:maxP, haut:q, inclusBas:false, inclusHaut:false}]};
-  return { enonce: texSysteme(lignes), intervalleSpec };
+  return { enonce: texSysteme(inequations.map(i => i.tex)), intervalleSpec, detail: detailSysteme(inequations, intervalleSpec) };
 }
 // deux inequations de MEME sens : la solution est la demi-droite la plus restrictive
 function genSystemeMemeSens() {
   const inferieur = alea01();
   let p1, p2; do { p1 = alea(-8,8); p2 = alea(-8,8); } while (p1 === p2);
-  const lignes = melanger([ligneInequation(p1, inferieur), ligneInequation(p2, inferieur)]);
+  const inequations = melanger([ligneInequation(p1, inferieur), ligneInequation(p2, inferieur)]);
   const intervalleSpec = inferieur
     ? {type:'intervalles', liste:[{bas:Math.max(p1,p2), haut:Infinity, inclusBas:false, inclusHaut:false}]}
     : {type:'intervalles', liste:[{bas:-Infinity, haut:Math.min(p1,p2), inclusBas:false, inclusHaut:false}]};
-  return { enonce: texSysteme(lignes), intervalleSpec };
+  return { enonce: texSysteme(inequations.map(i => i.tex)), intervalleSpec, detail: detailSysteme(inequations, intervalleSpec) };
 }
 
 const generateurs = [
@@ -1138,8 +1254,9 @@ const generateurs = [
     // double inegalite a bornes entieres -> intervalle
     const a = entierSigne(1,9), b = a + alea(2,10);
     const inclusBas = alea01(), inclusHaut = alea01();
+    const intervalleSpec = {type:'intervalles', liste:[{bas:a, haut:b, inclusBas, inclusHaut}]};
     return { enonce: `Écrire sous la forme d'un intervalle : \\(${a}${inclusBas ? '\\leqslant' : '\\lt'} x ${inclusHaut ? '\\leqslant' : '\\lt'} ${b}\\)`,
-      intervalleSpec: {type:'intervalles', liste:[{bas:a, haut:b, inclusBas, inclusHaut}]} };
+      intervalleSpec, detail: detailConversion(intervalleSpec) };
   }},
   {id:"12.2 b)", type:"intervalle", texteLibre:true, gen: () => {
     // inegalite simple a seuil fractionnaire peu evident (53/6, -29/4...) -> demi-droite
@@ -1148,40 +1265,45 @@ const generateurs = [
     const seuil = p/q;
     const sens = choix(['>','<','>=','<=']);
     const symb = { '>':'\\gt', '<':'\\lt', '>=':'\\geqslant', '<=':'\\leqslant' }[sens];
-    return { enonce: `Écrire sous la forme d'un intervalle : \\(x ${symb} ${formaterUneBorne(seuil)}\\)`, intervalleSpec: intervalleDemiDroite(sens, seuil) };
+    const intervalleSpec = intervalleDemiDroite(sens, seuil);
+    return { enonce: `Écrire sous la forme d'un intervalle : \\(x ${symb} ${formaterUneBorne(seuil)}\\)`, intervalleSpec, detail: detailConversion(intervalleSpec) };
   }},
   {id:"12.2 c)", type:"encadrement", texteLibre:true, gen: () => {
     // intervalle borne a bornes demi-entieres -> encadrement
     const a = (2*entierSigne(1,9) + 1)/2, b = a + alea(2,6);
     const inclusBas = alea01(), inclusHaut = alea01();
-    return { enonce: `Écrire sous la forme d'un encadrement de \\(x\\) : \\(${inclusBas ? '[' : ']'}${formaterUneBorne(a)}\\,;\\,${formaterUneBorne(b)}${inclusHaut ? ']' : '['}\\)`, bas:a, haut:b, inclusBas, inclusHaut };
+    const iv = {bas:a, haut:b, inclusBas, inclusHaut}, cond = condIv(iv);
+    return { enonce: `Écrire sous la forme d'un encadrement de \\(x\\) : \\(${inclusBas ? '[' : ']'}${formaterUneBorne(a)}\\,;\\,${formaterUneBorne(b)}${inclusHaut ? ']' : '['}\\)`, bas:a, haut:b, inclusBas, inclusHaut,
+      detail: { lignes: [`x \\in ${texIv(iv)}`, `\\iff ${cond}`], final: cond } };
   }},
   {id:"12.2 d)", type:"ineq", texteLibre:true, gen: () => {
     // demi-droite a seuil entier -> inegalite sur x
     const seuil = entierSigne(1,12);
     const sens = choix(['>','<','>=','<=']);
-    const tex = formaterIntervalleSpec(intervalleDemiDroite(sens, seuil));
-    return { enonce: `Écrire sous la forme d'une inégalité portant sur \\(x\\) : \\(${tex}\\)`, sens, seuil };
+    const spec = intervalleDemiDroite(sens, seuil);
+    const tex = formaterIntervalleSpec(spec), cond = condIv(spec.liste[0]);
+    return { enonce: `Écrire sous la forme d'une inégalité portant sur \\(x\\) : \\(${tex}\\)`, sens, seuil,
+      detail: { lignes: [`x \\in ${tex}`, `\\iff ${cond}`], final: cond } };
   }},
 
   // ---------- 12.3 : chaque affirmation est-elle vraie ? (appartenance a un intervalle, inclusion d'ensembles de nombres) ----------
   {id:"12.3 a)", type:"ouiNon", texteLibre:true, gen: () => {
     // nombre a l'interieur ou a l'exterieur d'un intervalle a bornes entieres
     const t = tirerAppartenanceSimple(choix(['interieur','exterieur']));
-    return { enonce: `\\(${t.x}\\in ${t.tex}\\)`, reponseOuiNon: t.appartient };
+    return { enonce: `\\(${t.x}\\in ${t.tex}\\)`, reponseOuiNon: t.appartient, detail: detailAppartenance(t.x, t.iv, t.appartient) };
   }},
   {id:"12.3 b)", type:"ouiNon", texteLibre:true, gen: () => {
     // nombre egal a une borne d'un intervalle a bornes demi-entieres : tout depend du crochet
     const t = tirerAppartenanceRiche(choix(['borneBas','borneHaut']));
-    return { enonce: `\\(${formaterUneBorne(t.x)}\\in ${t.tex}\\)`, reponseOuiNon: t.appartient };
+    return { enonce: `\\(${formaterUneBorne(t.x)}\\in ${t.tex}\\)`, reponseOuiNon: t.appartient, detail: detailAppartenance(t.x, t.iv, t.appartient) };
   }},
   {id:"12.3 c)", type:"ouiNon", texteLibre:true, gen: () => {
     const t = tirageInclusions[0];
-    return { enonce: `\\(${t.tex}\\)`, reponseOuiNon: t.vrai };
+    return { enonce: `\\(${t.tex}\\)`, reponseOuiNon: t.vrai, detail: detailInclusion(t) };
   }},
   {id:"12.3 d)", type:"ouiNon", texteLibre:true, gen: () => {
     const t = tirageInclusions[1];
-    return { enonce: `\\(${t.tex}\\)`, reponseOuiNon: t.vrai };
+    return { enonce: `\\(${t.tex}\\)`, reponseOuiNon: t.vrai, detail: detailInclusion(t) };
   }},
 
   // ---------- 12.4 : intersection de deux intervalles (chevauchement, inclusion, ensemble vide, demi-droite) ----------
@@ -1189,21 +1311,24 @@ const generateurs = [
     const a1 = entierSigne(1,7), a2 = a1 + alea(1,3), b1 = a2 + alea(1,4), b2 = b1 + alea(1,3);
     const [x, y] = ordreAleatoire({bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:alea01()}, {bas:a2, haut:b2, inclusBas:alea01(), inclusHaut:alea01()});
     const g = x.bas < y.bas ? x : y, d = x.bas < y.bas ? y : x;
-    return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[{bas:d.bas, haut:g.haut, inclusBas:d.inclusBas, inclusHaut:g.inclusHaut}]} };
+    const intervalleSpec = {type:'intervalles', liste:[{bas:d.bas, haut:g.haut, inclusBas:d.inclusBas, inclusHaut:g.inclusHaut}]};
+    return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailInter([x, y], ['I','J'], intervalleSpec) };
   }},
   {id:"12.4 b)", type:"intervalle", texteLibre:true, gen: () => {
     // un intervalle contenu dans l'autre : l'intersection est le plus petit
     const a1 = entierSigne(1,6), a2 = a1 + alea(1,3), b2 = a2 + alea(1,4), b1 = b2 + alea(1,3);
     const grand = {bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:alea01()}, petit = {bas:a2, haut:b2, inclusBas:alea01(), inclusHaut:alea01()};
     const [x, y] = ordreAleatoire(grand, petit);
-    return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste:[petit]} };
+    const intervalleSpec = {type:'intervalles', liste:[petit]};
+    return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailInter([x, y], ['I','J'], intervalleSpec) };
   }},
   {id:"12.4 c)", type:"intervalle", texteLibre:true, gen: () => {
     // intersection vide, les deux intervalles ayant la MEME borne : au moins un des deux crochets est ouvert en ce point
     const a1 = entierSigne(1,7), b1 = a1 + alea(2,5), b2 = b1 + alea(2,5);
     const [inclusHaut1, inclusBas2] = choix([[false,false],[false,true],[true,false]]);
     const [x, y] = ordreAleatoire({bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:inclusHaut1}, {bas:b1, haut:b2, inclusBas:inclusBas2, inclusHaut:alea01()});
-    return { enonce: enonceIJ(x, y), intervalleSpec: {type:'vide'} };
+    const intervalleSpec = {type:'vide'};
+    return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailInter([x, y], ['I','J'], intervalleSpec) };
   }},
   {id:"12.4 d)", type:"intervalle", texteLibre:true, gen: () => {
     // bornes proches dont une irrationnelle : le decimal (1,7 ou 1,8) est-il avant ou apres sqrt(3) ? vide ou non selon le cas
@@ -1221,7 +1346,10 @@ const generateurs = [
     if (nonVide) intervalleSpec = sensA
       ? {type:'intervalles', liste:[{bas:d, haut:r, inclusBas:J.inclusBas, inclusHaut:I.inclusHaut, texBas:decTex, texHaut:racTex}]}
       : {type:'intervalles', liste:[{bas:r, haut:d, inclusBas:I.inclusBas, inclusHaut:J.inclusHaut, texBas:racTex, texHaut:decTex}]};
-    return { enonce: enonceIJ(x, y), intervalleSpec };
+    // comparaison du decimal et de la racine par les carres (deux nombres positifs)
+    const carre = String(Math.round(d*d*100)/100).replace('.', '{,}');
+    const comparaison = [`${decTex}^{2} = ${carre} ${d < r ? '\\lt' : '\\gt'} ${k} = \\sqrt{${k}}^{2}`, '\\text{Les deux nombres sont positifs,}', '\\text{donc rangés comme leurs carrés}', `${d < r ? `${decTex} \\lt ${racTex}` : `${decTex} \\gt ${racTex}`}`];
+    return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailInter([x, y], ['I','J'], intervalleSpec, comparaison) };
   }},
   // ---------- 12.5 : reunion de deux intervalles (disjoints, qui se chevauchent, qui se touchent, demi-droites) ----------
   {id:"12.5 a)", type:"intervalle", texteLibre:true, gen: () => tirageDisjointEnPremier ? reunionDisjointe() : reunionChevauchement()},
@@ -1233,7 +1361,8 @@ const generateurs = [
     const I = {bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:inclusHaut1}, J = {bas:b1, haut:b2, inclusBas:inclusBas2, inclusHaut:alea01()};
     const [x, y] = ordreAleatoire(I, J);
     const liste = (inclusHaut1 || inclusBas2) ? [{bas:a1, haut:b2, inclusBas:I.inclusBas, inclusHaut:J.inclusHaut}] : [I, J];
-    return { enonce: enonceIJ(x, y), intervalleSpec: {type:'intervalles', liste} };
+    const intervalleSpec = {type:'intervalles', liste};
+    return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailUnion([x, y], ['I','J'], intervalleSpec) };
   }},
   {id:"12.5 d)", type:"intervalle", texteLibre:true, gen: () => {
     // deux demi-droites ]-oo ; b] et [a ; +oo[ : tout R si elles se recouvrent, deux morceaux sinon
@@ -1241,7 +1370,8 @@ const generateurs = [
     const a = entierSigne(1,6), b = recouvrement ? a + alea(1,5) : a - alea(1,5);
     const I = ivMoins(b, alea01()), J = ivPlus(a, alea01());
     const [x, y] = ordreAleatoire(I, J);
-    return { enonce: enonceIJ(x, y), intervalleSpec: recouvrement ? {type:'tout'} : {type:'intervalles', liste:[I, J]} };
+    const intervalleSpec = recouvrement ? {type:'tout'} : {type:'intervalles', liste:[I, J]};
+    return { enonce: enonceIJ(x, y), intervalleSpec, detail: detailUnion([x, y], ['I','J'], intervalleSpec) };
   }},
 
   // ---------- 12.6 : determiner l'ensemble demande, ecrit avec ∩ ou ∪ (sans les mots), avec deux puis trois intervalles ----------
@@ -1263,7 +1393,7 @@ const generateurs = [
       spec = {type:'vide'};
     }
     const [x, y] = ordreAleatoire(I, J);
-    return { enonce: enonceEnsembles([x, y], ' \\cap '), intervalleSpec: spec };
+    return { enonce: enonceEnsembles([x, y], ' \\cap '), intervalleSpec: spec, detail: detailInter([x, y], ['I','J'], spec) };
   }},
   {id:"12.6 b)", type:"intervalle", texteLibre:true, gen: () => {
     // I ∪ J : intervalles disjoints (deux morceaux), qui se chevauchent (un morceau) ou emboites (le plus grand), cas sans ambiguite
@@ -1283,7 +1413,7 @@ const generateurs = [
       spec = {type:'intervalles', liste:[I]};
     }
     const [x, y] = ordreAleatoire(I, J);
-    return { enonce: enonceEnsembles([x, y], ' \\cup '), intervalleSpec: spec };
+    return { enonce: enonceEnsembles([x, y], ' \\cup '), intervalleSpec: spec, detail: detailUnion([x, y], ['I','J'], spec) };
   }},
   {id:"12.6 c)", type:"intervalle", texteLibre:true, gen: () => {
     // I ∩ J ∩ K : un intervalle impose la borne basse, un autre la borne haute, le troisieme ne contraint rien
@@ -1291,8 +1421,9 @@ const generateurs = [
     const I1 = {bas:m - alea(1,5), haut:n + alea(1,5), inclusBas:alea01(), inclusHaut:alea01()};
     const I2 = {bas:m, haut:n + alea(1,5), inclusBas:alea01(), inclusHaut:alea01()};
     const I3 = {bas:m - alea(1,5), haut:n, inclusBas:alea01(), inclusHaut:alea01()};
-    return { enonce: enonceEnsembles(melanger([I1, I2, I3]), ' \\cap '),
-      intervalleSpec: {type:'intervalles', liste:[{bas:m, haut:n, inclusBas:I2.inclusBas, inclusHaut:I3.inclusHaut}]} };
+    const ivs = melanger([I1, I2, I3]);
+    const intervalleSpec = {type:'intervalles', liste:[{bas:m, haut:n, inclusBas:I2.inclusBas, inclusHaut:I3.inclusHaut}]};
+    return { enonce: enonceEnsembles(ivs, ' \\cap '), intervalleSpec, detail: detailInter(ivs, ['I','J','K'], intervalleSpec) };
   }},
   {id:"12.6 d)", type:"intervalle", texteLibre:true, gen: () => {
     // I ∪ J ∪ K : soit deux intervalles se chevauchent et le troisieme est a part (deux morceaux), soit une chaine qui fusionne tout (un morceau)
@@ -1307,7 +1438,8 @@ const generateurs = [
       I1 = {bas:a1, haut:b1, inclusBas:alea01(), inclusHaut:alea01()}; I2 = {bas:a2, haut:b2, inclusBas:alea01(), inclusHaut:alea01()}; I3 = {bas:a3, haut:b3, inclusBas:alea01(), inclusHaut:alea01()};
       spec = {type:'intervalles', liste:[{bas:a1, haut:b3, inclusBas:I1.inclusBas, inclusHaut:I3.inclusHaut}]};
     }
-    return { enonce: enonceEnsembles(melanger([I1, I2, I3]), ' \\cup '), intervalleSpec: spec };
+    const ivs = melanger([I1, I2, I3]);
+    return { enonce: enonceEnsembles(ivs, ' \\cup '), intervalleSpec: spec, detail: detailUnion(ivs, ['I','J','K'], spec) };
   }},
 
   // ---------- 12.7 : systemes de deux inequations (une borne de chaque cote, puis deux bornes de meme sens) ----------
@@ -1322,35 +1454,48 @@ const generateurs = [
     const cg = inclusBas?'[':']', cd = inclusHaut?']':'[';
     const debut = inclusBas ? a : a+1;
     const fin = inclusHaut ? b : b-1;
-    return { enonce: `Combien d'entiers relatifs appartiennent à l'intervalle \\(${cg}${a};${b}${cd}\\) ?`, reponse: `${fin - debut + 1}` };
+    const nombre = fin - debut + 1;
+    return { enonce: `Combien d'entiers relatifs appartiennent à l'intervalle \\(${cg}${a};${b}${cd}\\) ?`, reponse: `${nombre}`,
+      detail: { lignes: [`\\mathbb{Z} \\cap ${cg}${a}\\,;\\,${b}${cd} = \\{${debut}\\,;\\,${debut + 1}\\,;\\,\\dots\\,;\\,${fin}\\}`,
+        '\\text{Pour } m \\leqslant n \\text{ : de } m \\text{ à } n \\text{ inclus,}', '\\text{il y a } n-m+1 \\text{ entiers}',
+        `${fin}-${dP(debut)}+1 = ${nombre}`], final: `${nombre}` } };
   }},
   {id:"12.8 c)", type:"intervalle", texteLibre:true, gen: () => {
     const a = entierSigne(1,8), b = a + alea(2,8);
     const inclusBas = alea01(), inclusHaut = alea01();
     const cg = inclusBas?'[':']', cd = inclusHaut?']':'[';
-    const tex = `${cg}${a};${b}${cd}`;
-    return { enonce: `Déterminer l'ensemble des nombres réels qui n'appartiennent pas à l'intervalle \\(${tex}\\).`,
-      intervalleSpec: { type:'intervalles', liste: [
-        {bas:-Infinity, haut:a, inclusBas:false, inclusHaut: !inclusBas},
-        {bas:b, haut:Infinity, inclusBas: !inclusHaut, inclusHaut:false}
-      ]} };
+    const tex = `${cg}${a};${b}${cd}`, texV = `${cg}${a}\\,;\\,${b}${cd}`;
+    const intervalleSpec = { type:'intervalles', liste: [
+      {bas:-Infinity, haut:a, inclusBas:false, inclusHaut: !inclusBas},
+      {bas:b, haut:Infinity, inclusBas: !inclusHaut, inclusHaut:false}
+    ]};
+    const final = formaterIntervalleSpec(intervalleSpec);
+    return { enonce: `Déterminer l'ensemble des nombres réels qui n'appartiennent pas à l'intervalle \\(${tex}\\).`, intervalleSpec,
+      detail: { lignes: [`x \\in ${texV} \\iff ${condIv({bas:a, haut:b, inclusBas, inclusHaut})}`,
+        ptLigne(`x \\notin ${texV} \\iff ${intervalleSpec.liste.map(condIv).join(' \\text{ ou } ')}`), `S = ${final}`], final } };
   }},
   {id:"12.8 d)", type:"num", texteLibre:true, gen: () => {
     const seuil = choix([10,15,20,25,30,35,40,50]);
     const elements = [];
     for (let n=0; n*n<seuil; n++) elements.push(n);
-    return { enonce: `Décrire en extension (lister tous les éléments) l'ensemble \\(E=\\{n\\in\\mathbb{N}\\mid n^2\\lt ${seuil}\\}\\).`, reponse: `{${elements.join(';')}}` };
+    const m = elements[elements.length - 1], carreSuivant = (m + 1) * (m + 1), final = `\\{${elements.join('\\,;\\,')}\\}`;
+    return { enonce: `Décrire en extension (lister tous les éléments) l'ensemble \\(E=\\{n\\in\\mathbb{N}\\mid n^2\\lt ${seuil}\\}\\).`, reponse: `{${elements.join(';')}}`,
+      detail: { lignes: [`${m}^{2} = ${m*m} \\lt ${seuil}`, `${m + 1}^{2} = ${carreSuivant} ${carreSuivant > seuil ? '\\gt' : '\\geqslant'} ${seuil}`, `E = ${final}`], final } };
   }}
 ];
+
 
 function genererExercices() {
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 4);
   tirageDisjointEnPremier = alea01();
   tirageInclusions = melanger([choix(INCLUSIONS_VIVIER.filter(t => t.vrai)), choix(INCLUSIONS_VIVIER.filter(t => !t.vrai))]);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 24); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2363,7 +2508,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

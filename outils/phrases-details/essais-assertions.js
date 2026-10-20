@@ -67,6 +67,12 @@ const ESSAIS = {
     [true, '\\text{Réponse : non}', { reponse: 'non' }, env('')],
     [false, '\\text{Réponse : oui}', { reponse: 'non' }, env('')]
   ],
+  'aucun-reel-ne-convient-si-l-ensemble-est-vide': [
+    [true, '\\text{Aucun réel ne convient}', { intervalleSpec: { type: 'vide' } }, env('')],
+    [false, '\\text{Aucun réel ne convient}', { intervalleSpec: { type: 'tout' } }, env('')],
+    [false, '\\text{Aucun réel ne convient}', { intervalleSpec: { type: 'intervalles', liste: [{ bas: 1, haut: 2, inclusBas: true, inclusHaut: true }] } }, env('')],
+    [false, '\\text{Aucun réel ne convient}', {}, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],

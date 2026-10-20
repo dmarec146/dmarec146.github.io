@@ -177,6 +177,12 @@ module.exports = [
     }
   },
   {
+    nom: 'aucun-reel-ne-convient-si-l-ensemble-est-vide',
+    // « Aucun réel ne convient » n'est écrit que si la réponse attendue est l'ensemble vide
+    motif: /Aucun réel ne convient/,
+    verifie: (l, e) => !!e.intervalleSpec && e.intervalleSpec.type === 'vide'
+  },
+  {
     nom: 'la-longueur-de-periode-annoncee-est-exacte',
     // « \text{Période de } 6 \text{ chiffres} » : longueur de la période de 1/b (b lu dans l'énoncé)
     motif: /\\text\{Période de \} \d+ \\text\{ chiffres?\}/,

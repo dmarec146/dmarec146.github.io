@@ -80,7 +80,7 @@ async function controlerDansLaPage(opts) {
   // ---------- LaTeX -> mathjs ----------
   const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'abs', 'pi', 'e', 'Infinity', 'nthRoot']);
   function versMathjs(tex) {
-    let t = String(tex).replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
+    let t = String(tex).replace(/\\(?:small|scriptsize)\s*/g, '').replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
       .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
       .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '');
@@ -166,11 +166,15 @@ async function controlerDansLaPage(opts) {
   const JETON = { '<=': 'LE', '>=': 'GE', '<': 'LT', '>': 'GT' }, SYMBOLE = { LE: '<=', GE: '>=', LT: '<', GT: '>', EQ: '=' };
   // une relation « g(v) op 0 » : [{ g: (x) => nombre, op }] ; plusieurs relations reliées par ET (double inégalité) ou OU
   function analyserPartie(partie) {
-    let p = partie.replace(/\\text\{\s*ou\s*\}/g, ' §OU§ ').replace(/\\q?quad/g, ' ');
+    // « A \text{ ou } B » : réunion ; « A \text{ et } B » : intersection ; une double inégalité est elle-même une intersection.
+    // Réunion de doubles inégalités acceptée (« 1 \lt x \lt 3 \text{ ou } 5 \leqslant x \lt 8 ») ; « et » et « ou » ne se mélangent pas.
+    let p = partie.replace(/\\text\{\s*ou\s*\}/g, ' §OU§ ').replace(/\\text\{\s*et\s*\}/g, ' §ET§ ').replace(/\\q?quad/g, ' ');
     if (/\\text|\\begin|\\neq|\\in|\\cup/.test(p)) return null;
-    const morceaux = p.split('§OU§').map((s) => s.trim()).filter(Boolean);
-    const relations = [];
-    let connecteur = morceaux.length > 1 ? 'ou' : 'et';
+    if (p.includes('§OU§') && p.includes('§ET§')) return null;
+    const morceaux = p.split(/§OU§|§ET§/).map((s) => s.trim()).filter(Boolean);
+    const relations = [], groupes = [];
+    const unionDeMorceaux = p.includes('§OU§');
+    let connecteur = unionDeMorceaux ? 'ou' : 'et';
     for (const morceau of morceaux) {
       // repère les opérateurs de relation (= < > ≤ ≥) au premier niveau
       // les opérateurs sont remplacés par des jetons sans « < » ni « = » pour ne pas se couper entre eux
@@ -180,11 +184,12 @@ async function controlerDansLaPage(opts) {
       const jetons = marque.split(/§(LE|GE|LT|GT|EQ)§/).map((x) => x.trim());
       // jetons : expr, op, expr, [op, expr]
       if (jetons.length < 3 || jetons.length % 2 === 0) return null;
-      for (let i = 0; i + 2 < jetons.length; i += 2) relations.push({ gauche: jetons[i], op: SYMBOLE[jetons[i + 1]], droite: jetons[i + 2] });
-      if (jetons.length > 3) connecteur = morceaux.length > 1 ? 'mixte' : 'et';
+      const indices = [];
+      for (let i = 0; i + 2 < jetons.length; i += 2) { indices.push(relations.length); relations.push({ gauche: jetons[i], op: SYMBOLE[jetons[i + 1]], droite: jetons[i + 2] }); }
+      groupes.push(indices);
     }
-    if (connecteur === 'mixte') return null;
-    return { relations, connecteur };
+    // réunion : un groupe par morceau ; intersection : un seul groupe contenant toutes les relations
+    return { relations, connecteur, groupes: unionDeMorceaux ? groupes : [groupes.flat()] };
   }
   function variableLibre(...analyses) {
     const lettres = new Set();
@@ -211,6 +216,7 @@ async function controlerDansLaPage(opts) {
     });
     if (!gardes.some(Boolean)) throw new Error('aucune condition');
     const rels = a.relations.filter((r, k) => gardes[k]), f = fTout.filter((fn, k) => gardes[k]), valeurs = valeursTout.filter((w, k) => gardes[k]);
+    let suivant = 0; const nk = gardes.map((g) => (g ? suivant++ : -1));   // indice d'une relation conservée (relations constantes écartées : -1)
     const racines = [], frontieres = new Set(), vecteur = new Array(N + 1);
     f.forEach((fn, k) => {
       for (let i = 0; i < N; i++) {
@@ -240,7 +246,7 @@ async function controlerDansLaPage(opts) {
     for (let i = 0; i <= N; i++) {
       const t = rels.map((r, k) => { const y = valeurs[k][i]; if (!isFinite(y)) return null; return r.op === '<' ? y < 0 : r.op === '>' ? y > 0 : r.op === '<=' ? y <= 0 : r.op === '>=' ? y >= 0 : null; });
       if (t.some((x) => x === null && true)) { vecteur[i] = null; continue; }
-      vecteur[i] = a.connecteur === 'ou' ? t.some(Boolean) : t.every(Boolean);
+      vecteur[i] = a.groupes.some((g) => g.every((k) => nk[k] === -1 || t[nk[k]]));
     }
     // racines d'une relation d'égalité : solutions ; racines d'une inégalité : simples frontières
     const solutions = racines.filter((x) => x.op === '=').map((x) => x.r);
@@ -314,6 +320,12 @@ async function controlerDansLaPage(opts) {
         const v = evaluer(String(F).replace(/\\approx\s*/g, '').replace(/\\,?\s*\\%/g, ''), 0);
         return Math.abs(v - cibleNum) <= Math.max(e.tolerancePourcent || 0, e.tolerancePoints ? 0.05 : 0, 1e-6) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
+    }
+    // inégalité portant sur x (« x \gt -7 ») : sens et seuil (20/10/2026)
+    if (e.type === 'ineq' && e.sens !== undefined && e.seuil !== undefined) {
+      const m = String(F).replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/\s+/g, '').match(/^x(<=|>=|<|>)(.+)$/);
+      if (!m) return 'faux';
+      try { return m[1] === e.sens && Math.abs(evaluer(m[2], 0) - e.seuil) < 1e-9 ? 'ok' : 'faux'; } catch (er) { return 'non-verifiable'; }
     }
     // oui / non (reponseOuiNon booléen) ; plus petit ensemble de nombres (\mathbb{N}, \mathbb{Z}, \mathbb{D}, \mathbb{Q}, \mathbb{R}) ;
     // écriture scientifique a\times 10^{n} : mantisse et exposant exacts (20/10/2026)
@@ -589,8 +601,10 @@ async function controlerDansLaPage(opts) {
         compte('equivalence-modifiee', () => { const r = verifierEquivalence(parties[0], n); if (r.faux) return true; const rc = verifierChaine(n, null, true); return !!(rc && rc.faux); }, `${e.id} : ${parties[0].trim()} ⟺ ${n.trim()}`);
       });
       // M4 : une accolade fermante supprimée => MathJax doit refuser
-      if (window.MathJax && (MathJax.tex2svg || MathJax.tex2chtml) && D.lignes.some((l) => l.includes('}'))) {
-        const l = D.lignes.find((x) => x.includes('}')); const mut = l.replace(/\}([^}]*)$/, '$1');
+      // (une accolade d'ensemble « \} » est un symbole, non un groupe : sa suppression laisse un « \ » final que MathJax accepte, on ne la retient pas)
+      const derniereAccolade = (x) => { for (let i = x.length - 1; i >= 0; i--) if (x[i] === '}' && x[i - 1] !== '\\') return i; return -1; };
+      if (window.MathJax && (MathJax.tex2svg || MathJax.tex2chtml) && D.lignes.some((l) => derniereAccolade(l) >= 0)) {
+        const l = D.lignes.find((x) => derniereAccolade(x) >= 0); const k = derniereAccolade(l), mut = l.slice(0, k) + l.slice(k + 1);
         compte('accolade-supprimee', () => { try { const nn = (MathJax.tex2svg || MathJax.tex2chtml)(mut); return !!nn.querySelector('[data-mml-node="merror"], mjx-merror'); } catch (er) { return true; } });
       }
       // M6 : un signe de la ligne finale, puis d'une ligne de facteur, est inversé dans un tableau de signes => le tableau doit être refusé
@@ -646,7 +660,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       // 1. la réponse finale du détail, saisie comme le ferait un élève, doit être acceptée par la validation de la fiche
       const versTexte = (tex) => {
         let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\%/g, '%').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
-          .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\(?:times|cdot)/g, '*')
+          .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/\\(?:times|cdot)/g, '*')
           .replace(/\\(?:emptyset|varnothing)/g, '∅').replace(/\\mathbb\{R\}/g, 'ℝ');
         for (let k = 0; k < 6; k++) a = a.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
         return a.replace(/\s+/g, '');
