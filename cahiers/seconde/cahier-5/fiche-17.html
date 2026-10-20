@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"17.1 a)":0.5,"17.1 b)":0.5,"17.2 a)":0.75,"17.2 b)":1,"17.3 a)":0.75,"17.3 b)":1,"17.3 c)":1.25,"17.4 a)":0.5,"17.4 b)":1,"17.4 c)":1.25,"17.5 a)":1.25,"17.5 b)":1,"17.5 c)":1,"17.5 d)":1.25,"17.6 a)":2,"17.6 b)":1.75,"17.6 c)":1.5,"17.6 d)":2},"bonus":["17.6 a)","17.6 b)","17.6 c)","17.6 d)"]});
@@ -1797,53 +1798,109 @@ function tableCorrigeVariationsHTML(ex) {
 }
 
 
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracDP, fracTexte, sommeTermes, polyL, fr, quotientBrut, lignesPente, lignesOrdonnee, ptLigne } = Detail;
+const SYM17 = { '<': '\\lt', '>': '\\gt' };
+// (n/d) x + p, d >= 2, p entier non nul : « \dfrac{3}{4}x-5 », « -\dfrac{2}{3}x+1 »
+const affineTexteFrac17 = (n, d, p) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}x${p > 0 ? '+' : '-'}${Math.abs(p)}`;
+// comparaison de deux images par une fonction du type (x - v)^2 (+ d) : sens de variation du cote concerne, rangement des deux nombres, conclusion
+// n1 et n2 : noms des deux nombres ; (bas1, haut1) et (bas2, haut2) : leurs encadrements ; droite : encadrements a droite du sommet v
+function detailComparaisonCarre17(nom, v, droite, n1, n2, bas1, haut1, bas2, haut2, symbole) {
+  const croissante = droite;
+  const lignes = [`\\text{La fonction } ${nom} \\text{ est ${croissante ? 'croissante' : 'décroissante'} sur } ${croissante ? `[${v}\\,;\\,+\\infty[` : `]-\\infty\\,;\\,${v}]`}`];
+  let ordre;
+  if (bas1 >= haut2) { lignes.push(haut2 === bas1 ? `${n2} \\lt ${haut2} \\lt ${n1}` : `${n2} \\lt ${haut2} \\leqslant ${bas1} \\lt ${n1}`, `${n2} \\lt ${n1}`); ordre = 'gt'; }
+  else { lignes.push(haut1 === bas2 ? `${n1} \\lt ${haut1} \\lt ${n2}` : `${n1} \\lt ${haut1} \\leqslant ${bas2} \\lt ${n2}`, `${n1} \\lt ${n2}`); ordre = 'lt'; }
+  lignes.push(`${nom}(${n1}) ${SYM17[symbole]} ${nom}(${n2})`);
+  return { lignes, final: `${nom}(${n1}) ${SYM17[symbole]} ${nom}(${n2})` };
+}
+// comparaison avec deux valeurs numeriques x1, x2 : rangement puis sens de variation
+function detailComparaisonValeurs17(nom, x1, x2, phraseVariation, symbole) {
+  return { lignes: [`${x1} ${x1 < x2 ? '\\lt' : '>'} ${x2}`, ...[].concat(phraseVariation), `${nom}(x_{1}) ${SYM17[symbole]} ${nom}(x_{2})`], final: `${nom}(x_{1}) ${SYM17[symbole]} ${nom}(x_{2})` };
+}
+
 // ---------- modeles de developpement du calcul 17.2 : a) une identite remarquable, b) une double distributivite ----------
 const MODELES_IDENTITE_REMARQUABLE17 = [
-  () => { const a = alea(2,9); return { enonce:`(x+${a})^2`, reponse:`x^2+${2*a}*x+${a*a}` }; },
-  () => { const a = alea(2,9); return { enonce:`(x-${a})^2`, reponse:`x^2-${2*a}*x+${a*a}` }; },
-  () => { const a = alea(2,9); return { enonce:`(x+${a})(x-${a})`, reponse:`x^2-${a*a}` }; }
+  () => { const a = alea(2,9), res = polyL([a*a, 2*a, 1]);
+          return { enonce:`(x+${a})^2`, reponse:`x^2+${2*a}*x+${a*a}`,
+            detail: { lignes: [`(x+${a})^{2} = (x+${a})(x+${a}) = ${sommeTermes([[1, 'x^{2}'], [a, 'x'], [a, 'x'], [a*a, '']])} = ${res}`], final: res } }; },
+  () => { const a = alea(2,9), res = polyL([a*a, -2*a, 1]);
+          return { enonce:`(x-${a})^2`, reponse:`x^2-${2*a}*x+${a*a}`,
+            detail: { lignes: [`(x-${a})^{2} = (x-${a})(x-${a}) = ${sommeTermes([[1, 'x^{2}'], [-a, 'x'], [-a, 'x'], [a*a, '']])} = ${res}`], final: res } }; },
+  () => { const a = alea(2,9), res = polyL([-a*a, 0, 1]);
+          return { enonce:`(x+${a})(x-${a})`, reponse:`x^2-${a*a}`,
+            detail: { lignes: [`(x+${a})(x-${a}) = ${sommeTermes([[1, 'x^{2}'], [-a, 'x'], [a, 'x'], [-a*a, '']])} = ${res}`], final: res } }; }
 ];
 const MODELES_DOUBLE_DISTRIBUTIVITE17 = [
   () => {
     let a, b; do { a = entierSigne(1,9); b = entierSigne(1,9); } while (a + b === 0);
-    const somme = a+b, produit = a*b;
-    return { enonce:`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}` };
+    const somme = a+b, produit = a*b, res = polyL([produit, somme, 1]);
+    return { enonce:`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b})`, reponse:`x^2${somme>=0?'+':''}${somme}*x${produit>=0?'+':''}${produit}`,
+      detail: { lignes: [`(x${a>=0?'+':''}${a})(x${b>=0?'+':''}${b}) = ${sommeTermes([[1, 'x^{2}'], [b, 'x'], [a, 'x'], [produit, '']])} = ${res}`], final: res } };
   },
   () => {
     let a, b, c, d, milieu;
     do { a = alea(2,4); c = alea(2,4); b = entierSigne(1,9); d = entierSigne(1,9); milieu = a*d + b*c; } while (milieu === 0);
-    return { enonce:`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d})`, reponse:`${a*c}*x^2${milieu>=0?'+':''}${milieu}*x${b*d>=0?'+':''}${b*d}` };
+    const res = polyL([b*d, milieu, a*c]);
+    return { enonce:`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d})`, reponse:`${a*c}*x^2${milieu>=0?'+':''}${milieu}*x${b*d>=0?'+':''}${b*d}`,
+      detail: { lignes: [`(${a}x${b>=0?'+':''}${b})(${c}x${d>=0?'+':''}${d}) = ${sommeTermes([[a*c, 'x^{2}'], [a*d, 'x'], [b*c, 'x'], [b*d, '']])} = ${res}`], final: res } };
   }
 ];
 
 // ---------- vivier de calculs numeriques (groupe 17.1), identique a celui des fiches 8, 12, 14, 15 et 16 ----------
 const MODELES_CALCUL = [
   () => { const a = alea(2,20), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}` }; },
-  () => { const a = alea(2,9), b = alea(2,12), c = alea(2,15);
-          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}` }; },
+          return { enonce:`${a}-${b}\\times ${c}`, reponse:`${a - b*c}`,
+                   detail: { lignes: [`${a}-${b}\\times ${c} = ${a} - ${b*c} = ${a - b*c}`], final: `${a - b*c}` } }; },
+  // produit d'un negatif par une difference
+  () => { let a, b, c; do { a = alea(2,9); b = alea(2,12); c = alea(2,15); } while (b === c);
+          return { enonce:`(-${a})\\times (${b}-${c})`, reponse:`${-a*(b-c)}`,
+                   detail: { lignes: [`(-${a})\\times (${b}-${c}) = (-${a})\\times ${dP(b - c)} = ${-a*(b-c)}`], final: `${-a*(b-c)}` } }; },
+  // carre puis soustraction
   () => { const a = alea(3,12), b = alea(2,9), c = alea(2,9);
-          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}` }; },
-  () => { const a = alea(2,15), b = alea(2,15);
-          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}` }; },
+          return { enonce:`${a}^2-${b}\\times ${c}`, reponse:`${a*a - b*c}`,
+                   detail: { lignes: [`${a}^2-${b}\\times ${c} = ${a*a} - ${b*c} = ${a*a - b*c}`], final: `${a*a - b*c}` } }; },
+  // double negation
+  () => { let a, b; do { a = alea(2,15); b = alea(2,15); } while (a === b);
+          return { enonce:`-${a}-(-${b})`, reponse:`${-a + b}`,
+                   detail: { lignes: [`-${a}-(-${b}) = -${a} + ${b} = ${-a + b}`], final: `${-a + b}` } }; },
+  // produit de trois facteurs signes
   () => { const a = alea(2,7), b = alea(2,7), c = alea(2,7);
-          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}` }; },
+          return { enonce:`${a}\\times (-${b})\\times (-${c})`, reponse:`${a*b*c}`,
+                   detail: { lignes: [`${a}\\times (-${b})\\times (-${c}) = (${-a*b})\\times (-${c}) = ${a*b*c}`], final: `${a*b*c}` } }; },
+  // quotient exact suivi d'une addition
   () => { const b = alea(2,9), q = alea(2,12), c = alea(2,20);
-          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}` }; },
+          return { enonce:`\\dfrac{${b*q}}{${b}}+${c}`, reponse:`${q + c}`,
+                   detail: { lignes: [`\\dfrac{${b*q}}{${b}}+${c} = ${q}+${c} = ${q + c}`], final: `${q + c}` } }; },
+  // quotient d'une somme : la barre de fraction joue le role d'une parenthese
   () => { const c = alea(2,9), q = alea(2,9), a = alea(2, c*q - 1), b = c*q - a;
-          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}}{${c}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}}{${c}} = \\dfrac{${a + b}}{${c}} = ${q}`], final: `${q}` } }; },
+  // moyenne de trois entiers
   () => { const q = alea(3,20), a = alea(1, 3*q - 2), b = alea(1, 3*q - a - 1), c = 3*q - a - b;
-          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}+${c}}{3}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}+${c}}{3} = \\dfrac{${3*q}}{3} = ${q}`], final: `${q}` } }; },
+  // suite d'additions et de soustractions
   () => { const a = alea(5,25), b = alea(2,18), c = alea(2,18), d = alea(2,18);
-          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}` }; },
+          return { enonce:`${a}-${b}+${c}-${d}`, reponse:`${a - b + c - d}`,
+                   detail: { lignes: [`${a}-${b}+${c}-${d} = ${a - b}+${c}-${d} = ${a - b + c}-${d} = ${a - b + c - d}`], final: `${a - b + c - d}` } }; },
+  // distributivite mentale : a x 99 = a x 100 - a
   () => { const a = alea(3,25), m = choix([99, 101, 999, 98, 102]);
-          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}` }; },
+          const base = m > 500 ? 1000 : 100, ecart = base - m, signe = ecart > 0 ? '-' : '+', k = Math.abs(ecart);
+          return { enonce:`${a}\\times ${m}`, reponse:`${a*m}`,
+                   detail: { lignes: [`${a}\\times ${m} = ${a}\\times (${base} ${signe} ${k}) = ${a*base} ${signe} ${a*k} = ${a*m}`], final: `${a*m}` } }; },
+  // cube et difference
   () => { const a = alea(2,6), b = alea(2,40);
-          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}` }; },
+          return { enonce:`${a}^3-${b}`, reponse:`${a*a*a - b}`,
+                   detail: { lignes: [`${a}^3-${b} = ${a*a*a} - ${b} = ${a*a*a - b}`], final: `${a*a*a - b}` } }; },
+  // priorites imbriquees
   () => { const a = alea(2,9), b = alea(2,9), c = alea(2,9), d = alea(2,12);
-          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}` }; },
+          return { enonce:`${a}\\times (${b}+${c})-${d}`, reponse:`${a*(b+c) - d}`,
+                   detail: { lignes: [`${a}\\times (${b}+${c})-${d} = ${a}\\times ${b + c}-${d} = ${a*(b+c)}-${d} = ${a*(b+c) - d}`], final: `${a*(b+c) - d}` } }; },
+  // double et moitie
   () => { const q = alea(2,20), a = 2*q, b = alea(2,15);
-          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}` }; }
+          return { enonce:`\\dfrac{${a}}{2}+${b}\\times 2`, reponse:`${q + 2*b}`,
+                   detail: { lignes: [`\\dfrac{${a}}{2}+${b}\\times 2 = ${q}+${2*b} = ${q + 2*b}`], final: `${q + 2*b}` } }; }
 ];
 let tirageCalculs = melanger(MODELES_CALCUL).slice(0, 2);
 
@@ -1858,7 +1915,7 @@ const generateurs = [
   {id:"17.2 b)", type:"num", gen: () => choix(MODELES_DOUBLE_DISTRIBUTIVITE17)()},
 
 
-  // ---------- 16.3 : ensemble de definition d'une fonction de reference (directe ou translatee) ----------
+  // ---------- 17.3 : ensemble de definition d'une fonction de reference (directe ou translatee) ----------
   {id:"17.3 a)", type:"intervalle", texteLibre:true, gen: () => {
     const nom = choix(['affine','carre','cube','abs','inverse','racine']);
     const specs = {
@@ -1870,7 +1927,9 @@ const generateurs = [
       racine: { type:'intervalles', liste:[{bas:0, haut:Infinity, inclusBas:true, inclusHaut:false}] }
     };
     const exprs = { affine:'2x-3', carre:'x^2', cube:'x^3', abs:'|x|', inverse:'\\dfrac{1}{x}', racine:'\\sqrt{x}' };
-    return { enonce:`\\(f(x)=${exprs[nom]}\\)`, intervalleSpec: specs[nom] };
+    const fin = formaterIntervalleSpec(specs[nom]);
+    const tete = { inverse: ['\\text{On ne peut pas diviser par } 0', 'x \\neq 0'], racine: ['\\text{Sous une racine carrée,}', '\\text{le nombre est positif ou nul}', 'x \\geqslant 0'] }[nom] || ['\\text{On peut calculer } f(x) \\text{ pour tout réel } x'];
+    return { enonce:`\\(f(x)=${exprs[nom]}\\)`, intervalleSpec: specs[nom], detail: { lignes: [...tete, `D_{f} = ${fin}`], final: fin } };
   }},
   {id:"17.3 b)", type:"intervalle", texteLibre:true, gen: () => {
     const a = entierSigne(1,6);
@@ -1878,7 +1937,9 @@ const generateurs = [
       {bas:-Infinity, haut:a, inclusBas:false, inclusHaut:false},
       {bas:a, haut:Infinity, inclusBas:false, inclusHaut:false}
     ]};
-    return { enonce:`\\(f(x)=\\dfrac{1}{${xMoinsTexte(a)}}\\)`, intervalleSpec: spec };
+    const fin = formaterIntervalleSpec(spec);
+    return { enonce:`\\(f(x)=\\dfrac{1}{${xMoinsTexte(a)}}\\)`, intervalleSpec: spec,
+      detail: { lignes: ['\\text{On ne peut pas diviser par } 0', `${xMoinsTexte(a)} \\neq 0`, `\\iff x \\neq ${a}`, `D_{f} = ${fin}`], final: fin } };
   }},
   {id:"17.3 c)", type:"intervalle", texteLibre:true, gen: () => {
     const a = entierSigne(1,6);
@@ -1887,7 +1948,11 @@ const generateurs = [
       ? { type:'intervalles', liste:[{bas:a, haut:Infinity, inclusBas:true, inclusHaut:false}] }
       : { type:'intervalles', liste:[{bas:-Infinity, haut:a, inclusBas:false, inclusHaut:true}] };
     const expr = versLaDroite ? `\\sqrt{${xMoinsTexte(a)}}` : `\\sqrt{${a}-x}`;
-    return { enonce:`\\(f(x)=${expr}\\)`, intervalleSpec: spec };
+    const fin = formaterIntervalleSpec(spec), regle = '\\text{Sous une racine carrée,}', regle2 = '\\text{le nombre est positif ou nul}';
+    const lignes = versLaDroite
+      ? [regle, regle2, `${xMoinsTexte(a)} \\geqslant 0`, `\\iff x \\geqslant ${a}`, `D_{f} = ${fin}`]
+      : [regle, regle2, `${a}-x \\geqslant 0`, `\\iff -x \\geqslant ${-a}`, '\\text{On multiplie par } -1 < 0', "\\text{donc le sens de l'inégalité change}", `\\iff x \\leqslant ${a}`, `D_{f} = ${fin}`];
+    return { enonce:`\\(f(x)=${expr}\\)`, intervalleSpec: spec, detail: { lignes, final: fin } };
   }},
 
   // ---------- 17.4 : fonction affine, coefficient directeur m et ordonnee a l'origine p (uniquement
@@ -1899,13 +1964,15 @@ const generateurs = [
   {id:"17.4 a)", type:"num", texteLibre:true, gen: () => {
     const m = entierSigne(1,9), p = entierSigne(1,15);
     let x1, x2; do { x1 = alea(-6,6); x2 = alea(-6,6); } while (x1 === x2);
-    const y1 = m*x1+p, y2 = m*x2+p;
-    return { enonce:`Une fonction affine \\(f\\) vérifie \\(f(${x1})=${y1}\\) et \\(f(${x2})=${y2}\\). Calculer son coefficient directeur \\(m\\).`, reponse:`${m}` };
+    const y1 = m*x1+p, y2 = m*x2+p, P = lignesPente(x1, y1, x2, y2);
+    return { enonce:`Une fonction affine \\(f\\) vérifie \\(f(${x1})=${y1}\\) et \\(f(${x2})=${y2}\\). Calculer son coefficient directeur \\(m\\).`, reponse:`${m}`,
+      detail: { lignes: ['m = \\dfrac{f(x_{2})-f(x_{1})}{x_{2}-x_{1}}', ...P.lignes], final: fracD(P.m) } };
   }},
   {id:"17.4 b)", type:"num", texteLibre:true, gen: () => {
     const m = entierSigne(1,9), x0 = entierSigne(1,9), p = entierSigne(1,15);
     const y0 = m*x0+p;
-    return { enonce:`Une fonction affine \\(f\\), de coefficient directeur \\(m=${m}\\), vérifie \\(f(${x0})=${y0}\\). Calculer son ordonnée à l'origine \\(p\\).`, reponse:`${p}` };
+    return { enonce:`Une fonction affine \\(f\\), de coefficient directeur \\(m=${m}\\), vérifie \\(f(${x0})=${y0}\\). Calculer son ordonnée à l'origine \\(p\\).`, reponse:`${p}`,
+      detail: { lignes: [`${y0} = ${sommeTermes([[m, dP(x0)]])} + p`, `\\iff ${y0} = ${m*x0} + p`, `\\iff p = ${y0} - ${dP(m*x0)} = ${p}`], final: `${p}` } };
   }},
   {id:"17.4 c)", type:"num", texteLibre:true, gen: () => {
     const d = choix([2,3,4]);
@@ -1914,7 +1981,9 @@ const generateurs = [
     let k1, k2; do { k1 = alea(-3,3); k2 = alea(-3,3); } while (k1 === k2);
     const xA = d*k1, xB = d*k2, yA = n*k1+p, yB = n*k2+p;
     const signeP = p >= 0 ? `+${p}` : `-${Math.abs(p)}`;
-    return { enonce:`Une droite \\((AB)\\) passe par les points \\(A(${xA}\\,;\\,${yA})\\) et \\(B(${xB}\\,;\\,${yB})\\). Donner l'expression de la fonction affine \\(f\\) dont \\((AB)\\) est la représentation graphique, sous la forme \\(f(x)=mx+p\\).`, reponse:`(${n}/${d})*x${signeP}` };
+    const P = lignesPente(xA, yA, xB, yB), O = lignesOrdonnee(P.m, xA, yA), fin = `f(x) = ${affineTexteFrac17(n, d, p)}`;
+    return { enonce:`Une droite \\((AB)\\) passe par les points \\(A(${xA}\\,;\\,${yA})\\) et \\(B(${xB}\\,;\\,${yB})\\). Donner l'expression de la fonction affine \\(f\\) dont \\((AB)\\) est la représentation graphique, sous la forme \\(f(x)=mx+p\\).`, reponse:`(${n}/${d})*x${signeP}`,
+      detail: { lignes: ['m = \\dfrac{y_{B}-y_{A}}{x_{B}-x_{A}}', ...P.lignes, ...O.lignes, fin], final: fin } };
   }},
 
   // ---------- 16.5 : comparer f(x1) et f(x2) sans les calculer, a l'aide du sens de variation
@@ -1930,19 +1999,22 @@ const generateurs = [
     const bas1 = droite ? p+d1 : p-d1-1, haut1 = bas1+1;
     const bas2 = droite ? p+d2 : p-d2-1, haut2 = bas2+1;
     const symbole = d1<d2 ? '<' : '>';
-    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(${bas1}\\lt a\\lt ${haut1}\\) et \\(${bas2}\\lt b\\lt ${haut2}\\).`, reponse: `f(a)${symbole}f(b)` };
+    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=(${xMoinsTexte(p)})^2\\). On sait que \\(${bas1}\\lt a\\lt ${haut1}\\) et \\(${bas2}\\lt b\\lt ${haut2}\\).`, reponse: `f(a)${symbole}f(b)`,
+      detail: detailComparaisonCarre17('f', p, droite, 'a', 'b', bas1, haut1, bas2, haut2, symbole) };
   }},
   {id:"17.5 b)", type:"texte", comparaison:true, nomFonction:"g", texteLibre:true, gen: () => {
     const p = entierSigne(0,6);
     let d1 = alea(1,8), d2 = alea(1,8);
     while (d2 === d1) d2 = alea(1,8);
     const symbole = d1<d2 ? '<' : '>';
-    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=\\sqrt{${xMoinsTexte(p)}}\\). On considère \\(x_1=${p+d1}\\) et \\(x_2=${p+d2}\\).`, reponse: `g(x1)${symbole}g(x2)` };
+    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=\\sqrt{${xMoinsTexte(p)}}\\). On considère \\(x_1=${p+d1}\\) et \\(x_2=${p+d2}\\).`, reponse: `g(x1)${symbole}g(x2)`,
+      detail: detailComparaisonValeurs17('g', p+d1, p+d2, '\\text{La fonction racine carrée est croissante}', symbole) };
   }},
   {id:"17.5 c)", type:"texte", comparaison:true, nomFonction:"h", texteLibre:true, gen: () => {
     let x1 = entierSigne(1,8), x2; do { x2 = entierSigne(1,8); } while (x2 === x1);
     const symbole = x1<x2 ? '<' : '>';
-    return { enonce:`La fonction \\(h\\) est définie par \\(h(x)=x^3\\). On considère \\(x_1=${x1}\\) et \\(x_2=${x2}\\).`, reponse: `h(x1)${symbole}h(x2)` };
+    return { enonce:`La fonction \\(h\\) est définie par \\(h(x)=x^3\\). On considère \\(x_1=${x1}\\) et \\(x_2=${x2}\\).`, reponse: `h(x1)${symbole}h(x2)`,
+      detail: detailComparaisonValeurs17('h', x1, x2, '\\text{La fonction cube est croissante sur } \\mathbb{R}', symbole) };
   }},
   {id:"17.5 d)", type:"texte", comparaison:true, nomFonction:"k", texteLibre:true, gen: () => {
     // decroissante sur chaque branche : x1<x2 (meme signe) => k(x1)>k(x2), quel que soit le signe.
@@ -1951,7 +2023,8 @@ const generateurs = [
     while (d2 === d1) d2 = alea(1,6);
     const x1 = signe*d1, x2 = signe*d2;
     const symbole = x1<x2 ? '>' : '<';
-    return { enonce:`La fonction \\(k\\) est définie par \\(k(x)=\\dfrac{1}{x}\\). On considère \\(x_1=${x1}\\) et \\(x_2=${x2}\\) (même signe).`, reponse: `k(x1)${symbole}k(x2)` };
+    return { enonce:`La fonction \\(k\\) est définie par \\(k(x)=\\dfrac{1}{x}\\). On considère \\(x_1=${x1}\\) et \\(x_2=${x2}\\) (même signe).`, reponse: `k(x1)${symbole}k(x2)`,
+      detail: detailComparaisonValeurs17('k', x1, x2, ['\\text{La fonction inverse est décroissante}', `\\text{sur } ${signe > 0 ? ']0\\,;\\,+\\infty[' : ']-\\infty\\,;\\,0['}`], symbole) };
   }},
 
   // ---------- 16.6 : calculs avances — comparer f(x1) et f(x2) sans calculer pour des fonctions
@@ -1974,7 +2047,8 @@ const generateurs = [
     const bas1 = droite ? -c+d1 : -c-d1-1, haut1 = bas1+1;
     const bas2 = droite ? -c+d2 : -c-d2-1, haut2 = bas2+1;
     const symbole = d1<d2 ? '<' : '>';
-    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=(x${sgn(c)})^2${sgn(d)}\\). On sait que \\(${bas1}\\lt x_1\\lt ${haut1}\\) et \\(${bas2}\\lt x_2\\lt ${haut2}\\). Comparer \\(f(x_1)\\) et \\(f(x_2)\\) sans les calculer.`, reponse: `f(x1)${symbole}f(x2)` };
+    return { enonce:`La fonction \\(f\\) est définie par \\(f(x)=(x${sgn(c)})^2${sgn(d)}\\). On sait que \\(${bas1}\\lt x_1\\lt ${haut1}\\) et \\(${bas2}\\lt x_2\\lt ${haut2}\\). Comparer \\(f(x_1)\\) et \\(f(x_2)\\) sans les calculer.`, reponse: `f(x1)${symbole}f(x2)`,
+      detail: detailComparaisonCarre17('f', -c, droite, 'x_{1}', 'x_{2}', bas1, haut1, bas2, haut2, symbole) };
   }},
   {id:"17.6 b)", type:"texte", comparaison:true, nomFonction:"g", texteLibre:true, gen: () => {
     const c = entierSigne(1,9), d = entierSigne(1,15);
@@ -1984,30 +2058,37 @@ const generateurs = [
     while (d2 === d1) d2 = alea(1,6);
     const x1 = -c + signe*d1, x2 = -c + signe*d2;
     const symbole = x1<x2 ? '>' : '<';
-    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=\\dfrac{1}{x${sgn(c)}}${sgn(d)}\\). On considère \\(x_1=${x1}\\) et \\(x_2=${x2}\\) (du même côté de l'asymptote verticale). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer.`, reponse: `g(x1)${symbole}g(x2)` };
+    return { enonce:`La fonction \\(g\\) est définie par \\(g(x)=\\dfrac{1}{x${sgn(c)}}${sgn(d)}\\). On considère \\(x_1=${x1}\\) et \\(x_2=${x2}\\) (du même côté de l'asymptote verticale). Comparer \\(g(x_1)\\) et \\(g(x_2)\\) sans les calculer.`, reponse: `g(x1)${symbole}g(x2)`,
+      detail: detailComparaisonValeurs17('g', x1, x2, `\\text{La fonction } g \\text{ est décroissante sur } ${signe > 0 ? `]${-c}\\,;\\,+\\infty[` : `]-\\infty\\,;\\,${-c}[`}`, symbole) };
   }},
   {id:"17.6 c)", type:"intervalle", texteLibre:true, gen: () => {
     const veutInf = alea(0,1) === 1;
     const spec = veutInf
-      ? { type:'intervalles', liste:[{bas:0, haut:1, inclusBas:true, inclusHaut:false}] }
+      ? { type:'intervalles', liste:[{bas:0, haut:1, inclusBas:false, inclusHaut:false}] }
       : { type:'intervalles', liste:[{bas:1, haut:Infinity, inclusBas:false, inclusHaut:false}] };
-    const opSymb = veutInf ? '\\lt' : '\\gt';
-    return { enonce:`En reprenant le graphique de \\(y=x\\) et \\(y=x^2\\), résoudre sur \\([0\\,;\\,+\\infty[\\) l'inéquation \\(x^2${opSymb}\\,x\\).`, intervalleSpec: spec };
+    const opSymb = veutInf ? '\\lt' : '\\gt', fin = formaterIntervalleSpec(spec);
+    const lignes = [`x^{2} ${opSymb} x`, `\\iff x^{2}-x ${opSymb} 0`, `\\iff x(x-1) ${opSymb} 0`, '\\text{Le produit est nul pour } x = 0', "\\text{donc } 0 \\text{ n'est pas solution}", '\\text{Pour } x \\gt 0 \\text{ , le signe du produit}', '\\text{est celui de } x-1',
+      `x-1 ${opSymb} 0`, `\\iff x ${opSymb} 1`, `S = ${fin}`];
+    return { enonce:`En reprenant le graphique de \\(y=x\\) et \\(y=x^2\\), résoudre sur \\([0\\,;\\,+\\infty[\\) l'inéquation \\(x^2${opSymb}\\,x\\).`, intervalleSpec: spec, detail: { lignes, final: fin } };
   }},
   {id:"17.6 d)", type:"num", texteLibre:true, gen: () => {
     const demiP = 2*alea(3,7);
     const xOpt = demiP/2, aireMax = xOpt*xOpt;
-    return { enonce:`Un rectangle a pour demi-périmètre \\(${demiP}\\). On note \\(x\\) sa largeur. Déterminer la valeur de \\(x\\) qui rend l'aire du rectangle maximale, ainsi que cette aire maximale.`, reponse:`(${xOpt};${aireMax})` };
+    return { enonce:`Un rectangle a pour demi-périmètre \\(${demiP}\\). On note \\(x\\) sa largeur. Déterminer la valeur de \\(x\\) qui rend l'aire du rectangle maximale, ainsi que cette aire maximale.`, reponse:`(${xOpt};${aireMax})`,
+      detail: { lignes: [`\\text{Longueur : } ${demiP}-x`, `x(${demiP}-x) = ${demiP}x-x^{2} = ${aireMax}-(x-${xOpt})^{2}`, `(x-${xOpt})^{2} \\geqslant 0`, `\\text{donc l'aire est au plus } ${aireMax}`, `\\text{avec égalité pour } x = ${xOpt}`, `\\left(${xOpt}\\,;\\,${aireMax}\\right)`], final: `\\left(${xOpt}\\,;\\,${aireMax}\\right)` } };
   }}
 ];
 
 
 function genererExercices() {
   tirageCalculs = melanger(MODELES_CALCUL).slice(0, 2);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -3257,7 +3338,7 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeVariationsHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

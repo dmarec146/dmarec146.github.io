@@ -400,6 +400,12 @@ async function controlerDansLaPage(opts) {
       return norm(F) === norm(e.reponse) ? 'ok' : 'faux';
     }
     const rep = e.reponse.trim();
+    // couple ou triplet écrit « (6;36) » dans une réponse de type num
+    if (/^\(.+;.+\)$/.test(rep)) {
+      const A = rep.slice(1, -1).split(';'), L = String(F).replace(/\\left|\\right/g, '').replace(/\\,/g, '').replace(/^\s*\(|\)\s*$/g, '').split(';');
+      if (A.length !== L.length) return 'faux';
+      try { return A.every((a, i) => egal(math.evaluate(a), evaluer(L[i], 0))) ? 'ok' : 'faux'; } catch (er) { return 'non-verifiable'; }
+    }
     if (rep.startsWith('{')) {
       try {
         const A = rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x.replace(',', '.'))).sort((p, q) => p - q);
@@ -411,7 +417,7 @@ async function controlerDansLaPage(opts) {
     }
     try {
       for (let k = 0; k < NB_PORTEES; k++) {
-        const m = versMathjs(String(F).replace(/^\s*y\s*=\s*/, '')), sc = portee(m + ' + ' + rep, k);     // équation réduite « y = mx + p » : on compare mx + p
+        const m = versMathjs(String(F).replace(/^\s*(?:y|f\(x\))\s*=\s*/, '')), sc = portee(m + ' + ' + rep, k);     // équation réduite « y = mx + p » ou « f(x) = mx + p » : on compare mx + p
         const a = math.evaluate(rep, sc), b = math.evaluate(m, sc);
         if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b)) return 'non-verifiable';
         if (!egal(a, b)) return 'faux';

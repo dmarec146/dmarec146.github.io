@@ -173,6 +173,36 @@ const ESSAIS = {
     [true, '\\text{donc une infinité de solutions}', { enonce: 'Le système \\(\\begin{cases}-x-y=5\\\\-2x-2y=10\\end{cases}\\) admet-il' }, env('')],
     [false, '\\text{donc une infinité de solutions}', { enonce: 'Le système \\(\\begin{cases}x-4y=0\\\\-3x+12y=1\\end{cases}\\) admet-il' }, env('')]
   ],
+  'f-definie-sur-r-pour-une-fonction-de-reference': [
+    [true, '\\text{On peut calculer } f(x) \\text{ pour tout réel } x', { enonce: '\\(f(x)=x^2\\)' }, env('')],
+    [true, '\\text{On peut calculer } f(x) \\text{ pour tout réel } x', { enonce: '\\(f(x)=|x|\\)' }, env('')],
+    [false, '\\text{On peut calculer } f(x) \\text{ pour tout réel } x', { enonce: '\\(f(x)=\\dfrac{1}{x}\\)' }, env('')],
+    [false, '\\text{On peut calculer } f(x) \\text{ pour tout réel } x', { enonce: '\\(f(x)=\\sqrt{x}\\)' }, env('')]
+  ],
+  'monotonie-du-carre-du-bon-cote': [
+    [true, '\\text{La fonction } f \\text{ est croissante sur } [5\\,;\\,+\\infty[', { enonce: 'La fonction \\(f\\) est définie par \\(f(x)=(x-5)^2\\). On sait que \\(11\\lt a\\lt 12\\) et \\(9\\lt b\\lt 10\\).' }, env('')],
+    [true, '\\text{La fonction } f \\text{ est décroissante sur } ]-\\infty\\,;\\,5]', { enonce: 'La fonction \\(f\\) est définie par \\(f(x)=(x-5)^2\\). On sait que \\(2\\lt a\\lt 3\\) et \\(0\\lt b\\lt 1\\).' }, env('')],
+    [true, '\\text{La fonction } f \\text{ est décroissante sur } ]-\\infty\\,;\\,-3]', { enonce: 'La fonction \\(f\\) est définie par \\(f(x)=(x+3)^2-10\\). On sait que \\(-9\\lt x_1\\lt -8\\) et \\(-6\\lt x_2\\lt -5\\).' }, env('')],
+    [false, '\\text{La fonction } f \\text{ est décroissante sur } ]-\\infty\\,;\\,5]', { enonce: 'La fonction \\(f\\) est définie par \\(f(x)=(x-5)^2\\). On sait que \\(11\\lt a\\lt 12\\) et \\(9\\lt b\\lt 10\\).' }, env('')],
+    [false, '\\text{La fonction } f \\text{ est croissante sur } [4\\,;\\,+\\infty[', { enonce: 'La fonction \\(f\\) est définie par \\(f(x)=(x-5)^2\\). On sait que \\(11\\lt a\\lt 12\\) et \\(9\\lt b\\lt 10\\).' }, env('')]
+  ],
+  'monotonie-de-l-inverse-du-bon-cote': [
+    [true, '\\text{sur } ]0\\,;\\,+\\infty[', { enonce: 'définie par \\(k(x)=\\dfrac{1}{x}\\). On considère \\(x_1=2\\) et \\(x_2=5\\)' }, env('')],
+    [true, '\\text{sur } ]-\\infty\\,;\\,0[', { enonce: 'définie par \\(k(x)=\\dfrac{1}{x}\\). On considère \\(x_1=-2\\) et \\(x_2=-5\\)' }, env('')],
+    [false, '\\text{sur } ]-\\infty\\,;\\,0[', { enonce: 'définie par \\(k(x)=\\dfrac{1}{x}\\). On considère \\(x_1=2\\) et \\(x_2=5\\)' }, env('')]
+  ],
+  'monotonie-de-l-homographique-du-bon-cote': [
+    [true, '\\text{La fonction } g \\text{ est décroissante sur } ]-7\\,;\\,+\\infty[', { enonce: 'définie par \\(g(x)=\\dfrac{1}{x+7}+1\\). On considère \\(x_1=-5\\) et \\(x_2=-3\\)' }, env('')],
+    [true, '\\text{La fonction } g \\text{ est décroissante sur } ]-\\infty\\,;\\,-7[', { enonce: 'définie par \\(g(x)=\\dfrac{1}{x+7}+1\\). On considère \\(x_1=-10\\) et \\(x_2=-9\\)' }, env('')],
+    [false, '\\text{La fonction } g \\text{ est décroissante sur } ]-7\\,;\\,+\\infty[', { enonce: 'définie par \\(g(x)=\\dfrac{1}{x+7}+1\\). On considère \\(x_1=-10\\) et \\(x_2=-9\\)' }, env('')],
+    [false, '\\text{La fonction } g \\text{ est décroissante sur } ]-\\infty\\,;\\,-6[', { enonce: 'définie par \\(g(x)=\\dfrac{1}{x+7}+1\\). On considère \\(x_1=-10\\) et \\(x_2=-9\\)' }, env('')]
+  ],
+  'le-maximum-annonce-est-celui-de-l-enonce': [
+    [true, "\\text{donc l'aire est au plus } 36", { reponse: '(6;36)' }, env('')],
+    [true, '\\text{avec égalité pour } x = 6', { reponse: '(6;36)' }, env('')],
+    [false, "\\text{donc l'aire est au plus } 30", { reponse: '(6;36)' }, env('')],
+    [false, '\\text{avec égalité pour } x = 36', { reponse: '(6;36)' }, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],

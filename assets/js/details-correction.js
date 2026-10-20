@@ -215,7 +215,42 @@ const Detail = (() => {
     .correction-ligne .details[hidden] { display: none; }`;
   document.head.appendChild(style);
 
-  return { dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, tableauSignesFacteurs, lignesSigneAffine, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
+  // ---- aides communes ajoutées le 20/10/2026 (fiches 17 et suivantes ; les fiches 14 à 16 gardent leurs copies locales) ----
+  // polynôme en LaTeX, coefficients par degré CROISSANT : polyL([5, 3]) -> « 3x+5 » ; jamais « 1x », signes propres
+  const polyL = (coefs, v = 'x') => {
+    let s = '';
+    for (let p = coefs.length - 1; p >= 0; p--) {
+      const c = coefs[p];
+      if (c === 0) continue;
+      const abs = Math.abs(c), base = p === 0 ? '' : (p === 1 ? v : `${v}^{${p}}`);
+      s += (c < 0 ? '-' : (s === '' ? '' : '+')) + (p === 0 ? `${abs}` : (abs === 1 ? base : `${abs}${base}`));
+    }
+    return s === '' ? '0' : s;
+  };
+  // décimal à la française en LaTeX : 1.5 -> 1{,}5 (arrondi au millième)
+  const decT = v => String(Math.round(v * 1000) / 1000).replace('.', '{,}');
+  // ligne trop longue pour un téléphone : police réduite
+  const ptLigne = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 17 ? '\\small ' + l : l);
+  const fr = (n, d = 1) => math.fraction(n, d);
+  // quotient (num / den) écrit avec le signe devant (den < 0 : signes ramenés sur le numérateur)
+  const quotientBrut = (num, den) => (den < 0 ? fracBrute(-num, -den) : fracBrute(num, den));
+  // coefficient directeur par deux points : « m = (yB - yA)/(xB - xA) » ; renvoie { lignes, m } (m fraction math.js)
+  const lignesPente = (xA, yA, xB, yB) => {
+    const dy = yB - yA, dx = xB - xA, m = fr(dy, dx);
+    const ecrit = `\\dfrac{${yB}-${dP(yA)}}{${xB}-${dP(xA)}}`, intermediaire = quotientBrut(dy, dx), simple = fracD(m);
+    const suite = [ecrit, intermediaire !== ecrit ? intermediaire : null, simple !== intermediaire ? simple : null].filter(x => x !== null);
+    return { lignes: [`m = ${suite.join(' = ')}`], m };
+  };
+  // ordonnée à l'origine p = yA - m xA, m connu (fraction) ; renvoie { lignes, p }
+  const lignesOrdonnee = (m, xA, yA) => {
+    const p = math.subtract(fr(yA), math.multiply(m, fr(xA)));
+    if (xA === 0) return { lignes: [`p = ${yA}`], p };
+    const produit = math.multiply(m, fr(xA));
+    const suite = [`${yA}-${fracDP(m)}\\times ${dP(xA)}`, `${yA}-${fracDP(produit)}`, fracD(p)];
+    return { lignes: [`p = ${suite.filter((t, i) => i === 0 || t !== suite[i - 1]).join(' = ')}`], p };
+  };
+
+  return { polyL, decT, ptLigne, fr, quotientBrut, lignesPente, lignesOrdonnee, dP, dPlus, fracTexte, fracD, fracDP, sommeTermes, fracBrute, coefAbs, ajouterFrac, termeNsansSigne, termeNavecSigne, divisionD, tableauSignes, tableauSignesFacteurs, lignesSigneAffine, ppcm, lignesSomme, produitFrac, lignesComparaison, couper, preparer, html };
 })();
 
 function basculerDetails(idx, bouton) {

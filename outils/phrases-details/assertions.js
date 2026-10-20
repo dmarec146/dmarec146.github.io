@@ -322,6 +322,54 @@ module.exports = [
     }
   },
   {
+    nom: 'f-definie-sur-r-pour-une-fonction-de-reference',
+    // « On peut calculer f(x) pour tout réel x » : seulement pour 2x-3, x², x³ ou |x| (pas 1/x ni √x)
+    motif: /On peut calculer \} f\(x\) \\text\{ pour tout réel/,
+    verifie: (l, e) => /f\(x\)=(?:2x-3|x\^2|x\^3|\|x\|)\\\)$/.test(String(e.enonce))
+  },
+  {
+    nom: 'monotonie-du-carre-du-bon-cote',
+    // « La fonction f est croissante sur [v ; +oo[ » (nombres à droite du sommet) ou « décroissante sur ]-oo ; v] » (à gauche)
+    motif: /^\\text\{La fonction \} f \\text\{ est (?:croissante|décroissante) sur \} /,
+    verifie: (l, e) => {
+      const m = l.match(/^\\text\{La fonction \} f \\text\{ est (croissante|décroissante) sur \} (?:\[(-?\d+)\\,;\\,\+\\infty\[|\]-\\infty\\,;\\,(-?\d+)\])$/);
+      const f = String(e.enonce).match(/\(x([+-]\d+)\)\^2/), b = String(e.enonce).match(/(-?\d+)\\lt (?:a|x_1)\\lt (-?\d+)/);
+      if (!m || !f || !b) return false;
+      const v = -Number(f[1]), droite = Number(b[1]) >= v;
+      return (m[1] === 'croissante') === droite && Number(m[2] !== undefined ? m[2] : m[3]) === v && (m[1] === 'croissante') === (m[2] !== undefined);
+    }
+  },
+  {
+    nom: 'monotonie-de-l-inverse-du-bon-cote',
+    // « La fonction inverse est décroissante sur ]0 ; +oo[ » si x_1 > 0, sur ]-oo ; 0[ si x_1 < 0
+    motif: /^\\text\{sur \} \](?:0\\,;\\,\+\\infty|-\\infty\\,;\\,0)\[$/,
+    verifie: (l, e) => {
+      const m = l.match(/^\\text\{sur \} (\]0\\,;\\,\+\\infty\[|\]-\\infty\\,;\\,0\[)$/), x = String(e.enonce).match(/x_1=(-?\d+)/);
+      return !!(m && x) && (m[1] === ']0\\,;\\,+\\infty[') === (Number(x[1]) > 0);
+    }
+  },
+  {
+    nom: 'monotonie-de-l-homographique-du-bon-cote',
+    // « La fonction g est décroissante sur ]v ; +oo[ » (x_1 à droite de la valeur interdite v = -c) ou « ]-oo ; v[ » (à gauche)
+    motif: /^\\text\{La fonction \} g \\text\{ est décroissante sur \} /,
+    verifie: (l, e) => {
+      const m = l.match(/sur \} (?:\](-?\d+)\\,;\\,\+\\infty\[|\]-\\infty\\,;\\,(-?\d+)\[)$/), g = String(e.enonce).match(/\\dfrac\{1\}\{x([+-]\d+)\}/), x = String(e.enonce).match(/x_1=(-?\d+)/);
+      if (!m || !g || !x) return false;
+      const v = -Number(g[1]);
+      return Number(m[1] !== undefined ? m[1] : m[2]) === v && (m[1] !== undefined) === (Number(x[1]) > v);
+    }
+  },
+  {
+    nom: 'le-maximum-annonce-est-celui-de-l-enonce',
+    // « donc l'aire est au plus 36 » et « avec égalité pour x = 6 » : les deux valeurs de la réponse attendue (x ; aire)
+    motif: /^\\text\{donc l'aire est au plus \} \d+$|^\\text\{avec égalité pour \} x = \d+$/,
+    verifie: (l, e) => {
+      const r = String(e.reponse).match(/^\((\d+);(\d+)\)$/); if (!r) return false;
+      const a = l.match(/au plus \} (\d+)$/), b = l.match(/égalité pour \} x = (\d+)$/);
+      return a ? a[1] === r[2] : !!b && b[1] === r[1];
+    }
+  },
+  {
     nom: 'la-longueur-de-periode-annoncee-est-exacte',
     // « \text{Période de } 6 \text{ chiffres} » : longueur de la période de 1/b (b lu dans l'énoncé)
     motif: /\\text\{Période de \} \d+ \\text\{ chiffres?\}/,
