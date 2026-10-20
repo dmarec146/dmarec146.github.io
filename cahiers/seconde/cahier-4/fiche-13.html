@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"13.1 a)":0.5,"13.1 b)":0.5,"13.1 c)":0.5,"13.1 d)":0.5,"13.2 a)":0.5,"13.2 b)":0.5,"13.2 c)":0.5,"13.2 d)":0.5,"13.3 a)":0.5,"13.3 b)":0.75,"13.3 c)":1,"13.3 d)":1.25,"13.4 a)":0.5,"13.4 b)":0.5,"13.4 c)":0.75,"13.4 d)":0.75,"13.5 a)":0.75,"13.5 b)":1,"13.6 a)":0.75,"13.6 b)":0.75,"13.6 c)":1.25,"13.7 a)":0.75,"13.7 b)":1.25,"13.8 a)":1.25,"13.8 b)":1,"13.8 c)":1.25,"13.9 a)":1,"13.9 b)":1.5,"13.9 c)":2,"13.9 d)":2},"bonus":["13.9 a)","13.9 b)","13.9 c)","13.9 d)"]});
@@ -1005,31 +1006,103 @@ function solutionAbs(lo, hi, op) {
 
 // ---------- vivier des automatismes (13.1) : calculs numeriques de nature differente, plus fournis que les calculs courants ;
 // resultat toujours entier ou decimal fini ; 4 modeles tires sans remise a chaque version ----------
+// ---------- details de correction (20/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, fracTexte } = Detail;
+// ligne longue : police reduite (comme en Seconde 8 et 12)
+const ptLigne = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 17 ? '\\small ' + l : l);
+// nombre entier ou decimal en LaTeX : 4, 4{,}5
+const nbT = v => (Number.isInteger(arrondi(v)) ? String(Math.round(v)) : formatDecimalFr(arrondi(v)));
+// borne (num/den) : entier, fraction irreductible avec le signe devant
+const borneT = (num, den) => fracTexte(num, den);
+const SYM = { '<': '\\lt', '<=': '\\leqslant', '>': '\\gt', '>=': '\\geqslant' };
+// « 3x+5 », « x-7 », « x » : jamais de coefficient 1
+const exprKx = (k, m) => `${k === 1 ? '' : k}x${m === 0 ? '' : (m > 0 ? '+' + m : m)}`;
+// resolution detaillee de |kx+m| op r (k entier >= 1, r > 0) : renvoie { lignes, spec, cond } ;
+// cond = ecriture finale (encadrement « L \leqslant x \leqslant H » ou « x \leqslant L \text{ ou } x \geqslant H »)
+function lignesAbs(k, m, r, op) {
+  const X = exprKx(k, m), rT = nbT(r), faible = op === '<' || op === '<=', sym = SYM[op];
+  const symNeg = op === '>' ? '\\lt' : '\\leqslant';                           // x < -r (pour >) ou x <= -r (pour >=)
+  const lignes = [`|${X}| ${sym} ${rT}`];
+  lignes.push(faible ? `\\iff -${rT} ${sym} ${X} ${sym} ${rT}` : `\\iff ${X} ${symNeg} -${rT} \\text{ ou } ${X} ${sym} ${rT}`);
+  const L = -r - m, H = r - m;                                                   // bornes de kx
+  const formeKx = (b1, b2, e) => (faible ? `\\iff ${b1} ${sym} ${e} ${sym} ${b2}` : `\\iff ${e} ${symNeg} ${b1} \\text{ ou } ${e} ${sym} ${b2}`);
+  if (m !== 0) lignes.push(formeKx(nbT(L), nbT(H), k === 1 ? 'x' : `${k}x`));
+  let cond;
+  if (k > 1) {
+    const l = borneT(L, k), h = borneT(H, k);
+    lignes.push(formeKx(l, h, 'x'));
+    cond = faible ? `${l} ${sym} x ${sym} ${h}` : `x ${symNeg} ${l} \\text{ ou } x ${sym} ${h}`;
+  } else cond = faible ? `${nbT(L)} ${sym} x ${sym} ${nbT(H)}` : `x ${symNeg} ${nbT(L)} \\text{ ou } x ${sym} ${nbT(H)}`;
+  return { lignes, spec: solutionAbs(L / k, H / k, op), cond };
+}
+// equation |kx+m| = c (c > 0) : deux equations, puis les deux solutions ; renvoie { lignes, solutions: [{tex, v}] }
+function lignesEquationAbs(k, m, c) {
+  const X = exprKx(k, m);
+  const lignes = [`|${X}| = ${c}`, `\\iff ${X} = ${c} \\text{ ou } ${X} = -${c}`];
+  const nums = [c - m, -c - m];
+  if (m !== 0) lignes.push(`\\iff ${k === 1 ? '' : k}x = ${nums[0]} \\text{ ou } ${k === 1 ? '' : k}x = ${nums[1]}`);
+  const sol = nums.map(n => ({ tex: borneT(n, k), v: n / k }));
+  if (k > 1) lignes.push(`\\iff x = ${sol[0].tex} \\text{ ou } x = ${sol[1].tex}`);
+  return { lignes, solutions: sol.sort((p, q) => p.v - q.v) };
+}
+const ensembleT = (sols) => `\\{${sols.map(s => s.tex).join('\\,;\\,')}\\}`;
+// encadrement lo < x < hi -> |x - a| < r : centre, rayon, puis la double inegalite recentree (sym : \leqslant ou \lt)
+function detailEncadrementVersAbs(lo, hi, a, r, sym) {
+  const pT = v => (v < 0 ? `(${nbT(v)})` : nbT(v)), t = termeXmoinsA(a), rT = nbT(r);
+  return { lignes: ["\\text{Centre de l'intervalle :}", `\\dfrac{${nbT(lo)}+${pT(hi)}}{2} = ${nbT(a)}`, '\\text{Rayon :}', `\\dfrac{${nbT(hi)}-${pT(lo)}}{2} = ${rT}`,
+    `${nbT(lo)} ${sym} x ${sym} ${nbT(hi)}`, ptLigne(`\\iff ${nbT(lo)}-${pT(a)} ${sym} ${t} ${sym} ${nbT(hi)}-${pT(a)}`), `\\iff -${rT} ${sym} ${t} ${sym} ${rT}`, `\\iff |${t}| ${sym} ${rT}`],
+    final: `|${t}| ${sym} ${rT}` };
+}
+// systeme / double inegalite : deux ensembles de solutions, puis leur intersection
+function detailInterAbs(lignesA, specA, lignesB, specB, solution, condA, condB, condFusion) {
+  const lignes = [...lignesA, ...lignesB];
+  if (condFusion) {
+    lignes.push(ptLigne(`${condA} \\text{ et } ${condB}`), `\\iff ${condFusion}`);
+  } else {
+    lignes.push(`S_{1} = ${formaterIntervalleSpec(specA)}`, `S_{2} = ${formaterIntervalleSpec(specB)}`);
+  }
+  const final = formaterIntervalleSpec({ type: 'intervalles', liste: solution });
+  lignes.push(condFusion ? `S = ${final}` : `S = S_{1} \\cap S_{2} = ${final}`);
+  return { lignes, final };
+}
+
 const MODELES_CALCUL = [
   // priorites avec parentheses et signes
   () => { let a = entierSigne(2,20), b = alea(2,9), c, d; do { c = alea(2,12); d = alea(2,15); } while (c === d);
-          return { enonce:`${a}-${b}\\times (${c}-${d})`, reponse:`${a - b*(c-d)}` }; },
+          const diff = c - d, prod = b*diff, res = a - prod;
+          const chaine = [`${a}-${b}\\times (${c}-${d})`, `${a}-${b}\\times ${dP(diff)}`, `${a}-${dP(prod)}`];
+          if (prod < 0) chaine.push(`${a}+${-prod}`);
+          chaine.push(`${res}`);
+          return { enonce:`${a}-${b}\\times (${c}-${d})`, reponse:`${res}`, detail: { lignes: [chaine.join(' = ')], final: `${res}` } }; },
   // carre d'un negatif et cube
   () => { const a = alea(2,9), b = alea(2,4);
-          return { enonce:`(-${a})^{2}-${b}^{3}`, reponse:`${a*a - b**3}` }; },
+          return { enonce:`(-${a})^{2}-${b}^{3}`, reponse:`${a*a - b**3}`,
+                   detail: { lignes: [`(-${a})^{2}-${b}^{3} = ${a*a}-${b**3} = ${a*a - b**3}`], final: `${a*a - b**3}` } }; },
   // quotient exact d'une somme
   () => { let a, b, c, d, q; do { d = alea(2,9); q = alea(2,15); b = alea(2,9); c = alea(2,9); a = d*q - b*c; } while (a < 1);
-          return { enonce:`\\dfrac{${a}+${b}\\times ${c}}{${d}}`, reponse:`${q}` }; },
+          return { enonce:`\\dfrac{${a}+${b}\\times ${c}}{${d}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${a}+${b}\\times ${c}}{${d}} = \\dfrac{${a}+${b*c}}{${d}} = \\dfrac{${d*q}}{${d}} = ${q}`], final: `${q}` } }; },
   // racine d'un carre parfait (<= 144) dans un calcul
   () => { const k = alea(2,12), a = alea(2,9), b = alea(2,9), c = alea(2,9);
-          return { enonce:`\\sqrt{${k*k}}\\times ${a}-${b}\\times ${c}`, reponse:`${k*a - b*c}` }; },
+          return { enonce:`\\sqrt{${k*k}}\\times ${a}-${b}\\times ${c}`, reponse:`${k*a - b*c}`,
+                   detail: { lignes: [`\\sqrt{${k*k}}\\times ${a}-${b}\\times ${c} = ${k}\\times ${a}-${b}\\times ${c} = ${k*a}-${b*c} = ${k*a - b*c}`], final: `${k*a - b*c}` } }; },
   // decimaux
   () => { const x = alea(1,9), n = alea(2,30), y = alea(1,9), z = alea(1,9);
-          return { enonce:`0{,}${x}\\times ${n}-${y}{,}${z}`, reponse:`${arrondi(x*n/10 - (y + z/10))}` }; },
+          const prod = arrondi(x*n/10), res = arrondi(x*n/10 - (y + z/10));
+          return { enonce:`0{,}${x}\\times ${n}-${y}{,}${z}`, reponse:`${arrondi(x*n/10 - (y + z/10))}`,
+                   detail: { lignes: [`0{,}${x}\\times ${n}-${y}{,}${z} = ${nbT(prod)}-${y}{,}${z} = ${nbT(res)}`], final: nbT(res) } }; },
   // fraction d'un nombre, puis somme
   () => { const b = choix([2,3,4,5,6,8]), a = alea(1,b-1), k = alea(2,9), m = alea(2,30);
-          return { enonce:`\\dfrac{${a}}{${b}}\\times ${b*k}+${m}`, reponse:`${a*k + m}` }; },
+          return { enonce:`\\dfrac{${a}}{${b}}\\times ${b*k}+${m}`, reponse:`${a*k + m}`,
+                   detail: { lignes: [`\\dfrac{${a}}{${b}}\\times ${b*k}+${m} = ${a}\\times ${k}+${m} = ${a*k}+${m} = ${a*k + m}`], final: `${a*k + m}` } }; },
   // difference de carres de binomes numeriques
   () => { const a = alea(1,9), b = alea(1,9), c = alea(1,9), d = alea(1,9);
-          return { enonce:`(${a}-${b})^{2}-(${c}+${d})^{2}`, reponse:`${(a-b)**2 - (c+d)**2}` }; },
+          return { enonce:`(${a}-${b})^{2}-(${c}+${d})^{2}`, reponse:`${(a-b)**2 - (c+d)**2}`,
+                   detail: { lignes: [`(${a}-${b})^{2}-(${c}+${d})^{2} = ${dP(a-b)}^{2}-${c+d}^{2} = ${(a-b)**2}-${(c+d)**2} = ${(a-b)**2 - (c+d)**2}`], final: `${(a-b)**2 - (c+d)**2}` } }; },
   // quotient exact d'une difference de carres
   () => { let k, m, d, q; do { k = alea(4,15); d = alea(2,9); q = alea(2,15); m = k*k - d*q; } while (m < 1);
-          return { enonce:`\\dfrac{${k}^{2}-${m}}{${d}}`, reponse:`${q}` }; }
+          return { enonce:`\\dfrac{${k}^{2}-${m}}{${d}}`, reponse:`${q}`,
+                   detail: { lignes: [`\\dfrac{${k}^{2}-${m}}{${d}} = \\dfrac{${k*k}-${m}}{${d}} = \\dfrac{${d*q}}{${d}} = ${q}`], final: `${q}` } }; }
 ];
 let tirageCalculs = tirerSansRemise(MODELES_CALCUL, 4);
 
@@ -1062,124 +1135,144 @@ const generateurs = [
   {id:"13.1 d)", type:"num", gen: () => tirageCalculs[3]()},
 
   // ---------- 13.2 : calculer une valeur absolue (quatre ecritures differentes) ----------
-  {id:"13.2 a)", type:"num", gen: () => { const a = entierSigne(1,25); return {enonce:`|${a}|`, reponse:`${Math.abs(a)}`}; }},
-  {id:"13.2 b)", type:"num", gen: () => { const a = entierSigne(1,25); return {enonce:`-|${a}|`, reponse:`${-Math.abs(a)}`}; }},
+  {id:"13.2 a)", type:"num", gen: () => { const a = entierSigne(1,25);
+    return {enonce:`|${a}|`, reponse:`${Math.abs(a)}`, detail: { lignes: [`|${a}| = ${Math.abs(a)}`], final: `${Math.abs(a)}` }}; }},
+  {id:"13.2 b)", type:"num", gen: () => { const a = entierSigne(1,25);
+    return {enonce:`-|${a}|`, reponse:`${-Math.abs(a)}`, detail: { lignes: [`-|${a}| = ${-Math.abs(a)}`], final: `${-Math.abs(a)}` }}; }},
   {id:"13.2 c)", type:"num", gen: () => {
     // valeur absolue d'une difference : le resultat interieur est tantot positif, tantot negatif
     let a, b; do { a = alea(1,15); b = alea(1,15); } while (a === b);
-    return {enonce:`|${a}-${b}|`, reponse:`${Math.abs(a-b)}`};
+    return {enonce:`|${a}-${b}|`, reponse:`${Math.abs(a-b)}`, detail: { lignes: [`|${a}-${b}| = |${a-b}| = ${Math.abs(a-b)}`], final: `${Math.abs(a-b)}` }};
   }},
-  {id:"13.2 d)", type:"num", gen: () => { const a = entierSigne(1,15), b = entierSigne(1,15); return {enonce:`|${a}|-|${b}|`, reponse:`${Math.abs(a)-Math.abs(b)}`}; }},
+  {id:"13.2 d)", type:"num", gen: () => { const a = entierSigne(1,15), b = entierSigne(1,15);
+    return {enonce:`|${a}|-|${b}|`, reponse:`${Math.abs(a)-Math.abs(b)}`, detail: { lignes: [`|${a}|-|${b}| = ${Math.abs(a)}-${Math.abs(b)} = ${Math.abs(a)-Math.abs(b)}`], final: `${Math.abs(a)-Math.abs(b)}` }}; }},
 
 
   // ---------- 13.3 : equations avec valeur absolue (|x| = A, |x - a| = r, |kx + b| = c, puis cas delicats) ----------
   {id:"13.3 a)", type:"num", texteLibre:true, gen: () => {
-    const A = alea(1,15);
-    return { enonce:`\\(|x|=${A}\\)`, reponse:`{${-A};${A}}` };
+    const A = alea(1,15), E = lignesEquationAbs(1, 0, A), final = ensembleT(E.solutions);
+    return { enonce:`\\(|x|=${A}\\)`, reponse:`{${-A};${A}}`, detail: { lignes: [...E.lignes, `S = ${final}`], final } };
   }},
   {id:"13.3 b)", type:"num", texteLibre:true, gen: () => {
-    const a = entierSigne(1,10), r = alea(1,9);
-    return { enonce:`\\(|${termeXmoinsA(a)}|=${r}\\)`, reponse:`{${a-r};${a+r}}` };
+    const a = entierSigne(1,10), r = alea(1,9), E = lignesEquationAbs(1, -a, r), final = ensembleT(E.solutions);
+    return { enonce:`\\(|${termeXmoinsA(a)}|=${r}\\)`, reponse:`{${a-r};${a+r}}`, detail: { lignes: [...E.lignes, `S = ${final}`], final } };
   }},
   {id:"13.3 c)", type:"num", texteLibre:true, gen: () => {
     // coefficient devant x : solutions (-b-c)/k et (-b+c)/k, souvent fractionnaires
-    const k = alea(2,5), b = entierSigne(1,9), c = alea(1,12);
-    return { enonce:`\\(|${k}x${b < 0 ? b : '+' + b}|=${c}\\)`, reponse:`{${fractionSimplifiee(-b-c, k)};${fractionSimplifiee(-b+c, k)}}` };
+    const k = alea(2,5), b = entierSigne(1,9), c = alea(1,12), E = lignesEquationAbs(k, b, c), final = ensembleT(E.solutions);
+    return { enonce:`\\(|${k}x${b < 0 ? b : '+' + b}|=${c}\\)`, reponse:`{${fractionSimplifiee(-b-c, k)};${fractionSimplifiee(-b+c, k)}}`, detail: { lignes: [...E.lignes, `S = ${final}`], final } };
   }},
   {id:"13.3 d)", type:"num", texteLibre:true, gen: () => {
     if (alea(0,1) === 1) {
       // second membre negatif : aucune solution
       const a = entierSigne(1,10), r = alea(1,9);
-      return { enonce:`\\(|${termeXmoinsA(a)}|=-${r}\\)`, reponse:'{}' };
+      return { enonce:`\\(|${termeXmoinsA(a)}|=-${r}\\)`, reponse:'{}',
+        detail: { lignes: [`|${termeXmoinsA(a)}| = -${r}`, '\\text{Une valeur absolue est positive ou nulle,}', `-${r} \\lt 0`, "\\text{donc l'équation n'a pas de solution}", 'S = \\emptyset'], final: '\\emptyset' } };
     }
     // deux valeurs absolues egales : x est a egale distance de a et de b, une seule solution (a+b)/2
     let a, b; do { a = entierSigne(1,10); b = entierSigne(1,10); } while (a === b);
-    return { enonce:`\\(|${termeXmoinsA(a)}|=|${termeXmoinsA(b)}|\\)`, reponse:`{${fractionSimplifiee(a+b, 2)}}` };
+    const sol = fracTexte(a + b, 2), tA = termeXmoinsA(a), tB = termeXmoinsA(b), opp = `-x${b > 0 ? '+' + b : b}`;
+    return { enonce:`\\(|${tA}|=|${tB}|\\)`, reponse:`{${fractionSimplifiee(a+b, 2)}}`,
+      detail: { lignes: [`|${tA}| = |${tB}|`, `\\iff ${tA} = ${tB} \\text{ ou } ${tA} = -(${tB})`,
+        '\\text{La première équation est impossible :}', "\\text{les termes en } x \\text{ s'annulent}", '\\text{et les constantes diffèrent}',
+        `\\iff ${tA} = ${opp}`, `\\iff 2x = ${a + b}`, `\\iff x = ${sol}`, `S = \\{${sol}\\}`], final: `\\{${sol}\\}` } };
   }},
 
   // ---------- 13.4 : distance entre deux nombres (consigne dans le titre ; quatre situations differentes) ----------
-  {id:"13.4 a)", type:"num", texteLibre:true, gen: () => { const a = entierSigne(1,20); return {enonce:`\\(0\\) et \\(${a}\\)`, reponse:`${Math.abs(a)}`}; }},
+  {id:"13.4 a)", type:"num", texteLibre:true, gen: () => { const a = entierSigne(1,20);
+    return {enonce:`\\(0\\) et \\(${a}\\)`, reponse:`${Math.abs(a)}`, detail: { lignes: [`|0-${dP(a)}| = |${-a}| = ${Math.abs(a)}`], final: `${Math.abs(a)}` }}; }},
   {id:"13.4 b)", type:"num", texteLibre:true, gen: () => {
     // de part et d'autre de 0
-    const a = alea(1,15), b = -alea(1,15);
-    return alea(0,1) === 0 ? {enonce:`\\(${a}\\) et \\(${b}\\)`, reponse:`${a-b}`} : {enonce:`\\(${b}\\) et \\(${a}\\)`, reponse:`${a-b}`};
+    const a = alea(1,15), b = -alea(1,15), p = alea(0,1) === 0 ? a : b, q = p === a ? b : a;
+    return {enonce:`\\(${p}\\) et \\(${q}\\)`, reponse:`${a-b}`, detail: { lignes: [`|${p}-${dP(q)}| = |${p-q}| = ${a-b}`], final: `${a-b}` }};
   }},
   {id:"13.4 c)", type:"num", texteLibre:true, gen: () => {
     // deux negatifs
     let a, b; do { a = -alea(1,20); b = -alea(1,20); } while (a === b);
-    return {enonce:`\\(${a}\\) et \\(${b}\\)`, reponse:`${Math.abs(a-b)}`};
+    return {enonce:`\\(${a}\\) et \\(${b}\\)`, reponse:`${Math.abs(a-b)}`, detail: { lignes: [`|${a}-${dP(b)}| = |${a-b}| = ${Math.abs(a-b)}`], final: `${Math.abs(a-b)}` }};
   }},
   {id:"13.4 d)", type:"num", texteLibre:true, gen: () => {
     // deux decimaux (dixiemes)
     let a, b; do { a = entierSigne(5,60); b = entierSigne(5,60); } while (a === b || a%10 === 0 && b%10 === 0);
-    return {enonce:`\\(${formatDecimalFr(a/10)}\\) et \\(${formatDecimalFr(b/10)}\\)`, reponse:`${arrondi(Math.abs(a-b)/10)}`};
+    const dif = arrondi((a - b) / 10), dist = arrondi(Math.abs(a-b)/10), tb = b < 0 ? `(${nbT(b/10)})` : nbT(b/10);
+    return {enonce:`\\(${formatDecimalFr(a/10)}\\) et \\(${formatDecimalFr(b/10)}\\)`, reponse:`${dist}`,
+      detail: { lignes: [`|${nbT(a/10)}-${tb}| = |${nbT(dif)}| = ${nbT(dist)}`], final: nbT(dist) }};
   }},
 
 
   // ---------- 13.5 : inequations |x| op A puis |x - a| op B (op = <, <=, > ou >=, tire a chaque version) ----------
   {id:"13.5 a)", type:"intervalle", gen: () => {
-    const r = alea(1,9), op = choix(OPERATEURS_INEG);
-    return {enonce:`|x|${SYMBOLE_INEG[op]} ${r}`, intervalleSpec: solutionAbs(-r, r, op)};
+    const r = alea(1,9), op = choix(OPERATEURS_INEG), R = lignesAbs(1, 0, r, op);
+    return {enonce:`|x|${SYMBOLE_INEG[op]} ${r}`, intervalleSpec: solutionAbs(-r, r, op),
+      detail: { lignes: [...R.lignes, `S = ${formaterIntervalleSpec(R.spec)}`], final: formaterIntervalleSpec(R.spec) }};
   }},
   {id:"13.5 b)", type:"intervalle", gen: () => {
-    const a = entierSigne(1,10), r = alea(1,9), op = choix(OPERATEURS_INEG);
-    return {enonce:`|${termeXmoinsA(a)}|${SYMBOLE_INEG[op]} ${r}`, intervalleSpec: solutionAbs(a-r, a+r, op)};
+    const a = entierSigne(1,10), r = alea(1,9), op = choix(OPERATEURS_INEG), R = lignesAbs(1, -a, r, op);
+    return {enonce:`|${termeXmoinsA(a)}|${SYMBOLE_INEG[op]} ${r}`, intervalleSpec: solutionAbs(a-r, a+r, op),
+      detail: { lignes: [...R.lignes, `S = ${formaterIntervalleSpec(R.spec)}`], final: formaterIntervalleSpec(R.spec) }};
   }},
 
   // ---------- 13.6 : inequation avec valeur absolue -> encadrement (consigne dans le titre) ----------
   {id:"13.6 a)", type:"encadrement", texteLibre:true, gen: () => {
-    const a = entierSigne(1,12), r = alea(1,9);
-    return {enonce:`\\(|${termeXmoinsA(a)}|\\leqslant ${r}\\)`, bas:a-r, haut:a+r, inclusBas:true, inclusHaut:true};
+    const a = entierSigne(1,12), r = alea(1,9), R = lignesAbs(1, -a, r, '<=');
+    return {enonce:`\\(|${termeXmoinsA(a)}|\\leqslant ${r}\\)`, bas:a-r, haut:a+r, inclusBas:true, inclusHaut:true, detail: { lignes: R.lignes, final: R.cond }};
   }},
   {id:"13.6 b)", type:"encadrement", texteLibre:true, gen: () => {
-    const a = entierSigne(1,12), r = alea(1,9);
-    return {enonce:`\\(|${termeXmoinsA(a)}|\\lt ${r}\\)`, bas:a-r, haut:a+r, inclusBas:false, inclusHaut:false};
+    const a = entierSigne(1,12), r = alea(1,9), R = lignesAbs(1, -a, r, '<');
+    return {enonce:`\\(|${termeXmoinsA(a)}|\\lt ${r}\\)`, bas:a-r, haut:a+r, inclusBas:false, inclusHaut:false, detail: { lignes: R.lignes, final: R.cond }};
   }},
   {id:"13.6 c)", type:"encadrement", texteLibre:true, gen: () => {
     // rayon demi-entier : bornes decimales
-    const a = entierSigne(1,12), r = alea(1,9) + 0.5, inclus = alea(0,1) === 1;
-    return {enonce:`\\(|${termeXmoinsA(a)}|${inclus ? '\\leqslant' : '\\lt'} ${formatDecimalFr(r)}\\)`, bas:a-r, haut:a+r, inclusBas:inclus, inclusHaut:inclus};
+    const a = entierSigne(1,12), r = alea(1,9) + 0.5, inclus = alea(0,1) === 1, R = lignesAbs(1, -a, r, inclus ? '<=' : '<');
+    return {enonce:`\\(|${termeXmoinsA(a)}|${inclus ? '\\leqslant' : '\\lt'} ${formatDecimalFr(r)}\\)`, bas:a-r, haut:a+r, inclusBas:inclus, inclusHaut:inclus, detail: { lignes: R.lignes, final: R.cond }};
   }},
 
   // ---------- 13.7 : encadrement -> inequation avec valeur absolue (consigne dans le titre) ----------
   {id:"13.7 a)", type:"valAbs", texteLibre:true, gen: () => {
     const a = entierSigne(1,12), r = alea(1,9);
-    return {enonce:`\\(${a-r}\\leqslant x\\leqslant ${a+r}\\)`, aAttendu:a, sensAttendu:'<=', rAttendu:r};
+    return {enonce:`\\(${a-r}\\leqslant x\\leqslant ${a+r}\\)`, aAttendu:a, sensAttendu:'<=', rAttendu:r, detail: detailEncadrementVersAbs(a - r, a + r, a, r, '\\leqslant')};
   }},
   {id:"13.7 b)", type:"valAbs", texteLibre:true, gen: () => {
     // rayon demi-entier : bornes decimales
     const a = entierSigne(1,12), r = alea(1,9) + 0.5;
-    return {enonce:`\\(${formatDecimalFr(a-r)}\\lt x\\lt ${formatDecimalFr(a+r)}\\)`, aAttendu:a, sensAttendu:'<', rAttendu:r};
+    return {enonce:`\\(${formatDecimalFr(a-r)}\\lt x\\lt ${formatDecimalFr(a+r)}\\)`, aAttendu:a, sensAttendu:'<', rAttendu:r, detail: detailEncadrementVersAbs(a - r, a + r, a, r, '\\lt')};
   }},
 
 
   // ---------- 13.8 : inequations plus delicates : coefficient devant x, solution d'un seul point, second membre negatif ----------
   {id:"13.8 a)", type:"intervalle", texteLibre:true, gen: () => {
     // |kx + b| op c : bornes (-b-c)/k et (-b+c)/k, souvent fractionnaires
-    const k = alea(2,5), b = entierSigne(1,9), c = alea(2,15), op = choix(OPERATEURS_INEG);
-    return {enonce:`\\(|${k}x${b < 0 ? b : '+' + b}|${SYMBOLE_INEG[op]} ${c}\\)`, intervalleSpec: solutionAbs((-b-c)/k, (-b+c)/k, op)};
+    const k = alea(2,5), b = entierSigne(1,9), c = alea(2,15), op = choix(OPERATEURS_INEG), R = lignesAbs(k, b, c, op);
+    return {enonce:`\\(|${k}x${b < 0 ? b : '+' + b}|${SYMBOLE_INEG[op]} ${c}\\)`, intervalleSpec: solutionAbs((-b-c)/k, (-b+c)/k, op),
+      detail: { lignes: [...R.lignes, `S = ${formaterIntervalleSpec(R.spec)}`], final: formaterIntervalleSpec(R.spec) }};
   }},
   {id:"13.8 b)", type:"intervalle", texteLibre:true, gen: () => {
-    const a = entierSigne(1,15);
-    return {enonce:`\\(|${termeXmoinsA(a)}|\\leqslant 0\\)`,
-      intervalleSpec:{type:'intervalles', liste:[{bas:a, haut:a, inclusBas:true, inclusHaut:true}]}};
+    const a = entierSigne(1,15), t = termeXmoinsA(a), final = `[${a}\\,;\\,${a}]`;
+    return {enonce:`\\(|${t}|\\leqslant 0\\)`,
+      intervalleSpec:{type:'intervalles', liste:[{bas:a, haut:a, inclusBas:true, inclusHaut:true}]},
+      detail: { lignes: [`|${t}| \\leqslant 0`, '\\text{Une valeur absolue est positive ou nulle,}', `\\text{donc elle est nulle}`, `\\iff |${t}| = 0`, `\\iff ${t} = 0`, `\\iff x = ${a}`, `S = \\{${a}\\} = ${final}`], final }};
   }},
   {id:"13.8 c)", type:"intervalle", texteLibre:true, gen: () => {
     // second membre negatif : toujours vrai (tout R) avec > ou >=, jamais vrai (ensemble vide) avec < ou <=
-    const a = entierSigne(1,15), r = alea(1,9), op = choix(OPERATEURS_INEG);
-    return {enonce:`\\(|${termeXmoinsA(a)}|${SYMBOLE_INEG[op]} -${r}\\)`, intervalleSpec: (op === '>' || op === '>=') ? {type:'tout'} : {type:'vide'}};
+    const a = entierSigne(1,15), r = alea(1,9), op = choix(OPERATEURS_INEG), tout = (op === '>' || op === '>=');
+    return {enonce:`\\(|${termeXmoinsA(a)}|${SYMBOLE_INEG[op]} -${r}\\)`, intervalleSpec: tout ? {type:'tout'} : {type:'vide'},
+      detail: { lignes: [`|${termeXmoinsA(a)}| ${SYM[op]} -${r}`, '\\text{Une valeur absolue est positive ou nulle :}', `|${termeXmoinsA(a)}| \\geqslant 0 \\gt -${r}`,
+        tout ? "\\text{L'inégalité est toujours vérifiée}" : "\\text{L'inégalité n'est jamais vérifiée}", tout ? 'S = \\mathbb{R}' : 'S = \\emptyset'], final: tout ? '\\mathbb{R}' : '\\emptyset' }};
   }},
 
   // ---------- 13.9 : calculs plus avances ----------
   {id:"13.9 a)", type:"num", texteLibre:true, gen: () => {
     const a = entierSigne(2,20);
-    return {enonce:`Calculer \\(\\sqrt{(${a})^2}\\) sans calculatrice, en utilisant la relation \\(\\sqrt{a^2}=|a|\\).`, reponse:`${Math.abs(a)}`};
+    return {enonce:`Calculer \\(\\sqrt{(${a})^2}\\) sans calculatrice, en utilisant la relation \\(\\sqrt{a^2}=|a|\\).`, reponse:`${Math.abs(a)}`,
+      detail: { lignes: [`\\sqrt{(${a})^{2}} = |${a}| = ${Math.abs(a)}`], final: `${Math.abs(a)}` }};
   }},
   {id:"13.9 b)", type:"encadrement", texteLibre:true, gen: () => {
     const N = choix(NON_CARRES);
     const p = choix([1,2]);
     const {bas, haut} = encadrerParBalayage(Math.sqrt(N), p);
-    return {enonce:`Par balayage, donner un encadrement de \\(\\sqrt{${N}}\\) d'amplitude \\(${p===1?'0{,}1':'0{,}01'}\\).`, bas, haut, inclusBas:false, inclusHaut:false};
+    const carre = v => nbT(Math.round(v * v * 1e6) / 1e6);
+    return {enonce:`Par balayage, donner un encadrement de \\(\\sqrt{${N}}\\) d'amplitude \\(${p===1?'0{,}1':'0{,}01'}\\).`, bas, haut, inclusBas:false, inclusHaut:false,
+      detail: { lignes: [`${nbT(bas)}^{2} = ${carre(bas)}`, `${nbT(haut)}^{2} = ${carre(haut)}`, `${carre(bas)} \\lt ${N} \\lt ${carre(haut)}`, `${nbT(bas)} \\lt \\sqrt{${N}} \\lt ${nbT(haut)}`], final: `${nbT(bas)} \\lt \\sqrt{${N}} \\lt ${nbT(haut)}` }};
   }},
   {id:"13.9 c)", type:"intervalle", texteLibre:true, gen: () => {
     // systeme de deux inequations avec valeurs absolues : intersection d'un ensemble borne ou non et d'une reunion de demi-droites ;
@@ -1191,28 +1284,41 @@ const generateurs = [
       A = solutionAbs(a-r, a+r, op1).liste; B = solutionAbs(b-s, b+s, op2).liste;
       solution = intersecterIntervalles(A, B);
     } while (solution.length === 0 || memeListeIntervalles(solution, A) || memeListeIntervalles(solution, B));
+    const R1 = lignesAbs(1, -a, r, op1), R2 = lignesAbs(1, -b, s, op2);
+    const unSeulChacun = (op1 === '<' || op1 === '<=') && (op2 === '<' || op2 === '<=');
+    const fusion = unSeulChacun ? `${(() => { const c = solution[0]; return `${nbT(c.bas)} ${c.inclusBas ? '\\leqslant' : '\\lt'} x ${c.inclusHaut ? '\\leqslant' : '\\lt'} ${nbT(c.haut)}`; })()}` : null;
     return {enonce:`Résoudre le système suivant (solution sous forme d'intervalle ou de réunion d'intervalles) : ${texSysteme([`|${termeXmoinsA(a)}|${SYMBOLE_INEG[op1]} ${r}`, `|${termeXmoinsA(b)}|${SYMBOLE_INEG[op2]} ${s}`])}`,
-      intervalleSpec:{type:'intervalles', liste:solution}};
+      intervalleSpec:{type:'intervalles', liste:solution},
+      detail: detailInterAbs(R1.lignes, R1.spec, R2.lignes, R2.spec, solution, R1.cond, R2.cond, fusion)};
   }},
   {id:"13.9 d)", type:"intervalle", texteLibre:true, gen: () => {
     // s <(=) |kx + b| <(=) r : deux intervalles symetriques par rapport a -b/k, bornes souvent fractionnaires
     const k = alea(2,4), b = entierSigne(1,9), s = alea(1,6), r = s + alea(2,7);
     const incBas = alea(0,1) === 1, incHaut = alea(0,1) === 1;
     const racine = [(-b-r)/k, (-b-s)/k, (-b+s)/k, (-b+r)/k];
+    const solution = [
+      {bas:racine[0], haut:racine[1], inclusBas:incHaut, inclusHaut:incBas},
+      {bas:racine[2], haut:racine[3], inclusBas:incBas, inclusHaut:incHaut}
+    ];
+    const X = exprKx(k, b), opMin = incBas ? '>=' : '>', opMax = incHaut ? '<=' : '<';
+    const R1 = lignesAbs(k, b, s, opMin), R2 = lignesAbs(k, b, r, opMax);
+    const D = detailInterAbs(R1.lignes, R1.spec, R2.lignes, R2.spec, solution, R1.cond, R2.cond, null);
+    D.lignes.unshift(`${s} ${incBas ? '\\leqslant' : '\\lt'} |${X}| ${incHaut ? '\\leqslant' : '\\lt'} ${r}`, `\\iff |${X}| ${SYM[opMin]} ${s} \\text{ et } |${X}| ${SYM[opMax]} ${r}`);
     return {enonce:`Résoudre l'inéquation (solution sous forme d'intervalle ou de réunion d'intervalles) : \\(${s}${incBas ? '\\leqslant' : '\\lt'}|${k}x${b < 0 ? b : '+' + b}|${incHaut ? '\\leqslant' : '\\lt'} ${r}\\)`,
-      intervalleSpec:{type:'intervalles', liste:[
-        {bas:racine[0], haut:racine[1], inclusBas:incHaut, inclusHaut:incBas},
-        {bas:racine[2], haut:racine[3], inclusBas:incBas, inclusHaut:incHaut}
-      ]}};
+      intervalleSpec:{type:'intervalles', liste:solution}, detail: D};
   }}
 ];
 
+
 function genererExercices() {
   tirageCalculs = tirerSansRemise(MODELES_CALCUL, 4);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -2218,7 +2324,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

@@ -83,7 +83,8 @@ async function controlerDansLaPage(opts) {
     let t = String(tex).replace(/\\(?:small|scriptsize)\s*/g, '').replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
       .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
-      .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '');
+      .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '')
+      .replace(/\|([^|]*)\|/g, 'abs($1)');                                      // valeur absolue |x-3| (sans imbrication)
     if (/\\[a-zA-Z]+/.test(t.replace(/\\(?:dfrac|frac|sqrt)/g, ''))) throw new Error('commande LaTeX inconnue : ' + (t.match(/\\[a-zA-Z]+/) || [''])[0]);
     for (let i = 0; i < 12; i++) {
       const avant = t;
@@ -321,6 +322,15 @@ async function controlerDansLaPage(opts) {
         return Math.abs(v - cibleNum) <= Math.max(e.tolerancePourcent || 0, e.tolerancePoints ? 0.05 : 0, 1e-6) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
     }
+    // |x - a| op r (type valAbs) : centre, sens et rayon (20/10/2026)
+    if (e.type === 'valAbs' && e.aAttendu !== undefined) {
+      const m = String(F).replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/\s+/g, '').match(/^\|x(?:([+-][\d{},.]+))?\|(<=|>=|<|>)([\d{},.]+)$/);
+      if (!m) return 'faux';
+      try {
+        const decalage = m[1] ? evaluer(m[1], 0) : 0;
+        return Math.abs(-decalage - e.aAttendu) < 1e-9 && m[2] === e.sensAttendu && Math.abs(evaluer(m[3], 0) - e.rAttendu) < 1e-9 ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
+    }
     // inégalité portant sur x (« x \gt -7 ») : sens et seuil (20/10/2026)
     if (e.type === 'ineq' && e.sens !== undefined && e.seuil !== undefined) {
       const m = String(F).replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/\s+/g, '').match(/^x(<=|>=|<|>)(.+)$/);
@@ -368,7 +378,7 @@ async function controlerDansLaPage(opts) {
     const m = [];
     if (/\\dfrac\{[^{}]*\}\{1\}(?!\d)/.test(sansTexte)) m.push(['erreur', 'fraction-denominateur-1']);
     if (/\\dfrac\{[^{}]*\}\{0\}(?![\d.])/.test(sansTexte)) m.push(['erreur', 'denominateur-nul']);
-    if (/NaN|undefined|Infinity|null/.test(l)) m.push(['erreur', 'valeur-invalide']);
+    if (/NaN|undefined|Infinity|null/.test(sansTexte)) m.push(['erreur', 'valeur-invalide']);   // hors des blocs de texte (« nulle » contient « null »)
     if (/\^\{1\}(?!\d)/.test(sansTexte)) m.push(['erreur', 'exposant-1']);
     if (/\+\s*-|-\s*-|-\s*\+|\+\s*\+/.test(sansTexte.replace(/\\[a-zA-Z]+/g, '').replace(/\^\{-/g, '^{').replace(/\\left\(|\\right\)|\([^()]*\)/g, '(x)'))) m.push(['erreur', 'signes-doubles']);
     // coefficient 1 écrit devant une lettre (« 1n », « 1\,r », « 1\times r », « 1\left(… »). Les blocs de texte et les ⟺ sont remplacés par un jeton

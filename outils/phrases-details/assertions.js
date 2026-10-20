@@ -183,6 +183,24 @@ module.exports = [
     verifie: (l, e) => !!e.intervalleSpec && e.intervalleSpec.type === 'vide'
   },
   {
+    nom: 'inegalite-toujours-verifiee-si-l-ensemble-est-r',
+    // « L'inégalité est toujours vérifiée » (|x-a| > -r) : la réponse attendue est ℝ
+    motif: /toujours vérifiée/,
+    verifie: (l, e) => !!e.intervalleSpec && e.intervalleSpec.type === 'tout'
+  },
+  {
+    nom: 'inegalite-jamais-verifiee-si-l-ensemble-est-vide',
+    // « L'inégalité n'est jamais vérifiée » (|x-a| < -r) : la réponse attendue est l'ensemble vide
+    motif: /n'est jamais vérifiée/,
+    verifie: (l, e) => !!e.intervalleSpec && e.intervalleSpec.type === 'vide'
+  },
+  {
+    nom: 'equation-sans-solution-si-l-ensemble-est-vide',
+    // « donc l'équation n'a pas de solution » : la réponse attendue est l'ensemble vide {}
+    motif: /n'a pas de solution/,
+    verifie: (l, e) => String(e.reponse).trim() === '{}'
+  },
+  {
     nom: 'la-longueur-de-periode-annoncee-est-exacte',
     // « \text{Période de } 6 \text{ chiffres} » : longueur de la période de 1/b (b lu dans l'énoncé)
     motif: /\\text\{Période de \} \d+ \\text\{ chiffres?\}/,

@@ -73,6 +73,21 @@ const ESSAIS = {
     [false, '\\text{Aucun réel ne convient}', { intervalleSpec: { type: 'intervalles', liste: [{ bas: 1, haut: 2, inclusBas: true, inclusHaut: true }] } }, env('')],
     [false, '\\text{Aucun réel ne convient}', {}, env('')]
   ],
+  'inegalite-toujours-verifiee-si-l-ensemble-est-r': [
+    [true, "\\text{L'inégalité est toujours vérifiée}", { intervalleSpec: { type: 'tout' } }, env('')],
+    [false, "\\text{L'inégalité est toujours vérifiée}", { intervalleSpec: { type: 'vide' } }, env('')],
+    [false, "\\text{L'inégalité est toujours vérifiée}", {}, env('')]
+  ],
+  'inegalite-jamais-verifiee-si-l-ensemble-est-vide': [
+    [true, "\\text{L'inégalité n'est jamais vérifiée}", { intervalleSpec: { type: 'vide' } }, env('')],
+    [false, "\\text{L'inégalité n'est jamais vérifiée}", { intervalleSpec: { type: 'tout' } }, env('')],
+    [false, "\\text{L'inégalité n'est jamais vérifiée}", { intervalleSpec: { type: 'intervalles', liste: [] } }, env('')]
+  ],
+  'equation-sans-solution-si-l-ensemble-est-vide': [
+    [true, "\\text{donc l'équation n'a pas de solution}", { reponse: '{}' }, env('')],
+    [false, "\\text{donc l'équation n'a pas de solution}", { reponse: '{-3;3}' }, env('')],
+    [false, "\\text{donc l'équation n'a pas de solution}", {}, env('')]
+  ],
   'la-longueur-de-periode-annoncee-est-exacte': [
     [true, '\\text{Période de } 6 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
     [false, '\\text{Période de } 3 \\text{ chiffres}', { enonce: 'Le développement décimal de \\(\\dfrac{1}{7}\\) est périodique.' }, env('')],
