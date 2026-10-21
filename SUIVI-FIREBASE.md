@@ -146,7 +146,7 @@ depuis la réorganisation du 02/10/2026 »).
     et ligne « © 2026 dmarec146 · Tous droits réservés » en pied de page (ajoutée au
     `.site-pied` existant, sinon dans un pied créé). **Toute nouvelle page publique
     doit contenir la balise avant `</body>`** ; l'auteur et l'année sont deux
-    constantes en tête du script. Fichier `LICENSE` à la racine (tous droits réservés).
+    constantes en tête du script. Fichier `LICENSE` à la racine (tous droits réservés). Export PDF : mention répétée en bas de chaque page (boîte de marge `@page`, `export-cahier.js`).
   - MathLive **épinglé à 0.111.0** (`unpkg.com/mathlive@0.111.0`, 05/10/2026 ; avant : sans
     numéro, donc toujours la dernière version) et MathJax. Pour changer de version : modifier
     le numéro dans les 50 fiches, relancer `outils/audit-claviers/`, puis publier.

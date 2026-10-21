@@ -10,6 +10,7 @@
   var ANNEE = '2026';
   var AUTEUR = 'dmarec146';
   var TEXTE = '© ' + ANNEE + ' ' + AUTEUR + ' · Tous droits réservés';
+  window.SITE_DROITS = TEXTE;   // repris par l'export PDF des cahiers (assets/js/export-cahier.js)
 
   // meme dessin que assets/img/icone-cahiers.svg (sigma blanc, extremites vertes, fond indigo)
   function icone(taille) {

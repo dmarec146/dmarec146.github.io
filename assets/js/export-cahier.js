@@ -108,6 +108,21 @@
     return section;
   }
 
+  // mention « Tous droits réservés » (texte fourni par pied-droits.js) en bas de CHAQUE page du PDF, par une
+  // boîte de marge de @page (Chrome 131 et plus). Les autres navigateurs ne la connaissent pas : la ligne de
+  // droits placée par pied-droits.js à la fin de chaque fiche reste alors visible ; avec Chrome, elle est masquée
+  // pour ne pas doubler la mention de chaque page. Retirée par nettoyer() (attribut data-export-cahier).
+  function ajouterMentionDroits() {
+    const texte = window.SITE_DROITS;
+    const chrome = /Chrome\/(\d+)/.exec(navigator.userAgent);
+    if (!texte || !chrome || Number(chrome[1]) < 131) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-export-cahier', '1');
+    style.textContent = '@media print { @page { margin: 1.4cm 1.4cm 1.9cm; @bottom-center { content: ' + JSON.stringify(texte) + '; font: 9pt system-ui, sans-serif; color: #6b6a66; } } ' +
+      '#export-cahier-conteneur footer.site-droits { display: none !important; } }';
+    document.head.appendChild(style);
+  }
+
   async function exporterCahierPDF(bouton) {
     if (bouton.disabled) return;
     const fiches = collecterFiches();
@@ -115,6 +130,7 @@
 
     bouton.disabled = true;
     document.body.classList.add('mode-export-cahier');
+    ajouterMentionDroits();
 
     let conteneur = document.getElementById('export-cahier-conteneur');
     if (!conteneur) {
