@@ -539,6 +539,53 @@ module.exports = [
     }
   },
   {
+    nom: 'le-sens-de-AE-est-celui-du-signe-de-k',
+    // « \text{AE a le même sens que } AB » ou « \text{AE a le sens contraire de } AB » : selon le signe de k (réponse de l'exercice)
+    motif: /\\text\{AE a le (?:même sens que|sens contraire de) \}/,
+    verifie: (l, e) => { const k = math.evaluate(String(e.reponse)); return /même sens/.test(l) === (k > 0); }
+  },
+  {
+    nom: 'la-longueur-de-AE-est-celle-de-la-valeur-absolue-de-k',
+    // « \text{AE est } 2 \text{ fois aussi long que } AB », « \text{AE est } \dfrac{3}{2} \text{ fois aussi long que } AB », « \text{AE a la même longueur que } AB »
+    motif: /\\text\{AE (?:est \} .* \\text\{ fois aussi long que \}|a la même longueur que \})/,
+    verifie: (l, e) => {
+      const k = Math.abs(math.evaluate(String(e.reponse)));
+      if (/a la même longueur/.test(l)) return Math.abs(k - 1) < 1e-9;
+      const m = l.match(/\\text\{AE est \} (\d+|\\dfrac\{\d+\}\{\d+\}) \\text\{ fois aussi long que \}/);
+      if (!m) return false;
+      return Math.abs(math.evaluate(m[1].replace(/\\dfrac\{(\d+)\}\{(\d+)\}/, '($1/$2)')) - k) < 1e-9 && Math.abs(k - 1) > 1e-9;
+    }
+  },
+  {
+    nom: 'la-propriete-annoncee-correspond-a-la-question-egaux-ou-opposes',
+    // « \text{Égaux : mêmes coordonnées} » pour une question « égaux », « \text{Opposés : coordonnées opposées} » pour « opposés »
+    motif: /\\text\{(?:Égaux : mêmes coordonnées|Opposés : coordonnées opposées)\}/,
+    verifie: (l, e) => (/Égaux/.test(l) ? /sont-ils égaux/.test(String(e.enonce)) : /sont-ils opposés/.test(String(e.enonce)))
+  },
+  {
+    nom: 'la-regle-du-parallelogramme-est-au-sommet-commun',
+    // « \text{Règle du parallélogramme en } C \text{ :} » : C est l'origine commune des deux vecteurs de l'énoncé
+    motif: /\\text\{Règle du parallélogramme en \} [A-D] \\text\{ :\}/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{Règle du parallélogramme en \} ([A-D]) \\text/), vs = [...String(e.enonce).matchAll(/overrightarrow\{([A-Z])([A-Z])\}/g)];
+      return !!m && vs.length === 2 && vs[0][1] === m[1] && vs[1][1] === m[1] && vs[0][2] !== vs[1][2];
+    }
+  },
+  {
+    nom: 'le-milieu-cite-est-celui-de-l-enonce',
+    // « \text{I est le milieu de } [AC] \text{ :} » : soit l'énoncé le dit (« I est le milieu du segment [AB] »), soit les deux vecteurs de l'énoncé
+    // partent de I (ou arrivent en I) vers les extrémités X et Y citées
+    motif: /\\text\{[IJ] est le milieu de \} \[[A-Z]{2}\]/,
+    verifie: (l, e) => {
+      const m = l.match(/\\text\{([IJ]) est le milieu de \} \[([A-Z])([A-Z])\]/), t = String(e.enonce);
+      if (!m) return false;
+      const [, P, X, Y] = m, direct = new RegExp(P + '(?:\\\\\\))? est le milieu (?:du segment|de) \\\\\\(\\[' + X + Y + '\\]\\\\\\)').test(t);
+      const vs = [...t.matchAll(/overrightarrow\{([A-Z])([A-Z])\}/g)].map((x) => x[1] + x[2]);
+      const ok = vs.length === 2 && ((vs[0] === P + X && vs[1] === P + Y) || (vs[0] === P + Y && vs[1] === P + X) || (vs[0] === X + P && vs[1] === Y + P) || (vs[0] === Y + P && vs[1] === X + P));
+      return direct || ok;
+    }
+  },
+  {
     nom: 'le-mot-egal-ou-different-correspond-a-la-relation',
     // « \text{Carrés égaux : } \dfrac{13}{4} = \dfrac{13}{4} », « \text{Sommes différentes : } 2 \neq 3 », « \text{Égalité vérifiée : } … » :
     // le mot annonce la vraie relation entre les deux valeurs écrites, et le signe est celui du mot

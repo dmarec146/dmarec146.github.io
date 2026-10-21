@@ -331,6 +331,41 @@ const ESSAIS = {
     [true, '\\text{Deux chemins mènent à } R \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')],
     [false, '\\text{Deux chemins mènent à } E \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')]
   ],
+  'le-sens-de-AE-est-celui-du-signe-de-k': [
+    [true, '\\text{AE a le même sens que } AB', { reponse: '2' }, env('')],
+    [false, '\\text{AE a le même sens que } AB', { reponse: '-2' }, env('')],
+    [true, '\\text{AE a le sens contraire de } AB', { reponse: '-1/2' }, env('')],
+    [false, '\\text{AE a le sens contraire de } AB', { reponse: '3/2' }, env('')]
+  ],
+  'la-longueur-de-AE-est-celle-de-la-valeur-absolue-de-k': [
+    [true, '\\text{AE est } 2 \\text{ fois aussi long que } AB', { reponse: '-2' }, env('')],
+    [false, '\\text{AE est } 3 \\text{ fois aussi long que } AB', { reponse: '-2' }, env('')],
+    [true, '\\text{AE est } \\dfrac{3}{2} \\text{ fois aussi long que } AB', { reponse: '3/2' }, env('')],
+    [false, '\\text{AE est } \\dfrac{1}{2} \\text{ fois aussi long que } AB', { reponse: '3/2' }, env('')],
+    [true, '\\text{AE a la même longueur que } AB', { reponse: '-1' }, env('')],
+    [false, '\\text{AE a la même longueur que } AB', { reponse: '2' }, env('')]
+  ],
+  'la-propriete-annoncee-correspond-a-la-question-egaux-ou-opposes': [
+    [true, '\\text{Égaux : mêmes coordonnées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?' }, env('')],
+    [false, '\\text{Égaux : mêmes coordonnées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?' }, env('')],
+    [true, '\\text{Opposés : coordonnées opposées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?' }, env('')],
+    [false, '\\text{Opposés : coordonnées opposées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?' }, env('')]
+  ],
+  'la-regle-du-parallelogramme-est-au-sommet-commun': [
+    [true, '\\text{Règle du parallélogramme en } C \\text{ :}', { enonce: '\\(\\overrightarrow{CD}+\\overrightarrow{CB}\\)' }, env('')],
+    [false, '\\text{Règle du parallélogramme en } B \\text{ :}', { enonce: '\\(\\overrightarrow{CD}+\\overrightarrow{CB}\\)' }, env('')],
+    [false, '\\text{Règle du parallélogramme en } C \\text{ :}', { enonce: '\\(\\overrightarrow{CD}+\\overrightarrow{AB}\\)' }, env('')]
+  ],
+  'le-milieu-cite-est-celui-de-l-enonce': [
+    [true, '\\text{I est le milieu de } [BD] \\text{ :}', { enonce: '\\(\\overrightarrow{IB}+\\overrightarrow{ID}\\)' }, env('')],
+    [false, '\\text{I est le milieu de } [AC] \\text{ :}', { enonce: '\\(\\overrightarrow{IB}+\\overrightarrow{ID}\\)' }, env('')],
+    [true, '\\text{I est le milieu de } [AC] \\text{ :}', { enonce: '\\(\\overrightarrow{AI}+\\overrightarrow{CI}\\)' }, env('')],
+    [false, '\\text{I est le milieu de } [AC] \\text{ :}', { enonce: '\\(\\overrightarrow{IA}+\\overrightarrow{BI}\\)' }, env('')],
+    [true, '\\text{I est le milieu de } [AB] \\text{ :}', { enonce: 'Soit \\(ABC\\) un triangle. On définit les points \\(I\\) et \\(J\\) par : \\(I\\) est le milieu du segment \\([AB]\\) ; \\(J\\) est…' }, env('')],
+    [false, '\\text{I est le milieu de } [AC] \\text{ :}', { enonce: 'Soit \\(ABC\\) un triangle. \\(I\\) est le milieu du segment \\([AB]\\) ; …' }, env('')],
+    [true, '\\text{J est le milieu de } [CD] \\text{ :}', { enonce: '\\(ABCD\\) est un parallélogramme. \\(I\\) est le milieu de \\([AB]\\) et \\(J\\) est le milieu de \\([CD]\\). Exprimer…' }, env('')],
+    [false, '\\text{J est le milieu de } [AB] \\text{ :}', { enonce: '\\(ABCD\\) est un parallélogramme. \\(I\\) est le milieu de \\([AB]\\) et \\(J\\) est le milieu de \\([CD]\\). Exprimer…' }, env('')]
+  ],
   'le-mot-egal-ou-different-correspond-a-la-relation': [
     [true, '\\text{Carrés égaux : } \\dfrac{13}{4} = \\dfrac{13}{4}', {}, env('')],
     [false, '\\text{Carrés égaux : } \\dfrac{13}{4} \\neq 5', {}, env('')],

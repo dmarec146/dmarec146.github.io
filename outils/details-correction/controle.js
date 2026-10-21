@@ -257,7 +257,8 @@ async function controlerDansLaPage(opts) {
   function verifierEquivalence(partieA, partieB) {
     const A = analyserPartie(partieA), B = analyserPartie(partieB);
     if (!A || !B) return { illisible: true };
-    const v = variableLibre(A, B);
+    let v;
+    try { v = variableLibre(A, B); } catch (er) { return { illisible: true }; }   // commande LaTeX inconnue (\overrightarrow…) : équivalence non lisible
     if (!v) return { illisible: true };
     let RA, RB;
     // la fenêtre de recherche s'élargit avec les nombres écrits (x/72 > 5 a pour frontière x = 360)
@@ -336,6 +337,21 @@ async function controlerDansLaPage(opts) {
     }
     // deux droites parallèles distinctes : aucun point d'intersection
     if (e.type === 'paire' && e.aucunPoint) return F === "\\text{aucun point d'intersection}" ? 'ok' : 'faux';
+    // vecteur nommé « coef \overrightarrow{XY} » (type vecteur à lettres : coef, from, to) ou vecteur nul
+    if (e.type === 'vecteur' && e.from !== undefined && e.to !== undefined) {
+      const t = String(F).replace(/\s/g, '');
+      if (e.coef === 0) return t === '\\vec{0}' ? 'ok' : 'faux';
+      const m = t.match(/^(-?)(\d*)\\overrightarrow\{([A-Z])([A-Z])\}$/);
+      return m && (m[1] === '-' ? -1 : 1) * (m[2] === '' ? 1 : Number(m[2])) === e.coef && m[3] === e.from && m[4] === e.to ? 'ok' : 'faux';
+    }
+    // combinaison de vecteurs nommés : mêmes coefficients devant les mêmes vecteurs, dans n'importe quel ordre
+    if (e.type === 'combinaison' && Array.isArray(e.termes)) {
+      const lus = [...String(F).replace(/\s/g, '').matchAll(/([+-]?)(\\dfrac\{(\d+)\}\{(\d+)\}|\d+)?\\overrightarrow\{([A-Z])([A-Z])\}/g)].map((m) => ({ coef: (m[1] === '-' ? -1 : 1) * (m[3] ? Number(m[3]) / Number(m[4]) : m[2] ? Number(m[2]) : 1), nom: m[5] + m[6] }));
+      if (lus.length !== e.termes.length) return 'faux';
+      return e.termes.every((t) => lus.some((l) => l.nom === t.from + t.to && Math.abs(l.coef - t.coef) < 1e-9)) ? 'ok' : 'faux';
+    }
+    // résultat nul d'une somme de vecteurs, la réponse attendue étant « 0 »
+    if (String(F).trim() === '\\vec{0}' && String(e.reponse).trim() === '0') return 'ok';
     // tableau croisé à compléter : les effectifs des cases à compléter, dans l'ordre de aCompleter
     // (« 28 \text{ et } 12 », ou « \left(28\,;\,12\,;\,6\,;\,54\right) » ; les milliers « 2\,700 » sont recollés)
     if (e.type === 'tableauCroiseRempli' && e.tcr) {
