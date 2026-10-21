@@ -539,6 +539,12 @@ module.exports = [
     }
   },
   {
+    nom: 'un-carre-n-est-jamais-negatif',
+    // « \text{Un carré n'est jamais égal à } -20 » : le nombre cité est bien négatif
+    motif: /\\text\{Un carré n'est jamais égal à \}/,
+    verifie: (l) => { const m = l.match(/\\text\{Un carré n'est jamais égal à \} (-?\d+(?:\.\d+)?)$/); return !!m && Number(m[1]) < 0; }
+  },
+  {
     nom: 'le-sens-de-AE-est-celui-du-signe-de-k',
     // « \text{AE a le même sens que } AB » ou « \text{AE a le sens contraire de } AB » : selon le signe de k (réponse de l'exercice)
     motif: /\\text\{AE a le (?:même sens que|sens contraire de) \}/,
@@ -589,9 +595,9 @@ module.exports = [
     nom: 'le-mot-egal-ou-different-correspond-a-la-relation',
     // « \text{Carrés égaux : } \dfrac{13}{4} = \dfrac{13}{4} », « \text{Sommes différentes : } 2 \neq 3 », « \text{Égalité vérifiée : } … » :
     // le mot annonce la vraie relation entre les deux valeurs écrites, et le signe est celui du mot
-    motif: /\\text\{(?:Carrés|Sommes|Égalité) [^{}]* : \}/,
+    motif: /\\text\{(?:Carrés|Sommes|Égalité|Pentes) [^{}]* : \}/,
     verifie: (l) => {
-      const m = l.match(/\\text\{(?:Carrés|Sommes|Égalité) (égaux|égales|vérifiée|différents|différentes|non vérifiée) : \} (.+?) (=|\\neq) (.+)$/);
+      const m = l.match(/\\text\{(?:Carrés|Sommes|Égalité|Pentes) (égaux|égales|vérifiée|différents|différentes|non vérifiée) : \} (.+?) (=|\\neq) (.+)$/);
       if (!m) return false;
       const val = (t) => math.evaluate(t.replace(/\\left|\\right/g, '').replace(/\\dfrac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))'));
       const egalReel = Math.abs(val(m[2]) - val(m[4])) < 1e-9, annonce = /^(égaux|égales|vérifiée)$/.test(m[1]);

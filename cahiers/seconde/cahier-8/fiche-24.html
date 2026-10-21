@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"24.1 a)":0.5,"24.1 b)":0.75,"24.2 a)":0.5,"24.2 b)":0.75,"24.3 a)":0.5,"24.3 b)":0.75,"24.3 c)":0.75,"24.3 d)":0.75,"24.4 a)":0.5,"24.4 b)":0.75,"24.4 c)":1,"24.4 d)":1,"24.5 a)":0.75,"24.5 b)":1,"24.5 c)":1,"24.6 a)":1,"24.6 b)":1,"24.6 c)":1.25,"24.6 d)":1.5,"24.7 a)":0.75,"24.7 b)":1,"24.7 c)":1.25,"24.8 a)":1.5,"24.8 b)":1.5,"24.9 a)":1.5,"24.9 b)":1.75,"24.9 c)":1.5,"24.9 d)":2,"24.10 a)":2,"24.10 b)":1.5},"bonus":["24.9 a)","24.9 b)","24.9 c)","24.9 d)","24.10 a)","24.10 b)"]});
@@ -2698,6 +2699,183 @@ function tirerTriangle25() {
 
 let droite25_4, triangle25_9, ligneParametre25;
 
+// ---------- details de correction (21/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracDP, fracTexte, fracBrute, sommeTermes, fr, quotientBrut } = Detail;
+const sg24 = (k) => (k < 0 ? `-${-k}` : `+${k}`);                                     // « +5 » ou « -5 »
+const termeY24 = (b, premier) => `${b < 0 ? '-' : (premier ? '' : '+')}${Math.abs(b) === 1 ? '' : Math.abs(b)}y`;   // « +3y », « -y »
+const termeX24 = (a, premier) => `${a < 0 ? '-' : (premier ? '' : '+')}${Math.abs(a) === 1 ? '' : Math.abs(a)}x`;
+const dedoublon24 = (t, i, tab) => i === 0 || t !== tab[i - 1];
+const compT24 = (x, y, egal) => `${x} ${egal ? '=' : '\\neq'} ${y}`;
+const compMotT24 = (mots, x, y, egal) => `\\text{${mots[egal ? 0 : 1]} : } ${x} ${egal ? '=' : '\\neq'} ${y}`;
+const MOTS_EGALITE24 = ['Égalité vérifiée', 'Égalité non vérifiée'], MOTS_PENTES24 = ['Pentes égales', 'Pentes différentes'];
+const demiT24 = (v2) => fracD(fr(v2, 2));
+const parenT24 = (t) => (String(t).startsWith('-') ? `\\left(${t}\\right)` : String(t));
+// terme c x v d'une somme (c entier, v entier ou fraction math.js) : signe a part, coefficient 1 omis
+function produitT24(c, v, premier) {
+  const f = math.fraction(c), g = math.fraction(v);
+  const signe = f.s < 0 ? '-' : (premier ? '' : '+'), coef = fracTexte(f.n, f.d), vt = fracD(g);
+  if (coef === '1') return premier && f.s > 0 ? vt : `${signe}${parenT24(vt)}`;
+  return `${signe}${coef}\\times ${parenT24(vt)}`;
+}
+// difference de deux coordonnees (en demis) : b2/2 - a2/2
+function chaineDiffDemis24(b2, a2) {
+  const r = fracD(fr(b2 - a2, 2)), ecrit = `${demiT24(b2)}-${parenT24(demiT24(a2))}`, sans = a2 < 0 ? `${demiT24(b2)}+${demiT24(-a2)}` : ecrit;
+  return [ecrit, sans, r].filter(dedoublon24).join(' = ');
+}
+// moyenne de deux entiers (milieu, une coordonnee)
+function milieuEntiers24(a, b) {
+  const s = a + b;
+  return [`\\dfrac{${b < 0 ? `${a}-${-b}` : `${a}+${b}`}}{2}`, fracBrute(s, 2), fracD(fr(s, 2))].filter(dedoublon24).join(' = ');
+}
+// moyenne de trois entiers (centre de gravite, une coordonnee)
+function chaineMoyenne3_24(a, b, c) {
+  const s = a + b + c, t = (u, v) => (v < 0 ? `${u}-${-v}` : `${u}+${v}`);
+  return [`\\dfrac{${t(t(a, b), c)}}{3}`, fracBrute(s, 3), fracD(fr(s, 3))].filter(dedoublon24).join(' = ');
+}
+// a x + b y + c pour (x, y) donnes (entiers ou fractions math.js) : ecriture, produits effectues, valeur
+function chaineEvalCart24(a, b, c, x, y) {
+  const px = math.multiply(fr(a), math.fraction(x)), py = math.multiply(fr(b), math.fraction(y)), S = math.add(math.add(px, py), fr(c));
+  const f = (v, i) => (i === 0 ? fracD(v) : (v.s < 0 ? `-${fracTexte(v.n, v.d)}` : `+${fracTexte(v.n, v.d)}`));
+  const s1 = `${produitT24(a, x, true)}${produitT24(b, y, false)}${c === 0 ? '' : sg24(c)}`, s2 = `${f(px, 0)}${f(py, 1)}${c === 0 ? '' : sg24(c)}`;
+  return { ligne: [s1, s2, fracD(S)].filter(dedoublon24).join(' = '), valeur: S };
+}
+// equation « a x + b y + c = 0 », c fraction possible (math.js) ; termes nuls omis
+function eqCartBrute24(a, b, c) {
+  const cf = math.fraction(c);
+  let t = a !== 0 ? termeX24(a, true) : '';
+  if (b !== 0) t += termeY24(b, t === '');
+  if (cf.n !== 0) t += `${cf.s < 0 ? '-' : (t === '' ? '' : '+')}${fracTexte(cf.n, cf.d)}`;
+  return `${t || '0'} = 0`;
+}
+// ordonnee du point d'abscisse k (ou abscisse du point d'ordonnee k) d'une droite a x + b y + c = 0
+function lignesInconnue24(a, b, c, k, cherche) {
+  const ak = cherche === 'y' ? a * k : b * k, coefInc = cherche === 'y' ? b : a, nom = cherche === 'y' ? 'y' : 'x', reste = -(ak + c);
+  const connu = cherche === 'y' ? produitT24(a, k, true) : null;
+  const l1 = cherche === 'y' ? `${connu}${termeY24(b, false)}${c === 0 ? '' : sg24(c)} = 0` : `${termeX24(a, true)}${produitT24(b, k, false)}${c === 0 ? '' : sg24(c)} = 0`;
+  const l2 = cherche === 'y' ? `${ak === 0 ? '' : ak}${termeY24(b, ak === 0)}${c === 0 ? '' : sg24(c)} = 0` : `${termeX24(a, true)}${ak === 0 ? '' : sg24(ak)}${c === 0 ? '' : sg24(c)} = 0`;
+  const lignes = [l1];
+  if (l2 !== l1) lignes.push(`\\iff ${l2}`);
+  lignes.push(`\\iff ${coefInc === 1 ? nom : coefInc === -1 ? '-' + nom : coefInc + nom} = ${reste}`);
+  const q = quotientBrut(reste, coefInc), v = fracD(fr(reste, coefInc));
+  if (coefInc !== 1) lignes.push(`\\iff ${nom} = ${q}`);
+  if (v !== q) lignes.push(`\\iff ${nom} = ${v}`);
+  return { lignes, valeur: v };
+}
+// equation cartesienne d'une droite passant par A (coordonnees math.js) et de vecteur directeur entier (u1 ; u2) : a = u2, b = -u1, c tel que A soit sur d ;
+// coefficients rendus entiers (x2 si c est une fraction) puis forme canonique (a > 0, premiers entre eux)
+function lignesEquationCart24(xA, yA, u1, u2) {
+  const a = u2, b = -u1, c = math.unaryMinus(math.add(math.multiply(fr(a), math.fraction(xA)), math.multiply(fr(b), math.fraction(yA))));
+  const lignes = ['\\text{Une équation de } d \\text{ est } ax+by+c=0', '\\text{où } a = u_{2} \\text{ et } b = -u_{1} \\text{ :}', `a = ${a}`, `b = ${b}`, '\\text{Le point } A \\text{ est sur } d \\text{ :}'];
+  const prod = `${produitT24(a, xA, true)}${produitT24(b, yA, false)}`;
+  lignes.push(`${prod}+c = 0`);
+  const somme = math.add(math.multiply(fr(a), math.fraction(xA)), math.multiply(fr(b), math.fraction(yA)));
+  if (`${fracD(somme)}+c = 0` !== `${prod}+c = 0`) lignes.push(`\\iff ${fracD(somme)}+c = 0`);
+  lignes.push(`\\iff c = ${fracD(c)}`);
+  const brute = eqCartBrute24(a, b, c);
+  lignes.push(brute);
+  const entier = Number.isInteger(c.valueOf()) ? 1 : c.d, A1 = a * entier, B1 = b * entier, C1 = math.multiply(c, entier).valueOf();
+  if (entier !== 1) lignes.push(`\\iff ${eqCartBrute24(A1, B1, C1)}`);
+  const can = coefsCanoniques25(A1, B1, C1), fin = equationCartTexte25(can.a, can.b, can.c);
+  if (`${membreCartesien25(A1, B1, C1)}=0`.replace(/\s/g, '') !== fin.replace(/\s/g, '')) lignes.push(`\\iff ${membreCartesien25(can.a, can.b, can.c)} = 0`);
+  return { lignes, final: membreCartesien25(can.a, can.b, can.c) + ' = 0' };
+}
+// vecteur de coordonnees (en demis) entre deux points : abscisse, ordonnee (chaines) et tuple
+function lignesVecteurPoints24(d2, a2, nom) {
+  const fin = `\\left(${fracD(fr(a2.x - d2.x, 2))}\\,;\\,${fracD(fr(a2.y - d2.y, 2))}\\right)`;
+  return { lignes: [`\\text{Arrivée moins départ pour } ${nom} \\text{ :}`, '\\text{Abscisse :}', chaineDiffDemis24(a2.x, d2.x), '\\text{Ordonnée :}', chaineDiffDemis24(a2.y, d2.y), fin], final: fin };
+}
+// systeme a x + b y = c : copie de lignesSystemeCombinaison (fiche 16), l'equation de b non nul en premier
+const coefYT24 = (b) => (Math.abs(b) === 1 ? 'y' : `${Math.abs(b)}y`);
+// « a x + b y = c », termes nuls omis
+const eqLin24 = (a, b, c) => `${a !== 0 ? termeX24(a, true) : ''}${b !== 0 ? termeY24(b, a === 0) : ''} = ${c}`;
+// systeme a x + b y = c : si une equation ne contient pas y, elle donne x directement ; sinon elimination de y
+function lignesSysteme24(e1, e2) {
+  if (e1.b !== 0 && e2.b !== 0) return lignesSystemeElimination24(e1, e2);
+  const [z, o] = e1.b === 0 ? [e1, e2] : [e2, e1], x = fr(z.c, z.a), q = quotientBrut(z.c, z.a);
+  const lignes = ["\\text{Une équation ne contient pas } y \\text{ :}", eqLin24(z.a, 0, z.c), ...(z.a !== 1 ? [`\\iff x = ${q}${fracD(x) !== q ? ' = ' + fracD(x) : ''}`] : []), "\\text{On remplace } x \\text{ dans l'autre équation :}"];
+  const reste = math.subtract(fr(o.c), math.multiply(fr(o.a), x)), y = math.divide(reste, fr(o.b));
+  const sy = o.b < 0 ? '-' : '+', produit = o.a === 1 ? fracDP(x) : o.a === -1 ? '-' + fracDP(x) : `${o.a}\\times ${fracDP(x)}`;
+  const t1 = `${produit} ${sy} ${coefYT24(o.b)} = ${o.c}`, t2 = `${fracD(math.multiply(fr(o.a), x))} ${sy} ${coefYT24(o.b)} = ${o.c}`;
+  lignes.push(t1);
+  if (t2 !== t1) lignes.push(`\\iff ${t2}`);
+  lignes.push(`\\iff ${(o.b < 0 ? '-' : '') + coefYT24(o.b)} = ${fracD(reste)}`);
+  if (o.b !== 1) lignes.push(Math.abs(o.b) === 1 ? `\\iff y = ${fracD(y)}` : `\\iff y = ${fracD(reste)} \\div ${dP(o.b)} = ${fracD(y)}`);
+  return { lignes, x, y };
+}
+function lignesSystemeElimination24(e1, e2) {
+  const { a: a1, b: b1, c: c1 } = e1, { a: a2, b: b2, c: c2 } = e2;
+  const det = a1 * b2 - a2 * b1, xn = c1 * b2 - c2 * b1;
+  const x = fr(xn, det), y = math.divide(math.subtract(fr(c1), math.multiply(fr(a1), x)), fr(b1));
+  const lignes = ['\\text{On élimine } y \\text{ en multipliant}', `\\text{la 1re équation par } ${b2} \\text{ et la 2e par } ${b1}`,
+    eqLin24(a1 * b2, b1 * b2, c1 * b2), eqLin24(a2 * b1, b2 * b1, c2 * b1), '\\text{On soustrait membre à membre :}', `${coefXTexte(det)} = ${xn}`];
+  if (det !== 1) lignes.push(`\\iff x = ${quotientBrut(xn, det)}${fracD(x) !== quotientBrut(xn, det) ? ' = ' + fracD(x) : ''}`);
+  lignes.push('\\text{On remplace } x \\text{ dans la 1re équation :}');
+  const reste = math.subtract(fr(c1), math.multiply(fr(a1), x));
+  const sy = b1 < 0 ? '-' : '+', termeYs = (b1 < 0 ? '-' : '') + coefYT24(b1);
+  const produit = a1 === 1 ? fracDP(x) : a1 === -1 ? '-' + fracDP(x) : `${a1}\\times ${fracDP(x)}`;
+  const t1 = `${produit} ${sy} ${coefYT24(b1)} = ${c1}`, t2 = `${fracD(math.multiply(fr(a1), x))} ${sy} ${coefYT24(b1)} = ${c1}`;
+  lignes.push(t1);
+  if (t2 !== t1) lignes.push(`\\iff ${t2}`);
+  lignes.push(`\\iff ${termeYs} = ${fracD(reste)}`);
+  if (b1 !== 1) lignes.push(Math.abs(b1) === 1 ? `\\iff y = ${fracD(y)}` : `\\iff y = ${fracD(reste)} \\div ${dP(b1)} = ${fracD(y)}`);
+  return { lignes, x, y };
+}
+
+// (v - p)^2 developpe : v^{2} - 2 p v + p^2 (termes nuls omis) ; v = 'x' ou 'y'
+const devCarre24 = (p, v) => `${v}^{2}${p === 0 ? '' : `${p < 0 ? '+' : '-'}${Math.abs(2 * p)}${v}${sg24(p * p)}`}`;
+// mediatrice de [PQ] : MP^2 = MQ^2, developpe ; renvoie les lignes et les coefficients bruts (a, b, c) de a x + b y + c = 0
+function lignesMediatrice24(P, Q, nomP, nomQ) {
+  const t = (c) => (c < 0 ? `-${-c}` : `+${c}`), a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y), c = P.x * P.x + P.y * P.y - Q.x * Q.x - Q.y * Q.y;
+  const can = coefsCanoniques25(a, b, c), brute = eqCartBrute24(a, b, c);
+  const lignes = [`\\text{M est sur la médiatrice de } [${nomP}${nomQ}]`, `\\text{si } M${nomP} \\text{ et } M${nomQ} \\text{ sont égaux, donc leurs carrés :}`,
+    `(x${P.x === 0 ? '' : t(-P.x)})^{2}+(y${P.y === 0 ? '' : t(-P.y)})^{2} = (x${Q.x === 0 ? '' : t(-Q.x)})^{2}+(y${Q.y === 0 ? '' : t(-Q.y)})^{2}`,
+    `\\iff ${devCarre24(P.x, 'x')}+${devCarre24(P.y, 'y')}`, `= ${devCarre24(Q.x, 'x')}+${devCarre24(Q.y, 'y')}`, `\\iff ${brute}`];
+  const fin = `${membreCartesien25(can.a, can.b, can.c)} = 0`;
+  if (brute.replace(/\s/g, '') !== fin.replace(/\s/g, '')) lignes.push(`\\iff ${fin}`);
+  return { lignes, final: fin };
+}
+// parallelisme / orthogonalite de d1 : (m ou m^2) x + p y + q = 0 et d2 : D x + E y + F = 0 ; ensemble des valeurs de m
+function detailParametre24(orthogonal, d) {
+  const { degre2, D, E, p, k } = d, mm = degre2 ? 'm^{2}' : 'm', coefM = (c) => `${c === 1 ? '' : c === -1 ? '-' : c}${mm}`;
+  const annonce = orthogonal ? "\\text{Orthogonales si } aa'+bb' = 0 \\text{ :}" : "\\text{Parallèles si } ab'-a'b = 0 \\text{ :}";
+  const l1 = orthogonal ? `${mm}\\times ${dP(D)}+${dP(p)}\\times ${dP(E)} = 0` : `${mm}\\times ${dP(E)}-${dP(D)}\\times ${dP(p)} = 0`;
+  const coef = orthogonal ? D : E, second = orthogonal ? -p * E : D * p;
+  const lignes = [annonce, l1, `\\iff ${coefM(coef)} = ${second}`];
+  if (!degre2) {
+    const v = fracD(fr(second, coef)), q = quotientBrut(second, coef);
+    lignes.push(`\\iff m = ${q}${v !== q ? ' = ' + v : ''}`);
+    return { lignes, final: v };
+  }
+  const A = second / coef;
+  if (coef !== 1) lignes.push(`\\iff m^{2} = ${A}`);
+  if (A > 0) {
+    const kk = orthogonal ? -k : k, base = orthogonal ? Math.abs(E) : Math.abs(D), t = kk === 1 ? `${base}` : `${base === 1 ? '' : base}\\sqrt{${kk}}`;
+    lignes.push(`\\iff m = -\\sqrt{${A}} \\text{ ou } m = \\sqrt{${A}}`, `\\iff m = -${t} \\text{ ou } m = ${t}`, `S = \\{-${t}\\,;\\,${t}\\}`);
+    return { lignes, final: `\\{-${t}\\,;\\,${t}\\}` };
+  }
+  lignes.push(`\\text{Un carré n'est jamais égal à } ${A}`, 'S = \\emptyset');
+  return { lignes, final: '\\emptyset' };
+}
+// equation reduite a partir de a x + b y + c = 0 (b non nul, |b| >= 2) : b y = -a x - c, puis division par b
+function detailReduite24(a, b, c) {
+  const fin = `y = ${affineTexte16(-a, b, -c, b)}`, droite = a === 0 ? String(-c) : `${termeX24(-a, true)}${c === 0 ? '' : sg24(-c)}`;
+  return { lignes: [`${membreCartesien25(a, b, c)} = 0`, `\\iff ${b < 0 ? '-' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}y = ${droite}`, `\\iff ${fin}`], final: fin };
+}
+// condition de parallelisme ab' - a'b = 0 : ecriture, produits, valeur, comparaison a 0
+function lignesDeterminant24(a, b, a2, b2, annonce) {
+  const v = a * b2 - a2 * b, chaine = [`${a}\\times ${dP(b2)}-${dP(a2)}\\times ${dP(b)}`, `${a * b2}-${dP(a2 * b)}`, `${v}`].filter(dedoublon24).join(' = ');
+  return [annonce, chaine, compMotT24(MOTS_EGALITE24, `${v}`, '0', v === 0)];
+}
+// systeme de deux droites donnees par a x + b y + c = 0 (premiere ligne : mise sous la forme a x + b y = c), solution ou absence de solution
+function lignesIntersection24(d1, d2) {
+  const e1 = { a: d1.a, b: d1.b, c: -d1.c }, e2 = { a: d2.a, b: d2.b, c: -d2.c }, det = e1.a * e2.b - e2.a * e1.b;
+  const entete = ["\\text{On écrit } ax+by=c \\text{ :}", eqLin24(e1.a, e1.b, e1.c), eqLin24(e2.a, e2.b, e2.c)];
+  if (det === 0) return { lignes: [...entete, "\\text{On calcule } ab'-a'b \\text{ :}", `${e1.a}\\times ${dP(e2.b)}-${dP(e2.a)}\\times ${dP(e1.b)} = ${det}`, compMotT24(MOTS_EGALITE24, '0', '0', true),
+    "\\text{On calcule aussi } cb'-c'b \\text{ :}", `${e1.c}\\times ${dP(e2.b)}-${dP(e2.c)}\\times ${dP(e1.b)} = ${e1.c * e2.b - e2.c * e1.b}`, "\\text{aucun point d'intersection}"], final: "\\text{aucun point d'intersection}" };
+  const S = lignesSysteme24(e1, e2), fin = `\\left(${fracD(S.x)}\\,;\\,${fracD(S.y)}\\right)`;
+  return { lignes: [...entete, ...S.lignes, fin], final: fin };
+}
+
 // ---------- automatismes : quotients de differences (coefficient directeur, 24.1) et equations du premier degre (24.2),
 // preparation du vecteur directeur, de l'abscisse d'un point, de l'intersection de deux droites et du parametre m ----------
 const par24 = (v) => v < 0 ? `(${v})` : `${v}`;
@@ -2707,16 +2885,20 @@ function quotientPentes24(difficile) {
     x1 = alea(-9,9); y1 = alea(-9,9); x2 = alea(-9,9); y2 = alea(-9,9);
     dx = x2 - x1; dy = y2 - y1;
   } while (dx === 0 || dy === 0 || (difficile ? (pgcd(Math.abs(dy), Math.abs(dx)) < 2 || dy % dx === 0) : false));
-  return { enonce:`\\dfrac{${y2}-${par24(y1)}}{${x2}-${par24(x1)}}`, reponse:fracSimplifiee(dy, dx), fractionIrreductible:true };
+  const e = `\\dfrac{${y2}-${par24(y1)}}{${x2}-${par24(x1)}}`;
+  return { enonce:e, reponse:fracSimplifiee(dy, dx), fractionIrreductible:true, detail: { lignes: [[e, quotientBrut(dy, dx), fracD(fr(dy, dx))].filter(dedoublon24).join(' = ')], final: fracD(fr(dy, dx)) } };
 }
 function equationSimple24() {
-  const a = entierSigne(2,9), b = entierSigne(1,12);
-  return { enonce:`${affineTexte(a, b)}=0`, reponse:fracSimplifiee(-b, a), fractionIrreductible:true };
+  const a = entierSigne(2,9), b = entierSigne(1,12), v = fracD(fr(-b, a)), q = quotientBrut(-b, a);
+  return { enonce:`${affineTexte(a, b)}=0`, reponse:fracSimplifiee(-b, a), fractionIrreductible:true,
+    detail: { lignes: [`${affineTexte(a, b)} = 0`, `\\iff ${coefXTexte(a)} = ${-b}`, `\\iff x = ${q}${v !== q ? ' = ' + v : ''}`], final: v } };
 }
 function equationDeuxMembres24() {
   let a, b, c, d;
   do { a = entierSigne(1,7); c = entierSigne(1,7); b = entierSigne(1,12); d = entierSigne(1,12); } while (a === c);
-  return { enonce:`${affineTexte(a, b)}=${affineTexte(c, d)}`, reponse:fracSimplifiee(d - b, a - c), fractionIrreductible:true };
+  const v = fracD(fr(d - b, a - c)), q = quotientBrut(d - b, a - c);
+  return { enonce:`${affineTexte(a, b)}=${affineTexte(c, d)}`, reponse:fracSimplifiee(d - b, a - c), fractionIrreductible:true,
+    detail: { lignes: [`${affineTexte(a, b)} = ${affineTexte(c, d)}`, `\\iff ${coefXTexte(a)}${termeX24(-c, false)} = ${d}${sg24(-b)}`, `\\iff ${coefXTexte(a - c)} = ${d - b}`, ...(a - c !== 1 ? [`\\iff x = ${q}${v !== q ? ' = ' + v : ''}`] : [])], final: v } };
 }
 
 const generateurs = [
@@ -2733,19 +2915,25 @@ const generateurs = [
   // colineaire est accepte (checkVecteurDirecteur25). ----------
   {id:"24.3 a)", type:"paire", vecteurDirecteur:true, texteLibre:true, gen: () => {
     const a = entierSigne(1,6), b = entierSigne(1,6), c = alea(-9,9);
-    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, b, c)}\\)`, vx: -b, vy: a, reponseLatex: `\\left(${-b};${a}\\right)` };
+    const fin = `\\left(${-b}\\,;\\,${a}\\right)`;
+    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, b, c)}\\)`, vx: -b, vy: a, reponseLatex: `\\left(${-b};${a}\\right)`,
+      detail: { lignes: ['\\text{Pour } ax+by+c=0 \\text{ , un vecteur}', '\\text{directeur est } \\left(-b\\,;\\,a\\right)', ...(b < 0 ? [`\\left(-${dP(b)}\\,;\\,${a}\\right)`] : []), fin], final: fin } };
   }},
   {id:"24.3 b)", type:"paire", vecteurDirecteur:true, texteLibre:true, gen: () => {
     const q = choix([2,3,4,5]);
     let n; do { n = entierSigne(1,7); } while (pgcd(Math.abs(n), q) !== 1);
     const p = entierSigne(1,9);
-    return { enonce: `\\(d\\) a pour équation réduite \\(y=${affineTexte16(n, q, p)}\\)`, vx: q, vy: n, reponseLatex: `\\left(${q};${n}\\right)` };
+    const fin = `\\left(${q}\\,;\\,${n}\\right)`;
+    return { enonce: `\\(d\\) a pour équation réduite \\(y=${affineTexte16(n, q, p)}\\)`, vx: q, vy: n, reponseLatex: `\\left(${q};${n}\\right)`,
+      detail: { lignes: ['\\text{Pour } y=mx+p \\text{ , un vecteur}', '\\text{directeur est } \\left(1\\,;\\,m\\right)', `\\left(1\\,;\\,${fracD(fr(n, q))}\\right)`, '\\text{On multiplie par le dénominateur :}', fin], final: fin } };
   }},
   {id:"24.3 c)", type:"paire", vecteurDirecteur:true, texteLibre:true, gen: () => {
     let A, B;
     do { A = { x: coordDemi16(4), y: alea(-6,6) }; B = { x: alea(-6,6), y: coordDemi16(4) }; } while (A.x === B.x && A.y === B.y);
     const vx = B.x - A.x, vy = B.y - A.y;
-    return { enonce: `\\(d\\) passe par \\(A\\left(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)}\\right)\\) et \\(B\\left(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)}\\right)\\)`, vx, vy, reponseLatex: `\\left(${fracTexte16(vx*2,2)};${fracTexte16(vy*2,2)}\\right)` };
+    const V = lignesVecteurPoints24({ x: A.x * 2, y: A.y * 2 }, { x: B.x * 2, y: B.y * 2 }, '\\overrightarrow{AB}');
+    return { enonce: `\\(d\\) passe par \\(A\\left(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)}\\right)\\) et \\(B\\left(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)}\\right)\\)`, vx, vy, reponseLatex: `\\left(${fracTexte16(vx*2,2)};${fracTexte16(vy*2,2)}\\right)`,
+      detail: { lignes: ['\\text{Un vecteur directeur est } \\overrightarrow{AB}', ...V.lignes], final: V.final } };
   }},
   {id:"24.3 d)", type:"paire", vecteurDirecteur:true, texteLibre:true, gen: () => {
     // droite passant par (0;p) et (q;p+n), deux points du quadrillage bien lisibles
@@ -2754,7 +2942,9 @@ const generateurs = [
     const x0 = choix([-4,-3,-2,2,3]);
     const labelX = [3.5, -3.5, 2.5, -2.5].find(x => Math.abs((n/q)*x + p) <= 4 && Math.abs((n/q)*x + p) >= 0.9) ?? 3.5;
     const figure = genererSVGRepereVecteurs([{ type:'droite', m: n/q, p, couleur:'#4B46C7', labelX, nom:'d' }], { fenetre: { xmin:-5, xmax:5, ymin:-5, ymax:5 }, largeur: 300, hauteur: 300 });
-    return { enonce: `${figure}\\(d\\) est la droite représentée ci-dessus`, vx: q, vy: n, reponseLatex: `\\left(${q};${n}\\right)` };
+    const fin = `\\left(${q}\\,;\\,${n}\\right)`;
+    return { enonce: `${figure}\\(d\\) est la droite représentée ci-dessus`, vx: q, vy: n, reponseLatex: `\\left(${q};${n}\\right)`,
+      detail: { lignes: ['\\text{On lit deux points de la droite :}', `A\\left(0\\,;\\,${p}\\right)`, `B\\left(${q}\\,;\\,${p + n}\\right)`, '\\text{Arrivée moins départ :}', `\\left(${q}-0\\,;\\,${p + n}-${dP(p)}\\right)`, fin], final: fin } };
   }},
 
   // ---------- 24.4 : points d'une droite donnee par une equation cartesienne -- une meme droite ;
@@ -2766,7 +2956,9 @@ const generateurs = [
     droite25_4 = { a, b, c };
     const dedans = alea(0,1) === 1;
     const P = dedans ? { x: xP, y: yP } : { x: xP, y: yP + choix([-1,1]) };
-    return { contexteTexte: `On considère la droite \\(d\\) d'équation \\(${equationCartTexte25(a, b, c)}\\).`, enonce: `Le point \\(A(${P.x};${P.y})\\) appartient-il à \\(d\\) ?`, reponseOuiNon: dedans };
+    const E = chaineEvalCart24(a, b, c, P.x, P.y);
+    return { contexteTexte: `On considère la droite \\(d\\) d'équation \\(${equationCartTexte25(a, b, c)}\\).`, enonce: `Le point \\(A(${P.x};${P.y})\\) appartient-il à \\(d\\) ?`, reponseOuiNon: dedans,
+      detail: { lignes: ['\\text{On remplace } x \\text{ et } y \\text{ :}', E.ligne, compMotT24(MOTS_EGALITE24, fracD(E.valeur), '0', dedans), `\\text{Réponse : ${dedans ? 'oui' : 'non'}}`], final: dedans ? 'oui' : 'non' } };
   }},
   {id:"24.4 b)", type:"ouiNon", texteLibre:true, gen: () => {
     const { a, b, c } = droite25_4;
@@ -2775,17 +2967,21 @@ const generateurs = [
     const yNum = -(a*k + c), dedans = alea(0,1) === 1;
     const y = dedans ? yNum / b : yNum / b + choix([-0.5, 0.5]);
     const yTexte = dedans ? fracTexte16(yNum, b) : fracTexte16(Math.round(y * 2 * Math.abs(b)), 2 * Math.abs(b));
-    return { enonce: `Le point \\(B\\left(${k};${yTexte}\\right)\\) appartient-il à \\(d\\) ?`, reponseOuiNon: dedans };
+    const yFr = dedans ? fr(yNum, b) : fr(Math.round(y * 2 * Math.abs(b)), 2 * Math.abs(b)), E = chaineEvalCart24(a, b, c, k, yFr);
+    return { enonce: `Le point \\(B\\left(${k};${yTexte}\\right)\\) appartient-il à \\(d\\) ?`, reponseOuiNon: dedans,
+      detail: { lignes: ['\\text{On remplace } x \\text{ et } y \\text{ :}', E.ligne, compMotT24(MOTS_EGALITE24, fracD(E.valeur), '0', dedans), `\\text{Réponse : ${dedans ? 'oui' : 'non'}}`], final: dedans ? 'oui' : 'non' } };
   }},
   {id:"24.4 c)", type:"num", texteLibre:true, fractionIrreductible:true, gen: () => {
     const { a, b, c } = droite25_4;
     let k; do { k = alea(-7,7); } while ((a*k + c) % b === 0);
-    return { enonce: `Déterminer l'ordonnée du point de \\(d\\) d'abscisse \\(${k}\\) (fraction irréductible)`, reponse: fracSimplifiee(-(a*k + c), b) };
+    return { enonce: `Déterminer l'ordonnée du point de \\(d\\) d'abscisse \\(${k}\\) (fraction irréductible)`, reponse: fracSimplifiee(-(a*k + c), b),
+      detail: (() => { const L = lignesInconnue24(a, b, c, k, 'y'); return { lignes: ['\\text{On remplace } x \\text{ dans l\'équation :}', ...L.lignes], final: L.valeur }; })() };
   }},
   {id:"24.4 d)", type:"num", texteLibre:true, fractionIrreductible:true, gen: () => {
     const { a, b, c } = droite25_4;
     let k; do { k = alea(-7,7); } while (Math.abs(a) > 1 && (b*k + c) % a === 0);
-    return { enonce: `Déterminer l'abscisse du point de \\(d\\) d'ordonnée \\(${k}\\) (fraction irréductible)`, reponse: fracSimplifiee(-(b*k + c), a) };
+    return { enonce: `Déterminer l'abscisse du point de \\(d\\) d'ordonnée \\(${k}\\) (fraction irréductible)`, reponse: fracSimplifiee(-(b*k + c), a),
+      detail: (() => { const L = lignesInconnue24(a, b, c, k, 'x'); return { lignes: ['\\text{On remplace } y \\text{ dans l\'équation :}', ...L.lignes], final: L.valeur }; })() };
   }},
 
   // ---------- 24.6 (echangee avec 24.5 le 24/09/2026, David) : equation cartesienne d'une droite --
@@ -2796,22 +2992,24 @@ const generateurs = [
   {id:"24.6 a)", type:"num", equationCartesienne:true, texteLibre:true, gen: () => {
     const A = { x: alea(-6,6), y: alea(-6,6) };
     let u1, u2; do { u1 = entierSigne(1,5); u2 = entierSigne(1,5); } while (pgcd(Math.abs(u1), Math.abs(u2)) !== 1);
-    const e = equationPointVecteur25(A.x, A.y, u1, u2);
-    return { enonce: `\\(d\\) passe par \\(A(${A.x};${A.y})\\) et a pour vecteur directeur \\(${vecteurTexte25('u', u1, u2)}\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c) };
+    const e = equationPointVecteur25(A.x, A.y, u1, u2), L = lignesEquationCart24(A.x, A.y, u1, u2);
+    return { enonce: `\\(d\\) passe par \\(A(${A.x};${A.y})\\) et a pour vecteur directeur \\(${vecteurTexte25('u', u1, u2)}\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c), detail: { lignes: L.lignes, final: L.final } };
   }},
   {id:"24.6 b)", type:"num", equationCartesienne:true, texteLibre:true, gen: () => {
     const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
     const vertical = alea(0,1) === 1, k = entierSigne(1,4);
     const [u1, u2] = vertical ? [0, k] : [k, 0];
-    const e = equationPointVecteur25(A.x, A.y, u1, u2);
-    return { enonce: `\\(d\\) passe par \\(A(${A.x};${A.y})\\) et a pour vecteur directeur \\(${vecteurTexte25('u', u1, u2)}\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c) };
+    const e = equationPointVecteur25(A.x, A.y, u1, u2), L = lignesEquationCart24(A.x, A.y, u1, u2);
+    return { enonce: `\\(d\\) passe par \\(A(${A.x};${A.y})\\) et a pour vecteur directeur \\(${vecteurTexte25('u', u1, u2)}\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c), detail: { lignes: L.lignes, final: L.final } };
   }},
   {id:"24.6 c)", type:"num", equationCartesienne:true, texteLibre:true, gen: () => {
     let A, B;
     do { A = { x: coordDemi16(4), y: coordDemi16(4) }; B = { x: coordDemi16(4), y: coordDemi16(4) }; }
     while (A.x === B.x || A.y === B.y);
     const e = equationPointVecteur25(A.x, A.y, 2*(B.x - A.x), 2*(B.y - A.y));
-    return { enonce: `\\(d\\) passe par \\(A\\left(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)}\\right)\\) et \\(B\\left(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)}\\right)\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c) };
+    const V = lignesVecteurPoints24({ x: A.x * 2, y: A.y * 2 }, { x: B.x * 2, y: B.y * 2 }, '\\overrightarrow{AB}'), u1 = 2*(B.x - A.x), u2 = 2*(B.y - A.y), L = lignesEquationCart24(A.x, A.y, u1, u2);
+    return { enonce: `\\(d\\) passe par \\(A\\left(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)}\\right)\\) et \\(B\\left(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)}\\right)\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c),
+      detail: { lignes: [...V.lignes, '\\text{On prend le vecteur } 2\\overrightarrow{AB} \\text{ :}', `\\left(${u1}\\,;\\,${u2}\\right)`, ...L.lignes], final: L.final } };
   }},
   {id:"24.6 d)", type:"num", equationCartesienne:true, texteLibre:true, gen: () => {
     const q = choix([2,3,4,5]);
@@ -2819,7 +3017,9 @@ const generateurs = [
     const pn = entierSigne(1,9), pd = choix([1, q]);
     // y = (n/q) x + pn/pd  <=>  n x - q y + q pn/pd = 0, multiplie par pd
     const e = coefsCanoniques25(n * pd, -q * pd, q * pn);
-    return { enonce: `\\(d\\) a pour équation réduite \\(y=${affineTexte16(n, q, pn, pd)}\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c) };
+    const lignes = [`y = ${affineTexte16(n, q, pn, pd)}`, `\\iff ${q * pd === 1 ? 'y' : (q * pd) + 'y'} = ${termeX24(n * pd, true)}${sg24(q * pn)}`, `\\iff ${eqCartBrute24(n * pd, -q * pd, q * pn)}`];
+    if (`${membreCartesien25(n * pd, -q * pd, q * pn)}=0` !== equationCartTexte25(e.a, e.b, e.c)) lignes.push(`\\iff ${membreCartesien25(e.a, e.b, e.c)} = 0`);
+    return { enonce: `\\(d\\) a pour équation réduite \\(y=${affineTexte16(n, q, pn, pd)}\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c), detail: { lignes, final: `${membreCartesien25(e.a, e.b, e.c)} = 0` } };
   }},
 
   // ---------- 24.5 (echangee avec 24.6 le 24/09/2026, David) : equation reduite a partir d'une
@@ -2829,22 +3029,26 @@ const generateurs = [
   {id:"24.5 a)", type:"num", equationReduite:true, verticalePossible:true, texteLibre:true, gen: () => {
     const b = choix([-4,-3,-2,2,3,4]), m = entierSigne(1,5), p = entierSigne(1,6);
     // b y = b m x + b p  <=>  -b m x + b y - b p = 0
-    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(-b*m, b, -b*p)}\\)`, reponse: affineReponse16(m, 1, p), reponseLatex: 'y=' + affineTexte16(m, 1, p) };
+    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(-b*m, b, -b*p)}\\)`, reponse: affineReponse16(m, 1, p), reponseLatex: 'y=' + affineTexte16(m, 1, p), detail: detailReduite24(-b*m, b, -b*p) };
   }},
   {id:"24.5 b)", type:"num", equationReduite:true, verticalePossible:true, texteLibre:true, gen: () => {
     let a, b, c; do { a = entierSigne(1,7); b = entierSigne(2,6); c = alea(-9,9); } while (pgcd(Math.abs(a), Math.abs(b)) !== 1 || c % b === 0);
     // y = -(a/b) x - c/b
-    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, b, c)}\\)`, reponse: affineReponse16(-a, b, -c, b), reponseLatex: 'y=' + affineTexte16(-a, b, -c, b) };
+    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, b, c)}\\)`, reponse: affineReponse16(-a, b, -c, b), reponseLatex: 'y=' + affineTexte16(-a, b, -c, b), detail: detailReduite24(a, b, c) };
   }},
   {id:"24.5 c)", type:"num", equationReduite:true, verticalePossible:true, texteLibre:true, gen: () => {
     // droite parallele a un axe : une fois sur deux verticale (x = c), sinon horizontale (y = c)
     if (alea(0,1) === 1) {
       let a, c; do { a = entierSigne(2,6); c = entierSigne(1,12); } while (c % a === 0 && alea(0,1) === 1);
       const x0 = -c / a;
-      return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, 0, c)}\\)`, verticaleX: x0, reponseLatex: 'x=' + fracTexte16(-c, a) };
+      const v = fracD(fr(-c, a)), q = quotientBrut(-c, a);
+      return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, 0, c)}\\)`, verticaleX: x0, reponseLatex: 'x=' + fracTexte16(-c, a),
+        detail: { lignes: [`${membreCartesien25(a, 0, c)} = 0`, `\\iff ${coefXTexte(a)} = ${-c}`, `\\iff x = ${q}`, ...(v !== q ? [`\\iff x = ${v}`] : [])], final: `x = ${v}` } };
     }
     let b, c; do { b = entierSigne(2,6); c = entierSigne(1,12); } while (c % b === 0 && alea(0,1) === 1);
-    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(0, b, c)}\\)`, reponse: affineReponse16(0, 1, -c, b), reponseLatex: 'y=' + affineTexte16(0, 1, -c, b) };
+    const v = fracD(fr(-c, b)), q = quotientBrut(-c, b);
+    return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(0, b, c)}\\)`, reponse: affineReponse16(0, 1, -c, b), reponseLatex: 'y=' + affineTexte16(0, 1, -c, b),
+      detail: { lignes: [`${membreCartesien25(0, b, c)} = 0`, `\\iff ${b}y = ${-c}`, `\\iff y = ${q}`, ...(v !== q ? [`\\iff y = ${v}`] : [])], final: `y = ${v}` } };
   }},
 
   // ---------- 24.7 : droites paralleles ou secantes -- les cas paralleles sont construits a partir
@@ -2856,7 +3060,8 @@ const generateurs = [
     const paralleles = alea(0,1) === 1;
     const a2 = k*a, b2 = paralleles ? k*b : k*b + choix([-1,1]);
     let c2; do { c2 = alea(-12,12); } while (paralleles && c2 === k*c1);
-    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c1)}\\) et \\(d_2\\) : \\(${equationCartTexte25(a2, b2, c2)}\\)`, reponseOuiNon: paralleles };
+    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c1)}\\) et \\(d_2\\) : \\(${equationCartTexte25(a2, b2, c2)}\\)`, reponseOuiNon: paralleles,
+      detail: { lignes: [...lignesDeterminant24(a, b, a2, b2, "\\text{Parallèles si } ab'-a'b = 0 \\text{ :}"), `\\text{Réponse : ${paralleles ? 'oui' : 'non'}}`], final: paralleles ? 'oui' : 'non' } };
   }},
   {id:"24.7 b)", type:"ouiNon", texteLibre:true, gen: () => {
     // d1 cartesienne, d2 reduite : paralleles <=> -a/b = m
@@ -2865,7 +3070,9 @@ const generateurs = [
     let mn = -a, md = b;
     if (!paralleles) { mn = -a + choix([-1,1]); }
     let p; do { p = entierSigne(1,8); } while (paralleles && p * b === -c);
-    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c)}\\) et \\(d_2\\) : \\(y=${affineTexte16(mn, md, p)}\\)`, reponseOuiNon: paralleles };
+    const m1 = fracD(fr(-a, b)), q1 = quotientBrut(-a, b), brut1 = `-\\dfrac{${dP(a)}}{${dP(b)}}`, m2 = fracD(fr(mn, md));
+    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c)}\\) et \\(d_2\\) : \\(y=${affineTexte16(mn, md, p)}\\)`, reponseOuiNon: paralleles,
+      detail: { lignes: ['\\text{Pente de } d_{1} \\text{ :}', [brut1, q1, m1].filter(dedoublon24).join(' = '), '\\text{Pente de } d_{2} \\text{ :}', m2, compMotT24(MOTS_PENTES24, m1, m2, paralleles), `\\text{Réponse : ${paralleles ? 'oui' : 'non'}}`], final: paralleles ? 'oui' : 'non' } };
   }},
   {id:"24.7 c)", type:"ouiNon", texteLibre:true, gen: () => {
     // d1 cartesienne, d2 = (AB) : paralleles <=> AB colineaire a (-b;a)
@@ -2875,7 +3082,10 @@ const generateurs = [
     let B = { x: A.x - b*t, y: A.y + a*t };
     if (!paralleles) B = { x: B.x, y: B.y + choix([-1,1]) };
     if (paralleles && a*A.x + b*A.y + c === 0) return generateurs.find(g => g.id === '24.7 c)').gen();
-    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c)}\\) et \\(d_2=(AB)\\) avec \\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\)`, reponseOuiNon: paralleles };
+    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c)}\\) et \\(d_2=(AB)\\) avec \\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\)`, reponseOuiNon: paralleles,
+      detail: (() => { const dx = B.x - A.x, dy = B.y - A.y, det = -b * dy - dx * a;
+        const chaine = [`${dP(-b)}\\times ${dP(dy)}-${dP(dx)}\\times ${dP(a)}`, `${-b * dy}-${dP(dx * a)}`, `${det}`].filter(dedoublon24).join(' = ');
+        return { lignes: ['\\text{Vecteur directeur de } d_{1} \\text{ :}', `\\left(${-b}\\,;\\,${a}\\right)`, '\\text{Vecteur } \\overrightarrow{AB} \\text{ :}', `\\left(${dx}\\,;\\,${dy}\\right)`, "\\text{Colinéaires si } xy'-x'y = 0 \\text{ :}", chaine, compMotT24(MOTS_EGALITE24, `${det}`, '0', paralleles), `\\text{Réponse : ${paralleles ? 'oui' : 'non'}}`], final: paralleles ? 'oui' : 'non' }; })() };
   }},
 
   // ---------- 24.8 : point d'intersection de deux droites, s'il existe -- a) deux equations
@@ -2886,10 +3096,12 @@ const generateurs = [
       let a, b; do { a = entierSigne(1,5); b = entierSigne(1,5); } while (pgcd(Math.abs(a), Math.abs(b)) !== 1);
       const k = choix([-3,-2,2,3]), c1 = alea(-9,9);
       let c2; do { c2 = alea(-12,12); } while (c2 === k*c1);
-      return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c1)}\\) et \\(d_2\\) : \\(${equationCartTexte25(k*a, k*b, c2)}\\)`, aucunPoint: true, pa: '', pb: '', vars: [], reponseLatex: "\\text{aucun point d'intersection}" };
+      return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c1)}\\) et \\(d_2\\) : \\(${equationCartTexte25(k*a, k*b, c2)}\\)`, aucunPoint: true, pa: '', pb: '', vars: [], reponseLatex: "\\text{aucun point d'intersection}",
+        detail: lignesIntersection24({ a, b, c: c1 }, { a: k*a, b: k*b, c: c2 }) };
     }
     const s = tirerSysteme16(1,4);
-    return { enonce: `\\(d_1\\) : \\(${membreCartesien25(s.e1.a, s.e1.b, -s.e1.c)}=0\\) et \\(d_2\\) : \\(${membreCartesien25(s.e2.a, s.e2.b, -s.e2.c)}=0\\)`, pa: `${s.x0}`, pb: `${s.y0}`, vars: [] };
+    return { enonce: `\\(d_1\\) : \\(${membreCartesien25(s.e1.a, s.e1.b, -s.e1.c)}=0\\) et \\(d_2\\) : \\(${membreCartesien25(s.e2.a, s.e2.b, -s.e2.c)}=0\\)`, pa: `${s.x0}`, pb: `${s.y0}`, vars: [],
+      detail: lignesIntersection24({ a: s.e1.a, b: s.e1.b, c: -s.e1.c }, { a: s.e2.a, b: s.e2.b, c: -s.e2.c }) };
   }},
   {id:"24.8 b)", type:"paire", formePoint:true, peutEtreSansPoint:true, texteLibre:true, gen: () => {
     // d1 : a x + b y + c = 0 ; d2 : y = m x + p (m, p entiers) ; x = -(b p + c)/(a + b m)
@@ -2897,7 +3109,12 @@ const generateurs = [
     do { a = entierSigne(1,5); b = entierSigne(1,5); c = alea(-9,9); m = entierSigne(1,4); p = alea(-6,6); den = a + b*m; }
     while (den === 0 || (b*p + c) % den === 0);
     const xn = -(b*p + c);
-    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c)}\\) et \\(d_2\\) : \\(y=${affineTexte(m, p)}\\)`, pa: fracSimplifiee(xn, den), pb: fracSimplifiee(m*xn + p*den, den), vars: [] };
+    const x = fr(xn, den), y = math.add(math.multiply(fr(m), x), fr(p)), fin = `\\left(${fracD(x)}\\,;\\,${fracD(y)}\\right)`, q = quotientBrut(xn, den);
+    const l1 = `${termeX24(a, true)}${b < 0 ? '-' : '+'}${Math.abs(b) === 1 ? '' : Math.abs(b)}(${affineTexte(m, p)})${c === 0 ? '' : sg24(c)} = 0`;
+    const l2 = `\\iff ${termeX24(a, true)}${termeX24(b * m, false)}${sg24(b * p)}${c === 0 ? '' : sg24(c)} = 0`;
+    return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c)}\\) et \\(d_2\\) : \\(y=${affineTexte(m, p)}\\)`, pa: fracSimplifiee(xn, den), pb: fracSimplifiee(m*xn + p*den, den), vars: [],
+      detail: { lignes: ["\\text{On remplace } y \\text{ dans l'équation de } d_{1} \\text{ :}", l1, l2, `\\iff ${coefXTexte(den)} = ${xn}`, `\\iff x = ${q}${fracD(x) !== q ? ' = ' + fracD(x) : ''}`,
+        `y = ${sommeTermes([[m, fracDP(x)], [p, '']])} = ${fracD(y)}`, fin], final: fin } };
   }},
 
   // ---------- 24.9 (avance) : droites remarquables d'un triangle (David, 2026-09-23 : pas de
@@ -2916,17 +3133,22 @@ const generateurs = [
     const figure = genererSVGRepereVecteurs(elements, { marge:1 });
     const I = { x: (B.x + C.x)/2, y: (B.y + C.y)/2 };
     const e = equationPointVecteur25(A.x, A.y, 2*(I.x - A.x), 2*(I.y - A.y));
-    return { contexteTexte: `Dans un repère orthonormé, on considère le triangle \\(ABC\\) avec \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\).`, contexteFigure: figure, enonce: `Une équation cartésienne de la médiane issue de \\(A\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c) };
+    const u1 = B.x + C.x - 2 * A.x, u2 = B.y + C.y - 2 * A.y, V = lignesVecteurPoints24({ x: 2 * A.x, y: 2 * A.y }, { x: B.x + C.x, y: B.y + C.y }, '\\overrightarrow{AI}'), L = lignesEquationCart24(A.x, A.y, u1, u2);
+    return { contexteTexte: `Dans un repère orthonormé, on considère le triangle \\(ABC\\) avec \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\).`, contexteFigure: figure, enonce: `Une équation cartésienne de la médiane issue de \\(A\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c),
+      detail: { lignes: ['\\text{La médiane issue de } A \\text{ passe par}', '\\text{le milieu } I \\text{ de } [BC] \\text{ :}', '\\text{Abscisse de } I \\text{ :}', milieuEntiers24(B.x, C.x), '\\text{Ordonnée de } I \\text{ :}', milieuEntiers24(B.y, C.y), ...V.lignes, '\\text{On prend le vecteur } 2\\overrightarrow{AI} \\text{ :}', `\\left(${u1}\\,;\\,${u2}\\right)`, ...L.lignes], final: L.final } };
   }},
   {id:"24.9 b)", type:"num", equationCartesienne:true, texteLibre:true, gen: () => {
     const { B, C } = triangle25_9;
     // MB^2 = MC^2  <=>  2(xC - xB) x + 2(yC - yB) y + (xB^2 + yB^2 - xC^2 - yC^2) = 0
     const e = coefsCanoniques25(2*(C.x - B.x), 2*(C.y - B.y), B.x*B.x + B.y*B.y - C.x*C.x - C.y*C.y);
-    return { enonce: `Une équation cartésienne de la médiatrice du segment \\([BC]\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c) };
+    const L = lignesMediatrice24(B, C, 'B', 'C');
+    return { enonce: `Une équation cartésienne de la médiatrice du segment \\([BC]\\)`, eqa: e.a, eqb: e.b, eqc: e.c, reponseLatex: equationCartTexte25(e.a, e.b, e.c), detail: { lignes: L.lignes, final: L.final } };
   }},
   {id:"24.9 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const { A, B, C } = triangle25_9;
-    return { enonce: `Les coordonnées du point de concours des médianes du triangle \\(ABC\\)`, pa: fracSimplifiee(A.x + B.x + C.x, 3), pb: fracSimplifiee(A.y + B.y + C.y, 3), vars: [] };
+    const fin = `\\left(${fracD(fr(A.x + B.x + C.x, 3))}\\,;\\,${fracD(fr(A.y + B.y + C.y, 3))}\\right)`;
+    return { enonce: `Les coordonnées du point de concours des médianes du triangle \\(ABC\\)`, pa: fracSimplifiee(A.x + B.x + C.x, 3), pb: fracSimplifiee(A.y + B.y + C.y, 3), vars: [],
+      detail: { lignes: ['\\text{Abscisse du centre de gravité :}', chaineMoyenne3_24(A.x, B.x, C.x), '\\text{Ordonnée du centre de gravité :}', chaineMoyenne3_24(A.y, B.y, C.y), fin], final: fin } };
   }},
   {id:"24.9 d)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const { A, B, C } = triangle25_9;
@@ -2934,7 +3156,9 @@ const generateurs = [
     const a1 = 2*(B.x - A.x), b1 = 2*(B.y - A.y), c1 = B.x*B.x + B.y*B.y - A.x*A.x - A.y*A.y;
     const a2 = 2*(C.x - B.x), b2 = 2*(C.y - B.y), c2 = C.x*C.x + C.y*C.y - B.x*B.x - B.y*B.y;
     const det = a1*b2 - a2*b1;
-    return { enonce: `Les coordonnées du centre du cercle circonscrit au triangle \\(ABC\\)`, pa: fracSimplifiee(c1*b2 - c2*b1, det), pb: fracSimplifiee(a1*c2 - a2*c1, det), vars: [] };
+    const S = lignesSysteme24({ a: a1, b: b1, c: c1 }, { a: a2, b: b2, c: c2 }), fin = `\\left(${fracD(S.x)}\\,;\\,${fracD(S.y)}\\right)`;
+    return { enonce: `Les coordonnées du centre du cercle circonscrit au triangle \\(ABC\\)`, pa: fracSimplifiee(c1*b2 - c2*b1, det), pb: fracSimplifiee(a1*c2 - a2*c1, det), vars: [],
+      detail: { lignes: ['\\text{Le centre est sur les médiatrices}', '\\text{de } [AB] \\text{ et } [BC] \\text{ :}', '\\text{Médiatrice de } [AB] \\text{ :}', eqLin24(a1, b1, c1), '\\text{Médiatrice de } [BC] \\text{ :}', eqLin24(a2, b2, c2), ...S.lignes, fin], final: fin } };
   }},
 
   // ---------- 24.10 (avance) : parallelisme puis orthogonalite entre deux droites, l'une avec un
@@ -2962,19 +3186,20 @@ const generateurs = [
       } else {
         reponseParallele = '{}';
       }
-      ligneParametre25 = { degre2, D, E, k };
+      ligneParametre25 = { degre2, D, E, k, p };
     } else {
       p = entierSigne(1,6);
       coefLettre = 'm';
       reponseParallele = fracSimplifiee(D * p, E);
-      ligneParametre25 = { degre2, D, E, p };
+      ligneParametre25 = { degre2, D, E, p, k: 0 };
     }
     const eqD1 = equationAvecParametre25(coefLettre, p, q);
     const eqD2 = equationCartTexte25(D, E, F);
     return {
       contexteTexte: `On considère les droites \\(d_1\\) d'équation \\(${eqD1}\\) et \\(d_2\\) d'équation \\(${eqD2}\\), où \\(m\\) est un réel.`,
       enonce: `Parallèles`,
-      reponse: reponseParallele
+      reponse: reponseParallele,
+      detail: detailParametre24(false, ligneParametre25)
     };
   }},
   {id:"24.10 b)", type:"num", texteLibre:true, gen: () => {
@@ -2993,7 +3218,8 @@ const generateurs = [
     }
     return {
       enonce: `Orthogonales`,
-      reponse: reponseOrthogonale
+      reponse: reponseOrthogonale,
+      detail: detailParametre24(true, ligneParametre25)
     };
   }}
 ];
@@ -3001,13 +3227,16 @@ const generateurs = [
 
 
 function genererExercices() {
-  return generateurs.map(g => {
+  const exs = generateurs.map(g => {
     const { gen, ...modele } = g;
     const ex = { ...modele, ...gen() };
     // pas de point final en fin de question (David, 2026-09-26)
     if (typeof ex.enonce === 'string') ex.enonce = ex.enonce.replace(/\.\s*$/, '');
     return ex;
   });
+  Detail.preparer(exs);   // « < » des étapes : \lt
+  Detail.couper(exs, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return exs;
 }
 
 let exercices = genererExercices();
@@ -4406,7 +4635,7 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

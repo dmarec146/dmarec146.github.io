@@ -337,6 +337,27 @@ async function controlerDansLaPage(opts) {
     }
     // deux droites parallèles distinctes : aucun point d'intersection
     if (e.type === 'paire' && e.aucunPoint) return F === "\\text{aucun point d'intersection}" ? 'ok' : 'faux';
+    // vecteur directeur d'une droite : tout vecteur non nul colinéaire à (vx ; vy)
+    if (e.type === 'paire' && e.vecteurDirecteur && e.vx !== undefined) {
+      const L = String(F).replace(/\\left|\\right/g, '').replace(/\\,/g, '').replace(/^\s*\(|\)\s*$/g, '').split(';');
+      if (L.length !== 2) return 'faux';
+      try { const ux = evaluer(L[0], 0), uy = evaluer(L[1], 0); return Math.abs(ux) + Math.abs(uy) > 1e-12 && Math.abs(ux * e.vy - uy * e.vx) <= 1e-9 * (1 + Math.abs(ux * e.vy)) ? 'ok' : 'faux'; } catch (er) { return 'non-verifiable'; }
+    }
+    // équation cartésienne : équivalente à eqa x + eqb y + eqc = 0 (coefficients proportionnels)
+    if (e.equationCartesienne && e.eqa !== undefined) {
+      const parties = String(F).replace(/\s/g, '').split('=');
+      if (parties.length !== 2) return 'faux';
+      try {
+        const g = versMathjs(parties[0]), d = versMathjs(parties[1]), f = (x, y) => math.evaluate(g, { x, y }) - math.evaluate(d, { x, y });
+        const c = f(0, 0), a = f(1, 0) - c, b = f(0, 1) - c, tol = 1e-9 * (1 + Math.abs(a) + Math.abs(b) + Math.abs(c));
+        return Math.abs(a * e.eqb - b * e.eqa) <= tol && Math.abs(a * e.eqc - c * e.eqa) <= tol && Math.abs(b * e.eqc - c * e.eqb) <= tol ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
+    }
+    // équation réduite d'une droite parallèle à l'axe des ordonnées : « x = c »
+    if (e.verticaleX !== undefined) {
+      const m = String(F).replace(/\s/g, '').match(/^x=(.+)$/);
+      try { return m && Math.abs(evaluer(m[1], 0) - e.verticaleX) < 1e-9 ? 'ok' : 'faux'; } catch (er) { return 'non-verifiable'; }
+    }
     // vecteur nommé « coef \overrightarrow{XY} » (type vecteur à lettres : coef, from, to) ou vecteur nul
     if (e.type === 'vecteur' && e.from !== undefined && e.to !== undefined) {
       const t = String(F).replace(/\s/g, '');

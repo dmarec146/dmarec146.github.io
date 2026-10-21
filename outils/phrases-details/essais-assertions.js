@@ -331,6 +331,11 @@ const ESSAIS = {
     [true, '\\text{Deux chemins mènent à } R \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')],
     [false, '\\text{Deux chemins mènent à } E \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')]
   ],
+  'un-carre-n-est-jamais-negatif': [
+    [true, "\\text{Un carré n'est jamais égal à } -20", {}, env('')],
+    [false, "\\text{Un carré n'est jamais égal à } 20", {}, env('')],
+    [false, "\\text{Un carré n'est jamais égal à } 0", {}, env('')]
+  ],
   'le-sens-de-AE-est-celui-du-signe-de-k': [
     [true, '\\text{AE a le même sens que } AB', { reponse: '2' }, env('')],
     [false, '\\text{AE a le même sens que } AB', { reponse: '-2' }, env('')],
@@ -374,6 +379,9 @@ const ESSAIS = {
     [false, '\\text{Carrés égaux : } 2 \\neq 2', {}, env('')],
     [true, '\\text{Sommes égales : } -\\dfrac{3}{2} = -\\dfrac{3}{2}', {}, env('')],
     [false, '\\text{Sommes différentes : } \\dfrac{3}{2} \\neq \\dfrac{3}{2}', {}, env('')],
+    [true, '\\text{Pentes égales : } -\\dfrac{1}{4} = -\\dfrac{1}{4}', {}, env('')],
+    [false, '\\text{Pentes égales : } 2 \\neq 3', {}, env('')],
+    [true, '\\text{Pentes différentes : } 2 \\neq 3', {}, env('')],
     [true, '\\text{Égalité vérifiée : } \\dfrac{65}{2} = \\dfrac{65}{2}', {}, env('')],
     [true, '\\text{Égalité non vérifiée : } 15 \\neq \\dfrac{29}{2}', {}, env('')],
     [false, '\\text{Égalité vérifiée : } 15 \\neq \\dfrac{29}{2}', {}, env('')]
