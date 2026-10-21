@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"23.1 a)":0.5,"23.1 b)":0.5,"23.2 a)":0.75,"23.2 b)":0.75,"23.3 a)":0.5,"23.3 b)":0.5,"23.3 c)":0.75,"23.4 a)":0.5,"23.4 b)":0.5,"23.4 c)":0.75,"23.4 d)":1,"23.5 a)":0.75,"23.5 b)":1,"23.5 c)":1,"23.5 d)":1.25,"23.6 a)":0.75,"23.6 b)":1,"23.6 c)":1.25,"23.6 d)":1.5,"23.7 a)":1.25,"23.7 b)":1.25,"23.8 a)":1.5,"23.8 b)":1.25,"23.9 a)":1.5,"23.9 b)":1.5},"bonus":["23.8 a)","23.8 b)","23.9 a)","23.9 b)"]});
@@ -2380,6 +2381,142 @@ function pointCercle22(entree, surLeCercle) {
 
 let lecture22_3, triangleRelation22_7, triangle22_8, cercle22_9, pointCercle22_9a;
 
+// ---------- details de correction (21/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracTexte, fracBrute, fr } = Detail;
+const sommeT23 = (a, b) => (b < 0 ? `${a}-${-b}` : `${a}+${b}`);
+const compT23 = (x, y, egal) => `${x} ${egal ? '=' : '\\neq'} ${y}`;
+const compMotT23 = (mots, x, y, egal) => `\\text{${mots[egal ? 0 : 1]} : } ${x} ${egal ? '=' : '\\neq'} ${y}`;
+const MOTS_CARRES23 = ['Carrés égaux', 'Carrés différents'];
+// fraction reduite v2/2 (demi-entier), signe devant
+const demiT23 = (v2) => fracD(fr(v2, 2));
+// valeur entiere ou demi-entiere ecrite en texte pour un produit : negatif entre parentheses
+const parenT23 = (t) => (String(t).startsWith('-') ? `\\left(${t}\\right)` : String(t));
+// carre de v2/2 : entier positif tel quel, entier negatif ou fraction entre parentheses
+function carreDemiT23(v2) {
+  const t = demiT23(v2);
+  return /^\d+$/.test(t) ? `${t}^{2}` : (/^-\d+$/.test(t) ? `(${t})^{2}` : `\\left(${t}\\right)^{2}`);
+}
+// carre de la norme d'un vecteur de coordonnees a2/2 et b2/2 : « (a/2)^2+(b/2)^2 = ... = valeur » ; renvoie { ligne, valeur }
+function carreNormeDemi23(a2, b2) {
+  const total = fr(a2 * a2 + b2 * b2, 4);
+  const suite = [`${carreDemiT23(a2)}+${carreDemiT23(b2)}`, `${fracD(fr(a2 * a2, 4))}+${fracD(fr(b2 * b2, 4))}`, fracD(total)].filter((t, i, tab) => i === 0 || t !== tab[i - 1]);
+  return { ligne: suite.join(' = '), valeur: total };
+}
+// racine carree de N simplifiee : etapes apres \sqrt{N} et valeur finale
+function racineChaine23(N) {
+  let k = Math.floor(Math.sqrt(N)); while (N % (k * k) !== 0) k--;
+  const n = N / (k * k);
+  if (n === 1) return { suite: [`${k}`], final: `${k}` };
+  if (k === 1) return { suite: [], final: `\\sqrt{${N}}` };
+  return { suite: [`\\sqrt{${k * k}\\times ${n}}`, `${k}\\sqrt{${n}}`], final: `${k}\\sqrt{${n}}` };
+}
+// norme d'un vecteur de coordonnees ENTIERES (dx, dy) : \sqrt{dx^2+dy^2}, simplifiee ; premier = ecriture de depart (differences de coordonnees, ou null)
+function chaineNormeEntiers23(dx, dy, depart) {
+  const N = dx * dx + dy * dy, R = racineChaine23(N);
+  const suite = [depart, `\\sqrt{${dP(dx)}^{2}+${dP(dy)}^{2}}`, `\\sqrt{${dx * dx}+${dy * dy}}`, `\\sqrt{${N}}`, ...R.suite].filter((t) => t !== null);
+  return { ligne: suite.join(' = '), final: R.final };
+}
+// norme d'un vecteur de coordonnees a2/2 et b2/2 (au moins une demi-entiere) : \sqrt{N}/2 puis simplification, k pair ou non
+function chaineNormeDemis23(a2, b2, depart) {
+  const N = a2 * a2 + b2 * b2, s = simplifierRacine(N);
+  const q = (v2) => fracD(fr(v2 * v2, 4));
+  const suite = [depart, `\\sqrt{${carreDemiT23(a2)}+${carreDemiT23(b2)}}`, `\\sqrt{${q(a2)}+${q(b2)}}`, `\\sqrt{${fracBrute(N, 4)}}`, `\\dfrac{\\sqrt{${N}}}{2}`].filter((t) => t !== null);
+  let final;
+  if (s.radicand === 1) final = fracD(fr(s.coef, 2));
+  else {
+    if (s.coef > 1) suite.push(`\\dfrac{\\sqrt{${s.coef * s.coef}\\times ${s.radicand}}}{2}`);
+    const surd = s.coef === 1 ? `\\sqrt{${s.radicand}}` : `${s.coef}\\sqrt{${s.radicand}}`;
+    if (s.coef % 2 === 0) { suite.push(`\\dfrac{${surd}}{2}`); final = `${s.coef / 2 === 1 ? '' : s.coef / 2}\\sqrt{${s.radicand}}`; } else final = `\\dfrac{${surd}}{2}`;
+  }
+  if (s.radicand === 1) suite.push(final);
+  else if (final !== suite[suite.length - 1]) suite.push(final);
+  return { ligne: suite.filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = '), final };
+}
+// somme de demi-entiers : items [{ n2: valeur en demis (signee), entier: vrai si ecrit comme un entier }] ; enonce = ecriture de depart
+function chaineSommeDemis23(enonce, items) {
+  const S = items.reduce((a, t) => a + t.n2, 0);
+  const t1 = items.map((t, i) => { const v = t.entier ? String(Math.abs(t.n2 / 2)) : fracBrute(Math.abs(t.n2), 2); return `${t.n2 < 0 ? '-' : (i === 0 ? '' : '+')}${v}`; }).join('');
+  const t2 = items.map((t, i) => `${t.n2 < 0 ? '-' : (i === 0 ? '' : '+')}${fracBrute(Math.abs(t.n2), 2)}`).join('');
+  const t3 = `\\dfrac{${items.map((t, i) => (i === 0 ? String(t.n2) : (t.n2 < 0 ? `-${-t.n2}` : `+${t.n2}`))).join('')}}{2}`;
+  return [enonce, t1, t2, t3, fracBrute(S, 2), fracD(fr(S, 2))].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+// difference de deux coordonnees (en demis) : b2/2 - a2/2 ; ecriture, signe, resultat
+function chaineDiffDemis23(b2, a2) {
+  const dem = (v2) => fracD(fr(v2, 2)), r = fracD(fr(b2 - a2, 2));
+  const ecrit = `${dem(b2)}-${parenT23(dem(a2))}`, sans = a2 < 0 ? `${dem(b2)}+${dem(-a2)}` : ecrit;
+  return [ecrit, sans, r].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+// terme c x v d'une somme (c entier, fraction math.js, v entier ou fraction) : signe a part, coefficient 1 omis
+function produitT23(c, v, premier) {
+  const f = math.fraction(c), g = math.fraction(v);
+  const signe = f.s < 0 ? '-' : (premier ? '' : '+'), coef = fracTexte(f.n, f.d), vt = fracD(g);
+  if (coef === '1') return premier && f.s > 0 ? vt : `${signe}${parenT23(vt)}`;
+  return `${signe}${coef}\\times ${parenT23(vt)}`;
+}
+// une coordonnee d'une combinaison lineaire : somme de produits c x v, puis produits effectues, puis somme
+function chaineCombinaison23(termes) {
+  const prods = termes.map((t) => math.multiply(math.fraction(t.c), math.fraction(t.v))), S = prods.reduce((a, p) => math.add(a, p), math.fraction(0));
+  const s1 = termes.map((t, i) => produitT23(t.c, t.v, i === 0)).join('');
+  const s2 = prods.map((p, i) => (i === 0 ? fracD(p) : (p.s < 0 ? `-${fracTexte(p.n, p.d)}` : `+${fracTexte(p.n, p.d)}`))).join('');
+  return [s1, s2, fracD(S)].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+// coordonnees d'un vecteur donne par deux points a coordonnees entieres ou demi-entieres (en demis) : abscisse puis ordonnee
+function lignesVecteurPoints23(depart2, arrivee2, nomTexte) {
+  return [`\\text{${nomTexte}}`, chaineDiffDemis23(arrivee2.x, depart2.x), chaineDiffDemis23(arrivee2.y, depart2.y)];
+}
+
+// combinaison lineaire en coordonnees : [[termes de l'abscisse], [termes de l'ordonnee]] ; avant = lignes d'introduction eventuelles
+function detailCombinaison23(coords, avant) {
+  const cx = chaineCombinaison23(coords[0]), cy = chaineCombinaison23(coords[1]);
+  const rx = cx.split(' = ').pop(), ry = cy.split(' = ').pop(), fin = `\\left(${rx}\\,;\\,${ry}\\right)`;
+  return { lignes: [...(avant || []), '\\text{Abscisse :}', cx, '\\text{Ordonnée :}', cy, fin], final: fin };
+}
+// vecteur lu sur le repere : deplacement horizontal puis vertical
+function detailLecture23(v) {
+  const fin = `\\left(${fracD(fr(Math.round(v.dx * 2), 2))}\\,;\\,${fracD(fr(Math.round(v.dy * 2), 2))}\\right)`;
+  return { lignes: ['\\text{On lit le déplacement}', '\\text{horizontal puis vertical :}', fin], final: fin };
+}
+// vecteur donne par deux points (coordonnees entieres ou demi-entieres) : arrivee moins depart, abscisse puis ordonnee
+function detailVecteurPoints23(dep, arr) {
+  const d2 = { x: Math.round(dep.x * 2), y: Math.round(dep.y * 2) }, a2 = { x: Math.round(arr.x * 2), y: Math.round(arr.y * 2) };
+  const fin = `\\left(${fracD(fr(a2.x - d2.x, 2))}\\,;\\,${fracD(fr(a2.y - d2.y, 2))}\\right)`;
+  return { lignes: ['\\text{Arrivée moins départ :}', '\\text{Abscisse :}', chaineDiffDemis23(a2.x, d2.x), '\\text{Ordonnée :}', chaineDiffDemis23(a2.y, d2.y), fin], final: fin };
+}
+// norme de AB, A et B a coordonnees entieres : formule, substitution, racine simplifiee
+function detailNormePoints23(A, B) {
+  const dx = B.x - A.x, dy = B.y - A.y, R = chaineNormeEntiers23(dx, dy, `\\sqrt{(${B.x}-${dP(A.x)})^{2}+(${B.y}-${dP(A.y)})^{2}}`);
+  return { lignes: ['\\text{Norme de } \\overrightarrow{AB} \\text{ :}', '\\sqrt{(x_{B}-x_{A})^{2}+(y_{B}-y_{A})^{2}}', R.ligne], final: R.final };
+}
+// centre de gravite G : GA + GB + GC = 0, donc AG = (AB + AC) / 3
+function detailCentreGravite23() {
+  const V = (x, y) => `\\overrightarrow{${x}${y}}`, fin = `\\dfrac{1}{3}${V('A', 'B')}+\\dfrac{1}{3}${V('A', 'C')}`;
+  return { lignes: ['\\text{G est le centre de gravité :}', `${V('G', 'A')}+${V('G', 'B')}+${V('G', 'C')} = \\vec{0}`, `${V('G', 'B')} = ${V('G', 'A')}+${V('A', 'B')}`, `${V('G', 'C')} = ${V('G', 'A')}+${V('A', 'C')}`,
+    `3${V('G', 'A')}+${V('A', 'B')}+${V('A', 'C')} = \\vec{0}`, `\\iff ${V('G', 'A')} = -\\dfrac{1}{3}${V('A', 'B')}-\\dfrac{1}{3}${V('A', 'C')}`, `\\text{Or } ${V('A', 'G')} = -${V('G', 'A')} \\text{ :}`, `${V('A', 'G')} = ${fin}`], final: fin };
+}
+// coordonnees (entieres) des vecteurs AB et AC d'un triangle
+const lignesAB_AC23 = (A, B, C) => ['\\text{Coordonnées (arrivée moins départ) :}', `\\overrightarrow{AB}\\left(${B.x - A.x}\\,;\\,${B.y - A.y}\\right)`, `\\overrightarrow{AC}\\left(${C.x - A.x}\\,;\\,${C.y - A.y}\\right)`];
+// moyenne de trois entiers (centre de gravite, une coordonnee)
+function chaineMoyenne3_23(a, b, c) {
+  const s = a + b + c;
+  return [`\\dfrac{${sommeT23(sommeT23(a, b), c)}}{3}`, fracBrute(s, 3), fracD(fr(s, 3))].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+// carre du rayon : (\sqrt{5})^2 = 5, (2\sqrt{2})^2 = 4 x 2 = 8, 2,5^2 = 6,25
+function chaineRayonCarre23(entree) {
+  const t = entree.rTexte, r2 = fracD(fr(Math.round(entree.r2 * 4), 4));
+  let m;
+  if ((m = t.match(/^\\sqrt\{(\d+)\}$/))) return `(${t})^{2} = ${m[1]}`;
+  if ((m = t.match(/^(\d+)\\sqrt\{(\d+)\}$/))) return `(${t})^{2} = ${m[1]}^{2}\\times ${m[2]} = ${Number(m[1]) ** 2}\\times ${m[2]} = ${entree.r2}`;
+  return `${t}^{2} = ${r2}`;
+}
+// appartenance d'un point P au cercle de centre Omega et de rayon r : carre de OmegaP compare au carre du rayon
+function detailCercle23(centre, entree, P, sur, nom) {
+  const c2 = { x: centre.x * 2, y: centre.y * 2 }, p2 = { x: Math.round(P.x * 2), y: Math.round(P.y * 2) };
+  const dx2 = p2.x - c2.x, dy2 = p2.y - c2.y, carre = carreNormeDemi23(dx2, dy2), rayon = fr(Math.round(entree.r2 * 4), 4);
+  return { lignes: [`\\text{Abscisse de } \\overrightarrow{\\Omega ${nom}} \\text{ :}`, chaineDiffDemis23(p2.x, c2.x), `\\text{Ordonnée de } \\overrightarrow{\\Omega ${nom}} \\text{ :}`, chaineDiffDemis23(p2.y, c2.y),
+    `\\text{Carré de } \\Omega ${nom} \\text{ :}`, carre.ligne, '\\text{Carré du rayon :}', chaineRayonCarre23(entree),
+    compMotT23(MOTS_CARRES23, fracD(carre.valeur), fracD(rayon), sur), `\\text{Réponse : ${sur ? 'oui' : 'non'}}`], final: sur ? 'oui' : 'non' };
+}
+
 // ---------- automatismes : sommes de demi-entiers (23.1) et carres de fractions / racines a simplifier (23.2),
 // preparation des coordonnees demi-entieres de 23.4 a 23.7 et de la norme de 23.6 ----------
 const par23 = (t) => String(t).startsWith('-') ? `\\left(${t}\\right)` : String(t);
@@ -2387,13 +2524,17 @@ const hf23 = (v2) => fracLatexAffichage(v2, 2);          // demi-entier 2v/2 en 
 const imp23 = () => entierSigne(0, 4) * 2 + (alea(0,1) === 1 ? 1 : -1);   // entier impair signe, de -9 a 9
 const MODELES_DEMIS23 = [
   () => { let p, q; do { p = imp23(); q = imp23(); } while (p === q);
-          return { enonce:`${hf23(p)}-${par23(hf23(q))}`, reponse:fracSimplifiee(p - q, 2), fractionIrreductible:true }; },
+          const e = `${hf23(p)}-${par23(hf23(q))}`;
+          return { enonce:e, reponse:fracSimplifiee(p - q, 2), fractionIrreductible:true, detail: { lignes: [chaineSommeDemis23(e, [{ n2: p }, { n2: -q }])], final: fracD(fr(p - q, 2)) } }; },
   () => { const p = imp23(), k = entierSigne(1,5);
-          return { enonce:`${hf23(p)}-${par23(k)}`, reponse:fracSimplifiee(p - 2*k, 2), fractionIrreductible:true }; },
+          const e = `${hf23(p)}-${par23(k)}`;
+          return { enonce:e, reponse:fracSimplifiee(p - 2*k, 2), fractionIrreductible:true, detail: { lignes: [chaineSommeDemis23(e, [{ n2: p }, { n2: -2*k, entier: true }])], final: fracD(fr(p - 2*k, 2)) } }; },
   () => { const q = imp23(), k = entierSigne(1,5);
-          return { enonce:`${k}-${par23(hf23(q))}`, reponse:fracSimplifiee(2*k - q, 2), fractionIrreductible:true }; },
+          const e = `${k}-${par23(hf23(q))}`;
+          return { enonce:e, reponse:fracSimplifiee(2*k - q, 2), fractionIrreductible:true, detail: { lignes: [chaineSommeDemis23(e, [{ n2: 2*k, entier: true }, { n2: -q }])], final: fracD(fr(2*k - q, 2)) } }; },
   () => { let p, q; do { p = imp23(); q = imp23(); } while (p === -q);
-          return { enonce:`${hf23(p)}+${par23(hf23(q))}`, reponse:fracSimplifiee(p + q, 2), fractionIrreductible:true }; }
+          const e = `${hf23(p)}+${par23(hf23(q))}`;
+          return { enonce:e, reponse:fracSimplifiee(p + q, 2), fractionIrreductible:true, detail: { lignes: [chaineSommeDemis23(e, [{ n2: p }, { n2: q }])], final: fracD(fr(p + q, 2)) } }; }
 ];
 let tirageDemis23 = melanger(MODELES_DEMIS23).slice(0, 2);
 // norme sqrt(N)/2 sous forme simplifiee : k sqrt(n) / 2, ou (k/2) sqrt(n) si k est pair, ou une fraction si n = 1
@@ -2414,12 +2555,15 @@ const generateurs = [
     const p = imp23();
     if (alea(0,1) === 0) {
       const q = entierSigne(1,5);
-      return { enonce:`\\left(${hf23(p)}\\right)^2+${q < 0 ? `(${q})` : q}^2`, reponse:fracSimplifiee(p*p + 4*q*q, 4), fractionIrreductible:true };
+      const e = `\\left(${hf23(p)}\\right)^2+${q < 0 ? `(${q})` : q}^2`, S = p*p + 4*q*q;
+      return { enonce:e, reponse:fracSimplifiee(S, 4), fractionIrreductible:true,
+        detail: { lignes: [[e, `\\dfrac{${p*p}}{4}+${q*q}`, `\\dfrac{${p*p}}{4}+\\dfrac{${4*q*q}}{4}`, fracBrute(S, 4), fracD(fr(S, 4))].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fracD(fr(S, 4)) } };
     }
-    const q = imp23();
-    return { enonce:`\\left(${hf23(p)}\\right)^2+\\left(${hf23(q)}\\right)^2`, reponse:fracSimplifiee(p*p + q*q, 4), fractionIrreductible:true };
+    const q = imp23(), e = `\\left(${hf23(p)}\\right)^2+\\left(${hf23(q)}\\right)^2`, S = p*p + q*q;
+    return { enonce:e, reponse:fracSimplifiee(S, 4), fractionIrreductible:true,
+      detail: { lignes: [[e, `\\dfrac{${p*p}}{4}+\\dfrac{${q*q}}{4}`, fracBrute(S, 4), fracD(fr(S, 4))].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fracD(fr(S, 4)) } };
   }},
-  {id:"23.2 b)", type:"num", texteLibre:true, gen: () => { const k = alea(3,9), n = choix([2,3,5,6,7,10,11,13]); return { enonce:`\\sqrt{${k*k*n}}`, reponse:`${k}*sqrt(${n})` }; }},
+  {id:"23.2 b)", type:"num", texteLibre:true, gen: () => { const k = alea(3,9), n = choix([2,3,5,6,7,10,11,13]); return { enonce:`\\sqrt{${k*k*n}}`, reponse:`${k}*sqrt(${n})`, detail: { lignes: [`\\sqrt{${k*k*n}} = \\sqrt{${k*k}\\times ${n}} = \\sqrt{${k*k}}\\times \\sqrt{${n}} = ${k}\\sqrt{${n}}`], final: `${k}\\sqrt{${n}}` } }; }},
 
   // ---------- 22.3 : lecture graphique de plusieurs vecteurs -- une seule figure avec quatre
   // vecteurs libres bien separes. Zones et composantes volontairement resserrees (etendue totale
@@ -2441,15 +2585,15 @@ const generateurs = [
     lecture22_3 = vecteurs;
     const elements = vecteurs.map(v => ({ type:'vecteur', x1:v.x1,y1:v.y1, x2:v.x2,y2:v.y2, nom:v.nom, couleur:v.couleur }));
     const figure = genererSVGRepereVecteurs(elements, { marge:1, sousQuadrillage:true });
-    return { contexteFigure: figure, enonce: `\\(\\overrightarrow{u}\\).`, pa: fracSimplifiee(vecteurs[0].dx*2,2), pb: fracSimplifiee(vecteurs[0].dy*2,2), vars:[] };
+    return { contexteFigure: figure, enonce: `\\(\\overrightarrow{u}\\).`, pa: fracSimplifiee(vecteurs[0].dx*2,2), pb: fracSimplifiee(vecteurs[0].dy*2,2), vars:[], detail: detailLecture23(vecteurs[0]) };
   }},
   {id:"23.3 b)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const v = lecture22_3[1];
-    return { enonce: `\\(\\overrightarrow{v}\\).`, pa: fracSimplifiee(v.dx*2,2), pb: fracSimplifiee(v.dy*2,2), vars:[] };
+    return { enonce: `\\(\\overrightarrow{v}\\).`, pa: fracSimplifiee(v.dx*2,2), pb: fracSimplifiee(v.dy*2,2), vars:[], detail: detailLecture23(v) };
   }},
   {id:"23.3 c)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const w = lecture22_3[2];
-    return { enonce: `\\(\\overrightarrow{w}\\).`, pa: fracSimplifiee(w.dx*2,2), pb: fracSimplifiee(w.dy*2,2), vars:[] };
+    return { enonce: `\\(\\overrightarrow{w}\\).`, pa: fracSimplifiee(w.dx*2,2), pb: fracSimplifiee(w.dy*2,2), vars:[], detail: detailLecture23(w) };
   }},
   // ---------- 22.4 : coordonnees d'un vecteur AB = (xB-xA;yB-yA), a partir de points donnes --
   // consigne commune factorisee, chaque item cite juste le vecteur et les points qui le definissent
@@ -2458,22 +2602,22 @@ const generateurs = [
   {id:"23.4 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     let A, B;
     do { A = point22(5); B = point22(5); } while (A.x === B.x && A.y === B.y);
-    return { enonce: `\\(\\overrightarrow{AB}\\), avec \\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\).`, pa:String(B.x-A.x), pb:String(B.y-A.y), vars:[] };
+    return { enonce: `\\(\\overrightarrow{AB}\\), avec \\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\).`, pa:String(B.x-A.x), pb:String(B.y-A.y), vars:[], detail: detailVecteurPoints23(A, B) };
   }},
   {id:"23.4 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     let A, C;
     do { A = point22(6); C = point22(6); } while (A.x === C.x && A.y === C.y);
-    return { enonce: `\\(\\overrightarrow{CA}\\), avec \\(A(${A.x};${A.y})\\) et \\(C(${C.x};${C.y})\\).`, pa:String(A.x-C.x), pb:String(A.y-C.y), vars:[] };
+    return { enonce: `\\(\\overrightarrow{CA}\\), avec \\(A(${A.x};${A.y})\\) et \\(C(${C.x};${C.y})\\).`, pa:String(A.x-C.x), pb:String(A.y-C.y), vars:[], detail: detailVecteurPoints23(C, A) };
   }},
   {id:"23.4 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const A = point22(4);
     let B; do { B = pointDemiEntier(4); } while (B.x === A.x && B.y === A.y);
-    return { enonce: `\\(\\overrightarrow{AB}\\), avec \\(A(${A.x};${A.y})\\) et \\(B(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)})\\).`, pa: fracSimplifiee((B.x-A.x)*2,2), pb: fracSimplifiee((B.y-A.y)*2,2), vars:[] };
+    return { enonce: `\\(\\overrightarrow{AB}\\), avec \\(A(${A.x};${A.y})\\) et \\(B(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)})\\).`, pa: fracSimplifiee((B.x-A.x)*2,2), pb: fracSimplifiee((B.y-A.y)*2,2), vars:[], detail: detailVecteurPoints23(A, B) };
   }},
   {id:"23.4 d)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     let A, B;
     do { A = pointDemiEntier(4); B = pointDemiEntier(4); } while (A.x === B.x && A.y === B.y);
-    return { enonce: `\\(\\overrightarrow{AB}\\), avec \\(A(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)})\\) et \\(B(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)})\\).`, pa: fracSimplifiee((B.x-A.x)*2,2), pb: fracSimplifiee((B.y-A.y)*2,2), vars:[] };
+    return { enonce: `\\(\\overrightarrow{AB}\\), avec \\(A(${texteCoordPoint(A.x)};${texteCoordPoint(A.y)})\\) et \\(B(${texteCoordPoint(B.x)};${texteCoordPoint(B.y)})\\).`, pa: fracSimplifiee((B.x-A.x)*2,2), pb: fracSimplifiee((B.y-A.y)*2,2), vars:[], detail: detailVecteurPoints23(A, B) };
   }},
 
   // ---------- 22.5 : combinaison lineaire de vecteurs, en coordonnees -- consigne commune
@@ -2483,23 +2627,27 @@ const generateurs = [
   {id:"23.5 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const u = { x: alea(-5,5), y: alea(-5,5) }, v = { x: alea(-5,5), y: alea(-5,5) };
     const m = entierSigne(1,3), n = entierSigne(1,3);
-    return { enonce: `\\(${coefLatexVec(m)}\\overrightarrow{u}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{v}\\), avec \\(\\overrightarrow{u}(${u.x};${u.y})\\) et \\(\\overrightarrow{v}(${v.x};${v.y})\\).`, pa:String(m*u.x+n*v.x), pb:String(m*u.y+n*v.y), vars:[] };
+    return { enonce: `\\(${coefLatexVec(m)}\\overrightarrow{u}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{v}\\), avec \\(\\overrightarrow{u}(${u.x};${u.y})\\) et \\(\\overrightarrow{v}(${v.x};${v.y})\\).`, pa:String(m*u.x+n*v.x), pb:String(m*u.y+n*v.y), vars:[],
+      detail: detailCombinaison23([[{c:m,v:u.x},{c:n,v:v.x}], [{c:m,v:u.y},{c:n,v:v.y}]]) };
   }},
   {id:"23.5 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const u = { x: alea(-4,4), y: alea(-4,4) }, v = { x: alea(-4,4), y: alea(-4,4) }, w = { x: alea(-4,4), y: alea(-4,4) };
     const m = entierSigne(1,2), n = entierSigne(1,2), p = entierSigne(1,2);
-    return { enonce: `\\(${coefLatexVec(m)}\\overrightarrow{u}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{v}${p>=0?'+':''}${coefLatexVec(p)}\\overrightarrow{w}\\), avec \\(\\overrightarrow{u}(${u.x};${u.y})\\), \\(\\overrightarrow{v}(${v.x};${v.y})\\) et \\(\\overrightarrow{w}(${w.x};${w.y})\\).`, pa:String(m*u.x+n*v.x+p*w.x), pb:String(m*u.y+n*v.y+p*w.y), vars:[] };
+    return { enonce: `\\(${coefLatexVec(m)}\\overrightarrow{u}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{v}${p>=0?'+':''}${coefLatexVec(p)}\\overrightarrow{w}\\), avec \\(\\overrightarrow{u}(${u.x};${u.y})\\), \\(\\overrightarrow{v}(${v.x};${v.y})\\) et \\(\\overrightarrow{w}(${w.x};${w.y})\\).`, pa:String(m*u.x+n*v.x+p*w.x), pb:String(m*u.y+n*v.y+p*w.y), vars:[],
+      detail: detailCombinaison23([[{c:m,v:u.x},{c:n,v:v.x},{c:p,v:w.x}], [{c:m,v:u.y},{c:n,v:v.y},{c:p,v:w.y}]]) };
   }},
   {id:"23.5 c)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const u = { x: alea(-5,5), y: alea(-5,5) }, v = { x: alea(-5,5), y: alea(-5,5) };
     const m = choix([0.5,-0.5,1.5,-1.5]), n = entierSigne(1,2);
-    return { enonce: `\\(${fracLatexAffichage(m*2,2)}\\overrightarrow{u}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{v}\\), avec \\(\\overrightarrow{u}(${u.x};${u.y})\\) et \\(\\overrightarrow{v}(${v.x};${v.y})\\).`, pa: formatDemiEntier(m*u.x+n*v.x), pb: formatDemiEntier(m*u.y+n*v.y), vars:[] };
+    return { enonce: `\\(${fracLatexAffichage(m*2,2)}\\overrightarrow{u}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{v}\\), avec \\(\\overrightarrow{u}(${u.x};${u.y})\\) et \\(\\overrightarrow{v}(${v.x};${v.y})\\).`, pa: formatDemiEntier(m*u.x+n*v.x), pb: formatDemiEntier(m*u.y+n*v.y), vars:[],
+      detail: detailCombinaison23([[{c:fr(m*2,2),v:u.x},{c:n,v:v.x}], [{c:fr(m*2,2),v:u.y},{c:n,v:v.y}]]) };
   }},
   {id:"23.5 d)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const { A, B, C } = tirerTriangleLibre22(4);
     const m = choix([0.5,-0.5,1.5,-1.5,2.5,-2.5]), n = choix([0.5,-0.5,1.5,-1.5]);
     const wx = m*(B.x-A.x) + n*(C.x-A.x), wy = m*(B.y-A.y) + n*(C.y-A.y);
-    return { enonce: `\\(${fracLatexAffichage(m*2,2)}\\overrightarrow{AB}${n>=0?'+':''}${fracLatexAffichage(n*2,2)}\\overrightarrow{AC}\\), avec \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\).`, pa: formatDemiEntier(wx), pb: formatDemiEntier(wy), vars:[] };
+    return { enonce: `\\(${fracLatexAffichage(m*2,2)}\\overrightarrow{AB}${n>=0?'+':''}${fracLatexAffichage(n*2,2)}\\overrightarrow{AC}\\), avec \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\).`, pa: formatDemiEntier(wx), pb: formatDemiEntier(wy), vars:[],
+      detail: detailCombinaison23([[{c:fr(m*2,2),v:B.x-A.x},{c:fr(n*2,2),v:C.x-A.x}], [{c:fr(m*2,2),v:B.y-A.y},{c:fr(n*2,2),v:C.y-A.y}]], lignesAB_AC23(A, B, C)) };
   }},
 
   // ---------- 22.6 : norme d'un vecteur en repere orthonorme -- consigne commune, deux exemples
@@ -2511,25 +2659,31 @@ const generateurs = [
     const [p,q] = choix(TRIPLES_PYTHAGORE);
     const dx = choix([-1,1])*p, dy = choix([-1,1])*q;
     const A = point22(3), B = { x:A.x+dx, y:A.y+dy };
-    return { enonce: `\\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\) : calculer \\(\\|\\overrightarrow{AB}\\|\\).`, reponse: String(Math.round(Math.sqrt(dx*dx+dy*dy))) };
+    return { enonce: `\\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\) : calculer \\(\\|\\overrightarrow{AB}\\|\\).`, reponse: String(Math.round(Math.sqrt(dx*dx+dy*dy))), detail: detailNormePoints23(A, B) };
   }},
   {id:"23.6 b)", type:"num", texteLibre:true, gen: () => {
     let dx, dy;
     do { dx = entierSigne(1,6); dy = entierSigne(1,6); } while (estCarreParfait(dx*dx+dy*dy));
     const A = point22(3), B = { x:A.x+dx, y:A.y+dy };
     const s = simplifierRacine(dx*dx+dy*dy);
-    return { enonce: `\\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\) : calculer \\(\\|\\overrightarrow{AB}\\|\\).`, reponse: surdTexte(s.coef, s.radicand) };
+    return { enonce: `\\(A(${A.x};${A.y})\\) et \\(B(${B.x};${B.y})\\) : calculer \\(\\|\\overrightarrow{AB}\\|\\).`, reponse: surdTexte(s.coef, s.radicand), detail: detailNormePoints23(A, B) };
   }},
   {id:"23.6 c)", type:"num", texteLibre:true, gen: () => {
     const p = choix([-5,-3,-1,1,3,5]), q = entierSigne(1,6);
-    return { enonce: `\\(\\overrightarrow{u}\\left(${fracLatexAffichage(p,2)};${fracLatexAffichage(q,2)}\\right)\\) : calculer \\(\\|\\overrightarrow{u}\\|\\).`, reponse: normeDemi23(p*p+q*q) };
+    return { enonce: `\\(\\overrightarrow{u}\\left(${fracLatexAffichage(p,2)};${fracLatexAffichage(q,2)}\\right)\\) : calculer \\(\\|\\overrightarrow{u}\\|\\).`, reponse: normeDemi23(p*p+q*q),
+      detail: (() => { const R = chaineNormeDemis23(p, q, null); return { lignes: ['\\text{Norme de } \\overrightarrow{u} \\text{ :}', R.ligne], final: R.final }; })() };
   }},
   {id:"23.6 d)", type:"num", texteLibre:true, gen: () => {
     const { A, B, C, dx1, dy1, dx2, dy2 } = tirerTriangleLibre22(4);
     const m = entierSigne(1,2), n = entierSigne(1,2);
     const wx = m*dx1 + n*dx2, wy = m*dy1 + n*dy2;
     const s = simplifierRacine(wx*wx + wy*wy);
-    return { enonce: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\) : calculer \\(\\left\\|${coefLatexVec(m)}\\overrightarrow{AB}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{AC}\\right\\|\\).`, reponse: surdTexte(s.coef, s.radicand) };
+    return { enonce: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\) : calculer \\(\\left\\|${coefLatexVec(m)}\\overrightarrow{AB}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{AC}\\right\\|\\).`, reponse: surdTexte(s.coef, s.radicand),
+      detail: (() => {
+        const R = chaineNormeEntiers23(wx, wy, null), mF = fr(m * 2, 2), nF = fr(n * 2, 2);
+        return { lignes: [...lignesAB_AC23(A, B, C), '\\text{Abscisse de la combinaison :}', chaineCombinaison23([{ c: mF, v: B.x - A.x }, { c: nF, v: C.x - A.x }]), '\\text{Ordonnée de la combinaison :}', chaineCombinaison23([{ c: mF, v: B.y - A.y }, { c: nF, v: C.y - A.y }]),
+          '\\text{Norme :}', R.ligne], final: R.final };
+      })() };
   }},
 
   // ---------- 22.7 : point defini par une relation vectorielle -- meme triangle pour les deux
@@ -2541,13 +2695,15 @@ const generateurs = [
     triangleRelation22_7 = { A, B, C };
     const k = choix([-2,-1,2,3]);
     const D = { x: A.x + k*(C.x-B.x), y: A.y + k*(C.y-B.y) };
-    return { contexteTexte: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\).`, enonce: `Soit \\(D\\) le point tel que \\(\\overrightarrow{AD}=${coefLatexVec(k)}\\overrightarrow{BC}\\). Calculer les coordonnées de \\(D\\).`, pa:String(D.x), pb:String(D.y), vars:[] };
+    return { contexteTexte: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\).`, enonce: `Soit \\(D\\) le point tel que \\(\\overrightarrow{AD}=${coefLatexVec(k)}\\overrightarrow{BC}\\). Calculer les coordonnées de \\(D\\).`, pa:String(D.x), pb:String(D.y), vars:[],
+      detail: detailCombinaison23([[{c:1,v:A.x},{c:k,v:C.x-B.x}], [{c:1,v:A.y},{c:k,v:C.y-B.y}]], ['\\text{Coordonnées de } \\overrightarrow{BC} \\text{ :}', `\\left(${C.x-B.x}\\,;\\,${C.y-B.y}\\right)`]) };
   }},
   {id:"23.7 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const { A, B, C } = triangleRelation22_7;
     const m = entierSigne(1,2), n = entierSigne(1,2);
     const E = { x: A.x + m*(B.x-A.x) + n*(C.x-A.x), y: A.y + m*(B.y-A.y) + n*(C.y-A.y) };
-    return { enonce: `Soit \\(E\\) le point tel que \\(\\overrightarrow{AE}=${coefLatexVec(m)}\\overrightarrow{AB}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{AC}\\). Calculer les coordonnées de \\(E\\).`, pa:String(E.x), pb:String(E.y), vars:[] };
+    return { enonce: `Soit \\(E\\) le point tel que \\(\\overrightarrow{AE}=${coefLatexVec(m)}\\overrightarrow{AB}${n>=0?'+':''}${coefLatexVec(n)}\\overrightarrow{AC}\\). Calculer les coordonnées de \\(E\\).`, pa:String(E.x), pb:String(E.y), vars:[],
+      detail: detailCombinaison23([[{c:1,v:A.x},{c:m,v:B.x-A.x},{c:n,v:C.x-A.x}], [{c:1,v:A.y},{c:m,v:B.y-A.y},{c:n,v:C.y-A.y}]], lignesAB_AC23(A, B, C)) };
   }},
 
   // ---------- 22.8 (avance) : coordonnees du centre de gravite -- meme triangle pour les deux
@@ -2579,11 +2735,14 @@ const generateurs = [
     ];
     const figure = genererSVGRepereVecteurs(elements, { marge:1 });
     const termes = [{ coef:1/3, from:'A', to:'B' }, { coef:1/3, from:'A', to:'C' }];
-    return { contexteTexte: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\), les sommets d'un triangle. On note \\(G\\) le centre de gravité de ce triangle.`, contexteFigure: figure, enonce: `Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\).`, termes };
+    return { contexteTexte: `On donne \\(A(${A.x};${A.y})\\), \\(B(${B.x};${B.y})\\) et \\(C(${C.x};${C.y})\\), les sommets d'un triangle. On note \\(G\\) le centre de gravité de ce triangle.`, contexteFigure: figure, enonce: `Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\).`, termes,
+      detail: detailCentreGravite23() };
   }},
   {id:"23.8 b)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const { A, B, C } = triangle22_8;
-    return { enonce: `Calculer les coordonnées de \\(G\\).`, pa: fracSimplifiee(A.x+B.x+C.x,3), pb: fracSimplifiee(A.y+B.y+C.y,3), vars:[] };
+    return { enonce: `Calculer les coordonnées de \\(G\\).`, pa: fracSimplifiee(A.x+B.x+C.x,3), pb: fracSimplifiee(A.y+B.y+C.y,3), vars:[],
+      detail: (() => { const fin = `\\left(${fracD(fr(A.x+B.x+C.x, 3))}\\,;\\,${fracD(fr(A.y+B.y+C.y, 3))}\\right)`;
+        return { lignes: ['\\text{Abscisse de } G \\text{ :}', chaineMoyenne3_23(A.x, B.x, C.x), '\\text{Ordonnée de } G \\text{ :}', chaineMoyenne3_23(A.y, B.y, C.y), fin], final: fin }; })() };
   }},
 
   // ---------- 22.9 (avance) : appartenance a un cercle -- centre entier connu, rayon connu (parfois
@@ -2601,7 +2760,7 @@ const generateurs = [
     const [dx,dy] = pointCercle22(entree, surLeCercle);
     const M = { x: centre.x+dx, y: centre.y+dy };
     pointCercle22_9a = M;
-    return { contexteTexte: `On considère le cercle de centre \\(\\Omega(${centre.x};${centre.y})\\) et de rayon \\(r=${entree.rTexte}\\).`, enonce: `Le point \\(M(${texteCoordPoint(M.x)};${texteCoordPoint(M.y)})\\) appartient-il à ce cercle ?`, reponseOuiNon: surLeCercle };
+    return { contexteTexte: `On considère le cercle de centre \\(\\Omega(${centre.x};${centre.y})\\) et de rayon \\(r=${entree.rTexte}\\).`, enonce: `Le point \\(M(${texteCoordPoint(M.x)};${texteCoordPoint(M.y)})\\) appartient-il à ce cercle ?`, reponseOuiNon: surLeCercle, detail: detailCercle23(centre, entree, M, surLeCercle, 'M') };
   }},
   {id:"23.9 b)", type:"ouiNon", texteLibre:true, gen: () => {
     const { centre, entree } = cercle22_9;
@@ -2611,7 +2770,7 @@ const generateurs = [
       const [dx,dy] = pointCercle22(entree, surLeCercle);
       N = { x: centre.x+dx, y: centre.y+dy };
     } while (N.x === pointCercle22_9a.x && N.y === pointCercle22_9a.y);
-    return { enonce: `Le point \\(N(${texteCoordPoint(N.x)};${texteCoordPoint(N.y)})\\) appartient-il à ce cercle ?`, reponseOuiNon: surLeCercle };
+    return { enonce: `Le point \\(N(${texteCoordPoint(N.x)};${texteCoordPoint(N.y)})\\) appartient-il à ce cercle ?`, reponseOuiNon: surLeCercle, detail: detailCercle23(centre, entree, N, surLeCercle, 'N') };
   }}
 ];
 
@@ -2619,10 +2778,13 @@ const generateurs = [
 
 function genererExercices() {
   tirageDemis23 = melanger(MODELES_DEMIS23).slice(0, 2);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -4009,7 +4171,7 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
