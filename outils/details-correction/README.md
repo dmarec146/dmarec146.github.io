@@ -78,6 +78,10 @@ signalé comme erreur de l'outil.
    droites, figures, tableaux, texte) : comptées « non vérifiables automatiquement ».
 6. **La lisibilité et le sens pédagogique** : relecture de `exemples.html`.
 
+## Recalcul indépendant (dossier recalcul-independant/)
+
+Un script par fiche (`verif-sNNd.js`, fiches de Seconde 11 à 24) recalcule chaque réponse et chaque détail **à partir de l'énoncé affiché**, sans lire les données du générateur (tableaux, figures SVG, textes), sur plusieurs centaines de tirages. Usage : `node outils/details-correction/recalcul-independant/verif-s22d.js 300 [chemin de la fiche]`. `dump-details.js <fiche> [tirages] [filtre]` affiche les détails d'un tirage. Les égalités entre vecteurs et les équations de droites à deux inconnues, que le contrôle ne sait pas lire, sont vérifiées là. Les scripts supposent Chrome installé et `outils/audit-reponses/node_modules`.
+
 ## Étendre l'outil
 
 Auto-test des tableaux de signes : `tableau-signe-final-inverse` (un signe de la ligne finale est inversé) et `tableau-signe-facteur-inverse` (un signe d'une ligne de facteur est inversé) ; tous les tableaux vérifiables sont mutés (100 % détectés le 20/10/2026 : Seconde 8, Première 11, 12, 13).

@@ -351,10 +351,10 @@ const ESSAIS = {
     [false, '\\text{AE a la même longueur que } AB', { reponse: '2' }, env('')]
   ],
   'la-propriete-annoncee-correspond-a-la-question-egaux-ou-opposes': [
-    [true, '\\text{Égaux : mêmes coordonnées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?' }, env('')],
-    [false, '\\text{Égaux : mêmes coordonnées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?' }, env('')],
-    [true, '\\text{Opposés : coordonnées opposées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?' }, env('')],
-    [false, '\\text{Opposés : coordonnées opposées}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?' }, env('')]
+    [true, '\\text{Égaux si mêmes coordonnées :}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?' }, env('')],
+    [false, '\\text{Égaux si mêmes coordonnées :}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?' }, env('')],
+    [true, '\\text{Opposés si coordonnées opposées :}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils opposés ?' }, env('')],
+    [false, '\\text{Opposés si coordonnées opposées :}', { enonce: 'Les vecteurs \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{CD}\\) sont-ils égaux ?' }, env('')]
   ],
   'la-regle-du-parallelogramme-est-au-sommet-commun': [
     [true, '\\text{Règle du parallélogramme en } C \\text{ :}', { enonce: '\\(\\overrightarrow{CD}+\\overrightarrow{CB}\\)' }, env('')],

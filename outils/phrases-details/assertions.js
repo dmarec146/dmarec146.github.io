@@ -564,8 +564,8 @@ module.exports = [
   },
   {
     nom: 'la-propriete-annoncee-correspond-a-la-question-egaux-ou-opposes',
-    // « \text{Égaux : mêmes coordonnées} » pour une question « égaux », « \text{Opposés : coordonnées opposées} » pour « opposés »
-    motif: /\\text\{(?:Égaux : mêmes coordonnées|Opposés : coordonnées opposées)\}/,
+    // « \text{Égaux si mêmes coordonnées :} » pour une question « égaux », « \text{Opposés si coordonnées opposées :} » pour « opposés »
+    motif: /\\text\{(?:Égaux si mêmes coordonnées|Opposés si coordonnées opposées) :\}/,
     verifie: (l, e) => (/Égaux/.test(l) ? /sont-ils égaux/.test(String(e.enonce)) : /sont-ils opposés/.test(String(e.enonce)))
   },
   {

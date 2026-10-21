@@ -2765,7 +2765,7 @@ function lignesInconnue24(a, b, c, k, cherche) {
 // coefficients rendus entiers (x2 si c est une fraction) puis forme canonique (a > 0, premiers entre eux)
 function lignesEquationCart24(xA, yA, u1, u2) {
   const a = u2, b = -u1, c = math.unaryMinus(math.add(math.multiply(fr(a), math.fraction(xA)), math.multiply(fr(b), math.fraction(yA))));
-  const lignes = ['\\text{Une équation de } d \\text{ est } ax+by+c=0', '\\text{où } a = u_{2} \\text{ et } b = -u_{1} \\text{ :}', `a = ${a}`, `b = ${b}`, '\\text{Le point } A \\text{ est sur } d \\text{ :}'];
+  const lignes = ['\\text{Une équation de la droite est } ax+by+c=0', '\\text{où } \\left(-b\\,;\\,a\\right) \\text{ est un vecteur directeur :}', `\\left(-b\\,;\\,a\\right) = \\left(${u1}\\,;\\,${u2}\\right)`, `a = ${a}`, `b = ${b}`, '\\text{Le point } A \\text{ est sur la droite :}'];
   const prod = `${produitT24(a, xA, true)}${produitT24(b, yA, false)}`;
   lignes.push(`${prod}+c = 0`);
   const somme = math.add(math.multiply(fr(a), math.fraction(xA)), math.multiply(fr(b), math.fraction(yA)));
@@ -2827,7 +2827,7 @@ const devCarre24 = (p, v) => `${v}^{2}${p === 0 ? '' : `${p < 0 ? '+' : '-'}${Ma
 function lignesMediatrice24(P, Q, nomP, nomQ) {
   const t = (c) => (c < 0 ? `-${-c}` : `+${c}`), a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y), c = P.x * P.x + P.y * P.y - Q.x * Q.x - Q.y * Q.y;
   const can = coefsCanoniques25(a, b, c), brute = eqCartBrute24(a, b, c);
-  const lignes = [`\\text{M est sur la médiatrice de } [${nomP}${nomQ}]`, `\\text{si } M${nomP} \\text{ et } M${nomQ} \\text{ sont égaux, donc leurs carrés :}`,
+  const lignes = [`\\text{M est sur la médiatrice de } [${nomP}${nomQ}]`, `\\text{si et seulement si } M${nomP} \\text{ et } M${nomQ}`, '\\text{sont égaux, donc si leurs carrés le sont :}',
     `(x${P.x === 0 ? '' : t(-P.x)})^{2}+(y${P.y === 0 ? '' : t(-P.y)})^{2} = (x${Q.x === 0 ? '' : t(-Q.x)})^{2}+(y${Q.y === 0 ? '' : t(-Q.y)})^{2}`,
     `\\iff ${devCarre24(P.x, 'x')}+${devCarre24(P.y, 'y')}`, `= ${devCarre24(Q.x, 'x')}+${devCarre24(Q.y, 'y')}`, `\\iff ${brute}`];
   const fin = `${membreCartesien25(can.a, can.b, can.c)} = 0`;
@@ -2837,10 +2837,10 @@ function lignesMediatrice24(P, Q, nomP, nomQ) {
 // parallelisme / orthogonalite de d1 : (m ou m^2) x + p y + q = 0 et d2 : D x + E y + F = 0 ; ensemble des valeurs de m
 function detailParametre24(orthogonal, d) {
   const { degre2, D, E, p, k } = d, mm = degre2 ? 'm^{2}' : 'm', coefM = (c) => `${c === 1 ? '' : c === -1 ? '-' : c}${mm}`;
-  const annonce = orthogonal ? "\\text{Orthogonales si } aa'+bb' = 0 \\text{ :}" : "\\text{Parallèles si } ab'-a'b = 0 \\text{ :}";
+  const annonce = orthogonal ? ["\\text{Pour } ax+by+c=0 \\text{ et } a'x+b'y+c'=0 \\text{ :}", "\\text{orthogonales si } aa'+bb' = 0 \\text{ :}"] : ["\\text{Pour } ax+by+c=0 \\text{ et } a'x+b'y+c'=0 \\text{ :}", "\\text{parallèles si } ab'-a'b = 0 \\text{ :}"];
   const l1 = orthogonal ? `${mm}\\times ${dP(D)}+${dP(p)}\\times ${dP(E)} = 0` : `${mm}\\times ${dP(E)}-${dP(D)}\\times ${dP(p)} = 0`;
   const coef = orthogonal ? D : E, second = orthogonal ? -p * E : D * p;
-  const lignes = [annonce, l1, `\\iff ${coefM(coef)} = ${second}`];
+  const lignes = [...annonce, l1, `\\iff ${coefM(coef)} = ${second}`];
   if (!degre2) {
     const v = fracD(fr(second, coef)), q = quotientBrut(second, coef);
     lignes.push(`\\iff m = ${q}${v !== q ? ' = ' + v : ''}`);
@@ -2864,7 +2864,7 @@ function detailReduite24(a, b, c) {
 // condition de parallelisme ab' - a'b = 0 : ecriture, produits, valeur, comparaison a 0
 function lignesDeterminant24(a, b, a2, b2, annonce) {
   const v = a * b2 - a2 * b, chaine = [`${a}\\times ${dP(b2)}-${dP(a2)}\\times ${dP(b)}`, `${a * b2}-${dP(a2 * b)}`, `${v}`].filter(dedoublon24).join(' = ');
-  return [annonce, chaine, compMotT24(MOTS_EGALITE24, `${v}`, '0', v === 0)];
+  return [...annonce, chaine, compMotT24(MOTS_EGALITE24, `${v}`, '0', v === 0)];
 }
 // systeme de deux droites donnees par a x + b y + c = 0 (premiere ligne : mise sous la forme a x + b y = c), solution ou absence de solution
 function lignesIntersection24(d1, d2) {
@@ -2917,7 +2917,7 @@ const generateurs = [
     const a = entierSigne(1,6), b = entierSigne(1,6), c = alea(-9,9);
     const fin = `\\left(${-b}\\,;\\,${a}\\right)`;
     return { enonce: `\\(d\\) a pour équation \\(${equationCartTexte25(a, b, c)}\\)`, vx: -b, vy: a, reponseLatex: `\\left(${-b};${a}\\right)`,
-      detail: { lignes: ['\\text{Pour } ax+by+c=0 \\text{ , un vecteur}', '\\text{directeur est } \\left(-b\\,;\\,a\\right)', ...(b < 0 ? [`\\left(-${dP(b)}\\,;\\,${a}\\right)`] : []), fin], final: fin } };
+      detail: { lignes: ['\\text{Pour } ax+by+c=0 \\text{, un vecteur}', '\\text{directeur est } \\left(-b\\,;\\,a\\right)', ...(b < 0 ? [`\\left(-${dP(b)}\\,;\\,${a}\\right)`] : []), fin], final: fin } };
   }},
   {id:"24.3 b)", type:"paire", vecteurDirecteur:true, texteLibre:true, gen: () => {
     const q = choix([2,3,4,5]);
@@ -2925,7 +2925,7 @@ const generateurs = [
     const p = entierSigne(1,9);
     const fin = `\\left(${q}\\,;\\,${n}\\right)`;
     return { enonce: `\\(d\\) a pour équation réduite \\(y=${affineTexte16(n, q, p)}\\)`, vx: q, vy: n, reponseLatex: `\\left(${q};${n}\\right)`,
-      detail: { lignes: ['\\text{Pour } y=mx+p \\text{ , un vecteur}', '\\text{directeur est } \\left(1\\,;\\,m\\right)', `\\left(1\\,;\\,${fracD(fr(n, q))}\\right)`, '\\text{On multiplie par le dénominateur :}', fin], final: fin } };
+      detail: { lignes: ['\\text{Pour } y=mx+p \\text{, un vecteur}', '\\text{directeur est } \\left(1\\,;\\,m\\right)', `\\left(1\\,;\\,${fracD(fr(n, q))}\\right)`, '\\text{On multiplie par le dénominateur :}', fin], final: fin } };
   }},
   {id:"24.3 c)", type:"paire", vecteurDirecteur:true, texteLibre:true, gen: () => {
     let A, B;
@@ -3061,7 +3061,7 @@ const generateurs = [
     const a2 = k*a, b2 = paralleles ? k*b : k*b + choix([-1,1]);
     let c2; do { c2 = alea(-12,12); } while (paralleles && c2 === k*c1);
     return { enonce: `\\(d_1\\) : \\(${equationCartTexte25(a, b, c1)}\\) et \\(d_2\\) : \\(${equationCartTexte25(a2, b2, c2)}\\)`, reponseOuiNon: paralleles,
-      detail: { lignes: [...lignesDeterminant24(a, b, a2, b2, "\\text{Parallèles si } ab'-a'b = 0 \\text{ :}"), `\\text{Réponse : ${paralleles ? 'oui' : 'non'}}`], final: paralleles ? 'oui' : 'non' } };
+      detail: { lignes: [...lignesDeterminant24(a, b, a2, b2, ["\\text{Pour } ax+by+c=0 \\text{ et } a'x+b'y+c'=0 \\text{ :}", "\\text{parallèles si } ab'-a'b = 0 \\text{ :}"]), `\\text{Réponse : ${paralleles ? 'oui' : 'non'}}`], final: paralleles ? 'oui' : 'non' } };
   }},
   {id:"24.7 b)", type:"ouiNon", texteLibre:true, gen: () => {
     // d1 cartesienne, d2 reduite : paralleles <=> -a/b = m

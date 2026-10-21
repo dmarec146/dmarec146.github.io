@@ -2371,7 +2371,7 @@ function detailTriangleRectangle21(A2, B2, C2, rect) {
   const ab = carreLongueurDemi21(B2.x - A2.x, B2.y - A2.y), bc = carreLongueurDemi21(C2.x - B2.x, C2.y - B2.y), ac = carreLongueurDemi21(C2.x - A2.x, C2.y - A2.y);
   const somme = math.add(ab.valeur, bc.valeur);
   return { lignes: ["\\text{Carré de } AB \\text{ :}", ab.ligne, "\\text{Carré de } BC \\text{ :}", bc.ligne, "\\text{Carré de } AC \\text{ :}", ac.ligne,
-    "\\text{Rectangle en } B \\text{ si le carré de } AC", "\\text{égale la somme des carrés de } AB \\text{ et } BC \\text{ :}", `${fracD(ab.valeur)}+${fracD(bc.valeur)} = ${fracD(somme)}`,
+    "\\text{Rectangle en } B \\text{ si et seulement si}", "\\text{le carré de } AC \\text{ égale la somme}", "\\text{des carrés de } AB \\text{ et } BC \\text{ :}", `${fracD(ab.valeur)}+${fracD(bc.valeur)} = ${fracD(somme)}`,
     compMotT21(MOTS_EGALITE21, fracD(somme), fracD(ac.valeur), rect), `\\text{Réponse : ${rect ? 'oui' : 'non'}}`], final: rect ? 'oui' : 'non' };
 }
 // triangle ABC : carres des trois cotes, comparaisons deux a deux
@@ -2384,7 +2384,7 @@ function detailTriangleIsocele21(A2, B2, C2, iso) {
 // quadrilatere ABCD : memes milieux des diagonales (sommes des coordonnees egales)
 function detailParallelogramme21(A2, B2, C2, D2, para) {
   const somme = (p2, q2) => { const t1 = demiT21(p2), t2 = demiT21(q2); return { ligne: `${t1}${t2.startsWith('-') ? '' : '+'}${t2} = ${fracD(fr(p2 + q2, 2))}`, v: fr(p2 + q2, 2) }; };
-  const lignes = ["\\text{ABCD est un parallélogramme}", "\\text{si et seulement si [AC] et [BD]}", "\\text{ont le même milieu, c'est-à-dire si}", "\\text{les sommes de leurs extrémités sont}", "\\text{égales, coordonnée par coordonnée :}"];
+  const lignes = ["\\text{ABCD est un parallélogramme}", "\\text{si et seulement si [AC] et [BD]}", "\\text{ont le même milieu, c'est-à-dire si}", "\\text{les sommes des coordonnées des}", "\\text{extrémités sont égales, une à une :}"];
   const axes = [['abscisses', 'x'], ['ordonnées', 'y']];
   for (const [nom, c] of axes) {
     const s1 = somme(A2[c], C2[c]), s2 = somme(B2[c], D2[c]), egal = math.equal(s1.v, s2.v);
@@ -2408,7 +2408,7 @@ function detailCotesEgaux21(A2, B2, C2, D2, tous) {
 // ensemble (E) : AM = MH donc AM^2 = MH^2 ; ordonnee y du point d'abscisse x0 : y = ((x0-a)^2 + b^2) / (2b)
 function lignesEnsembleE21(a, b, x0) {
   const t = (c) => (c >= 0 ? `+${c}` : `-${-c}`), dx = x0 - a, N = dx * dx + b * b, y = fracD(fr(N, 2 * b));
-  const lignes = ['\\text{Les longueurs } AM \\text{ et } MH \\text{ sont égales,}', '\\text{donc leurs carrés aussi :}', `(x${t(-a)})^{2}+(y${t(-b)})^{2} = y^{2}`, `\\iff (${x0}${t(-a)})^{2}+(y${t(-b)})^{2} = y^{2}`,
+  const lignes = ['\\text{M appartient à } (E) \\text{ si et seulement si}', '\\text{AM et MH sont égaux, donc si}', '\\text{leurs carrés le sont :}', `(x${t(-a)})^{2}+(y${t(-b)})^{2} = y^{2}`, `\\iff (${x0}${t(-a)})^{2}+(y${t(-b)})^{2} = y^{2}`,
     `\\iff ${dx * dx}+y^{2}-${2 * b}y+${b * b} = y^{2}`, `\\iff ${N} = ${2 * b}y`, `\\iff y = ${fracBrute(N, 2 * b)}${fracBrute(N, 2 * b) !== y ? ' = ' + y : ''}`];
   return { lignes, y };
 }
