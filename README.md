@@ -4,6 +4,8 @@ Site d'exercices de mathématiques auto-corrigés pour lycéens, à travailler d
 
 Site en ligne : https://dmarec146.github.io/
 
+© 2026 dmarec146. Tous droits réservés : voir le fichier `LICENSE`.
+
 ## Structure du dépôt
 
 ```
@@ -21,7 +23,7 @@ Chaque dossier `cahier-N/` contient :
 ## Ajouter une fiche ou un cahier
 
 1. Créer le fichier `fiche-XX.html` dans le dossier du cahier concerné, en repartant de la structure d'une fiche existante du même niveau (mêmes balises `<head>`, mêmes classes CSS).
-2. Ajouter le lien vers la nouvelle fiche dans l'`index.html` du cahier.
+2. Ajouter le lien vers la nouvelle fiche dans l'`index.html` du cahier. Toute nouvelle page publique doit aussi contenir, juste avant `</body>`, la balise `<script src="…/assets/js/pied-droits.js"></script>` (chemin relatif adapté à la profondeur de la page) : elle affiche l'icône du site, le favicon et la mention « Tous droits réservés ».
 3. Si c'est un nouveau cahier : créer le dossier `cahier-N/`, son `index.html`, puis l'ajouter dans `cahiers/index.html`.
 
 ## Chantiers en cours

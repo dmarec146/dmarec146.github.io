@@ -141,6 +141,12 @@ depuis la réorganisation du 02/10/2026 »).
   - `assets/js/statistiques.js` (module, chargé par les 76 pages publiques) :
     mesure de fréquentation anonyme, une écriture Firestore par page vue
     (voir §3). Pied de page : « Mesure de fréquentation anonyme… ».
+  - `assets/js/pied-droits.js` (script classique, 81 pages publiques, hors `outils/`) :
+    icône sigma (`assets/img/`) à gauche du titre « Cahiers interactifs », favicon
+    et ligne « © 2026 dmarec146 · Tous droits réservés » en pied de page (ajoutée au
+    `.site-pied` existant, sinon dans un pied créé). **Toute nouvelle page publique
+    doit contenir la balise avant `</body>`** ; l'auteur et l'année sont deux
+    constantes en tête du script. Fichier `LICENSE` à la racine (tous droits réservés).
   - MathLive **épinglé à 0.111.0** (`unpkg.com/mathlive@0.111.0`, 05/10/2026 ; avant : sans
     numéro, donc toujours la dernière version) et MathJax. Pour changer de version : modifier
     le numéro dans les 50 fiches, relancer `outils/audit-claviers/`, puis publier.
