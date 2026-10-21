@@ -331,6 +331,18 @@ const ESSAIS = {
     [true, '\\text{Deux chemins mènent à } R \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')],
     [false, '\\text{Deux chemins mènent à } E \\text{ :}', { enonce: "Calculer \\(P(R)\\)." }, env('')]
   ],
+  'le-mot-egal-ou-different-correspond-a-la-relation': [
+    [true, '\\text{Carrés égaux : } \\dfrac{13}{4} = \\dfrac{13}{4}', {}, env('')],
+    [false, '\\text{Carrés égaux : } \\dfrac{13}{4} \\neq 5', {}, env('')],
+    [true, '\\text{Carrés différents : } \\dfrac{13}{4} \\neq 5', {}, env('')],
+    [false, '\\text{Carrés différents : } \\dfrac{13}{4} = \\dfrac{13}{4}', {}, env('')],
+    [false, '\\text{Carrés égaux : } 2 \\neq 2', {}, env('')],
+    [true, '\\text{Sommes égales : } -\\dfrac{3}{2} = -\\dfrac{3}{2}', {}, env('')],
+    [false, '\\text{Sommes différentes : } \\dfrac{3}{2} \\neq \\dfrac{3}{2}', {}, env('')],
+    [true, '\\text{Égalité vérifiée : } \\dfrac{65}{2} = \\dfrac{65}{2}', {}, env('')],
+    [true, '\\text{Égalité non vérifiée : } 15 \\neq \\dfrac{29}{2}', {}, env('')],
+    [false, '\\text{Égalité vérifiée : } 15 \\neq \\dfrac{29}{2}', {}, env('')]
+  ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],

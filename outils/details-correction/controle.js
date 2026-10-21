@@ -354,7 +354,8 @@ async function controlerDansLaPage(opts) {
       const L = String(F).replace(/\\left|\\right/g, '').replace(/\\,/g, '').replace(/^\s*\(|\)\s*$/g, '').split(/;/);
       if (L.length !== cibleListe.length) return 'faux';
       for (let i = 0; i < L.length; i++) {
-        try { const a = math.evaluate(String(cibleListe[i]).replace(/\^/g, '^')), b = evaluer(L[i], 0); if (!egal(a, b)) return 'faux'; } catch (er) { return 'non-verifiable'; }
+        // même valeur des lettres (paramètre m…) des deux côtés, sur plusieurs tirages de ces valeurs
+        try { for (let k = 0; k < 3; k++) { const [a, b] = evaluerGroupe([String(cibleListe[i]), L[i]], k); if (!egal(a, b)) return 'faux'; } } catch (er) { return 'non-verifiable'; }
       }
       return 'ok';
     }

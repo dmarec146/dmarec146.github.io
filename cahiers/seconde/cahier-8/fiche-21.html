@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"21.1 a)":0.5,"21.1 b)":0.5,"21.2 a)":0.75,"21.2 b)":0.75,"21.3 a)":0.5,"21.3 b)":0.5,"21.3 c)":0.75,"21.4 a)":1,"21.4 b)":1,"21.5 a)":1,"21.5 b)":1.25,"21.5 c)":1.25,"21.5 d)":1.25,"21.6 a)":1,"21.6 b)":1,"21.7 a)":1,"21.7 b)":1,"21.8 a)":1.5,"21.8 b)":2,"21.9 a)":1.75},"bonus":["21.8 a)","21.8 b)","21.9 a)"]});
@@ -2270,9 +2271,16 @@ function genererMilieuParametre20_9() {
   const texteA = `A(${texteCoordA('x')}\\,;\\,${texteCoordA('y')})`;
   const texteB = `B(${texteCoordB('x')}\\,;\\,${texteCoordB('y')})`;
   const texteI = `I\\left(${fracLatexAffichage(numIx,2)}\\,;\\,${fracLatexAffichage(numIy,2)}\\right)`;
+  // details : une equation par coordonnee (sur m, ou verification numerique), puis comparaison des valeurs de m
+  const cA = { x: texteCoordA('x') === 'm' ? 'm' : brut.Ax, y: texteCoordA('y') === 'm' ? 'm' : brut.Ay }, cB = { x: texteCoordB('x') === 'm' ? 'm' : brut.Bx, y: texteCoordB('y') === 'm' ? 'm' : brut.By };
+  const ex = lignesAxe21('Abscisse', cA.x, cB.x, numIx), ey = lignesAxe21('Ordonnée', cA.y, cB.y, numIy);
+  const lignes = [...ex.lignes, ...ey.lignes];
+  if (ex.m !== undefined && ey.m !== undefined) lignes.push('\\text{Valeurs de } m \\text{ :}', compT21(`${ex.m}`, `${ey.m}`, ex.m === ey.m));
+  lignes.push(`\\text{Réponse : ${possible ? 'oui' : 'non'}}`);
   return {
     enonce: `On donne \\(${texteA}\\) et \\(${texteB}\\), ainsi que \\(${texteI}\\). Est-il possible que \\(I\\) soit le milieu du segment \\([AB]\\) ?`,
-    reponseOuiNon: possible
+    reponseOuiNon: possible,
+    detail: { lignes, final: possible ? 'oui' : 'non' }
   };
 }
 
@@ -2309,17 +2317,151 @@ function texteCoordDemi(nom, P2) {
   return `\\(${nom}\\left(${fracLatexAffichage(P2.x,2)}\\,;\\,${fracLatexAffichage(P2.y,2)}\\right)\\)`;
 }
 
+// ---------- details de correction (21/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, dPlus, fracD, fracTexte, fracBrute, fr, ptLigne } = Detail;
+// a+b ou a-b selon le signe de b (jamais « +- »)
+const sommeT21 = (a, b) => (b < 0 ? `${a}-${-b}` : `${a}+${b}`);
+// fraction reduite v2/2 (coordonnee du reseau des demi-entiers), signe devant
+const demiT21 = (v2) => fracD(fr(v2, 2));
+// comparaison de deux valeurs deja ecrites : « X = Y » ou « X \neq Y »
+const compT21 = (x, y, egal) => `${x} ${egal ? '=' : '\\neq'} ${y}`;
+// idem, annoncee par un mot (« Carrés égaux : … » ; evite aussi que l'egalite soit recollee a la ligne precedente)
+const compMotT21 = (mots, x, y, egal) => `\\text{${mots[egal ? 0 : 1]} : } ${x} ${egal ? '=' : '\\neq'} ${y}`;
+const MOTS_CARRES21 = ['Carrés égaux', 'Carrés différents'], MOTS_SOMMES21 = ['Sommes égales', 'Sommes différentes'], MOTS_EGALITE21 = ['Égalité vérifiée', 'Égalité non vérifiée'];
+// carre d'un nombre v2/2 : entier positif tel quel, entier negatif ou fraction entre parentheses
+function carreDemiT21(v2) {
+  const t = demiT21(v2);
+  return /^\d+$/.test(t) ? `${t}^{2}` : (/^-\d+$/.test(t) ? `(${t})^{2}` : `\\left(${t}\\right)^{2}`);
+}
+// carre de la longueur dont les differences de coordonnees valent dx2/2 et dy2/2 : lignes d'egalites, valeur (fraction math.js)
+function carreLongueurDemi21(dx2, dy2) {
+  const total = fr(dx2 * dx2 + dy2 * dy2, 4);
+  const suite = [`${carreDemiT21(dx2)}+${carreDemiT21(dy2)}`, `${fracD(fr(dx2 * dx2, 4))}+${fracD(fr(dy2 * dy2, 4))}`, fracD(total)].filter((t, i, tab) => i === 0 || t !== tab[i - 1]);
+  return { ligne: suite.join(' = '), valeur: total };
+}
+// racine carree simplifiee de N : etapes apres \sqrt{N} et valeur finale
+function racineChaine21(N) {
+  let k = Math.floor(Math.sqrt(N)); while (N % (k * k) !== 0) k--;
+  const n = N / (k * k);
+  if (n === 1) return { suite: [`${k}`], final: `${k}` };
+  if (k === 1) return { suite: [], final: `\\sqrt{${N}}` };
+  return { suite: [`\\sqrt{${k * k}\\times ${n}}`, `${k}\\sqrt{${n}}`], final: `${k}\\sqrt{${n}}` };
+}
+// milieu : abscisse puis ordonnee (chaines deja ecrites), reponse (x ; y)
+function detailMilieu21(chaineX, chaineY, finalX, finalY) {
+  const fin = `\\left(${finalX}\\,;\\,${finalY}\\right)`;
+  return { lignes: ["\\text{Abscisse de } I \\text{ :}", chaineX, "\\text{Ordonnée de } I \\text{ :}", chaineY, fin], final: fin };
+}
+// une coordonnee du milieu quand l'une des deux vaut le parametre m : \dfrac{m+3}{2} ; sinon la moyenne de deux entiers
+function coordMilieuParam21(u, v) {
+  if (u === 'm' || v === 'm') {
+    const autre = u === 'm' ? Number(v) : Number(u), t = `\\dfrac{m${autre >= 0 ? '+' : '-'}${Math.abs(autre)}}{2}`;
+    return { chaine: t, final: t };
+  }
+  return { chaine: milieuEntiers21(Number(u), Number(v)), final: fracD(fr(Number(u) + Number(v), 2)) };
+}
+// B = 2I - A, une coordonnee : A = a, I = (a+b)/2 donnes
+function lignesRetrouveB21(abscisse, a, b) {
+  const s = a + b, t = demiT21(s), tp = t.startsWith('-') ? `\\left(${t}\\right)` : t;
+  const [xi, xa, xb] = abscisse ? ['x_{I}', 'x_{A}', 'x_{B}'] : ['y_{I}', 'y_{A}', 'y_{B}'];
+  return [`\\text{${abscisse ? 'Abscisse' : 'Ordonnée'} : } ${xi} = \\dfrac{${xa}+${xb}}{2}`, `\\iff ${xb} = 2${xi}-${xa}`, `2\\times ${tp} ${dPlus(-a)} = ${s} ${dPlus(-a)} = ${b}`];
+}
+// triangle ABC (coordonnees doublees) : carres des cotes, test du triangle rectangle en B
+function detailTriangleRectangle21(A2, B2, C2, rect) {
+  const ab = carreLongueurDemi21(B2.x - A2.x, B2.y - A2.y), bc = carreLongueurDemi21(C2.x - B2.x, C2.y - B2.y), ac = carreLongueurDemi21(C2.x - A2.x, C2.y - A2.y);
+  const somme = math.add(ab.valeur, bc.valeur);
+  return { lignes: ["\\text{Carré de } AB \\text{ :}", ab.ligne, "\\text{Carré de } BC \\text{ :}", bc.ligne, "\\text{Carré de } AC \\text{ :}", ac.ligne,
+    "\\text{Rectangle en } B \\text{ si le carré de } AC", "\\text{égale la somme des carrés de } AB \\text{ et } BC \\text{ :}", `${fracD(ab.valeur)}+${fracD(bc.valeur)} = ${fracD(somme)}`,
+    compMotT21(MOTS_EGALITE21, fracD(somme), fracD(ac.valeur), rect), `\\text{Réponse : ${rect ? 'oui' : 'non'}}`], final: rect ? 'oui' : 'non' };
+}
+// triangle ABC : carres des trois cotes, comparaisons deux a deux
+function detailTriangleIsocele21(A2, B2, C2, iso) {
+  const ab = carreLongueurDemi21(B2.x - A2.x, B2.y - A2.y), bc = carreLongueurDemi21(C2.x - B2.x, C2.y - B2.y), ca = carreLongueurDemi21(A2.x - C2.x, A2.y - C2.y);
+  const cmp = (p, q) => compMotT21(MOTS_CARRES21, fracD(p.valeur), fracD(q.valeur), math.equal(p.valeur, q.valeur));
+  return { lignes: ["\\text{Carré de } AB \\text{ :}", ab.ligne, "\\text{Carré de } BC \\text{ :}", bc.ligne, "\\text{Carré de } CA \\text{ :}", ca.ligne, '\\text{On compare les carrés :}', cmp(ab, bc), cmp(bc, ca), cmp(ca, ab),
+    `\\text{Réponse : ${iso ? 'oui' : 'non'}}`], final: iso ? 'oui' : 'non' };
+}
+// quadrilatere ABCD : memes milieux des diagonales (sommes des coordonnees egales)
+function detailParallelogramme21(A2, B2, C2, D2, para) {
+  const somme = (p2, q2) => { const t1 = demiT21(p2), t2 = demiT21(q2); return { ligne: `${t1}${t2.startsWith('-') ? '' : '+'}${t2} = ${fracD(fr(p2 + q2, 2))}`, v: fr(p2 + q2, 2) }; };
+  const lignes = ["\\text{ABCD est un parallélogramme}", "\\text{si et seulement si [AC] et [BD]}", "\\text{ont le même milieu, c'est-à-dire si}", "\\text{les sommes de leurs extrémités sont}", "\\text{égales, coordonnée par coordonnée :}"];
+  const axes = [['abscisses', 'x'], ['ordonnées', 'y']];
+  for (const [nom, c] of axes) {
+    const s1 = somme(A2[c], C2[c]), s2 = somme(B2[c], D2[c]), egal = math.equal(s1.v, s2.v);
+    lignes.push(`\\text{Somme des ${nom} de } A \\text{ et } C \\text{ :}`, s1.ligne, `\\text{Somme des ${nom} de } B \\text{ et } D \\text{ :}`, s2.ligne, compMotT21(MOTS_SOMMES21, fracD(s1.v), fracD(s2.v), egal));
+    if (!egal) break;
+  }
+  lignes.push(`\\text{Réponse : ${para ? 'oui' : 'non'}}`);
+  return { lignes, final: para ? 'oui' : 'non' };
+}
+// quadrilatere ABCD : carres des cotes compares de proche en proche
+function detailCotesEgaux21(A2, B2, C2, D2, tous) {
+  const cotes = [['AB', A2, B2], ['BC', B2, C2], ['CD', C2, D2], ['DA', D2, A2]], lignes = [], vals = [];
+  for (let i = 0; i < 4; i++) {
+    const [nom, P, Q] = cotes[i], c = carreLongueurDemi21(Q.x - P.x, Q.y - P.y);
+    lignes.push(`\\text{Carré de } ${nom} \\text{ :}`, c.ligne); vals.push(c.valeur);
+    if (i > 0) { const egal = math.equal(vals[i - 1], vals[i]); lignes.push(compMotT21(MOTS_CARRES21, fracD(vals[i - 1]), fracD(vals[i]), egal)); if (!egal) break; }
+  }
+  lignes.push(`\\text{Réponse : ${tous ? 'oui' : 'non'}}`);
+  return { lignes, final: tous ? 'oui' : 'non' };
+}
+// ensemble (E) : AM = MH donc AM^2 = MH^2 ; ordonnee y du point d'abscisse x0 : y = ((x0-a)^2 + b^2) / (2b)
+function lignesEnsembleE21(a, b, x0) {
+  const t = (c) => (c >= 0 ? `+${c}` : `-${-c}`), dx = x0 - a, N = dx * dx + b * b, y = fracD(fr(N, 2 * b));
+  const lignes = ['\\text{Les longueurs } AM \\text{ et } MH \\text{ sont égales,}', '\\text{donc leurs carrés aussi :}', `(x${t(-a)})^{2}+(y${t(-b)})^{2} = y^{2}`, `\\iff (${x0}${t(-a)})^{2}+(y${t(-b)})^{2} = y^{2}`,
+    `\\iff ${dx * dx}+y^{2}-${2 * b}y+${b * b} = y^{2}`, `\\iff ${N} = ${2 * b}y`, `\\iff y = ${fracBrute(N, 2 * b)}${fracBrute(N, 2 * b) !== y ? ' = ' + y : ''}`];
+  return { lignes, y };
+}
+// une coordonnee de A, de B (nombre ou 'm') et le numerateur de celle de I (I = numI/2) : equation sur m ou verification numerique
+function lignesAxe21(nom, uA, uB, numI) {
+  const nI = fracLatexAffichage(numI, 2), sg = (k) => (k >= 0 ? `+${k}` : `-${-k}`), lignes = [`\\text{${nom} :}`];
+  const nbM = [uA, uB].filter((u) => u === 'm').length;
+  if (nbM === 2) { lignes.push(`\\dfrac{m+m}{2} = ${nI}`, `\\iff m = ${nI}`); return { lignes, m: numI / 2 }; }
+  if (nbM === 1) {
+    const k = Number(uA === 'm' ? uB : uA);
+    lignes.push(`\\dfrac{m${sg(k)}}{2} = ${nI}`, `\\iff m${sg(k)} = ${numI}`, `\\iff m = ${numI - k}`);
+    return { lignes, m: numI - k };
+  }
+  const ka = Number(uA), kb = Number(uB), ok = ka + kb === numI;
+  lignes.push(milieuEntiers21(ka, kb), compT21(fracD(fr(ka + kb, 2)), nI, ok));
+  return { lignes, ok };
+}
+// distance AB dans un repere orthonorme (A et B a coordonnees entieres) : formule, substitution, carres, racine simplifiee
+function detailDistance21(A, B) {
+  const dx = B.x - A.x, dy = B.y - A.y, N = dx * dx + dy * dy, R = racineChaine21(N);
+  const suite = [`\\sqrt{(${B.x}-${dP(A.x)})^{2}+(${B.y}-${dP(A.y)})^{2}}`, `\\sqrt{${dP(dx)}^{2}+${dP(dy)}^{2}}`, `\\sqrt{${dx * dx}+${dy * dy}}`, `\\sqrt{${N}}`, ...R.suite];
+  return { lignes: ['AB = \\sqrt{(x_{B}-x_{A})^{2}+(y_{B}-y_{A})^{2}}', suite.join(' = ')], final: R.final };
+}
+// moyenne de deux entiers (milieu, une coordonnee) : \dfrac{a+b}{2} = \dfrac{s}{2} = valeur
+function milieuEntiers21(a, b) {
+  const s = a + b;
+  return [`\\dfrac{${sommeT21(a, b)}}{2}`, fracBrute(s, 2), fracD(fr(s, 2))].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+// moyenne de deux rationnels n1/d1 et n2/d2 : \dfrac{1}{2}\left(a+b\right), reduction au meme denominateur, produit par 1/2
+function milieuRationnels21(n1, d1, n2, d2) {
+  const a = fr(n1, d1), b = fr(n2, d2), D = math.lcm(a.d, b.d);
+  const S = a.s * a.n * (D / a.d) + b.s * b.n * (D / b.d);
+  const terme = (f, i) => (i === 0 ? fracD(f) : (f.s < 0 ? `-${fracTexte(f.n, f.d)}` : `+${fracTexte(f.n, f.d)}`));
+  const conv = (f, i) => { const t = fracTexte(f.n * (D / f.d), D); return i === 0 ? (f.s < 0 ? `-${t}` : t) : (f.s < 0 ? `-${t}` : `+${t}`); };
+  const p1 = `\\dfrac{1}{2}\\left(${terme(a, 0)}${terme(b, 1)}\\right)`;
+  const p2 = `\\dfrac{1}{2}\\left(${conv(a, 0)}${conv(b, 1)}\\right)`;
+  const sTexte = fracBrute(S, D), p3 = `\\dfrac{1}{2}\\times ${S < 0 ? `\\left(${sTexte}\\right)` : sTexte}`;
+  const p4 = fracBrute(S, 2 * D), p5 = fracD(fr(S, 2 * D));
+  return [p1, p2, p3, p4, p5].filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ');
+}
+
 // ---------- calculs de carres (21.1), preparation directe du calcul de distance : deux modeles tires sans remise parmi quatre ----------
 const entre21 = (v) => v < 0 ? `(${v})` : `${v}`;
 const MODELES_CARRES21 = [
   () => { const a = alea(2,9), b = alea(2,9);
-          return { enonce:`(-${a})^2+${b}^2`, reponse:`${a*a + b*b}` }; },
-  () => { const x1 = entierSigne(1,6), x2 = entierSigne(1,6), y1 = entierSigne(1,6), y2 = entierSigne(1,6);
-          return { enonce:`(${entre21(x2)}-${entre21(x1)})^2+(${entre21(y2)}-${entre21(y1)})^2`, reponse:`${(x2-x1)**2 + (y2-y1)**2}` }; },
+          return { enonce:`(-${a})^2+${b}^2`, reponse:`${a*a + b*b}`, detail: { lignes: [`(-${a})^{2}+${b}^{2} = ${a*a}+${b*b} = ${a*a + b*b}`], final: `${a*a + b*b}` } }; },
+  () => { const x1 = entierSigne(1,6), x2 = entierSigne(1,6), y1 = entierSigne(1,6), y2 = entierSigne(1,6), dx = x2-x1, dy = y2-y1;
+          return { enonce:`(${entre21(x2)}-${entre21(x1)})^2+(${entre21(y2)}-${entre21(y1)})^2`, reponse:`${dx**2 + dy**2}`,
+            detail: { lignes: [`(${entre21(x2)}-${entre21(x1)})^{2}+(${entre21(y2)}-${entre21(y1)})^{2} = ${entre21(dx)}^{2}+${entre21(dy)}^{2} = ${dx*dx}+${dy*dy} = ${dx**2 + dy**2}`], final: `${dx**2 + dy**2}` } }; },
   () => { const a = alea(2,9), b = alea(2,9);
-          return { enonce:`${a}^2-(-${b})^2`, reponse:`${a*a - b*b}` }; },
+          return { enonce:`${a}^2-(-${b})^2`, reponse:`${a*a - b*b}`, detail: { lignes: [`${a}^{2}-(-${b})^{2} = ${a*a}-${b*b} = ${a*a - b*b}`], final: `${a*a - b*b}` } }; },
   () => { const a = alea(2,8), b = alea(2,8), c = alea(2,9);
-          return { enonce:`(${a}-${b})^2+(-${c})^2`, reponse:`${(a-b)**2 + c*c}` }; }
+          return { enonce:`(${a}-${b})^2+(-${c})^2`, reponse:`${(a-b)**2 + c*c}`, detail: { lignes: [`(${a}-${b})^{2}+(-${c})^{2} = ${entre21(a-b)}^{2}+${c}^{2} = ${(a-b)**2}+${c*c} = ${(a-b)**2 + c*c}`], final: `${(a-b)**2 + c*c}` } }; }
 ];
 let tirageCarres21 = melanger(MODELES_CARRES21).slice(0, 2);
 // racines a simplifier (21.2) : k^2 n avec n sans facteur carre
@@ -2348,8 +2490,8 @@ const generateurs = [
   {id:"21.1 b)", type:"num", gen: () => tirageCarres21[1]()},
 
   // ---------- 21.2 : simplifier une racine carree (consigne dans le titre) : a) k de 2 a 5, b) k de 4 a 8 ----------
-  {id:"21.2 a)", type:"num", gen: () => { const k = alea(2,5), n = choix(NON_CARRES21); return { enonce:`\\sqrt{${k*k*n}}`, reponse:`${k}*sqrt(${n})` }; }},
-  {id:"21.2 b)", type:"num", gen: () => { const k = alea(4,8), n = choix(NON_CARRES21); return { enonce:`\\sqrt{${k*k*n}}`, reponse:`${k}*sqrt(${n})` }; }},
+  {id:"21.2 a)", type:"num", gen: () => { const k = alea(2,5), n = choix(NON_CARRES21); return { enonce:`\\sqrt{${k*k*n}}`, reponse:`${k}*sqrt(${n})`, detail: { lignes: [`\\sqrt{${k*k*n}} = \\sqrt{${k*k}\\times ${n}} = \\sqrt{${k*k}}\\times \\sqrt{${n}} = ${k}\\sqrt{${n}}`], final: `${k}\\sqrt{${n}}` } }; }},
+  {id:"21.2 b)", type:"num", gen: () => { const k = alea(4,8), n = choix(NON_CARRES21); return { enonce:`\\sqrt{${k*k*n}}`, reponse:`${k}*sqrt(${n})`, detail: { lignes: [`\\sqrt{${k*k*n}} = \\sqrt{${k*k}\\times ${n}} = \\sqrt{${k*k}}\\times \\sqrt{${n}} = ${k}\\sqrt{${n}}`], final: `${k}\\sqrt{${n}}` } }; }},
 
 
   // ---------- 20.3 : lecture de coordonnees dans un repere orthonorme -- trois points places sur
@@ -2362,15 +2504,18 @@ const generateurs = [
     const noms = ['A','B','C'];
     const elements = pts.map((p,i) => ({ type:'point', x:p.x, y:p.y, nom:noms[i], position: positionEloignee(p, {x:0,y:0}) }));
     const figure = genererSVGRepere(elements);
-    return { contexteTexte: "Le repère ci-dessus est orthonormé. Donner les coordonnées de chacun des points suivants.", contexteFigure: figure, enonce: `Point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [] };
+    return { contexteTexte: "Le repère ci-dessus est orthonormé. Donner les coordonnées de chacun des points suivants.", contexteFigure: figure, enonce: `Point \\(A\\).`, pa: String(pts[0].x), pb: String(pts[0].y), vars: [],
+      detail: { lignes: ["\\text{On lit l'abscisse, puis l'ordonnée :}", `\\left(${pts[0].x}\\,;\\,${pts[0].y}\\right)`], final: `\\left(${pts[0].x}\\,;\\,${pts[0].y}\\right)` } };
   }},
   {id:"21.3 b)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const p = ptsRepere20_3[1];
-    return { enonce: `Point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
+    return { enonce: `Point \\(B\\).`, pa: String(p.x), pb: String(p.y), vars: [],
+      detail: { lignes: ["\\text{On lit l'abscisse, puis l'ordonnée :}", `\\left(${p.x}\\,;\\,${p.y}\\right)`], final: `\\left(${p.x}\\,;\\,${p.y}\\right)` } };
   }},
   {id:"21.3 c)", type:"paire", formePoint:true, texteLibre:true, margeLecture:0.2, gen: () => {
     const p = ptsRepere20_3[2];
-    return { enonce: `Point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [] };
+    return { enonce: `Point \\(C\\).`, pa: String(p.x), pb: String(p.y), vars: [],
+      detail: { lignes: ["\\text{On lit l'abscisse, puis l'ordonnée :}", `\\left(${p.x}\\,;\\,${p.y}\\right)`], final: `\\left(${p.x}\\,;\\,${p.y}\\right)` } };
   }},
 
   // ---------- 20.4 : distance entre deux points (forme exacte, racine carree eventuelle) --
@@ -2383,7 +2528,8 @@ const generateurs = [
       B = { x: entierSigne(1,5), y: entierSigne(1,5) };
       dx = B.x-A.x; dy = B.y-A.y;
     } while (dx === 0 && dy === 0);
-    return { contexteTexte: "Dans un repère orthonormé, calculer la valeur exacte de la distance \\(AB\\) dans chaque cas.", enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: racineSimplifiee21(dx*dx+dy*dy) };
+    return { contexteTexte: "Dans un repère orthonormé, calculer la valeur exacte de la distance \\(AB\\) dans chaque cas.", enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: racineSimplifiee21(dx*dx+dy*dy),
+      detail: detailDistance21(A, B) };
   }},
   {id:"21.4 b)", type:"num", texteLibre:true, gen: () => {
     let A, B, dx, dy;
@@ -2392,7 +2538,7 @@ const generateurs = [
       B = { x: entierSigne(1,5), y: entierSigne(1,5) };
       dx = B.x-A.x; dy = B.y-A.y;
     } while (dx === 0 && dy === 0);
-    return { enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: racineSimplifiee21(dx*dx+dy*dy) };
+    return { enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, reponse: racineSimplifiee21(dx*dx+dy*dy), detail: detailDistance21(A, B) };
   }},
 
   // ---------- 20.5 : coordonnees du milieu d'un segment -- consigne commune factorisee dans le
@@ -2401,7 +2547,8 @@ const generateurs = [
   {id:"21.5 a)", type:"paire", formePoint:true, texteLibre:true, gen: () => {
     const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
     const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
-    return { contexteTexte: "Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\) dans chaque cas.", enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [] };
+    return { contexteTexte: "Donner les coordonnées du milieu \\(I\\) du segment \\([AB]\\) dans chaque cas.", enonce: `\\(A(${A.x}\\,;\\,${A.y})\\) et \\(B(${B.x}\\,;\\,${B.y})\\).`, pa: fracSimplifiee(A.x+B.x, 2), pb: fracSimplifiee(A.y+B.y, 2), vars: [],
+      detail: detailMilieu21(milieuEntiers21(A.x, B.x), milieuEntiers21(A.y, B.y), fracD(fr(A.x+B.x, 2)), fracD(fr(A.y+B.y, 2))) };
   }},
   // 20.5 c) : memes coordonnees deja rationnelles (pas seulement un milieu qui tombe sur une
   // fraction) -- force a additionner deux fractions avant de diviser par 2 (David, 2026-09-22).
@@ -2411,7 +2558,8 @@ const generateurs = [
     const Bx = entierSigne(1,3*d), By = entierSigne(1,3*d);
     const texA = `A\\left(${fracLatexAffichage(Ax,d)}\\,;\\,${fracLatexAffichage(Ay,d)}\\right)`;
     const texB = `B\\left(${fracLatexAffichage(Bx,d)}\\,;\\,${fracLatexAffichage(By,d)}\\right)`;
-    return { enonce: `\\(${texA}\\) et \\(${texB}\\).`, pa: fracSimplifiee(Ax+Bx, 2*d), pb: fracSimplifiee(Ay+By, 2*d), vars: [] };
+    return { enonce: `\\(${texA}\\) et \\(${texB}\\).`, pa: fracSimplifiee(Ax+Bx, 2*d), pb: fracSimplifiee(Ay+By, 2*d), vars: [],
+      detail: detailMilieu21(milieuRationnels21(Ax, d, Bx, d), milieuRationnels21(Ay, d, By, d), fracD(fr(Ax+Bx, 2*d)), fracD(fr(Ay+By, 2*d))) };
   }},
   // 20.5 d) : une coordonnee parametree par m -- le milieu s'exprime alors en fonction de m
   // (David, 2026-09-22 : "une avec coordonnées rationnelles, l'autre avec paramètre").
@@ -2422,7 +2570,8 @@ const generateurs = [
     const Ax = val('Ax'), Ay = val('Ay'), Bx = val('Bx'), By = val('By');
     return {
       enonce: `\\(A(${Ax}\\,;\\,${Ay})\\) et \\(B(${Bx}\\,;\\,${By})\\), où \\(m\\) désigne un nombre réel (exprimer le résultat en fonction de \\(m\\)).`,
-      pa: milieuCoordonnee21(Ax, Bx), pb: milieuCoordonnee21(Ay, By), vars: ['m']
+      pa: milieuCoordonnee21(Ax, Bx), pb: milieuCoordonnee21(Ay, By), vars: ['m'],
+      detail: (() => { const cx = coordMilieuParam21(Ax, Bx), cy = coordMilieuParam21(Ay, By); return detailMilieu21(cx.chaine, cy.chaine, cx.final, cy.final); })()
     };
   }},
   // 20.5 e) : sens reciproque -- A et le milieu I sont connus, il faut retrouver B (David,
@@ -2432,7 +2581,8 @@ const generateurs = [
     const A = { x: entierSigne(1,6), y: entierSigne(1,6) };
     const B = { x: entierSigne(1,6), y: entierSigne(1,6) };
     const texteI = `I\\left(${fracLatexAffichage(A.x+B.x,2)}\\,;\\,${fracLatexAffichage(A.y+B.y,2)}\\right)`;
-    return { enonce: `On donne \\(A(${A.x}\\,;\\,${A.y})\\). On sait que \\(${texteI}\\) est le milieu du segment \\([AB]\\). Déterminer les coordonnées du point \\(B\\).`, pa: String(B.x), pb: String(B.y), vars: [] };
+    return { enonce: `On donne \\(A(${A.x}\\,;\\,${A.y})\\). On sait que \\(${texteI}\\) est le milieu du segment \\([AB]\\). Déterminer les coordonnées du point \\(B\\).`, pa: String(B.x), pb: String(B.y), vars: [],
+      detail: { lignes: [...lignesRetrouveB21(true, A.x, B.x), ...lignesRetrouveB21(false, A.y, B.y), `\\left(${B.x}\\,;\\,${B.y}\\right)`], final: `\\left(${B.x}\\,;\\,${B.y}\\right)` } };
   }},
 
   // ---------- 20.6 : nature d'un triangle (rectangle / isocele) -- coordonnees donnees en TEXTE
@@ -2456,12 +2606,12 @@ const generateurs = [
     const figure = genererSVGRepere(elements);
     const rectangleEnB = d2(A2,B2) + d2(B2,C2) === d2(C2,A2);
     const contexteTexte = `On donne ${texteCoordDemi('A',A2)}, ${texteCoordDemi('B',B2)} et ${texteCoordDemi('C',C2)} dans un repère orthonormé (la figure ci-dessus n'est qu'un appui, éventuellement imprécis : seul un calcul à partir des coordonnées données permet de justifier la réponse).`;
-    return { contexteTexte, contexteFigure: figure, enonce: `Le triangle \\(ABC\\) est-il rectangle en \\(B\\) ?`, reponseOuiNon: rectangleEnB };
+    return { contexteTexte, contexteFigure: figure, enonce: `Le triangle \\(ABC\\) est-il rectangle en \\(B\\) ?`, reponseOuiNon: rectangleEnB, detail: detailTriangleRectangle21(A2, B2, C2, rectangleEnB) };
   }},
   {id:"21.6 b)", type:"ouiNon", texteLibre:true, gen: () => {
     const { A2, B2, C2 } = triangle20_6;
     const isocele = d2(A2,B2) === d2(B2,C2) || d2(B2,C2) === d2(C2,A2) || d2(C2,A2) === d2(A2,B2);
-    return { enonce: `Le triangle \\(ABC\\) est-il isocèle ?`, reponseOuiNon: isocele };
+    return { enonce: `Le triangle \\(ABC\\) est-il isocèle ?`, reponseOuiNon: isocele, detail: detailTriangleIsocele21(A2, B2, C2, isocele) };
   }},
 
   // ---------- 20.7 : nature d'un quadrilatere (parallelogramme / cotes egaux) -- meme principe que
@@ -2513,12 +2663,12 @@ const generateurs = [
     const mACx = A2.x+C2.x, mACy = A2.y+C2.y, mBDx = B2.x+D2.x, mBDy = B2.y+D2.y;
     const parallelogrammeReel = (mACx === mBDx) && (mACy === mBDy);
     const contexteTexte = `On donne ${texteCoordDemi('A',A2)}, ${texteCoordDemi('B',B2)}, ${texteCoordDemi('C',C2)} et ${texteCoordDemi('D',D2)} dans un repère orthonormé (la figure ci-dessus n'est qu'un appui, éventuellement imprécis : seul un calcul à partir des coordonnées données permet de justifier la réponse).`;
-    return { contexteTexte, contexteFigure: figure, enonce: `Le quadrilatère \\(ABCD\\) est-il un parallélogramme ?`, reponseOuiNon: parallelogrammeReel };
+    return { contexteTexte, contexteFigure: figure, enonce: `Le quadrilatère \\(ABCD\\) est-il un parallélogramme ?`, reponseOuiNon: parallelogrammeReel, detail: detailParallelogramme21(A2, B2, C2, D2, parallelogrammeReel) };
   }},
   {id:"21.7 b)", type:"ouiNon", texteLibre:true, gen: () => {
     const { A2, B2, C2, D2 } = quad20_7;
     const cotesEgaux = (d2(A2,B2) === d2(B2,C2)) && (d2(B2,C2) === d2(C2,D2)) && (d2(C2,D2) === d2(D2,A2));
-    return { enonce: `Les côtés \\(AB\\), \\(BC\\), \\(CD\\) et \\(DA\\) ont-ils tous la même longueur ?`, reponseOuiNon: cotesEgaux };
+    return { enonce: `Les côtés \\(AB\\), \\(BC\\), \\(CD\\) et \\(DA\\) ont-ils tous la même longueur ?`, reponseOuiNon: cotesEgaux, detail: detailCotesEgaux21(A2, B2, C2, D2, cotesEgaux) };
   }},
 
   // ---------- 20.8 (avance) : ensemble des points equidistants d'un point A et de l'axe des
@@ -2559,7 +2709,8 @@ const generateurs = [
       contexteTexte: `On considère le point \\(A(${a}\\,;\\,${b})\\) et l'ensemble \\((E)\\) des points \\(M\\) du plan équidistants de \\(A\\) et de l'axe des abscisses (en notant \\(H\\) le projeté orthogonal de \\(M\\) sur \\((Ox)\\), tel que \\(AM=MH\\)).`,
       contexteFigure: figure,
       enonce: `Le point \\(M(${x1}\\,;\\,${M1Latex})\\) appartient-il à \\((E)\\) ?`,
-      reponseOuiNon: surE
+      reponseOuiNon: surE,
+      detail: (() => { const E = lignesEnsembleE21(a, b, x1); return { lignes: [...E.lignes, "\\text{Ordonnée de } M \\text{ donnée :}", compT21(E.y, M1Latex, surE), `\\text{Réponse : ${surE ? 'oui' : 'non'}}`], final: surE ? 'oui' : 'non' }; })()
     };
   }},
   {id:"21.8 b)", type:"num", fractionIrreductible:true, texteLibre:true, gen: () => {
@@ -2567,7 +2718,8 @@ const generateurs = [
     const dx = entierSigne(1,4);
     const x0 = a + dx;
     const reponse = fracSimplifiee(dx*dx + b*b, 2*b);
-    return { enonce: `Soit \\(M\\) un point de l'ensemble \\((E)\\). Si son abscisse est \\(x=${x0}\\), déterminer son ordonnée.`, reponse };
+    return { enonce: `Soit \\(M\\) un point de l'ensemble \\((E)\\). Si son abscisse est \\(x=${x0}\\), déterminer son ordonnée.`, reponse,
+      detail: (() => { const E = lignesEnsembleE21(a, b, x0); return { lignes: E.lignes, final: E.y }; })() };
   }},
 
   // ---------- 20.9 (avance) : A et B dependent d'un parametre m (present dans une coordonnee de
@@ -2575,17 +2727,20 @@ const generateurs = [
   // Un seul exemple (David, 2026-09-22 : "un exemple suffit") ----------
   {id:"21.9 a)", type:"ouiNon", texteLibre:true, gen: () => {
     const r = genererMilieuParametre20_9();
-    return { contexteTexte: `Les coordonnées des points \\(A\\) et \\(B\\) dépendent d'un paramètre réel \\(m\\).`, enonce: r.enonce, reponseOuiNon: r.reponseOuiNon };
+    return { contexteTexte: `Les coordonnées des points \\(A\\) et \\(B\\) dépendent d'un paramètre réel \\(m\\).`, enonce: r.enonce, reponseOuiNon: r.reponseOuiNon, detail: r.detail };
   }}
 ];
 
 
 function genererExercices() {
   tirageCarres21 = melanger(MODELES_CARRES21).slice(0, 2);
-  return generateurs.map(g => {
+  const ex = generateurs.map(g => {
     const { gen, ...modele } = g;
     return { ...modele, ...gen() };
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return ex;
 }
 
 let exercices = genererExercices();
@@ -3909,7 +4064,7 @@ function verifierTout() {
         return `<div class="correction-ligne"><span class="id">${ex.id}</span> — tableau attendu :</div>${tableCorrigeCroiseHTML(ex)}`;
       }
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

@@ -539,6 +539,19 @@ module.exports = [
     }
   },
   {
+    nom: 'le-mot-egal-ou-different-correspond-a-la-relation',
+    // « \text{Carrés égaux : } \dfrac{13}{4} = \dfrac{13}{4} », « \text{Sommes différentes : } 2 \neq 3 », « \text{Égalité vérifiée : } … » :
+    // le mot annonce la vraie relation entre les deux valeurs écrites, et le signe est celui du mot
+    motif: /\\text\{(?:Carrés|Sommes|Égalité) [^{}]* : \}/,
+    verifie: (l) => {
+      const m = l.match(/\\text\{(?:Carrés|Sommes|Égalité) (égaux|égales|vérifiée|différents|différentes|non vérifiée) : \} (.+?) (=|\\neq) (.+)$/);
+      if (!m) return false;
+      const val = (t) => math.evaluate(t.replace(/\\left|\\right/g, '').replace(/\\dfrac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))'));
+      const egalReel = Math.abs(val(m[2]) - val(m[4])) < 1e-9, annonce = /^(égaux|égales|vérifiée)$/.test(m[1]);
+      return annonce === egalReel && (m[3] === '=') === egalReel;
+    }
+  },
+  {
     nom: 'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce',
     // « \text{Parmi les individus de } B \text{, ceux de } \overline{A} \text{ :} » : le couple (X, Y) est celui d'un P_{X}(Y) de l'énoncé
     motif: /\\text\{Parmi les individus de \} .* \\text\{, ceux de \}/,
