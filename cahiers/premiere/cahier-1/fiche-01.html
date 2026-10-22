@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"1.1 a)":0.5,"1.1 b)":0.75,"1.2 a)":0.5,"1.2 b)":0.75,"1.3 a)":0.5,"1.3 b)":0.75,"1.4 a)":0.5,"1.4 b)":0.75,"1.4 c)":1,"1.4 d)":1.25,"1.5 a)":0.75,"1.5 b)":1,"1.5 c)":1.25,"1.5 d)":1.25,"1.6 a)":1.25,"1.6 b)":1.5,"1.6 c)":1.5,"1.7 a)":1,"1.7 b)":1.25,"1.8 a)":1,"1.8 b)":1,"1.9 a)":1.5,"1.9 b)":1.75,"1.10 a)":1.5,"1.10 b)":1.5,"1.10 c)":2},"bonus":["1.9 a)","1.9 b)","1.10 a)","1.10 b)","1.10 c)"]});
@@ -1125,6 +1126,106 @@ function fmtTermeCanoniqueFrac(alphaCoef, v, w){
   return `(${v}${s}${coef}${w})`;
 }
 
+// ---------- details de correction (21/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, fracD, fracTexte, fracBrute, fr } = Detail;
+// fraction {n,d} de la fiche -> fraction math.js
+const mf1 = (a) => math.fraction(a.n, a.d);
+// signe et valeur d'un nombre a ecrire APRES un terme : « +\dfrac{3}{2} », « -5 » ; rien si nul
+const sg1 = (f) => { f = math.fraction(f); return f.n === 0 ? '' : (f.s < 0 ? '-' : '+') + fracTexte(f.n, f.d); };
+// polynome en une lettre : termes [{ c (fraction ou nombre), v: 'x^{2}' | 'x' | '' }], coefficient 1 omis devant une lettre, termes nuls supprimes
+function polyF1(termes) {
+  let s = '';
+  for (const { c, v } of termes) {
+    const f = math.fraction(c); if (f.n === 0) continue;
+    const t = fracTexte(f.n, f.d), corps = (t === '1' && v) ? v : `${t}${v}`;
+    s += (f.s < 0 ? '-' : (s ? '+' : '')) + corps;
+  }
+  return s || '0';
+}
+// coefficient devant un carre : « » pour 1, « - » pour -1, fraction ou entier sinon (fraction math.js)
+const coefCarre1 = (a) => { a = math.fraction(a); return (a.n === 1 && a.d === 1) ? (a.s < 0 ? '-' : '') : fracD(a); };
+// (x - alpha)^2 : « x^{2} » si alpha = 0, « (x-3)^{2} » ou « \left(x+\dfrac{3}{2}\right)^{2} » (alpha fraction math.js)
+function carreT1(alpha, v) {
+  const al = math.fraction(alpha);
+  if (al.n === 0) return `${v}^{2}`;
+  const base = `${v}${al.s < 0 ? '+' : '-'}${fracTexte(al.n, al.d)}`;
+  return al.d === 1 ? `(${base})^{2}` : `\\left(${base}\\right)^{2}`;
+}
+// A(x - alpha)^2 + beta (fractions math.js)
+function canoniqueT1(A, alpha, beta, v = 'x') { return `${coefCarre1(A)}${carreT1(alpha, v)}${sg1(beta)}`; }
+// terme en v avec signe devant, coefficient 1 omis : « +v », « -3v », « +\dfrac{1}{2}v » ; rien si nul (fraction math.js)
+const termeLin1 = (f, v) => { f = math.fraction(f); if (f.n === 0) return ''; const t = fracTexte(f.n, f.d); return (f.s < 0 ? '-' : '+') + (t === '1' ? '' : t) + v; };
+// forme canonique de A x^2 + B x + C (fractions math.js) : factoriser A, completer le carre, regrouper ; renvoie { lignes, final, alpha, beta }
+function detailCanonique1(A, B, C, v, depart) {
+  const a = math.fraction(A), b = math.fraction(B), c = math.fraction(C), unite = a.n === 1 && a.d === 1 && a.s > 0;
+  const demi = math.divide(b, math.multiply(2, a)), alpha = math.unaryMinus(demi), carreDemi = math.multiply(demi, demi);
+  const beta = math.subtract(c, math.multiply(a, carreDemi)), cA = coefCarre1(a), carre = carreT1(alpha, v);
+  const etapes = [depart];
+  if (!unite) etapes.push(`${cA}\\left(${v}^{2}${termeLin1(math.divide(b, a), v)}\\right)${sg1(c)}`);
+  etapes.push(`${unite ? '' : cA + '\\left('}${carre}-${fracTexte(carreDemi.n, carreDemi.d)}${unite ? '' : '\\right)'}${sg1(c)}`);
+  if (!unite) etapes.push(`${cA}${carre}${sg1(math.unaryMinus(math.multiply(a, carreDemi)))}${sg1(c)}`);
+  else etapes.push(`${carre}${sg1(math.unaryMinus(carreDemi))}${sg1(c)}`);
+  etapes.push(canoniqueT1(a, alpha, beta, v));
+  return { lignes: [etapes.filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ')], final: canoniqueT1(a, alpha, beta, v), alpha, beta };
+}
+// coefficient (valeur absolue, fraction math.js) devant w : « \lambda », « 3\lambda », « \dfrac{1}{4}\lambda »
+const lamAbs1 = (f, w) => { f = math.abs(math.fraction(f)); const t = fracTexte(f.n, f.d); return (t === '1' ? '' : t) + w; };
+// idem avec le signe devant : « +\dfrac{1}{4}\lambda », « -\lambda » ; rien si nul
+const sgL1 = (f, w) => { f = math.fraction(f); return f.n === 0 ? '' : (f.s < 0 ? '-' : '+') + lamAbs1(f, w); };
+// fraction positive de la forme « \dfrac{n}{d\lambda} » (d omis s'il vaut 1)
+const fracSurLam1 = (f) => { f = math.abs(math.fraction(f)); return `\\dfrac{${f.n}}{${f.d === 1 ? '' : f.d}\\lambda}`; };
+// forme canonique de A x^2 + B x + C ou le parametre lambda intervient (A = lambda, ou B = Bc lambda, ...) ;
+// cas « lambda dans B » : A entier ou fraction, B = Bc*lambda, C quelconque (terme ajoute tel quel : texteC) ; renvoie { lignes, final }
+function detailCanoniqueLambdaB1(A, Bc, texteC, depart) {
+  const a = math.fraction(A), bc = math.fraction(Bc), cA = coefCarre1(a);
+  const demi = math.divide(bc, math.multiply(2, a)), cdeMi = math.multiply(math.multiply(demi, demi), a);
+  const carre = `\\left(x${sgL1(demi, '\\lambda')}\\right)^{2}`;
+  const etapes = [depart,
+    `${cA}\\left(x^{2}${sgL1(math.divide(bc, a), '\\lambda')} x\\right)${texteC}`,
+    `${cA}\\left(${carre}-\\left(${lamAbs1(demi, '\\lambda')}\\right)^{2}\\right)${texteC}`,
+    `${cA}${carre}${sgL1(math.unaryMinus(cdeMi), '\\lambda^{2}')}${texteC}`];
+  return { lignes: [etapes.filter((t, i, tab) => i === 0 || t !== tab[i - 1]).join(' = ')], final: etapes[3] };
+}
+
+// somme de fractions (math.js) ecrite avec les signes, termes nuls omis : « -3+9+4 »
+function sommeF1(liste) {
+  let s = '';
+  for (const t of liste) { const f = math.fraction(t); if (f.n === 0) continue; s += s ? sg1(f) : fracD(f); }
+  return s || '0';
+}
+// « m rel 0 est vrai/faux » : conclusion d'un vrai-faux a l'aide du minimum m de l'expression ; v = lettre, alpha = abscisse du minimum
+function conclusionVraiFaux1(m, rel, vrai, v, alpha) {
+  const ecrit = rel === '>' ? '\\gt' : '\\geqslant';
+  return vrai
+    ? [`${fracD(m)} ${ecrit} 0 \\text{ est vrai}`, `\\text{L'inégalité est vraie pour tout réel } ${v}`, '\\text{Réponse : Vrai}']
+    : [`${fracD(m)} ${ecrit} 0 \\text{ est faux}`, `\\text{L'inégalité est fausse pour } ${v} \\text{ égal à } ${fracD(alpha)}`, '\\text{Réponse : Faux}'];
+}
+// vrai-faux sur une expression de forme canonique a(v-alpha)^2+beta avec a > 0 : lignes communes, de la forme canonique a la conclusion
+function detailVraiFaux1(canon, A, v, rel, vrai) {
+  const a = math.fraction(A), carre = carreT1(canon.alpha, v), beta = canon.beta, lignes = [...canon.lignes];
+  lignes.push(`\\text{Un carré est positif ou nul : } ${carre} \\geqslant 0`);
+  if (beta.n !== 0) lignes.push(`${coefCarre1(a)}${carre}${sg1(beta)} \\geqslant ${fracD(beta)}`);
+  lignes.push(`\\text{Le minimum de l'expression est } ${fracD(beta)}`);
+  lignes.push(`\\text{Il est atteint pour } ${v} \\text{ égal à } ${fracD(canon.alpha)}`);
+  lignes.push(...conclusionVraiFaux1(beta, rel, vrai, v, canon.alpha));
+  return { lignes, final: vrai ? 'Vrai' : 'Faux' };
+}
+// cercle : x^2 + Bx + y^2 + B'y = membreDroit (fractions math.js, centre et rayon) -> forme canonique, centre, rayon
+// (on complete le carre en x puis en y, en ajoutant a chaque fois le meme nombre aux deux membres ; yPart = les termes en y du premier membre)
+function detailCercle1(departGauche, yPart, membreDroit, cx, cy, r) {
+  const X = math.fraction(cx), Y = math.fraction(cy), R = math.fraction(r), md = math.fraction(membreDroit);
+  const X2 = math.multiply(X, X), Y2 = math.multiply(Y, Y), R2 = math.multiply(R, R), avecX = carreT1(X, 'x'), avecY = carreT1(Y, 'y');
+  const lignes = [`${departGauche} = ${fracD(md)}`];
+  lignes.push(`\\iff ${avecX}+${yPart} = ${sommeF1([md, X2])}`);
+  const partiel = math.add(md, X2);
+  lignes.push(`\\iff ${avecX}+${avecY} = ${sommeF1([partiel, Y2])}`);
+  lignes.push(`\\text{Calcul : } ${sommeF1([partiel, Y2])} = ${fracD(R2)}`);
+  lignes.push(`\\text{Le rayon est } \\sqrt{${fracD(R2)}} = ${fracD(R)}`);
+  const final = `\\Omega(${fracD(X)}\\,;\\,${fracD(Y)}) \\text{ et } r=${fracD(R)}`;
+  lignes.push(final);
+  return { lignes, final };
+}
+
 // Section "Quelques automatismes" (1.1-1.3) ramenee de 12 a 6 questions le 30/09/2026
 // (regle standing de David : 6 au total, reparties selon le vrai gradient de chaque calcul).
 // Chacun des trois calculs couvre deux familles ou deux niveaux distincts et aucun n'a de
@@ -1156,8 +1257,12 @@ function genGroupe1_1() {
   const pa=alea(2,5), qa=alea(2,9);
   const [pe,qe] = aleaParmi(PAIRES_COPREMIERES); const re=alea(2,5);
   return [
-    {id:"1.1 a)", type:"alg", enonce:`(${pa}x+${qa})^2`, reponse: ecrireDev([{c:F(pa*pa),v:'x^2'},{c:F(2*pa*qa),v:'x'},{c:F(qa*qa),v:''}])},
-    {id:"1.1 b)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^2`, reponse: ecrireDev([{c:F(pe*pe,qe*qe),v:'z^2'},{c:F(2*pe*re,qe),v:'z'},{c:F(re*re),v:''}])}
+    {id:"1.1 a)", type:"alg", enonce:`(${pa}x+${qa})^2`, reponse: ecrireDev([{c:F(pa*pa),v:'x^2'},{c:F(2*pa*qa),v:'x'},{c:F(qa*qa),v:''}]),
+      detail: (() => { const fin = polyF1([{c:pa*pa,v:'x^{2}'},{c:2*pa*qa,v:'x'},{c:qa*qa,v:''}]);
+        return { lignes: [`(${pa}x+${qa})^{2} = (${pa}x)^{2}+2\\times ${pa}x\\times ${qa}+${qa}^{2} = ${fin}`], final: fin }; })() },
+    {id:"1.1 b)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^2`, reponse: ecrireDev([{c:F(pe*pe,qe*qe),v:'z^2'},{c:F(2*pe*re,qe),v:'z'},{c:F(re*re),v:''}]),
+      detail: (() => { const fin = polyF1([{c:fr(pe*pe,qe*qe),v:'z^{2}'},{c:fr(2*pe*re,qe),v:'z'},{c:re*re,v:''}]), brut = `\\dfrac{${pe*pe}}{${qe*qe}}z^{2}+\\dfrac{${2*pe*re}}{${qe}}z+${re*re}`;
+        return { lignes: [[`\\left(\\dfrac{${pe}}{${qe}}z+${re}\\right)^{2}`, `\\left(\\dfrac{${pe}}{${qe}}z\\right)^{2}+2\\times \\dfrac{${pe}}{${qe}}z\\times ${re}+${re}^{2}`, brut, fin].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fin }; })() }
   ];
 }
 
@@ -1169,8 +1274,10 @@ function genGroupe1_2() {
   const ka = alea(2,12);
   const pe = alea(2,5), ke = alea(2,9);
   return [
-    {id:"1.2 a)", type:"alg", enonce:`x^2-${ka*ka}`, reponse:`(x-${ka})*(x+${ka})`},
-    {id:"1.2 b)", type:"alg", enonce:`${pe*pe}v^2-${2*pe*ke}v+${ke*ke}`, reponse:`(${pe}*v-${ke})^2`}
+    {id:"1.2 a)", type:"alg", enonce:`x^2-${ka*ka}`, reponse:`(x-${ka})*(x+${ka})`,
+      detail: { lignes: [`x^{2}-${ka*ka} = x^{2}-${ka}^{2} = (x-${ka})(x+${ka})`], final: `(x-${ka})(x+${ka})` } },
+    {id:"1.2 b)", type:"alg", enonce:`${pe*pe}v^2-${2*pe*ke}v+${ke*ke}`, reponse:`(${pe}*v-${ke})^2`,
+      detail: { lignes: [`${pe*pe}v^{2}-${2*pe*ke}v+${ke*ke} = (${pe}v)^{2}-2\\times ${pe}v\\times ${ke}+${ke}^{2} = (${pe}v-${ke})^{2}`], final: `(${pe}v-${ke})^{2}` } }
   ];
 }
 
@@ -1181,8 +1288,10 @@ function genGroupe1_3() {
   const kb = aleaParmi([2,3,5,6,7,8,10,11,12,13,14,15,17,18,19,20]);
   const pc = alea(2,5), resc = alea(2,9), qc = pc*resc;
   return [
-    {id:"1.3 a)", type:"num", enonce:`z^2=${kb}`, reponse:`{-sqrt(${kb});sqrt(${kb})}`},
-    {id:"1.3 b)", type:"num", enonce:`(${pc}t+${qc})^2=0`, reponse:`{-${resc}}`}
+    {id:"1.3 a)", type:"num", enonce:`z^2=${kb}`, reponse:`{-sqrt(${kb});sqrt(${kb})}`,
+      detail: { lignes: [`z^{2} = ${kb}`, `\\iff z = -\\sqrt{${kb}} \\text{ ou } z = \\sqrt{${kb}}`, `S = \\{-\\sqrt{${kb}}\\,;\\,\\sqrt{${kb}}\\}`], final: `\\{-\\sqrt{${kb}}\\,;\\,\\sqrt{${kb}}\\}` } },
+    {id:"1.3 b)", type:"num", enonce:`(${pc}t+${qc})^2=0`, reponse:`{-${resc}}`,
+      detail: { lignes: [`(${pc}t+${qc})^{2} = 0`, '\\text{Un carré est nul si et seulement si}', '\\text{le nombre élevé au carré est nul :}', `\\iff ${pc}t+${qc} = 0`, `\\iff ${pc}t = -${qc}`, `\\iff t = -${resc}`, `S = \\{-${resc}\\}`], final: `\\{-${resc}\\}` } }
   ];
 }
 
@@ -1203,10 +1312,19 @@ function genGroupe1_4() {
   const [pe,qe]=aleaParmi(PAIRES_COPREMIERES), [re,se]=aleaParmi(PAIRES_COPREMIERES), te=aleaNonNul(-4,4);
   const constE = F(re*re*te===0?re*re: re*re + te*se*se, se*se); // (r/s)^2+t exact
   return [
-    {id:"1.4 a)", type:"alg", enonce:`(x-${pa})^2${fmtConst(qa)}`, reponse: ecrireDev([{c:F(1),v:'x^2'},{c:F(-2*pa),v:'x'},{c:F(pa*pa+qa),v:''}])},
-    {id:"1.4 b)", type:"alg", enonce:`${Ab}(x+${pb})^2${fmtConst(qb)}`, reponse: ecrireDev([{c:F(Ab),v:'x^2'},{c:F(2*Ab*pb),v:'x'},{c:F(Ab*pb*pb+qb),v:''}])},
-    {id:"1.4 c)", type:"alg", enonce:`\\sqrt{${md}}(${nd}x-${pd})^2${fmtConst(-kd)}\\sqrt{${md}}`, reponse: ecrireDev([{c:F(nd*nd),v:'x^2',r:`sqrt(${md})`},{c:F(-2*nd*pd),v:'x',r:`sqrt(${md})`},{c:F(pd*pd-kd),v:'',r:`sqrt(${md})`}])},
-    {id:"1.4 d)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^2${fmtConst(te)}`, reponse: ecrireDev([{c:F(pe*pe,qe*qe),v:'x^2'},{c:F(2*pe*re,qe*se),v:'x'},{c:constE,v:''}])}
+    {id:"1.4 a)", type:"alg", enonce:`(x-${pa})^2${fmtConst(qa)}`, reponse: ecrireDev([{c:F(1),v:'x^2'},{c:F(-2*pa),v:'x'},{c:F(pa*pa+qa),v:''}]),
+      detail: (() => { const fin = polyF1([{c:1,v:'x^{2}'},{c:-2*pa,v:'x'},{c:pa*pa+qa,v:''}]);
+        return { lignes: [[`(x-${pa})^{2}${fmtConst(qa)}`, `x^{2}-2\\times x\\times ${pa}+${pa}^{2}${fmtConst(qa)}`, `x^{2}-${2*pa}x+${pa*pa}${fmtConst(qa)}`, fin].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fin }; })() },
+    {id:"1.4 b)", type:"alg", enonce:`${Ab}(x+${pb})^2${fmtConst(qb)}`, reponse: ecrireDev([{c:F(Ab),v:'x^2'},{c:F(2*Ab*pb),v:'x'},{c:F(Ab*pb*pb+qb),v:''}]),
+      detail: (() => { const fin = polyF1([{c:Ab,v:'x^{2}'},{c:2*Ab*pb,v:'x'},{c:Ab*pb*pb+qb,v:''}]);
+        return { lignes: [[`${Ab}(x+${pb})^{2}${fmtConst(qb)}`, `${Ab}\\left(x^{2}+2\\times x\\times ${pb}+${pb}^{2}\\right)${fmtConst(qb)}`, `${Ab}(x^{2}+${2*pb}x+${pb*pb})${fmtConst(qb)}`, polyF1([{c:Ab,v:'x^{2}'},{c:2*Ab*pb,v:'x'},{c:Ab*pb*pb,v:''}]) + fmtConst(qb), fin].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fin }; })() },
+    {id:"1.4 c)", type:"alg", enonce:`\\sqrt{${md}}(${nd}x-${pd})^2${fmtConst(-kd)}\\sqrt{${md}}`, reponse: ecrireDev([{c:F(nd*nd),v:'x^2',r:`sqrt(${md})`},{c:F(-2*nd*pd),v:'x',r:`sqrt(${md})`},{c:F(pd*pd-kd),v:'',r:`sqrt(${md})`}]),
+      detail: (() => { const rm = `\\sqrt{${md}}`, fin = polyF1([{c:nd*nd,v:`${rm}x^{2}`},{c:-2*nd*pd,v:`${rm}x`},{c:pd*pd-kd,v:rm}]), kr = `${kd === 1 ? '' : kd}${rm}`;
+        return { lignes: [[`${rm}(${nd}x-${pd})^{2}-${kd === 1 ? '' : kd}${rm}`, `${rm}\\left((${nd}x)^{2}-2\\times ${nd}x\\times ${pd}+${pd}^{2}\\right)-${kr}`, `${rm}(${nd*nd}x^{2}-${2*nd*pd}x+${pd*pd})-${kr}`, `${polyF1([{c:nd*nd,v:`${rm}x^{2}`},{c:-2*nd*pd,v:`${rm}x`},{c:pd*pd,v:rm}])}-${kr}`, fin].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fin }; })() },
+    {id:"1.4 d)", type:"alg", enonce:`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^2${fmtConst(te)}`, reponse: ecrireDev([{c:F(pe*pe,qe*qe),v:'x^2'},{c:F(2*pe*re,qe*se),v:'x'},{c:constE,v:''}]),
+      detail: (() => { const fin = polyF1([{c:fr(pe*pe,qe*qe),v:'x^{2}'},{c:fr(2*pe*re,qe*se),v:'x'},{c:fr(re*re+te*se*se,se*se),v:''}]);
+        const brut = `\\dfrac{${pe*pe}}{${qe*qe}}x^{2}+\\dfrac{${2*pe*re}}{${qe*se}}x+\\dfrac{${re*re}}{${se*se}}${fmtConst(te)}`;
+        return { lignes: [[`\\left(\\dfrac{${pe}}{${qe}}x+\\dfrac{${re}}{${se}}\\right)^{2}${fmtConst(te)}`, `\\left(\\dfrac{${pe}}{${qe}}x\\right)^{2}+2\\times \\dfrac{${pe}}{${qe}}x\\times \\dfrac{${re}}{${se}}+\\left(\\dfrac{${re}}{${se}}\\right)^{2}${fmtConst(te)}`, brut, fin].filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final: fin }; })() }
   ];
 }
 
@@ -1224,7 +1342,8 @@ function genGroupe1_5() {
   function itemEntier(lettre, A) {
     const alpha = aleaNonNul(-5,5), beta = alea(-9,9);
     const B = -2*A*alpha, C = A*alpha*alpha+beta;
-    return {id:`1.5 ${lettre})`, type:"alg", enonce:`${A}x^2${fmtLin(B,'x')}${fmtConst(C)}`, reponse:`${A}*(x${sgn(-alpha)}${Math.abs(alpha)})^2${fmtConst(beta)}`};
+    return {id:`1.5 ${lettre})`, type:"alg", enonce:`${A}x^2${fmtLin(B,'x')}${fmtConst(C)}`, reponse:`${A}*(x${sgn(-alpha)}${Math.abs(alpha)})^2${fmtConst(beta)}`,
+      detail: detailCanonique1(A, B, C, 'x', polyF1([{c:A,v:'x^{2}'},{c:B,v:'x'},{c:C,v:''}]))};
   }
   function itemFraction(lettre, Afr, Bfr, Cfr) {
     const {alpha,beta} = completerCarreExact(Afr,Bfr,Cfr);
@@ -1235,10 +1354,12 @@ function genGroupe1_5() {
     const enonceB = Bfr.d===1?fmtLin(Bfr.n,'x'):(sgn(Bfr.n)+`\\dfrac{${Math.abs(Bfr.n)}}{${Bfr.d}}x`);
     const enonceC = Cfr.d===1?fmtConst(Cfr.n):(sgn(Cfr.n)+`\\dfrac{${Math.abs(Cfr.n)}}{${Cfr.d}}`);
     const reponse = `${Afr.n<0?'-':''}${corpsA}${fmtFracApres(beta)}`;
-    return {id:`1.5 ${lettre})`, type:"alg", enonce:enonceA+enonceB+enonceC, reponse};
+    return {id:`1.5 ${lettre})`, type:"alg", enonce:enonceA+enonceB+enonceC, reponse,
+      detail: detailCanonique1(mf1(Afr), mf1(Bfr), mf1(Cfr), 'x', polyF1([{c:mf1(Afr),v:'x^{2}'},{c:mf1(Bfr),v:'x'},{c:mf1(Cfr),v:''}]))};
   }
   return [
-    {id:"1.5 a)", type:"alg", enonce:`x^2${fmtLin(B1,'x')}${fmtConst(C1)}`, reponse:`(x${sgn(-alpha1)}${Math.abs(alpha1)})^2${fmtConst(beta1)}`},
+    {id:"1.5 a)", type:"alg", enonce:`x^2${fmtLin(B1,'x')}${fmtConst(C1)}`, reponse:`(x${sgn(-alpha1)}${Math.abs(alpha1)})^2${fmtConst(beta1)}`,
+      detail: detailCanonique1(1, B1, C1, 'x', polyF1([{c:1,v:'x^{2}'},{c:B1,v:'x'},{c:C1,v:''}]))},
     itemEntier('b', aleaParmi([2,3,4,9])),
     itemEntier('c', aleaParmi([-2,-3,-4,-9])),
     itemFraction('d', F(1,aleaParmi([2,3,4])), F(1), F(-alea(1,9)))
@@ -1260,13 +1381,20 @@ function genGroupe1_6() {
   const betaLam2A = F(-Bcoefa*Bcoefa, 4*Aa);
   const Ca = alea(-6,6);
   const itemA = {id:"1.6 a)", type:"alg", enonce:`${Aa}x^2${sgn(Bcoefa)}${Math.abs(Bcoefa)===1?'':Math.abs(Bcoefa)}\\lambda x${fmtConst(Ca)}`,
-    reponse:`${Aa}*${fmtTermeCanoniqueFrac(alphaCoefA,'x','lam')}^2${fmtFracFoisVar(betaLam2A,'lam^2')}${fmtConst(Ca)}`};
+    reponse:`${Aa}*${fmtTermeCanoniqueFrac(alphaCoefA,'x','lam')}^2${fmtFracFoisVar(betaLam2A,'lam^2')}${fmtConst(Ca)}`,
+    detail: detailCanoniqueLambdaB1(Aa, Bcoefa, fmtConst(Ca), `${Aa}x^{2}${sgL1(Bcoefa, '\\lambda')} x${fmtConst(Ca)}`)};
   // b) A=lambda, B=entier, C=entier
   const Bc = aleaNonNul(-9,9), Cc = alea(-9,9);
   const alphaCoefC = F(-Bc,2); // alpha = alphaCoefC / lam
   const betaCoefC = F(-Bc*Bc,4); // coeff de 1/lam dans beta
   const itemB = {id:"1.6 b)", type:"alg", enonce:`\\lambda x^2${fmtLin(Bc,'x')}${fmtConst(Cc)}`,
-    reponse:`lam*(x${alphaCoefC.n>=0?'-':'+'}${fracStr(fracAbs(alphaCoefC))}/lam)^2${sgn(betaCoefC.n)}${fracStr(fracAbs(betaCoefC))}/lam${fmtConst(Cc)}`};
+    reponse:`lam*(x${alphaCoefC.n>=0?'-':'+'}${fracStr(fracAbs(alphaCoefC))}/lam)^2${sgn(betaCoefC.n)}${fracStr(fracAbs(betaCoefC))}/lam${fmtConst(Cc)}`,
+    detail: (() => { const sB = Bc < 0 ? '-' : '+', aB = Math.abs(Bc), cst = fmtConst(Cc), ab = fracSurLam1(mf1(alphaCoefC)), be = fracSurLam1(mf1(betaCoefC));
+      const final = `\\lambda\\left(x${alphaCoefC.n >= 0 ? '-' : '+'}${ab}\\right)^{2}-${be}${cst}`;
+      const etapes = [`\\lambda x^{2}${fmtLin(Bc, 'x')}${cst}`, `\\lambda\\left(x^{2}${sB}\\dfrac{${aB}}{\\lambda}x\\right)${cst}`,
+        `\\lambda\\left(\\left(x${sB}\\dfrac{${aB}}{2\\lambda}\\right)^{2}-\\left(\\dfrac{${aB}}{2\\lambda}\\right)^{2}\\right)${cst}`,
+        `\\lambda\\left(x${sB}\\dfrac{${aB}}{2\\lambda}\\right)^{2}-\\lambda\\times \\dfrac{${aB*aB}}{${4}\\lambda^{2}}${cst}`, final];
+      return { lignes: [etapes.filter((t, i, tab) => i === 0 || t !== tab[i-1]).join(' = ')], final }; })()};
   // c) A=1/m, B=Bcoef*lambda, C=Ccoef*lambda (pas de constante pure)
   const mb = aleaParmi([2,3,4]);
   const [Bpb,Bqb] = aleaParmi(PAIRES_COPREMIERES);
@@ -1275,7 +1403,9 @@ function genGroupe1_6() {
   const alphaCoefB = fracMul(fracNeg(Bcoefb), F(mb,2));
   const betaLam2B = fracNeg(fracMul(fracMul(Bcoefb,Bcoefb), F(mb,4)));
   const itemC = {id:"1.6 c)", type:"alg", enonce:`\\dfrac{1}{${mb}}x^2+\\dfrac{${Bpb}\\lambda}{${Bqb}}x+\\dfrac{${Cpb}\\lambda}{${Cqb}}`,
-    reponse:`1/${mb}*${fmtTermeCanoniqueFrac(alphaCoefB,'x','lam')}^2${fmtFracFoisVar(betaLam2B,'lam^2')}${fmtFracFoisVar(Ccoefb,'lam')}`};
+    reponse:`1/${mb}*${fmtTermeCanoniqueFrac(alphaCoefB,'x','lam')}^2${fmtFracFoisVar(betaLam2B,'lam^2')}${fmtFracFoisVar(Ccoefb,'lam')}`,
+    detail: detailCanoniqueLambdaB1(fr(1, mb), mf1(Bcoefb), sgL1(mf1(Ccoefb), '\\lambda'),
+      `\\dfrac{1}{${mb}}x^{2}+\\dfrac{${Bpb}\\lambda}{${Bqb}}x+\\dfrac{${Cpb}\\lambda}{${Cqb}}`)};
   return [itemA, itemB, itemC];
 }
 
@@ -1299,18 +1429,28 @@ function genGroupe1_9() {
     const opAff = op==='\\geqslant' ? '\\geqslant' : '>';
     return {id:`1.9 ${lettre})`, type:"vraifaux",
       enonce:`\\forall ${varName}\\in\\mathbb{R},\\ ${varName}^2${fmtLin(B,varName)}${fmtConst(C-T)}${opAff}0`,
-      estVrai};
+      estVrai,
+      detail: detailVraiFaux1(detailCanonique1(1, B, C - T, varName, polyF1([{c:1,v:`${varName}^{2}`},{c:B,v:varName},{c:C - T,v:''}])), 1, varName, op === '\\geqslant' ? '>=' : '>', estVrai)};
   }
   const ea = seuilConstant('a','x', aleaParmi(['\\geqslant','>']));
   // b (ex-c) : quadratique compare a quadratique, 3z+z^2 (op) q*z^2+r style
   const qc = aleaParmi([2,3,4]), pc = aleaNonNul(-6,6), rc = alea(-9,9);
+  const pz = pc === 1 ? 'z' : pc === -1 ? '-z' : `${pc}z`;   // jamais « 1z » ni « -1z »
   const opc = aleaParmi(['<','\\leqslant']);
   const Ac=F(qc-1), Bc=F(-pc), Cc=F(rc);
   const {beta:betaC} = completerCarreExact(Ac,Bc,Cc);
   const estVraiC = opc==='<' ? betaC.n>0 : betaC.n>=0;
   const eb = {id:"1.9 b)", type:"vraifaux",
-    enonce:`\\forall z\\in\\mathbb{R},\\ ${pc}z+z^2${opc}${qc}z^2${fmtConst(rc)}`,
-    estVrai: estVraiC};
+    enonce:`\\forall z\\in\\mathbb{R},\\ ${pz}+z^2${opc}${qc}z^2${fmtConst(rc)}`,
+    estVrai: estVraiC,
+    detail: (() => {
+      const op = opc === '<' ? '\\lt' : '\\leqslant', diff = `${qc}z^{2}${fmtConst(rc)}-\\left(${pz}+z^{2}\\right)`, deploye = `${qc}z^{2}${fmtConst(rc)}${pc > 0 ? '-' : '+'}${Math.abs(pc) === 1 ? '' : Math.abs(pc)}z-z^{2}`;
+      const reduit = polyF1([{c:qc - 1,v:'z^{2}'},{c:-pc,v:'z'},{c:rc,v:''}]);
+      const canon = detailCanonique1(qc - 1, -pc, rc, 'z', reduit);
+      const debut = [`${pz}+z^{2} ${op} ${qc}z^{2}${fmtConst(rc)}`, `\\iff 0 ${op} ${diff}`, `${diff} = ${deploye} = ${reduit}`];
+      const d = detailVraiFaux1(canon, qc - 1, 'z', opc === '<' ? '>' : '>=', estVraiC);
+      return { lignes: [...debut, ...d.lignes], final: d.final };
+    })()};
   return [ea,eb];
 }
 
@@ -1321,7 +1461,11 @@ function genGroupe1_10() {
     const Bx = -2*cx, By = -2*cy, C = cx*cx+cy*cy-r*r;
     return {id:`1.10 ${lettre})`, type:"cercle",
       enonce:`x^2${fmtLin(Bx,'x')}+y^2${fmtLin(By,'y')}${fmtConst(C)}=0`,
-      cx, cy, r};
+      cx, cy, r,
+      detail: (() => {
+        const gauche = `x^{2}${fmtLin(Bx,'x')}+y^{2}${fmtLin(By,'y')}`, d = detailCercle1(gauche, `y^{2}${fmtLin(By,'y')}`, -C, cx, cy, r);
+        return { lignes: [`${gauche}${fmtConst(C)} = 0`, `\\iff ${d.lignes[0]}`, ...d.lignes.slice(1)], final: d.final };
+      })()};
   }
   const cxF = F(aleaNonNul(-3,3), aleaParmi([2,3])), cyF = F(aleaNonNul(-3,3), aleaParmi([2,3]));
   const r3 = 1;
@@ -1329,7 +1473,8 @@ function genGroupe1_10() {
   const C3 = fracSub(fracAdd(fracMul(cxF,cxF), fracMul(cyF,cyF)), F(r3*r3));
   const item3 = {id:"1.10 c)", type:"cercle",
     enonce:`x^2+y^2${fmtFracFoisVar(Bx3,'x')}${fmtFracFoisVar(By3,'y')}=${fracStr(fracNeg(C3))}`,
-    cx: cxF.n/cxF.d, cy: cyF.n/cyF.d, r: r3};
+    cx: cxF.n/cxF.d, cy: cyF.n/cyF.d, r: r3,
+    detail: detailCercle1(polyF1([{c:1,v:'x^{2}'},{c:1,v:'y^{2}'},{c:mf1(Bx3),v:'x'},{c:mf1(By3),v:'y'}]), polyF1([{c:1,v:'y^{2}'},{c:mf1(By3),v:'y'}]), mf1(fracNeg(C3)), mf1(cxF), mf1(cyF), r3)};
   return [itemEntier('a'), itemEntier('b'), item3];
 }
 
@@ -1350,7 +1495,10 @@ function genererExercices() {
   const debut = generateursAvantQCM.flatMap(g => g());
   const graphiques = genererParametresGraphiques();
   const fin = generateursApresQCM.flatMap(g => g());
-  return [...debut, ...graphiques, ...fin];
+  const tous = [...debut, ...graphiques, ...fin];
+  Detail.preparer(tous);   // « < » des étapes : \lt
+  Detail.couper(tous, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return tous;
 }
 
 // Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
@@ -2565,7 +2713,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
@@ -3346,11 +3494,23 @@ function genererParametresGraphiques() {
   const pqr8b = aleaParmi(PANEL_1_8B);
   paramsGraphiques.g1_8b = genererCandidats(pqr8b.p, pqr8b.q, pqr8b.r, 4);
 
+  // details : 1.7 = lecture du sommet puis forme canonique correspondante ; 1.8 = forme canonique du trinome puis sommet et sens de la parabole
+  const detail17 = (p) => ({
+    lignes: ['\\text{La forme canonique est } a(x-\\alpha)^{2}+\\beta', '\\text{Le sommet est } S(\\alpha\\,;\\,\\beta)',
+      `\\text{Sur la courbe, le sommet est } S(${p.alpha}\\,;\\,${p.beta})`,
+      `\\text{Proposition : } ${canoniqueT1(mf1(p.a), p.alpha, p.beta)}`, `\\text{Réponse : } ${p.bonneReponse}`],
+    final: p.bonneReponse });
+  const detail18 = (p) => {
+    const a = math.fraction(p.p), canon = detailCanonique1(a, math.fraction(p.q), math.fraction(p.r), 'x', polyF1([{c:a,v:'x^{2}'},{c:math.fraction(p.q),v:'x'},{c:math.fraction(p.r),v:''}]));
+    return { lignes: [...canon.lignes, `\\text{Le sommet est } S(${fracD(canon.alpha)}\\,;\\,${fracD(canon.beta)})`,
+      a.s > 0 ? `${fracD(a)} \\gt 0 \\text{ : parabole tournée vers le haut}` : `${fracD(a)} \\lt 0 \\text{ : parabole tournée vers le bas}`,
+      `\\text{Réponse : figure } ${p.bonneReponse}`], final: p.bonneReponse };
+  };
   return [
-    {id:"1.7 a)", type:"qcm", bonneReponse: paramsGraphiques.g1_7a.bonneReponse},
-    {id:"1.7 b)", type:"qcm", bonneReponse: paramsGraphiques.g1_7b.bonneReponse},
-    {id:"1.8 a)", type:"qcm", bonneReponse: paramsGraphiques.g1_8a.bonneReponse},
-    {id:"1.8 b)", type:"qcm", bonneReponse: paramsGraphiques.g1_8b.bonneReponse}
+    {id:"1.7 a)", type:"qcm", bonneReponse: paramsGraphiques.g1_7a.bonneReponse, detail: detail17(paramsGraphiques.g1_7a)},
+    {id:"1.7 b)", type:"qcm", bonneReponse: paramsGraphiques.g1_7b.bonneReponse, detail: detail17(paramsGraphiques.g1_7b)},
+    {id:"1.8 a)", type:"qcm", bonneReponse: paramsGraphiques.g1_8a.bonneReponse, detail: detail18(paramsGraphiques.g1_8a)},
+    {id:"1.8 b)", type:"qcm", bonneReponse: paramsGraphiques.g1_8b.bonneReponse, detail: detail18(paramsGraphiques.g1_8b)}
   ];
 }
 

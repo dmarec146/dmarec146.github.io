@@ -386,6 +386,28 @@ const ESSAIS = {
     [true, '\\text{Égalité non vérifiée : } 15 \\neq \\dfrac{29}{2}', {}, env('')],
     [false, '\\text{Égalité vérifiée : } 15 \\neq \\dfrac{29}{2}', {}, env('')]
   ],
+  'la-parabole-est-tournee-dans-le-sens-du-signe-du-coefficient': [
+    [true, '3 \\gt 0 \\text{ : parabole tournée vers le haut}', {}, env('')],
+    [true, '-\\dfrac{1}{2} \\lt 0 \\text{ : parabole tournée vers le bas}', {}, env('')],
+    [false, '-2 \\lt 0 \\text{ : parabole tournée vers le haut}', {}, env('')],
+    [false, '\\dfrac{3}{2} \\gt 0 \\text{ : parabole tournée vers le bas}', {}, env('')],
+    [false, '-2 \\gt 0 \\text{ : parabole tournée vers le haut}', {}, env('')]
+  ],
+  'la-comparaison-du-minimum-est-annoncee-vraie-ou-fausse-comme-elle-l-est': [
+    [true, '3 \\gt 0 \\text{ est vrai}', {}, env('')],
+    [true, '-\\dfrac{3}{2} \\geqslant 0 \\text{ est faux}', {}, env('')],
+    [true, '0 \\geqslant 0 \\text{ est vrai}', {}, env('')],
+    [true, '0 \\gt 0 \\text{ est faux}', {}, env('')],
+    [false, '0 \\gt 0 \\text{ est vrai}', {}, env('')],
+    [false, '-2 \\geqslant 0 \\text{ est vrai}', {}, env('')],
+    [false, '3 \\gt 0 \\text{ est faux}', {}, env('')]
+  ],
+  'la-conclusion-vrai-faux-est-celle-de-l-exercice': [
+    [true, '\\text{L\'inégalité est vraie pour tout réel } x', { estVrai: true }, env('')],
+    [true, '\\text{L\'inégalité est fausse pour } x \\text{ égal à } 2', { estVrai: false }, env('')],
+    [false, '\\text{L\'inégalité est vraie pour tout réel } z', { estVrai: false }, env('')],
+    [false, '\\text{L\'inégalité est fausse pour } z \\text{ égal à } \\dfrac{1}{2}', { estVrai: true }, env('')]
+  ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],

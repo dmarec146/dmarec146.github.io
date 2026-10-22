@@ -605,6 +605,37 @@ module.exports = [
     }
   },
   {
+    nom: 'la-parabole-est-tournee-dans-le-sens-du-signe-du-coefficient',
+    // « 3 \gt 0 \text{ : parabole tournée vers le haut} », « -\dfrac{1}{2} \lt 0 \text{ : parabole tournée vers le bas} »
+    motif: /parabole tournée vers le (?:haut|bas)/,
+    verifie: (l) => {
+      const m = l.match(/^(-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) (\\gt|\\lt) 0 \\text\{ : parabole tournée vers le (haut|bas)\}$/);
+      if (!m) return false;
+      const v = math.evaluate(m[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')'));
+      return (m[2] === '\\gt') === (v > 0) && (m[3] === 'haut') === (v > 0);
+    }
+  },
+  {
+    nom: 'la-comparaison-du-minimum-est-annoncee-vraie-ou-fausse-comme-elle-l-est',
+    // « -\dfrac{3}{2} \geqslant 0 \text{ est faux} » : la comparaison du minimum à 0 est vraie ou fausse comme annoncé
+    motif: /^-?(?:\\dfrac\{\d+\}\{\d+\}|\d+) (?:\\gt|\\geqslant) 0 \\text\{ est (?:vrai|faux)\}$/,
+    verifie: (l) => {
+      const m = l.match(/^(-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) (\\gt|\\geqslant) 0 \\text\{ est (vrai|faux)\}$/);
+      if (!m) return false;
+      const v = math.evaluate(m[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')'));
+      return (m[3] === 'vrai') === (m[2] === '\\gt' ? v > 0 : v >= 0);
+    }
+  },
+  {
+    nom: 'la-conclusion-vrai-faux-est-celle-de-l-exercice',
+    // « \text{L'inégalité est fausse pour } x \text{ égal à } 2 » ou « \text{L'inégalité est vraie pour tout réel } x » : conforme à estVrai
+    motif: /\\text\{L'inégalité est (?:vraie pour tout réel|fausse pour) \}/,
+    verifie: (l, e) => {
+      const m = l.match(/^\\text\{L'inégalité est (vraie pour tout réel|fausse pour) \}/);
+      return !!m && (m[1] === 'vraie pour tout réel') === !!e.estVrai;
+    }
+  },
+  {
     nom: 'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce',
     // « \text{Parmi les individus de } B \text{, ceux de } \overline{A} \text{ :} » : le couple (X, Y) est celui d'un P_{X}(Y) de l'énoncé
     motif: /\\text\{Parmi les individus de \} .* \\text\{, ceux de \}/,

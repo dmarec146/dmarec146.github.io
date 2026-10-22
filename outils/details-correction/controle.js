@@ -437,6 +437,14 @@ async function controlerDansLaPage(opts) {
       if (!m) return 'faux';
       return Math.abs(Number(m[1].replace('{,}', '.')) - e.mantisse) < 1e-9 && (m[2] === undefined ? 1 : Number(m[2])) === e.exposant ? 'ok' : 'faux';
     }
+    // vrai / faux (estVrai booléen) ; QCM (bonneReponse : lettre ou numéro de figure) ; centre et rayon d'un cercle « \Omega(a\,;\,b) \text{ et } r=c » (22/10/2026)
+    if (e.type === 'vraifaux' && typeof e.estVrai === 'boolean') return String(F).replace(/\\text\{([^{}]*)\}/g, '$1').trim().toLowerCase() === (e.estVrai ? 'vrai' : 'faux') ? 'ok' : 'faux';
+    if (e.type === 'qcm' && e.bonneReponse !== undefined) return String(F).trim().toLowerCase() === String(e.bonneReponse).toLowerCase() ? 'ok' : 'faux';
+    if (e.type === 'cercle' && e.cx !== undefined) {
+      const m = String(F).replace(/\\left|\\right/g, '').replace(/\s+/g, '').match(/^\\Omega\((.+?)\\,;\\,(.+?)\)\\text\{et\}r=(.+)$/);
+      if (!m) return 'faux';
+      try { return Math.abs(evaluer(m[1], 0) - e.cx) < 1e-9 && Math.abs(evaluer(m[2], 0) - e.cy) < 1e-9 && Math.abs(evaluer(m[3], 0) - e.r) < 1e-9 ? 'ok' : 'faux'; } catch (er) { return 'non-verifiable'; }
+    }
     if (typeof e.reponse !== 'string') return 'non-verifiable';
     // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
     if (e.type === 'texte') {
@@ -779,7 +787,9 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         const inp = document.getElementById('input-' + i); if (!inp) continue;
         if (e.type === 'discussionParametre') continue;   // réponse « si m<s alors … » : la fiche la contrôle elle-même (audit-reponses)
         const ensembleSeul = e.detail.final.match(/^\\mathbb\{([NZDQR])\}$/);   // « \mathbb{N} » : l'élève tape la lettre dans un champ texte
-        if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
+        const cercle = e.detail.final.match(/^\\Omega\((.+?)\\,;\\,(.+?)\) \\text\{ et \} r=(.+)$/);   // « \Omega(a\,;\,b) \text{ et } r=c » : l'élève tape « a;b;c »
+        if (cercle) inp.value = [cercle[1], cercle[2], cercle[3]].map(versTexte).join(';');
+        else if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
         await dormir(25);
         let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }
         if (ok !== true) refus.push({ id: e.id, final: e.detail.final, resultat: String(ok) });
