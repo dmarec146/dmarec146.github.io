@@ -9,7 +9,9 @@ const env = (texte) => ({ texte: () => texte });
 const ESSAIS = {
   'on-divise-par-un-nombre-negatif': [
     [true, '\\text{On divise par } -3 \\lt  0 \\text{ : les inégalités changent de sens}', {}, env('')],
-    [false, '\\text{On divise par } 3 \\lt  0 \\text{ : les inégalités changent de sens}', {}, env('')]
+    [false, '\\text{On divise par } 3 \\lt  0 \\text{ : les inégalités changent de sens}', {}, env('')],
+    [true, '\\text{On divise par } -\\dfrac{3}{2} \\lt 0', {}, env('')],
+    [false, '\\text{On divise par } \\dfrac{3}{2} \\lt 0', {}, env('')]
   ],
   'la-valeur-rejetee-est-negative': [
     [true, '\\text{Or } n \\in \\mathbb{N} \\text{, donc } -3 \\text{ est rejeté}', {}, env('')],
@@ -438,6 +440,24 @@ const ESSAIS = {
     [true, '\\text{Réponse : non}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '-3 \\lt 0 \\text{ : aucune racine réelle}'] } }, env('')],
     [false, '\\text{Réponse : non}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '9 \\gt 0 \\text{ : deux racines distinctes}'] } }, env('')],
     [false, '\\text{Réponse : oui}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '-3 \\lt 0 \\text{ : aucune racine réelle}'] } }, env('')]
+  ],
+  'on-garde-la-racine-si-elle-verifie-la-condition': [
+    [true, '2 \\geqslant 0 \\text{ : on garde } 3', {}, env('')],
+    [true, '0 \\geqslant 0 \\text{ : on garde } -5', {}, env('')],
+    [true, '-1 \\lt 0 \\text{ : on rejette } -4', {}, env('')],
+    [false, '-1 \\lt 0 \\text{ : on garde } -4', {}, env('')],
+    [false, '2 \\geqslant 0 \\text{ : on rejette } 3', {}, env('')],
+    [false, '2 \\lt 0 \\text{ : on rejette } 3', {}, env('')]
+  ],
+  'pas-de-solution-seulement-pour-un-carre-egal-a-un-nombre-negatif': [
+    [true, '-3 \\lt 0 \\text{ : pas de solution}', {}, env('')],
+    [false, '3 \\lt 0 \\text{ : pas de solution}', {}, env('')]
+  ],
+  'la-valeur-testee-est-bien-une-racine': [
+    [true, '\\text{Donc } 3 \\text{ est une racine de } P', { detail: { lignes: ['\\text{On teste la valeur } 3', '27-18+3-12', '= 0', '\\text{Donc } 3 \\text{ est une racine de } P'] } }, env('')],
+    [true, '\\text{Donc } -2 \\text{ est une racine de } P', { detail: { lignes: ['\\text{On teste la valeur } -2', '-8+8-4+4 = 0', '\\text{Donc } -2 \\text{ est une racine de } P'] } }, env('')],
+    [false, '\\text{Donc } 3 \\text{ est une racine de } P', { detail: { lignes: ['\\text{On teste la valeur } 3', '27-18+3-12 = 0', '= 5', '\\text{Donc } 3 \\text{ est une racine de } P'] } }, env('')],
+    [false, '\\text{Donc } 2 \\text{ est une racine de } P', { detail: { lignes: ['\\text{On teste la valeur } 3', '27-18+3-12 = 0', '\\text{Donc } 2 \\text{ est une racine de } P'] } }, env('')]
   ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],

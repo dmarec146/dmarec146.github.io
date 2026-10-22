@@ -16,7 +16,8 @@ module.exports = [
   {
     nom: 'on-divise-par-un-nombre-negatif',
     motif: /On divise par \}/,
-    verifie: (l) => { const m = l.match(/\\text\{On divise par \}\s*(-?\d+)\s*\\lt\s*0/); return m ? Number(m[1]) < 0 : false; }
+    // le diviseur est un entier ou une fraction : « -3 », « -\dfrac{3}{2} »
+    verifie: (l) => { const m = l.match(/\\text\{On divise par \}\s*(-?\d+|-\\dfrac\{\d+\}\{\d+\})\s*\\lt\s*0/); return m ? /^-[\d\\]/.test(m[1]) && !/^-0$/.test(m[1]) : false; }
   },
   {
     nom: 'la-suite-est-arithmetique',
@@ -690,6 +691,30 @@ module.exports = [
       const L = (e.detail && e.detail.lignes) || [];
       if (!L.some((x) => /Discriminant : /.test(x))) return null;
       return /oui/.test(l) === L.some((x) => /\\gt 0 \\text\{ : deux racines distinctes\}$/.test(x));
+    }
+  },
+  {
+    nom: 'on-garde-la-racine-si-elle-verifie-la-condition',
+    // « 2 \geqslant 0 \text{ : on garde } 3 », « -1 \lt 0 \text{ : on rejette } -4 » : « on garde » exactement quand le nombre est positif ou nul
+    motif: /\\text\{ : on (?:garde|rejette) \} -?\d+$/,
+    verifie: (l) => {
+      const m = l.match(/^(-?\d+) (\\geqslant|\\lt) 0 \\text\{ : on (garde|rejette) \} (-?\d+)$/);
+      return !!m && (m[2] === '\\geqslant') === (Number(m[1]) >= 0) && (m[3] === 'garde') === (Number(m[1]) >= 0);
+    }
+  },
+  {
+    nom: 'pas-de-solution-seulement-pour-un-carre-egal-a-un-nombre-negatif',
+    // « -3 \lt 0 \text{ : pas de solution} » (après « x^2 = -3 ») : le nombre est bien négatif
+    motif: /\\lt 0 \\text\{ : pas de solution\}$/,
+    verifie: (l) => { const m = l.match(/^(-\d+) \\lt 0 \\text\{ : pas de solution\}$/); return !!m && Number(m[1]) < 0; }
+  },
+  {
+    nom: 'la-valeur-testee-est-bien-une-racine',
+    // « \text{Donc } 3 \text{ est une racine de } P » : la valeur citée est celle de « \text{On teste la valeur } 3 » et l'évaluation qui précède vaut 0
+    motif: /^\\text\{Donc \} -?\d+ \\text\{ est une racine de \} P$/,
+    verifie: (l, e) => {
+      const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l), m = l.match(/^\\text\{Donc \} (-?\d+) /), t = L.find((x) => /^\\text\{On teste la valeur \} -?\d+$/.test(x));
+      return i > 0 && !!m && !!t && t.endsWith('} ' + m[1]) && /(?:^|= )0$/.test(L[i - 1].trim());
     }
   },
   {

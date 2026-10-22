@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261022"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.5,"3.2 a)":0.5,"3.2 b)":0.5,"3.2 c)":1,"3.2 d)":1,"3.3 a)":0.5,"3.3 b)":0.75,"3.3 c)":1,"3.3 d)":1,"3.4 a)":1.25,"3.4 b)":1.5,"3.5 a)":1,"3.5 b)":1.25,"3.5 c)":1.25,"3.6 a)":0.75,"3.6 b)":1,"3.6 c)":1,"3.7 a)":1.25,"3.7 b)":1.5,"3.8 a)":1.5,"3.8 b)":1.5,"3.8 c)":1.75,"3.8 d)":2},"bonus":["3.8 a)","3.8 b)","3.8 c)","3.8 d)"]});
@@ -1033,6 +1035,138 @@ function fmtConstFracLatex(fr) {
   return a.d===1 ? `${s}${a.n}` : `${s}\\dfrac{${a.n}}{${a.d}}`;
 }
 
+// ---------- details de correction (22/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute } = Detail;
+const { dF2, dedup2, polyF2, sommeF2, coefLettre2, lignesDelta2, phraseDelta2, ENTETE_RACINES2, texRacineSimp2, lignesRacines2, lignesRacinesRat2, ligneRacineDouble2, facteurRacine2, facteurRacineSurd2 } = DetailQ;
+// fraction {n,d} de la fiche -> fraction math.js
+const mf3 = (a) => math.fraction(a.n, a.d);
+// produit de facteurs LaTeX (null = facteur absent) : « 2^{3}\times 3 » ; « 1 » s'il n'en reste aucun
+const prod3 = (...f) => { const l = f.filter((x) => x !== null); return l.length ? l.join('\\times ') : '1'; };
+// puissance b^{e} : exposant 1 omis ; null si e = 0 (facteur 1)
+const pwz3 = (b, e) => (e === 0 ? null : e === 1 ? String(b) : `${b}^{${e}}`);
+// polynome ecrit « x - r »-facteur par facteur : A(x-r1)(x-r2)... ; coefficient 1 omis, A = -1 -> « - »
+const produitFacteurs3 = (A, facteurs) => { const a = math.fraction(A); return `${a.n === 1 && a.d === 1 && a.s > 0 ? '' : a.n === 1 && a.d === 1 ? '-' : fracD(a)}${facteurs.map((f) => (f.includes('\\dfrac') ? `\\left(${f}\\right)` : `(${f})`)).join('')}`; };
+// trinome A x^2 + B x + C (A > 0 et B entiers, C entier ou fraction, discriminant entier > 0) : discriminant et racines (lignes sans conclusion),
+// facteurs « x - racine » dans l'ordre croissant des racines et valeurs des racines
+function racinesFacteurs3(A, B, C) {
+  const c = math.fraction(C), d = lignesDelta2(A, B, c), D = d.D.n, r = lignesRacines2(A, B, D), s = Math.round(Math.sqrt(D));
+  let K = 1, m = D; for (let f = 2; f * f <= m; f++) while (m % (f * f) === 0) { m /= f * f; K *= f; }
+  const facteurs = m === 1 ? [facteurRacine2(math.fraction(-B - s, 2 * A)), facteurRacine2(math.fraction(-B + s, 2 * A))] : [facteurRacineSurd2(-B, -K, m, 2 * A), facteurRacineSurd2(-B, K, m, 2 * A)];
+  return { lignes: [...ENTETE_RACINES2, ...d.lignes, phraseDelta2(d.D), ...r.lignes], facteurs, valeurs: [r.x1, r.x2], t1: r.t1, t2: r.t2 };
+}
+// factorisation d'un trinome : derniere ligne « trinome = produit »
+function detailTrinome3(A, B, C) {
+  const r = racinesFacteurs3(A, B, C), fin = produitFacteurs3(A, r.facteurs), poly = polyF2([{c:A,v:'x^{2}'},{c:B,v:'x'},{c:C,v:''}]);
+  return { lignes: [...r.lignes, `${poly} = ${fin}`], final: fin };
+}
+// 3.5 a) x + 1/x = k (k fraction math.js)
+function detail35a(kf) {
+  const k = math.fraction(kf), kx = polyF2([{c:k,v:'x'}]), nk = math.unaryMinus(k), P = polyF2([{c:1,v:'x^{2}'},{c:nk,v:'x'},{c:1,v:''}]), d = lignesDelta2(1, nk, 1);
+  const lignes = ['\\text{Valeur interdite : } 0', `x+\\dfrac{1}{x}=${fracD(k)} \\iff x^{2}+1=${kx}`, `\\iff ${P} = 0`, '\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D)];
+  let S;
+  if (d.D.n === 0) { const r = ligneRacineDouble2(1, nk); lignes.push(r.ligne); S = `\\{${fracD(r.x0)}\\}`; }
+  else { const r = lignesRacinesRat2(1, nk, d.D); lignes.push(...r.lignes); S = `\\{${fracD(r.x1)}\\,;\\,${fracD(r.x2)}\\}`; }
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+// 3.5 b) x/(x^2-1) = A - B/(x-1) : A x^2 - (B+1) x - (A+B) = 0, A != 0, discriminant > 0
+function detail35b(A, B) {
+  const cf = (a) => (a === 1 ? '' : a === -1 ? '-' : String(a)), rhs = `${cf(A)}(x^{2}-1)${B >= 0 ? '-' : '+'}${cf(Math.abs(B))}(x+1)`;
+  let a = A, b = -(B + 1), c = -(A + B);
+  const lignes = ['\\text{Valeurs interdites : } -1 \\text{ et } 1', `\\dfrac{x}{x^{2}-1}=${A}-\\dfrac{${B}}{x-1}`, `\\iff x = ${rhs}`, `\\iff ${polyF2([{c:a,v:'x^{2}'},{c:b,v:'x'},{c,v:''}])} = 0`];
+  if (a < 0) { a = -a; b = -b; c = -c; lignes.push(`\\iff ${polyF2([{c:a,v:'x^{2}'},{c:b,v:'x'},{c,v:''}])} = 0`); }
+  const r = racinesFacteurs3(a, b, c), S = `\\{${r.t1}\\,;\\,${r.t2}\\}`;
+  lignes.push(...r.lignes, `S = ${S}`);
+  return { lignes, final: S };
+}
+// P(r) pour un polynome de degre 3 (coefficients [A, c2, c1, c0], fractions math.js) et r entier : chaine « P(r) developpe = valeurs = somme »
+function chaineEval3(coefs, r) {
+  const termes = coefs.map((c, i) => ({ c, k: 3 - i })).filter((t) => t.c.n !== 0);
+  const sub = termes.map((t, i) => {
+    const mag = fracTexte(t.c.n, t.c.d), pw = t.k === 0 ? '' : t.k === 1 ? dP(r) : `${dP(r)}^{${t.k}}`;
+    return (t.c.s < 0 ? '-' : (i ? '+' : '')) + (t.k === 0 ? mag : (mag === '1' ? pw : `${mag}\\times ${pw}`));
+  }).join('');
+  const valeurs = termes.map((t) => math.multiply(t.c, Math.pow(r, t.k)));
+  return dedup2(sub, sommeF2(valeurs), fracD(valeurs.reduce((s, v) => math.add(s, v), math.fraction(0))));
+}
+// identification de P(x) = (x - r0)(a x^2 + b x + c) ; coefs = [A, c2, c1, c0] (fractions math.js) : { lignes, qB, qC }
+function lignesIdent3(coefs, r0) {
+  const [A, c2, c1, c0] = coefs, qB = math.add(c2, math.multiply(r0, A)), qC = math.add(c1, math.multiply(r0, qB));
+  const comb = (u, w) => polyF2([{c:1,v:u},{c:-r0,v:w}]), cc = polyF2([{c:-r0,v:'c'}]);
+  const developpe = `ax^{3}+(${comb('b','a')})x^{2}+(${comb('c','b')})x${cc.startsWith('-') ? '' : '+'}${cc}`;
+  return { lignes: ['\\text{On écrit } P(x) \\text{ sous la forme :}', `(x${fmtConst(-r0)})(ax^{2}+bx+c) = ${developpe}`, '\\text{Par identification avec } P(x) \\text{ :}',
+    `\\left\\{\\begin{array}{l} a = ${fracD(A)} \\\\ ${comb('b','a')} = ${fracD(c2)} \\\\ ${comb('c','b')} = ${fracD(c1)} \\\\ ${cc} = ${fracD(c0)} \\end{array}\\right.`,
+    `\\text{donc } a = ${fracD(A)} \\text{, } b = ${fracD(qB)} \\text{ et } c = ${fracD(qC)}`], qB, qC };
+}
+// quotient a x^2 + b x + c (fractions math.js) en LaTeX
+const quotient3 = (A, qB, qC) => polyF2([{c:A,v:'x^{2}'},{c:qB,v:'x'},{c:qC,v:''}]);
+// racines du quotient, puis factorisation complete de P (racines classees par ordre croissant) : { lignes, final }
+function suiteCubique3(A, qB, qC, r0, Pstr) {
+  const r = racinesFacteurs3(A.n, qB.s * qB.n, qC);
+  const tri = [{ v: r0, f: facteurRacine2(math.fraction(r0)) }, { v: r.valeurs[0], f: r.facteurs[0] }, { v: r.valeurs[1], f: r.facteurs[1] }].sort((u, w) => u.v - w.v);
+  const fin = produitFacteurs3(A, tri.map((t) => t.f));
+  return { lignes: [`\\text{On cherche les racines de } ${quotient3(A, qB, qC)}`, ...r.lignes, `${Pstr} = ${fin}`], final: fin };
+}
+// v^2 = Y (Y entier) : lignes et solutions { v (nombre), tex } ; Y < 0 : « pas de solution » ; Y = 0 : v = 0 ; sqrt(Y) simplifie si besoin
+function lignesCarre3(lettre, Y) {
+  if (Y < 0) return { lignes: [`\\text{Un carré est positif ou nul : } ${lettre}^{2} \\geqslant 0`, `${Y} \\lt 0 \\text{ : pas de solution}`], sols: [] };
+  if (Y === 0) return { lignes: [`${lettre}^{2} = 0 \\iff ${lettre} = 0`], sols: [{ v: 0, tex: '0' }] };
+  let K = 1, m = Y; for (let f = 2; f * f <= m; f++) while (m % (f * f) === 0) { m /= f * f; K *= f; }
+  const tex = m === 1 ? String(K) : K > 1 ? `${K}\\sqrt{${m}}` : `\\sqrt{${m}}`, brut = m === 1 ? String(K) : `\\sqrt{${Y}}`, v = Math.sqrt(Y);
+  const lignes = [`${lettre}^{2} = ${Y} \\iff ${lettre} = -${brut} \\text{ ou } ${lettre} = ${brut}`];
+  if (m > 1 && K > 1) lignes.push(`\\sqrt{${Y}} = ${tex}`);
+  return { lignes, sols: [{ v: -v, tex: `-${tex}` }, { v, tex }] };
+}
+// ensemble des solutions { ... } trie par ordre croissant, sans doublon ; \emptyset s'il n'y en a pas
+function ensembleSols3(sols) {
+  const l = [...sols].sort((p, q) => p.v - q.v).filter((s, i, t) => i === 0 || Math.abs(s.v - t[i - 1].v) > 1e-9);
+  return l.length ? `\\{${l.map((s) => s.tex).join('\\,;\\,')}\\}` : '\\emptyset';
+}
+// 3.8 a, b) x^4 + B x^2 + C = 0 de racines Y1, Y2 en X = x^2
+function detailBicarre3(B, C, Y1, Y2) {
+  const d = lignesDelta2(1, B, C), r = lignesRacines2(1, B, d.D.n), sols = [];
+  const lignes = ['\\text{On pose } X \\text{ égal à } x^{2}', `\\text{On résout } ${polyF2([{c:1,v:'X^{2}'},{c:B,v:'X'},{c:C,v:''}])} = 0`, ...ENTETE_RACINES2, ...d.lignes, phraseDelta2(d.D), ...r.lignes.map((l) => l.replace(/^x_/, 'X_'))];
+  [Math.min(Y1, Y2), Math.max(Y1, Y2)].forEach((Y) => { const c = lignesCarre3('x', Y); lignes.push(...c.lignes); sols.push(...c.sols); });
+  const S = ensembleSols3(sols);
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+// 3.8 c, d) ecart des racines de x^2 + b x + c : |alpha - beta| = sqrt(Delta) = |a + k2| (ou |a^2 + k2|) = 1
+function detailEcart3(carre, k1, k2) {
+  const v = carre ? 'a^{2}' : 'a', coef = F(k1 - k2, 2), cst = F(k1 * k1 - k2 * k2, 4), c = polyF2([{c:mf3(coef),v},{c:mf3(cst),v:''}]);
+  const b2 = carre ? `\\left(-\\left(a^{2}${fmtConst(k1)}\\right)\\right)^{2}` : `\\left(a${fmtConst(k1)}\\right)^{2}`, u = `${v}${fmtConst(k2)}`;
+  const lignes = ['\\text{Discriminant : } b^{2}-4ac', `${b2}-4\\times \\left(${c}\\right) = \\left(${u}\\right)^{2}`,
+    '\\text{Le coefficient de } x^{2} \\text{ est } 1', '\\text{donc } |\\alpha-\\beta| \\text{ est égal à } \\sqrt{\\Delta}',
+    dedup2(`\\sqrt{\\left(${u}\\right)^{2}}`, `\\left|${u}\\right|`), `\\left|${u}\\right| = 1 \\iff ${u} = -1 \\text{ ou } ${u} = 1`];
+  const sols = [];
+  if (!carre) { lignes.push(`\\iff a = ${-1 - k2} \\text{ ou } a = ${1 - k2}`); sols.push({ v: -1 - k2, tex: String(-1 - k2) }, { v: 1 - k2, tex: String(1 - k2) }); }
+  else {
+    lignes.push(`\\iff a^{2} = ${-1 - k2} \\text{ ou } a^{2} = ${1 - k2}`);
+    [-1 - k2, 1 - k2].forEach((Y) => { const r = lignesCarre3('a', Y); lignes.push(...r.lignes); sols.push(...r.sols); });
+  }
+  const S = ensembleSols3(sols);
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+// 3.5 c) x + p = sqrt(x + q), p entier, racines de x^2 + (2p-1)x + p^2 - q = 0 entieres : on garde celles qui verifient x + p >= 0
+function detail35c(p, q) {
+  const xp = polyF2([{c:1,v:'x'},{c:p,v:''}]), xq = polyF2([{c:1,v:'x'},{c:q,v:''}]), B = 2 * p - 1, C = p * p - q, D = B * B - 4 * C;
+  const lignes = ['\\text{Une racine carrée est positive :}', `\\text{il faut } ${xp} \\geqslant 0`, '\\text{On élève au carré :}', `(${xp})^{2} = ${xq}`,
+    `\\iff ${polyF2([{c:1,v:'x^{2}'},{c:2*p,v:'x'},{c:p*p,v:''}])} = ${xq}`, `\\iff ${polyF2([{c:1,v:'x^{2}'},{c:B,v:'x'},{c:C,v:''}])} = 0`, ...ENTETE_RACINES2, ...lignesDelta2(1, B, C).lignes, phraseDelta2(D)];
+  let racines;
+  if (D === 0) { const r = ligneRacineDouble2(1, B); lignes.push(r.ligne); racines = [math.number(r.x0)]; }
+  else { const r = lignesRacines2(1, B, D); lignes.push(...r.lignes); racines = [r.x1, r.x2].map((x) => Math.round(x)); }
+  const gardees = [];
+  racines.forEach((x) => {
+    const v = x + p;
+    lignes.push(dedup2(`${x}${p >= 0 ? '+' : '-'}${Math.abs(p)}`, String(v)), `${v} ${v >= 0 ? '\\geqslant' : '\\lt'} 0 \\text{ : on ${v >= 0 ? 'garde' : 'rejette'} } ${x}`);
+    if (v >= 0) gardees.push(x);
+  });
+  const S = `\\{${gardees.join('\\,;\\,')}\\}`;
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+
 function genGroupe3_1() {
   function unItem(lettre) {
     let A,C;
@@ -1054,7 +1188,15 @@ function genGroupe3_1() {
       : {type:'intervalles', liste:[{bas:-Infinity, haut:seuil, inclusBas:false, inclusHaut:inclus}]};
     const opLatex = {'<':'<','>':'>','<=':'\\leqslant','>=':'\\geqslant'}[op];
     const enonce = `${fmtFracCoefLatex(A,'x')}${fmtConstFracLatex(B)}${opLatex} ${fmtFracCoefLatex(C,'x')}${fmtConstFracLatex(D)}`;
-    return {id:`3.1 ${lettre})`, type:"intervalle", enonce, intervalleSpec: spec};
+    const detail = (() => {
+      const a = mf3(A), b = mf3(B), c = mf3(C), d = mf3(D), k = math.subtract(a, c), m = math.subtract(d, b), s = math.divide(m, k);
+      const sym = {'<':'\\lt','>':'\\gt','<=':'\\leqslant','>=':'\\geqslant'}, inv = {'<':'>','>':'<','<=':'>=','>=':'<='}, S = formaterIntervalleSpec(spec);
+      const lignes = [`${polyF2([{c:a,v:'x'},{c:b,v:''}])} ${sym[op]} ${polyF2([{c:c,v:'x'},{c:d,v:''}])}`, `\\iff ${polyF2([{c:k,v:'x'}])} ${sym[op]} ${fracD(m)}`];
+      if (k.s < 0) lignes.push(`\\text{On divise par } ${fracD(k)} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+      lignes.push(`\\iff x ${sym[k.s < 0 ? inv[op] : op]} ${fracD(s)}`, `S = ${S}`);
+      return { lignes, final: S };
+    })();
+    return {id:`3.1 ${lettre})`, type:"intervalle", enonce, intervalleSpec: spec, detail};
   }
   return ['a','b'].map(unItem);
 }
@@ -1077,11 +1219,35 @@ function genGroupe3_2() {
   // d) base r : (r^4)^(n+1) + (-r^2)^(2n+1) + (-r)^(4n) tout divise par (r^3)^n = (r^4-r^2+1)*r^n
   const rd = aleaParmi([2,3]);
   const coefD = rd*rd*rd*rd - rd*rd + 1;
+  // details : a) decomposition en facteurs premiers ; b) regroupement (A/B)^n ; c) mise en facteur de a^{n-1} ; d) tout en base r
+  const pwx = (base, e) => (e === 1 ? base : `(${base})^{${e}}`);
+  const detailA = (() => {
+    const s1 = `\\dfrac{${pwx('2\\times 3', e1)}\\times ${pw(2,e2)}}{${pwx('2^{2}', e3)}\\times ${pwx('2^{2}\\times 3', e4)}}`;
+    const s2 = `\\dfrac{${prod3(pwz3(2,e1), pwz3(3,e1), pwz3(2,e2))}}{${prod3(pwz3(2,2*e3), pwz3(2,2*e4), pwz3(3,e4))}}`;
+    const s3 = `\\dfrac{${prod3(pwz3(2,e1+e2), pwz3(3,e1))}}{${prod3(pwz3(2,2*e3+2*e4), pwz3(3,e4))}}`;
+    const s4 = prod3(pwz3(2,p2), pwz3(3,p3)), fin = fracTexte(valA.n, valA.d);
+    return { lignes: [dedup2(`\\dfrac{${pw(6,e1)}\\times ${pw(2,e2)}}{${pw(4,e3)}\\times ${pw(12,e4)}}`, s1, s2, s3, s4, fin)], final: fin };
+  })();
+  const detailB = (() => {
+    const base = ratioAB.d === 1 ? String(ratioAB.n) : `\\left(\\dfrac{${ratioAB.n}}{${ratioAB.d}}\\right)`, num = Math.pow(C0, expC), den = Math.pow(D0, expD), rc = F(num, den);
+    const reste = (rc.n === 1 && rc.d === 1) ? '' : `\\times ${fracTexte(rc.n, rc.d)}`, fin = `${base}^{n}${reste}`;
+    return { lignes: [dedup2(`\\dfrac{${Ab}^{n}\\times ${pw(C0,expC)}}{${Bb}^{n}\\times ${pw(D0,expD)}}`, `\\left(\\dfrac{${Ab}}{${Bb}}\\right)^{n}\\times \\dfrac{${pw(C0,expC)}}{${pw(D0,expD)}}`,
+      `${base}^{n}\\times ${fracBrute(num, den)}`, fin)], final: fin };
+  })();
+  const detailC = (() => {
+    const num = ac*ac*ac - ac*ac - kc*ac + 1, fin = `${fracD(mf3(coefC))}\\times ${ac}^{n}`;
+    return { lignes: [dedup2(`${ac}^{n+2}-${ac}^{n+1}-${kc}\\times ${ac}^{n}+${ac}^{n-1}`, `${ac}^{n-1}\\left(${ac}^{3}-${ac}^{2}-${kc}\\times ${ac}+1\\right)`, `${ac}^{n-1}\\left(${ac**3}-${ac*ac}-${kc*ac}+1\\right)`, `${num}\\times ${ac}^{n-1}`, fin)], final: fin };
+  })();
+  const detailD = (() => {
+    const r = rd, fin = `${coefD}\\times ${r}^{n}`;
+    return { lignes: [dedup2(`\\dfrac{${r**4}^{n+1}+(-${r*r})^{2n+1}+(-${r})^{4n}}{${r**3}^{n}}`, `\\dfrac{(${r}^{4})^{n+1}+\\left(-${r}^{2}\\right)^{2n+1}+(-${r})^{4n}}{(${r}^{3})^{n}}`,
+      `\\dfrac{${r}^{4n+4}-${r}^{4n+2}+${r}^{4n}}{${r}^{3n}}`, `\\dfrac{${r}^{4n}\\left(${r}^{4}-${r}^{2}+1\\right)}{${r}^{3n}}`, `\\dfrac{${r}^{4n}\\left(${r**4}-${r*r}+1\\right)}{${r}^{3n}}`, fin)], final: fin };
+  })();
   return [
-    {id:"3.2 a)", type:"num", enonce:`\\dfrac{${pw(6,e1)}\\times ${pw(2,e2)}}{${pw(4,e3)}\\times ${pw(12,e4)}}`, reponse:fracStr(valA)},
-    {id:"3.2 b)", type:"alg", enonce:`\\dfrac{${Ab}^n\\times ${pw(C0,expC)}}{${Bb}^n\\times ${pw(D0,expD)}}`, reponse:`${ratioAB.d===1 ? ratioAB.n : `(${ratioAB.n}/${ratioAB.d})`}^n*(${fracStr(ratioCD)})`},
-    {id:"3.2 c)", type:"alg", enonce:`${ac}^{n+2}-${ac}^{n+1}-${kc}\\times ${ac}^n+${ac}^{n-1}`, reponse:`(${fracStr(coefC)})*${ac}^n`},
-    {id:"3.2 d)", type:"alg", enonce:`\\dfrac{${rd**4}^{n+1}+(-${rd*rd})^{2n+1}+(-${rd})^{4n}}{${rd**3}^n}`, reponse:`${coefD}*${rd}^n`}
+    {id:"3.2 a)", type:"num", enonce:`\\dfrac{${pw(6,e1)}\\times ${pw(2,e2)}}{${pw(4,e3)}\\times ${pw(12,e4)}}`, reponse:fracStr(valA), detail: detailA},
+    {id:"3.2 b)", type:"alg", enonce:`\\dfrac{${Ab}^n\\times ${pw(C0,expC)}}{${Bb}^n\\times ${pw(D0,expD)}}`, reponse:`${ratioAB.d===1 ? ratioAB.n : `(${ratioAB.n}/${ratioAB.d})`}^n*(${fracStr(ratioCD)})`, detail: detailB},
+    {id:"3.2 c)", type:"alg", enonce:`${ac}^{n+2}-${ac}^{n+1}-${kc}\\times ${ac}^n+${ac}^{n-1}`, reponse:`(${fracStr(coefC)})*${ac}^n`, detail: detailC},
+    {id:"3.2 d)", type:"alg", enonce:`\\dfrac{${rd**4}^{n+1}+(-${rd*rd})^{2n+1}+(-${rd})^{4n}}{${rd**3}^n}`, reponse:`${coefD}*${rd}^n`, detail: detailD}
   ];
 }
 
@@ -1106,7 +1272,7 @@ function genGroupe3_3() {
     let r1,r2;
     do { r1=aleaNonNul(-6,6); r2=aleaNonNul(-6,6); } while (r1===r2);
     const {enonce,reponse} = enonceEtReponseTrinome(F(1),F(r1),F(r2),v);
-    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
+    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detailTrinome3(1, -(r1+r2), r1*r2)};
   }
   // b) delicat, famille distincte : coefficient dominant non entier (a>=2), racines
   // rationnelles de denominateur a
@@ -1116,7 +1282,8 @@ function genGroupe3_3() {
     let r1,r2;
     do { r1=racine(); r2=racine(); } while (Math.abs(r1.n/r1.d-r2.n/r2.d)<1e-9);
     const {enonce,reponse} = enonceEtReponseTrinome(F(a), r1, r2, v);
-    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
+    const Bb = fracNeg(fracMul(F(a), fracAdd(r1,r2))), Cb = fracMul(F(a), fracMul(r1,r2));
+    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detailTrinome3(a, Bb.n / Bb.d, mf3(Cb))};
   }
   // c) delicat, famille distincte : racines irrationnelles, a=1, centre p entier + rayon sqrt(d)
   function itemCentre(lettre) {
@@ -1124,7 +1291,7 @@ function genGroupe3_3() {
     const B = -2*p, C = p*p-d;
     const enonce = `x^2${fmtLin(B,'x')}${fmtConst(C)}`;
     const reponse = `(x${fmtConst(-p)}-sqrt(${d}))*(x${fmtConst(-p)}+sqrt(${d}))`;
-    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
+    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detailTrinome3(1, B, C)};
   }
   // d) delicat, le plus complet : non-monique (a=2) ET racines irrationnelles
   function itemNonMoniqueSurd(lettre) {
@@ -1134,7 +1301,7 @@ function genGroupe3_3() {
     const B = -A*P, C = A*(P*P-K*K*rad)/4;
     const enonce = `${A}x^2${fmtLin(B,'x')}${fmtConst(C)}`;
     const reponse = `${A}*(x-(${P}-${K}*sqrt(${rad}))/2)*(x-(${P}+${K}*sqrt(${rad}))/2)`;
-    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse};
+    return {id:`3.3 ${lettre})`, type:"alg", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detailTrinome3(A, B, C)};
   }
   return [
     itemEntier('a','x'), itemNonMoniqueRationnel('b','x'),
@@ -1154,9 +1321,29 @@ function genGroupe3_4() {
   const pB = aleaNonNul(-4,4), DB = aleaParmi(RADICANDS_PETITS);
   const enonceB = `x^2${fmtLin(-2*pB,'x')}+${pB*pB}${sgn(-DB)}${DB}m^2`;
   const reponseB = `(x${fmtConst(-pB)}-sqrt(${DB})*m)*(x${fmtConst(-pB)}+sqrt(${DB})*m)`;
+  // details : discriminant en fonction de m, racines avec ±, factorisation
+  const detailA = (() => {
+    const c = coefLinA, p = coefM2A, s = aA + bA, cm = polyF2([{c, v:'m'}]), sm = polyF2([{c:s, v:'m'}]);
+    const par = (e) => (/^[a-z]$/.test(e) ? e : `\\left(${e}\\right)`);      // « m » seul reste sans parenthese
+    const fin = `(${polyF2([{c:1,v:'x'},{c:-aA,v:'m'}])})(${polyF2([{c:1,v:'x'},{c:bA,v:'m'}])})`;
+    return { lignes: ['\\text{Discriminant : } b^{2}-4ac',
+      dedup2(`${par(cm)}^{2}-4\\times \\left(${polyF2([{c:p,v:'m^{2}'}])}\\right)`, polyF2([{c:c*c,v:'m^{2}'},{c:-4*p,v:'m^{2}'}]), polyF2([{c:s*s,v:'m^{2}'}]), `${par(sm)}^{2}`),
+      dedup2(`\\sqrt{${par(sm)}^{2}}`, `\\left|${sm}\\right|`),
+      `x_1 = ${dedup2(`\\dfrac{-${par(cm)}+${par(sm)}}{2}`, polyF2([{c:aA,v:'m'}]))}`,
+      `x_2 = ${dedup2(`\\dfrac{-${par(cm)}-${par(sm)}}{2}`, polyF2([{c:-bA,v:'m'}]))}`,
+      `${polyF2([{c:1,v:'x^{2}'},{c:c,v:'mx'},{c:p,v:'m^{2}'}])} = ${fin}`], final: fin };
+  })();
+  const detailB = (() => {
+    const pp = pB*pB, fin = `(${polyF2([{c:1,v:'x'},{c:-pB,v:''}])}+\\sqrt{${DB}}m)(${polyF2([{c:1,v:'x'},{c:-pB,v:''}])}-\\sqrt{${DB}}m)`;
+    return { lignes: ['\\text{Discriminant : } b^{2}-4ac',
+      dedup2(`${dP(-2*pB)}^{2}-4\\times \\left(${pp}-${DB}m^{2}\\right)`, `${4*pp}-${4*pp}+${4*DB}m^{2}`, `${4*DB}m^{2}`),
+      dedup2(`\\sqrt{${4*DB}m^{2}}`, `2\\sqrt{${DB}}\\left|m\\right|`),
+      `x_1 = ${dedup2(`\\dfrac{${2*pB}-2\\sqrt{${DB}}m}{2}`, `${pB}-\\sqrt{${DB}}m`)}`, `x_2 = ${dedup2(`\\dfrac{${2*pB}+2\\sqrt{${DB}}m}{2}`, `${pB}+\\sqrt{${DB}}m`)}`,
+      `${polyF2([{c:1,v:'x^{2}'},{c:-2*pB,v:'x'},{c:pp,v:''},{c:-DB,v:'m^{2}'}])} = ${fin}`], final: fin };
+  })();
   return [
-    {id:"3.4 a)", type:"alg", texteLibre:true, enonce:`\\(${enonceA}\\)`, reponse:reponseA},
-    {id:"3.4 b)", type:"alg", texteLibre:true, enonce:`\\(${enonceB}\\)`, reponse:reponseB}
+    {id:"3.4 a)", type:"alg", texteLibre:true, enonce:`\\(${enonceA}\\)`, reponse:reponseA, detail: detailA},
+    {id:"3.4 b)", type:"alg", texteLibre:true, enonce:`\\(${enonceB}\\)`, reponse:reponseB, detail: detailB}
   ];
 }
 
@@ -1165,13 +1352,13 @@ function genGroupe3_5() {
   function itemA() {
     if (alea(0,1)===0) {
       const k = aleaParmi([2,-2]);
-      return {id:"3.5 a)", type:"num", texteLibre:true, enonce:`\\(x+\\dfrac{1}{x}=${k}\\)`, reponse:`{${k/2}}`};
+      return {id:"3.5 a)", type:"num", texteLibre:true, enonce:`\\(x+\\dfrac{1}{x}=${k}\\)`, reponse:`{${k/2}}`, detail: detail35a(k)};
     }
     const r = aleaParmi([2,3,-2,-3,1/2,-1/2].filter(x=>x!==1&&x!==-1));
     const rf = Number.isInteger(r) ? F(r) : F(Math.sign(r), Math.abs(1/r));
     const k = F(rf.n*rf.n+rf.d*rf.d, rf.n*rf.d); // r+1/r = (r^2+1)/r
     const rInv = fracDiv(F(1),rf);
-    return {id:"3.5 a)", type:"num", texteLibre:true, enonce:`\\(x+\\dfrac{1}{x}=${fracStr(k)}\\)`, reponse:`{${fracStr(rf)};${fracStr(rInv)}}`};
+    return {id:"3.5 a)", type:"num", texteLibre:true, enonce:`\\(x+\\dfrac{1}{x}=${fracStr(k)}\\)`, reponse:`{${fracStr(rf)};${fracStr(rInv)}}`, detail: detail35a(mf3(k))};
   }
   // b) combine deux fractions (denominateurs x-1 et x^2-1)
   function itemB() {
@@ -1180,12 +1367,12 @@ function genGroupe3_5() {
       A = aleaNonNul(-4,4); B = aleaNonNul(-6,6);
       Ac = A; Bc = -(B+1); Cc = -(A+B);
       delta = Bc*Bc-4*Ac*Cc;
-    } while (delta < 0);
+    } while (delta <= 0);   // deux racines distinctes (delta = 0 donnerait la reponse {r;r}, refusee quand on ecrit {r})
     const sq = Math.sqrt(delta);
     const reponse = Number.isInteger(delta) && Number.isInteger(sq)
       ? `{${fracStr(F(-Bc-sq,2*Ac))};${fracStr(F(-Bc+sq,2*Ac))}}`
       : `{(${-Bc}-sqrt(${delta}))/${2*Ac};(${-Bc}+sqrt(${delta}))/${2*Ac}}`;
-    return {id:"3.5 b)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{x}{x^2-1}=${A}-\\dfrac{${B}}{x-1}\\)`, reponse};
+    return {id:"3.5 b)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{x}{x^2-1}=${A}-\\dfrac{${B}}{x-1}\\)`, reponse, detail: detail35b(A, B)};
   }
   // c) x+p=sqrt(x+q), construit depuis une racine valide et filtre l'autre
   function itemC() {
@@ -1195,7 +1382,7 @@ function genGroupe3_5() {
     const sommeRacines = 1-2*p, autreRacine = sommeRacines-r0;
     const racines = [r0, autreRacine].filter(r => Math.abs((r+p) - Math.sqrt(Math.max(0,r+q))) < 1e-6 && (r+q)>=-1e-9 && (r+p)>=-1e-9);
     const uniques = [...new Set(racines)].sort((a,b)=>a-b);
-    return {id:"3.5 c)", type:"num", texteLibre:true, enonce:`\\(x${fmtConst(p)}=\\sqrt{x${fmtConst(q)}}\\)`, reponse:`{${uniques.join(';')}}`};
+    return {id:"3.5 c)", type:"num", texteLibre:true, enonce:`\\(x${fmtConst(p)}=\\sqrt{x${fmtConst(q)}}\\)`, reponse:`{${uniques.join(';')}}`, detail: detail35c(p, q)};
   }
   // 3.5 d) (deux radicaux) supprime le 05/10/2026 a la demande de David : 4 -> 3 questions.
   return [itemA(), itemB(), itemC()];
@@ -1244,10 +1431,16 @@ function genGroupe3_6(numero, A) {
   const qB = fracNeg(fracMul(Afr, fracAdd(r1,r2)));
   const qC = fracMul(Afr, fracMul(r1,r2));
   const quotientAscii = `${fracStr(Afr)}*x^2${qB.d===1?fmtLin(qB.n,'x'):(sgn(qB.n)+fracStr(fracAbs(qB))+'*x')}${qC.n===0?'':(qC.d===1?fmtConst(qC.n):sgn(qC.n)+fracStr(fracAbs(qC)))}`;
+  // details : a) valeur de P(r0) ; b) identification des coefficients du quotient ; c) racines du quotient puis produit des trois facteurs
+  const coefs = [mf3(Afr), mf3(c2), mf3(c1), mf3(c0)], id = lignesIdent3(coefs, r0), q = quotient3(coefs[0], id.qB, id.qC);
+  const finB = `(x${fmtConst(-r0)})${q.includes('\\dfrac') ? `\\left(${q}\\right)` : `(${q})`}`, suite = suiteCubique3(coefs[0], id.qB, id.qC, r0, Pstr);
   return [
-    {id:`${numero} a)`, type:"num", texteLibre:true, enonce:`Avec \\(P(x)=${Pstr}\\), calculer \\(P(${r0})\\)`, reponse:"0"},
-    {id:`${numero} b)`, type:"alg", texteLibre:true, enonce:`Factoriser \\(P\\) par \\(x${fmtConst(-r0)}\\)`, reponse:`(x${fmtConst(-r0)})*(${quotientAscii})`},
-    {id:`${numero} c)`, type:"alg", texteLibre:true, enonce:`En déduire une factorisation complète de \\(P\\)`, reponse:`${fracStr(Afr)}*(${fmtRacineAscii(F(r0),'x')})*(${fmtRacineAscii(r1,'x')})*(${fmtRacineAscii(r2,'x')})`}
+    {id:`${numero} a)`, type:"num", texteLibre:true, enonce:`Avec \\(P(x)=${Pstr}\\), calculer \\(P(${r0})\\)`, reponse:"0",
+      detail: { lignes: [`\\text{On remplace } x \\text{ par } ${r0}`, chaineEval3(coefs, r0)], final: '0' }},
+    {id:`${numero} b)`, type:"alg", texteLibre:true, enonce:`Factoriser \\(P\\) par \\(x${fmtConst(-r0)}\\)`, reponse:`(x${fmtConst(-r0)})*(${quotientAscii})`,
+      detail: { lignes: [...id.lignes, `${Pstr} = ${finB}`], final: finB }},
+    {id:`${numero} c)`, type:"alg", texteLibre:true, enonce:`En déduire une factorisation complète de \\(P\\)`, reponse:`${fracStr(Afr)}*(${fmtRacineAscii(F(r0),'x')})*(${fmtRacineAscii(r1,'x')})*(${fmtRacineAscii(r2,'x')})`,
+      detail: { lignes: ["\\text{D'après la question précédente,}", `P(x) \\text{ s'écrit } ${finB}`, ...suite.lignes], final: suite.final }}
   ];
 }
 
@@ -1271,9 +1464,16 @@ function genGroupe3_7() {
   const {c2:c2b,c1:c1b,c0:c0b} = developperCubique(AfrB, F(r0b), r1b, r2b);
   const enonceB = fmtCubiqueLatex(AfrB, c2b, c1b, c0b, 'x');
   const reponseB = `${Ab}*(${fmtRacineAscii(F(r0b),'x')})*(${fmtRacineAscii(r1b,'x')})*(${fmtRacineAscii(r2b,'x')})`;
+  // details : racine evidente, identification du quotient, racines du quotient, produit des facteurs
+  const detailCub = (coefs, r0, Pstr) => {
+    const id = lignesIdent3(coefs, r0), suite = suiteCubique3(coefs[0], id.qB, id.qC, r0, Pstr);
+    return { lignes: [`\\text{On teste la valeur } ${r0}`, chaineEval3(coefs, r0), `\\text{Donc } ${r0} \\text{ est une racine de } P`, ...id.lignes, ...suite.lignes], final: suite.final };
+  };
+  const detailA = detailCub([math.fraction(1), math.fraction(-sommeA), math.fraction(sommeProdA), math.fraction(-prodA)], r0a, enonceAFinal);
+  const detailBb = detailCub([mf3(AfrB), mf3(c2b), mf3(c1b), mf3(c0b)], r0b, enonceB);
   return [
-    {id:"3.7 a)", type:"alg", texteLibre:true, enonce:`\\(${enonceAFinal}\\)`, reponse:reponseA},
-    {id:"3.7 b)", type:"alg", texteLibre:true, enonce:`\\(${enonceB}\\)`, reponse:reponseB}
+    {id:"3.7 a)", type:"alg", texteLibre:true, enonce:`\\(${enonceAFinal}\\)`, reponse:reponseA, detail: detailA},
+    {id:"3.7 b)", type:"alg", texteLibre:true, enonce:`\\(${enonceB}\\)`, reponse:reponseB, detail: detailBb}
   ];
 }
 
@@ -1289,7 +1489,7 @@ function unBiquadratique() {
   [Y1,Y2].forEach(Y => { if (Y>0) { solsX.push(-Math.sqrt(Y), Math.sqrt(Y)); } });
   const fmtSol = (v) => Number.isInteger(v) ? String(v) : (v<0?`-sqrt(${Math.round(v*v)})`:`sqrt(${Math.round(v*v)})`);
   const reponseSols = `{${solsX.map(fmtSol).join(';')}}`;
-  return {Y1,Y2,B,C,enonce,reponseSols};
+  return {Y1,Y2,B,C,enonce,reponseSols, detail: detailBicarre3(B, C, Y1, Y2)};
 }
 
 // Calcul 3.8 (ex-3.9, renumerote le 30/09/2026).
@@ -1312,7 +1512,7 @@ function genGroupe3_8() {
       const sols = [Math.min(a1,a2), Math.max(a1,a2)];
       return {id:`3.8 ${lettre})`, type:"num", texteLibre:true,
         enonce:`On note \\(\\alpha,\\beta\\) les racines de \\(${enonce}\\). Déterminer les valeurs de \\(a\\) telles que \\(|\\alpha-\\beta|=1\\)`,
-        reponse:`{${sols.join(';')}}`};
+        reponse:`{${sols.join(';')}}`, detail: detailEcart3(false, k1, k2)};
     }
     // d) : ecart entre les racines, parametre a^2 (plus delicat)
     const k1 = aleaNonNul(-4,4), k2 = aleaNonNul(-4,4,k1);
@@ -1330,24 +1530,27 @@ function genGroupe3_8() {
     const uniques = trouvees.filter((x,k)=>k===0 || Math.abs(x.v-trouvees[k-1].v)>1e-9).map(x=>x.t);
     return {id:`3.8 ${lettre})`, type:"num", texteLibre:true,
       enonce:`On note \\(\\alpha,\\beta\\) les racines de \\(${enonce}\\). Déterminer les valeurs de \\(a\\) telles que \\(|\\alpha-\\beta|=1\\)`,
-      reponse:`{${uniques.join(';')}}`};
+      reponse:`{${uniques.join(';')}}`, detail: detailEcart3(true, k1, k2)};
   }
   return [
-    {id:"3.8 a)", type:"num", texteLibre:true, enonce:`\\(${bq1.enonce}\\)`, reponse:bq1.reponseSols},
-    {id:"3.8 b)", type:"num", texteLibre:true, enonce:`\\(${bq2.enonce}\\)`, reponse:bq2.reponseSols},
+    {id:"3.8 a)", type:"num", texteLibre:true, enonce:`\\(${bq1.enonce}\\)`, reponse:bq1.reponseSols, detail: bq1.detail},
+    {id:"3.8 b)", type:"num", texteLibre:true, enonce:`\\(${bq2.enonce}\\)`, reponse:bq2.reponseSols, detail: bq2.detail},
     itemEcart('c', false),
     itemEcart('d', true)
   ];
 }
 
 function genererExercices() {
-  return [
+  const tous = [
     ...genGroupe3_1(), ...genGroupe3_2(), ...genGroupe3_3(), ...genGroupe3_4(),
     ...genGroupe3_5(),
     ...genGroupe3_6("3.6", 2),
     ...genGroupe3_7(),
     ...genGroupe3_8()
   ];
+  Detail.preparer(tous);   // « < » des étapes : \lt
+  Detail.couper(tous, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return tous;
 }
 // Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
 // Table declarative, cle = identifiant complet ou prefixe de groupe. La valeur 'numerateur'
@@ -2451,6 +2654,7 @@ function formaterUneBorne(v) {
   if (Number.isInteger(v)) return String(v);
   try {
     const frac = math.fraction(v);
+    if (frac.d === 1) return String(frac.s * frac.n);   // entier obtenu avec une erreur d'arrondi : jamais « \dfrac{10}{1} »
     if (frac.d < 1000) return `${frac.s < 0 ? '-' : ''}\\dfrac{${frac.n}}{${frac.d}}`;
   } catch(e) {}
   return v.toFixed(3);
@@ -2570,7 +2774,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
