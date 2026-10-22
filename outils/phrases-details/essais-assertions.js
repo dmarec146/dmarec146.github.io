@@ -459,6 +459,14 @@ const ESSAIS = {
     [false, '\\text{Donc } 3 \\text{ est une racine de } P', { detail: { lignes: ['\\text{On teste la valeur } 3', '27-18+3-12 = 0', '= 5', '\\text{Donc } 3 \\text{ est une racine de } P'] } }, env('')],
     [false, '\\text{Donc } 2 \\text{ est une racine de } P', { detail: { lignes: ['\\text{On teste la valeur } 3', '27-18+3-12 = 0', '\\text{Donc } 2 \\text{ est une racine de } P'] } }, env('')]
   ],
+  'la-reponse-citee-est-la-bonne-reponse-du-qcm': [
+    [true, '\\text{Réponse : f2}', { bonneReponse: 'f2' }, env('')],
+    [false, '\\text{Réponse : f3}', { bonneReponse: 'f2' }, env('')]
+  ],
+  'le-produit-scalaire-annonce-nul-vaut-0': [
+    [true, '\\text{Il est nul : les vecteurs sont orthogonaux}', { detail: { lignes: ['a+b = c = 0', '\\text{Il est nul : les vecteurs sont orthogonaux}'] } }, env('')],
+    [false, '\\text{Il est nul : les vecteurs sont orthogonaux}', { detail: { lignes: ['a+b = c = 3', '\\text{Il est nul : les vecteurs sont orthogonaux}'] } }, env('')]
+  ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],

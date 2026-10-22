@@ -20,6 +20,7 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"4.1 a)":0.5,"4.1 b)":0.5,"4.1 c)":1,"4.2 a)":0.5,"4.2 b)":0.5,"4.3 a) 1":1,"4.3 a) 2":1,"4.3 b)":1,"4.4":1,"4.5 a)":1,"4.5 b)":1,"4.6 a)":1.5,"4.6 b)":1.5,"4.6 c)":1.5,"4.6 d)":2,"4.6 e)":1.5,"4.6 f)":1.5,"4.6 g)":1.5},"bonus":["4.6 a)","4.6 b)","4.6 c)","4.6 d)","4.6 e)","4.6 f)","4.6 g)"]});
@@ -1296,7 +1297,7 @@ function genererParamsQCM3Courbes() {
   // coeffs : de quoi reconstruire les trois fonctions apres un brouillon (une fonction ne se
   // serialise pas -- voir reconstruireFonctionsQCM3Courbes, 30/09/2026)
   const coeffs = { cub: { k: cub.k, p: cub.p, q: cub.q, C: cub.C }, cubLeurre: { k: cubLeurre.k, p: cubLeurre.p, q: cubLeurre.q, C: cubLeurre.C }, C0 };
-  return { sens, ordre, plageGlobale, bonneReponse, xmin, xmax, tableauHTML, coeffs };
+  return { sens, ordre, plageGlobale, bonneReponse, xmin, xmax, tableauHTML, coeffs, racines: [a, b, c] };
 }
 function reconstruireFonctionsQCM3Courbes(params) {
   if (!params || !params.coeffs || !Array.isArray(params.ordre)) return false;
@@ -1389,6 +1390,48 @@ function numeroFonctionQCM(s, accepterLettre) {
   return i >= 0 ? i + 1 : null;
 }
 
+// ---------- details de correction (22/10/2026) : fonctions communes dans assets/js/details-correction.js ----------
+const { dP, fracD, fracTexte, fracBrute } = Detail;
+const dedup4 = (...t) => t.filter((x, i) => i === 0 || x !== t[i - 1]).join(' = ');
+// exposant a n + b (a, b entiers) en LaTeX : « n », « 3n », « 2n-1 » ; « 5 » si a = 0
+const linN4 = (a, b) => { const t = a === 0 ? '' : (a === 1 ? 'n' : a === -1 ? '-n' : `${a}n`); return (t + (b > 0 ? (t ? '+' : '') + b : b < 0 ? b : '')) || '0'; };
+// polynome en n (coefficients du plus haut degre au terme constant) en LaTeX
+function polyN4(poly) {
+  let s = ''; const deg = poly.length - 1;
+  poly.forEach((c, i) => { if (c === 0) return; const k = deg - i, v = k === 0 ? '' : k === 1 ? 'n' : `n^{${k}}`, m = Math.abs(c); s += (c < 0 ? '-' : (s ? '+' : '')) + (v ? (m === 1 ? v : `${m}${v}`) : String(m)); });
+  return s || '0';
+}
+// meme polynome divise par n^deg : termes constants ou \dfrac{a}{n^k}
+function divN4(poly) {
+  let s = '';
+  poly.forEach((c, i) => { if (c === 0) return; const m = Math.abs(c); s += (c < 0 ? '-' : (s ? '+' : '')) + (i === 0 ? String(m) : `\\dfrac{${m}}{${i === 1 ? 'n' : `n^{${i}}`}}`); });
+  return s || '0';
+}
+// nombre lu dans un tableau : entier ou 2 decimales avec virgule
+const texNb4 = (v) => (Math.abs(v - Math.round(v)) < 1e-6 ? String(Math.round(v)) : `${v < 0 ? '-' : ''}${Math.abs(v).toFixed(2).replace('.', '{,}')}`);
+// tableau « signes de f' puis variations de f » : racines = nombres LaTeX, signes de f' sur chaque intervalle ('+' / '-')
+function tableauSignesVar4(racines, signes) {
+  const k = racines.length, haut = ['x', '-\\infty'], s = ["f'(x)", ''], v = ['f', ''], fl = (g) => (g === '+' ? '\\nearrow' : '\\searrow');
+  racines.forEach((t, i) => { haut.push('', t); s.push(signes[i], '0'); v.push(fl(signes[i]), ''); });
+  haut.push('', '+\\infty'); s.push(signes[k], ''); v.push(fl(signes[k]), '');
+  return `${k >= 3 ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * k + 3)}} ${haut.join(' & ')} \\\\ \\hline ${s.join(' & ')} \\\\ \\hline ${v.join(' & ')} \\end{array}`;
+}
+// 4.5 : tableau de variation de f' (zeros a, b, c) -> signe de f' -> variations de f -> courbe
+function detail45(gp) {
+  const num = numeroFonctionQCM(gp.bonneReponse, true);
+  return { lignes: ["\\text{Les zéros de } f'", '\\text{sont lus dans son tableau de variation}', "\\text{Le signe de } f' \\text{ donne les variations de } f", tableauSignesVar4(gp.racines.map(texNb4), gp.sens), `\\text{Réponse : f${num}}`], final: 'f' + num };
+}
+// fraction de deux polynomes de meme degre en n : mise en facteur de n^deg puis simplification
+function detailFraction4(num, den) {
+  const deg = num.length - 1, fin = divN4(den) === '1' ? divN4(num) : `\\dfrac{${divN4(num)}}{${divN4(den)}}`;      // jamais « \dfrac{1}{1} » ni « \dfrac{a}{1} »
+  return { lignes: [dedup4(`\\dfrac{${polyN4(num)}}{${polyN4(den)}}`, `\\dfrac{n^{${deg}}\\left(${divN4(num)}\\right)}{n^{${deg}}\\left(${divN4(den)}\\right)}`, fin)], final: fin };
+}
+// lecture d'un nombre derive : f'(x0) = coefficient directeur de la tangente, lu avec deux points A et B de la droite (fractions math.js : pente)
+function detailLecturePente4(nom, tang, x0, y0, pente) {
+  const sl = math.fraction(pente), n = sl.s * sl.n, d = sl.d, xB = x0 + d, yB = y0 + n, lp = Detail.lignesPente(x0, y0, xB, yB);
+  return { lignes: [`\\text{Le nombre dérivé } ${nom}'(${x0})`, `\\text{est le coefficient directeur de } ${tang}`, `${tang} \\text{ passe par les points}`, `A(${x0}\\,;\\,${y0}) \\text{ et } B(${xB}\\,;\\,${yB})`, ...lp.lignes, `${nom}'(${x0}) \\text{ vaut } ${fracD(sl)}`], final: fracD(sl) };
+}
+
 const generateurs = [
   // Calcul 4.1 - puissances (3 items). Depuis le 30/09/2026 (demande de David), la reponse attendue
   // est l'ecriture 2^k elle-meme -- auparavant seul l'exposant k etait demande, alors que la
@@ -1396,26 +1439,34 @@ const generateurs = [
   {id:"4.1 a)", type:"alg", gen: () => {
     const p = alea(1,6);
     const base = Math.pow(2,p);
-    return { formePuissance2:true, texteLibre:true, enonce:`\\(${base}^n+${base}^n\\)`, reponse: `2^(${fmtLinN(p,1)})` };
+    const fin = `2^{${linN4(p,1)}}`;
+    return { formePuissance2:true, texteLibre:true, enonce:`\\(${base}^n+${base}^n\\)`, reponse: `2^(${fmtLinN(p,1)})`,
+      detail: { lignes: [dedup4(`${base}^{n}+${base}^{n}`, `2\\times ${base}^{n}`, ...(p > 1 ? [`2\\times \\left(2^{${p}}\\right)^{n}`] : []), `2\\times 2^{${linN4(p,0)}}`, fin)], final: fin } };
   }},
   {id:"4.1 b)", type:"alg", gen: () => {
     const p = alea(1,6);
     const base = Math.pow(2,p);
-    return { formePuissance2:true, texteLibre:true, enonce:`\\(${base}^n\\times ${base}^n\\)`, reponse: `2^(${fmtLinN(2*p,0)})` };
+    const fin = `2^{${linN4(2*p,0)}}`;
+    return { formePuissance2:true, texteLibre:true, enonce:`\\(${base}^n\\times ${base}^n\\)`, reponse: `2^(${fmtLinN(2*p,0)})`,
+      detail: { lignes: [dedup4(`${base}^{n}\\times ${base}^{n}`, ...(p > 1 ? [`\\left(2^{${p}}\\right)^{n}\\times \\left(2^{${p}}\\right)^{n}`] : []), `2^{${linN4(p,0)}}\\times 2^{${linN4(p,0)}}`, fin)], final: fin } };
   }},
   {id:"4.1 c)", type:"alg", gen: () => {
     const p = alea(2,3), q = alea(1,2), c = alea(1,4), d = alea(1,2);
     const A = Math.pow(2,p), B = Math.pow(2,q);
-    return { formePuissance2:true, texteLibre:true, enonce:`\\(\\dfrac{${A}^n\\times 2^{n+${c}}}{${B}^{n+${d}}}\\)`, reponse: `2^(${fmtLinN(p+1-q, c-q*d)})` };
+    const fin = `2^{${linN4(p+1-q, c-q*d)}}`;
+    return { formePuissance2:true, texteLibre:true, enonce:`\\(\\dfrac{${A}^n\\times 2^{n+${c}}}{${B}^{n+${d}}}\\)`, reponse: `2^(${fmtLinN(p+1-q, c-q*d)})`,
+      detail: { lignes: [dedup4(`\\dfrac{${A}^{n}\\times 2^{n+${c}}}{${B}^{n+${d}}}`, `\\dfrac{\\left(2^{${p}}\\right)^{n}\\times 2^{n+${c}}}{${q === 1 ? `2^{n+${d}}` : `\\left(2^{${q}}\\right)^{n+${d}}`}}`,
+        `\\dfrac{2^{${linN4(p,0)}}\\times 2^{n+${c}}}{2^{${q === 1 ? `n+${d}` : `${q}(n+${d})`}}}`, `\\dfrac{2^{${linN4(p+1,c)}}}{2^{${linN4(q,q*d)}}}`, fin)], final: fin } };
   }},
   // Calcul 4.2 - factorisation dans des fractions (2 items)
+  // details : on factorise n^k au numerateur et au denominateur, puis on simplifie
   {id:"4.2 a)", type:"alg", gen: () => {
     const num = polyAlea(2), den = polyAlea(2);
-    return { formeUnSurN:true, texteLibre:true, enonce:`\\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})` };
+    return { formeUnSurN:true, texteLibre:true, enonce:`\\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})`, detail: detailFraction4(num, den) };
   }},
   {id:"4.2 b)", type:"alg", gen: () => {
     const num = polyAlea(3), den = polyAlea(3);
-    return { formeUnSurN:true, texteLibre:true, enonce:`\\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})` };
+    return { formeUnSurN:true, texteLibre:true, enonce:`\\(\\dfrac{${joinPolyN(num)}}{${joinPolyN(den)}}\\)`, reponse: `(${joinDivN(num)})/(${joinDivN(den)})`, detail: detailFraction4(num, den) };
   }},
   // Calcul 4.3 - lecture graphique d'un nombre derive : fusion le 30/09/2026 des anciens 6.3 (I,
   // courbe de f) et 6.4 (II, courbe de g), meme consigne numerotee I/II (regle standing de David :
@@ -1431,40 +1482,62 @@ const generateurs = [
     const { p } = paramsGraphiques.g6_3;
     // margeLecture (30/09/2026, demande de David) : lecture graphique, souvent sur telephone --
     // toute valeur a 0,2 pres de la valeur exacte est acceptee (voir checkLectureGraphique).
-    return { repere:"1", margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0" };
+    return { repere:"1", margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${p})\\)`, reponse:"0",
+      detail: { lignes: [`\\text{La tangente au point d'abscisse } ${p}`, '\\text{est la droite } T_{2}', '\\text{Elle est horizontale :}', '\\text{son coefficient directeur est } 0', `f'(${p}) \\text{ vaut } 0`], final: '0' } };
   }},
   {id:"4.3 a) 2", type:"num", gen: () => {
-    const { q, d, m } = paramsGraphiques.g6_3;
-    return { repere:"2", margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}` };
+    const { q, r, d, m } = paramsGraphiques.g6_3;
+    return { repere:"2", margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(f'(${q})\\)`, reponse:`${d*d}/${m}`,
+      detail: detailLecturePente4('f', 'T_{1}', q, r, math.fraction(d*d, m)) };
   }},
   {id:"4.3 b)", type:"num", gen: () => {
-    const { p2, slopeNum, m } = paramsGraphiques.g6_3g;
-    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}` };
+    const { p2, e, C0, slopeNum, m } = paramsGraphiques.g6_3g;
+    // ordonnee exacte du point de tangence : g(p2) = (p2^3/3 - e p2^2/2)/m + C0, entiere pour tout le panel
+    const gy = math.add(math.divide(math.subtract(math.fraction(p2**3, 3), math.fraction(e*p2*p2, 2)), m), C0);
+    return { margeLecture:0.2, texteLibre:true, enonce:`Déterminer graphiquement \\(g'(${p2})\\)`, reponse:`${slopeNum}/${m}`,
+      detail: detailLecturePente4('g', 'T', p2, gy.s * gy.n / gy.d, math.fraction(slopeNum, m)) };
   }},
   // Calcul 4.4 (ex-6.5) - courbe et tableaux (1 item, QCM)
   // Depuis le 30/09/2026 (demande de David) : on repond par le NOM de la fonction (f1, f2 ou f3,
   // noms portes par les tableaux et les courbes), et non plus par une lettre a/b/c/d qui
   // n'apparaissait nulle part sur les figures. Les parametres gardent la lettre a/b/c (position),
   // convertie ici -- voir numeroFonctionQCM, qui accepte aussi les anciens brouillons en a/b/c.
-  {id:"4.4", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_4.lettre, true) })},
+  {id:"4.4", type:"qcm", gen: () => {
+    const g = paramsGraphiques.g6_4, s = g.k > 0 ? '+' : '-', num = numeroFonctionQCM(g.lettre, true);
+    return { sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + num,
+      detail: { lignes: ["\\text{Le signe de } f' \\text{ donne les variations de } f", "\\text{La courbe de } f'", `\\text{coupe l'axe des abscisses en } ${g.r1} \\text{ et } ${g.r2}`,
+        tableauSignesVar4([String(g.r1), String(g.r2)], [s, s === '+' ? '-' : '+', s]), `\\text{Réponse : f${num}}`], final: 'f' + num } };
+  }},
   // Calcul 4.5 - un tableau et trois courbes : fusion le 30/09/2026 des anciens 6.6 (I) et 6.7 (II),
   // meme consigne mot pour mot -> une section, sous-questions a) et b) (chacune son tableau et ses
   // trois courbes, la lettre est portee par le texte d'introduction de la figure).
-  {id:"4.5 a)", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_5a.bonneReponse, true) })},
-  {id:"4.5 b)", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_5b.bonneReponse, true) })},
+  {id:"4.5 a)", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_5a.bonneReponse, true), detail: detail45(paramsGraphiques.g6_5a) })},
+  {id:"4.5 b)", type:"qcm", gen: () => ({ sansEgal:true, texteLibre:true, enonce:"Parmi \\(f_1\\), \\(f_2\\) et \\(f_3\\), quelle fonction a pour dérivée \\(f'\\) ?", bonneReponse: 'f' + numeroFonctionQCM(paramsGraphiques.g6_5b.bonneReponse, true), detail: detail45(paramsGraphiques.g6_5b) })},
   // Calcul 4.6 (ex-6.8) - tangente et rayon (7 items : etapes d'un meme probleme guide, pas des exemples -- non reduit, déjà génériques en t : rien à randomiser)
-  {id:"4.6 a)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Exprimer \\(OM(t)\\) en fonction de \\(t\\)", reponse:"sqrt(t^2+yt^2)" })},
-  {id:"4.6 b)", type:"alg", gen: () => ({ texteLibre:true, enonce:"En déduire une expression de \\(y_t\\) en fonction de \\(t\\)", reponse:"sqrt(1-t^2)" })},
-  {id:"4.6 c)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Avec \\(f(t)=\\sqrt{1-t^2}\\), donner l'expression de \\(f'(t)\\)", reponse:"-t/sqrt(1-t^2)" })},
-  {id:"4.6 d)", type:"alg", gen: () => ({ formeYax:true, texteLibre:true, enonce:"Donner l'équation réduite de la tangente \\(T\\) à \\(C_f\\) au point d'abscisse \\(t\\), sous la forme y=ax+b", reponse: equationReduiteAscii("-t/sqrt(1-t^2)","1/sqrt(1-t^2)") })},
-  {id:"4.6 e)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur \\(\\vec{w}\\) de \\(T\\) sous la forme \\((x;y)\\)", vx:"sqrt(1-t^2)", vy:"-t", vars:["t"] })},
-  {id:"4.6 f)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur de la droite \\((OM(t))\\) sous la forme \\((x;y)\\)", vx:"t", vy:"sqrt(1-t^2)", vars:["t"] })},
-  {id:"4.6 g)", type:"vraifaux", gen: () => ({ texteLibre:true, enonce:"Les vecteurs \\(\\vec{w}\\) et \\(\\overrightarrow{OM}(t)\\) sont-ils orthogonaux ?", estVrai:true })}
+  {id:"4.6 a)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Exprimer \\(OM(t)\\) en fonction de \\(t\\)", reponse:"sqrt(t^2+yt^2)",
+    detail: { lignes: ['O(0\\,;\\,0) \\text{ et } M(t\\,;\\,y_{t})', 'OM(t) = \\sqrt{(t-0)^{2}+(y_{t}-0)^{2}} = \\sqrt{t^{2}+y_{t}^{2}}'], final: '\\sqrt{t^{2}+y_{t}^{2}}' } })},
+  {id:"4.6 b)", type:"alg", gen: () => ({ texteLibre:true, enonce:"En déduire une expression de \\(y_t\\) en fonction de \\(t\\)", reponse:"sqrt(1-t^2)",
+    detail: { lignes: ['\\text{M(t) est sur le cercle de centre } O \\text{ et de rayon } 1', 'OM(t) = 1', '\\sqrt{t^{2}+y_{t}^{2}} = 1', '\\iff t^{2}+y_{t}^{2} = 1', '\\iff y_{t}^{2} = 1-t^{2}',
+      '\\text{Or } y_{t} \\text{ est strictement positif}', 'y_{t} = \\sqrt{1-t^{2}}'], final: '\\sqrt{1-t^{2}}' } })},
+  {id:"4.6 c)", type:"alg", gen: () => ({ texteLibre:true, enonce:"Avec \\(f(t)=\\sqrt{1-t^2}\\), donner l'expression de \\(f'(t)\\)", reponse:"-t/sqrt(1-t^2)",
+    detail: { lignes: ["(\\sqrt{u})' = \\dfrac{u'}{2\\sqrt{u}}", "\\text{Ici } u \\text{ vaut } 1-t^{2} \\text{ et } u' \\text{ vaut } -2t", "f'(t) = \\dfrac{-2t}{2\\sqrt{1-t^{2}}} = -\\dfrac{t}{\\sqrt{1-t^{2}}}"], final: '-\\dfrac{t}{\\sqrt{1-t^{2}}}' } })},
+  {id:"4.6 d)", type:"alg", gen: () => ({ formeYax:true, texteLibre:true, enonce:"Donner l'équation réduite de la tangente \\(T\\) à \\(C_f\\) au point d'abscisse \\(t\\), sous la forme y=ax+b", reponse: equationReduiteAscii("-t/sqrt(1-t^2)","1/sqrt(1-t^2)"),
+    detail: { lignes: ["\\text{Équation de la tangente en } t \\text{ :}", "y = f'(t)(x-t)+f(t)", "y = -\\dfrac{t}{\\sqrt{1-t^{2}}}(x-t)+\\sqrt{1-t^{2}}", "y = -\\dfrac{t}{\\sqrt{1-t^{2}}}x+\\dfrac{t^{2}}{\\sqrt{1-t^{2}}}+\\dfrac{1-t^{2}}{\\sqrt{1-t^{2}}}",
+      "y = -\\dfrac{t}{\\sqrt{1-t^{2}}}x+\\dfrac{1}{\\sqrt{1-t^{2}}}"], final: "y = -\\dfrac{t}{\\sqrt{1-t^{2}}}x+\\dfrac{1}{\\sqrt{1-t^{2}}}" } })},
+  {id:"4.6 e)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur \\(\\vec{w}\\) de \\(T\\) sous la forme \\((x;y)\\)", vx:"sqrt(1-t^2)", vy:"-t", vars:["t"],
+    detail: { lignes: ["\\text{Un vecteur directeur de } T \\text{ est } \\left(1\\,;\\,f'(t)\\right)", "\\text{soit } \\left(1\\,;\\,-\\dfrac{t}{\\sqrt{1-t^{2}}}\\right)", "\\text{On le multiplie par } \\sqrt{1-t^{2}}", "\\text{qui est strictement positif}", "\\left(\\sqrt{1-t^{2}}\\,;\\,-t\\right)"], final: "\\left(\\sqrt{1-t^{2}}\\,;\\,-t\\right)" } })},
+  {id:"4.6 f)", type:"vecteur", gen: () => ({ texteLibre:true, enonce:"Donner les coordonnées d'un vecteur directeur de la droite \\((OM(t))\\) sous la forme \\((x;y)\\)", vx:"t", vy:"sqrt(1-t^2)", vars:["t"],
+    detail: { lignes: ["\\overrightarrow{OM}(t) \\text{ a pour coordonnées } \\left(t\\,;\\,\\sqrt{1-t^{2}}\\right)", "\\text{C'est un vecteur directeur}", "\\text{de la droite } (OM(t))", "\\left(t\\,;\\,\\sqrt{1-t^{2}}\\right)"], final: "\\left(t\\,;\\,\\sqrt{1-t^{2}}\\right)" } })},
+  {id:"4.6 g)", type:"vraifaux", gen: () => ({ texteLibre:true, enonce:"Les vecteurs \\(\\vec{w}\\) et \\(\\overrightarrow{OM}(t)\\) sont-ils orthogonaux ?", estVrai:true,
+    detail: { lignes: ["\\text{On calcule le produit scalaire de } \\vec{w} \\text{ et } \\overrightarrow{OM}(t)", "\\sqrt{1-t^{2}}\\times t+(-t)\\times \\sqrt{1-t^{2}} = t\\sqrt{1-t^{2}}-t\\sqrt{1-t^{2}} = 0", "\\text{Il est nul : les vecteurs sont orthogonaux}", "\\text{Réponse : Vrai}"], final: 'Vrai' } })}
 ];
 
 function genererExercices() {
   genererParametresGraphiques();
-  return generateurs.map(g => ({ id: g.id, type: g.type, ...g.gen() }));
+  const tous = generateurs.map(g => ({ id: g.id, type: g.type, ...g.gen() }));
+  Detail.preparer(tous);   // « < » des étapes : \lt
+  Detail.couper(tous, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return tous;
 }
 let exercices = genererExercices();
 
@@ -2795,7 +2868,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

@@ -718,6 +718,18 @@ module.exports = [
     }
   },
   {
+    nom: 'la-reponse-citee-est-la-bonne-reponse-du-qcm',
+    // « \text{Réponse : f2} » : c'est la bonne réponse de l'exercice (QCM f1, f2, f3)
+    motif: /^\\text\{Réponse : f\d\}$/,
+    verifie: (l, e) => l === '\\text{Réponse : ' + String(e.bonneReponse) + '}'
+  },
+  {
+    nom: 'le-produit-scalaire-annonce-nul-vaut-0',
+    // « \text{Il est nul : les vecteurs sont orthogonaux} » : la ligne qui précède se termine par « = 0 »
+    motif: /^\\text\{Il est nul : les vecteurs sont orthogonaux\}$/,
+    verifie: (l, e) => { const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l); return i > 0 && /= 0$/.test(L[i - 1].trim()); }
+  },
+  {
     nom: 'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce',
     // « \text{Parmi les individus de } B \text{, ceux de } \overline{A} \text{ :} » : le couple (X, Y) est celui d'un P_{X}(Y) de l'énoncé
     motif: /\\text\{Parmi les individus de \} .* \\text\{, ceux de \}/,

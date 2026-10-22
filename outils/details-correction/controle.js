@@ -293,7 +293,7 @@ async function controlerDansLaPage(opts) {
   // ---------- réponse finale ----------
   function comparerFinal(e) {
     const D = e.detail;
-    const F = D.final;
+    const F = String(D.final).replace(/y_\{t\}/g, 'yt');      // la variable y_t de l'énoncé s'écrit yt dans la réponse attendue (Première 4.6)
     if (e.type === 'intervalle' && e.intervalleSpec) {
       const exact = formaterIntervalleSpec(e.intervalleSpec);
       if (!e.tolerance) return F === exact || F === exact.replace(/(\d)\.(\d)/g, '$1{,}$2') ? 'ok' : 'faux';
@@ -470,7 +470,7 @@ async function controlerDansLaPage(opts) {
     }
     try {
       for (let k = 0; k < NB_PORTEES; k++) {
-        const m = versMathjs(String(F).replace(/^\s*(?:y|f\(x\))\s*=\s*/, '')), sc = portee(m + ' + ' + rep, k);     // équation réduite « y = mx + p » ou « f(x) = mx + p » : on compare mx + p
+        const m = versMathjs(String(F).replace(/^\s*(?:y|f\(x\))\s*=\s*/, '')).replace(/\by\*t\b/g, 'yt'), sc = portee(m + ' + ' + rep, k);     // équation réduite « y = mx + p » ou « f(x) = mx + p » : on compare mx + p
         const a = math.evaluate(rep, sc), b = math.evaluate(m, sc);
         if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b)) return 'non-verifiable';
         if (!egal(a, b)) return 'faux';
