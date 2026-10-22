@@ -636,6 +636,63 @@ module.exports = [
     }
   },
   {
+    nom: 'le-discriminant-annonce-le-bon-nombre-de-racines',
+    // « 4 \gt 0 \text{ : deux racines distinctes} », « -\dfrac{17}{3} \lt 0 \text{ : aucune racine réelle} », « 0 \text{ : une racine double} » (le discriminant
+    // nul est celui de la ligne « \Delta = … = 0 » qui précède)
+    motif: /\\text\{ : (?:deux racines distinctes|aucune racine réelle|une racine double)\}$/,
+    verifie: (l, e) => {
+      const m = l.match(/^(-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) (\\gt|\\lt) 0 \\text\{ : (deux racines distinctes|aucune racine réelle)\}$/);
+      if (m) {
+        const v = math.evaluate(m[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')'));
+        return v !== 0 && (m[2] === '\\gt') === (v > 0) && (m[3] === 'deux racines distinctes') === (v > 0);
+      }
+      if (!/^0 \\text\{ : une racine double\}$/.test(l)) return false;
+      const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l);
+      return i > 0 && /= 0$/.test(L[i - 1].trim());
+    }
+  },
+  {
+    nom: 'le-trinome-positif-pour-tout-reel-a-un-coefficient-positif-et-pas-de-racine',
+    // « 1 \gt 0 \text{ : trinôme strictement positif} » : le coefficient dominant est positif et le discriminant a annoncé « aucune racine réelle »
+    motif: /\\gt 0 \\text\{ : trinôme strictement positif\}$/,
+    verifie: (l, e) => {
+      const m = l.match(/^(-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) \\gt 0 \\text\{ : trinôme strictement positif\}$/);
+      if (!m) return false;
+      const v = math.evaluate(m[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')'));
+      return v > 0 && ((e.detail && e.detail.lignes) || []).some((x) => /\\lt 0 \\text\{ : aucune racine réelle\}$/.test(x));
+    }
+  },
+  {
+    nom: 'le-coefficient-dominant-annonce-est-positif-et-est-celui-de-l-enonce',
+    // « \dfrac{2}{3} \gt 0 \text{ donc} » (énoncé « P(x)=\dfrac{2}{3}x^2+… ») : le nombre est positif et c'est le coefficient de x^2 de P
+    motif: /^-?(?:\\dfrac\{\d+\}\{\d+\}|\d+) \\gt 0 \\text\{ donc\}$/,
+    verifie: (l, e) => {
+      const m = l.match(/^(-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) \\gt 0 \\text\{ donc\}$/), p = String(e.enonce).match(/P\(x\)=((?:\\dfrac\{\d+\}\{\d+\})|\d*)x\^2/);
+      if (!m || !p) return false;
+      const val = (t) => (t === '' ? 1 : math.evaluate(t.replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')')));
+      return val(m[1]) > 0 && Math.abs(val(m[1]) - val(p[1])) < 1e-9;
+    }
+  },
+  {
+    nom: 'la-constante-annoncee-negative-est-celle-de-l-enonce',
+    // « -8 \lt 0 \text{ donc } P(0) \lt 0 \text{ pour toute valeur de } a » (énoncé « P(x)=ax^2+4x-8 ») : c est négatif et c'est la constante de P
+    motif: /\\text\{ donc \} P\(0\) \\lt 0/,
+    verifie: (l, e) => {
+      const m = l.match(/^(-\d+) \\lt 0 \\text\{ donc \} P\(0\) \\lt 0 \\text\{ pour toute valeur de \} a$/), p = String(e.enonce).match(/([+-]\d+)\\\)$/);
+      return !!m && !!p && Number(m[1]) < 0 && Number(m[1]) === Number(p[1]);
+    }
+  },
+  {
+    nom: 'oui-si-et-seulement-si-le-discriminant-annonce-deux-racines-distinctes',
+    // « \text{Réponse : oui} » après un discriminant : oui exactement quand une ligne annonce « deux racines distinctes »
+    motif: /^\\text\{Réponse : (?:oui|non)\}$/,
+    verifie: (l, e) => {
+      const L = (e.detail && e.detail.lignes) || [];
+      if (!L.some((x) => /Discriminant : /.test(x))) return null;
+      return /oui/.test(l) === L.some((x) => /\\gt 0 \\text\{ : deux racines distinctes\}$/.test(x));
+    }
+  },
+  {
     nom: 'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce',
     // « \text{Parmi les individus de } B \text{, ceux de } \overline{A} \text{ :} » : le couple (X, Y) est celui d'un P_{X}(Y) de l'énoncé
     motif: /\\text\{Parmi les individus de \} .* \\text\{, ceux de \}/,

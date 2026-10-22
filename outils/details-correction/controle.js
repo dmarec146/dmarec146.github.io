@@ -460,9 +460,10 @@ async function controlerDansLaPage(opts) {
     }
     if (rep.startsWith('{')) {
       try {
-        const A = rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x.replace(',', '.'))).sort((p, q) => p - q);
+        const sansDoublon = (L) => L.filter((v, i) => i === 0 || Math.abs(v - L[i - 1]) > 1e-9);      // {r;r} (racine double) = {r}
+        const A = sansDoublon(rep.slice(1, -1).split(';').filter((s) => s.trim()).map((x) => math.evaluate(x.replace(',', '.'))).sort((p, q) => p - q));
         const interieur = String(F).replace(/\\left\\\{|\\right\\\}/g, '').replace(/\\[,;! ]/g, '').replace(/\\\{|\\\}/g, '');
-        const B = /^\s*(\\emptyset|\\varnothing)\s*$/.test(String(F)) ? [] : interieur.split(';').filter((s) => s.trim()).map((x) => evaluer(x, 0)).sort((p, q) => p - q);
+        const B = /^\s*(\\emptyset|\\varnothing)\s*$/.test(String(F)) ? [] : sansDoublon(interieur.split(';').filter((s) => s.trim()).map((x) => evaluer(x, 0)).sort((p, q) => p - q));
         const tol = e.margeLecture ? e.margeLecture + 1e-9 : 0;      // lecture graphique : valeurs lues au dixième
         return A.length === B.length && A.every((v, i) => (tol ? Math.abs(v - B[i]) <= tol : egal(v, B[i]))) ? 'ok' : 'faux';
       } catch (er) { return 'non-verifiable'; }
@@ -825,7 +826,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
           numLigne++;
           const svg = ligne.querySelector('svg, mjx-container'); if (!svg) { mesures.push({ id: bloc.id, vide: true }); continue; }
           // largeur naturelle de la formule rapportée à la largeur disponible : > 1 = la ligne défile horizontalement
-          mesures.push({ id: bloc.id, num: numLigne, largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"], mjx-merror') });
+          mesures.push({ id: bloc.id, num: numLigne, texte: String(((exercices[Number(bloc.id.replace("details-", ""))] || {}).detail || { lignes: [] }).lignes[numLigne - 1] || "").slice(0, 110), largeur: ligne.scrollWidth / Math.max(1, ligne.clientWidth), erreur: !!ligne.querySelector('[data-mml-node="merror"], mjx-merror') });
         }
       }
       // éléments qui dépassent à droite de l'écran sans être dans un conteneur à défilement (pour localiser un débordement)
@@ -850,7 +851,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       if (m.erreur) anomalies.push({ gravite: 'erreur', motif: 'erreur-mathjax-affichee', id: '(interface ' + tag + ')', exemple: m.id });
       // la ligne garde sa taille et défile : aucun défilement ne devrait être utile, ni sur téléphone ni sur ordinateur
       const seuil = 1.1;   // David (16/10/2026) : le moins de défilement possible, même sur téléphone
-      if (m.largeur !== undefined && m.largeur > seuil) anomalies.push({ gravite: 'style', motif: 'ligne-trop-longue-' + (viewport.width < 600 ? 'telephone' : 'ordinateur'), id: m.id.replace('details-', 'ex.#'), exemple: `ligne ${m.num} : ${m.largeur.toFixed(2)} fois la largeur disponible (${tag})` });
+      if (m.largeur !== undefined && m.largeur > seuil) anomalies.push({ gravite: 'style', motif: 'ligne-trop-longue-' + (viewport.width < 600 ? 'telephone' : 'ordinateur'), id: m.id.replace('details-', 'ex.#'), exemple: `ligne ${m.num} : ${m.largeur.toFixed(2)} fois la largeur disponible (${tag}) — ${m.texte || ""}` });
     }
     if (res.debordement > 2) anomalies.push({ gravite: 'erreur', motif: 'debordement-horizontal', id: '(interface ' + tag + ')', exemple: res.debordement + ' px de trop' + (res.fautifs.length ? ' — ' + res.fautifs.join(' ; ') : '') });
   }

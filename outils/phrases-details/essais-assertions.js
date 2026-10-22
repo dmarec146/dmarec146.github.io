@@ -408,6 +408,37 @@ const ESSAIS = {
     [false, '\\text{L\'inégalité est vraie pour tout réel } z', { estVrai: false }, env('')],
     [false, '\\text{L\'inégalité est fausse pour } z \\text{ égal à } \\dfrac{1}{2}', { estVrai: true }, env('')]
   ],
+  'le-discriminant-annonce-le-bon-nombre-de-racines': [
+    [true, '4 \\gt 0 \\text{ : deux racines distinctes}', {}, env('')],
+    [true, '-\\dfrac{17}{3} \\lt 0 \\text{ : aucune racine réelle}', {}, env('')],
+    [true, '0 \\text{ : une racine double}', { detail: { lignes: ['\\Delta = 9-9', '= 0', '0 \\text{ : une racine double}'] } }, env('')],
+    [false, '-4 \\gt 0 \\text{ : deux racines distinctes}', {}, env('')],
+    [false, '4 \\lt 0 \\text{ : aucune racine réelle}', {}, env('')],
+    [false, '5 \\gt 0 \\text{ : aucune racine réelle}', {}, env('')],
+    [false, '0 \\text{ : une racine double}', { detail: { lignes: ['\\Delta = 9-4 = 5', '0 \\text{ : une racine double}'] } }, env('')]
+  ],
+  'le-trinome-positif-pour-tout-reel-a-un-coefficient-positif-et-pas-de-racine': [
+    [true, '1 \\gt 0 \\text{ : trinôme strictement positif}', { detail: { lignes: ['-\\dfrac{17}{3} \\lt 0 \\text{ : aucune racine réelle}'] } }, env('')],
+    [false, '1 \\gt 0 \\text{ : trinôme strictement positif}', { detail: { lignes: ['4 \\gt 0 \\text{ : deux racines distinctes}'] } }, env('')],
+    [false, '-1 \\gt 0 \\text{ : trinôme strictement positif}', { detail: { lignes: ['-5 \\lt 0 \\text{ : aucune racine réelle}'] } }, env('')]
+  ],
+  'le-coefficient-dominant-annonce-est-positif-et-est-celui-de-l-enonce': [
+    [true, '\\dfrac{2}{3} \\gt 0 \\text{ donc}', { enonce: 'Avec \\(P(x)=\\dfrac{2}{3}x^2+3x+\\dfrac{a}{2}\\)' }, env('')],
+    [true, '1 \\gt 0 \\text{ donc}', { enonce: 'Avec \\(P(x)=x^2+x+\\dfrac{a}{2}\\)' }, env('')],
+    [false, '\\dfrac{3}{2} \\gt 0 \\text{ donc}', { enonce: 'Avec \\(P(x)=\\dfrac{2}{3}x^2+3x+\\dfrac{a}{2}\\)' }, env('')],
+    [false, '1 \\gt 0 \\text{ donc}', { enonce: 'Avec \\(P(x)=2x^2+x+\\dfrac{a}{2}\\)' }, env('')]
+  ],
+  'la-constante-annoncee-negative-est-celle-de-l-enonce': [
+    [true, '-8 \\lt 0 \\text{ donc } P(0) \\lt 0 \\text{ pour toute valeur de } a', { enonce: 'Avec \\(P(x)=ax^2+4x-8\\)' }, env('')],
+    [false, '-7 \\lt 0 \\text{ donc } P(0) \\lt 0 \\text{ pour toute valeur de } a', { enonce: 'Avec \\(P(x)=ax^2+4x-8\\)' }, env('')],
+    [false, '-8 \\lt 0 \\text{ donc } P(0) \\lt 0 \\text{ pour toute valeur de } a', { enonce: 'Avec \\(P(x)=ax^2+4x+8\\)' }, env('')]
+  ],
+  'oui-si-et-seulement-si-le-discriminant-annonce-deux-racines-distinctes': [
+    [true, '\\text{Réponse : oui}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '9 \\gt 0 \\text{ : deux racines distinctes}'] } }, env('')],
+    [true, '\\text{Réponse : non}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '-3 \\lt 0 \\text{ : aucune racine réelle}'] } }, env('')],
+    [false, '\\text{Réponse : non}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '9 \\gt 0 \\text{ : deux racines distinctes}'] } }, env('')],
+    [false, '\\text{Réponse : oui}', { detail: { lignes: ['\\text{Discriminant : } b^{2}-4ac', '-3 \\lt 0 \\text{ : aucune racine réelle}'] } }, env('')]
+  ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
