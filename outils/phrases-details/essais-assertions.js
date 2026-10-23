@@ -467,6 +467,16 @@ const ESSAIS = {
     [true, '\\text{Il est nul : les vecteurs sont orthogonaux}', { detail: { lignes: ['a+b = c = 0', '\\text{Il est nul : les vecteurs sont orthogonaux}'] } }, env('')],
     [false, '\\text{Il est nul : les vecteurs sont orthogonaux}', { detail: { lignes: ['a+b = c = 3', '\\text{Il est nul : les vecteurs sont orthogonaux}'] } }, env('')]
   ],
+  'la-solution-trouvee-differe-de-la-valeur-interdite': [
+    [true, '-\\dfrac{1}{2} \\neq 3 \\text{ : la solution convient}', { reponse: '{-1/2}' }, env('')],
+    [true, '4 \\neq -\\dfrac{3}{2} \\text{ : la solution convient}', { reponse: '{4}' }, env('')],
+    [false, '3 \\neq 3 \\text{ : la solution convient}', { reponse: '{3}' }, env('')],
+    [false, '2 \\neq 3 \\text{ : la solution convient}', { reponse: '{5}' }, env('')]
+  ],
+  'le-trinome-ne-s-annule-pas-apres-delta-negatif': [
+    [true, '\\text{Donc } u \\text{ ne s\'annule pas}', { detail: { lignes: ['-3 \\lt 0 \\text{ : aucune racine réelle}', '\\text{Donc } u \\text{ ne s\'annule pas}'] } }, env('')],
+    [false, '\\text{Donc } u \\text{ ne s\'annule pas}', { detail: { lignes: ['5 \\gt 0 \\text{ : deux racines distinctes}', '\\text{Donc } u \\text{ ne s\'annule pas}'] } }, env('')]
+  ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],

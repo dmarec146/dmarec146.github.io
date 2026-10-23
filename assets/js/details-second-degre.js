@@ -101,5 +101,44 @@ const DetailQ = (() => {
     const t = texRacineSimp2(P, Q, rad, D);
     return t.startsWith('-') ? `x+${t.slice(1)}` : `x-${t}`;
   }
-  return { dF2, dedup2, polyF2, sommeF2, sg2, coefLettre2, lignesDelta2, phraseDelta2, ENTETE_RACINES2, texRacineQuadratique, texRacineSimp2, lignesRacines2, lignesRacinesRat2, ligneRacineDouble2, facteurRacine2, facteurRacineSurd2 };
+  // tableau de signes d'un trinome (une ligne) : racines = [{ v: nombre, tex }], g(t) = valeur du trinome, etiquette = le trinome ecrit en LaTeX
+  function tableauTrinome2(v, racines, g, etiquette) {
+    const bs = [...racines].sort((p, q) => p.v - q.v), n = bs.length;
+    const signe = (i) => { const lo = i === 0 ? -Infinity : bs[i - 1].v, hi = i === n ? Infinity : bs[i].v; const t = !isFinite(lo) ? hi - 1 : !isFinite(hi) ? lo + 1 : (lo + hi) / 2; return g(t) > 0 ? '+' : '-'; };
+    const haut = [v, '-\\infty'], bas = [etiquette, ''];
+    const long = n >= 3 || bs.reduce((s, r) => s + r.tex.length, etiquette.length) > 26;      // racines longues : taille reduite et fractions en ligne, pour tenir sur un telephone
+    bs.forEach((r, i) => { haut.push('', long ? r.tex.replace(/\\dfrac/g, '\\frac') : r.tex); bas.push(signe(i), '0'); });
+    haut.push('', '+\\infty'); bas.push(signe(n), '');
+    return `${long ? '\\scriptsize' : '\\small'}\\begin{array}{c|${'c'.repeat(2 * n + 3)}} ${haut.join(' & ')} \\\\ \\hline ${bas.join(' & ')} \\end{array}`;
+  }
+  // inequation du second degre « A v^2 + B v + C op 0 » (A, B, C entiers ou fractions ; op '>', '>=', '<', '<=') : discriminant, racines, tableau de signes,
+  // ensemble des solutions (spec = intervalleSpec de la reponse, fmt = formaterIntervalleSpec de la fiche). debut = lignes qui menent a cette forme
+  // (la forme elle-meme y figure) ; sinon elle est ecrite ici.
+  function detailInequation2(v, A, B, C, op, spec, debut, fmt) {
+    let a = math.fraction(A), b = math.fraction(B), c = math.fraction(C);
+    const sym = { '>': '\\gt', '>=': '\\geqslant', '<': '\\lt', '<=': '\\leqslant' }, inv = { '>': '<', '>=': '<=', '<': '>', '<=': '>=' };
+    const poly = (a, b, c) => polyF2([{ c: a, v: `${v}^{2}` }, { c: b, v }, { c, v: '' }]);
+    const lignes = debut && debut.length ? [...debut] : [`${poly(a, b, c)} ${sym[op]} 0`];
+    if (a.s < 0) {      // coefficient dominant negatif : on divise par -1 pour le rendre positif
+      lignes.push('\\text{On divise par } -1 \\lt 0', "\\text{donc le sens de l'inégalité change}");
+      a = math.unaryMinus(a); b = math.unaryMinus(b); c = math.unaryMinus(c); op = inv[op];
+      lignes.push(`\\iff ${poly(a, b, c)} ${sym[op]} 0`);
+    }
+    const d = lignesDelta2(a, b, c), D = d.D, etiquette = poly(a, b, c);
+    lignes.push('\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(D));
+    if (D.s < 0) lignes.push(`${fracD(a)} \\gt 0 \\text{ : trinôme strictement positif}`, `\\text{pour tout réel } ${v}`);
+    else if (D.n === 0) {
+      const r = ligneRacineDouble2(a, b); lignes.push(r.ligne);
+      lignes.push(tableauTrinome2(v, [{ v: math.number(r.x0), tex: fracD(r.x0) }], (t) => math.number(a), etiquette));
+    } else {
+      let r, racines;
+      if (a.d === 1 && b.d === 1 && D.d === 1) { r = lignesRacines2(a.n, b.s * b.n, D.n); racines = [{ v: r.x1, tex: r.t1 }, { v: r.x2, tex: r.t2 }]; }
+      else { r = lignesRacinesRat2(a, b, D); racines = [{ v: math.number(r.x1), tex: fracD(r.x1) }, { v: math.number(r.x2), tex: fracD(r.x2) }]; }
+      lignes.push(...r.lignes, tableauTrinome2(v, racines, (t) => math.number(a) * (t - racines[0].v) * (t - racines[1].v), etiquette));
+    }
+    const final = fmt(spec);
+    lignes.push(`${final.length > 44 ? '\\scriptsize ' : final.length > 30 ? '\\small ' : ''}S = ${final}`);      // une reponse longue passe en plus petit pour tenir sur un telephone
+    return { lignes, final };
+  }
+  return { dF2, dedup2, polyF2, sommeF2, sg2, coefLettre2, lignesDelta2, phraseDelta2, ENTETE_RACINES2, texRacineQuadratique, texRacineSimp2, lignesRacines2, lignesRacinesRat2, ligneRacineDouble2, facteurRacine2, facteurRacineSurd2, tableauTrinome2, detailInequation2 };
 })();

@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"5.1 a)":0.5,"5.1 b)":0.5,"5.2 a)":0.5,"5.2 b)":0.5,"5.3 a)":0.5,"5.3 b)":0.75,"5.4 a)":0.5,"5.4 b)":0.75,"5.4 c)":0.75,"5.5 a)":0.75,"5.5 b)":0.75,"5.6 a)":0.75,"5.6 b)":1,"5.6 c)":1,"5.6 d)":1,"5.7 a)":0.75,"5.7 b)":1,"5.7 c)":1,"5.8 a)":1,"5.8 b)":1,"5.8 c)":1.25,"5.8 d)":1.25,"5.8 e)":1.25,"5.9 a)":1,"5.9 b)":1,"5.9 c)":1,"5.10 a)":1.5,"5.10 b)":1.5,"5.10 c)":1.75,"5.10 d)":2},"bonus":["5.10 a)","5.10 b)","5.10 c)","5.10 d)"]});
@@ -1121,6 +1123,192 @@ function snAscii(c, D) {
     : (t.neg ? (t.frac ? '-(' + t.corps + ')' : '-' + t.corps) : t.corps)).join('');
 }
 
+// ---------- details de correction (23/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracTexte, fracBrute } = Detail;
+const { dF2, dedup2, polyF2, sommeF2, lignesDelta2, phraseDelta2, lignesRacines2, tableauTrinome2, detailInequation2 } = DetailQ;
+// fraction {n,d} de la fiche -> fraction math.js
+const mf5 = (a) => math.fraction(a.n, a.d);
+const SYM5 = { '<': '\\lt', '>': '\\gt', '<=': '\\leqslant', '>=': '\\geqslant' }, INV5 = { '<': '>', '>': '<', '<=': '>=', '>=': '<=' };
+// polynome de la fiche (coefficients {n,d} dans l'ordre croissant des degres) en LaTeX decroissant
+const polyL5 = (p, v = 'x') => polyF2(p.map((c, k) => ({ c: mf5(c), v: k === 0 ? '' : k === 1 ? v : `${v}^{${k}}` })).reverse());
+// puissance b^{e} : exposant 1 omis ; null si e = 0
+const pw5 = (b, e) => (e === 0 ? null : e === 1 ? String(b) : `${b}^{${e}}`);
+const prod5 = (...f) => { const l = f.filter((x) => x !== null); return l.length ? l.join('\\times ') : '1'; };
+// somme de termes { c (entier ou fraction math.js), corps (LaTeX ou '') } : coefficient 1 omis devant un corps, signe devant chaque terme
+function somme5(termes) {
+  let s = '';
+  termes.forEach(({ c, corps }) => {
+    const f = math.fraction(c); if (f.n === 0) return;
+    const mag = fracTexte(f.n, f.d), t = !corps ? mag : (mag === '1' ? corps : `${mag}${/^[\\(]/.test(corps) || /^\d/.test(corps) ? '\\times ' : ''}${corps}`);
+    s += (f.s < 0 ? '-' : (s ? '+' : '')) + t;
+  });
+  return s || '0';
+}
+// derivee terme a terme : chaine « chaque terme k c x^{k-1} = polynome derive » (identite verifiable en x)
+function chaineDeriv5(p, v = 'x') {
+  const termes = [];
+  for (let k = p.length - 1; k >= 1; k--) {
+    const c = mf5(p[k]); if (c.n === 0) continue;
+    const puis = k - 1 === 0 ? '' : k - 1 === 1 ? v : `${v}^{${k - 1}}`, mag = fracTexte(c.n, c.d);
+    termes.push({ neg: c.s < 0, corps: k === 1 ? mag : (mag === '1' ? `${k}${puis}` : `${k}\\times ${mag}${puis}`) });
+  }
+  const sub0 = termes.map((t, i) => (t.neg ? '-' : (i ? '+' : '')) + t.corps).join('') || '0', sub = (sub0.length > 85 ? '\\scriptsize ' : sub0.length > 60 ? '\\small ' : '') + sub0;      // longue ligne : plus petit pour tenir sur un telephone
+  return dedup2(sub, polyL5(pDerivF(p), v));
+}
+const REGLE_DERIV5 = ["\\text{Un terme } cx^{k} \\text{ a pour dérivée } kcx^{k-1}", '\\text{Un terme constant a pour dérivée } 0'];
+// a + b sqrt(D) (fractions {n,d}) en LaTeX, terme a terme
+function snTex5(c, D) {
+  const a = mf5(c.a), b = mf5(c.b), parts = [];
+  if (a.n !== 0) parts.push({ neg: a.s < 0, corps: fracTexte(a.n, a.d) });
+  if (b.n !== 0) { const rac = (b.n === 1 ? '' : String(b.n)) + `\\sqrt{${D}}`; parts.push({ neg: b.s < 0, corps: b.d === 1 ? rac : `\\dfrac{${rac}}{${b.d}}` }); }
+  return parts.length ? parts.map((t, i) => (t.neg ? '-' : (i ? '+' : '')) + t.corps).join('') : '0';
+}
+// inequation du premier degre px+q op rx+s (entiers) : on regroupe, on divise (changement de sens si le coefficient est negatif)
+function detail51a(p, q, r, s, op, spec) {
+  const k = math.fraction(p - r), m = math.fraction(s - q), seuil = math.divide(m, k), S = formaterIntervalleSpec(spec);
+  const lignes = [`${polyF2([{c:p,v:'x'},{c:q,v:''}])} ${SYM5[op]} ${polyF2([{c:r,v:'x'},{c:s,v:''}])}`, `\\iff ${polyF2([{c:k,v:'x'}])} ${SYM5[op]} ${fracD(m)}`];
+  if (k.s < 0) lignes.push(`\\text{On divise par } ${fracD(k)} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  lignes.push(`\\iff x ${SYM5[k.s < 0 ? INV5[op] : op]} ${fracD(seuil)}`, `S = ${S}`);
+  return { lignes, final: S };
+}
+// inequation produit (px+q)(rx+s) op 0 : signe de chaque facteur, tableau de signes complet, ensemble des solutions
+function detail51b(u, v, op, spec) {
+  const S = formaterIntervalleSpec(spec), lu = latexAffine(u), lv = latexAffine(v), sgl = (f) => Math.sign(f.p);
+  const tableau = Detail.tableauSignesFacteurs([{ label: lu, v: -u.q / u.p, tex: fracTexte(-u.q, u.p), sgn: sgl(u) }, { label: lv, v: -v.q / v.p, tex: fracTexte(-v.q, v.p), sgn: sgl(v) }], 'signe');
+  return { lignes: [`(${lu})(${lv}) ${SYM5[op]} 0`, ...Detail.lignesSigneAffine(u.p, u.q), ...Detail.lignesSigneAffine(v.p, v.q), '\\text{Tableau de signes du produit}', tableau,
+    '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles l'expression est } ${SYM5[op]}\\ 0`, `S = ${S}`], final: S };
+}
+// equation produit (px+q)(rx+s) = 0
+function detail52a(u, v) {
+  const lu = latexAffine(u), lv = latexAffine(v), ru = racineAffine(u), rv = racineAffine(v);
+  const etapeFacteur = (f, r) => { const l = latexAffine(f), eg = Math.abs(f.p) === 1 ? [] : [`\\iff ${polyF2([{c:f.p,v:'x'}])} = ${-f.q}`]; return [`${l} = 0`, ...eg, `\\iff x = ${fracD(mf5(r))}`]; };
+  const rs = [ru, rv].map(mf5).sort((x, y) => math.number(x) - math.number(y)), S = `\\{${rs.map(fracD).join('\\,;\\,')}\\}`;
+  return { lignes: [`(${lu})(${lv}) = 0`, `\\iff ${lu} = 0 \\text{ ou } ${lv} = 0`, ...etapeFacteur(u, ru), ...etapeFacteur(v, rv), `S = ${S}`], final: S };
+}
+// equation quotient (px+q)/(rx+s) = k
+function detail52b(u, v, k, sol) {
+  const lu = latexAffine(u), lv = latexAffine(v), pole = mf5(F(-v.q, v.p)), x = mf5(sol), kk = k, c = u.p - kk * v.p, d = kk * v.q - u.q, S = `\\{${fracD(x)}\\}`;
+  const kv = polyF2([{c:kk*v.p,v:'x'},{c:kk*v.q,v:''}]);
+  return { lignes: [`\\text{Valeur interdite : } ${fracD(pole)}`, `\\dfrac{${lu}}{${lv}} = ${k} \\iff ${lu} = ${k}(${lv})`, `\\iff ${polyF2([{c:u.p,v:'x'},{c:u.q,v:''}])} = ${kv}`,
+    `\\iff ${polyF2([{c:c,v:'x'}])} = ${d}`, `\\iff x = ${fracD(x)}`, `${fracD(x)} \\neq ${fracD(pole)} \\text{ : la solution convient}`, `S = ${S}`], final: S };
+}
+// 5.3 a) fraction de puissances : decomposition en facteurs premiers
+function detail53a(m1, n1, m2, n2, val) {
+  const fin = fracTexte(val.n, val.d), pwx = (b, e) => (e === 1 ? b : `(${b})^{${e}}`);
+  const s1 = `\\dfrac{${pwx('2^{2}\\times 3', m1)}\\times ${pwx('2\\times 5', n1)}}{${pwx('3\\times 5', m2)}\\times ${pwx('2^{3}', n2)}}`;
+  const s2 = `\\dfrac{${prod5(pw5(2, 2 * m1), pw5(3, m1), pw5(2, n1), pw5(5, n1))}}{${prod5(pw5(3, m2), pw5(5, m2), pw5(2, 3 * n2))}}`;
+  const s3 = `\\dfrac{${prod5(pw5(2, 2 * m1 + n1), pw5(3, m1), pw5(5, n1))}}{${prod5(pw5(2, 3 * n2), pw5(3, m2), pw5(5, m2))}}`;
+  const s4 = prod5(pw5(2, 2 * m1 + n1 - 3 * n2), pw5(3, m1 - m2), pw5(5, n1 - m2));
+  return { lignes: [dedup2(`\\dfrac{12^{${m1}}\\times 10^{${n1}}}{15^{${m2}}\\times 8^{${n2}}}`, s1, s2, s3, s4, fin)], final: fin };
+}
+// 5.3 b) image de (p + sqrt(D))/q par A x^2 + B x + C (entiers)
+function detail53b(A, B, C, p, D, q, res) {
+  const x0 = `\\dfrac{${p}+\\sqrt{${D}}}{${q}}`, fin = snTex5(res, D);
+  const sn0 = snMk(F(p, q), F(1, q)), sn2 = snTex5(snMul(sn0, sn0, D), D);
+  const t1 = somme5([{ c: A, corps: `\\left(${x0}\\right)^{2}` }, { c: B, corps: x0 }, { c: C, corps: '' }]);
+  const t2 = somme5([{ c: A, corps: `\\left(${sn2}\\right)` }, { c: B, corps: x0 }, { c: C, corps: '' }]);
+  return { lignes: [`\\text{On remplace } x \\text{ par } ${x0}`, dedup2(`\\left(${x0}\\right)^{2}`, `\\dfrac{${dP(p)}^{2}+2\\times ${dP(p)}\\sqrt{${D}}+${D}}{${q}^{2}}`, sn2), dedup2(t1, t2, fin)], final: fin };
+}
+
+// 5.5 f'(a) avec a = p + sqrt(D) ou sqrt(D)/k : derivee, substitution, carre de a, resultat a + b sqrt(D)
+function detail55(coefs, deriv, D, aTex, sn, res) {
+  const a = `\\left(${aTex}\\right)`, fin = snTex5(res, D), d = deriv.map(mf5), a2 = snMul(sn, sn, D);
+  const subst = (carre) => somme5(d.map((c, k) => ({ c, corps: k === 0 ? '' : k === 1 ? a : (carre ? `\\left(${snTex5(a2, D)}\\right)` : `${a}^{${k}}`) })).reverse());
+  const lignes = [...REGLE_DERIV5, chaineDeriv5(coefs), `\\text{On remplace } x \\text{ par } ${aTex}`], pieces = [subst(false)];
+  if (deriv.length >= 3) { lignes.push(dedup2(`${a}^{2}`, snTex5(a2, D))); pieces.push(subst(true)); }
+  pieces.push(fin); lignes.push(dedup2(...pieces));
+  return { lignes, final: fin };
+}
+// fraction « polynome / denominateur » : numerateur constant negatif -> signe devant la fraction
+const fracPoly5 = (num, den) => (num.length === 1 ? `${mf5(num[0]).s < 0 ? '-' : ''}\\dfrac{${fracTexte(mf5(num[0]).n, mf5(num[0]).d)}}{${den}}` : `\\dfrac{${polyL5(num)}}{${den}}`);
+// 5.6 a, b) k/u : (k/u)' = -k u'/u^2
+function detail56ku(k, u) {
+  const du = pDerivF(u), lu = polyL5(u), ldu = polyL5(du), num = pScaleF(du, F(-k)), kk = k === 1 ? '' : k === -1 ? '-' : String(k), fin = fracPoly5(num, `\\left(${lu}\\right)^{2}`);
+  return { lignes: ["\\text{Pour } \\dfrac{k}{u} \\text{ la dérivée est } -\\dfrac{ku'}{u^{2}}", `\\text{Ici } u \\text{ vaut } ${lu}`, `\\text{et } u' \\text{ vaut } ${ldu}`,
+    dedup2(`-\\dfrac{${kk}\\left(${ldu}\\right)}{\\left(${lu}\\right)^{2}}`, fin)], final: fin };
+}
+// 5.6 c) (px+q)/(rx+s) : (u/v)' = (u'v - uv')/v^2, numerateur constant ps - qr
+function detail56lin(p, q, r, s) {
+  const lu = polyF2([{c:p,v:'x'},{c:q,v:''}]), lv = polyF2([{c:r,v:'x'},{c:s,v:''}]), den = `\\left(${lv}\\right)^{2}`, n = p * s - q * r;
+  const fin = `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${den}}`;
+  return { lignes: ["\\text{Pour } \\dfrac{u}{v} \\text{ la dérivée est } \\dfrac{u'v-uv'}{v^{2}}", dedup2(`\\dfrac{${somme5([{ c: p, corps: `\\left(${lv}\\right)` }, { c: -r, corps: `\\left(${lu}\\right)` }])}}{${den}}`, fin)], final: fin };
+}
+// 5.6 d) ax/(x^2+b) : f' = a(b - x^2)/(x^2+b)^2
+function detail56ax(a, b) {
+  const den = `\\left(x^{2}${fmtConst(b)}\\right)^{2}`, cf = a === 1 ? '' : a === -1 ? '-' : String(a), fin = `\\dfrac{${cf}\\left(${polyF2([{c:-1,v:'x^{2}'},{c:b,v:''}])}\\right)}{${den}}`;
+  return { lignes: ["\\text{Pour } \\dfrac{u}{v} \\text{ la dérivée est } \\dfrac{u'v-uv'}{v^{2}}", `\\text{Ici } u \\text{ vaut } ${polyF2([{c:a,v:'x'}])} \\text{ et } v \\text{ vaut } x^{2}${fmtConst(b)}`,
+    dedup2(`\\dfrac{${somme5([{ c: a, corps: `\\left(x^{2}${fmtConst(b)}\\right)` }, { c: -2 * a, corps: 'x^{2}' }])}}{${den}}`, `\\dfrac{${polyF2([{c:-a,v:'x^{2}'},{c:a*b,v:''}])}}{${den}}`, fin)], final: fin };
+}
+// 5.7 a, b) produit de deux polynomes : (uv)' = u'v + uv'
+function detail57(u, v, deriv) {
+  const lu = polyL5(u), lv = polyL5(v), fin = polyL5(deriv);
+  return { lignes: ["\\text{Pour } uv \\text{ la dérivée est } u'v+uv'", `\\text{Ici } u \\text{ vaut } ${lu}`, `\\text{et } v \\text{ vaut } ${lv}`, dedup2(((s) => (s.length > 70 ? '\\scriptsize ' : s.length > 50 ? '\\small ' : '') + s)(`\\left(${polyL5(pDerivF(u))}\\right)\\left(${lv}\\right)+\\left(${lu}\\right)\\left(${polyL5(pDerivF(v))}\\right)`), fin)], final: fin };
+}
+// 5.7 c) u(x) sqrt(x) : (u sqrt(x))' = u' sqrt(x) + u / (2 sqrt(x))
+function detail57rac(u) {
+  const lu = polyL5(u), du = pDerivF(u), cst = somme5([{ c: mf5(du[0]), corps: '\\sqrt{x}' }]), fin = `${cst}+\\dfrac{${lu}}{2\\sqrt{x}}`;
+  return { lignes: ["\\text{Pour } uv \\text{ la dérivée est } u'v+uv'", '\\text{Ici } v \\text{ vaut } \\sqrt{x}', "\\text{et } v' \\text{ vaut } \\dfrac{1}{2\\sqrt{x}}", dedup2(`${cst}+\\left(${lu}\\right)\\times \\dfrac{1}{2\\sqrt{x}}`, fin)], final: fin };
+}
+
+// 5.8 a) f'(x) = 2Ax - B >= 0 (inequation du premier degre, coefficient de x positif)
+function detail58a(coefs, spec) {
+  const d = pDerivF(coefs).map(mf5), seuil = math.divide(math.unaryMinus(d[0]), d[1]), S = formaterIntervalleSpec(spec);
+  return { lignes: [...REGLE_DERIV5, chaineDeriv5(coefs), `${polyL5(pDerivF(coefs))} \\geqslant 0`, `\\iff ${polyF2([{c:d[1],v:'x'}])} \\geqslant ${fracD(math.unaryMinus(d[0]))}`, `\\iff x \\geqslant ${fracD(seuil)}`, `S = ${S}`], final: S };
+}
+// 5.8 b) f' du second degre : inequation f'(x) >= 0 traitee par le discriminant
+function detail58b(coefs, spec) {
+  const d = pDerivF(coefs).map(mf5), debut = [...REGLE_DERIV5, chaineDeriv5(coefs), `${polyL5(pDerivF(coefs))} \\geqslant 0`];
+  return detailInequation2('x', d[2], d[1], d[0], '>=', spec, debut, formaterIntervalleSpec);
+}
+// 5.8 c) (px+q)/(rx+s) avec ps - qr > 0 : f' = (ps-qr)/(rx+s)^2 > 0 sauf en la valeur interdite
+function detail58c(p, q, r, s, spec) {
+  const base = detail56lin(p, q, r, s), pole = fracD(mf5(F(-s, r))), n = p * s - q * r, S = formaterIntervalleSpec(spec);
+  return { lignes: [...base.lignes, `\\text{Valeur interdite : } ${pole}`, `${n} \\gt 0`, '\\text{Un carré non nul est strictement positif}', "\\text{donc } f'(x) \\gt 0 \\text{ sur le domaine}", `S = ${S}`], final: S };
+}
+// 5.8 d) 1/(Ax^2+Bx+C) sans racine : f' a le signe de -(2Ax+B)
+function detail58d(A, B, C, spec) {
+  const u = polyF2([{c:A,v:'x^{2}'},{c:B,v:'x'},{c:C,v:''}]), d = lignesDelta2(A, B, C), seuil = F(-B, 2 * A), S = formaterIntervalleSpec(spec);
+  const lignes = ["\\text{Pour } \\dfrac{1}{u} \\text{ la dérivée est } -\\dfrac{u'}{u^{2}}", `\\text{Ici } u \\text{ vaut } ${u}`, '\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D), "\\text{Donc } u \\text{ ne s'annule pas}",
+    `\\text{et } f'(x) \\text{ a le signe de } -\\left(${polyF2([{c:2*A,v:'x'},{c:B,v:''}])}\\right)`, `${polyF2([{c:-2*A,v:'x'},{c:-B,v:''}])} \\geqslant 0`, `\\iff ${polyF2([{c:-2*A,v:'x'}])} \\geqslant ${B}`];
+  if (A > 0) lignes.push(`\\text{On divise par } ${-2 * A} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  lignes.push(`\\iff x ${A > 0 ? '\\leqslant' : '\\geqslant'} ${fracD(mf5(seuil))}`, `S = ${S}`);
+  return { lignes, final: S };
+}
+// 5.8 e) ax/(x^2+b), b > 0 : f' = a(b - x^2)/(x^2+b)^2 du signe de a(b - x^2)
+function detail58e(a, b, spec) {
+  const base = detail56ax(a, b), S = formaterIntervalleSpec(spec), rb = racineLatex(b), brut = `\\sqrt{${b}}`, cf = a === 1 ? '' : a === -1 ? '-' : String(a), prod = `${cf}\\left(${polyF2([{c:-1,v:'x^{2}'},{c:b,v:''}])}\\right)`;
+  const lignes = [...base.lignes, `${b} \\gt 0`, '\\text{Un carré est positif}', `\\text{donc } x^{2}+${b} \\gt 0`, `\\text{Donc } f'(x) \\text{ a le signe de } ${prod}`, `${prod} \\geqslant 0`];
+  if (a < 0) lignes.push(`\\text{On divise par } ${a} \\lt 0`, "\\text{donc le sens de l'inégalité change}", `\\iff ${b}-x^{2} \\leqslant 0`, `\\iff x^{2} \\geqslant ${b}`, `\\iff x \\leqslant -${brut} \\text{ ou } x \\geqslant ${brut}`);
+  else lignes.push(`\\iff ${b}-x^{2} \\geqslant 0`, `\\iff x^{2} \\leqslant ${b}`, `\\iff -${brut} \\leqslant x \\leqslant ${brut}`);
+  if (rb !== brut) lignes.push(`${brut} = ${rb}`);
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+// 5.9 tangente : y = f'(a)(x - a) + f(a) ; vals = lignes qui calculent f(a) et f'(a) (chaines numeriques), fa et pente (fractions math.js)
+function ligneTangente5(lignesAvant, a, fa, pente) {
+  const pb = math.subtract(fa, math.multiply(pente, a)), P1 = somme5([{ c: pente, corps: `\\left(${polyF2([{c:1,v:'x'},{c:math.unaryMinus(a),v:''}])}\\right)` }, { c: fa, corps: '' }]);
+  const P2 = polyF2([{c:pente,v:'x'},{c:pb,v:''}]);
+  return { lignes: [...lignesAvant, "\\text{Équation de la tangente en } a \\text{ :}", "y = f'(a)(x-a)+f(a)", dedup2(P1, P2), `y = ${P2}`], final: `y = ${P2}` };
+}
+// 5.9 a, b) f(x) = Ax^2 + Bx + C
+function detail59q(A, B, C, a) {
+  const coefs = [C, B, A], fa = math.add(math.add(math.multiply(mf5(A), math.multiply(mf5(a), mf5(a))), math.multiply(mf5(B), mf5(a))), mf5(C)), d = pDerivF(coefs).map(mf5), pente = math.add(math.multiply(d[1], mf5(a)), d[0]);
+  const aT = `\\left(${fracD(mf5(a))}\\right)`, v1 = [math.multiply(mf5(A), math.multiply(mf5(a), mf5(a))), math.multiply(mf5(B), mf5(a)), mf5(C)];
+  const imageFa = dedup2(somme5([{ c: mf5(A), corps: `${aT}^{2}` }, { c: mf5(B), corps: aT }, { c: mf5(C), corps: '' }]), sommeF2(v1), fracD(fa));
+  const imageFp = dedup2(somme5([{ c: d[1], corps: aT }, { c: d[0], corps: '' }]), sommeF2([math.multiply(d[1], mf5(a)), d[0]]), fracD(pente));
+  return ligneTangente5(['\\text{Image de } a \\text{ :}', imageFa, ...REGLE_DERIV5, chaineDeriv5(coefs), '\\text{Nombre dérivé en } a \\text{ :}', imageFp], mf5(a), fa, pente);
+}
+// 5.9 c) f(x) = kx/(ax+b)
+function detail59r(k, a, b, pt) {
+  const K = mf5(k), A = mf5(a), B = mf5(b), P = mf5(pt), den = math.add(math.multiply(A, P), B), fa = math.divide(math.multiply(K, P), den);
+  const pente = math.divide(math.multiply(K, B), math.multiply(den, den)), lv = polyF2([{c:A,v:'x'},{c:B,v:''}]), pT = `\\left(${fracD(P)}\\right)`;
+  const cstNum = math.multiply(K, B), derivGen = dedup2(`\\dfrac{${somme5([{ c: K, corps: `\\left(${lv}\\right)` }, { c: math.unaryMinus(math.multiply(K, A)), corps: 'x' }])}}{\\left(${lv}\\right)^{2}}`, fracPoly5([cstNum.s * cstNum.n === 0 ? F(0) : F(cstNum.s * cstNum.n, cstNum.d)], `\\left(${lv}\\right)^{2}`));
+  const quot5 = (n, d) => { n = math.fraction(n); d = math.fraction(d); return n.d === 1 && d.d === 1 ? (d.n === 1 ? String(n.s * d.s * n.n) : `${n.s * d.s < 0 ? '-' : ''}\\dfrac{${n.n}}{${d.n}}`) : `\\dfrac{${fracD(n)}}{${fracD(d)}}`; };
+  const image = dedup2(`\\dfrac{${somme5([{ c: K, corps: pT }])}}{${somme5([{ c: A, corps: pT }, { c: B, corps: '' }])}}`, quot5(math.multiply(K, P), den), fracD(fa));
+  const imagePente = dedup2(`${cstNum.s < 0 ? '-' : ''}\\dfrac{${cstNum.n}}{\\left(${fracD(den)}\\right)^{2}}`, fracD(pente));
+  return ligneTangente5(['\\text{Image de } a \\text{ :}', image, "\\text{Pour } \\dfrac{u}{v} \\text{ la dérivée est } \\dfrac{u'v-uv'}{v^{2}}", derivGen, '\\text{Nombre dérivé en } a \\text{ :}', imagePente], P, fa, pente);
+}
+
 // ---------- Calcul 5.1 : inequations produit et quotient -> intervalle(s) ----------
 // Automatismes diversifies le 01/10/2026 (demande de David : « pas que du calcul numerique
 // mais aussi equations, inequations produits et quotients ») : 5.1 inequations produit et
@@ -1160,7 +1348,7 @@ function genGroupe7_1() {
       ? {type:'intervalles', liste:[{bas:-Infinity, haut:v, inclusBas:false, inclusHaut:inclus}]}
       : {type:'intervalles', liste:[{bas:v, haut:Infinity, inclusBas:inclus, inclusHaut:false}]};
     const enonce = `${fracTermLatex(F(p),'x',true)}${fmtConst(q)} ${SYMB_INEQ[sens]} ${fracTermLatex(F(r),'x',true)}${fmtConst(s)}`;
-    return {id:"5.1 a)", type:"intervalle", enonce, intervalleSpec: spec};
+    return {id:"5.1 a)", type:"intervalle", enonce, intervalleSpec: spec, detail: detail51a(p, q, r, s, sens, spec)};
   }
   function itemProduit() {
     let u, v;
@@ -1169,7 +1357,7 @@ function genGroupe7_1() {
     const ru = racineAffine(u), rv = racineAffine(v);
     const [r1, r2] = [ru.n/ru.d, rv.n/rv.d].sort((a, b) => a - b);
     const spec = specSigneProduit(u.p*v.p, r1, r2, sens, large, large);
-    return {id:"5.1 b)", type:"intervalle", enonce:`(${latexAffine(u)})(${latexAffine(v)}) ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec};
+    return {id:"5.1 b)", type:"intervalle", enonce:`(${latexAffine(u)})(${latexAffine(v)}) ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec, detail: detail51b(u, v, sens, spec)};
   }
   return [itemDegre1(), itemProduit()];
 }
@@ -1179,7 +1367,7 @@ function genGroupe7_2() {
   function itemProduit() {
     let u, v;
     do { u = facteurAffine(); v = facteurAffine(); } while (racineAffine(u).n * racineAffine(v).d === racineAffine(v).n * racineAffine(u).d);
-    return {id:"5.2 a)", type:"num", enonce:`(${latexAffine(u)})(${latexAffine(v)})=0`, reponse:`{${fracStr(racineAffine(u))};${fracStr(racineAffine(v))}}`};
+    return {id:"5.2 a)", type:"num", enonce:`(${latexAffine(u)})(${latexAffine(v)})=0`, reponse:`{${fracStr(racineAffine(u))};${fracStr(racineAffine(v))}}`, detail: detail52a(u, v)};
   }
   function itemQuotient() {
     // (px+q)/(rx+s) = k  <=>  px+q = k(rx+s), x != -s/r  ->  x = (ks-q)/(p-kr).
@@ -1188,7 +1376,7 @@ function genGroupe7_2() {
     let u, v, k;
     do { u = facteurAffine(); v = facteurAffine(); k = aleaNonNul(-5,5); } while (u.p === k*v.p || u.p*v.q === u.q*v.p);
     const sol = F(k*v.q - u.q, u.p - k*v.p);
-    return {id:"5.2 b)", type:"num", enonce:`\\dfrac{${latexAffine(u)}}{${latexAffine(v)}}=${k}`, reponse:`{${fracStr(sol)}}`};
+    return {id:"5.2 b)", type:"num", enonce:`\\dfrac{${latexAffine(u)}}{${latexAffine(v)}}=${k}`, reponse:`{${fracStr(sol)}}`, detail: detail52b(u, v, k, sol)};
   }
   return [itemProduit(), itemQuotient()];
 }
@@ -1217,7 +1405,7 @@ function genGroupe7_3() {
     const m1=alea(2,4), n1=alea(2,5), m2=alea(2,3), n2=alea(2,3);
     const val = fracMul(fracPow(F(12),m1), fracPow(F(10),n1));
     const den = fracMul(fracPow(F(15),m2), fracPow(F(8),n2));
-    return {id:"5.3 a)", type:"num", texteLibre:true, enonce:`Simplifier \\(\\dfrac{12^${m1}\\times 10^${n1}}{15^${m2}\\times 8^${n2}}\\)`, reponse: fracStr(fracDiv(val, den))};
+    return {id:"5.3 a)", type:"num", texteLibre:true, enonce:`Simplifier \\(\\dfrac{12^${m1}\\times 10^${n1}}{15^${m2}\\times 8^${n2}}\\)`, reponse: fracStr(fracDiv(val, den)), detail: detail53a(m1, n1, m2, n2, fracDiv(val, den))};
   }
   function itemImage() {
     const D = aleaParmi(RADICANDS_PETITS);
@@ -1225,7 +1413,7 @@ function genGroupe7_3() {
     const q = aleaParmi([2,3,4]);
     const res = evalQuad7_3(snMk(F(p,q), F(1,q)), D);
     const fLatex = polyLatexDesc([params7_3.C, params7_3.B, params7_3.A], 'x');
-    return {id:"5.3 b)", type:"num", texteLibre:true, enonce:`Avec \\(f(x)=${fLatex}\\), calculer \\(f\\left(\\dfrac{${p}+\\sqrt{${D}}}{${q}}\\right)\\)`, sansEgal:true, reponse: snAscii(res, D)};
+    return {id:"5.3 b)", type:"num", texteLibre:true, enonce:`Avec \\(f(x)=${fLatex}\\), calculer \\(f\\left(\\dfrac{${p}+\\sqrt{${D}}}{${q}}\\right)\\)`, sansEgal:true, reponse: snAscii(res, D), detail: detail53b(params7_3.A.n, params7_3.B.n, params7_3.C.n, p, D, q, res)};
   }
   return [itemPuissances(), itemImage()];
 }
@@ -1237,7 +1425,8 @@ function genGroupe7_4() {
     for (let k=0;k<=deg;k++) coefs.push(F(aleaNonNul(-9,9), aleaParmi(denoms)));
     const enonce = `\\(f(x)=${polyLatexDesc(coefs,'x')}\\)`;
     const deriv = pDerivF(coefs);
-    return {id, type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(deriv,'x')};
+    return {id, type:"alg", texteLibre:true, enonce, reponse: polyAsciiDesc(deriv,'x'),
+      detail: { lignes: [...REGLE_DERIV5, chaineDeriv5(coefs)], final: polyL5(deriv) }};
   }
   // degres 2 a 5 (01/10/2026, demande de David : « privilegier les polynomes de degre 2 a 5 »,
   // auparavant 4, 5, 6) : a) degre 2 a coefficients entiers, b) degre 3 ou 4, c) degre 5.
@@ -1266,7 +1455,7 @@ function genGroupe7_5() {
     let acc = snFromInt(0);
     for (let i=deriv.length-1;i>=0;i--) acc = snAddFrac(snMul(acc, sn, D), deriv[i]);
     const enonce = `Avec \\(f(x)=${polyLatexDesc(coefs,'x')}\\) et \\(a=${aLatex}\\)`;
-    return {id, type:"num", texteLibre:true, enonce, reponse: snAscii(acc, D)};
+    return {id, type:"num", texteLibre:true, enonce, reponse: snAscii(acc, D), detail: detail55(coefs, deriv, D, aLatex, sn, acc)};
   }
   return [item("5.5 a)",2), item("5.5 b)",3)];
 }
@@ -1286,7 +1475,7 @@ function itemKSurU(id, deg) {
   const uLatex = polyLatexDesc(u,'x'), uAscii = polyAsciiDesc(u,'x');
   // f = k/u => f' = -k u'/u^2
   const numAscii = polyAsciiDesc(pScaleF(pDerivF(u), F(-k)), 'x');
-  return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${k}}{${uLatex}}\\)`, reponse:`(${numAscii})/(${uAscii})^2`};
+  return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=\\dfrac{${k}}{${uLatex}}\\)`, reponse:`(${numAscii})/(${uAscii})^2`, detail: detail56ku(k, u)};
 }
 function itemLinLin(id) {
   // ps - qr != 0 : sinon f constante (ex. (2x+4)/(x+2)), derivee nulle -- enonce absurde
@@ -1296,7 +1485,7 @@ function itemLinLin(id) {
   const num = p*s - q*r;
   const enonce = `\\(f(x)=\\dfrac{${fracTermLatex(F(p),'x',true)}${fmtConst(q)}}{${fracTermLatex(F(r),'x',true)}${fmtConst(s)}}\\)`;
   const denAscii = `(${fracTermAscii(F(r),'x',true)}${fmtConst(s)})`;
-  return {id, type:"alg", texteLibre:true, enonce, reponse:`${num}/${denAscii}^2`};
+  return {id, type:"alg", texteLibre:true, enonce, reponse:`${num}/${denAscii}^2`, detail: detail56lin(p, q, r, s)};
 }
 // ax/(x^2+b) : f'(x) = a(b-x^2)/(x^2+b)^2. bMin > 0 force b > 0 (5.8 e : denominateur jamais nul).
 function paramsAxSurX2b(bMin) {
@@ -1307,7 +1496,7 @@ function latexAxSurX2b(a, b) {
 }
 function itemAxSurX2b(id) {
   const { a, b } = paramsAxSurX2b(0);
-  return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=${latexAxSurX2b(a, b)}\\)`, reponse:`${a}*(${b}-x^2)/(x^2${fmtConst(b)})^2`};
+  return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=${latexAxSurX2b(a, b)}\\)`, reponse:`${a}*(${b}-x^2)/(x^2${fmtConst(b)})^2`, detail: detail56ax(a, b)};
 }
 function genGroupe7_6() {
   return [itemKSurU("5.6 a)", 1), itemKSurU("5.6 b)", 2), itemLinLin("5.6 c)"), itemAxSurX2b("5.6 d)")];
@@ -1322,13 +1511,13 @@ function genGroupe7_7() {
   function itemProduitPolynomes(id, degU, degV) {
     const u = genereU(degU, [1]), v = genereU(degV, [1]);
     const deriv = pAddF(pMulF(pDerivF(u), v), pMulF(u, pDerivF(v)));
-    return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})(${polyLatexDesc(v,'x')})\\)`, reponse: polyAsciiDesc(deriv,'x')};
+    return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})(${polyLatexDesc(v,'x')})\\)`, reponse: polyAsciiDesc(deriv,'x'), detail: detail57(u, v, deriv)};
   }
   function itemFoisRacine(id, deg) {
     const u = genereU(deg, [1]);
     // f = u*sqrt(x) => f' = u'*sqrt(x) + u/(2sqrt(x))
     const reponse = `(${polyAsciiDesc(pDerivF(u),'x')})*sqrt(x)+(${polyAsciiDesc(u,'x')})/(2*sqrt(x))`;
-    return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})\\sqrt{x}\\) sur \\(]0;+\\infty[\\)`, reponse};
+    return {id, type:"alg", texteLibre:true, enonce:`\\(f(x)=(${polyLatexDesc(u,'x')})\\sqrt{x}\\) sur \\(]0;+\\infty[\\)`, reponse, detail: detail57rac(u)};
   }
   return [itemProduitPolynomes("5.7 a)", 1, 2), itemProduitPolynomes("5.7 b)", 2, 2), itemFoisRacine("5.7 c)", 1)];
 }
@@ -1349,7 +1538,7 @@ function genGroupe7_10() {
     const seuil = F(B, 2*A);
     const enonce = `Avec \\(f(x)=${polyLatexDesc(coefs,'x')}\\)`;
     const spec = {type:'intervalles', liste:[{bas:seuil.n/seuil.d, haut:Infinity, inclusBas:true, inclusHaut:false}]};
-    return {id:"5.8 a)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec};
+    return {id:"5.8 a)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec, detail: detail58a(coefs, spec)};
   }
   // b) polynome de degre 3 : f'(x) = 3A(x-r1)(x-r2), quadratique a deux racines (Vieta) ->
   // exterieur si A>0, interieur si A<0.
@@ -1367,7 +1556,7 @@ function genGroupe7_10() {
     const spec = (3*A>0)
       ? {type:'intervalles', liste:[{bas:-Infinity,haut:rmin,inclusBas:false,inclusHaut:true},{bas:rmax,haut:Infinity,inclusBas:true,inclusHaut:false}]}
       : {type:'intervalles', liste:[{bas:rmin,haut:rmax,inclusBas:true,inclusHaut:true}]};
-    return {id:"5.8 b)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec};
+    return {id:"5.8 b)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec, detail: detail58b(coefs, spec)};
   }
   function itemMobius() {
     let p,q,r,s,D;
@@ -1383,7 +1572,7 @@ function genGroupe7_10() {
       {bas:-Infinity, haut:poleVal, inclusBas:false, inclusHaut:false},
       {bas:poleVal, haut:Infinity, inclusBas:false, inclusHaut:false}
     ]};
-    return {id:"5.8 c)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec};
+    return {id:"5.8 c)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec, detail: detail58c(p, q, r, s, spec)};
   }
   function itemUnSurQuadratique() {
     // discriminant B^2-4AC < 0 impose (01/10/2026) : auparavant le trinome pouvait s'annuler
@@ -1398,7 +1587,7 @@ function genGroupe7_10() {
     const spec = A>0
       ? {type:'intervalles', liste:[{bas:-Infinity,haut:seuilVal,inclusBas:false,inclusHaut:true}]}
       : {type:'intervalles', liste:[{bas:seuilVal,haut:Infinity,inclusBas:true,inclusHaut:false}]};
-    return {id:"5.8 d)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec};
+    return {id:"5.8 d)", type:"intervalle", texteLibre:true, enonce, intervalleSpec:spec, detail: detail58d(A, B, C, spec)};
   }
   // e) ajoute le 01/10/2026 (demande de David) : ax/(x^2+b), b > 0 (definie sur R).
   // f'(x) = a(b-x^2)/(x^2+b)^2, du signe de a(b-x^2) : [-rac(b);rac(b)] si a>0, exterieur sinon.
@@ -1408,7 +1597,7 @@ function genGroupe7_10() {
     const spec = a > 0
       ? {type:'intervalles', liste:[{bas:-r, haut:r, inclusBas:true, inclusHaut:true, texBas:'-'+rTex, texHaut:rTex}]}
       : {type:'intervalles', liste:[{bas:-Infinity, haut:-r, inclusBas:false, inclusHaut:true, texHaut:'-'+rTex}, {bas:r, haut:Infinity, inclusBas:true, inclusHaut:false, texBas:rTex}]};
-    return {id:"5.8 e)", type:"intervalle", texteLibre:true, enonce:`Avec \\(f(x)=${latexAxSurX2b(a, b)}\\)`, intervalleSpec:spec};
+    return {id:"5.8 e)", type:"intervalle", texteLibre:true, enonce:`Avec \\(f(x)=${latexAxSurX2b(a, b)}\\)`, intervalleSpec:spec, detail: detail58e(a, b, spec)};
   }
   return [itemQuadratique(), itemCubique(), itemMobius(), itemUnSurQuadratique(), itemAxSurX2bSigne()];
 }
@@ -1428,7 +1617,7 @@ function tangenteQuadratique5(A, B, C, a) {
   // f(x) = Ax^2+Bx+C : f'(a) = 2Aa+B, ordonnee a l'origine f(a) - a f'(a) = C - A a^2
   const pa = fracAdd(fracMul(F(2), fracMul(A, a)), B);
   const pb = fracSub(C, fracMul(A, fracMul(a, a)));
-  return { enonce:`\\(f(x)=${polyLatexDesc([C, B, A], 'x')}\\) et \\(a=${fracTermLatex(a, '', true)}\\)`, reponse: equationReduiteTangente(pa, pb) };
+  return { enonce:`\\(f(x)=${polyLatexDesc([C, B, A], 'x')}\\) et \\(a=${fracTermLatex(a, '', true)}\\)`, reponse: equationReduiteTangente(pa, pb), detail: detail59q(A, B, C, a) };
 }
 function tangenteRationnelle5(k, a, b, pt) {
   // f(x) = kx/(ax+b) : f'(x) = kb/(ax+b)^2
@@ -1438,40 +1627,48 @@ function tangenteRationnelle5(k, a, b, pt) {
   const pb = fracSub(fval, fracMul(pt, fprime));
   const numer = fracTermLatex(k, 'x', true);
   const denLatex = `${fracTermLatex(a, 'x', true)}${fmtConst(b.n)}`;
-  return { enonce:`\\(f(x)=\\dfrac{${numer}}{${denLatex}}\\) et \\(a=${fracTermLatex(pt, '', true)}\\)`, reponse: equationReduiteTangente(fprime, pb) };
+  return { enonce:`\\(f(x)=\\dfrac{${numer}}{${denLatex}}\\) et \\(a=${fracTermLatex(pt, '', true)}\\)`, reponse: equationReduiteTangente(fprime, pb), detail: detail59r(k, a, b, pt) };
 }
 function genGroupeTangentes() {
   function itemA() {
-    const { enonce, reponse } = tangenteQuadratique5(F(aleaNonNul(-3,3)), F(alea(-4,4)), F(alea(-4,4)), F(aleaNonNul(-3,3)));
-    return {id:"5.9 a)", type:"alg", formeYax:true, texteLibre:true, enonce, reponse};
+    const { enonce, reponse, detail } = tangenteQuadratique5(F(aleaNonNul(-3,3)), F(alea(-4,4)), F(alea(-4,4)), F(aleaNonNul(-3,3)));
+    return {id:"5.9 a)", type:"alg", formeYax:true, texteLibre:true, enonce, reponse, detail};
   }
   function itemB() {
     const demiImpair = () => { let k; do { k = alea(-5,5); } while (k % 2 === 0); return k; };
-    const { enonce, reponse } = tangenteQuadratique5(F(demiImpair(),2), F(demiImpair(),2), F(demiImpair(),2), F(alea(-2,2) || 1));
-    return {id:"5.9 b)", type:"alg", formeYax:true, texteLibre:true, enonce, reponse};
+    const { enonce, reponse, detail } = tangenteQuadratique5(F(demiImpair(),2), F(demiImpair(),2), F(demiImpair(),2), F(alea(-2,2) || 1));
+    return {id:"5.9 b)", type:"alg", formeYax:true, texteLibre:true, enonce, reponse, detail};
   }
   function itemC() {
     let k, a, b, pt;
     do { k = aleaNonNul(-3,3); a = aleaNonNul(-3,3); b = aleaNonNul(-4,4); pt = aleaNonNul(-3,3); } while (a*pt + b === 0);
-    const { enonce, reponse } = tangenteRationnelle5(F(k), F(a), F(b), F(pt));
-    return {id:"5.9 c)", type:"alg", formeYax:true, texteLibre:true, enonce, reponse};
+    const { enonce, reponse, detail } = tangenteRationnelle5(F(k), F(a), F(b), F(pt));
+    return {id:"5.9 c)", type:"alg", formeYax:true, texteLibre:true, enonce, reponse, detail};
   }
   return [itemA(), itemB(), itemC()];
 }
 
 function genGroupe7_12() {
   const m = aleaNonNul(2,5);
+  // details : la derivee d'une somme est la somme des derivees ; on derive le terme general, puis on adapte les indices
+  const regleSomme = ['\\text{La dérivée d\'une somme}', '\\text{est la somme des dérivées}'];
   return [
-    {id:"5.10 a)", type:"somme", texteLibre:true, enonce:"Avec \\(f(x)=\\displaystyle\\sum_{k=1}^{n}x^k\\)", reponse:"sum(k,1,n,k*x^(k-1))"},
-    {id:"5.10 b)", type:"somme", texteLibre:true, enonce:"Avec \\(f(x)=\\displaystyle\\sum_{k=1}^{n}(-1)^{k+1}\\dfrac{x^k}{k}\\)", reponse:"sum(k,1,n,(-1)^(k+1)*x^(k-1))"},
-    {id:"5.10 c)", type:"somme", texteLibre:true, enonce:"Avec \\(f(x)=\\displaystyle\\sum_{k=0}^{n}\\dfrac{x^k}{k!}\\)", reponse:"sum(k,0,n-1,x^k/k!)"},
-    {id:"5.10 d)", type:"somme", texteLibre:true, enonce:`Avec \\(f(x)=\\displaystyle\\sum_{k=0}^{n}\\dfrac{(${m}x)^{2k}}{(2k)!}\\)`, reponse:`sum(k,1,n,${2*m}*k*(${m}*x)^(2*k-1)/(2*k)!)`}
+    {id:"5.10 a)", type:"somme", texteLibre:true, enonce:"Avec \\(f(x)=\\displaystyle\\sum_{k=1}^{n}x^k\\)", reponse:"sum(k,1,n,k*x^(k-1))",
+      detail: { lignes: [...regleSomme, '\\text{Le terme } x^{k} \\text{ a pour dérivée } kx^{k-1}', '\\sum_{k=1}^{n}kx^{k-1}'], final: '\\sum_{k=1}^{n}kx^{k-1}' }},
+    {id:"5.10 b)", type:"somme", texteLibre:true, enonce:"Avec \\(f(x)=\\displaystyle\\sum_{k=1}^{n}(-1)^{k+1}\\dfrac{x^k}{k}\\)", reponse:"sum(k,1,n,(-1)^(k+1)*x^(k-1))",
+      detail: { lignes: [...regleSomme, '\\text{Le terme } \\dfrac{x^{k}}{k} \\text{ a pour dérivée } \\dfrac{kx^{k-1}}{k}', '\\dfrac{kx^{k-1}}{k} = x^{k-1}', '\\sum_{k=1}^{n}(-1)^{k+1}x^{k-1}'], final: '\\sum_{k=1}^{n}(-1)^{k+1}x^{k-1}' }},
+    {id:"5.10 c)", type:"somme", texteLibre:true, enonce:"Avec \\(f(x)=\\displaystyle\\sum_{k=0}^{n}\\dfrac{x^k}{k!}\\)", reponse:"sum(k,0,n-1,x^k/k!)",
+      detail: { lignes: [...regleSomme, "\\text{Le terme d'indice } 0 \\text{ est constant}", '\\text{sa dérivée est } 0', '\\text{Pour } k \\geqslant 1 \\text{, } \\dfrac{x^{k}}{k!} \\text{ a pour dérivée } \\dfrac{kx^{k-1}}{k!}', '\\dfrac{kx^{k-1}}{k!} = \\dfrac{x^{k-1}}{(k-1)!}',
+        "\\text{On change d'indice : } k-1 \\text{ devient } k", '\\sum_{k=0}^{n-1}\\dfrac{x^{k}}{k!}'], final: '\\sum_{k=0}^{n-1}\\dfrac{x^{k}}{k!}' }},
+    {id:"5.10 d)", type:"somme", texteLibre:true, enonce:`Avec \\(f(x)=\\displaystyle\\sum_{k=0}^{n}\\dfrac{(${m}x)^{2k}}{(2k)!}\\)`, reponse:`sum(k,1,n,${2*m}*k*(${m}*x)^(2*k-1)/(2*k)!)`,
+      detail: { lignes: [...regleSomme, "\\text{Le terme d'indice } 0 \\text{ est constant}", '\\text{sa dérivée est } 0', `\\text{Pour } k \\geqslant 1 \\text{, } (${m}x)^{2k}`, `\\text{a pour dérivée } 2k\\times ${m}(${m}x)^{2k-1}`,
+        `\\sum_{k=1}^{n}\\dfrac{${2*m}k(${m}x)^{2k-1}}{(2k)!}`], final: `\\sum_{k=1}^{n}\\dfrac{${2*m}k(${m}x)^{2k-1}}{(2k)!}` }}
   ];
 }
 
 function genererExercices() {
   genererParametres7_3();
-  return [
+  const tous = [
     ...genGroupe7_1(), ...genGroupe7_2(), ...genGroupe7_3(),
     ...genGroupe7_4(), ...genGroupe7_5(),
     ...genGroupe7_6(), ...genGroupe7_7(),
@@ -1479,6 +1676,9 @@ function genererExercices() {
     ...genGroupeTangentes(),
     ...genGroupe7_12()
   ];
+  Detail.preparer(tous);   // « < » des étapes : \lt
+  Detail.couper(tous, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return tous;
 }
 
 // Consignes « Factoriser » : la reponse doit etre un produit, pas une expression developpee.
@@ -2771,7 +2971,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

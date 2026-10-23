@@ -730,6 +730,24 @@ module.exports = [
     verifie: (l, e) => { const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l); return i > 0 && /= 0$/.test(L[i - 1].trim()); }
   },
   {
+    nom: 'la-solution-trouvee-differe-de-la-valeur-interdite',
+    // « -\dfrac{1}{2} \neq 3 \text{ : la solution convient} » : les deux nombres sont différents et le premier est la solution de la réponse attendue
+    motif: /\\neq .* \\text\{ : la solution convient\}$/,
+    verifie: (l, e) => {
+      const m = l.match(/^(-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) \\neq (-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) \\text\{ : la solution convient\}$/);
+      if (!m) return false;
+      const val = (t) => math.evaluate(t.replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')'));
+      const sol = math.evaluate(String(e.reponse).replace(/[{}]/g, ''));
+      return Math.abs(val(m[1]) - val(m[2])) > 1e-9 && Math.abs(val(m[1]) - sol) < 1e-9;
+    }
+  },
+  {
+    nom: 'le-trinome-ne-s-annule-pas-apres-delta-negatif',
+    // « \text{Donc } u \text{ ne s'annule pas} » : une ligne précédente annonce « aucune racine réelle »
+    motif: /^\\text\{Donc \} u \\text\{ ne s'annule pas\}$/,
+    verifie: (l, e) => { const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l); return i > 0 && L.slice(0, i).some((x) => /\\lt 0 \\text\{ : aucune racine réelle\}$/.test(x)); }
+  },
+  {
     nom: 'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce',
     // « \text{Parmi les individus de } B \text{, ceux de } \overline{A} \text{ :} » : le couple (X, Y) est celui d'un P_{X}(Y) de l'énoncé
     motif: /\\text\{Parmi les individus de \} .* \\text\{, ceux de \}/,

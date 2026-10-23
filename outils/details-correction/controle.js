@@ -786,7 +786,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const refus = [];
       for (const { e, i } of avecDetail) {
         const inp = document.getElementById('input-' + i); if (!inp) continue;
-        if (e.type === 'discussionParametre') continue;   // réponse « si m<s alors … » : la fiche la contrôle elle-même (audit-reponses)
+        if (e.type === 'discussionParametre' || e.type === 'somme') continue;   // réponse « si m<s alors … » ou somme \sum : la fiche la contrôle elle-même (audit-reponses)
         const ensembleSeul = e.detail.final.match(/^\\mathbb\{([NZDQR])\}$/);   // « \mathbb{N} » : l'élève tape la lettre dans un champ texte
         const cercle = e.detail.final.match(/^\\Omega\((.+?)\\,;\\,(.+?)\) \\text\{ et \} r=(.+)$/);   // « \Omega(a\,;\,b) \text{ et } r=c » : l'élève tape « a;b;c »
         if (cercle) inp.value = [cercle[1], cercle[2], cercle[3]].map(versTexte).join(';');
