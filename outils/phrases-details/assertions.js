@@ -770,6 +770,18 @@ module.exports = [
     }
   },
   {
+    nom: 'la-lettre-du-qcm-citee-est-la-bonne-reponse-lettree',
+    // « \text{Réponse : } b » : la lettre est la bonne réponse de l'exercice (options a, b, c mélangées à chaque tirage)
+    motif: /^\\text\{Réponse : \} [a-c]$/,
+    verifie: (l, e) => { const m = l.match(/^\\text\{Réponse : \} ([a-c])$/); return !!m && m[1] === e.bonneReponse; }
+  },
+  {
+    nom: 'x-non-nul-donne-une-raison-differente-de-1',
+    // « \text{Comme } x \neq 0 \text{, on a } e^{2x} \neq 1 » : l'énoncé impose x réel non nul (\mathbb{R}^*) et l'exposant est un multiple non nul de x
+    motif: /^\\text\{Comme \} x \\neq 0 \\text\{, on a \} e\^\{\d*x\} \\neq 1$/,
+    verifie: (l, e) => { const m = l.match(/e\^\{(\d*)x\} \\neq 1$/); return !!m && /x\\in\\mathbb\{R\}\^\*/.test(String(e.enonce)) && (m[1] === '' || Number(m[1]) !== 0); }
+  },
+  {
     nom: 'on-simplifie-par-s-seulement-apres-avoir-etabli-que-s-est-non-nul',
     // « \text{On simplifie par } s \text{ (non nul)} » : une ligne précédente a établi « s \neq 0 »
     motif: /^\\text\{On simplifie par \} s \\text\{ \(non nul\)\}$/,

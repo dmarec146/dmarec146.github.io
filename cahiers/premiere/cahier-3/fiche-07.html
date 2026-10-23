@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"7.1 a)":0.5,"7.1 b)":0.5,"7.2 a)":0.75,"7.2 b)":1,"7.3 a)":0.5,"7.3 b)":0.5,"7.4 a)":0.5,"7.4 b)":0.75,"7.4 c)":0.75,"7.5 a)":1,"7.5 b)":1.25,"7.5 c)":1,"7.6 a)":1,"7.6 b)":0.75,"7.6 c)":1,"7.7 a)":1,"7.7 b)":1,"7.7 c)":1,"7.8 a)":1.25,"7.8 b)":1.5,"7.9":1.5,"7.10":1.5,"7.11":1.5,"7.12 a)":1.5,"7.12 b)":1.5,"7.13":1.75,"7.14 a)":1.75,"7.14 b)":2},"bonus":["7.10","7.11","7.12 a)","7.12 b)","7.13","7.14 a)","7.14 b)"]});
@@ -1046,6 +1048,197 @@ function melanger(tableau) {
   return tableau;
 }
 
+// ---------- details de correction (23/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracTexte, fracBrute } = Detail;
+const { dedup2, polyF2, lignesDelta2, phraseDelta2, lignesRacines2, detailInequation2 } = DetailQ;
+const lin7 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const par7 = (v) => (v < 0 ? `\\left(${v}\\right)` : String(v));
+const ex7 = (a) => (a === 1 ? 'e' : `e^{${a}}`);                                        // e^{1} s'ecrit e
+const ex7b = (t) => (t === '1' ? 'e' : `e^{${t}}`);                                       // idem pour un exposant deja ecrit
+const sum7 =(...t) => t.reduce((s, x, i) => (i === 0 ? x : (x.startsWith('-') ? s + x : s + '+' + x)), '');
+const SYM7 = { '<': '\\lt', '>': '\\gt', '<=': '\\leqslant', '>=': '\\geqslant' }, INV7 = { '<': '>', '>': '<', '<=': '>=', '>=': '<=' };
+const NORM7 = (op) => ({ '<': '<', '>': '>', '\\leqslant ': '<=', '\\geqslant ': '>=' })[op];     // operateurs de l'enonce
+const REGLES_EXP7 = ['e^{a}\\times e^{b} = e^{a+b}', '\\left(e^{a}\\right)^{n} = e^{na}', '\\dfrac{e^{a}}{e^{b}} = e^{a-b}'];
+// ax+b op 0 (a, b entiers non nuls) : lignes depuis « ax+b op 0 » jusqu'a « x op racine »
+function lignesAffine7(a, b, op) {
+  const l = [`${lin7(a, b)} ${SYM7[op]} 0`];
+  if (b !== 0) l.push(`\\iff ${polyF2([{ c: a, v: 'x' }])} ${SYM7[op]} ${-b}`);
+  if (a < 0) l.push(`\\text{On divise par } ${a} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (a !== 1) l.push(`\\iff x ${SYM7[a < 0 ? INV7[op] : op]} ${fracD(math.fraction(-b, a))}`);
+  return l;
+}
+// 7.1 a) (px+q)/d op rx+s
+function detail71a(enonce, p, q, d, r, s, op, spec) {
+  const coef = p - d * r, rhs = d * s - q, S = formaterIntervalleSpec(spec);
+  const l = [enonce, `\\text{On multiplie par } ${d}`, `\\iff ${lin7(p, q)} ${SYM7[op]} ${lin7(d * r, d * s)}`, `\\iff ${polyF2([{ c: coef, v: 'x' }])} ${SYM7[op]} ${rhs}`];
+  if (coef < 0) l.push(`\\text{On divise par } ${coef} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (coef !== 1) l.push(`\\iff x ${SYM7[coef < 0 ? INV7[op] : op]} ${fracD(math.fraction(rhs, coef))}`);
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 7.1 b) (x^2+k)(ax+b) op 0
+function detail71b(enonce, k, a, b, op, spec) {
+  const S = formaterIntervalleSpec(spec);
+  return { lignes: [enonce, '\\text{Un carré est positif ou nul : } x^{2} \\geqslant 0', `\\text{donc } x^{2}+${k} \\gt 0`, `\\small \\text{Donc } \\left(x^{2}+${k}\\right)\\left(${lin7(a, b)}\\right) \\text{ a le signe de } ${lin7(a, b)}`, ...lignesAffine7(a, b, op), `S = ${S}`], final: S };
+}
+// 7.2 a) (ax+b)^2 = c^2
+function detail72a(a, b, c) {
+  const L = lin7(a, b), r1 = math.fraction(c - b, a), r2 = math.fraction(-c - b, a), ordre = [r1, r2].sort((u, v) => math.number(u) - math.number(v)), S = `\\{${fracD(ordre[0])}\\,;\\,${fracD(ordre[1])}\\}`;
+  const ax = polyF2([{ c: a, v: 'x' }]), l = [`\\left(${L}\\right)^{2} = ${c * c}`, `\\iff \\left(${L}\\right)^{2} = ${c}^{2}`, `\\iff ${L} = ${c} \\text{ ou } ${L} = -${c}`];
+  if (L !== 'x' + (b > 0 ? '+' : '') + b || a !== 1) l.push(`\\iff ${ax} = ${c - b} \\text{ ou } ${ax} = ${-c - b}`);
+  if (a !== 1) l.push(`\\iff x = ${fracD(r1)} \\text{ ou } x = ${fracD(r2)}`);
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 7.2 b) (ax+b)(cx+d) = (ax+b)(ex+f)
+function detail72b(a, b, c, d, e, f, sols) {
+  const L1 = lin7(a, b), L2 = lin7(c, d), L3 = lin7(e, f), L4 = lin7(c - e, d - f), cx = polyF2([{ c: c - e, v: 'x' }]), ordre = sols.map((s) => math.fraction(s[0], s[1])).sort((u, v) => math.number(u) - math.number(v));
+  const S = `\\{${fracD(ordre[0])}\\,;\\,${fracD(ordre[1])}\\}`, ax = polyF2([{ c: a, v: 'x' }]);
+  const l = [`\\left(${L1}\\right)\\left(${L2}\\right) = \\left(${L1}\\right)\\left(${L3}\\right)`, `\\iff \\small \\left(${L1}\\right)\\left(${L2}\\right)-\\left(${L1}\\right)\\left(${L3}\\right) = 0`,
+    `\\iff \\left(${L1}\\right)\\left(\\left(${L2}\\right)-\\left(${L3}\\right)\\right) = 0`, `\\iff \\left(${L1}\\right)\\left(${L4}\\right) = 0`, `\\iff ${L1} = 0 \\text{ ou } ${L4} = 0`,
+    `\\iff ${ax} = ${-b} \\text{ ou } ${cx} = ${f - d}`, `\\iff x = ${fracD(math.fraction(-b, a))} \\text{ ou } x = ${fracD(math.fraction(f - d, c - e))}`, `S = ${S}`];
+  return { lignes: l, final: S };
+}
+// 7.3 a) (R+c)(R-c) ou (c-R)(c+R), R = a sqrt(b)
+function detail73a(a, b, c, forme1, val) {
+  const rac = `${a === 1 ? '' : a}\\sqrt{${b}}`, expr = forme1 ? `\\left(${rac}+${c}\\right)\\left(${rac}-${c}\\right)` : `\\left(${c}-${rac}\\right)\\left(${c}+${rac}\\right)`;
+  const carreR = `\\left(${rac}\\right)^{2}`, carreRn = a === 1 ? `${b}` : `${a}^{2}\\times ${b}`, A = a * a * b, C = c * c;
+  const pieces = forme1 ? [expr, `${carreR}-${c}^{2}`, `${carreRn}-${c}^{2}`, `${A}-${C}`, String(val)] : [expr, `${c}^{2}-${carreR}`, `${c}^{2}-${carreRn}`, `${C}-${A}`, String(val)];
+  return { lignes: [dedup2(...pieces)], final: String(val) };
+}
+// 7.3 b) (B^{n+p} +/- B^n) / B^{n+q}
+function detail73b(B, p, q, plus, num, den) {
+  const s = plus ? '+' : '-', pw = (e) => (e === 1 ? `${B}` : `${B}^{${e}}`), pn = (e) => `${B}^{n+${e}}`;
+  const l = [dedup2(`\\dfrac{${pn(p)}${s}${B}^{n}}{${pn(q)}}`, `\\dfrac{${B}^{n}\\times ${pw(p)}${s}${B}^{n}}{${B}^{n}\\times ${pw(q)}}`, `\\dfrac{${B}^{n}\\left(${pw(p)}${s}1\\right)}{${B}^{n}\\times ${pw(q)}}`),
+    dedup2(`\\dfrac{${pw(p)}${s}1}{${pw(q)}}`, `\\dfrac{${Math.pow(B, p)}${s}1}{${den}}`, fq7(num, den), fracTexte(num, den))];
+  return { lignes: l, final: fracTexte(num, den) };
+}
+function fq7(n, d) { return d === 1 ? String(n) : `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`; }
+// 7.4 a) e^A (e^B)^3 / (e^C e^D)
+function detail74a(A, B, C, D, total) {
+  const S1 = A + 3 * B, S2 = C + D, fin = total === 0 ? '1' : ex7(total);
+  const e = [`\\dfrac{${ex7(A)}\\times \\left(${ex7(B)}\\right)^{3}}{${ex7(C)}\\times ${ex7(D)}}`, `\\dfrac{${ex7(A)}\\times ${ex7(`3\\times ${par7(B)}`)}}{${ex7(C)}\\times ${ex7(D)}}`,
+    `\\dfrac{${ex7(sum7(String(A), `3\\times ${par7(B)}`))}}{${ex7(sum7(String(C), String(D)))}}`, `\\dfrac{${ex7(S1)}}{${ex7(S2)}}`, ex7(`${S1}-${par7(S2)}`), ex7(total)];
+  if (total === 0) e.push('1');
+  return { lignes: [...REGLES_EXP7, dedup2(...e)], final: fin };
+}
+// 7.4 b) e^{u1} e^{u2} (e^{u3})^2
+function detail74b(p1, c1, p2, c2, p3, c3, totalCoef) {
+  const u1 = lin7(p1, c1), u2 = lin7(p2, c2), u3 = lin7(p3, c3), brut = polyF2([{ c: p1, v: 'x' }, { c: c1, v: '' }, { c: p2, v: 'x' }, { c: c2, v: '' }, { c: 2 * p3, v: 'x' }, { c: 2 * c3, v: '' }]);
+  const fin = `e^{${polyF2([{ c: totalCoef, v: 'x' }, { c: c1 + c2 + 2 * c3, v: '' }])}}`;
+  return { lignes: [...REGLES_EXP7, dedup2(`e^{${u1}}\\times e^{${u2}}\\times \\left(e^{${u3}}\\right)^{2}`, `e^{${u1}}\\times e^{${u2}}\\times e^{2\\left(${u3}\\right)}`, `e^{\\left(${u1}\\right)+\\left(${u2}\\right)+2\\left(${u3}\\right)}`, `e^{${brut}}`, fin)], final: fin };
+}
+// 7.4 c) e^{px} e^{c1} / (e^{c2} (e^{qx})^3)
+function detail74c(p, c1, c2, q) {
+  const P1 = polyF2([{ c: p, v: 'x' }, { c: c1, v: '' }]), P2 = polyF2([{ c: c2, v: '' }, { c: 3 * q, v: 'x' }]), fin = `e^{${polyF2([{ c: p - 3 * q, v: 'x' }, { c: c1 - c2, v: '' }])}}`;
+  return { lignes: [...REGLES_EXP7, dedup2(`\\dfrac{e^{${lin7(p, 0)}}\\times ${ex7(c1)}}{${ex7(c2)}\\times \\left(e^{${lin7(q, 0)}}\\right)^{3}}`, `\\dfrac{e^{${lin7(p, 0)}}\\times ${ex7(c1)}}{${ex7(c2)}\\times e^{3\\left(${lin7(q, 0)}\\right)}}`, `\\dfrac{e^{${P1}}}{e^{${P2}}}`, `e^{${P1}-\\left(${P2}\\right)}`, fin)], final: fin };
+}
+// 7.5 a) (c1 e^{px} - c2 e^{-px})^2
+function detail75a(c1, c2, p) {
+  const E = lin7(p, 0), Em = lin7(-p, 0), E2 = lin7(2 * p, 0), E2m = lin7(-2 * p, 0), fin = `${c1 * c1}e^{${E2}}-${2 * c1 * c2}+${c2 * c2}e^{${E2m}}`;
+  return { lignes: [dedup2(`\\left(${c1}e^{${E}}-${c2}e^{${Em}}\\right)^{2}`, `\\left(${c1}e^{${E}}\\right)^{2}-2\\times ${c1}e^{${E}}\\times ${c2}e^{${Em}}+\\left(${c2}e^{${Em}}\\right)^{2}`,
+    `${c1 * c1}\\left(e^{${E}}\\right)^{2}-${2 * c1 * c2}e^{${E}}\\times e^{${Em}}+${c2 * c2}\\left(e^{${Em}}\\right)^{2}`, `${c1 * c1}e^{${E2}}-${2 * c1 * c2}e^{0}+${c2 * c2}e^{${E2m}}`, fin)], final: fin };
+}
+// 7.5 b) e^{2px} - 2C e^{(p-q)x} + C^2 e^{-2qx} = (e^{px} - C e^{-qx})^2
+function detail75b(p, q, C) {
+  const P = lin7(p, 0), Q = lin7(-q, 0), fin = `\\left(e^{${P}}-${C}e^{${Q}}\\right)^{2}`;
+  return { lignes: [dedup2(`e^{${lin7(2 * p, 0)}}-${2 * C}e^{${lin7(p - q, 0)}}+${C * C}e^{${lin7(-2 * q, 0)}}`, `\\left(e^{${P}}\\right)^{2}-${2 * C}e^{${P}}\\times e^{${Q}}+${C * C}\\left(e^{${Q}}\\right)^{2}`,
+    `\\left(e^{${P}}\\right)^{2}-2\\times e^{${P}}\\times ${C}e^{${Q}}+\\left(${C}e^{${Q}}\\right)^{2}`, fin)], final: fin };
+}
+// 7.5 c) C^2 e^{2px} - D^2 e^{-2px}
+function detail75c(C, D, p) {
+  const P = lin7(p, 0), Pm = lin7(-p, 0), fin = `\\left(${C}e^{${P}}-${D}e^{${Pm}}\\right)\\left(${C}e^{${P}}+${D}e^{${Pm}}\\right)`;
+  return { lignes: [dedup2(`${C * C}e^{${lin7(2 * p, 0)}}-${D * D}e^{${lin7(-2 * p, 0)}}`, `\\left(${C}e^{${P}}\\right)^{2}-\\left(${D}e^{${Pm}}\\right)^{2}`, fin)], final: fin };
+}
+const REJET7 = (v) => `\\text{Or } e^{x} \\gt 0 \\text{, donc } ${v} \\text{ est rejeté}`;
+// 7.6 a) e^{x^2} = e^{cx}
+function detail76a(c) {
+  const r = c < 0 ? [c, 0] : [0, c], S = `\\{${r[0]}\\,;\\,${r[1]}\\}`;
+  return { lignes: ['e^{a} = e^{b} \\iff a = b', 'e^{x^{2}} = e^{' + lin7(c, 0) + '}', `\\iff x^{2} = ${lin7(c, 0)}`, `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: -c, v: 'x' }])} = 0`, `\\iff x\\left(${lin7(1, -c)}\\right) = 0`, `\\iff x = 0 \\text{ ou } ${lin7(1, -c)} = 0`, `\\iff x = 0 \\text{ ou } x = ${c}`, `S = ${S}`], final: S };
+}
+// 7.6 b) (e^x - 1)(e^x + A) = 0
+function detail76b(A) {
+  return { lignes: [`\\left(e^{x}-1\\right)\\left(e^{x}+${A}\\right) = 0`, `\\iff e^{x}-1 = 0 \\text{ ou } e^{x}+${A} = 0`, `\\iff e^{x} = 1 \\text{ ou } e^{x} = -${A}`, REJET7(-A), '\\iff e^{x} = e^{0}', '\\iff x = 0', 'S = \\{0\\}'], final: '\\{0\\}' };
+}
+// 7.6 c) A - B e^{px-r} = C
+function detail76c(A, B, C, p, r) {
+  const S = `\\{${fracD(math.fraction(r, p))}\\}`, E = `e^{${polyF2([{ c: p, v: 'x' }, { c: -r, v: '' }])}}`;
+  return { lignes: [`${A}-${B}${E} = ${C}`, `\\iff -${B}${E} = ${C - A}`, `\\iff ${E} = 1`, `\\iff ${E} = e^{0}`, `\\iff ${polyF2([{ c: p, v: 'x' }, { c: -r, v: '' }])} = 0`, `\\iff ${polyF2([{ c: p, v: 'x' }])} = ${r}`, `\\iff x = ${fracD(math.fraction(r, p))}`, `S = ${S}`], final: S };
+}
+// 7.7 a) e^{x^2} < e^{cx}
+function detail77a(c, spec) {
+  const S = formaterIntervalleSpec(spec), tableau = Detail.tableauSignesFacteurs([{ label: 'x', v: 0, tex: '0', sgn: 1 }, { label: lin7(1, -c), v: c, tex: String(c), sgn: 1 }], 'signe');
+  return { lignes: ['e^{a} \\lt e^{b} \\iff a \\lt b', `e^{x^{2}} \\lt e^{${lin7(c, 0)}}`, `\\iff x^{2} \\lt ${lin7(c, 0)}`, `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: -c, v: 'x' }])} \\lt 0`, `\\iff x\\left(${lin7(1, -c)}\\right) \\lt 0`, ...Detail.lignesSigneAffine(1, -c),
+    '\\text{Tableau de signes du produit}', tableau, '\\text{On cherche les valeurs de } x', "\\text{pour lesquelles l'expression est } \\lt\\ 0", `S = ${S}`], final: S };
+}
+// 7.7 b) A - B e^{px+r} >= C
+function detail77b(A, B, C, p, r, spec) {
+  const S = formaterIntervalleSpec(spec), E = `e^{${polyF2([{ c: p, v: 'x' }, { c: r, v: '' }])}}`;
+  return { lignes: ['e^{a} \\lt e^{b} \\iff a \\lt b', `${A}-${B}${E} \\geqslant ${C}`, `\\iff -${B}${E} \\geqslant ${C - A}`, `\\text{On divise par } -${B} \\lt 0`, "\\text{donc le sens de l'inégalité change}", `\\iff ${E} \\leqslant 1`, `\\iff ${E} \\leqslant e^{0}`,
+    `\\iff ${polyF2([{ c: p, v: 'x' }, { c: r, v: '' }])} \\leqslant 0`, `\\iff ${polyF2([{ c: p, v: 'x' }])} \\leqslant ${-r}`, `\\iff x \\leqslant ${fracD(math.fraction(-r, p))}`, `S = ${S}`], final: S };
+}
+// 7.7 c) e^{Ax^2} > e^{Bx+C}
+function detail77c(A, B, C, spec) {
+  return detailInequation2('x', A, -B, -C, '>', spec, ['e^{a} \\lt e^{b} \\iff a \\lt b', `e^{${polyF2([{ c: A, v: 'x^{2}' }])}} \\gt ${ex7b(polyF2([{ c: B, v: 'x' }, { c: C, v: '' }]))}`, `\\iff ${polyF2([{ c: A, v: 'x^{2}' }])} \\gt ${polyF2([{ c: B, v: 'x' }, { c: C, v: '' }])}`,
+    `\\iff ${polyF2([{ c: A, v: 'x^{2}' }, { c: -B, v: 'x' }, { c: -C, v: '' }])} \\gt 0`], formaterIntervalleSpec);
+}
+// 7.8 a) e^{2x} + B e^x + N = 0, X = e^x
+function detail78a(B, N) {
+  const d = lignesDelta2(1, B, N), r = lignesRacines2(1, B, d.D.n), P = polyF2([{ c: 1, v: 'X^{2}' }, { c: B, v: 'X' }, { c: N, v: '' }]);
+  return { lignes: ['e^{2x} = \\left(e^{x}\\right)^{2}', '\\text{On pose } X \\text{ égal à } e^{x}', `\\text{On résout } ${P} = 0`, '\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D), ...r.lignes, `X = ${N} \\text{ ou } X = 1`, `e^{x} = ${N} \\text{ ou } e^{x} = 1`, REJET7(N), '\\iff e^{x} = e^{0}', '\\iff x = 0', 'S = \\{0\\}'], final: '\\{0\\}' };
+}
+// 7.8 b) e^{x^2} + e^m / e^{x^2} = 1 + e^m, X = e^{x^2}
+function detail78b(m) {
+  const sq = Math.round(Math.sqrt(m)), carre = sq * sq === m, em = ex7(m), rac = `\\sqrt{${m}}`, S = carre ? `\\{${-sq}\\,;\\,0\\,;\\,${sq}\\}` : `\\{-${rac}\\,;\\,0\\,;\\,${rac}\\}`;
+  const l = ['\\text{On pose } X \\text{ égal à } e^{x^{2}}', `e^{x^{2}}+\\dfrac{${em}}{e^{x^{2}}} = 1+${em} \\iff X+\\dfrac{${em}}{X} = 1+${em}`, '\\text{On multiplie par } X \\text{ (non nul car } X = e^{x^{2}} \\gt 0 \\text{)}', `\\iff X^{2}+${em} = \\left(1+${em}\\right)X`, `\\iff X^{2}-\\left(1+${em}\\right)X+${em} = 0`,
+    `\\iff \\left(X-1\\right)\\left(X-${em}\\right) = 0`, `\\iff X = 1 \\text{ ou } X = ${em}`, `\\iff e^{x^{2}} = e^{0} \\text{ ou } e^{x^{2}} = ${em}`, `\\iff x^{2} = 0 \\text{ ou } x^{2} = ${m}`, `\\iff x = 0 \\text{ ou } x = -${rac} \\text{ ou } x = ${rac}`];
+  if (carre) l.push(`${rac} = ${sq}`);
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 7.9 (e^{kt}-1)/(e^{kt}+1) impaire
+function detail79(k, lettre) {
+  const T = `${k === 1 ? '' : k}t`, E = `e^{${T}}`, Em = `e^{-${T}}`;
+  return { lignes: [`f(t) = \\dfrac{${E}-1}{${E}+1}`, '\\text{On calcule } f(-t) \\text{ :}', dedup2(`\\dfrac{${Em}-1}{${Em}+1}`, `\\dfrac{${E}\\left(${Em}-1\\right)}{${E}\\left(${Em}+1\\right)}`, `\\dfrac{1-${E}}{1+${E}}`, `-\\dfrac{${E}-1}{${E}+1}`), "\\text{Donc } f(-t) = -f(t)", '\\text{La fonction est impaire}', `\\text{Réponse : } ${lettre}`], final: lettre };
+}
+// 7.10 cosh^2 - sinh^2 = 1
+function detail710() {
+  return { lignes: ['\\cosh(x) = \\dfrac{e^{x}+e^{-x}}{2}', '\\sinh(x) = \\dfrac{e^{x}-e^{-x}}{2}',
+    dedup2('\\left(\\cosh(x)\\right)^{2}-\\left(\\sinh(x)\\right)^{2}', '\\left(\\dfrac{e^{x}+e^{-x}}{2}\\right)^{2}-\\left(\\dfrac{e^{x}-e^{-x}}{2}\\right)^{2}', '\\dfrac{\\left(e^{x}+e^{-x}\\right)^{2}-\\left(e^{x}-e^{-x}\\right)^{2}}{4}',
+      '\\dfrac{e^{2x}+2+e^{-2x}-\\left(e^{2x}-2+e^{-2x}\\right)}{4}', '\\dfrac{4}{4}', '1'), '\\text{Réponse : Vrai}'], final: 'Vrai' };
+}
+// 7.11 cosh(2x) = 2 cosh^2(x) - 1
+function detail711() {
+  return { lignes: ['\\cosh(x) = \\dfrac{e^{x}+e^{-x}}{2}', dedup2('\\cosh(2x)', '\\dfrac{e^{2x}+e^{-2x}}{2}'), dedup2('2\\left(\\cosh(x)\\right)^{2}-1', '2\\left(\\dfrac{e^{x}+e^{-x}}{2}\\right)^{2}-1', '\\dfrac{e^{2x}+2+e^{-2x}}{2}-1', '\\dfrac{e^{2x}+e^{-2x}}{2}'),
+    '\\cosh(2x) = 2\\left(\\cosh(x)\\right)^{2}-1'], final: '2\\left(\\cosh(x)\\right)^{2}-1' };
+}
+// 7.12 a) cosh(x+y) - cosh(x-y) = 2 sinh x sinh y
+function detail712a(lettre) {
+  return { lignes: ['\\cosh(x) = \\dfrac{e^{x}+e^{-x}}{2}', '\\sinh(x) = \\dfrac{e^{x}-e^{-x}}{2}',
+    dedup2('\\cosh(x+y)-\\cosh(x-y)', '\\dfrac{e^{x+y}+e^{-x-y}}{2}-\\dfrac{e^{x-y}+e^{-x+y}}{2}', '\\dfrac{e^{x+y}+e^{-x-y}-e^{x-y}-e^{-x+y}}{2}', '\\dfrac{\\left(e^{x}-e^{-x}\\right)\\left(e^{y}-e^{-y}\\right)}{2}', '2\\times \\dfrac{e^{x}-e^{-x}}{2}\\times \\dfrac{e^{y}-e^{-y}}{2}', '2\\sinh(x)\\sinh(y)'), `\\text{Réponse : } ${lettre}`], final: lettre };
+}
+// 7.12 b) sinh(x+y) + sinh(x-y) = 2 sinh x cosh y
+function detail712b(lettre) {
+  return { lignes: ['\\cosh(x) = \\dfrac{e^{x}+e^{-x}}{2}', '\\sinh(x) = \\dfrac{e^{x}-e^{-x}}{2}',
+    dedup2('\\sinh(x+y)+\\sinh(x-y)', '\\dfrac{e^{x+y}-e^{-x-y}}{2}+\\dfrac{e^{x-y}-e^{-x+y}}{2}', '\\dfrac{e^{x+y}-e^{-x-y}+e^{x-y}-e^{-x+y}}{2}', '\\dfrac{\\left(e^{x}-e^{-x}\\right)\\left(e^{y}+e^{-y}\\right)}{2}', '2\\times \\dfrac{e^{x}-e^{-x}}{2}\\times \\dfrac{e^{y}+e^{-y}}{2}', '2\\sinh(x)\\cosh(y)'), `\\text{Réponse : } ${lettre}`], final: lettre };
+}
+// 7.13 cosh(kx) = 1
+function detail713(k) {
+  const T = `${k === 1 ? '' : k}x`;
+  return { lignes: [`\\cosh(${T}) = \\dfrac{e^{${T}}+e^{-${T}}}{2}`, `\\cosh(${T}) = 1`, `\\iff \\dfrac{e^{${T}}+e^{-${T}}}{2} = 1`, `\\iff e^{${T}}+e^{-${T}} = 2`, `\\text{On pose } X \\text{ égal à } e^{${T}}`, `e^{-${T}} = \\dfrac{1}{e^{${T}}}`, '\\iff X+\\dfrac{1}{X} = 2',
+    '\\text{On multiplie par } X \\text{ (non nul car } X \\gt 0 \\text{)}', '\\iff X^{2}+1 = 2X', '\\iff X^{2}-2X+1 = 0', '\\iff \\left(X-1\\right)^{2} = 0', '\\iff X = 1', `\\iff e^{${T}} = e^{0}`, `\\iff ${T} = 0`, '\\iff x = 0', 'S = \\{0\\}'], final: '\\{0\\}' };
+}
+// 7.14 a) somme_{k=0}^{n} e^{ckx}
+function detail714a(c) {
+  const cx = `${c === 1 ? '' : c}x`, fin = `\\dfrac{e^{${c === 1 ? '' : c}(n+1)x}-1}{e^{${cx}}-1}`;
+  return { lignes: [`e^{${c === 1 ? '' : c}kx} = \\left(e^{${cx}}\\right)^{k}`, '\\text{On reconnaît une suite géométrique}', `\\text{de raison } e^{${cx}}`, `\\text{Comme } x \\neq 0 \\text{, on a } e^{${cx}} \\neq 1`, '\\sum_{k=0}^{n}q^{k} = \\dfrac{q^{n+1}-1}{q-1}', `\\dfrac{\\left(e^{${cx}}\\right)^{n+1}-1}{e^{${cx}}-1} = ${fin}`], final: fin };
+}
+// 7.14 b) somme_{k=1}^{n} (e^{dkx})^2
+function detail714b(d) {
+  const dx = `${2 * d}x`, fin = `e^{${dx}}\\times \\dfrac{e^{${2 * d}nx}-1}{e^{${dx}}-1}`;
+  return { lignes: [`\\left(e^{${d === 1 ? '' : d}kx}\\right)^{2} = e^{${2 * d}kx} = \\left(e^{${dx}}\\right)^{k}`, '\\text{On reconnaît une suite géométrique}', `\\text{de raison } e^{${dx}}`, `\\text{Comme } x \\neq 0 \\text{, on a } e^{${dx}} \\neq 1`, '\\sum_{k=1}^{n}q^{k} = q\\times \\dfrac{q^{n}-1}{q-1}', `e^{${dx}}\\times \\dfrac{\\left(e^{${dx}}\\right)^{n}-1}{e^{${dx}}-1} = ${fin}`], final: fin };
+}
+
 function genererExercices() {
   const ex = [];
 
@@ -1066,9 +1259,11 @@ function genererExercices() {
     const liste = versLeHaut
       ? [{bas:seuil, haut:Infinity, inclusBas:large, inclusHaut:false}]
       : [{bas:-Infinity, haut:seuil, inclusBas:false, inclusHaut:large}];
+    const spec = {type:'intervalles', liste};
+    const enonceTex = `\\dfrac{${fmtLin(p,q,false)}}{${d}}${op}${fmtLin(r,s,false)}`;
     ex.push({id:"7.1 a)", type:"intervalle", texteLibre:true,
-      enonce:`\\(\\dfrac{${fmtLin(p,q,false)}}{${d}}${op}${fmtLin(r,s,false)}\\)`,
-      intervalleSpec:{type:'intervalles', liste}});
+      enonce:`\\(${enonceTex}\\)`,
+      intervalleSpec:spec, detail: detail71a(enonceTex, p, q, d, r, s, NORM7(op), spec)});
   }
   // b) inequation produit dont un facteur (x^2+k) est toujours strictement positif
   {
@@ -1081,9 +1276,11 @@ function genererExercices() {
     const liste = versLeHaut
       ? [{bas:racine, haut:Infinity, inclusBas:large, inclusHaut:false}]
       : [{bas:-Infinity, haut:racine, inclusBas:false, inclusHaut:large}];
+    const spec = {type:'intervalles', liste};
+    const enonceTex = `(x^2+${k})(${fmtLin(a,b,false)})${op}0`;
     ex.push({id:"7.1 b)", type:"intervalle", texteLibre:true,
-      enonce:`\\((x^2+${k})(${fmtLin(a,b,false)})${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste}});
+      enonce:`\\(${enonceTex}\\)`,
+      intervalleSpec:spec, detail: detail71b(enonceTex, k, a, b, NORM7(op), spec)});
   }
 
   // ---------- 7.2 : equations (ensemble des solutions) ----------
@@ -1095,7 +1292,7 @@ function genererExercices() {
   {
     const a = aleaNonNul(-3,3), b = aleaNonNul(-6,6), c = alea(1,6);
     ex.push({id:"7.2 a)", type:"num", texteLibre:true, enonce:`\\((${fmtLin(a,b,false)})^2=${c*c}\\)`,
-      reponse: ensembleFrac([[c-b, a], [-c-b, a]])});
+      reponse: ensembleFrac([[c-b, a], [-c-b, a]]), detail: detail72a(a, b, c)});
   }
   // b) facteur commun : (ax+b)(cx+d) = (ax+b)(ex+f), solutions -b/a et (f-d)/(c-e), distinctes
   {
@@ -1105,7 +1302,7 @@ function genererExercices() {
     } while (c === e || (f - d) * a === -b * (c - e) || (d === 0 && f === 0));
     ex.push({id:"7.2 b)", type:"num", texteLibre:true,
       enonce:`\\((${fmtLin(a,b,false)})(${fmtLin(c,d,false)})=(${fmtLin(a,b,false)})(${fmtLin(e,f,false)})\\)`,
-      reponse: ensembleFrac([[-b, a], [f - d, c - e]])});
+      reponse: ensembleFrac([[-b, a], [f - d, c - e]]), detail: detail72b(a, b, c, d, e, f, [[-b, a], [f - d, c - e]])});
   }
 
   // ---------- 7.3 : calcul numerique (deux natures differentes) ----------
@@ -1117,7 +1314,7 @@ function genererExercices() {
     const rac = `${a===1?'':a}\\sqrt{${b}}`;
     const enonce = alea(0,1) === 0 ? `(${rac}+${c})(${rac}-${c})` : `(${c}-${rac})(${c}+${rac})`;
     const val = enonce.startsWith('(' + rac) ? a*a*b - c*c : c*c - a*a*b;
-    ex.push({id:"7.3 a)", type:"num", texteLibre:true, sansEgal:true, enonce:`Calculer \\(${enonce}\\)`, reponse: String(val)});
+    ex.push({id:"7.3 a)", type:"num", texteLibre:true, sansEgal:true, enonce:`Calculer \\(${enonce}\\)`, reponse: String(val), detail: detail73a(a, b, c, enonce.startsWith('(' + rac), val)});
   }
   // b) puissances d'exposant litteral : (B^(n+p) +/- B^n) / B^(n+q) = (B^p +/- 1) / B^q, irreductible
   {
@@ -1125,14 +1322,14 @@ function genererExercices() {
     const num = Math.pow(B,p) + (plus ? 1 : -1), den = Math.pow(B,q);
     ex.push({id:"7.3 b)", type:"num", fractionIrreductible:true, texteLibre:true, sansEgal:true,
       enonce:`Soit \\(n\\in\\mathbb{Z}\\). Écrire \\(\\dfrac{${B}^{n+${p}}${plus?'+':'-'}${B}^{n}}{${B}^{n+${q}}}\\) sous forme de fraction irréductible`,
-      reponse: fracStr(num, den)});
+      reponse: fracStr(num, den), detail: detail73b(B, p, q, plus, num, den)});
   }
 
   // ---------- 9.3 : calculs numeriques avec exp ----------
   function fmtExpAns(total) { return total === 0 ? '1' : `exp(${total})`; }
   {
     const A=aleaNonNul(-5,5), B=aleaNonNul(-3,3), C=aleaNonNul(-5,5), D=aleaNonNul(-5,5);
-    ex.push({id:"7.4 a)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{\\exp(${A})\\times \\left(\\exp(${B})\\right)^3}{\\exp(${C})\\times \\exp(${D})}\\)`, reponse: fmtExpAns(A+3*B-C-D)});
+    ex.push({id:"7.4 a)", type:"num", texteLibre:true, enonce:`\\(\\dfrac{\\exp(${A})\\times \\left(\\exp(${B})\\right)^3}{\\exp(${C})\\times \\exp(${D})}\\)`, reponse: fmtExpAns(A+3*B-C-D), detail: detail74a(A, B, C, D, A+3*B-C-D)});
   }
 
   // ---------- 9.4 : calculs avec exp(x) ----------
@@ -1142,7 +1339,7 @@ function genererExercices() {
     const c1=alea(-3,3), c2=alea(-3,3), c3=alea(-3,3);
     ex.push({id:"7.4 b)", type:"alg", texteLibre:true,
       enonce:`\\(\\exp(${fmtLin(p1,c1,false)})\\times \\exp(${fmtLin(p2,c2,false)})\\times \\left(\\exp(${fmtLin(p3,c3,false)})\\right)^2\\)`,
-      reponse:`exp(${fmtLin(totalCoef,c1+c2+2*c3,true)})`});
+      reponse:`exp(${fmtLin(totalCoef,c1+c2+2*c3,true)})`, detail: detail74b(p1, c1, p2, c2, p3, c3, totalCoef)});
   }
 
   // ---------- 9.5 : calculs plus compliques ----------
@@ -1151,7 +1348,7 @@ function genererExercices() {
     const c1=aleaNonNul(-5,5), c2=aleaNonNul(-5,5);
     ex.push({id:"7.4 c)", type:"alg", texteLibre:true,
       enonce:`\\(\\dfrac{\\exp(${fmtLin(p,0,false)})\\times \\exp(${c1})}{\\exp(${c2})\\times \\left(\\exp(${fmtLin(q,0,false)})\\right)^3}\\)`,
-      reponse:`exp(${fmtLin(p-3*q,c1-c2,true)})`});
+      reponse:`exp(${fmtLin(p-3*q,c1-c2,true)})`, detail: detail74c(p, c1, c2, q)});
   }
 
   // ---------- 9.6 : identites remarquables ----------
@@ -1159,7 +1356,7 @@ function genererExercices() {
     const c1=alea(2,4), c2=alea(2,4), p=alea(1,4);
     ex.push({id:"7.5 a)", type:"alg", texteLibre:true, sansEgal:true,
       enonce:`Développer \\(\\left(${c1}\\exp(${fmtLin(p,0,false)})-${c2}\\exp(${fmtLin(-p,0,false)})\\right)^2\\)`,
-      reponse:`${c1*c1}*exp(${2*p}*x)-${2*c1*c2}+${c2*c2}*exp(${fmtLin(-2*p,0,true)})`});
+      reponse:`${c1*c1}*exp(${2*p}*x)-${2*c1*c2}+${c2*c2}*exp(${fmtLin(-2*p,0,true)})`, detail: detail75a(c1, c2, p)});
   }
 
   // ---------- 9.7 ----------
@@ -1170,41 +1367,43 @@ function genererExercices() {
     const C=alea(2,4);
     ex.push({id:"7.5 b)", type:"alg", texteLibre:true, sansEgal:true,
       enonce:`Factoriser \\(\\exp(${2*p}x)-${2*C}\\exp(${fmtLin(p-q,0,false)})+${C*C}\\exp(${fmtLin(-2*q,0,false)})\\)`,
-      reponse:`(exp(${p}*x)-${C}*exp(${fmtLin(-q,0,true)}))^2`});
+      reponse:`(exp(${p}*x)-${C}*exp(${fmtLin(-q,0,true)}))^2`, detail: detail75b(p, q, C)});
   }
   {
     const C=alea(2,4), D=alea(2,4), p=alea(1,3);
     ex.push({id:"7.5 c)", type:"alg", texteLibre:true, sansEgal:true,
       enonce:`Factoriser \\(${C*C}\\exp(${2*p}x)-${D*D}\\exp(${fmtLin(-2*p,0,false)})\\)`,
-      reponse:`(${C}*exp(${p}*x)-${D}*exp(${fmtLin(-p,0,true)}))*(${C}*exp(${p}*x)+${D}*exp(${fmtLin(-p,0,true)}))`});
+      reponse:`(${C}*exp(${p}*x)-${D}*exp(${fmtLin(-p,0,true)}))*(${C}*exp(${p}*x)+${D}*exp(${fmtLin(-p,0,true)}))`, detail: detail75c(C, D, p)});
   }
 
   // ---------- 9.9 : equations I ----------
   {
     let c; do { c=alea(-5,5); } while (c===0);
-    ex.push({id:"7.6 a)", type:"num", texteLibre:true, enonce:`\\(\\exp(x^2)=\\exp(${fmtLin(c,0,false)})\\)`, reponse: c<0 ? `{${c};0}` : `{0;${c}}`});
+    ex.push({id:"7.6 a)", type:"num", texteLibre:true, enonce:`\\(\\exp(x^2)=\\exp(${fmtLin(c,0,false)})\\)`, reponse: c<0 ? `{${c};0}` : `{0;${c}}`, detail: detail76a(c)});
   }
   {
     const A=alea(2,9);
-    ex.push({id:"7.6 b)", type:"num", texteLibre:true, enonce:`\\(\\left(\\exp(x)-1\\right)\\left(\\exp(x)+${A}\\right)=0\\)`, reponse:"{0}"});
+    ex.push({id:"7.6 b)", type:"num", texteLibre:true, enonce:`\\(\\left(\\exp(x)-1\\right)\\left(\\exp(x)+${A}\\right)=0\\)`, reponse:"{0}", detail: detail76b(A)});
   }
 
   // ---------- 9.10 : equations II ----------
   {
     const p=alea(2,5), r=alea(1,6), B=alea(2,5), C=alea(1,4), A=C+B;
-    ex.push({id:"7.6 c)", type:"num", texteLibre:true, enonce:`\\(${A}-${B}\\exp(${p}x-${r})=${C}\\)`, reponse:`{${fracStr(r,p)}}`});
+    ex.push({id:"7.6 c)", type:"num", texteLibre:true, enonce:`\\(${A}-${B}\\exp(${p}x-${r})=${C}\\)`, reponse:`{${fracStr(r,p)}}`, detail: detail76c(A, B, C, p, r)});
   }
 
   // ---------- 9.11 : inequations ----------
   {
     const c=alea(2,5);
+    const spec = {type:'intervalles', liste:[{bas:0, haut:c, inclusBas:false, inclusHaut:false}]};
     ex.push({id:"7.7 a)", type:"intervalle", texteLibre:true, enonce:`\\(\\exp(x^2)<\\exp(${c}x)\\)`,
-      intervalleSpec:{type:'intervalles', liste:[{bas:0, haut:c, inclusBas:false, inclusHaut:false}]}});
+      intervalleSpec:spec, detail: detail77a(c, spec)});
   }
   {
     const p=alea(2,6), r=alea(1,6), B=alea(2,5), C=alea(1,4), A=C+B;
+    const spec = {type:'intervalles', liste:[{bas:-Infinity, haut:-r/p, inclusBas:false, inclusHaut:true}]};
     ex.push({id:"7.7 b)", type:"intervalle", texteLibre:true, enonce:`\\(${A}-${B}\\exp(${p}x+${r})\\geqslant ${C}\\)`,
-      intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity, haut:-r/p, inclusBas:false, inclusHaut:true}]}});
+      intervalleSpec:spec, detail: detail77b(A, B, C, p, r, spec)});
   }
   {
     function fracSimple() {
@@ -1222,11 +1421,12 @@ function genererExercices() {
     const Ccoef = -(r1.p*r2.p);
     const r1val = r1.p/r1.q, r2val = r2.p/r2.q;
     const rmin = Math.min(r1val,r2val), rmax = Math.max(r1val,r2val);
-    ex.push({id:"7.7 c)", type:"intervalle", texteLibre:true, enonce:`\\(\\exp(${Acoef===1?'':Acoef}x^2)>\\exp(${fmtLin(Bcoef,Ccoef,false)})\\)`,
-      intervalleSpec:{type:'intervalles', liste:[
+    const spec = {type:'intervalles', liste:[
         {bas:-Infinity, haut:rmin, inclusBas:false, inclusHaut:false},
         {bas:rmax, haut:Infinity, inclusBas:false, inclusHaut:false}
-      ]}});
+      ]};
+    ex.push({id:"7.7 c)", type:"intervalle", texteLibre:true, enonce:`\\(\\exp(${Acoef===1?'':Acoef}x^2)>\\exp(${fmtLin(Bcoef,Ccoef,false)})\\)`,
+      intervalleSpec:spec, detail: detail77c(Acoef, Bcoef, Ccoef, spec)});
   }
 
   // ---------- 9.12 : changement de variable ----------
@@ -1234,7 +1434,7 @@ function genererExercices() {
     const N=alea(-6,-2), B=-(1+N), C=N;
     ex.push({id:"7.8 a)", type:"num", texteLibre:true,
       enonce:`\\(\\exp(2x)+${B}\\exp(x)${C}=0\\), en posant \\(X=\\exp(x)\\)`,
-      reponse:"{0}"});
+      reponse:"{0}", detail: detail78a(B, C)});
   }
   const m9_12 = alea(1,4);
   {
@@ -1243,7 +1443,7 @@ function genererExercices() {
     const reponseC = isSquare ? `{-${sq};0;${sq}}` : `{-sqrt(${m9_12});0;sqrt(${m9_12})}`;
     ex.push({id:"7.8 b)", type:"num", texteLibre:true,
       enonce:`\\(\\exp(x^2)+\\dfrac{\\exp(${m9_12})}{\\exp(x^2)}=1+\\exp(${m9_12})\\), en posant \\(X=\\exp(x^2)\\)`,
-      reponse:reponseC});
+      reponse:reponseC, detail: detail78b(m9_12)});
   }
 
   // ---------- 9.13 : parite (QCM) ----------
@@ -1259,14 +1459,14 @@ function genererExercices() {
     const bonneLettre = options.find(o=>o.texte==='impaire').lettre;
     ex.push({id:"7.9", type:"qcm", texteLibre:true, sansEgal:true,
       enonce:`La fonction \\(t\\mapsto \\dfrac{\\exp(${k===1?'':k}t)-1}{\\exp(${k===1?'':k}t)+1}\\) (de \\(\\mathbb{R}\\) dans \\(\\mathbb{R}\\)) est :`,
-      bonneReponse:bonneLettre, options});
+      bonneReponse:bonneLettre, options, detail: detail79(k, bonneLettre)});
   }
 
   // ---------- 9.14 : identite hyperbolique (statique) ----------
-  ex.push({id:"7.10", type:"vraifaux", texteLibre:true, enonce:"A-t-on \\(\\cosh^2(x)-\\sinh^2(x)=1\\) pour tout \\(x\\in\\mathbb{R}\\) ?", estVrai:true});
+  ex.push({id:"7.10", type:"vraifaux", texteLibre:true, enonce:"A-t-on \\(\\cosh^2(x)-\\sinh^2(x)=1\\) pour tout \\(x\\in\\mathbb{R}\\) ?", estVrai:true, detail: detail710()});
 
   // ---------- 9.15 : formule de duplication (statique) ----------
-  ex.push({id:"7.11", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(\\cosh(2x)\\) en fonction de \\(\\cosh(x)\\)", reponse:"2*cosh(x)^2-1"});
+  ex.push({id:"7.11", type:"alg", texteLibre:true, sansEgal:true, enonce:"Exprimer \\(\\cosh(2x)\\) en fonction de \\(\\cosh(x)\\)", reponse:"2*cosh(x)^2-1", detail: detail711()});
 
   // ---------- 9.16 : formules de factorisation (QCM, shuffle) ----------
   {
@@ -1278,7 +1478,7 @@ function genererExercices() {
     const lettres3=['a','b','c'];
     options.forEach((o,i)=>o.lettre=lettres3[i]);
     const bonneLettre = options.find(o=>o.texte==='2\\sinh(x)\\sinh(y)').lettre;
-    ex.push({id:"7.12 a)", type:"qcm", texteLibre:true, enonce:"On a \\(\\cosh(x+y)-\\cosh(x-y)=\\cdots\\)", bonneReponse:bonneLettre, options});
+    ex.push({id:"7.12 a)", type:"qcm", texteLibre:true, enonce:"On a \\(\\cosh(x+y)-\\cosh(x-y)=\\cdots\\)", bonneReponse:bonneLettre, options, detail: detail712a(bonneLettre)});
   }
   {
     const options = melanger([
@@ -1289,13 +1489,13 @@ function genererExercices() {
     const lettres3=['a','b','c'];
     options.forEach((o,i)=>o.lettre=lettres3[i]);
     const bonneLettre = options.find(o=>o.texte==='2\\sinh(x)\\cosh(y)').lettre;
-    ex.push({id:"7.12 b)", type:"qcm", texteLibre:true, enonce:"On a \\(\\sinh(x+y)+\\sinh(x-y)=\\cdots\\)", bonneReponse:bonneLettre, options});
+    ex.push({id:"7.12 b)", type:"qcm", texteLibre:true, enonce:"On a \\(\\sinh(x+y)+\\sinh(x-y)=\\cdots\\)", bonneReponse:bonneLettre, options, detail: detail712b(bonneLettre)});
   }
 
   // ---------- 9.17 : une equation ----------
   {
     const k=alea(1,4);
-    ex.push({id:"7.13", type:"num", texteLibre:true, enonce:`Donner l'ensemble des solutions dans \\(\\mathbb{R}\\) de \\(\\cosh(${k===1?'':k}x)=1\\)`, reponse:"{0}"});
+    ex.push({id:"7.13", type:"num", texteLibre:true, enonce:`Donner l'ensemble des solutions dans \\(\\mathbb{R}\\) de \\(\\cosh(${k===1?'':k}x)=1\\)`, reponse:"{0}", detail: detail713(k)});
   }
 
   // ---------- 9.18 : calcul de sommes (forme close) ----------
@@ -1303,13 +1503,13 @@ function genererExercices() {
     const c=alea(1,3);
     ex.push({id:"7.14 a)", type:"alg", texteLibre:true, sansEgal:true,
       enonce:`Soit \\(x\\in\\mathbb{R}^*\\). Calculer \\(\\displaystyle\\sum_{k=0}^{n}\\exp(${c===1?'':c}kx)\\)`,
-      reponse:`(exp(${c}*(n+1)*x)-1)/(exp(${c}*x)-1)`});
+      reponse:`(exp(${c}*(n+1)*x)-1)/(exp(${c}*x)-1)`, detail: detail714a(c)});
   }
   {
     const d=alea(1,3);
     ex.push({id:"7.14 b)", type:"alg", texteLibre:true, sansEgal:true,
-      enonce:`Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\left(\\exp(${d===1?'':d}kx)\\right)^2\\)`,
-      reponse:`exp(${2*d}*x)*(exp(${2*d}*n*x)-1)/(exp(${2*d}*x)-1)`});
+      enonce:`Soit \\(x\\in\\mathbb{R}^*\\). Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\left(\\exp(${d===1?'':d}kx)\\right)^2\\)`,
+      reponse:`exp(${2*d}*x)*(exp(${2*d}*n*x)-1)/(exp(${2*d}*x)-1)`, detail: detail714b(d)});
   }
 
   ex.forEach(e => {
@@ -1317,6 +1517,8 @@ function genererExercices() {
     if (e.enonce) e.enonce = expVersPuissance(e.enonce).replace(/</g, '\\lt ');
     if (Array.isArray(e.options)) e.options.forEach(o => { o.texte = expVersPuissance(o.texte); });
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
   return ex;
 }
 
@@ -2662,7 +2864,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

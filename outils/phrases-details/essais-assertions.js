@@ -483,6 +483,16 @@ const ESSAIS = {
     [false, '\\text{Comme } a \\neq 2 \\text{, on a } s \\neq 0', { enonce: 'On définit \\(f(x)=2(x-3)^{2}\\). Soit \\(a\\) un réel différent de \\(2\\).' }, env('')],
     [false, '\\text{Comme } a \\neq 3 \\text{, on a } s \\neq 0', { enonce: 'On définit \\(f(x)=2(x-3)^{2}\\). Soit \\(a\\) un réel différent de \\(4\\).' }, env('')]
   ],
+  'la-lettre-du-qcm-citee-est-la-bonne-reponse-lettree': [
+    [true, '\\text{Réponse : } b', { bonneReponse: 'b' }, env('')],
+    [false, '\\text{Réponse : } a', { bonneReponse: 'b' }, env('')]
+  ],
+  'x-non-nul-donne-une-raison-differente-de-1': [
+    [true, '\\text{Comme } x \\neq 0 \\text{, on a } e^{2x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')],
+    [true, '\\text{Comme } x \\neq 0 \\text{, on a } e^{x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')],
+    [false, '\\text{Comme } x \\neq 0 \\text{, on a } e^{2x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}\\). Calculer la somme' }, env('')],
+    [false, '\\text{Comme } x \\neq 0 \\text{, on a } e^{0x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')]
+  ],
   'on-simplifie-par-s-seulement-apres-avoir-etabli-que-s-est-non-nul': [
     [true, '\\text{On simplifie par } s \\text{ (non nul)}', { detail: { lignes: ['\\text{Comme } a \\neq 3 \\text{, on a } s \\neq 0', '\\text{On simplifie par } s \\text{ (non nul)}'] } }, env('')],
     [false, '\\text{On simplifie par } s \\text{ (non nul)}', { detail: { lignes: ['\\text{On simplifie par } s \\text{ (non nul)}'] } }, env('')]
