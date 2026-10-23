@@ -16,6 +16,7 @@ options : --tirages N (défaut 4000 pour une fiche nommée, 1500 avec --toutes, 
           --tirages-equivalences N (défaut 300 ; 120 avec --toutes ; 40 avec --rapide : la résolution numérique des équivalences est coûteuse)
           --regenerations K (interface, défaut 14 ; 8 avec --toutes ; 4 avec --rapide)   --exemples N (défaut 2)
           --rapide (essai en cours de rédaction)   --sans-interface   --sans-autotest
+          --profil (affiche le temps passé dans chaque étape et dans l'interface, pour savoir où part le temps)
 ```
 Réglages **robustes par défaut** (demande de David, 16/10/2026 : plus de temps pour plus de sûreté) : une fiche nommée prend de 4 à 8
 minutes ; `--rapide` revient à moins d'une minute. Chaînes d'égalités évaluées en 8 valeurs des lettres, équivalences résolues sur
@@ -88,3 +89,13 @@ Auto-test des tableaux de signes : `tableau-signe-final-inverse` (un signe de la
 
 Les contrôles sont dans la fonction `controlerDansLaPage` (code exécuté dans la page) ; l'interface est dans `controlerInterface`.
 Un nouveau contrôle s'accompagne d'une mutation dans la section « auto-test », pour prouver qu'il détecte bien l'erreur qu'il vise.
+
+## Accélération du 23/10/2026 (demande de David : le contrôle complet de Première 7 avait pris 40 minutes)
+
+`--profil` a montré que 89 % du temps partait dans la résolution numérique des équivalences « ⟺ » (414 s sur 463 s pour 200 tirages de la
+fiche 7). Trois accélérations, sans rien retirer de ce que l'outil détecte (auto-tests identiques avant / après sur les fiches 2, 5, 12) :
+1. conversion LaTeX → mathjs et compilation **mémorisées** (une même expression était recompilée à chaque valeur des lettres et à chaque point
+   de la grille) ; 2. une partie « A ⟺ B ⟺ C » n'est **résolue qu'une fois** (B servait deux fois) ; 3. au plus **12 équivalences par forme**
+   (nombres remplacés par 0, signes et structure conservés : un cas particulier est une autre forme) au lieu de toutes celles des 300 premiers
+   tirages. Côté interface, la largeur ordinateur (1000 px) est contrôlée sur le tiers des régénérations (les débordements ne concernent
+   que le téléphone, 375 px, qui garde toutes les régénérations). Les chaînes d'égalités restent toutes contrôlées, tirage par tirage.

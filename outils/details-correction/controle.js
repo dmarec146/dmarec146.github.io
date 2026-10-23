@@ -79,7 +79,15 @@ async function controlerDansLaPage(opts) {
 
   // ---------- LaTeX -> mathjs ----------
   const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'cosh', 'sinh', 'abs', 'pi', 'e', 'Infinity', 'nthRoot']);
+  // (accélération 23/10/2026) conversion LaTeX -> mathjs et compilation mémorisées : une même expression est évaluée sur 8 portées et revient d'une ligne à l'autre
+  const memoVersMathjs = new Map(), memoCompile = new Map();
   function versMathjs(tex) {
+    const cle = String(tex); let r = memoVersMathjs.get(cle);
+    if (r === undefined) { r = versMathjs0(cle); if (memoVersMathjs.size > 60000) memoVersMathjs.clear(); memoVersMathjs.set(cle, r); }
+    return r;
+  }
+  const comp = (m) => { let c = memoCompile.get(m); if (!c) { c = math.compile(m); if (memoCompile.size > 60000) memoCompile.clear(); memoCompile.set(m, c); } return c; };
+  function versMathjs0(tex) {
     let t = String(tex).replace(/\\(?:small|scriptsize)\s*/g, '').replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
       .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
@@ -123,12 +131,12 @@ async function controlerDansLaPage(opts) {
   }
   const NB_PORTEES = 8;
   const egal = (a, b) => Math.abs(a - b) <= 1e-8 * Math.max(1, Math.abs(a), Math.abs(b));
-  const evaluer = (tex, k) => { const m = versMathjs(tex); const sc = portee(m, k); const v = math.evaluate(m, sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; };
+  const evaluer = (tex, k) => { const m = versMathjs(tex); const sc = portee(m, k); const v = comp(m).evaluate(sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; };
   // même valeur des lettres pour toutes les expressions comparées : on construit la portée sur la concaténation
   function evaluerGroupe(textes, k) {
     const ms = textes.map(versMathjs);
     const sc = portee(ms.join(' + '), k);
-    return ms.map((m) => { const v = math.evaluate(m, sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; });
+    return ms.map((m) => { const v = comp(m).evaluate(sc); if (typeof v !== 'number' || !isFinite(v)) throw new Error('non fini'); return v; });
   }
 
   // ---------- chaînes d'égalités ----------
@@ -204,7 +212,7 @@ async function controlerDansLaPage(opts) {
   function resoudre(a, v, borne) {
     // renvoie { racines: [...], vecteur: [booleens sur la grille], frontieres: Set d'indices }
     const N = 4800, pas = (2 * borne) / N;
-    const fTout = a.relations.map((r) => { const g = math.compile(versMathjs(r.gauche)), d = math.compile(versMathjs(r.droite)); return (x) => { const sc = {}; sc[v] = x; return g.evaluate(sc) - d.evaluate(sc); }; });
+    const fTout = a.relations.map((r) => { const g = comp(versMathjs(r.gauche)), d = comp(versMathjs(r.droite)), sc = {}; return (x) => { sc[v] = x; return g.evaluate(sc) - d.evaluate(sc); }; });
     const valeursTout = fTout.map((fn) => { const w = new Array(N + 1); for (let i = 0; i <= N; i++) { const y = fn(-borne + i * pas + 0.00137); w[i] = isFinite(y) ? y : NaN; } return w; });
     // une égalité vraie pour tout x (identité, ex. x² - 1 = (x-1)(x+1), ou égalité numérique) n'apporte aucune condition : on l'écarte ;
     // une égalité constamment fausse rend la partie illisible (la chaîne d'égalités la signale séparément)
@@ -254,6 +262,7 @@ async function controlerDansLaPage(opts) {
     const aEgalite = rels.some((r) => r.op === '=');
     return { solutions, aEgalite, vecteur, frontieres, racinesToutes: racines.map((x) => x.r) };
   }
+  const memoResolution = new Map();
   function verifierEquivalence(partieA, partieB) {
     const A = analyserPartie(partieA), B = analyserPartie(partieB);
     if (!A || !B) return { illisible: true };
@@ -264,7 +273,9 @@ async function controlerDansLaPage(opts) {
     // la fenêtre de recherche s'élargit avec les nombres écrits (x/72 > 5 a pour frontière x = 360)
     const nombres = (partieA + ' ' + partieB).match(/\d+(?:\.\d+)?/g) || [];
     const borne = Math.min(3000, Math.max(30, 1.5 * Math.max(0, ...nombres.map(Number))));
-    try { RA = resoudre(A, v, borne); RB = resoudre(B, v, borne); } catch (er) { return { illisible: true }; }
+    // (accélération) une partie « A ⟺ B ⟺ C » est résolue une seule fois : B sert de second membre puis de premier
+    const resoudreMemo = (txt, an) => { const cle = borne + '|' + v + '|' + txt.trim(); if (memoResolution.has(cle)) return memoResolution.get(cle); const r = resoudre(an, v, borne); if (memoResolution.size > 200) memoResolution.clear(); memoResolution.set(cle, r); return r; };
+    try { RA = resoudreMemo(partieA, A); RB = resoudreMemo(partieB, B); } catch (er) { return { illisible: true }; }
     const tous = (R) => R.racinesToutes;
     const memeListe = (X, Y) => X.length === Y.length && X.every((x, i) => Math.abs(x - Y[i]) < 1e-5 * (1 + Math.abs(x)));
     if (RA.aEgalite || RB.aEgalite) {
@@ -612,6 +623,9 @@ async function controlerDansLaPage(opts) {
           if (/\\text\{(?!\s*ou\s*\})/.test(parties[i] + parties[i + 1])) { ctx.equivalencesIllisibles++; continue; }
           const cleEq = parties[i].trim() + '§' + parties[i + 1].trim();
           if (ctx.equivVues) { if (ctx.equivVues.has(cleEq)) continue; ctx.equivVues.add(cleEq); }
+          // (accélération) la résolution numérique est la partie coûteuse du contrôle : au plus MAX_PAR_FORME équivalences pour une même forme
+          // (nombres remplacés par 0, signes et structure conservés : un cas particulier -- coefficient 1, signe négatif -- est une autre forme)
+          if (ctx.formesEquiv) { const forme = cleEq.replace(/\d+/g, '0'), n = ctx.formesEquiv.get(forme) || 0; if (n >= 12) { ctx.equivalencesEchantillonnees = (ctx.equivalencesEchantillonnees || 0) + 1; continue; } ctx.formesEquiv.set(forme, n + 1); }
           const r = verifierEquivalence(parties[i], parties[i + 1]);
           if (r.illisible) { ctx.equivalencesIllisibles++; const ill = stats.illisiblesEx || (stats.illisiblesEx = {}); const o = ill[e.id + ' (équivalence)'] || (ill[e.id + ' (équivalence)'] = { n: 0, ex: parties[i].trim() + '  ⟺  ' + parties[i + 1].trim() }); o.n++; } else { ctx.equivalences++; if (r.faux) noter('erreur', 'equivalence-fausse', parties[i] + '  ⟺  ' + parties[i + 1] + '   =>   ' + r.detail); }
         }
@@ -646,7 +660,15 @@ async function controlerDansLaPage(opts) {
   // ---------- boucle de tirages ----------
   const phrases = new Map(), exemples = new Map(), idsAvecDetail = new Set(), idsSansDetail = new Set(), echantillons = [];
   stats.equivVues = new Set();
-  stats.environnement = { texte: (id) => { const n = document.getElementById(id); return n ? n.textContent : ''; } };
+  stats.formesEquiv = new Map();
+  // --profil : temps passe (ms) dans chaque etape du controle des details
+  stats.temps = {};
+  if (opts.profil) {
+    const chrono = (nom, f) => function (...a) { const t = performance.now(); try { return f.apply(this, a); } finally { stats.temps[nom] = (stats.temps[nom] || 0) + performance.now() - t; } };
+    verifierChaine = chrono('chaines', verifierChaine); verifierEquivalence = chrono('equivalences', verifierEquivalence); styler = chrono('style', styler);
+    comparerFinal = chrono('reponse finale', comparerFinal); problemesTableauSignes = chrono('tableaux', problemesTableauSignes); compilerMathJax = chrono('MathJax', compilerMathJax); verifierDetail = chrono('verifierDetail (total)', verifierDetail);
+  }
+  stats.environnement ={ texte: (id) => { const n = document.getElementById(id); return n ? n.textContent : ''; } };
   stats.assertions = (opts.assertions || []).map((a) => ({ nom: a.nom, motif: new RegExp(a.motif), verifie: (0, eval)('(' + a.verifie + ')') }));
   stats.assertionsVerifiees = 0;
   for (let k = 0; k < opts.tirages; k++) {
@@ -746,7 +768,7 @@ async function controlerDansLaPage(opts) {
   // les lignes d'autotest ne comptent pas comme anomalies de la fiche
   const reelles = anomalies.filter((a) => !String(a.id).startsWith('#autotest'));
 
-  const statsSimples = (({ environnement, assertions, equivVues, equivActif, ...reste }) => reste)(stats);
+  const statsSimples = (({ environnement, assertions, equivVues, formesEquiv, equivActif, ...reste }) => reste)(stats);
   return {
     anomalies: reelles, stats: statsSimples,
     avecDetail: [...idsAvecDetail], sansDetail: [...idsSansDetail],
@@ -893,11 +915,13 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       await page.waitForFunction(() => window.MathJax && MathJax.startup, null, { timeout: 30000 }).catch(() => {});
       await page.waitForTimeout(600);
     } catch (er) { lignesRapport.push(`${fiche} : ouverture impossible (${er.message.slice(0, 80)})`); erreurs++; await contexte.close(); continue; }
-    const r = await page.evaluate(controlerDansLaPage, { tirages: couvertureSeule ? 1 : tirages, tiragesEquivalences: couvertureSeule ? 0 : tiragesEquivalences, exemples: nbExemples, assertions, autotest: !couvertureSeule && !drapeau('--sans-autotest') });
+    const tDebut = Date.now();
+    const r = await page.evaluate(controlerDansLaPage, { tirages: couvertureSeule ? 1 : tirages, tiragesEquivalences: couvertureSeule ? 0 : tiragesEquivalences, exemples: nbExemples, assertions, autotest: !couvertureSeule && !drapeau('--sans-autotest'), profil: drapeau('--profil') });
+    if (drapeau('--profil')) console.log(`[profil] ${fiche} : tirages + auto-tests ${((Date.now() - tDebut) / 1000).toFixed(0)} s ; détail (ms) ${JSON.stringify(Object.fromEntries(Object.entries(r.stats.temps || {}).map(([k, v]) => [k, Math.round(v)])))}`);
     couverture.push({ fiche, avec: r.avecDetail, sans: r.sansDetail });
     let anomalies = couvertureSeule ? [] : r.anomalies;
     if (!couvertureSeule && !drapeau('--sans-interface') && r.avecDetail.length) {
-      for (const vp of [{ width: 1000, height: 900 }, { width: 375, height: 812 }]) anomalies = anomalies.concat(await controlerInterface(page, vp, regenerations, base));
+      for (const vp of [{ width: 1000, height: 900 }, { width: 375, height: 812 }]) { const tVp = Date.now(); anomalies = anomalies.concat(await controlerInterface(page, vp, vp.width > 600 ? Math.max(3, Math.ceil(regenerations / 3)) : regenerations, base)); if (drapeau('--profil')) console.log(`[profil] interface ${vp.width}px : ${((Date.now() - tVp) / 1000).toFixed(0)} s`); }
     }
     // une même anomalie revue à chaque régénération n'est listée qu'une fois, avec son nombre d'occurrences
     const groupes = new Map();
