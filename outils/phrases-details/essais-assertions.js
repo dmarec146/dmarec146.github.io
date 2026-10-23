@@ -477,6 +477,16 @@ const ESSAIS = {
     [true, '\\text{Donc } u \\text{ ne s\'annule pas}', { detail: { lignes: ['-3 \\lt 0 \\text{ : aucune racine réelle}', '\\text{Donc } u \\text{ ne s\'annule pas}'] } }, env('')],
     [false, '\\text{Donc } u \\text{ ne s\'annule pas}', { detail: { lignes: ['5 \\gt 0 \\text{ : deux racines distinctes}', '\\text{Donc } u \\text{ ne s\'annule pas}'] } }, env('')]
   ],
+  'la-valeur-exclue-annule-la-base-du-carre': [
+    [true, '\\text{Comme } a \\neq 3 \\text{, on a } s \\neq 0', { enonce: 'On définit \\(f(x)=2(x-3)^{2}\\). Soit \\(a\\) un réel différent de \\(3\\).' }, env('')],
+    [true, '\\text{Comme } a \\neq -\\dfrac{3}{2} \\text{, on a } s \\neq 0', { enonce: 'On définit \\(f(x)=(2x+3)^{2}\\). Soit \\(a\\) un réel différent de \\(-\\dfrac{3}{2}\\).' }, env('')],
+    [false, '\\text{Comme } a \\neq 2 \\text{, on a } s \\neq 0', { enonce: 'On définit \\(f(x)=2(x-3)^{2}\\). Soit \\(a\\) un réel différent de \\(2\\).' }, env('')],
+    [false, '\\text{Comme } a \\neq 3 \\text{, on a } s \\neq 0', { enonce: 'On définit \\(f(x)=2(x-3)^{2}\\). Soit \\(a\\) un réel différent de \\(4\\).' }, env('')]
+  ],
+  'on-simplifie-par-s-seulement-apres-avoir-etabli-que-s-est-non-nul': [
+    [true, '\\text{On simplifie par } s \\text{ (non nul)}', { detail: { lignes: ['\\text{Comme } a \\neq 3 \\text{, on a } s \\neq 0', '\\text{On simplifie par } s \\text{ (non nul)}'] } }, env('')],
+    [false, '\\text{On simplifie par } s \\text{ (non nul)}', { detail: { lignes: ['\\text{On simplifie par } s \\text{ (non nul)}'] } }, env('')]
+  ],
   'parmi-les-individus-de-X-ceux-de-Y-est-une-probabilite-de-l-enonce': [
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],

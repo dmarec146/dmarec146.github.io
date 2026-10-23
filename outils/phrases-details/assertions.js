@@ -757,5 +757,22 @@ module.exports = [
       const echap = (s) => s.replace(/[\\{}]/g, '\\$&');
       return new RegExp('P_\\{' + echap(m[1]) + '\\}\\(' + echap(m[2]) + '\\)').test(String(e.enonce));
     }
+  },
+  {
+    nom: 'la-valeur-exclue-annule-la-base-du-carre',
+    // « \text{Comme } a \neq 3 \text{, on a } s \neq 0 » : la valeur citée est celle « différent de » de l'énoncé et annule le facteur (mx+p) du carré
+    motif: /\\text\{Comme \} a \\neq .* \\text\{, on a \} s \\neq 0$/,
+    verifie: (l, e) => {
+      const m = l.match(/^\\text\{Comme \} a \\neq (-?(?:\\dfrac\{\d+\}\{\d+\}|\d+)) \\text\{, on a \} s \\neq 0$/), base = String(e.enonce).match(/\(([^()]*)\)\^\{2\}/);
+      if (!m || !base) return false;
+      const val = math.evaluate(m[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (x, s, n, d) => s + '(' + n + '/' + d + ')'));
+      return String(e.enonce).includes('différent de \\(' + m[1] + '\\)') && Math.abs(math.evaluate(base[1].replace(/(\d)x/g, '$1*x').replace(/x/g, '(' + val + ')'))) < 1e-9;
+    }
+  },
+  {
+    nom: 'on-simplifie-par-s-seulement-apres-avoir-etabli-que-s-est-non-nul',
+    // « \text{On simplifie par } s \text{ (non nul)} » : une ligne précédente a établi « s \neq 0 »
+    motif: /^\\text\{On simplifie par \} s \\text\{ \(non nul\)\}$/,
+    verifie: (l, e) => { const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l); return i > 0 && L.slice(0, i).some((x) => /\\text\{, on a \} s \\neq 0$/.test(x)); }
   }
 ];

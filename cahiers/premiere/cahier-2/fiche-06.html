@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.5,"6.2 a)":0.5,"6.2 b)":0.5,"6.3":0.5,"6.4":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":1,"6.5 d)":1,"6.6 a)":1.5,"6.6 b)":1,"6.7 a)":1.5,"6.7 b)":1,"6.8 a)":1.25,"6.8 b)":1,"6.9":1.75,"6.10 a)":1.75,"6.10 b)":2},"bonus":["6.9","6.10 a)","6.10 b)"]});
@@ -1220,6 +1222,196 @@ function mettreAJourTextesAvances() {
   document.getElementById('texte-6-7').innerHTML = texteNote(paramsAvances.g10, false);
 }
 
+// ---------- details de correction (23/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracTexte, fracBrute } = Detail;
+const { dF2, dedup2, polyF2, sommeF2, lignesDelta2, phraseDelta2, ENTETE_RACINES2 } = DetailQ;
+const mf6 = (a) => math.fraction(a.n, a.d);
+const lin6 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const cf6 = (c) => (c === 1 ? '' : c === -1 ? '-' : String(c));                       // coefficient devant un facteur : 1 omis, -1 en signe
+const cp6 = (c) => (c === 1 ? '' : c === -1 ? '-' : `${c}\\times `);                   // idem devant une fonction : « 3\times f' »
+const pw6 = (b, e) => (e === 1 ? b : `${b}^{${e}}`);
+const fq6 = (n, d) => (d === 1 ? String(n) : `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`);              // fraction d'entiers, signe devant
+// terme « c fois corps » ajoute a une somme : signe devant, coefficient 1 omis
+const plus6 = (c, corps) => `${c < 0 ? '-' : '+'}${Math.abs(c) === 1 ? '' : Math.abs(c)}${corps}`;
+// produit de deux entiers ecrit sans facteur 1 ni -1
+const mul6 = (x, y) => (x === 0 || y === 0 ? '0' : x === 1 ? String(y) : y === 1 ? String(x) : x === -1 ? `-${par6(y)}` : y === -1 ? `-${par6(x)}` : `${x}\\times ${par6(y)}`);
+const fqt6 = (num, d) => (/^-\d+$/.test(num) ? `-\\dfrac{${num.slice(1)}}{${d}}` : `\\dfrac{${num}}{${d}}`);
+const par6 = (v) => (v < 0 ? `\\left(${v}\\right)` : String(v));
+// produit de facteurs entiers puis d'un dernier facteur (LaTeX) : les facteurs 1 sont omis, les facteurs -1 deviennent un signe moins devant
+const prod6 = (nums, dernier) => {
+  let signe = 1; const f = [];
+  nums.forEach((v) => { if (v === 1) return; if (v === -1) { signe = -signe; return; } f.push(v); });
+  const corps = [...f.map((v, i) => (i === 0 && signe > 0 ? String(v) : par6(v))), dernier].filter((x) => x !== '').join('\\times ');
+  return (signe < 0 ? '-' : '') + corps;
+};
+// polynome de la fiche (coefficients {n,d} par degre croissant) en LaTeX decroissant
+const pol6 = (p, v = 'x') => polyF2(pTrim(p).map((c, k) => ({ c: mf6(c), v: k === 0 ? '' : k === 1 ? v : `${v}^{${k}}` })).reverse());
+const REGLE_PUIS6 = "\\text{Pour } u^{n} \\text{ la dérivée est } nu'u^{n-1}";
+const REGLE_CARRE6 = "\\text{Pour } ku^{2} \\text{ la dérivée est } 2ku'u";
+const REGLE_QUOT6 = "\\text{Pour } \\dfrac{u}{v} \\text{ la dérivée est } \\dfrac{u'v-uv'}{v^{2}}";
+const REGLE_COMP6 = "\\text{Pour } f(u) \\text{ la dérivée est } u'f'(u)";
+const REGLE_DERIV6 = ["\\text{Un terme } cx^{k} \\text{ a pour dérivée } kcx^{k-1}", '\\text{Un terme constant a pour dérivée } 0'];
+// racines (a, b, delta fractions ou entiers, delta carre d'un rationnel > 0) : { lignes, x1, x2 } (x1 : signe moins devant la racine de delta)
+function racines6(A, B, D) {
+  const a = math.fraction(A), b = math.fraction(B), d = math.fraction(D), s = math.fraction(Math.round(Math.sqrt(d.n)), Math.round(Math.sqrt(d.d)));
+  const den = math.multiply(2, a), xs = [], lignes = [`\\sqrt{${fracD(d)}} = ${fracD(s)}`];
+  [[1, -1], [2, 1]].forEach(([i, sg]) => {
+    const num = math.add(math.unaryMinus(b), math.multiply(sg, s)), x = math.divide(num, den); xs.push(x);
+    const haut = b.n === 0 ? `${sg < 0 ? '-' : ''}\\dfrac{${fracD(s)}}{2\\times ${dF2(a)}}` : `\\dfrac{-${dF2(b)}${sg < 0 ? '-' : '+'}${fracD(s)}}{2\\times ${dF2(a)}}`;
+    const brut = (num.d === 1 && den.d === 1) ? Detail.quotientBrut(num.s * num.n, den.s * den.n) : `\\dfrac{${fracD(num)}}{${fracD(den)}}`;
+    lignes.push(`x_${i} = ${dedup2(haut, brut, fracD(x))}`);
+  });
+  return { lignes, x1: xs[0], x2: xs[1] };
+}
+// 6.1 a) k(x+q) op rx+s
+function detail61a(enonce, k, q, r, s, op, spec) {
+  const coef = k - r, rhs = s - k * q, seuil = math.fraction(rhs, coef), S = formaterIntervalleSpec(spec);
+  const lignes = [enonce, `\\iff ${polyF2([{ c: k, v: 'x' }, { c: k * q, v: '' }])} ${SYMB_INEQ[op]} ${lin6(r, s)}`, `\\iff ${polyF2([{ c: coef, v: 'x' }])} ${SYMB_INEQ[op]} ${rhs}`];
+  if (coef < 0) lignes.push(`\\text{On divise par } ${coef} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (coef !== 1) lignes.push(`\\iff x ${SYMB_INEQ[coef < 0 ? SENS_OPPOSE[op] : op]} ${fracD(seuil)}`);
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+// 6.1 b) (px+q)/(rx+s) op 0
+function detail61b(enonce, p, q, r, s, op, spec) {
+  const S = formaterIntervalleSpec(spec), pole = fracD(math.fraction(-s, r));
+  const tableau = Detail.tableauSignesFacteurs([{ label: lin6(p, q), v: -q / p, tex: fracTexte(-q, p), sgn: Math.sign(p) }, { label: lin6(r, s), v: -s / r, tex: fracTexte(-s, r), sgn: Math.sign(r), denom: true }], 'signe');
+  return { lignes: [enonce, ...Detail.lignesSigneAffine(p, q), ...Detail.lignesSigneAffine(r, s), '\\text{Tableau de signes du quotient}', tableau, '\\text{On cherche les valeurs de } x',
+    `\\text{pour lesquelles le quotient est } ${SYMB_INEQ[op]}\\ 0`, `\\small \\text{La valeur interdite } ${pole} \\text{ est exclue dans tous les cas}`, `S = ${S}`], final: S };
+}
+// 6.2 a) A x^2 + B x + C = 0, racines entieres m < n
+function detail62a(A, B, C, m, n) {
+  const d = lignesDelta2(A, B, C), r = racines6(A, B, d.D), S = `\\{${m}\\,;\\,${n}\\}`;
+  return { lignes: [...ENTETE_RACINES2, ...d.lignes, phraseDelta2(d.D), ...r.lignes, `S = ${S}`], final: S };
+}
+// 6.2 b) (ax+b)/c = (dx+e)/f
+function detail62b(a, b, c, d, e, f2, sol) {
+  const coef = f2 * a - c * d, rhs = c * e - f2 * b, S = `\\{${fracD(mf6(sol))}\\}`;
+  const lignes = [`\\dfrac{${lin6(a, b)}}{${c}} = \\dfrac{${lin6(d, e)}}{${f2}}`, `\\iff ${f2}\\left(${lin6(a, b)}\\right) = ${c}\\left(${lin6(d, e)}\\right)`, `\\iff ${lin6(f2 * a, f2 * b)} = ${lin6(c * d, c * e)}`, `\\iff ${polyF2([{ c: coef, v: 'x' }])} = ${rhs}`];
+  if (coef !== 1) lignes.push(`\\iff x = ${fracD(mf6(sol))}`);
+  lignes.push(`S = ${S}`);
+  return { lignes, final: S };
+}
+// 6.3 x -+ y z (fractions irreductibles {n,d}, produit prioritaire)
+function detail63(enonce, x, y, z, op) {
+  const prod = F.mul(y, z), p = Detail.produitFrac(y.n, y.d, z.n, z.d), s = Detail.lignesSomme([{ s: 1, n: x.n, d: x.d }, { s: op === '-' ? -1 : 1, n: prod.n, d: prod.d }]);
+  return { lignes: [enonce, "\\text{On calcule d'abord le produit :}", ...p.lignes, ...s.lignes], final: s.final };
+}
+// 6.4 (x-p)(x+p) + x(x-q)(2x-r)
+function detail64(p, q, r, poly) {
+  const A = polyF2([{ c: 1, v: 'x^{2}' }, { c: -p * p, v: '' }]), t = (-(r + 2 * q));
+  const B2 = polyF2([{ c: 2, v: 'x^{2}' }, { c: t, v: 'x' }, { c: q * r, v: '' }]), B3 = polyF2([{ c: 2, v: 'x^{3}' }, { c: t, v: 'x^{2}' }, { c: q * r, v: 'x' }]);
+  const fin = pol6(poly), brut = polyF2([{ c: 2, v: 'x^{3}' }, { c: t, v: 'x^{2}' }, { c: q * r, v: 'x' }, { c: 1, v: 'x^{2}' }, { c: -p * p, v: '' }]);
+  return { lignes: [`\\left(${lin6(1, -p)}\\right)\\left(${lin6(1, p)}\\right) = ${A}`,
+    `\\left(${lin6(1, -q)}\\right)\\left(${lin6(2, -r)}\\right) = ${dedup2(polyF2([{ c: 2, v: 'x^{2}' }, { c: -r, v: 'x' }, { c: -2 * q, v: 'x' }, { c: q * r, v: '' }]), B2)}`,
+    `x\\left(${B2}\\right) = ${B3}`, `${dedup2(`\\left(${A}\\right)+\\left(${B3}\\right)`, brut, fin)}`], final: fin };
+}
+// 6.5 f(x) = k (ax+b)^n (n entier relatif non nul)
+function detail65(k, a, b, n) {
+  const u = lin6(a, b), uG = `\\left(${u}\\right)`, e = n - 1, coef = k * n * a;
+  const fin = e > 0 ? `${cf6(coef)}${pw6(uG, e)}` : fq6(coef, pw6(uG, -e));
+  const lignes = [];
+  if (n < 0) lignes.push(`f(x) = ${dedup2(fq6(k, pw6(uG, -n)), `${cf6(k)}${pw6(uG, n)}`)}`);
+  lignes.push(REGLE_PUIS6, `\\text{Ici } u \\text{ vaut } ${u}`, `\\text{et } u' \\text{ vaut } ${a}`, `f'(x) = ${dedup2(prod6(k === 1 ? [n, a] : [k, n, a], pw6(uG, e)), `${coef}${pw6(uG, e)}`, fin)}`);
+  return { lignes, final: fin };
+}
+// 6.6 / 6.7 : h(x) = f(px+q), u = px+q
+function lignesU6(p, q, th, epH) {
+  const E = mf6(epH), ePar = E.s < 0 ? `\\left(${fracD(E)}\\right)` : fracD(E);
+  const e0 = `${cp6(p)}${ePar}${q > 0 ? '+' + q : q < 0 ? String(q) : ''}`, e1 = q === 0 ? null : sommeF2([math.multiply(p, E), q]);
+  return [`\\text{On remplace } x \\text{ par } ${fracD(E)}`, dedup2(...[e0, e1, String(th)].filter((x) => x !== null))];
+}
+function entete6(p, q) { return [REGLE_COMP6, `\\text{Ici } u \\text{ vaut } ${lin6(p, q)}`, `\\text{et } u' \\text{ vaut } ${p}`, `h'(x) = ${cp6(p)}f'\\left(${lin6(p, q)}\\right)`]; }
+function detail66a(p, q) {
+  const u = lin6(p, q), uT = u.startsWith('-') ? `\\left(${u}\\right)` : u, corps = `\\dfrac{1}{${u}}+${uT}`;
+  const fin = p === 1 ? corps : `${cf6(p)}\\left(${corps}\\right)`;
+  return { lignes: [...entete6(p, q), `h'(x) = ${fin}`], final: fin };
+}
+function detail67a(p, q) {
+  const g = `\\left(${lin6(p, q)}\\right)`, f0 = `\\dfrac{2${g}}{3+${g}^{2}}`, fin = `${p < 0 ? '-' : ''}\\dfrac{${2 * Math.abs(p)}${g}}{3+${g}^{2}}`;
+  return { lignes: [...entete6(p, q), `h'(x) = ${dedup2(`${cp6(p)}${f0}`, fin)}`], final: fin };
+}
+function detail6Val(p, q, th, epH, sum, chaine) {
+  const E = mf6(epH), total = math.multiply(p, sum), fin = fracD(total);
+  return { lignes: [...entete6(p, q), ...lignesU6(p, q, th, epH), `h'\\left(${fracD(E)}\\right) = ${cp6(p)}f'\\left(${th}\\right)`, `f'\\left(${th}\\right) = ${chaine}`,
+    `h'\\left(${fracD(E)}\\right) = ${p === 1 ? fin : dedup2(`${cp6(p)}\\left(${fracD(sum)}\\right)`, fin)}`], final: fin };
+}
+function detail66b(p, q, th, epH) {
+  const sum = math.add(math.fraction(1, th), th), d = Math.abs(th), tn = th * d;
+  const f1 = `${fracBrute(th < 0 ? -1 : 1, d)}${tn < 0 ? '-' : '+'}${fracBrute(Math.abs(tn), d)}`;
+  return detail6Val(p, q, th, epH, sum, dedup2(sommeF2([math.fraction(1, th), th]), f1, fracD(sum)));
+}
+function detail67b(p, q, th, epH) {
+  const sum = math.fraction(2 * th, 3 + th * th);
+  return detail6Val(p, q, th, epH, sum, dedup2(`\\dfrac{2\\times ${par6(th)}}{3+${par6(th)}^{2}}`, fq6(2 * th, 3 + th * th), fracD(sum)));
+}
+// ordonnee a l'origine de la tangente : p = f(a) - a f'(a) (fa, m, pt fractions math.js)
+function ordonnee6(fa, m, pt) {
+  const inter = math.subtract(fa, math.multiply(pt, m)), ptPar = pt.s < 0 ? `\\left(${fracD(pt)}\\right)` : fracD(pt);
+  const e0 = `${fracD(fa)}-${ptPar}\\times ${Detail.fracDP(m)}`, e1 = sommeF2([fa, math.unaryMinus(math.multiply(pt, m))]);
+  return { lignes: ['\\text{Équation de la tangente en } a \\text{ :}', "y = f'(a)(x-a)+f(a)", "\\text{Ordonnée à l'origine :}", "p = f(a)-af'(a)", `p = ${dedup2(e0, e1, fracD(inter))}`], final: fracD(inter) };
+}
+const eval6 = (a, b, pt) => `${a === 1 ? '' : a === -1 ? '-' : `${a}\\times `}${par6(pt)}${b > 0 ? '+' + b : b < 0 ? String(b) : ''}`;
+// 6.8 a) f(x) = (a1 x + b1) / (a2 x + b2)^2 en pt (entier)
+function detail68a(a1, b1, a2, b2, pt) {
+  const u0 = a1 * pt + b1, v0 = a2 * pt + b2, V = v0 * v0, W = 2 * a2 * v0, nn = a1 * V - u0 * W;
+  const fa = math.fraction(u0, V), m = math.fraction(nn, V * V), Wl = lin6(a2, b2);
+  const imageFa = dedup2(fqt6(eval6(a1, b1, pt), `\\left(${eval6(a2, b2, pt)}\\right)^{2}`), fqt6(String(u0), `${par6(v0)}^{2}`), fq6(u0, V), fracD(fa));
+  const second = mul6(u0, W), numF = `${mul6(a1, V)}${second.startsWith('-') ? `-\\left(${second}\\right)` : `-${second}`}`;
+  const imageFp = dedup2(`\\dfrac{${numF}}{${V}^{2}}`, fq6(nn, V * V), fracD(m));
+  const fin = ordonnee6(fa, m, math.fraction(pt));
+  return { lignes: [REGLE_QUOT6, `\\text{Ici } u \\text{ vaut } ${lin6(a1, b1)}`, `\\text{et } v \\text{ vaut } \\left(${Wl}\\right)^{2}`, `\\text{et } u' \\text{ vaut } ${a1}`, "\\text{Pour } w^{n} \\text{ la dérivée est } nw'w^{n-1}",
+    `\\text{donc } v' \\text{ vaut } ${2 * a2}\\left(${Wl}\\right)`, '\\text{Image de } a \\text{ :}', imageFa, '\\text{Nombre dérivé en } a \\text{ :}', imageFp, ...fin.lignes], final: fin.final };
+}
+// 6.8 b) f(x) = (ax+b)^n en pt = pNum/q, u = a pt + b entier
+function detail68b(a, b, n, pt, u) {
+  const P = mf6(pt), m = n * a * Math.pow(u, n - 1), apt = a * pt.n / pt.d, fa = math.fraction(Math.pow(u, n));
+  const imageU = dedup2(`${a}\\times ${Detail.fracDP(P)}${b > 0 ? '+' + b : String(b)}`, sommeF2([apt, b]), String(u));
+  const imageFa = dedup2(`${par6(u)}^{${n}}`, String(Math.pow(u, n))), imageFp = dedup2(`${n}\\times ${par6(a)}\\times ${par6(u)}^{${n - 1}}`, `${n * a}\\times ${par6(Math.pow(u, n - 1))}`, String(m));
+  const fin = ordonnee6(fa, math.fraction(m), P);
+  return { lignes: [REGLE_PUIS6, `\\text{Ici } u \\text{ vaut } ${lin6(a, b)}`, `\\text{et } u' \\text{ vaut } ${a}`, `\\text{On remplace } x \\text{ par } ${fracD(P)}`, imageU, '\\text{Image de } a \\text{ :}', imageFa, '\\text{Nombre dérivé en } a \\text{ :}', imageFp, ...fin.lignes], final: fin.final };
+}
+// 6.9 f = k1 (mx+pc)^2, g = k2 (mx+pc)^2 : abscisse d'intersection de T_{f,a} et T_{g,a}
+function detail69(k1, k2, m, pc, aExclu) {
+  const absm = Math.abs(m), sTex = polyF2([{ c: m, v: 'a' }, { c: pc, v: '' }]), c1 = 2 * k1 * m, c2 = 2 * k2 * m, sg = m > 0 ? '-' : '+', N = k2 - k1, Dn = c1 - c2;
+  const bloc = (nom, kk, cc) => [`\\text{Pour } ${nom} \\text{ :}`, `${nom}(a) = ${cf6(kk)}s^{2}`, `${nom}'(a) = ${dedup2(prod6(kk === 1 ? [2, m] : [2, kk, m], 's'), `${cf6(cc)}s`)}`, `y = ${cf6(cc)}s(x-a)${plus6(kk, 's^{2}')}`];
+  const g = pgcd(pgcd(absm, Math.abs(pc)), 2 * absm), N0 = m > 0 ? -pc : pc;
+  const e2 = `\\dfrac{${polyF2([{ c: absm, v: 'a' }, { c: N0, v: '' }])}}{${2 * absm}}`, e3 = `\\dfrac{${polyF2([{ c: absm / g, v: 'a' }, { c: N0 / g, v: '' }])}}{${2 * absm / g}}`;
+  const ratio = [`${(N < 0) !== (Dn < 0) ? '-' : ''}\\dfrac{${cf6(Math.abs(N))}s}{${Math.abs(Dn)}}`, `${m > 0 ? '-' : ''}\\dfrac{s}{${2 * absm}}`].filter((r, i, t) => i === 0 || r !== t[i - 1]);
+  const fin = dedup2(e2, e3);
+  return { lignes: [REGLE_CARRE6, `\\text{Ici } u \\text{ vaut } ${lin6(m, pc)}`, `\\text{et } u' \\text{ vaut } ${m}`, `\\text{On note } s \\text{ le réel } ${sTex}`, `\\text{Comme } a \\neq ${fracD(aExclu)} \\text{, on a } s \\neq 0`,
+    ...bloc('f', k1, c1), ...bloc('g', k2, c2), "\\text{Au point d'intersection, les } y \\text{ sont égaux}",
+    `${cf6(c1)}s(x-a)${plus6(k1, 's^{2}')} = ${cf6(c2)}s(x-a)${plus6(k2, 's^{2}')}`, `\\iff ${cf6(c1 - c2)}s(x-a) = ${cf6(N)}s^{2}`, '\\text{On simplifie par } s \\text{ (non nul)}',
+    `\\iff ${cf6(c1 - c2)}(x-a) = ${cf6(N)}s`, ...ratio.map((r) => `\\iff x-a = ${r}`), `\\iff x = a${sg}\\dfrac{s}{${2 * absm}}`,
+    `x = ${dedup2(`a${sg}\\dfrac{${sTex}}{${2 * absm}}`, `\\dfrac{${2 * absm}a${sg}\\left(${sTex}\\right)}{${2 * absm}}`, e2, e3)}`], final: fin.split(' = ').pop() };
+}
+// 6.10 a) f(x) = 3(1 - x/2)^2 : tangentes issues du point (px, py), parametres a = r1 ou r2
+function detail610a(px, py, r1, r2) {
+  const PX = mf6(px), PY = mf6(py), A = math.fraction(3, 4), B = math.unaryMinus(math.multiply(math.fraction(3, 2), PX)), C = math.subtract(math.add(PY, math.multiply(3, PX)), 3);
+  const dev1 = polyF2([{ c: math.fraction(-3, 2), v: 'a^{2}' }, { c: math.add(math.multiply(math.fraction(3, 2), PX), 3), v: 'a' }, { c: math.multiply(-3, PX), v: '' }]);
+  const dev2 = polyF2([{ c: math.fraction(3, 4), v: 'a^{2}' }, { c: -3, v: 'a' }, { c: 3, v: '' }]);
+  const somme = polyF2([{ c: math.fraction(-3, 4), v: 'a^{2}' }, { c: math.multiply(math.fraction(3, 2), PX), v: 'a' }, { c: math.subtract(3, math.multiply(3, PX)), v: '' }]);
+  const d = lignesDelta2(1, -(r1 + r2), r1 * r2), r = racines6(1, -(r1 + r2), d.D), S = `\\{${Math.min(r1, r2)}\\,;\\,${Math.max(r1, r2)}\\}`, pt = `\\left(${fracD(PX)}\\,;\\,${fracD(PY)}\\right)`;
+  return { lignes: [REGLE_CARRE6, '\\text{Ici } u \\text{ vaut } 1-\\dfrac{x}{2}', "\\text{et } u' \\text{ vaut } -\\dfrac{1}{2}", `f'(x) = ${dedup2('2\\times 3\\times \\left(-\\dfrac{1}{2}\\right)\\left(1-\\dfrac{x}{2}\\right)', '-3\\left(1-\\dfrac{x}{2}\\right)', polyF2([{ c: math.fraction(3, 2), v: 'x' }, { c: -3, v: '' }]))}`,
+    '\\text{Équation de la tangente en } a \\text{ :}', "y = f'(a)(x-a)+f(a)", `\\text{Le point } ${pt} \\text{ est sur } T_{f,a} \\text{ :}`,
+    `${fracD(PY)} = \\left(\\dfrac{3}{2}a-3\\right)\\left(${fracD(PX)}-a\\right)+3\\left(1-\\dfrac{a}{2}\\right)^{2}`,
+    `\\left(\\dfrac{3}{2}a-3\\right)\\left(${fracD(PX)}-a\\right) = ${dev1}`, `3\\left(1-\\dfrac{a}{2}\\right)^{2} = ${dedup2('3\\left(1-a+\\dfrac{a^{2}}{4}\\right)', dev2)}`,
+    `\\iff ${fracD(PY)} = ${somme}`, `\\iff ${polyF2([{ c: A, v: 'a^{2}' }, { c: B, v: 'a' }, { c: C, v: '' }])} = 0`, '\\text{On multiplie par } \\dfrac{4}{3}', `\\iff ${polyF2([{ c: 1, v: 'a^{2}' }, { c: -(r1 + r2), v: 'a' }, { c: r1 * r2, v: '' }])} = 0`, ...ENTETE_RACINES2, ...d.lignes, phraseDelta2(d.D), ...r.lignes, `S = ${S}`], final: S };
+}
+// 6.10 b) f(x) = x / ((bx)^2 + 1), tangente horizontale en x0
+function detail610b(x0, roots) {
+  const c = x0 * x0, cb = c === 1 ? '' : String(c), S = `\\{${fracD(roots[0])}\\,;\\,${fracD(roots[1])}\\}`, v = '\\left(b^{2}x^{2}+1\\right)', ax = Math.abs(x0);
+  const lignes = [REGLE_QUOT6, '\\text{Ici } u \\text{ vaut } x', '\\text{et } v \\text{ vaut } b^{2}x^{2}+1', ...REGLE_DERIV6, "\\text{donc } u' \\text{ vaut } 1", "\\text{et } v' \\text{ vaut } 2b^{2}x",
+    `f'(x) = ${dedup2(`\\dfrac{${v}-x\\times 2b^{2}x}{${v}^{2}}`, `\\dfrac{b^{2}x^{2}+1-2b^{2}x^{2}}{${v}^{2}}`, `\\dfrac{1-b^{2}x^{2}}{${v}^{2}}`)}`,
+    `\\text{Le nombre dérivé } f'(${x0})`, `\\text{est le coefficient directeur de } T_{f,${x0}}`,'\\text{Elle est horizontale : son coefficient directeur est } 0',
+    `\\text{Un carré est positif ou nul : } b^{2} \\geqslant 0`, `\\text{donc } ${cb}b^{2}+1 \\gt 0`,
+    `f'(${x0}) = ${dedup2(`\\dfrac{1-b^{2}\\times ${par6(x0)}^{2}}{\\left(b^{2}\\times ${par6(x0)}^{2}+1\\right)^{2}}`, `\\dfrac{1-${cb}b^{2}}{\\left(${cb}b^{2}+1\\right)^{2}}`)} = 0`,
+    `\\iff 1-${cb}b^{2} = 0`];
+  if (c !== 1) lignes.push(`\\iff ${cb}b^{2} = 1`);
+  lignes.push(`\\iff b^{2} = ${fq6(1, c)}`, `\\iff b = -${fq6(1, ax)} \\text{ ou } b = ${fq6(1, ax)}`, `S = ${S}`);
+  return { lignes, final: S };
+}
+
 // ---------- Automatismes 6.1 a 6.4 (diversifies le 01/10/2026, demande de David) ----------
 // Auparavant : 6.1 « ecrire sous la forme ax+by+cz » (3) et 6.2 « developper » (3), que du calcul
 // litteral. Desormais, en variant par rapport a la fiche 5 (inequation produit, equations
@@ -1248,7 +1440,8 @@ function itemInequationDegre1() {
     ? {type:'intervalles', liste:[{bas:-Infinity, haut:v, inclusBas:false, inclusHaut:inclus}]}
     : {type:'intervalles', liste:[{bas:v, haut:Infinity, inclusBas:inclus, inclusHaut:false}]};
   const kStr = k === 1 ? '' : k === -1 ? '-' : `${k}`;
-  return { enonce:`${kStr}(${fmtLin(1, q, false)}) ${SYMB_INEQ[sens]} ${fmtLin(r, s, false)}`, intervalleSpec: spec };
+  const enonce = `${kStr}(${fmtLin(1, q, false)}) ${SYMB_INEQ[sens]} ${fmtLin(r, s, false)}`;
+  return { enonce, intervalleSpec: spec, detail: detail61a(enonce, k, q, r, s, sens, spec) };
 }
 function itemInequationQuotient() {
   // (px+q)/(rx+s) ◊ 0 : racine du numerateur incluse si inegalite large, valeur interdite jamais
@@ -1257,7 +1450,8 @@ function itemInequationQuotient() {
   const sens = ['<','>','<=','>='][alea(0,3)], large = sens.length === 2;
   const zero = F.of(-q, p), pole = F.of(-s, r), vz = zero.n / zero.d, vp = pole.n / pole.d;
   const spec = vz < vp ? specSigneProduit(p*r, vz, vp, sens, large, false) : specSigneProduit(p*r, vp, vz, sens, false, large);
-  return { enonce:`\\dfrac{${fmtLin(p, q, false)}}{${fmtLin(r, s, false)}} ${SYMB_INEQ[sens]} 0`, intervalleSpec: spec };
+  const enonce = `\\dfrac{${fmtLin(p, q, false)}}{${fmtLin(r, s, false)}} ${SYMB_INEQ[sens]} 0`;
+  return { enonce, intervalleSpec: spec, detail: detail61b(enonce, p, q, r, s, sens, spec) };
 }
 function itemEquationSecondDegre() {
   // a(x-r1)(x-r2) developpe, racines entieres distinctes : discriminant carre parfait
@@ -1265,7 +1459,7 @@ function itemEquationSecondDegre() {
   do { a = [1,1,2,-1,-2,3][alea(0,5)]; r1 = aleaNonNul(-6,6); r2 = alea(-6,6); } while (r1 === r2);
   const coefs = pScale(pMul(pLinear(F.of(1), F.of(-r1)), pLinear(F.of(1), F.of(-r2))), F.of(a));
   const [m, n] = [r1, r2].sort((x, y) => x - y);
-  return { enonce:`${pToLatexEntier(coefs)}=0`, reponse:`{${m};${n}}` };
+  return { enonce:`${pToLatexEntier(coefs)}=0`, reponse:`{${m};${n}}`, detail: detail62a(coefs[2].n, coefs[1].n, coefs[0].n, m, n) };
 }
 function itemEquationFractions() {
   // (ax+b)/c = (dx+e)/f  <=>  f(ax+b) = c(dx+e)  <=>  x = (ce - fb)/(fa - cd)
@@ -1275,7 +1469,7 @@ function itemEquationFractions() {
     d = aleaNonNul(-4,4); e = aleaNonNul(-6,6); f2 = alea(2,5);
   } while (c === f2 || f2*a === c*d || (a === d && b === e)); // meme numerateur des deux cotes : sans interet
   const sol = F.of(c*e - f2*b, f2*a - c*d);
-  return { enonce:`\\dfrac{${fmtLin(a, b, false)}}{${c}}=\\dfrac{${fmtLin(d, e, false)}}{${f2}}`, reponse:`{${F.str(sol)}}` };
+  return { enonce:`\\dfrac{${fmtLin(a, b, false)}}{${c}}=\\dfrac{${fmtLin(d, e, false)}}{${f2}}`, reponse:`{${F.str(sol)}}`, detail: detail62b(a, b, c, d, e, f2, sol) };
 }
 function itemCalculFractions() {
   // a/b - c/d × e/f, toutes les fractions de l'enonce irreductibles, produit a simplifier
@@ -1285,7 +1479,8 @@ function itemCalculFractions() {
     x = irr(); y = irr(); z = irr(); op = alea(0,1) === 0 ? '-' : '+';
     res = op === '-' ? F.sub(x, F.mul(y, z)) : F.add(x, F.mul(y, z));
   } while (res.n === 0 || res.d > 60);
-  return { enonce:`${F.fmtLatex(x)}${op}${F.fmtLatex(y)}\\times ${F.fmtLatex(z)}`, reponse: F.str(res) };
+  const enonce = `${F.fmtLatex(x)}${op}${F.fmtLatex(y)}\\times ${F.fmtLatex(z)}`;
+  return { enonce, reponse: F.str(res), detail: detail63(enonce, x, y, z, op) };
 }
 // polynome a coefficients entiers en LaTeX (ordre decroissant)
 function pToLatexEntier(p) {
@@ -1338,7 +1533,7 @@ const generateurs = [
     const t2 = pMul(pLinear(F.of(1),F.of(0)), pMul(pLinear(F.of(1),F.of(-q)), pLinear(F.of(2),F.of(-r))));
     const poly = pAdd(t1,t2);
     const enonce = `(x${-p>=0?'+':''}${-p})(x${p>=0?'+':''}${p})+x(x${-q>=0?'+':''}${-q})(2x${-r>=0?'+':''}${-r})`;
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pToAscii(poly) };
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pToAscii(poly), detail: detail64(p, q, r, poly) };
   }},
   // Calcul 6.3 - derivees composees puissances I (4 items),
   // Calcul 6.3 - Puissances, fusion des anciens 8.3+8.4 (8->4, gradation de signe/amplitude :
@@ -1346,23 +1541,23 @@ const generateurs = [
   {id:"6.5 a)", type:"alg", gen: () => {
     const a = alea(2,4), b = aleaNonNul(-6,6), n = alea(2,4);
     const { enonce, reponse } = derivPuissanceLineaire(1, a, b, n);
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detail65(1, a, b, n) };
   }},
   {id:"6.5 b)", type:"alg", gen: () => {
     const k = alea(2,5), a = alea(2,5), b = aleaNonNul(-7,7), n = alea(3,6);
     const { enonce, reponse } = derivPuissanceLineaire(k, a, b, n);
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detail65(k, a, b, n) };
   }},
   {id:"6.5 c)", type:"alg", gen: () => {
     const a = -alea(2,4), b = aleaNonNul(-6,6), n = alea(2,5);
     const { enonce, reponse } = derivPuissanceLineaire(1, a, b, n);
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detail65(1, a, b, n) };
   }},
   {id:"6.5 d)", type:"alg", gen: () => {
     const signes = [-3,-2,2,3];
     const k = -alea(1,3), a = signes[alea(0,3)], b = aleaNonNul(-6,6), n = -alea(2,4);
     const { enonce, reponse } = derivPuissanceLineaire(k, a, b, n);
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse };
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse, detail: detail65(k, a, b, n) };
   }},
   // Calcul 6.9 - derivation a partir de f'(x)=1/x+x (4 items),
   // Calcul 6.6 - derivation a partir de f'(x)=1/x+x (4->2, garde les deux exemples "h" avec
@@ -1372,24 +1567,24 @@ const generateurs = [
     const { p, q, k } = paramsAvances.g9;
     const kp = k.n*p; const kc = kp===1?'':kp===-1?'-':kp+'*';
     const u = fmtLin(p,q,true);
-    return { texteLibre:true, sansEgal:true, enonce:"Que vaut \\(h'(x)\\) ?", reponse:`${kc}(1/(${u})+${u})`.replace(/\+-/g,'-') };
+    return { texteLibre:true, sansEgal:true, enonce:"Que vaut \\(h'(x)\\) ?", reponse:`${kc}(1/(${u})+${u})`.replace(/\+-/g,'-'), detail: detail66a(p, q) };
   }},
   {id:"6.6 b)", type:"num", gen: () => {
-    const { p, k, th, epH } = paramsAvances.g9;
+    const { p, q, k, th, epH } = paramsAvances.g9;
     const reponse = F.str(F.mul(F.mul(k,F.of(p)), F.add(F.div(F.of(1),F.of(th)), F.of(th))));
-    return { texteLibre:true, enonce:`Calculer \\(h'\\left(${F.fmtLatex(epH)}\\right)\\)`, reponse };
+    return { texteLibre:true, enonce:`Calculer \\(h'\\left(${F.fmtLatex(epH)}\\right)\\)`, reponse, detail: detail66b(p, q, th, epH) };
   }},
   // Calcul 6.10 - derivation a partir de f'(x)=2x/(3+x^2) (4 items),
   // Calcul 6.7 - derivation a partir de f'(x)=2x/(3+x^2) (4->2, meme logique)
   {id:"6.7 a)", type:"alg", gen: () => {
     const { p, q, k } = paramsAvances.g10;
     const kp = k.n*p; const u = fmtLin(p,q,true);
-    return { texteLibre:true, sansEgal:true, enonce:"Que vaut \\(h'(x)\\) ?", reponse:`${2*kp}*(${u})/(3+(${u})^2)` }; // 2*kp calcule : la correction affichait « -3 × 2(…) »
+    return { texteLibre:true, sansEgal:true, enonce:"Que vaut \\(h'(x)\\) ?", reponse:`${2*kp}*(${u})/(3+(${u})^2)`, detail: detail67a(p, q) }; // 2*kp calcule : la correction affichait « -3 × 2(…) »
   }},
   {id:"6.7 b)", type:"num", gen: () => {
-    const { p, k, th, epH } = paramsAvances.g10;
+    const { p, q, k, th, epH } = paramsAvances.g10;
     const reponse = F.str(F.div(F.mul(F.mul(k,F.of(p)), F.mul(F.of(2), F.of(th))), F.add(F.of(3), F.mul(F.of(th),F.of(th)))));
-    return { texteLibre:true, enonce:`Calculer \\(h'\\left(${F.fmtLatex(epH)}\\right)\\)`, reponse };
+    return { texteLibre:true, enonce:`Calculer \\(h'\\left(${F.fmtLatex(epH)}\\right)\\)`, reponse, detail: detail67b(p, q, th, epH) };
   }},
   // (equations de tangentes, ex-6.6 : deplacees en fiche 5, calcul 5.9, le 01/10/2026)
   // Calcul 6.13 - ordonnees a l'origine (4 items),
@@ -1401,7 +1596,7 @@ const generateurs = [
       u1 = a1*pt+b1; u2 = a2*pt+b2;
     } while (Math.abs(u2) < 0.4 || Math.abs(u1) > 4 || Math.abs(u2) > 3);
     const { enonce, pb } = ordonneeOrigineQuotient(F.of(a1), F.of(b1), 1, F.of(a2), F.of(b2), 2, F.of(pt));
-    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pb };
+    return { texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: pb, detail: detail68a(a1, b1, a2, b2, pt) };
   }},
   {id:"6.8 b)", type:"num", gen: () => {
     // f(x)=(ax+b)^n (02/10/2026, David : « une fonction du type (ax+b)^p suffit »).
@@ -1417,7 +1612,7 @@ const generateurs = [
     } while (Math.abs(u) < 1 || Math.abs(u) > 2);
     // tangente en pt : y = f'(pt)(x-pt)+f(pt), ordonnée à l'origine f(pt) - pt*f'(pt) avec f'(x)=n*a*(ax+b)^(n-1)
     const intercept = F.sub(powFrac(F.of(u), n), F.mul(pt, F.mul(F.of(n*a), powFrac(F.of(u), n-1))));
-    return { texteLibre:true, enonce:`\\(f(x)=${puissanceStr(a, b, n, false)}\\) et \\(a=${F.fmtLatex(pt)}\\)`, reponse: F.str(intercept) };
+    return { texteLibre:true, enonce:`\\(f(x)=${puissanceStr(a, b, n, false)}\\) et \\(a=${F.fmtLatex(pt)}\\)`, reponse: F.str(intercept), detail: detail68b(a, b, n, pt, u) };
   }},
   // Calcul 6.14 - intersection de tangentes (1 item, avance),
   // Calcul 6.11 - intersection de tangentes (inchangee)
@@ -1435,7 +1630,7 @@ const generateurs = [
     const reponse = intersectionTangentes(k1, 2, k2, 2, c, d);
     const kL = k => k.n===1 ? '' : k.n===-1 ? '-' : F.fmtLatex(k);
     const enonce = `On définit, pour tout réel \\(x\\), \\(f(x)=${kL(k1)}${puissanceStr(m,pc,2,false)}\\) et \\(g(x)=${kL(k2)}${puissanceStr(m,pc,2,false)}\\). Soit \\(a\\) un réel différent de \\(${F.fmtLatex(aExclu)}\\). Déterminer l'abscisse du point d'intersection des tangentes \\(T_{f,a}\\) et \\(T_{g,a}\\)`;
-    return { texteLibre:true, enonce, reponse };
+    return { texteLibre:true, enonce, reponse, detail: detail69(k1n, k2n, m, pc, aExclu) };
   }},
   // Calcul 6.15 - tangente passant par un point (2 items, avance),
   // Calcul 6.12 - tangente passant par un point (inchangee)
@@ -1445,7 +1640,7 @@ const generateurs = [
     const { px, py } = pointDepuisRacines(k, c, d, F.of(r1), F.of(r2));
     const roots = [r1,r2].sort((a,b)=>a-b);
     const enonce = `Avec \\(f(x)=3\\left(1-\\dfrac{x}{2}\\right)^2\\), trouver les deux valeurs de \\(a\\) telles que \\(T_{f,a}\\) passe par le point \\(\\left(${F.fmtLatex(px)}\\,;\\,${F.fmtLatex(py)}\\right)\\)`;
-    return { texteLibre:true, enonce, reponse: `{${roots[0]};${roots[1]}}` };
+    return { texteLibre:true, enonce, reponse: `{${roots[0]};${roots[1]}}`, detail: detail610a(px, py, r1, r2) };
   }},
   // Calcul 6.16 - avec un parametre (1 item, avance),
   // Calcul 6.13 - avec un parametre (inchangee)
@@ -1454,16 +1649,19 @@ const generateurs = [
     const b1 = F.of(-1,x0), b2 = F.of(1,x0);
     const roots = [b1,b2].sort((p,q)=> (p.n/p.d) - (q.n/q.d));
     const enonce = `On considère un réel b et, pour x réel, la fonction f définie par \\(f(x)=\\dfrac{x}{(bx)^2+1}\\). Pour quelles valeurs de b la tangente \\(T_{f,${x0}}\\) est-elle horizontale ?`;
-    return { texteLibre:true, enonce, reponse: `{${F.str(roots[0])};${F.str(roots[1])}}` };
+    return { texteLibre:true, enonce, reponse: `{${F.str(roots[0])};${F.str(roots[1])}}`, detail: detail610b(x0, roots.map(mf6)) };
   }}
 ];
 
 function genererExercices() {
   genererParametresAvances();
-  return generateurs.map(g => {
+  const tous = generateurs.map(g => {
     const res = g.gen();
     return { id: g.id, type: g.type, ...res };
   });
+  Detail.preparer(tous);   // « < » des étapes : \lt
+  Detail.couper(tous, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  return tous;
 }
 
 let exercices = genererExercices();
@@ -2682,7 +2880,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
