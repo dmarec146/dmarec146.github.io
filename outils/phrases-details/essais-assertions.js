@@ -269,6 +269,8 @@ const ESSAIS = {
   'la-valeur-citee-annule-le-denominateur': [
     [true, 'x-1 = 0 \\iff x = 1 \\text{ (valeur interdite)}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
     [false, 'x-1 = 0 \\iff x = 2 \\text{ (valeur interdite)}', { enonce: '\\dfrac{x^2-25}{x-1}\\geqslant 0' }, env('')],
+    [true, '\\iff x = -2 \\text{ (valeur interdite)}', { enonce: '\\dfrac{1}{x+3}=\\dfrac{2}{x+2}' }, env('')],
+    [false, '\\iff x = -4 \\text{ (valeur interdite)}', { enonce: '\\dfrac{1}{x+3}=\\dfrac{2}{x+2}' }, env('')],
     [true, '-4x+1 = 0 \\iff x = \\dfrac{1}{4} \\text{ (valeur interdite)}', { enonce: 'E(x)=\\dfrac{2*x-3}{-4*x+1}' }, env('')],
     [true, '2x+3 = 0 \\iff x = -\\dfrac{3}{2} \\text{ (valeur interdite)}', { enonce: 'E(x)=\\dfrac{x-5}{2*x+3}' }, env('')],
     [false, '2x+3 = 0 \\iff x = \\dfrac{3}{2} \\text{ (valeur interdite)}', { enonce: 'E(x)=\\dfrac{x-5}{2*x+3}' }, env('')],
@@ -491,7 +493,8 @@ const ESSAIS = {
     [true, '\\text{Comme } x \\neq 0 \\text{, on a } e^{2x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')],
     [true, '\\text{Comme } x \\neq 0 \\text{, on a } e^{x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')],
     [false, '\\text{Comme } x \\neq 0 \\text{, on a } e^{2x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}\\). Calculer la somme' }, env('')],
-    [false, '\\text{Comme } x \\neq 0 \\text{, on a } e^{0x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')]
+    [false, '\\text{Comme } x \\neq 0 \\text{, on a } e^{0x} \\neq 1', { enonce: 'Soit \\(x\\in\\mathbb{R}^*\\). Calculer la somme' }, env('')],
+    [true, '\\text{Comme } x \\neq 0 \\text{, on a } e^{3x} \\neq 1', { enonce: 'Soit \\(n\\in\\mathbb{N}^*\\) et \\(x\\in\\mathbb{R}\\) tel que \\(x\\ne 0\\). Calculer' }, env('')]
   ],
   'on-simplifie-par-s-seulement-apres-avoir-etabli-que-s-est-non-nul': [
     [true, '\\text{On simplifie par } s \\text{ (non nul)}', { detail: { lignes: ['\\text{Comme } a \\neq 3 \\text{, on a } s \\neq 0', '\\text{On simplifie par } s \\text{ (non nul)}'] } }, env('')],
@@ -502,6 +505,16 @@ const ESSAIS = {
     [false, '\\text{Parmi les individus de } A \\text{, ceux de } \\overline{B} \\text{ :}', { enonce: "calculer \\(P_{B}(\\overline{A})\\)." }, env('')],
     [true, '\\text{Parmi les individus de } B \\text{, ceux de } A \\text{ :}', { enonce: "dans cet ordre, \\(P_{A}(B)\\) puis \\(P_{B}(A)\\)." }, env('')],
     [false, '\\text{Parmi les individus de } B \\text{, ceux de } \\overline{A} \\text{ :}', { enonce: "dans cet ordre, \\(P_{A}(B)\\) puis \\(P_{B}(A)\\)." }, env('')]
+  ],
+  'g-de-f-vaut-l-exponentielle-de-k-x-de-l-enonce': [
+    [true, '\\text{Donc } g\\left(f(x)\\right) \\text{ vaut } e^{2x}', { enonce: 'f(x)=\\dfrac{e^{2x}-e^{-2x}}{2}' }, env('')],
+    [true, '\\text{Donc } g\\left(f(x)\\right) \\text{ vaut } e^{x}', { enonce: 'f(x)=\\dfrac{e^{x}-e^{-x}}{2}' }, env('')],
+    [false, '\\text{Donc } g\\left(f(x)\\right) \\text{ vaut } e^{3x}', { enonce: 'f(x)=\\dfrac{e^{2x}-e^{-2x}}{2}' }, env('')]
+  ],
+  'pour-x-egal-1-les-deux-exponentielles-different': [
+    [true, '\\text{Pour } x = 1 \\text{ : } e^{2} \\neq e^{3}', {}, env('')],
+    [true, '\\text{Pour } x = 1 \\text{ : } e \\neq e^{2}', {}, env('')],
+    [false, '\\text{Pour } x = 1 \\text{ : } e^{2} \\neq e^{2}', {}, env('')]
   ]
 };
 let echecs = 0, essais = 0;

@@ -685,7 +685,7 @@ async function controlerDansLaPage(opts) {
           styler(e, l);
           // phrase « en clair » : le texte des \text{…} dans l'ordre, les formules étant remplacées par […]
           if (/\\text\{/.test(l)) {
-            const clair = String(l).replace(/^\\small\s*/, '').split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
+            const clair = String(l).replace(/^\\(?:small|scriptsize)\s*/, '').split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
             if (!phrases.has(clair)) phrases.set(clair, { ids: new Set(), exemple: l, enonce: String(e.enonce).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), lignes: D.lignes.slice() });
             phrases.get(clair).ids.add(e.id);
           }
@@ -799,7 +799,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const avecDetail = exercices.map((e, i) => ({ e, i })).filter((x) => x.e.detail && (typeof DevoirPartiel === 'undefined' || DevoirPartiel.retenu(x.e)));
       // 1. la réponse finale du détail, saisie comme le ferait un élève, doit être acceptée par la validation de la fiche
       const versTexte = (tex) => {
-        let a = String(tex).replace(/\\approx\s*/g, '').replace(/\\%/g, '%').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
+        let a = String(tex).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\approx\s*/g, '').replace(/\\%/g, '%').replace(/\\pi/g, 'pi').replace(/\{,\}/g, ',').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, '')
           .replace(/\\\{/g, '{').replace(/\\\}/g, '}').replace(/\\cup/g, '∪').replace(/\\infty/g, 'inf').replace(/\\lt\s*/g, '<').replace(/\\leqslant\s*/g, '<=').replace(/\\geqslant\s*/g, '>=').replace(/\\gt\s*/g, '>').replace(/_\{(\d)\}/g, '$1').replace(/\\(?:times|cdot)/g, '*')
           .replace(/\\(?:emptyset|varnothing)/g, '∅').replace(/\\mathbb\{R\}/g, 'ℝ');
         for (let k = 0; k < 6; k++) a = a.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
@@ -812,7 +812,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         const ensembleSeul = e.detail.final.match(/^\\mathbb\{([NZDQR])\}$/);   // « \mathbb{N} » : l'élève tape la lettre dans un champ texte
         const cercle = e.detail.final.match(/^\\Omega\((.+?)\\,;\\,(.+?)\) \\text\{ et \} r=(.+)$/);   // « \Omega(a\,;\,b) \text{ et } r=c » : l'élève tape « a;b;c »
         if (cercle) inp.value = [cercle[1], cercle[2], cercle[3]].map(versTexte).join(';');
-        else if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
+        else if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = e.type === 'texte' ? String(e.detail.final).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\s+/g, ' ').trim() : ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
         await dormir(25);
         let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }
         if (ok !== true) refus.push({ id: e.id, final: e.detail.final, resultat: String(ok) });

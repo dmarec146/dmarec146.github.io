@@ -43,12 +43,12 @@ module.exports = [
     nom: 'la-valeur-citee-annule-le-denominateur',
     motif: /\(valeur interdite\)|est exclue dans tous les cas/,
     verifie: (l, e) => {
-      const den = String(e.enonce).match(/\\dfrac\{[^{}]*\}\{([^{}]*)\}/);
+      const dens = [...String(e.enonce).matchAll(/\\dfrac\{[^{}]*\}\{([^{}]*)\}/g)];      // une valeur interdite annule l'un des dénominateurs de l'énoncé
       const val = '(-?(?:\\\\dfrac\\{\\d+\\}\\{\\d+\\}|\\d+))';
       const p = l.match(new RegExp('x = ' + val + ' \\\\text\\{ \\(valeur interdite\\)')) || l.match(new RegExp('[Ll]a valeur interdite \\}\\s*' + val + '\\s*\\\\text\\{ est exclue dans tous les cas'));
-      if (!den || !p) return false;
+      if (!dens.length || !p) return false;
       const nombre = p[1].replace(/(-?)\\dfrac\{(\d+)\}\{(\d+)\}/, (m, s, n, d) => s + '(' + n + '/' + d + ')');
-      return Math.abs(math.evaluate(den[1].replace(/x/g, '(' + nombre + ')'))) < 1e-9;
+      return dens.some((den) => Math.abs(math.evaluate(den[1].replace(/x/g, '(' + nombre + ')'))) < 1e-9);
     }
   },
   {
@@ -331,7 +331,7 @@ module.exports = [
   {
     nom: 'monotonie-du-carre-du-bon-cote',
     // « La fonction f est croissante sur [v ; +oo[ » (nombres à droite du sommet) ou « décroissante sur ]-oo ; v] » (à gauche)
-    motif: /^\\text\{La fonction \} f \\text\{ est (?:croissante|décroissante) sur \} /,
+    motif: /^\\text\{La fonction \} f \\text\{ est (?:croissante|décroissante) sur \} (?:\[-?\d+\\,;\\,\+\\infty\[|\]-\\infty\\,;\\,-?\d+\])$/,
     verifie: (l, e) => {
       const m = l.match(/^\\text\{La fonction \} f \\text\{ est (croissante|décroissante) sur \} (?:\[(-?\d+)\\,;\\,\+\\infty\[|\]-\\infty\\,;\\,(-?\d+)\])$/);
       const f = String(e.enonce).match(/\(x([+-]\d+)\)\^2/), b = String(e.enonce).match(/(-?\d+)\\lt (?:a|x_1)\\lt (-?\d+)/);
@@ -779,12 +779,24 @@ module.exports = [
     nom: 'x-non-nul-donne-une-raison-differente-de-1',
     // « \text{Comme } x \neq 0 \text{, on a } e^{2x} \neq 1 » : l'énoncé impose x réel non nul (\mathbb{R}^*) et l'exposant est un multiple non nul de x
     motif: /^\\text\{Comme \} x \\neq 0 \\text\{, on a \} e\^\{\d*x\} \\neq 1$/,
-    verifie: (l, e) => { const m = l.match(/e\^\{(\d*)x\} \\neq 1$/); return !!m && /x\\in\\mathbb\{R\}\^\*/.test(String(e.enonce)) && (m[1] === '' || Number(m[1]) !== 0); }
+    verifie: (l, e) => { const m = l.match(/e\^\{(\d*)x\} \\neq 1$/); return !!m && /x\\in\\mathbb\{R\}\^\*|x\\ne(?:q)? 0/.test(String(e.enonce)) && (m[1] === '' || Number(m[1]) !== 0); }
   },
   {
     nom: 'on-simplifie-par-s-seulement-apres-avoir-etabli-que-s-est-non-nul',
     // « \text{On simplifie par } s \text{ (non nul)} » : une ligne précédente a établi « s \neq 0 »
     motif: /^\\text\{On simplifie par \} s \\text\{ \(non nul\)\}$/,
     verifie: (l, e) => { const L = (e.detail && e.detail.lignes) || [], i = L.indexOf(l); return i > 0 && L.slice(0, i).some((x) => /\\text\{, on a \} s \\neq 0$/.test(x)); }
+  },
+  {
+    nom: 'g-de-f-vaut-l-exponentielle-de-k-x-de-l-enonce',
+    // « \text{Donc } g\left(f(x)\right) \text{ vaut } e^{2x} » : f(x) = (e^{kx} - e^{-kx}) / 2 dans l'énoncé, g(f(x)) = e^{kx}
+    motif: /^\\text\{Donc \} g\\left\(f\(x\)\\right\) \\text\{ vaut \} e\^\{\d*x\}$/,
+    verifie: (l, e) => { const a = l.match(/vaut \} e\^\{(\d*)x\}$/), b = String(e.enonce).match(/f\(x\)=\\dfrac\{e\^\{(\d*)x\}-e\^\{-/); return !!a && !!b && a[1] === b[1]; }
+  },
+  {
+    nom: 'pour-x-egal-1-les-deux-exponentielles-different',
+    // « \text{Pour } x = 1 \text{ : } e^{2} \neq e^{3} » : les deux exposants sont différents (exponentielle injective)
+    motif: /^\\text\{Pour \} x = 1 \\text\{ : \} e(?:\^\{\d+\})? \\neq e(?:\^\{\d+\})?$/,
+    verifie: (l) => { const m = l.match(/ : \} e(?:\^\{(\d+)\})? \\neq e(?:\^\{(\d+)\})?$/); return !!m && Number(m[1] || 1) !== Number(m[2] || 1); }
   }
 ];

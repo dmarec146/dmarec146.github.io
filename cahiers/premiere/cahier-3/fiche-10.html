@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"10.1 a)":0.5,"10.1 b)":0.75,"10.2":0.75,"10.3":0.5,"10.4 a)":0.75,"10.4 b)":1,"10.4 c)":1,"10.4 d)":1,"10.5 a)":0.75,"10.5 b)":1,"10.5 c)":1.25,"10.5 d)":1.25,"10.6 a)":1,"10.6 b)":1,"10.7 a)":1,"10.7 b)":1.25,"10.7 c)":1.25,"10.8 a)":1.5,"10.8 b)":1.5,"10.8 c)":1.75,"10.9 a)":1.75,"10.9 b)":2},"bonus":["10.8 a)","10.8 b)","10.8 c)","10.9 a)","10.9 b)"]});
@@ -1063,6 +1065,177 @@ function melanger(tableau) {
   return tableau;
 }
 
+// ---------- details de correction (24/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracTexte, fracBrute } = Detail;
+const { dedup2, polyF2, lignesDelta2, phraseDelta2, lignesRacines2, detailInequation2 } = DetailQ;
+const lin10 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const cp10 = (v) => (v === 1 ? '' : v === -1 ? '-' : String(v));                         // coefficient devant une lettre ou une parenthese
+const par10 = (v) => (v < 0 ? `\\left(${v}\\right)` : String(v));
+const sum10 = (...t) => t.filter((x) => x !== '').reduce((s, x, i) => (i === 0 ? x : (x.startsWith('-') ? s + x : s + '+' + x)), '') || '0';
+const ex10 = (t) => (t === '1' ? 'e' : `e^{${t}}`);
+const mul10 = (c, x) => (c === 1 ? x : c === -1 ? `-${x}` : `${c}\\times ${x}`);          // coefficient 1 omis, -1 devient un signe
+const p10 = (k) => (k === 0 ? '' : k === 1 ? '\\times 10' : `\\times 10^{${k}}`);                                        // e^{1} s'ecrit e
+const INV10 = { '<': '>', '>': '<', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const REGLE_EXP10 = "\\text{Pour } e^{u} \\text{ la dérivée est } u'e^{u}";
+const REGLE_PROD10 = "\\text{Pour } uv \\text{ la dérivée est } u'v+uv'";
+const REGLE_QUOT10 = "\\text{Pour } \\dfrac{u}{v} \\text{ la dérivée est } \\dfrac{u'v-uv'}{v^{2}}";
+const ICI10 = (u, du) => [`\\text{Ici } u \\text{ vaut } ${u}`, `\\text{et } u' \\text{ vaut } ${du}`];
+const grand10 = (v) => (Math.abs(v) >= 10000 ? String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '\\,') : String(v));
+const POS10 = (e) => `\\text{Or } ${e} \\text{ est strictement positif}`;
+// produit de facteurs (chaines) suivi d'un dernier facteur : les 1 sont omis, les signes moins passent devant
+function produit10(facteurs, dernier) {
+  let neg = false; const f = [];
+  facteurs.forEach((t) => { if (t.startsWith('-')) { neg = !neg; t = t.slice(1); } if (t !== '1') f.push(t); });
+  return (neg ? '-' : '') + [...f, dernier].join('\\times ');
+}
+const polyX10 = (coefs) => { const n = coefs.length - 1; return polyF2(coefs.map((c, i) => ({ c, v: n - i === 0 ? '' : n - i === 1 ? 'x' : `x^{${n - i}}` }))); };   // coefficients du plus haut degre au terme constant
+// 10.1 a) a x + b op c x + d, coefficients decimaux (dixiemes) : a, b, cc, d sont les valeurs multipliees par 10
+function detail101a(a, b, cc, d, op, enonceDec, spec) {
+  const coef = a - cc, rhs = d - b, l = [enonceDec, '\\text{On multiplie par } 10', `\\iff ${lin10(a, b)} ${op} ${lin10(cc, d)}`, `\\iff ${polyF2([{ c: coef, v: 'x' }])} ${op} ${rhs}`];
+  if (coef < 0) l.push(`\\text{On divise par } ${coef} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  l.push(`\\iff x ${coef < 0 ? INV10[op] : op} ${fracD(math.fraction(rhs, coef))}`, `S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes: l, final: formaterIntervalleSpec(spec) };
+}
+// 10.1 b) (ax+b)/(cx+d)^2 op 0 : le carre est strictement positif sauf en la valeur interdite
+function detail101b(a, b, cc, d, op, spec) {
+  const N = lin10(a, b), Dn = lin10(cc, d), zD = fracD(math.fraction(-d, cc)), zN = fracD(math.fraction(-b, a)), l = [`\\dfrac{${N}}{\\left(${Dn}\\right)^{2}} ${op} 0`, `${Dn} = 0`, `\\iff x = ${zD} \\text{ (valeur interdite)}`,
+    '\\text{Un carré non nul est strictement positif}', `\\text{donc le quotient a le signe de } ${N}`, `${N} ${op} 0`, `\\iff ${polyF2([{ c: a, v: 'x' }])} ${op} ${-b}`];
+  if (a < 0) l.push(`\\text{On divise par } ${a} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (a !== 1) l.push(`\\iff x ${a < 0 ? INV10[op] : op} ${zN}`);
+  l.push(`\\small \\text{La valeur interdite } ${zD} \\text{ est exclue dans tous les cas}`, `S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes: l, final: formaterIntervalleSpec(spec) };
+}
+// 10.2 equation bicarree x^4 + ... = 0 : X = x^2 ; rejete = valeur negative de X (famille 2) ou null (famille 1) ; solsX = solutions en x
+function detail102(B, C, solsX, rejete) {
+  const d = lignesDelta2(1, B, C), r = lignesRacines2(1, B, d.D.n), S = `\\{${solsX.join('\\,;\\,')}\\}`;
+  const l = ['\\text{On pose } X \\text{ égal à } x^{2}', `\\text{On résout } ${polyF2([{ c: 1, v: 'X^{2}' }, { c: B, v: 'X' }, { c: C, v: '' }])} = 0`, '\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D), ...r.lignes.map((t) => t.replace(/^x_(\d)/, 'X_$1')), `X =${r.x1} \\text{ ou } X = ${r.x2}`];
+  if (rejete !== null) l.push(`\\text{Or } x^{2} \\geqslant 0 \\text{, donc } ${rejete} \\text{ est rejeté}`);
+  l.push(rejete === null ? `x^{2} = ${r.x1} \\text{ ou } x^{2} = ${r.x2}` : `x^{2} = ${rejete === r.x1 ? r.x2 : r.x1}`, `\\iff ${solsX.map((s) => `x = ${s}`).join(' \\text{ ou } ')}`, `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 10.3 puissances de 10
+function detail103(a, b, cc, pp, q, r, val) {
+  const ab = a * b, s = pp + q - r;
+  return { lignes: [dedup2(`\\dfrac{${a}\\times 10^{${pp}}\\times ${b}\\times 10^{${q}}}{${cc}\\times 10^{${r}}}`, `\\dfrac{${ab}${p10(pp + q)}}{${cc}${p10(r)}}`, `${ab / cc}${p10(s)}`, grand10(val))], final: grand10(val) };
+}
+// 10.4 a) C e^{px+r1} + D e^{qx+r2}
+function detail104a(C, p, r1, D, q, r2) {
+  const e1 = ex10(lin10(p, r1)), e2 = ex10(lin10(q, r2)), fin = sum10(`${cp10(C * p)}${e1}`, `${cp10(D * q)}${e2}`);
+  return { lignes: [REGLE_EXP10, `f'(x) = ${sum10(produit10([String(C), String(p)], e1), produit10([String(D), String(q)], e2))}`, `f'(x) = ${fin}`], final: fin };
+}
+// 10.4 b) (A x^2 + B) e^{px+q}
+function detail104b(A, B, p, q) {
+  const e = ex10(lin10(p, q)), U = polyF2([{ c: A, v: 'x^{2}' }, { c: B, v: '' }]), dU = polyF2([{ c: 2 * A, v: 'x' }]), P = polyF2([{ c: p * A, v: 'x^{2}' }, { c: 2 * A, v: 'x' }, { c: p * B, v: '' }]), fin = `\\left(${P}\\right)${e}`;
+  const pe = p < 0 ? `\\left(${cp10(p)}${e}\\right)` : `${cp10(p)}${e}`;
+  return { lignes: [REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${U} \\text{ et } v \\text{ vaut } ${e}`, `f'(x) = ${dedup2(`\\left(${dU}\\right)${e}+\\left(${U}\\right)\\times ${pe}`, fin)}`], final: fin };
+}
+// 10.4 c) C e^x / (x^2 + 1)
+function detail104c(C) {
+  const Ce = `${cp10(C)}e^{x}`, fin = `\\dfrac{${Ce}\\left(x-1\\right)^{2}}{\\left(x^{2}+1\\right)^{2}}`;
+  return { lignes: [REGLE_QUOT10, `\\text{Ici } u \\text{ vaut } ${Ce} \\text{ et } v \\text{ vaut } x^{2}+1`, `f'(x) = ${dedup2(`\\dfrac{${Ce}\\left(x^{2}+1\\right)-\\left(${Ce}\\right)\\times 2x}{\\left(x^{2}+1\\right)^{2}}`, `\\dfrac{${Ce}\\left(x^{2}-2x+1\\right)}{\\left(x^{2}+1\\right)^{2}}`, fin)}`], final: fin };
+}
+// 10.4 d) e^{px+q} sqrt(x)
+function detail104d(p, q) {
+  const e = ex10(lin10(p, q)), pe = `${cp10(p)}${e}`, fin = `\\dfrac{\\left(${lin10(2 * p, 1)}\\right)${e}}{2\\sqrt{x}}`;
+  const num = `${polyF2([{ c: 2 * p, v: 'x' }])}${e}+${e}`;
+  return { lignes: [REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${e} \\text{ et } v \\text{ vaut } \\sqrt{x}`, `f'(x) = ${dedup2(`${p < 0 ? `\\left(${pe}\\right)` : pe}\\sqrt{x}+${e}\\times \\dfrac{1}{2\\sqrt{x}}`, `\\dfrac{${num}}{2\\sqrt{x}}`, fin)}`], final: fin };
+}
+// 10.5 a) e^{alpha x^2 + beta x + gamma}
+function detail105a(al, be, ga) {
+  const u = polyF2([{ c: al, v: 'x^{2}' }, { c: be, v: 'x' }, { c: ga, v: '' }]), du = lin10(2 * al, be), fin = `\\left(${du}\\right)e^{${u}}`;
+  return { lignes: [REGLE_EXP10, ...ICI10(u, du), `f'(x) = ${fin}`], final: fin };
+}
+// 10.5 b) e^{k/(x - m)}
+function detail105b(k, m) {
+  const den = lin10(1, -m), denP = den === 'x' ? 'x' : `\\left(${den}\\right)`, u = `${k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${den}}`, du = `${-k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${denP}^{2}}`;
+  const fin = `${-k < 0 ? '-' : ''}\\dfrac{${Math.abs(k) === 1 ? '' : Math.abs(k)}e^{${u}}}{${denP}^{2}}`;
+  return { lignes: [REGLE_EXP10, `\\text{Pour } \\dfrac{1}{${den}} \\text{ la dérivée est } -\\dfrac{1}{${denP}^{2}}`, ...ICI10(u, du), `f'(x) = ${fin}`], final: fin };
+}
+// 10.5 c, d) P(x) e^u, u = k x^2, k/x ou px+q
+function detail105cd(P, type, k, p, q, N, quotient) {
+  const dP = polyX10(P.slice(0, -1).map((c, i) => c * (P.length - 1 - i))), Pt = polyX10(P);
+  let u, vp;
+  if (type === 'carre') { u = `${cp10(k)}x^{2}`; vp = `${2 * k}x`; } else if (type === 'affine') { u = lin10(p, q); vp = cp10(p); } else { u = `${k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{x}`; vp = `${-k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{x^{2}}`; }
+  const e = `e^{${u}}`, Nt = polyX10(N), fin = quotient ? `\\dfrac{\\left(${Nt}\\right)${e}}{x^{2}}` : `\\left(${Nt}\\right)${e}`, vpe = `${vp}${e}`, vpePar = vpe.startsWith('-') ? `\\left(${vpe}\\right)` : vpe;
+  return { lignes: [REGLE_EXP10, REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${Pt} \\text{ et } v \\text{ vaut } ${e}`, `\\text{et } v' \\text{ vaut } ${vpe}`, `f'(x) = ${dedup2(`\\left(${dP}\\right)${e}+\\left(${Pt}\\right)\\times ${vpePar}`, fin)}`], final: fin };
+}
+// 10.6 : tangente de e^{u} en a ; f(a) = e^{ua}, f'(a) = pente e^{ua}, ordonnee a l'origine ord e^{ua}
+function tangente10(a, ua, pente, ord) {
+  const E = ex10(String(ua)), xa = a === 0 ? 'x' : `x${a > 0 ? '-' : '+'}${Math.abs(a)}`, terme = (m) => (m === 0 ? '0' : `${cp10(m)}${E}`);
+  const droite = sum10(pente === 0 ? '' : `${cp10(pente)}${E}${E === 'e' ? '\\,' : ''}x`, ord === 0 ? '' : terme(ord)), fin = `y = ${droite}`;
+  return { fin, lignes: ['\\text{Équation de la tangente en } a \\text{ :}', "y = f'(a)(x-a)+f(a)", `${dedup2(sum10(a === 0 ? `${terme(pente)}x` : `${terme(pente)}\\left(${xa}\\right)`, E), droite)}`, fin] };
+}
+function detail106a(k, b, c, a, ua, s) {
+  const E = ex10(String(ua)), u = polyF2([{ c: k, v: 'x^{2}' }, { c: b, v: 'x' }, { c: c, v: '' }]), du = lin10(2 * k, b), T = tangente10(a, ua, s, 1 - a * s);
+  return { lignes: ['\\text{Image de } a \\text{ :}', `f(${a}) = ${dedup2(`e^{${sum10(mul10(k, `${par10(a)}^{2}`), b === 0 ? '' : mul10(b, par10(a)), c === 0 ? '' : String(c))}}`, E)}`, REGLE_EXP10, ...ICI10(u, du), `f'(x) = \\left(${du}\\right)e^{${u}}`,
+    '\\text{Nombre dérivé en } a \\text{ :}', `f'(${a}) = ${dedup2(`\\left(${sum10(`${2 * k}\\times ${par10(a)}`, b === 0 ? '' : String(b))}\\right)${E}`, `${cp10(s)}${E}`)}`, ...T.lignes], final: T.fin };
+}
+function detail106b(k, m, d, a) {
+  const E = ex10(String(k * d)), den = lin10(1, -m), denP = den === 'x' ? 'x' : `\\left(${den}\\right)`, u = `${k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${den}}`, du = `${-k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${denP}^{2}}`, pente = -k, T = tangente10(a, k * d, pente, 1 + a * k);
+  const ecart = m === 0 ? String(a) : `${a}-${par10(m)}`, unit = m === 0 && Math.abs(a) === 1;   // en a = ±1 et m = 0, le dénominateur vaut ±1 : on écrit l'entier
+  const ua = unit ? String(k * a) : `${k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${ecart}}`, dua = unit ? cp10(-k) : `${-k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${m === 0 ? par10(a) : `\\left(${ecart}\\right)`}^{2}}`;
+  return { lignes: ['\\text{Image de } a \\text{ :}', `f(${a}) = ${dedup2(ex10(ua), E)}`, REGLE_EXP10, `\\text{Pour } \\dfrac{1}{${den}} \\text{ la dérivée est } -\\dfrac{1}{${denP}^{2}}`, ...ICI10(u, du), `f'(x) = ${du}e^{${u}}`,
+    '\\text{Nombre dérivé en } a \\text{ :}', `f'(${a}) = ${dedup2(`${dua}${E}`, `${cp10(pente)}${E}`)}`, ...T.lignes], final: T.fin };
+}
+// 10.7 : sens de variation de f ; debut = lignes qui donnent f' et son signe, bornes = [{v, L}], regions = [{deb, fin, s}] (s = +1 croissante)
+function detail107(debut, bornes, regions, bonne) {
+  const last = bornes.length - 1, interv = (deb, fin) => `${deb === 0 ? ']-\\infty' : '[' + bornes[deb].L}\\,;\\,${fin === last ? '+\\infty[' : bornes[fin].L + ']'}`;
+  const lignes = [...debut(bornes, regions)];
+  regions.forEach((r) => lignes.push(`\\text{Donc } f \\text{ est ${r.s > 0 ? 'croissante' : 'décroissante'} sur } ${interv(r.deb, r.fin)}`));
+  lignes.push(`\\text{Réponse : } ${bonne}`);
+  return { lignes, final: bonne };
+}
+// tete des details 10.7 : produit (U) e^{w}, f' = (Nt) e^{w}, signe de e^{w} puis du facteur polynomial N (coefficients du plus haut degre au terme constant)
+function debut107(U, dU, w, pTexte, N) {
+  return (bornes, regions) => {
+  const e = `e^{${w}}`, Nt = polyX10(N), pe = pTexte === '' ? e : `${pTexte}${e}`, pePar = pe.startsWith('-') ? `\\left(${pe}\\right)` : pe;
+  const lignes = [REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${U} \\text{ et } v \\text{ vaut } ${e}`, `f'(x) = ${dedup2(`\\left(${dU}\\right)${e}+\\left(${U}\\right)\\times ${pePar}`, `\\left(${Nt}\\right)${e}`)}`, POS10(e)];
+  if (N.length === 2) lignes.push(...Detail.lignesSigneAffine(N[0], N[1]));
+  else {
+    const spec = { type: 'intervalles', liste: regions.filter((g) => g.s > 0).map((g) => ({ bas: bornes[g.deb].v, haut: bornes[g.fin].v, inclusBas: false, inclusHaut: false })) };
+    lignes.push(...detailInequation2('x', N[0], N[1], N[2], '>', spec, [`${Nt} \\gt 0`], formaterIntervalleSpec).lignes);
+  }
+  return lignes;
+  };
+}
+// 10.8 a) somme_{k=1}^{n} e^{kx}
+function detail108a() {
+  const fin = '\\dfrac{e^{\\left(n+1\\right)x}-e^{x}}{e^{x}-1}';
+  return { lignes: ['e^{kx} = \\left(e^{x}\\right)^{k}', '\\text{On reconnaît une suite géométrique}', '\\text{de raison } e^{x}', '\\text{Comme } x \\neq 0 \\text{, on a } e^{x} \\neq 1', '\\sum_{k=1}^{n}q^{k} = \\dfrac{q^{n+1}-q}{q-1}', `\\dfrac{\\left(e^{x}\\right)^{n+1}-e^{x}}{e^{x}-1} = ${fin}`], final: fin };
+}
+// 10.8 b) derivee de x -> e^x + e^{2x} + ... + e^{nx}
+function detail108b() {
+  const fin = '\\sum_{k=1}^{n}ke^{kx}';
+  return { lignes: ["\\small \\text{La dérivée d'une somme est la somme des dérivées}", REGLE_EXP10, ...ICI10('kx', 'k'), `f'(x) = ${fin}`], final: fin };
+}
+// 10.8 c) sum_{k=1}^{n} k e^{kx} par derivation du quotient
+function detail108c() {
+  const fin = '\\dfrac{ne^{\\left(n+2\\right)x}-\\left(n+1\\right)e^{\\left(n+1\\right)x}+e^{x}}{\\left(e^{x}-1\\right)^{2}}', u = 'e^{\\left(n+1\\right)x}-e^{x}', v = 'e^{x}-1';
+  return { lignes: ["\\small \\text{D'après le b), c'est la dérivée de la somme du a)}", "\\text{On dérive donc l'expression du a)}", REGLE_QUOT10, `\\text{Ici } u \\text{ vaut } ${u} \\text{ et } v \\text{ vaut } ${v}`, `\\scriptsize \\dfrac{\\left(\\left(n+1\\right)e^{\\left(n+1\\right)x}-e^{x}\\right)\\left(${v}\\right)-\\left(${u}\\right)e^{x}}{\\left(${v}\\right)^{2}} = ${fin}`], final: fin };
+}
+// 10.9 : extremum sur un intervalle ; chaque famille donne sa demarche (lignes) puis la valeur en r
+function fin109(lignes, r, al, be, calcul, val, expo, seule = true) {
+  const fin = `${cp10(val)}${ex10(String(expo))}`;
+  return { lignes: [...lignes, `\\text{${seule ? 'Seule la racine' : 'La racine'} } ${r} \\text{ est dans } \\left[${al}\\,;\\,${be}\\right]`, `f(${r}) = ${dedup2(calcul, fin)}`], final: fin };
+}
+function detail109a(a, b, p, q, r, al, be, val, expo) {
+  const e = ex10(lin10(p, q)), U = lin10(a, b), N = lin10(p * a, a + p * b), pe = p < 0 ? `\\left(${cp10(p)}${e}\\right)` : `${cp10(p)}${e}`;
+  return fin109([REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${U} \\text{ et } v \\text{ vaut } ${e}`, `f'(x) = ${dedup2(`${cp10(a)}${e}+\\left(${U}\\right)\\times ${pe}`, `\\left(${N}\\right)${e}`)}`, POS10(e), `${N} = 0`, `\\iff ${polyF2([{ c: p * a, v: 'x' }])} = ${-(a + p * b)}`, `\\iff x = ${r}`],
+    r, al, be, `\\left(${sum10(mul10(a, par10(r)), b === 0 ? '' : String(b))}\\right)${ex10(sum10(mul10(p, par10(r)), q === 0 ? '' : String(q)))}`, val, expo, false);
+}
+function detail109b(A, bt, gm, p, q, r1, r2, r, al, be, Pr, expo) {
+  const e = ex10(lin10(p, q)), U = polyX10([A, A * bt, A * gm]), dU = polyX10([2 * A, A * bt]), N = polyX10([A * p, 2 * A + A * bt * p, A * bt + A * gm * p]), pe = p < 0 ? `\\left(${cp10(p)}${e}\\right)` : `${cp10(p)}${e}`;
+  return fin109([REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${U} \\text{ et } v \\text{ vaut } ${e}`, `f'(x) = ${dedup2(`\\left(${dU}\\right)${e}+\\left(${U}\\right)\\times ${pe}`, `\\left(${N}\\right)${e}`, `${cp10(A * p)}\\left(${lin10(1, -r1)}\\right)\\left(${lin10(1, -r2)}\\right)${e}`)}`, POS10(e),
+    `${lin10(1, -r1)} = 0 \\text{ ou } ${lin10(1, -r2)} = 0`, `\\iff x = ${r1} \\text{ ou } x = ${r2}`], r, al, be, `${cp10(A)}\\left(${sum10(`${par10(r)}^{2}`, bt === 0 ? '' : mul10(bt, par10(r)), gm === 0 ? '' : String(gm))}\\right)${ex10(sum10(mul10(p, par10(r)), q === 0 ? '' : String(q)))}`, Pr, expo);
+}
+function detail109c(a, b, k, r, al, be, t, expo) {
+  const e = `e^{${cp10(k)}x^{2}}`, A = 2 * k * a, B = 2 * k * b, C = a, neg = A < 0, [A2, B2, C2] = neg ? [-A, -B, -C] : [A, B, C], d = lignesDelta2(A2, B2, C2), rr = lignesRacines2(A2, B2, d.D.n);
+  const ordre = [rr.x1, rr.x2].sort((u, v) => u - v), racines = [rr.t1, rr.t2];
+  return fin109([REGLE_PROD10, `\\text{Ici } u \\text{ vaut } ${lin10(a, b)} \\text{ et } v \\text{ vaut } ${e}`, `\\text{et } v' \\text{ vaut } ${2 * k}x${e}`, `f'(x) = ${dedup2(`${cp10(a)}${e}+\\left(${lin10(a, b)}\\right)\\times \\left(${2 * k}x${e}\\right)`, `\\left(${polyF2([{ c: A, v: 'x^{2}' }, { c: B, v: 'x' }, { c: C, v: '' }])}\\right)${e}`)}`, POS10(e),
+    `${polyF2([{ c: A, v: 'x^{2}' }, { c: B, v: 'x' }, { c: C, v: '' }])} = 0`, ...(neg ? [`\\iff ${polyF2([{ c: A2, v: 'x^{2}' }, { c: B2, v: 'x' }, { c: C2, v: '' }])} = 0`] : []), '\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D), ...rr.lignes],
+    r, al, be, `\\left(${sum10(mul10(a, par10(r)), b === 0 ? '' : String(b))}\\right)e^{${mul10(k, `${par10(r)}^{2}`)}}`, t, expo);
+}
+
 function genererExercices() {
   const ex = [];
 
@@ -1083,7 +1256,7 @@ function genererExercices() {
       : [{bas:-Infinity, haut:seuil, inclusBas:false, inclusHaut:large}];
     const terme = (k, x) => (k < 0 ? '-' : (x ? '' : '')) + dec10(Math.abs(k) / 10) + x;
     const membre = (k, m) => terme(k, 'x') + (m < 0 ? '-' : '+') + dec10(Math.abs(m) / 10);
-    ex.push({id:"10.1 a)", type:"intervalle", texteLibre:true,
+    ex.push({id:"10.1 a)", detail: detail101a(a, b, cc, d, op, `${membre(a,b)} ${op} ${membre(cc,d)}`, {type:'intervalles', liste}), type:"intervalle", texteLibre:true,
       enonce:`\\(${membre(a,b)}${op}${membre(cc,d)}\\)`,
       intervalleSpec:{type:'intervalles', liste}});
   }
@@ -1107,7 +1280,7 @@ function genererExercices() {
       if (dernier && dernier.haut === lo && lo === zN && large) { dernier.haut = hi; dernier.inclusHaut = false; }
       else liste.push({bas:lo, haut:hi, inclusBas: large && lo === zN, inclusHaut: large && hi === zN});
     }
-    ex.push({id:"10.1 b)", type:"intervalle", texteLibre:true,
+    ex.push({id:"10.1 b)", detail: detail101b(a, b, cc, d, op, {type:'intervalles', liste}), type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{${fmtLin(a,b,false)}}{(${fmtLin(cc,d,false)})^2}${op}0\\)`,
       intervalleSpec:{type:'intervalles', liste}});
   }
@@ -1119,17 +1292,19 @@ function genererExercices() {
   {
     const termeX2 = k => k === 0 ? '' : (k > 0 ? '+' : '-') + (Math.abs(k) === 1 ? '' : Math.abs(k)) + 'x^2';
     const terme0 = k => k === 0 ? '' : (k > 0 ? '+' : '') + k;
-    let enonce, reponse;
+    let enonce, reponse, det102;
     if (alea(0,1) === 0) {
       let m, n; do { m = alea(1,6); n = alea(1,6); } while (m >= n);
       enonce = `x^4${termeX2(-(m*m+n*n))}${terme0(m*m*n*n)}=0`;
       reponse = `{${-n};${-m};${m};${n}}`;
+      det102 = detail102(-(m*m + n*n), m*m*n*n, [-n, -m, m, n], null);
     } else {
       let m, k; do { m = alea(1,6); k = alea(1,9); } while (k === m*m);
       enonce = `x^4${termeX2(k - m*m)}${terme0(-k*m*m)}=0`;
       reponse = `{${-m};${m}}`;
+      det102 = detail102(k - m*m, -k*m*m, [-m, m], -k);
     }
-    ex.push({id:"10.2", type:"num", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse});
+    ex.push({id:"10.2", detail: det102, type:"num", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse});
   }
 
   // ---------- 10.3 : calcul numerique (deux natures differentes) ----------
@@ -1141,7 +1316,7 @@ function genererExercices() {
       pp = alea(-4,5); q = alea(-4,5); r = alea(-4,5);
       val = a * b / cc * Math.pow(10, pp + q - r);
     } while (!Number.isInteger(Math.round(val * 1e6) / 1e6) || val < 1 || val > 100000 || [pp, q, r].some(e => e === 0 || e === 1) || (a*b) % cc !== 0 || cc === a || cc === b);
-    ex.push({id:"10.3", type:"num", texteLibre:true, sansEgal:true,
+    ex.push({id:"10.3", detail: detail103(a, b, cc, pp, q, r, Math.round(val)), type:"num", texteLibre:true, sansEgal:true,
       enonce:`Calculer \\(\\dfrac{${a}\\times 10^{${pp}}\\times ${b}\\times 10^{${q}}}{${cc}\\times 10^{${r}}}\\)`,
       reponse: String(Math.round(val))});
   }
@@ -1150,7 +1325,7 @@ function genererExercices() {
   {
     let p, q; do { p = aleaNonNul(-6,6); q = aleaNonNul(-6,6); } while (p === q);
     const C = aleaNonNul(-6,6), r1 = alea(-4,4), D = aleaNonNul(-6,6), r2 = alea(-4,4);
-    ex.push({id:"10.4 a)", type:"alg", texteLibre:true,
+    ex.push({id:"10.4 a)", detail: detail104a(C, p, r1, D, q, r2), type:"alg", texteLibre:true,
       enonce:`\\(f(x)=${coefPrefixeL(C)}e^{${fmtLin(p,r1,false)}}${D>=0?'+':''}${coefPrefixeL(D)}e^{${fmtLin(q,r2,false)}}\\)`,
       reponse:`${coefPrefixe(C*p)}exp(${fmtLin(p,r1,true)})${(D*q)>=0?'+':'-'}${Math.abs(D*q)===1?'':Math.abs(D*q)+'*'}exp(${fmtLin(q,r2,true)})`,
       _fAscii:`${coefPrefixe(C)}exp(${fmtLin(p,r1,true)})+${coefPrefixe(D)}exp(${fmtLin(q,r2,true)})`});
@@ -1161,7 +1336,7 @@ function genererExercices() {
     const A = aleaNonNul(-4,4), B = aleaNonNul(-6,6);
     let p, q; do { p = aleaNonNul(-3,3); q = alea(-4,4); } while (p === 0);
     const t1 = p*A, t2 = 2*A, t3 = p*B;
-    ex.push({id:"10.4 b)", type:"alg", texteLibre:true, formeFactorisee:true,
+    ex.push({id:"10.4 b)", detail: detail104b(A, B, p, q), type:"alg", texteLibre:true, formeFactorisee:true,
       enonce:`\\(f(x)=(${A===1?'':A===-1?'-':A}x^2${B>=0?'+':''}${B})e^{${fmtLin(p,q,false)}}\\)`,
       reponse:`(${coefPrefixe(t1)}x^2${t2>=0?'+':''}${t2}*x${t3>=0?'+':''}${t3})*exp(${fmtLin(p,q,true)})`,
       _fAscii:`(${A}*x^2${B>=0?'+':''}${B})*exp(${fmtLin(p,q,true)})`});
@@ -1170,7 +1345,7 @@ function genererExercices() {
   // ---------- 12.5 : dérivées de quotients ----------
   {
     const C = aleaNonNul(-6,6);
-    ex.push({id:"10.4 c)", type:"alg", texteLibre:true, formeFactorisee:"numerateur", enonce:`\\(f(x)=\\dfrac{${coefPrefixeL(C)}e^x}{x^2+1}\\)`,
+    ex.push({id:"10.4 c)", detail: detail104c(C), type:"alg", texteLibre:true, formeFactorisee:"numerateur", enonce:`\\(f(x)=\\dfrac{${coefPrefixeL(C)}e^x}{x^2+1}\\)`,
       reponse:`${coefPrefixe(C)}(x-1)^2*exp(x)/(x^2+1)^2`, _fAscii:`${coefPrefixe(C)}exp(x)/(x^2+1)`});
   }
 
@@ -1185,7 +1360,7 @@ function genererExercices() {
   // ---------- 12.10 : exponentielle et racine carree ----------
   {
     const p = aleaNonNul(-4,4), q = alea(-4,4);
-    ex.push({id:"10.4 d)", type:"alg", texteLibre:true, formeFactorisee:"numerateur", enonce:`Sur \\(]0;+\\infty[\\), \\(f(x)=e^{${fmtLin(p,q,false)}}\\sqrt{x}\\)`,
+    ex.push({id:"10.4 d)", detail: detail104d(p, q), type:"alg", texteLibre:true, formeFactorisee:"numerateur", enonce:`Sur \\(]0;+\\infty[\\), \\(f(x)=e^{${fmtLin(p,q,false)}}\\sqrt{x}\\)`,
       reponse:`(${fmtLin(2*p,1,true)})*exp(${fmtLin(p,q,true)})/(2*sqrt(x))`,
       _fAscii:`exp(${fmtLin(p,q,true)})*sqrt(x)`});
   }
@@ -1210,7 +1385,7 @@ function genererExercices() {
   {
     const al = aleaNonNul(-3,3), be = aleaNonNul(-5,5), ga = alea(-5,5);
     const uA = polyX([al,be,ga], true);
-    ex.push({id:"10.5 a)", type:"alg", texteLibre:true, formeFactorisee:true,
+    ex.push({id:"10.5 a)", detail: detail105a(al, be, ga), type:"alg", texteLibre:true, formeFactorisee:true,
       enonce:`\\(f(x)=e^{${polyX([al,be,ga], false)}}\\)`,
       reponse:`(${fmtLin(2*al,be,true)})*exp(${uA})`, _fAscii:`exp(${uA})`});
   }
@@ -1218,7 +1393,7 @@ function genererExercices() {
   {
     const k = aleaNonNul(-5,5), m = alea(-3,3);
     const den = fmtLin(1,-m,true), denP = m === 0 ? 'x' : `(${den})`;
-    ex.push({id:"10.5 b)", type:"alg", texteLibre:true, formeFactorisee:"numerateur",
+    ex.push({id:"10.5 b)", detail: detail105b(k, m), type:"alg", texteLibre:true, formeFactorisee:"numerateur",
       enonce:`Sur \\(]${m};+\\infty[\\), \\(f(x)=e^{${k < 0 ? '-' : ''}\\frac{${Math.abs(k)}}{${fmtLin(1,-m,false)}}}\\)`,
       reponse:`${-k}*exp(${k}/${denP})/${denP}^2`, _fAscii:`exp(${k}/${denP})`});
   }
@@ -1226,24 +1401,25 @@ function genererExercices() {
   {
     const types = melanger(['carre','inverse','affine']);
     [['10.5 c)', 1, types[0]], ['10.5 d)', 2, types[1]]].forEach(([id, deg, type]) => {
+      let kk, qq;
       const P = deg === 1 ? [aleaNonNul(-4,4), aleaNonNul(-5,5)] : [aleaNonNul(-3,3), alea(-4,4), aleaNonNul(-5,5)];
       const [a, b, c] = P;
       let uL, uA, N, domaine = '', quotient = false;
       if (type === 'carre') {
-        const k = aleaNonNul(-3,3);
+        const k = aleaNonNul(-3,3); kk = k;
         uL = `${coefPrefixeL(k)}x^2`; uA = `${coefPrefixe(k)}x^2`;
         N = deg === 1 ? [2*k*a, 2*k*b, a] : [2*k*a, 2*k*b, 2*k*c + 2*a, b];        // P' + 2kxP
       } else if (type === 'affine') {
-        const p = aleaNonNul(-3,3), q = alea(-3,3);
+        const p = aleaNonNul(-3,3), q = alea(-3,3); kk = p; qq = q;
         uL = fmtLin(p,q,false); uA = fmtLin(p,q,true);
         N = deg === 1 ? [p*a, a + p*b] : [p*a, 2*a + p*b, b + p*c];               // P' + pP
       } else {
-        const k = aleaNonNul(-4,4);
+        const k = aleaNonNul(-4,4); kk = k;
         uL = `${k < 0 ? '-' : ''}\\frac{${Math.abs(k)}}{x}`; uA = `${k}/x`;
         N = deg === 1 ? [a, -k*a, -k*b] : [2*a, b - k*a, -k*b, -k*c];              // x^2 P' - k P
         domaine = 'Sur \\(]0;+\\infty[\\), '; quotient = true;
       }
-      ex.push({id, type:"alg", texteLibre:true, formeFactorisee: quotient ? "numerateur" : true,
+      ex.push({id, detail: detail105cd(P, type, kk, kk, qq, N, quotient), type:"alg", texteLibre:true, formeFactorisee: quotient ? "numerateur" : true,
         enonce:`${domaine}\\(f(x)=(${polyX(P, false)})e^{${uL}}\\)`,
         reponse:`(${polyX(N, true)})*exp(${uA})${quotient ? '/x^2' : ''}`,
         _fAscii:`(${polyX(P, true)})*exp(${uA})`});
@@ -1256,7 +1432,7 @@ function genererExercices() {
     let k, b, c, a, ua, s;
     do { k = aleaNonNul(-2,2); b = alea(-4,4); c = alea(-3,3); a = alea(-2,2); ua = k*a*a + b*a + c; s = 2*k*a + b; }
     while (ua === 0 || s === 0 || 1 - a*s === 0 || b === 0 && c === 0);   // ni « e^0 », ni pente nulle, ni ordonnee nulle
-    ex.push({id:"10.6 a)", type:"alg", formeYax:true, texteLibre:true,
+    ex.push({id:"10.6 a)", detail: detail106a(k, b, c, a, ua, s), type:"alg", formeYax:true, texteLibre:true,
       enonce:`Avec \\(f(x)=e^{${polyX([k,b,c], false)}}\\) et \\(a=${a}\\)`,
       reponse: equationReduiteAscii(`${coefPrefixe(s)}exp(${ua})`, `${coefPrefixe(1-a*s)}exp(${ua})`)});
   }
@@ -1266,14 +1442,14 @@ function genererExercices() {
     let k, m, d, a;
     do { k = aleaNonNul(-3,3); m = alea(-3,3); d = [1,-1][alea(0,1)]; a = m + d; } while (1 + a*k === 0);
     const intervalle = d === 1 ? `]${m};+\\infty[` : `]-\\infty;${m}[`;
-    ex.push({id:"10.6 b)", type:"alg", formeYax:true, texteLibre:true,
+    ex.push({id:"10.6 b)", detail: detail106b(k, m, d, a), type:"alg", formeYax:true, texteLibre:true,
       enonce:`Avec \\(f(x)=e^{${k < 0 ? '-' : ''}\\frac{${Math.abs(k)}}{${fmtLin(1,-m,false)}}}\\) sur \\(${intervalle}\\) et \\(a=${a}\\)`,
       reponse: equationReduiteAscii(`${coefPrefixe(-k)}exp(${k*d})`, `${coefPrefixe(1+a*k)}exp(${k*d})`)});
   }
 
   // ---------- 10.7 : variations de x -> P(x) e^u (QCM) ----------
   // racines : [{v, L}] rangees par ordre croissant, f' change de signe en chacune ; fp : f' (pour le signe)
-  const qcmVariations = (id, fL, racines, fp) => {
+  const qcmVariations = (id, fL, racines, fp, debut) => {
     const bornes = [{v:-Infinity}, ...racines, {v:Infinity}];
     const regions = [];
     for (let i = 0; i + 1 < bornes.length; i++) {
@@ -1304,14 +1480,14 @@ function genererExercices() {
       if (o.estBonne) bonneReponse = lettre;
       return {lettre, texte:o.texte, texteLibreOption:true};
     });
-    ex.push({id, type:"qcm", texteLibre:true, enonce:`Avec \\(f(x)=${fL}\\), \\(f\\) est :`, bonneReponse, options});
+    ex.push({id, detail: detail107(debut, bornes, regions, bonneReponse), type:"qcm", texteLibre:true, enonce:`Avec \\(f(x)=${fL}\\), \\(f\\) est :`, bonneReponse, options});
   };
   // a) (ax+b) e^{px+q} : f'(x) = (pa x + a + pb) e^{px+q}
   {
     const a = aleaNonNul(-4,4), b = alea(-5,5), p = aleaNonNul(-3,3), q = alea(-3,3);
     qcmVariations("10.7 a)", `(${fmtLin(a,b,false)})e^{${fmtLin(p,q,false)}}`,
       [{v: -(a + p*b) / (p*a), L: fracLatex(-(a + p*b), p*a)}],
-      x => p*a*x + a + p*b);
+      x => p*a*x + a + p*b, debut107(lin10(a, b), String(a), lin10(p, q), cp10(p), [p*a, a + p*b]));
   }
   // b) P(x) e^{px+q}, p = 1 ou -1, P de degre 2 choisi pour que f'(x) = A p (x-r1)(x-r2) e^{px+q}
   {
@@ -1321,7 +1497,7 @@ function genererExercices() {
     const be = p === 1 ? -S - 2 : 2 - S, ga = p === 1 ? Pi - be : Pi + be;   // P = A(x^2 + be x + ga)
     qcmVariations("10.7 b)", `(${polyX([A, A*be, A*ga], false)})e^{${fmtLin(p,q,false)}}`,
       [{v:r1, L:String(r1)}, {v:r2, L:String(r2)}],
-      x => A * p * (x - r1) * (x - r2));
+      x => A * p * (x - r1) * (x - r2), debut107(polyX10([A, A*be, A*ga]), polyX10([2*A, A*be]), lin10(p, q), cp10(p), [A*p, 2*A + A*be*p, A*be + A*ga*p]));
   }
   // c) (ax+b) e^{k x^2}, k = 1 ou -1 : f'(x) = (2ka x^2 + 2kb x + a) e^{kx^2}, racines rationnelles
   {
@@ -1330,18 +1506,18 @@ function genererExercices() {
     while (D4 <= 0 || rD * rD !== D4);
     const racines = [-1, 1].map(e => ({v: (-k*b + e*rD) / (2*k*a), L: fracLatex(-k*b + e*rD, 2*k*a)})).sort((u, v) => u.v - v.v);
     qcmVariations("10.7 c)", `(${fmtLin(a,b,false)})e^{${coefPrefixeL(k)}x^2}`, racines,
-      x => 2*k*a*x*x + 2*k*b*x + a);
+      x => 2*k*a*x*x + 2*k*b*x + a, debut107(lin10(a, b), String(a), `${cp10(k)}x^{2}`, `${2*k}x`, [2*k*a, 2*k*b, a]));
   }
 
   // ---------- 12.17 : somme, Sigma ----------
-  ex.push({id:"10.8 a)", type:"somme", texteLibre:true,
-    enonce:"Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\exp(kx)\\)",
+  ex.push({id:"10.8 a)", detail: detail108a(), type:"somme", texteLibre:true,
+    enonce:"Soit \\(n\\in\\mathbb{N}^*\\) et \\(x\\in\\mathbb{R}^*\\). Calculer \\(\\displaystyle\\sum_{k=1}^{n}\\exp(kx)\\)",
     reponse:"(exp((n+1)*x)-exp(x))/(exp(x)-1)"});
-  ex.push({id:"10.8 b)", type:"somme", texteLibre:true,
+  ex.push({id:"10.8 b)", detail: detail108b(), type:"somme", texteLibre:true,
     enonce:"Donner l'expression de la dérivée de \\(x\\mapsto \\exp(x)+\\exp(2x)+\\exp(3x)+\\cdots +\\exp(nx)\\)",
     reponse:"sum(k,1,n,k*exp(k*x))"});
-  ex.push({id:"10.8 c)", type:"somme", texteLibre:true,
-    enonce:"En déduire une expression simple de \\(\\displaystyle\\sum_{k=1}^{n}k\\exp(kx)\\)",
+  ex.push({id:"10.8 c)", detail: detail108c(), type:"somme", texteLibre:true,
+    enonce:"Pour \\(x\\in\\mathbb{R}^*\\), en déduire une expression simple de \\(\\displaystyle\\sum_{k=1}^{n}k\\exp(kx)\\)",
     reponse:"(n*exp((n+2)*x)-(n+1)*exp((n+1)*x)+exp(x))/(exp(x)-1)^2"});
 
   // ---------- 10.9 : extremum de x -> P(x) e^u sur un intervalle ferme borne (02/10/2026) ----------
@@ -1354,7 +1530,8 @@ function genererExercices() {
       let p, a, r, b, q;
       do { p = [-2,-1,1,2][alea(0,3)]; a = p * aleaNonNul(-3,3); r = alea(-3,3); b = -a*r - a/p; q = alea(-3,3); }
       while (p*r + q === 0 || Math.abs(b) > 12);
-      return {fL:`(${fmtLin(a,b,false)})e^{${fmtLin(p,q,false)}}`, al:r - alea(1,3), be:r + alea(1,3), val:-a/p, expo:p*r + q};
+      const al = r - alea(1,3), be = r + alea(1,3);
+      return {fL:`(${fmtLin(a,b,false)})e^{${fmtLin(p,q,false)}}`, al, be, val:-a/p, expo:p*r + q, det: detail109a(a, b, p, q, r, al, be, -a/p, p*r + q)};
     },
     // A(x^2 + bt x + gm) e^{px+q}, p = 1 ou -1 : f'(x) = A p (x-r1)(x-r2) e^{px+q} ; une seule racine dans l'intervalle
     trinome: () => {
@@ -1369,7 +1546,7 @@ function genererExercices() {
         Pr = A * (r*r + bt*r + gm);
         if (autre >= al && autre <= be) Pr = 0;   // l'autre racine ne doit pas etre dans l'intervalle
       } while (r1 >= r2 || Pr === 0 || p*r + q === 0);
-      return {fL:`(${polyX([A, A*bt, A*gm], false)})e^{${fmtLin(p,q,false)}}`, al, be, val:Pr, expo:p*r + q};
+      return {fL:`(${polyX([A, A*bt, A*gm], false)})e^{${fmtLin(p,q,false)}}`, al, be, val:Pr, expo:p*r + q, det: detail109b(A, bt, gm, p, q, r1, r2, r, al, be, Pr, p*r + q)};
     },
     // (ax+b) e^{kx^2} : f'(x) = (2ka x^2 + 2kb x + a) e^{kx^2} ; racine entiere r imposee :
     // a = -2krt, b = (2kr^2+1)t, l'autre racine vaut 1/(2kr) et f(r) = t e^{kr^2}
@@ -1380,12 +1557,12 @@ function genererExercices() {
         a = -2*k*r*t; b = (2*k*r*r + 1)*t; s = 1 / (2*k*r);
         al = r - alea(1,2); be = r + alea(1,2);
       } while (Math.abs(a) > 12 || Math.abs(b) > 12 || (s >= al && s <= be));
-      return {fL:`(${fmtLin(a,b,false)})e^{${coefPrefixeL(k)}x^2}`, al, be, val:t, expo:k*r*r};
+      return {fL:`(${fmtLin(a,b,false)})e^{${coefPrefixeL(k)}x^2}`, al, be, val:t, expo:k*r*r, det: detail109c(a, b, k, r, al, be, t, k*r*r)};
     }
   };
   melanger(['affine','trinome','carre']).slice(0, 2).forEach((fam, n) => {
-    const {fL, al, be, val, expo} = famillesExtremum[fam]();
-    ex.push({id:`10.9 ${'ab'[n]})`, type:"alg", texteLibre:true, sansEgal:true,
+    const {fL, al, be, val, expo, det} = famillesExtremum[fam]();
+    ex.push({id:`10.9 ${'ab'[n]})`, detail: det, type:"alg", texteLibre:true, sansEgal:true,
       enonce:`\\(f(x)=${fL}\\) sur \\([${al};${be}]\\)`,
       reponse:`${coefPrefixe(val)}exp(${expo})`});
   });
@@ -1395,6 +1572,9 @@ function genererExercices() {
     if (e.enonce) e.enonce = expVersPuissance(e.enonce).replace(/</g, '\\lt ');
     if (Array.isArray(e.options)) e.options.forEach(o => { o.texte = expVersPuissance(o.texte); });
   });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (/^= /.test(l) && l.length > 68 ? `\\scriptsize ${l}` : l)); }); // dérivée d'un produit : ligne trop large pour un téléphone
   return ex;
 }
 
@@ -2719,7 +2899,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
