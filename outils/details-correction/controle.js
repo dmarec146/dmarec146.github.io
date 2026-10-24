@@ -145,6 +145,8 @@ async function controlerDansLaPage(opts) {
   // une suite u_{14}, v_0, u_1 est une grandeur liée aux autres par l'énoncé : ses valeurs ne sont pas libres, on ne la compare pas
   const aIndice = (s) => /_(\{[^{}]*\}|\d)/.test(s);
   const estApplication = (s) => /^\s*[fgh]\s*(\\left)?\(/.test(s);                        // f(3/2) : image définie par la fonction de l'énoncé
+  // P(A\cap B), P_A(B), P_{\overline{C}}(D), E(X), E\left(X^{2}\right), V(X) : probabilité, espérance ou variance nommées par l'énoncé (pas des produits de lettres)
+  const estEtiquetteProba = (s) => /(^|[^A-Za-z\\])[PEV](_\{.*?\}\}|_\{[^{}]*\}|_[A-Za-z0-9])?\s*(\\left)?\(/.test(s);
   const aDesLettres = (s) => /[A-Za-z]/.test(s.replace(/\\(?:dfrac|frac|sqrt|times|cdot|div|left|right|pi|infty|lt|gt)(?![A-Za-z])/g, ''));
   const nz = (s) => String(s).replace(/\\\(|\\\)/g, '').replace(/\\lt\s*/g, '<').replace(/\\left|\\right|\\[,;! ]|\s+/g, '');
   // Une chaîne « A = B = C » est vérifiée par paires voisines : deux membres numériques doivent être égaux ; deux membres littéraux
@@ -152,7 +154,7 @@ async function controlerDansLaPage(opts) {
   // équation ou une substitution et n'est pas comparable. Un membre qui reprend l'énoncé (équation à résoudre) est ignoré.
   function verifierChaine(partie, enonce, dansEquivalence) {
     if (enonce && nz(partie).length >= 5 && nz(enonce).includes(nz(partie))) return null;
-    const segs = partie.split('=').map((s) => s.trim()).filter(Boolean).filter((s) => !estSymboleSeul(s) && !/\\Delta/.test(s) && !aIndice(s) && !estApplication(s) && !/[A-Za-z]'/.test(s));   // (a', b', c' : coefficients nommés, pas des valeurs)
+    const segs = partie.split('=').map((s) => s.trim()).filter(Boolean).filter((s) => !estSymboleSeul(s) && !/\\Delta/.test(s) && !aIndice(s) && !estApplication(s) && !estEtiquetteProba(s) && !/[A-Za-z]'/.test(s));   // (a', b', c' : coefficients nommés, pas des valeurs)
     if (segs.length < 2) return null;
     let verifie = 0;
     for (let i = 0; i + 1 < segs.length; i++) {
