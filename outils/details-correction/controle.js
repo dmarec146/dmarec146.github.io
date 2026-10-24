@@ -528,7 +528,7 @@ async function controlerDansLaPage(opts) {
     if (/\\dfrac\{[^{}]*\}\{0\}(?![\d.])/.test(sansTexte)) m.push(['erreur', 'denominateur-nul']);
     if (/NaN|undefined|Infinity|null/.test(sansTexte)) m.push(['erreur', 'valeur-invalide']);   // hors des blocs de texte (« nulle » contient « null »)
     if (/\^\{1\}(?!\d)/.test(sansTexte)) m.push(['erreur', 'exposant-1']);
-    if (/\+\s*-|-\s*-|-\s*\+|\+\s*\+/.test(sansTexte.replace(/\\[a-zA-Z]+/g, '').replace(/\^\{-/g, '^{').replace(/\\left\(|\\right\)|\([^()]*\)/g, '(x)'))) m.push(['erreur', 'signes-doubles']);
+    if (/\+\s*-|-\s*-|-\s*\+|\+\s*\+/.test(sansTexte.replace(/\\(?:alpha|beta|gamma|lambda|mu|theta|pi)(?![a-zA-Z])/g, 'a').replace(/\\[a-zA-Z]+/g, '').replace(/\^\{-/g, '^{').replace(/\\left\(|\\right\)|\([^()]*\)/g, '(x)'))) m.push(['erreur', 'signes-doubles']);
     // coefficient 1 écrit devant une lettre (« 1n », « 1\,r », « 1\times r », « 1\left(… »). Les blocs de texte et les ⟺ sont remplacés par un jeton
     // (§) pour ne pas être pris pour une multiplication implicite : « = -1 \text{ ou } x = 1 » est correct.
     const epure = l.replace(/\\text\{[^{}]*\}|\\iff|\\q?quad/g, ' § ').replace(/[uv]_\{?[0-9a-z+\-]*\}?/g, 'U');

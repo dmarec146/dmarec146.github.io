@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"17.1 a)":0.5,"17.1 b)":0.5,"17.2 a)":0.75,"17.2 b)":0.5,"17.3 a)":0.5,"17.3 b)":0.5,"17.4 a)":0.5,"17.4 b)":0.5,"17.4 c)":1,"17.4 d)":1.25,"17.5 a)":0.75,"17.5 b)":0.75,"17.5 c)":1,"17.5 d)":1,"17.6 a)":1.25,"17.6 b)":1.25,"17.6 c)":1.5,"17.7 a)":0.5,"17.7 b)":1.25,"17.8 a)":0.75,"17.8 b)":1.5,"17.9 a)":0.5,"17.9 b)":1,"17.9 c)":1.5,"17.10 a)":0.75,"17.10 b)":0.75,"17.11 a)":0.5,"17.11 b)":1.25,"17.12 a)":0.5,"17.12 b)":1.25,"17.13 a)":1.5,"17.13 b)":1.5,"17.13 c)":2,"17.13 d)":2},"bonus":["17.13 a)","17.13 b)","17.13 c)","17.13 d)"]});
@@ -1148,6 +1150,251 @@ function surdTerm(coefF, radicand) {
   return (neg ? '-' : '') + absStr + `sqrt(${radicand})`;
 }
 
+// ---------- details de correction (24/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, lignesDelta2, phraseDelta2, lignesRacines2 } = DetailQ;
+const lg17 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const cp17 = (v) => (v === 1 ? '' : v === -1 ? '-' : String(v));                          // coefficient devant une parenthese ou une lettre
+const ft17 = (f) => fracD(math.fraction(f));                                                // fraction irreductible, signe devant
+const fp17 = (f) => fracDP(math.fraction(f));                                               // idem, entre parentheses si negative
+const INV17 = { '\\lt ': '>', '>': '\\lt ', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const pm17 = (a, b) => `\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}`;
+const ajout17 = (t) => (t === '0' ? '' : t.startsWith('-') ? t : `+${t}`);                  // « + t » sans signe double
+const couple17 = (a, b) => `\\left(${a}\\,;\\,${b}\\right)`;
+const shift17 = (v, c) => (c === 0 ? v : `${v}${c > 0 ? '+' : '-'}${Math.abs(c)}`);        // x + c
+// somme de fractions math.js dont la premiere peut etre negative : { lignes, final }
+function sommeSignee17(...fs) {
+  const termes = fs.map((f) => { f = math.fraction(f); return { s: f.s, n: f.n, d: f.d }; });
+  const den = termes.reduce((t, x) => Detail.ppcm(t, x.d), 1), num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+  const sg = (x, i) => (i === 0 ? (x.s < 0 ? '-' : '') : (x.s < 0 ? ' - ' : ' + ')), brute = fracBrute(num, den), simple = fracTexte(num, den);
+  const origine = termes.map((x, i) => sg(x, i) + fracBrute(x.n, x.d)).join('');
+  const converti = termes.map((x, i) => { const m = den / x.d; return sg(x, i) + (m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+  const meme = termes.map((x, i) => sg(x, i) + fracBrute(x.n * (den / x.d), den)).join('');
+  const conversion = termes.some((x) => x.d !== den);
+  const fin = den === 1 ? `${num}` : `${brute}${brute === simple ? '' : ` = ${simple}`}`;
+  if (!conversion) return { lignes: [`${origine} = ${fin}`], final: simple };
+  return { lignes: termes.length <= 2 ? [`${origine} = ${converti} = ${meme} = ${fin}`] : [`${origine} = ${converti}`, `${meme} = ${fin}`], final: simple };
+}
+function finIneq17(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV17[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// systeme a1 u + b1 w = c1, a2 u + b2 w = c2 (entiers) resolu par combinaison : { lignes, x, y } (fractions)
+function lignesSysteme17(a1, b1, c1, a2, b2, c2, u, w) {
+  const eq = (a, b, c) => `${polyF2([{ c: a, v: u }, { c: b, v: w }])} = ${c}`, det = a1 * b2 - a2 * b1, xn = c1 * b2 - c2 * b1, x = math.fraction(xn, det);
+  const y = math.divide(math.subtract(math.fraction(c1), math.multiply(a1, x)), math.fraction(b1)), l = [eq(a1, b1, c1), eq(a2, b2, c2), `\\text{On élimine } ${w} \\text{ en multipliant}`, `\\text{la 1re équation par } ${b2} \\text{ et la 2e par } ${b1}`,
+    eq(a1 * b2, b1 * b2, c1 * b2), eq(a2 * b1, b2 * b1, c2 * b1), '\\text{On soustrait membre à membre :}', `${polyF2([{ c: det, v: u }])} = ${xn}`];
+  if (det !== 1) l.push(`\\iff ${u} = ${dedup2(det < 0 ? fracBrute(-xn, -det) : fracBrute(xn, det), fracD(x))}`);
+  l.push(`\\text{On remplace } ${u} \\text{ dans la 1re équation :}`);
+  const reste = math.subtract(math.fraction(c1), math.multiply(a1, x)), t1 = `${a1 === 1 ? '' : a1 === -1 ? '-' : `${a1}\\times `}${fracDP(x)} ${b1 < 0 ? '-' : '+'} ${Math.abs(b1) === 1 ? '' : Math.abs(b1)}${w} = ${c1}`;
+  l.push(t1, `\\iff ${polyF2([{ c: b1, v: w }])} = ${fracD(reste)}`);
+  if (b1 !== 1) l.push(`\\iff ${w} = ${dedup2(`${fracD(reste)} \\div ${dP(b1)}`, fracD(y))}`);
+  return { lignes: l, x, y };
+}
+// 17.1 a) S(Tx-1) op -Ux-V
+function detail171a(S, T, U, V, op, spec) {
+  const pente = math.add(math.multiply(S, T), U), cst = math.subtract(V, S), ST = math.multiply(S, T), seuil = ft17(math.divide(math.multiply(-1, cst), pente));
+  const l = [`${coefPrefixeL(S)}\\left(${T}x-1\\right) ${op} -${U}x-${ft17(V)}`, `\\iff ${coefPrefixeL(S)}\\left(${T}x-1\\right)+${U}x+${ft17(V)} ${op} 0`,
+    `\\iff ${polyF2([{ c: ST, v: 'x' }, { c: math.multiply(-1, S), v: '' }, { c: U, v: 'x' }, { c: V, v: '' }])} ${op} 0`, `\\iff ${polyF2([{ c: pente, v: 'x' }, { c: cst, v: '' }])} ${op} 0`,
+    `\\iff ${polyF2([{ c: pente, v: 'x' }])} ${op} ${ft17(math.multiply(-1, cst))}`];
+  if (!pente.equals(1)) l.push(`\\iff x ${op} ${seuil}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes: l, final: formaterIntervalleSpec(spec) };
+}
+// 17.1 b) (ax+b)/(x^2+k) op 0
+function detail171b(a, b, k, op, spec) {
+  const N = lg17(a, b);
+  return { lignes: [`\\dfrac{${N}}{x^{2}+${k}} ${op} 0`, '\\text{Un carré est positif ou nul : } x^{2} \\geqslant 0', `\\text{donc } x^{2}+${k} \\gt 0`, `\\text{donc le quotient a le signe de } ${N}`, `\\iff ${N} ${op} 0`, `\\iff ${polyF2([{ c: a, v: 'x' }])} ${op} ${-b}`, ...finIneq17(a, op, -b, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 17.2 a) (px+q)^2 - (rx+s)^2 = 0
+function detail172a(p, q, r, s) {
+  const x1 = math.fraction(s - q, p - r), x2 = math.fraction(-(s + q), p + r), [lo, hi] = x1.valueOf() < x2.valueOf() ? [x1, x2] : [x2, x1];
+  const A = lg17(p, q), B = lg17(r, s), F1 = lg17(p - r, q - s), F2 = lg17(p + r, q + s), S = `\\{${ft17(lo)}\\,;\\,${ft17(hi)}\\}`;
+  return { lignes: [`\\left(${A}\\right)^{2}-\\left(${B}\\right)^{2} = \\left(\\left(${A}\\right)-\\left(${B}\\right)\\right)\\left(\\left(${A}\\right)+\\left(${B}\\right)\\right)`, `= \\left(${F1}\\right)\\left(${F2}\\right)`,
+    `\\iff \\left(${F1}\\right)\\left(${F2}\\right) = 0`, `\\iff ${F1} = 0 \\text{ ou } ${F2} = 0`, `\\iff x = ${ft17(x1)} \\text{ ou } x = ${ft17(x2)}`, `S = ${S}`], final: S };
+}
+// 17.2 b) (x+a)^2 + 2b(x+a) + b^2 = 0
+function detail172b(a, b) {
+  const xa = shift17('x', a), c = a + b, S = `\\{${-c}\\}`, carre = c === 0 ? 'x^{2}' : `\\left(${shift17('x', c)}\\right)^{2}`;
+  return { lignes: [`\\left(${xa}\\right)^{2}${b > 0 ? '+' : '-'}${Math.abs(2 * b)}\\left(${xa}\\right)+${b * b} = \\left(\\left(${xa}\\right)${b > 0 ? '+' : '-'}${Math.abs(b)}\\right)^{2}`, `= ${carre}`, `\\iff ${carre} = 0`, `\\iff ${shift17('x', c)} = 0`, `\\iff x = ${-c}`, `S = ${S}`], final: S };
+}
+// 17.3 a) F1^2 + F2^2
+function detail173a(F1, F2) {
+  const q1 = math.multiply(F1, F1), q2 = math.multiply(F2, F2), S = sommeSignee17(q1, q2), par = (f) => { f = math.fraction(f); return f.s < 0 || f.d !== 1 ? `\\left(${ft17(f)}\\right)` : ft17(f); };
+  return { lignes: [`${par(F1)}^{2}+${par(F2)}^{2} = ${S.lignes[0]}`], final: S.final };
+}
+// racine simplifiee c sqrt(r) ; un carre parfait (r = 1) s'ecrit sans radical
+const rt17 = (c, r) => (r === 1 ? String(c) : c === 1 ? `\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+const extrait17 = (N, s) => `\\sqrt{${N}} = \\sqrt{${s.coef}^{2}${s.radicand === 1 ? '' : `\\times ${s.radicand}`}} = ${rt17(s.coef, s.radicand)}`;
+// 17.3 b) sqrt(a^2 + b^2)
+function detail173b(a, b, n, s) {
+  const simple = rt17(s.coef, s.radicand), l = [dedup2(`\\sqrt{${a}^{2}+${b}^{2}}`, `\\sqrt{${a * a}+${b * b}}`, `\\sqrt{${n}}`)];
+  if (s.coef !== 1) l.push(extrait17(n, s));
+  return { lignes: l, final: simple };
+}
+// 17.4 a) coordonnees entieres
+function detail174a(A, B) {
+  const dx = B[0] - A[0], dy = B[1] - A[1];
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm17(dx, dy)}`, couple17(dx, dy)], final: couple17(dx, dy) };
+}
+// 17.4 b) abscisse de A = somme de deux fractions
+function detail174b(n1, d1, n2, d2, Ayn, Ayd, Bxn, Bxd, Byn, Byd) {
+  const Ax = math.add(math.fraction(n1, d1), math.fraction(n2, d2)), SA = sommeSignee17(math.fraction(n1, d1), math.fraction(n2, d2)), Bx = math.fraction(Bxn, Bxd), Ay = math.fraction(Ayn, Ayd), By = math.fraction(Byn, Byd);
+  const SX = sommeSignee17(Bx, math.multiply(-1, Ax)), SY = sommeSignee17(By, math.multiply(-1, Ay)), fin = couple17(ft17(math.subtract(Bx, Ax)), ft17(math.subtract(By, Ay)));
+  return { lignes: [`x_{A} = ${SA.lignes[0]}`, `x_{B}-x_{A} = ${SX.lignes[0]}`, ...(SX.lignes[1] ? [SX.lignes[1]] : []), `y_{B}-y_{A} = ${SY.lignes[0]}`, ...(SY.lignes[1] ? [SY.lignes[1]] : []), fin], final: fin };
+}
+// 17.4 c) radicaux : A(1 + sqrt(m) ; 1/sqrt(n)), B(sqrt(4m) ; sqrt(n))
+function detail174c(m, n) {
+  const cn = n - 1 === 1 ? '' : n - 1, fin = couple17(`\\sqrt{${m}}-1`, `\\dfrac{${cn}\\sqrt{${n}}}{${n}}`);
+  return { lignes: [`\\sqrt{${4 * m}} = 2\\sqrt{${m}}`, `\\dfrac{1}{\\sqrt{${n}}} = \\dfrac{\\sqrt{${n}}}{${n}}`, `x_{B}-x_{A} = 2\\sqrt{${m}}-\\left(1+\\sqrt{${m}}\\right) = \\sqrt{${m}}-1`,
+    `y_{B}-y_{A} = \\sqrt{${n}}-\\dfrac{\\sqrt{${n}}}{${n}} = \\dfrac{${n}\\sqrt{${n}}-\\sqrt{${n}}}{${n}} = \\dfrac{${cn}\\sqrt{${n}}}{${n}}`, fin], final: fin };
+}
+// 17.4 d) puissances : A(k 2^n ; 1 - 3^(2(n+1))), B(k 2^(n+1) ; (1 - 3^n)(1 + 3^n))
+function detail174d(k) {
+  const kk = k === 1 ? '' : `${k}\\times `, fin = couple17(`${kk}2^{n}`, '8\\times 9^{n}');
+  return { lignes: ['2^{n+1} = 2\\times 2^{n}', `x_{B}-x_{A} = ${kk}2^{n+1}-${kk}2^{n} = ${2 * k}\\times 2^{n}-${kk}2^{n} = ${kk}2^{n}`, '\\left(1-3^{n}\\right)\\left(1+3^{n}\\right) = 1-3^{2n} = 1-9^{n}', '3^{2(n+1)} = 9\\times 9^{n}',
+    'y_{B}-y_{A} = \\left(1-9^{n}\\right)-\\left(1-9\\times 9^{n}\\right) = 8\\times 9^{n}', fin], final: fin };
+}
+// 17.5 : point D defini par une relation vectorielle, A, B, C = points de l'enonce
+const coordV17 = (P, Q) => [Q[0] - P[0], Q[1] - P[1]];
+function detail175a(A, B, C) {
+  const AB = coordV17(A, B), D = [C[0] - AB[0], C[1] - AB[1]], fin = couple17(D[0], D[1]);
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm17(AB[0], AB[1])}`, `\\overrightarrow{DC}${pm17(`${C[0]}-x`, `${C[1]}-y`)}`, `${C[0]}-x = ${AB[0]} \\iff x = ${D[0]}`, `${C[1]}-y = ${AB[1]} \\iff y = ${D[1]}`, fin], final: fin };
+}
+function detail175b(A, B, C, k) {
+  const AB = coordV17(A, B), kAB = [k * AB[0], k * AB[1]], D = [C[0] + kAB[0], C[1] + kAB[1]], fin = couple17(D[0], D[1]);
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm17(AB[0], AB[1])}`, `${coefPrefixeL(k)}\\overrightarrow{AB} = ${pm17(kAB[0], kAB[1])}`, `\\overrightarrow{CD}${pm17(`x-${dP(C[0])}`, `y-${dP(C[1])}`)}`,
+    `x-${dP(C[0])} = ${kAB[0]} \\iff x = ${D[0]}`, `y-${dP(C[1])} = ${kAB[1]} \\iff y = ${D[1]}`, fin], final: fin };
+}
+function detail175c(A, B, C, s, t) {
+  const AC = coordV17(A, C), AB = coordV17(A, B), x = math.add(B[0], math.add(math.multiply(s, AC[0]), math.multiply(t, AB[0]))), y = math.add(B[1], math.add(math.multiply(s, AC[1]), math.multiply(t, AB[1]))), fin = couple17(ft17(x), ft17(y));
+  const comb = (cx, ax) => `${cx17(s)}${dP(cx)}${t < 0 ? '-' : '+'}${Math.abs(t) === 1 ? '' : `${Math.abs(t)}\\times `}${dP(ax)}`;
+  return { lignes: [`\\overrightarrow{AC}${pm17(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm17(AC[0], AC[1])}`, `\\overrightarrow{AB}${pm17(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm17(AB[0], AB[1])}`, `\\overrightarrow{BD}${pm17(`x-${dP(B[0])}`, `y-${dP(B[1])}`)}`,
+    `x-${dP(B[0])} = ${comb(AC[0], AB[0])}`, `\\iff x = ${ft17(x)}`, `y-${dP(B[1])} = ${comb(AC[1], AB[1])}`, `\\iff y = ${ft17(y)}`, fin], final: fin };
+}
+const cx17 = (f) => { f = math.fraction(f); if (f.d === 1 && f.n === 1) return f.s < 0 ? '-' : ''; return `${f.s < 0 ? '-' : ''}${f.d === 1 ? String(f.n) : `\\dfrac{${f.n}}{${f.d}}`}\\times `; };   // coefficient devant un nombre : « 2\times », « - », jamais « 1\times »
+function detail175d(A, B, C, p, q, r) {
+  const AC = coordV17(A, C), den = math.subtract(p, q), xv = (a, b, c) => math.divide(math.add(math.subtract(math.multiply(p, a), math.multiply(q, b)), c), den);
+  const x = xv(A[0], B[0], r * AC[0]), y = xv(A[1], B[1], r * AC[1]), fin = couple17(ft17(x), ft17(y));
+  const eq = (a, b, k, v) => `${coefPrefixeL(p)}\\left(${v}-${dP(a)}\\right) = ${coefPrefixeL(q)}\\left(${v}-${dP(b)}\\right)${r < 0 ? '-' : '+'}${Math.abs(r) === 1 ? '' : `${Math.abs(r)}\\times `}${dP(k)}`;
+  return { lignes: [`\\overrightarrow{AC}${pm17(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm17(AC[0], AC[1])}`, `\\overrightarrow{AD}${pm17(`x-${dP(A[0])}`, `y-${dP(A[1])}`)} \\text{ et } \\overrightarrow{BD}${pm17(`x-${dP(B[0])}`, `y-${dP(B[1])}`)}`,
+    eq(A[0], B[0], AC[0], 'x'), `\\iff ${polyF2([{ c: den, v: 'x' }])} = ${ft17(math.multiply(den, x))}`, `\\iff x = ${ft17(x)}`, eq(A[1], B[1], AC[1], 'y'), `\\iff ${polyF2([{ c: den, v: 'y' }])} = ${ft17(math.multiply(den, y))}`, `\\iff y = ${ft17(y)}`, fin], final: fin };
+}
+// 17.6 a) A(2(kα+1) ; kα+2), B(-kα+11 ; 2kα-2), AB = u(0 ; -1)
+function detail176a(k) {
+  const al = (c, c0) => polyF2([{ c, v: '\\alpha' }, { c: c0, v: '' }]), sol = ft17(math.fraction(3, k)), bx = al(2 * k, 2), by = al(k, 2), cx = al(-k, 11), cy = al(2 * k, -2);
+  return { lignes: [`x_{B}-x_{A} = \\left(${cx}\\right)-\\left(${bx}\\right) = ${al(-3 * k, 9)}`, `y_{B}-y_{A} = \\left(${cy}\\right)-\\left(${by}\\right) = ${al(k, -4)}`, `${al(-3 * k, 9)} = 0 \\iff ${polyF2([{ c: -3 * k, v: '\\alpha' }])} = -9 \\iff \\alpha = ${sol}`,
+    `${al(k, -4)} = -1 \\iff ${polyF2([{ c: k, v: '\\alpha' }])} = 3 \\iff \\alpha = ${sol}`], final: sol };
+}
+// 17.6 b) A(-1/2 ; 15/16), B(2k alpha ; k alpha (k alpha + 1/2)), AB = u(0 ; -1)
+function detail176b(k) {
+  const ka = polyF2([{ c: k, v: '\\alpha' }]), sol = ft17(math.fraction(-1, 4 * k)), S = sommeSignee17(math.fraction(-1, 16), math.fraction(-15, 16));
+  return { lignes: [`x_{B}-x_{A} = ${polyF2([{ c: 2 * k, v: '\\alpha' }])}+\\dfrac{1}{2}`, `${polyF2([{ c: 2 * k, v: '\\alpha' }])}+\\dfrac{1}{2} = 0 \\iff ${polyF2([{ c: 4 * k, v: '\\alpha' }])} = -1 \\iff \\alpha = ${sol}`, `${ka} = -\\dfrac{1}{4}`,
+    `y_{B}-y_{A} = ${ka}\\left(${ka}+\\dfrac{1}{2}\\right)-\\dfrac{15}{16}`, `= -\\dfrac{1}{4}\\times\\left(-\\dfrac{1}{4}+\\dfrac{1}{2}\\right)-\\dfrac{15}{16} = -\\dfrac{1}{4}\\times\\dfrac{1}{4}-\\dfrac{15}{16}`, `= ${S.lignes[0]}`, '\\text{On retrouve l\'ordonnée } -1 \\text{ de } \\vec{u} \\text{ :}', '\\text{cette valeur de } \\alpha \\text{ convient}', `\\alpha = ${sol}`], final: sol };
+}
+// 17.6 c) A(2a+b+r1 ; -a-2b+r2), B(3a-2b+r3 ; a+r4), AB = 0
+function detail176c(r1, r2, r3, r4) {
+  const al = '\\alpha', be = '\\beta', beta = math.fraction((r2 - r4) - 2 * (r1 - r3), 8), alphaV = math.add(math.multiply(3, beta), math.fraction(r1 - r3)), fin = couple17(ft17(alphaV), ft17(beta));
+  const e1 = polyF2([{ c: 1, v: al }, { c: -3, v: be }, { c: r3 - r1, v: '' }]), e2 = polyF2([{ c: 2, v: al }, { c: 2, v: be }, { c: r4 - r2, v: '' }]), S = lignesSysteme17(1, -3, r1 - r3, 2, 2, r2 - r4, al, be);
+  return { lignes: [`x_{B}-x_{A} = ${e1}`, `y_{B}-y_{A} = ${e2}`, `\\overrightarrow{AB} = \\vec{0} \\iff ${e1} = 0 \\text{ et } ${e2} = 0`, ...S.lignes, fin], final: fin };
+}
+// 17.7 a) coordonnees de AB (A, B de l'enonce)
+function detail177a(A, B) { return detail174a(A, B); }
+// 17.7 b) AB = alpha u + beta v
+function detail177b(A, B, u, v) {
+  const AB = coordV17(A, B), S = lignesSysteme17(u[0], v[0], AB[0], u[1], v[1], AB[1], '\\alpha', '\\beta'), fin = couple17(ft17(S.x), ft17(S.y));
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm17(AB[0], AB[1])}`, `\\alpha\\vec{u}+\\beta\\vec{v} = ${pm17(polyF2([{ c: u[0], v: '\\alpha' }, { c: v[0], v: '\\beta' }]), polyF2([{ c: u[1], v: '\\alpha' }, { c: v[1], v: '\\beta' }]))}`, ...S.lignes, fin], final: fin };
+}
+// 17.8 a) M tel que MA + MB + MC = 0
+function detail178a(A, B, C) {
+  const sx = A[0] + B[0] + C[0], sy = A[1] + B[1] + C[1], fin = couple17(fr17x(sx), fr17x(sy)), l = ['\\overrightarrow{MA}+\\overrightarrow{MB}+\\overrightarrow{MC} = \\vec{0}'];
+  [[sx, A[0], B[0], C[0], 'x'], [sy, A[1], B[1], C[1], 'y']].forEach(([s, a, b, c, v]) => l.push(`\\left(${a}-${v}\\right)+\\left(${b}-${v}\\right)+\\left(${c}-${v}\\right) = 0`, `\\iff ${polyF2([{ c: s, v: '' }, { c: -3, v }])} = 0`, `\\iff ${polyF2([{ c: 3, v }])} = ${s}`, `\\iff ${v} = ${fr17x(s)}`));
+  l.push(fin);
+  return { lignes: l, final: fin };
+}
+const fr17x = (s) => ft17(math.fraction(s, 3));
+// 17.8 b) A(k a ; k(a+2)), B(k(a^2+1) ; 2k a), C(-3k a ; 0)
+function detail178b(k) {
+  const al = '\\alpha', ck = (f) => { f = math.fraction(f); return f.n === 1 && f.d === 1 ? '' : f.d === 1 ? String(f.n) : `\\dfrac{${f.n}}{${f.d}}`; }, kk = cp17(k), fin = couple17(`${k < 0 ? '-' : ''}${ck(math.fraction(Math.abs(k), 3))}\\left(\\alpha-1\\right)^{2}`, polyF2([{ c: k, v: al }, { c: math.fraction(2 * k, 3), v: '' }]));
+  return { lignes: ['\\overrightarrow{MA}+\\overrightarrow{MB}+\\overrightarrow{MC} = \\vec{0} \\iff x = \\dfrac{x_{A}+x_{B}+x_{C}}{3}', `x_{A}+x_{B}+x_{C} = ${kk}\\alpha+${kk}\\left(\\alpha^{2}+1\\right)${k < 0 ? '+' : '-'}${Math.abs(3 * k)}\\alpha`.replace(/\+-/, '-'),
+    `= ${polyF2([{ c: k, v: `${al}^{2}` }, { c: -2 * k, v: al }, { c: k, v: '' }])} = ${kk}\\left(\\alpha-1\\right)^{2}`, `x = \\dfrac{${kk}\\left(\\alpha-1\\right)^{2}}{3}`,
+    `y_{A}+y_{B}+y_{C} = ${kk}\\left(\\alpha+2\\right)${ajout17(polyF2([{ c: 2 * k, v: al }]))} =${polyF2([{ c: 3 * k, v: al }, { c: 2 * k, v: '' }])}`, `y = \\dfrac{${polyF2([{ c: 3 * k, v: al }, { c: 2 * k, v: '' }])}}{3} = ${polyF2([{ c: k, v: al }, { c: math.fraction(2 * k, 3), v: '' }])}`, fin], final: fin };
+}
+// 17.9 a) A(Ax ; Ay), B(Bx ; By) fractions
+function detail179a(A, B, p, q, d, s) {
+  const dx = math.fraction(p, d), dy = math.fraction(q, d), sc = rt17(s.coef, s.radicand), g = pgcd(s.coef, d), cr = s.coef / g, dr = d / g;
+  const scr = rt17(cr, s.radicand), fin = dr === 1 ? scr : `\\dfrac{${scr}}{${dr}}`;
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${ft17(B[0])}-${fp17(A[0])}`, `${ft17(B[1])}-${fp17(A[1])}`)} = ${pm17(ft17(dx), ft17(dy))}`,
+    `AB =${dedup2(`\\sqrt{\\left(${ft17(dx)}\\right)^{2}+\\left(${ft17(dy)}\\right)^{2}}`, `\\sqrt{\\dfrac{${p * p}}{${d * d}}+\\dfrac{${q * q}}{${d * d}}}`, `\\sqrt{\\dfrac{${p * p + q * q}}{${d * d}}}`, `\\dfrac{\\sqrt{${p * p + q * q}}}{${d}}`)}`,
+    ...(s.coef === 1 ? [] : [extrait17(p * p + q * q, s), `AB =\\dfrac{${sc}}{${d}}`]), ...(fin === `\\dfrac{${sc}}{${d}}` ? [] : [`AB = ${fin}`])], final: fin };
+}
+function detail179b(D1, D2, s) {
+  const sc = rt17(s.coef, s.radicand), P = D1 * D2;
+  return { lignes: [`\\overrightarrow{AB}${pm17(`\\sqrt{${D2}}-\\sqrt{${D1}}`, `-\\sqrt{${D2}}-\\sqrt{${D1}}`)}`, `AB = \\sqrt{\\left(\\sqrt{${D2}}-\\sqrt{${D1}}\\right)^{2}+\\left(-\\sqrt{${D2}}-\\sqrt{${D1}}\\right)^{2}}`,
+    `= \\sqrt{\\left(${D2}+${D1}-2\\sqrt{${P}}\\right)+\\left(${D2}+${D1}+2\\sqrt{${P}}\\right)}`, `= \\sqrt{${2 * (D1 + D2)}}`, ...(s.coef === 1 ? [] : [extrait17(2 * (D1 + D2), s)]), `AB = ${sc}`], final: sc };
+}
+function detail179c(k) {
+  const kk = cp17(k), fin = `${kk}\\sqrt{2}\\sqrt{\\alpha^{4}+1}`;
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${kk}\\alpha^{2}-${k}`, `${k}+${kk}\\alpha^{2}`)} = ${pm17(`${kk}\\left(\\alpha^{2}-1\\right)`, `${kk}\\left(\\alpha^{2}+1\\right)`)}`, `AB = \\sqrt{${k === 1 ? '' : `${k * k}`}\\left(\\alpha^{2}-1\\right)^{2}+${k === 1 ? '' : `${k * k}`}\\left(\\alpha^{2}+1\\right)^{2}}`,
+    `= \\sqrt{${k === 1 ? '' : `${k * k}`}\\left(\\left(\\alpha^{2}-1\\right)^{2}+\\left(\\alpha^{2}+1\\right)^{2}\\right)}`, `= \\sqrt{${k === 1 ? '' : `${k * k}`}\\left(2\\alpha^{4}+2\\right)}`, `= \\sqrt{${k === 1 ? '2' : `${2 * k * k}`}\\left(\\alpha^{4}+1\\right)}`, `= ${fin}`], final: fin };
+}
+// 17.10 : droites (AB) et (CD) parallèles ou sécantes
+function detail1710(A, B, C, D, parallele) {
+  const AB = coordV17(A, B), CD = coordV17(C, D), det = AB[0] * CD[1] - AB[1] * CD[0], let17 = parallele ? 'a' : 'b';
+  return { lignes: [`\\overrightarrow{AB}${pm17(AB[0], AB[1])} \\text{ et } \\overrightarrow{CD}${pm17(CD[0], CD[1])}`, `${dP(AB[0])}\\times ${dP(CD[1])}-${dP(AB[1])}\\times ${dP(CD[0])} = ${det}`,
+    ...(parallele ? ['\\text{Le déterminant est nul}', '\\text{donc les vecteurs sont colinéaires}'] : ['\\text{Le déterminant n\'est pas nul}', '\\text{donc les vecteurs ne sont pas colinéaires}']), parallele ? '\\text{Les droites sont parallèles}' : '\\text{Les droites sont sécantes}', `\\text{Réponse : } ${let17}`], final: let17 };
+}
+// 17.11 a) u(p w1 ; p w2), v(q w1 ; q w2)
+function detail1711a(p, q, w1, w2) {
+  const lam = ft17(math.fraction(p, q)), qb = (n, d) => Detail.quotientBrut(n, d);
+  return { lignes: [`${p * w1} = \\lambda\\times ${dP(q * w1)} \\iff \\lambda = ${dedup2(qb(p * w1, q * w1), lam)}`, `${p * w2} = \\lambda\\times ${dP(q * w2)} \\iff \\lambda = ${dedup2(qb(p * w2, q * w2), lam)}`, `\\lambda = ${lam}`], final: lam };
+}
+function detail1711b() {
+  return { lignes: ['\\dfrac{\\alpha^{n}-\\alpha^{n+1}}{\\alpha-1} = \\dfrac{\\alpha^{n}\\left(1-\\alpha\\right)}{\\alpha-1} = -\\alpha^{n}', '\\dfrac{\\alpha^{n}+\\alpha^{n+1}}{\\alpha+1} = \\dfrac{\\alpha^{n}\\left(1+\\alpha\\right)}{\\alpha+1} = \\alpha^{n}',
+    `\\vec{u}${pm17('-\\alpha^{n}', '\\alpha^{n}')}`, `\\vec{v}${pm17('-\\alpha^{n+1}', '\\alpha^{n+1}')} = \\alpha${pm17('-\\alpha^{n}', '\\alpha^{n}')}`, '\\vec{v} = \\alpha\\vec{u}', '\\vec{u} = \\dfrac{1}{\\alpha}\\vec{v}', '\\lambda = \\dfrac{1}{\\alpha}'], final: '\\dfrac{1}{\\alpha}' };
+}
+// 17.12 a) milieu I de [AB], A(fraction ; entier), B(fraction ; entier)
+function detail1712a(A, B) {
+  const dx = math.subtract(B[0], A[0]), dy = math.subtract(B[1], A[1]), ix = math.divide(dx, 2), iy = math.divide(dy, 2), fin = couple17(ft17(ix), ft17(iy));
+  return { lignes: [`\\overrightarrow{AB}${pm17(`${ft17(B[0])}-${fp17(A[0])}`, `${ft17(B[1])}-${fp17(A[1])}`)} = ${pm17(ft17(dx), ft17(dy))}`, '\\overrightarrow{AI} = \\dfrac{1}{2}\\overrightarrow{AB}', `= \\dfrac{1}{2}${pm17(ft17(dx), ft17(dy))} = ${pm17(ft17(ix), ft17(iy))}`, fin], final: fin };
+}
+// 17.12 b) A(2k a - 2k ; (k/4) a + 2k), B(4k a ; (3k/4) a - 6k)
+function detail1712b(k) {
+  const al = '\\alpha', kk = cp17(k), bx = polyF2([{ c: 2 * k, v: al }, { c: 2 * k, v: '' }]), by = polyF2([{ c: math.fraction(k, 2), v: al }, { c: -8 * k, v: '' }]), ix = polyF2([{ c: k, v: al }, { c: k, v: '' }]), iy = polyF2([{ c: math.fraction(k, 4), v: al }, { c: -4 * k, v: '' }]), fin = couple17(ix, iy);
+  return { lignes: [`x_{B}-x_{A} = ${polyF2([{ c: 4 * k, v: al }])}-\\left(${polyF2([{ c: 2 * k, v: al }, { c: -2 * k, v: '' }])}\\right) = ${bx}`, `y_{B}-y_{A} = \\left(${polyF2([{ c: math.fraction(3 * k, 4), v: al }, { c: -6 * k, v: '' }])}\\right)-\\left(${polyF2([{ c: math.fraction(k, 4), v: al }, { c: 2 * k, v: '' }])}\\right) = ${by}`,
+    '\\overrightarrow{AI} = \\dfrac{1}{2}\\overrightarrow{AB}', `= \\dfrac{1}{2}${pm17(bx, by)}`, `= ${pm17(ix, iy)}`, fin], final: fin };
+}
+// 17.13 : determinants
+const lin17a = (P, Q) => polyF2([{ c: P, v: '\\alpha' }, { c: Q, v: '' }]);
+function detail1713a(P1, Q1, P2, Q2, P3, Q3, P4, Q4) {
+  const c2 = P1 * P4 - P2 * P3, c1 = P1 * Q4 + Q1 * P4 - P2 * Q3 - Q2 * P3, c0 = Q1 * Q4 - Q2 * Q3, al = '\\alpha';
+  const e1 = polyF2([{ c: P1 * P4, v: `${al}^{2}` }, { c: P1 * Q4 + Q1 * P4, v: al }, { c: Q1 * Q4, v: '' }]), e2 = polyF2([{ c: P2 * P3, v: `${al}^{2}` }, { c: P2 * Q3 + Q2 * P3, v: al }, { c: Q2 * Q3, v: '' }]), fin = polyF2([{ c: c2, v: `${al}^{2}` }, { c: c1, v: al }, { c: c0, v: '' }]);
+  return { lignes: ['\\text{Le déterminant de } \\vec{u} \\text{ et } \\vec{v} \\text{ est } ad-bc', `= \\left(${lin17a(P1, Q1)}\\right)\\left(${lin17a(P4, Q4)}\\right)-\\left(${lin17a(P2, Q2)}\\right)\\left(${lin17a(P3, Q3)}\\right)`, `= \\left(${e1}\\right)-\\left(${e2}\\right)`, `= ${fin}`], final: fin };
+}
+function detail1713b(p, q) {
+  const fin = `\\dfrac{${q - p}}{\\left(${shift17('\\alpha', p)}\\right)\\left(${shift17('\\alpha', q)}\\right)}`;
+  return { lignes: ['\\text{Le déterminant de } \\vec{u} \\text{ et } \\vec{v} \\text{ est } ad-bc', `= \\left(-\\dfrac{1}{${shift17('\\alpha', q)}}\\right)-\\left(-\\dfrac{1}{${shift17('\\alpha', p)}}\\right)`, `= -\\dfrac{1}{${shift17('\\alpha', q)}}+\\dfrac{1}{${shift17('\\alpha', p)}}`,
+    `= \\dfrac{-\\left(${shift17('\\alpha', p)}\\right)+\\left(${shift17('\\alpha', q)}\\right)}{\\left(${shift17('\\alpha', p)}\\right)\\left(${shift17('\\alpha', q)}\\right)}`, `= ${fin}`], final: fin };
+}
+const racineFacteur17 = (r) => { r = math.fraction(r); return r.n === 0 ? '\\alpha' : r.s < 0 ? `\\alpha+${ft17(math.abs(r))}` : `\\alpha-${ft17(r)}`; };
+const facteur17 = (r) => (math.fraction(r).n === 0 ? '\\alpha' : `\\left(${racineFacteur17(r)}\\right)`);   // facteur du produit : pas de parentheses autour de α seul
+const colin17 = '\\text{Deux vecteurs sont colinéaires}';
+const colin17b = ['\\text{si et seulement si}', '\\text{leur déterminant est nul}'];
+function detail1713c(p, q, S, k, r1, r2) {
+  const al = '\\alpha', c1 = math.add(math.add(-p, q), math.multiply(k, S)), c0 = math.multiply(-1, q), uy = polyF2([{ c: -1, v: al }, { c: S, v: '' }]), fin = `\\{${ft17(r1)}\\,;\\,${ft17(r2)}\\}`;
+  const poly = polyF2([{ c: 1, v: `${al}^{2}` }, { c: c1, v: al }, { c: c0, v: '' }]);
+  return { lignes: [colin17, ...colin17b, `\\det(\\vec{u},\\vec{v}) = \\left(${polyF2([{ c: p, v: al }, { c: q, v: '' }])}\\right)\\left(${al}-1\\right)-\\left(${uy}\\right)\\left(${polyF2([{ c: -k, v: al }])}\\right)`, `= ${poly}`, `= ${facteur17(r1)}${facteur17(r2)}`,
+    `\\det(\\vec{u},\\vec{v}) = 0 \\iff ${racineFacteur17(r1)} = 0 \\text{ ou } ${racineFacteur17(r2)} = 0`, `\\iff \\alpha = ${ft17(r1)} \\text{ ou } \\alpha = ${ft17(r2)}`, `S = ${fin}`], final: fin };
+}
+function detail1713d(P, Q, r1, r2) {
+  const al = '\\alpha', A = math.subtract(P, 1), B = math.multiply(-1, math.multiply(A, math.add(r1, r2))), C = math.multiply(A, math.multiply(r1, r2)), fin = `\\{${ft17(r1)}\\,;\\,${ft17(r2)}\\}`;
+  const num = polyF2([{ c: P, v: al }, { c: Q, v: '' }]), num2 = polyF2([{ c: A, v: `${al}^{2}` }, { c: B, v: al }, { c: C, v: '' }]), cA = coefPrefixeL(A);
+  return { lignes: [colin17, ...colin17b, `\\det(\\vec{u},\\vec{v}) = \\dfrac{${num}}{\\alpha-1}-\\dfrac{1}{\\alpha+1}\\left(\\alpha-1\\right)`, `= \\dfrac{\\left(${num}\\right)\\left(\\alpha+1\\right)-\\left(\\alpha-1\\right)^{2}}{\\left(\\alpha-1\\right)\\left(\\alpha+1\\right)}`, `= \\dfrac{${num2}}{\\left(\\alpha-1\\right)\\left(\\alpha+1\\right)}`,
+    `= \\dfrac{${cA}${facteur17(r1)}${facteur17(r2)}}{\\left(\\alpha-1\\right)\\left(\\alpha+1\\right)}`, `\\det(\\vec{u},\\vec{v}) = 0 \\iff ${racineFacteur17(r1)} = 0 \\text{ ou } ${racineFacteur17(r2)} = 0`, `\\iff \\alpha = ${ft17(r1)} \\text{ ou } \\alpha = ${ft17(r2)}`, `S = ${fin}`], final: fin };
+}
 let contexte22 = {};
 function genererExercices() {
   contexte22 = {};
@@ -1181,15 +1428,17 @@ function genererExercices() {
     const T6 = alea(3,8), U6 = alea(2,6), V6 = math.fraction(alea(1,6), alea(2,6)), op = OPS17[alea(0,3)];
     const pente = math.add(math.multiply(S6, T6), U6), cst = math.subtract(V6, S6);   // S6(T6 x - 1) + U6 x + V6 = pente x + cst
     const seuil = math.divide(math.multiply(-1, cst), pente).valueOf();
-    auto.push({id:"17.1 a)", type:"intervalle", texteLibre:true, enonce:`\\(${coefPrefixeL(S6)}(${T6}x-1)${op}-${U6}x-${fracL(V6)}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne17([seuil], x => pente.valueOf()*x + cst.valueOf(), op)}});
+    const spec17a = {type:'intervalles', liste: parSigne17([seuil], x => pente.valueOf()*x + cst.valueOf(), op)};
+    auto.push({id:"17.1 a)", detail: detail171a(S6, T6, U6, V6, op, spec17a), type:"intervalle", texteLibre:true, enonce:`\\(${coefPrefixeL(S6)}(${T6}x-1)${op}-${U6}x-${fracL(V6)}\\)`,
+      intervalleSpec: spec17a});
   }
   // b) quotient a denominateur toujours positif : (ax+b)/(x^2+k) op 0
   {
     let a, b; do { a = aleaNonNul(-5,5); b = alea(-9,9); } while (b === 0);
     const k = alea(1,9), op = OPS17[alea(0,3)];
-    auto.push({id:"17.1 b)", type:"intervalle", texteLibre:true, enonce:`\\(\\dfrac{${lin17(a, b)}}{x^2+${k}}${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne17([-b/a], x => (a*x + b)/(x*x + k), op)}});
+    const spec17b = {type:'intervalles', liste: parSigne17([-b/a], x => (a*x + b)/(x*x + k), op)};
+    auto.push({id:"17.1 b)", detail: detail171b(a, b, k, op, spec17b), type:"intervalle", texteLibre:true, enonce:`\\(\\dfrac{${lin17(a, b)}}{x^2+${k}}${op}0\\)`,
+      intervalleSpec: spec17b});
   }
   // 17.2 a) difference de deux carres nulle : (px+q)^2-(rx+s)^2 = 0, deux solutions
   {
@@ -1199,26 +1448,26 @@ function genererExercices() {
       x1 = math.fraction(s - q, pp - rr); x2 = math.fraction(-(s + q), pp + rr);
     } while (pp === rr || x1.equals(x2));
     const [lo, hi] = x1.valueOf() < x2.valueOf() ? [x1, x2] : [x2, x1];
-    auto.push({id:"17.2 a)", type:"num", texteLibre:true, enonce:`\\((${lin17(pp, q)})^2-(${lin17(rr, s)})^2=0\\)`, reponse:`{${fracToStr(lo)};${fracToStr(hi)}}`});
+    auto.push({id:"17.2 a)", detail: detail172a(pp, q, rr, s), type:"num", texteLibre:true, enonce:`\\((${lin17(pp, q)})^2-(${lin17(rr, s)})^2=0\\)`, reponse:`{${fracToStr(lo)};${fracToStr(hi)}}`});
   }
   // b) carre parfait a reconnaitre : (x+a)^2 + 2b(x+a) + b^2 = 0, solution double -a-b
   {
     const a = aleaNonNul(-6,6), b = aleaNonNul(-5,5);
     const xa = `(x${a > 0 ? '+' : '-'}${Math.abs(a)})`;
-    auto.push({id:"17.2 b)", type:"num", texteLibre:true, enonce:`\\(${xa}^2${b > 0 ? '+' : '-'}${Math.abs(2*b)}${xa}+${b*b}=0\\)`, reponse:`{${-a - b}}`});
+    auto.push({id:"17.2 b)", detail: detail172b(a, b), type:"num", texteLibre:true, enonce:`\\(${xa}^2${b > 0 ? '+' : '-'}${Math.abs(2*b)}${xa}+${b*b}=0\\)`, reponse:`{${-a - b}}`});
   }
   // 17.3 a) somme de deux carres de fractions, fraction irreductible
   {
     const fr = () => { let n, d; do { n = aleaNonNul(-6,6); d = alea(2,7); } while (pgcd(n, d) !== 1); return math.fraction(n, d); };
     let F1, F2, r; do { F1 = fr(); F2 = fr(); r = math.add(math.multiply(F1, F1), math.multiply(F2, F2)); } while (r.d === 1);
-    auto.push({id:"17.3 a)", type:"num", fractionIrreductible:true, avecEgal:true,
+    auto.push({id:"17.3 a)", detail: detail173a(F1, F2), type:"num", fractionIrreductible:true, avecEgal:true,
       enonce:`\\left(${fracL(F1)}\\right)^2+\\left(${fracL(F2)}\\right)^2`, reponse: fracToStr(r)});
   }
   // b) racine d'une somme de deux carres (une norme), forme simplifiee ; jamais un carre parfait
   {
     let a, b, n; do { a = alea(1,9); b = alea(1,9); n = a*a + b*b; } while (a >= b || Number.isInteger(Math.sqrt(n)));
     const s = simplifierRacine(n);
-    auto.push({id:"17.3 b)", type:"num", formeRacine:true, avecEgal:true, enonce:`\\sqrt{${a}^2+${b}^2}`, reponse: surdTerm(math.fraction(s.coef), s.radicand)});
+    auto.push({id:"17.3 b)", detail: detail173b(a, b, n, s), type:"num", formeRacine:true, avecEgal:true, enonce:`\\sqrt{${a}^2+${b}^2}`, reponse: surdTerm(math.fraction(s.coef), s.radicand)});
   }
   // Calcul 17.3 - coordonnees du vecteur AB (3 items)
   (function() {
@@ -1228,22 +1477,22 @@ function genererExercices() {
     const [n1,d1] = irr(), [n2,d2] = irr(), [Ay2n,Ay2d] = irr(), [Bx2n,Bx2d] = irr(), [By2n,By2d] = irr();
     const Ax2 = math.add(math.fraction(n1,d1), math.fraction(n2,d2));
     const Ay2 = math.fraction(Ay2n,Ay2d), Bx2 = math.fraction(Bx2n,Bx2d), By2 = math.fraction(By2n,By2d);
-    ex.push({id:"17.3 a)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${n1}}{${d1}}+\\dfrac{${n2}}{${d2}};\\dfrac{${Ay2n}}{${Ay2d}}\\right)\\) et \\(B\\left(\\dfrac{${Bx2n}}{${Bx2d}};\\dfrac{${By2n}}{${By2d}}\\right)\\)`, pa: fracToStr(math.subtract(Bx2,Ax2)), pb: fracToStr(math.subtract(By2,Ay2))});
+    ex.push({id:"17.3 a)", detail: detail174b(n1, d1, n2, d2, Ay2n, Ay2d, Bx2n, Bx2d, By2n, By2d), type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(\\dfrac{${n1}}{${d1}}+\\dfrac{${n2}}{${d2}};\\dfrac{${Ay2n}}{${Ay2d}}\\right)\\) et \\(B\\left(\\dfrac{${Bx2n}}{${Bx2d}};\\dfrac{${By2n}}{${By2d}}\\right)\\)`, pa: fracToStr(math.subtract(Bx2,Ax2)), pb: fracToStr(math.subtract(By2,Ay2))});
     // item statique (radicaux) : conserve la structure d'origine, trop fragile pour generaliser sans risque
     // A(1+sqrt(m) ; 1/sqrt(n)), B(sqrt(4m) ; sqrt(n)) : AB = (sqrt(m)-1 ; (n-1)sqrt(n)/n) (tire au hasard le 05/10/2026)
     const RAD17 = [2,3,5,6,7]; const mR = RAD17[alea(0,4)], nR = RAD17[alea(0,4)];
-    ex.push({id:"17.3 b)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(1+\\sqrt{${mR}};\\dfrac{1}{\\sqrt{${nR}}}\\right)\\) et \\(B\\left(\\sqrt{${4*mR}};\\sqrt{${nR}}\\right)\\)`, pa:`sqrt(${mR})-1`, pb: surdTerm(math.fraction(nR-1, nR), nR)});
+    ex.push({id:"17.3 b)", detail: detail174c(mR, nR), type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(1+\\sqrt{${mR}};\\dfrac{1}{\\sqrt{${nR}}}\\right)\\) et \\(B\\left(\\sqrt{${4*mR}};\\sqrt{${nR}}\\right)\\)`, pa:`sqrt(${mR})-1`, pb: surdTerm(math.fraction(nR-1, nR), nR)});
   })();
   // Calcul 17.4 a) - coordonnees entieres (06/10/2026, David : un cas sans fraction ni racine en premier)
   (function() {
     let A, B;
     do { A = [alea(-8,8), alea(-8,8)]; B = [alea(-8,8), alea(-8,8)]; } while (A[0] === B[0] && A[1] === B[1]);
-    ex.push({id:"17.3 e)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A(${A[0]};${A[1]})\\) et \\(B(${B[0]};${B[1]})\\)`, pa: String(B[0]-A[0]), pb: String(B[1]-A[1])});
+    ex.push({id:"17.3 e)", detail: detail174a(A, B), type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A(${A[0]};${A[1]})\\) et \\(B(${B[0]};${B[1]})\\)`, pa: String(B[0]-A[0]), pb: String(B[1]-A[1])});
   })();
   // Calcul 17.4 - avec parametre n (1 item)
   (function() {
     const k = alea(2,5);
-    ex.push({id:"17.3 c)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A(${k}\\times 2^n;1-3^{2(n+1)})\\) et \\(B(${k}\\times 2^{n+1};(1-3^n)(1+3^n))\\), où \\(n\\in\\mathbb{N}\\)`, pa:`${k}*2^n`, pb:"8*9^n", vars:["n"]});
+    ex.push({id:"17.3 c)", detail: detail174d(k), type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A(${k}\\times 2^n;1-3^{2(n+1)})\\) et \\(B(${k}\\times 2^{n+1};(1-3^n)(1+3^n))\\), où \\(n\\in\\mathbb{N}\\)`, pa:`${k}*2^n`, pb:"8*9^n", vars:["n"]});
   })();
   // Calcul 17.7 - points ABC, D defini par diverses relations vectorielles (4 items)
   (function() {
@@ -1254,59 +1503,59 @@ function genererExercices() {
     function scl(k,v){ return [math.multiply(k,v[0]), math.multiply(k,v[1])]; }
     // D tel que AB = DC (ancien 17.4, ramene aux memes points le 05/10/2026)
     const ABg = sub(A,B), Dz = [C[0]-ABg[0], C[1]-ABg[1]];
-    ex.push({id:"17.4N", type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:"\\(\\overrightarrow{AB}=\\overrightarrow{DC}\\)", pa: fracToStr(Dz[0]), pb: fracToStr(Dz[1])});
+    ex.push({id:"17.4N", detail: detail175a(A, B, C), type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:"\\(\\overrightarrow{AB}=\\overrightarrow{DC}\\)", pa: fracToStr(Dz[0]), pb: fracToStr(Dz[1])});
     const kA = aleaNonNul(-3,3);
     const Da = add(C, scl(kA, sub(A,B)));
-    ex.push({id:"17.5 a)", type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:`\\(${coefPrefixeL(kA)}\\overrightarrow{AB}=\\overrightarrow{CD}\\)`, pa: fracToStr(Da[0]), pb: fracToStr(Da[1])});
+    ex.push({id:"17.5 a)", detail: detail175b(A, B, C, kA), type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:`\\(${coefPrefixeL(kA)}\\overrightarrow{AB}=\\overrightarrow{CD}\\)`, pa: fracToStr(Da[0]), pb: fracToStr(Da[1])});
     const kB = aleaNonNul(-3,3);
     const Db = add(A, scl(kB, sub(B,C)));
     const sC = math.fraction(aleaNonNul(-3,3), alea(1,3)), tC = aleaNonNul(-3,3);
     const Dc = add(B, scl(sC, sub(A,C)), scl(tC, sub(A,B)));
-    ex.push({id:"17.5 b)", type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:`\\(\\overrightarrow{BD}=${coefPrefixeL(sC)}\\overrightarrow{AC}${tC>=0?'+':''}${coefPrefixeL(tC)}\\overrightarrow{AB}\\)`, pa: fracToStr(Dc[0]), pb: fracToStr(Dc[1])});
+    ex.push({id:"17.5 b)", detail: detail175c(A, B, C, sC, tC), type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:`\\(\\overrightarrow{BD}=${coefPrefixeL(sC)}\\overrightarrow{AC}${tC>=0?'+':''}${coefPrefixeL(tC)}\\overrightarrow{AB}\\)`, pa: fracToStr(Dc[0]), pb: fracToStr(Dc[1])});
     let pD, qD; do { pD = alea(1,4); qD = math.fraction(aleaNonNul(-3,3), alea(2,4)); } while (math.fraction(math.subtract(pD,qD)).n === 0);
     const rD = aleaNonNul(-4,4);
     // p*(D-A) = q*(D-B) + r*(C-A)  =>  D = (p*A - q*B + r*(C-A)) / (p-q)
     const rhsD = add(scl(pD,A), scl(math.multiply(-1,qD),B), scl(rD, sub(A,C)));
     const Dd = scl(math.divide(1, math.subtract(pD,qD)), rhsD);
-    ex.push({id:"17.5 c)", type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:`\\(${coefPrefixeL(pD)}\\overrightarrow{AD}=${coefPrefixeL(qD)}\\overrightarrow{BD}${rD>=0?'+':''}${coefPrefixeL(rD)}\\overrightarrow{AC}\\)`, pa: fracToStr(Dd[0]), pb: fracToStr(Dd[1])});
+    ex.push({id:"17.5 c)", detail: detail175d(A, B, C, pD, qD, rD), type:"paire", coordSimplifiees:true, formePoint:true, texteLibre:true, enonce:`\\(${coefPrefixeL(pD)}\\overrightarrow{AD}=${coefPrefixeL(qD)}\\overrightarrow{BD}${rD>=0?'+':''}${coefPrefixeL(rD)}\\overrightarrow{AC}\\)`, pa: fracToStr(Dd[0]), pb: fracToStr(Dd[1])});
   })();
   // Calcul 17.8 - valeur de alpha telle que AB=u=(0,-1) (substitution kα)
   (function() {
     const k1 = aleaNonNul(-3,3);
     const k2 = aleaNonNul(-3,3);
-    ex.push({id:"17.6 a)", type:"num", texteLibre:true, enonce:`On considère \\(A(2(${coefPrefixeL(k2)}\\alpha+1);${coefPrefixeL(k2)}\\alpha+2)\\) et \\(B(${coefPrefixeL(-k2)}\\alpha+11;${coefPrefixeL(2*k2)}\\alpha-2)\\), où \\(\\alpha\\in\\mathbb{R}\\). Déterminer \\(\\alpha\\) tel que \\(\\overrightarrow{AB}=\\vec{u}\\)`, reponse: fracToStr(math.fraction(3,k2))});
+    ex.push({id:"17.6 a)", detail: detail176a(k2), type:"num", texteLibre:true, enonce:`On considère \\(A(2(${coefPrefixeL(k2)}\\alpha+1);${coefPrefixeL(k2)}\\alpha+2)\\) et \\(B(${coefPrefixeL(-k2)}\\alpha+11;${coefPrefixeL(2*k2)}\\alpha-2)\\), où \\(\\alpha\\in\\mathbb{R}\\). Déterminer \\(\\alpha\\) tel que \\(\\overrightarrow{AB}=\\vec{u}\\)`, reponse: fracToStr(math.fraction(3,k2))});
     const k3 = aleaNonNul(-3,3);
-    ex.push({id:"17.6 b)", type:"num", texteLibre:true, enonce:`On considère \\(A\\left(-\\dfrac{1}{2};\\dfrac{15}{16}\\right)\\) et \\(B\\left(${coefPrefixeL(2*k3)}\\alpha;${coefPrefixeL(k3)}\\alpha\\left(${coefPrefixeL(k3)}\\alpha+\\dfrac{1}{2}\\right)\\right)\\), où \\(\\alpha\\in\\mathbb{R}\\). Déterminer \\(\\alpha\\) tel que \\(\\overrightarrow{AB}=\\vec{u}\\)`, reponse: fracToStr(math.fraction(-1,4*k3))});
+    ex.push({id:"17.6 b)", detail: detail176b(k3), type:"num", texteLibre:true, enonce:`On considère \\(A\\left(-\\dfrac{1}{2};\\dfrac{15}{16}\\right)\\) et \\(B\\left(${coefPrefixeL(2*k3)}\\alpha;${coefPrefixeL(k3)}\\alpha\\left(${coefPrefixeL(k3)}\\alpha+\\dfrac{1}{2}\\right)\\right)\\), où \\(\\alpha\\in\\mathbb{R}\\). Déterminer \\(\\alpha\\) tel que \\(\\overrightarrow{AB}=\\vec{u}\\)`, reponse: fracToStr(math.fraction(-1,4*k3))});
   })();
   // Calcul 17.9 - couple (alpha,beta) tel que AB=0 (1 item)
   (function() {
     const r1=alea(-4,4), r2=alea(-4,4), r3=alea(-4,4), r4=alea(-4,4);
     const beta = math.fraction((r2-r4)-2*(r1-r3), 8);
     const alphaV = math.add(math.multiply(3,beta), math.fraction(r1-r3));
-    ex.push({id:"17.7", type:"paire", couple:true, texteLibre:true, enonce:`On considère \\(A(2\\alpha+\\beta${r1===0?'':(r1>0?'+':'')+r1};-\\alpha-2\\beta${r2===0?'':(r2>0?'+':'')+r2})\\) et \\(B(3\\alpha-2\\beta${r3===0?'':(r3>0?'+':'')+r3};\\alpha${r4===0?'':(r4>0?'+':'')+r4})\\), où \\(\\alpha\\) et \\(\\beta\\) sont deux réels. Déterminer le couple \\((\\alpha;\\beta)\\) tel que \\(\\overrightarrow{AB}=\\vec{0}\\)`, pa: fracToStr(alphaV), pb: fracToStr(beta)});
+    ex.push({id:"17.7", detail: detail176c(r1, r2, r3, r4), type:"paire", couple:true, texteLibre:true, enonce:`On considère \\(A(2\\alpha+\\beta${r1===0?'':(r1>0?'+':'')+r1};-\\alpha-2\\beta${r2===0?'':(r2>0?'+':'')+r2})\\) et \\(B(3\\alpha-2\\beta${r3===0?'':(r3>0?'+':'')+r3};\\alpha${r4===0?'':(r4>0?'+':'')+r4})\\), où \\(\\alpha\\) et \\(\\beta\\) sont deux réels. Déterminer le couple \\((\\alpha;\\beta)\\) tel que \\(\\overrightarrow{AB}=\\vec{0}\\)`, pa: fracToStr(alphaV), pb: fracToStr(beta)});
   })();
   // Calcul 17.10 - somme de vecteurs (2 items)
   (function() {
     const A=[alea(-8,8),alea(-8,8)], B=[alea(-8,8),alea(-8,8)];
     const AB=[B[0]-A[0],B[1]-A[1]];
-    ex.push({id:"17.8 a)", type:"paire", texteLibre:true, enonce:"Calculer les coordonnées de \\(\\overrightarrow{AB}\\)", pa: fracToStr(AB[0]), pb: fracToStr(AB[1])});
+    ex.push({id:"17.8 a)", detail: detail177a(A, B), type:"paire", texteLibre:true, enonce:"Calculer les coordonnées de \\(\\overrightarrow{AB}\\)", pa: fracToStr(AB[0]), pb: fracToStr(AB[1])});
     let u,v,det;
     do { u=[alea(-6,6),alea(-6,6)]; v=[alea(-6,6),alea(-6,6)]; det=u[0]*v[1]-u[1]*v[0]; } while (det===0 || u[0]===0 || u[1]===0 || v[0]===0 || v[1]===0);
     contexte22.g10 = {A,B,u,v};
     const alphaV = math.fraction(AB[0]*v[1]-AB[1]*v[0], det);
     const betaV = math.fraction(u[0]*AB[1]-u[1]*AB[0], det);
-    ex.push({id:"17.8 b)", type:"paire", couple:true, texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{AB}\\) sous la forme \\(\\alpha\\vec{u}+\\beta\\vec{v}\\), où \\(\\alpha\\) et \\(\\beta\\) sont à déterminer", pa: fracToStr(alphaV), pb: fracToStr(betaV)});
+    ex.push({id:"17.8 b)", detail: detail177b(A, B, u, v), type:"paire", couple:true, texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{AB}\\) sous la forme \\(\\alpha\\vec{u}+\\beta\\vec{v}\\), où \\(\\alpha\\) et \\(\\beta\\) sont à déterminer", pa: fracToStr(alphaV), pb: fracToStr(betaV)});
   })();
   // Calcul 17.11 - point M tel que MA+MB+MC=0 (centroide, 1 item)
   (function() {
     const A=[alea(-8,8),alea(-8,8)], B=[alea(-8,8),alea(-8,8)], C=[alea(-8,8),alea(-8,8)];
     const Mx = math.fraction(A[0]+B[0]+C[0], 3), My = math.fraction(A[1]+B[1]+C[1], 3);
-    ex.push({id:"17.9 a)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(A(${A[0]};${A[1]})\\), \\(B(${B[0]};${B[1]})\\) et \\(C(${C[0]};${C[1]})\\)`, pa: fracToStr(Mx), pb: fracToStr(My)});
+    ex.push({id:"17.9 a)", detail: detail178a(A, B, C), type:"paire", formePoint:true, texteLibre:true, enonce:`\\(A(${A[0]};${A[1]})\\), \\(B(${B[0]};${B[1]})\\) et \\(C(${C[0]};${C[1]})\\)`, pa: fracToStr(Mx), pb: fracToStr(My)});
   })();
   // Calcul 17.12 - point M avec alpha (mise a l'echelle globale, 1 item)
   (function() {
     const k = aleaNonNul(-4,4);
-    ex.push({id:"17.9 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`\\(A(${coefPrefixeL(k)}\\alpha;${coefPrefixeL(k)}(\\alpha+2))\\), \\(B(${coefPrefixeL(k)}(\\alpha^2+1);${coefPrefixeL(2*k)}\\alpha)\\) et \\(C(${coefPrefixeL(-3*k)}\\alpha;0)\\), où \\(\\alpha\\in\\mathbb{R}\\)`, pa: `${coefPrefixe(math.fraction(k,3))}(lam-1)^2`, pb: joinSigned([signedFracTerm(k,'lam'), signedFracTerm(math.fraction(2*k,3),'')]), vars:["lam"]});
+    ex.push({id:"17.9 b)", detail: detail178b(k), type:"paire", formePoint:true, texteLibre:true, enonce:`\\(A(${coefPrefixeL(k)}\\alpha;${coefPrefixeL(k)}(\\alpha+2))\\), \\(B(${coefPrefixeL(k)}(\\alpha^2+1);${coefPrefixeL(2*k)}\\alpha)\\) et \\(C(${coefPrefixeL(-3*k)}\\alpha;0)\\), où \\(\\alpha\\in\\mathbb{R}\\)`, pa: `${coefPrefixe(math.fraction(k,3))}(lam-1)^2`, pb: joinSigned([signedFracTerm(k,'lam'), signedFracTerm(math.fraction(2*k,3),'')]), vars:["lam"]});
   })();
   // Calcul 17.13 - norme de vecteur (4 items)
   (function() {
@@ -1316,17 +1565,17 @@ function genererExercices() {
     const p2=aleaNonNul(-6,6), q2=aleaNonNul(-6,6), d2=alea(2,5);
     const A2=[alea(-4,4),alea(-4,4)]; const B2=[math.add(A2[0],math.fraction(p2,d2)), math.add(A2[1],math.fraction(q2,d2))];
     const s2 = simplifierRacine(p2*p2+q2*q2);
-    ex.push({id:"17.10 a)", type:"num", normeSimplifiee:true, texteLibre:true, enonce:`Avec \\(A\\left(${A2[0]};${A2[1]}\\right)\\) et \\(B\\left(${fracL(B2[0])};${fracL(B2[1])}\\right)\\)`, reponse: surdTerm(math.fraction(s2.coef,d2), s2.radicand)});
+    ex.push({id:"17.10 a)", detail: detail179a(A2, B2, p2, q2, d2, s2), type:"num", normeSimplifiee:true, texteLibre:true, enonce:`Avec \\(A\\left(${A2[0]};${A2[1]}\\right)\\) et \\(B\\left(${fracL(B2[0])};${fracL(B2[1])}\\right)\\)`, reponse: surdTerm(math.fraction(s2.coef,d2), s2.radicand)});
     const POOL_D = [2,3,5,6,7,10,11];
     let D1,D2; do { D1=POOL_D[alea(0,POOL_D.length-1)]; D2=POOL_D[alea(0,POOL_D.length-1)]; } while (D1===D2);
     const s3 = simplifierRacine(2*(D1+D2));
-    ex.push({id:"17.10 b)", type:"num", normeSimplifiee:true, texteLibre:true, enonce:`Avec \\(A(\\sqrt{${D1}};\\sqrt{${D1}})\\) et \\(B(\\sqrt{${D2}};-\\sqrt{${D2}})\\)`, reponse: surdTerm(s3.coef, s3.radicand)});
+    ex.push({id:"17.10 b)", detail: detail179b(D1, D2, s3), type:"num", normeSimplifiee:true, texteLibre:true, enonce:`Avec \\(A(\\sqrt{${D1}};\\sqrt{${D1}})\\) et \\(B(\\sqrt{${D2}};-\\sqrt{${D2}})\\)`, reponse: surdTerm(s3.coef, s3.radicand)});
     const k4 = alea(2,4);
   })();
   // Calcul 17.14 - norme avec alpha (mise a l'echelle globale, 4 items)
   (function() {
     const k1 = alea(1,4);
-    ex.push({id:"17.10 c)", type:"alg", normeSimplifiee:true, texteLibre:true, enonce:`Avec \\(A(${k1};${coefPrefixeL(-k1)}\\alpha^2)\\) et \\(B(${coefPrefixeL(k1)}\\alpha^2;${k1})\\), où \\(\\alpha\\geqslant 1\\)`, reponse: `${k1===1?'':k1+'*'}sqrt(2)*sqrt(lam^4+1)`});
+    ex.push({id:"17.10 c)", detail: detail179c(k1), type:"alg", normeSimplifiee:true, texteLibre:true, enonce:`Avec \\(A(${k1};${coefPrefixeL(-k1)}\\alpha^2)\\) et \\(B(${coefPrefixeL(k1)}\\alpha^2;${k1})\\), où \\(\\alpha\\geqslant 1\\)`, reponse: `${k1===1?'':k1+'*'}sqrt(2)*sqrt(lam^4+1)`});
     const k4 = alea(1,4);
   })();
   // Calcul 17.15 - colinearite (3 items, QCM parallele/secant)
@@ -1346,7 +1595,7 @@ function genererExercices() {
         do { CD = [alea(-6,6),alea(-6,6)]; } while (CD[0]*AB[1]-CD[1]*AB[0] === 0);
         D = [C[0]+CD[0], C[1]+CD[1]];
       }
-      ex.push({id:`17.11 ${l}`, type:"qcm", texteLibre:true, enonce:`Avec \\(A(${A[0]};${A[1]})\\), \\(B(${B[0]};${B[1]})\\), \\(C(${C[0]};${C[1]})\\) et \\(D(${D[0]};${D[1]})\\).`, bonneReponse: estParallele?'a':'b', options:[{lettre:"a",texte:"Les droites \\((AB)\\) et \\((CD)\\) sont parallèles",texteLibreOption:true},{lettre:"b",texte:"Les droites \\((AB)\\) et \\((CD)\\) sont sécantes",texteLibreOption:true}]});
+      ex.push({id:`17.11 ${l}`, detail: detail1710(A, B, C, D, estParallele), type:"qcm", texteLibre:true, enonce:`Avec \\(A(${A[0]};${A[1]})\\), \\(B(${B[0]};${B[1]})\\), \\(C(${C[0]};${C[1]})\\) et \\(D(${D[0]};${D[1]})\\).`, bonneReponse: estParallele?'a':'b', options:[{lettre:"a",texte:"Les droites \\((AB)\\) et \\((CD)\\) sont parallèles",texteLibreOption:true},{lettre:"b",texte:"Les droites \\((AB)\\) et \\((CD)\\) sont sécantes",texteLibreOption:true}]});
     });
   })();
   // Calcul 17.16 - lambda tel que u=lambda*v (identites figees, non randomisables sans perdre le deguisement algebrique)
@@ -1355,9 +1604,9 @@ function genererExercices() {
     let pL, qL, w1, w2;
     do { pL = aleaNonNul(-5,5); qL = alea(1,4); } while (pgcd(pL, qL) !== 1 || pL === qL);
     do { w1 = aleaNonNul(-3,3); w2 = aleaNonNul(-3,3); } while (pgcd(w1, w2) !== 1);
-    ex.push({id:"17.12 a)", type:"num", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${pL*w1}\\\\${pL*w2}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${qL*w1}\\\\${qL*w2}\\end{pmatrix}\\)`, reponse: fracToStr(math.fraction(pL, qL))});
+    ex.push({id:"17.12 a)", detail: detail1711a(pL, qL, w1, w2), type:"num", texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${pL*w1}\\\\${pL*w2}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${qL*w1}\\\\${qL*w2}\\end{pmatrix}\\)`, reponse: fracToStr(math.fraction(pL, qL))});
   })();
-  ex.push({id:"17.12 b)", type:"alg", texteLibre:true, enonce:"Avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{\\alpha^n-\\alpha^{n+1}}{\\alpha-1}\\\\\\dfrac{\\alpha^n+\\alpha^{n+1}}{\\alpha+1}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}-\\alpha^{n+1}\\\\\\alpha^{n+1}\\end{pmatrix}\\)", reponse:"1/lam"});
+  ex.push({id:"17.12 b)", detail: detail1711b(), type:"alg", texteLibre:true, enonce:"Avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{\\alpha^n-\\alpha^{n+1}}{\\alpha-1}\\\\\\dfrac{\\alpha^n+\\alpha^{n+1}}{\\alpha+1}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}-\\alpha^{n+1}\\\\\\alpha^{n+1}\\end{pmatrix}\\)", reponse:"1/lam"});
   // Calcul 17.17 - milieu I (4 items)
   (function() {
     const A1=[alea(-8,8),alea(-8,8)], B1=[alea(-8,8),alea(-8,8)];
@@ -1365,14 +1614,14 @@ function genererExercices() {
     const n2=alea(1,5), d2=alea(2,4), A2y=alea(-6,6);
     const A2=[math.fraction(n2,d2), A2y]; const B2=[math.add(A2[0],alea(1,4)), alea(-6,6)];
     const AI2=[math.divide(math.subtract(B2[0],A2[0]),2), math.fraction(B2[1]-A2[1],2)];
-    ex.push({id:"17.13 a)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(${fracL(A2[0])};${A2[1]}\\right)\\) et \\(B\\left(${fracL(B2[0])};${B2[1]}\\right)\\)`, pa: fracToStr(AI2[0]), pb: fracToStr(AI2[1])});
+    ex.push({id:"17.13 a)", detail: detail1712a(A2, B2), type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(${fracL(A2[0])};${A2[1]}\\right)\\) et \\(B\\left(${fracL(B2[0])};${B2[1]}\\right)\\)`, pa: fracToStr(AI2[0]), pb: fracToStr(AI2[1])});
     const k4b = alea(1,4);
     const k4bpref = k4b===1 ? '' : `${k4b}\\times `;
   })();
   // Calcul 17.18 - milieu I avec alpha (mise a l'echelle globale, 4 items)
   (function() {
     const k1 = [1,3][alea(0,1)];
-    ex.push({id:"17.13 c)", type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(${2*k1}\\alpha-${2*k1};\\dfrac{${k1}}{4}\\alpha+${2*k1}\\right)\\) et \\(B\\left(${4*k1}\\alpha;\\dfrac{${3*k1}}{4}\\alpha-${6*k1}\\right)\\)`, pa: `${coefPrefixe(k1)}lam+${k1}`, pb: joinSigned([signedFracTerm(math.fraction(k1,4),'lam'), signedFracTerm(-4*k1,'')]), vars:["lam"]});
+    ex.push({id:"17.13 c)", detail: detail1712b(k1), type:"paire", coordSimplifiees:true, texteLibre:true, enonce:`Avec \\(A\\left(${2*k1}\\alpha-${2*k1};\\dfrac{${k1}}{4}\\alpha+${2*k1}\\right)\\) et \\(B\\left(${4*k1}\\alpha;\\dfrac{${3*k1}}{4}\\alpha-${6*k1}\\right)\\)`, pa: `${coefPrefixe(k1)}lam+${k1}`, pb: joinSigned([signedFracTerm(math.fraction(k1,4),'lam'), signedFracTerm(-4*k1,'')]), vars:["lam"]});
     const k4 = alea(1,4);
     const k4pref = k4===1 ? '' : `${k4}\\times `;
   })();
@@ -1380,7 +1629,7 @@ function genererExercices() {
   (function() {
     const P1=alea(-3,3),Q1=alea(-4,4),P2=alea(-3,3),Q2=alea(-4,4),P3=alea(-3,3),Q3=alea(-4,4),P4=alea(-3,3),Q4=alea(-4,4);
     const c2 = P1*P4-P2*P3, c1 = P1*Q4+Q1*P4-P2*Q3-Q2*P3, c0 = Q1*Q4-Q2*Q3;
-    ex.push({id:"17.15 a)", type:"alg", texteLibre:true, enonce:`Si \\(\\vec{u}\\begin{pmatrix}${joinSigned([signedFracTermLatex(P1,'\\alpha'),signedFracTermLatex(Q1,'')])}\\\\${joinSigned([signedFracTermLatex(P2,'\\alpha'),signedFracTermLatex(Q2,'')])}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${joinSigned([signedFracTermLatex(P3,'\\alpha'),signedFracTermLatex(Q3,'')])}\\\\${joinSigned([signedFracTermLatex(P4,'\\alpha'),signedFracTermLatex(Q4,'')])}\\end{pmatrix}\\) alors \\(\\det(\\vec{u},\\vec{v})=\\)`, reponse: polyQuadStr(c2,c1,c0,'lam')});
+    ex.push({id:"17.15 a)", detail: detail1713a(P1, Q1, P2, Q2, P3, Q3, P4, Q4), type:"alg", texteLibre:true, enonce:`Si \\(\\vec{u}\\begin{pmatrix}${joinSigned([signedFracTermLatex(P1,'\\alpha'),signedFracTermLatex(Q1,'')])}\\\\${joinSigned([signedFracTermLatex(P2,'\\alpha'),signedFracTermLatex(Q2,'')])}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${joinSigned([signedFracTermLatex(P3,'\\alpha'),signedFracTermLatex(Q3,'')])}\\\\${joinSigned([signedFracTermLatex(P4,'\\alpha'),signedFracTermLatex(Q4,'')])}\\end{pmatrix}\\) alors \\(\\det(\\vec{u},\\vec{v})=\\)`, reponse: polyQuadStr(c2,c1,c0,'lam')});
 
     const p2b = alea(1,4);
     const R2=alea(-3,3),S2=alea(-3,3),T2=alea(-3,3),U2=alea(-3,3);
@@ -1389,7 +1638,7 @@ function genererExercices() {
     const nc2 = T2 - R2, nc1 = U2 - R2*p2b - S2, nc0 = -S2*p2b;
 
     let p3c, q3c; do { p3c = aleaNonNul(-3,3); q3c = aleaNonNul(-3,3); } while (p3c === q3c);
-    ex.push({id:"17.15 b)", type:"alg", texteLibre:true, enonce:`Si \\(\\vec{u}\\begin{pmatrix}1\\\\-\\dfrac{1}{\\alpha${p3c>=0?'+':''}${p3c}}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}1\\\\-\\dfrac{1}{\\alpha${q3c>=0?'+':''}${q3c}}\\end{pmatrix}\\) alors \\(\\det(\\vec{u},\\vec{v})=\\)`, reponse: `${q3c-p3c}/((lam${p3c>=0?'+':''}${p3c})*(lam${q3c>=0?'+':''}${q3c}))`});
+    ex.push({id:"17.15 b)", detail: detail1713b(p3c, q3c), type:"alg", texteLibre:true, enonce:`Si \\(\\vec{u}\\begin{pmatrix}1\\\\-\\dfrac{1}{\\alpha${p3c>=0?'+':''}${p3c}}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}1\\\\-\\dfrac{1}{\\alpha${q3c>=0?'+':''}${q3c}}\\end{pmatrix}\\) alors \\(\\det(\\vec{u},\\vec{v})=\\)`, reponse: `${q3c-p3c}/((lam${p3c>=0?'+':''}${p3c})*(lam${q3c>=0?'+':''}${q3c}))`});
 
     const POOL_R = [1,2,3,-1,-2,-3,1/2,-1/2,3/2,-3/2];
     function pickR() { return math.fraction(POOL_R[alea(0,POOL_R.length-1)]); }
@@ -1400,19 +1649,23 @@ function genererExercices() {
     const qD = math.multiply(-1, math.multiply(r1d, r2d));
     const Bcoef = math.multiply(-1, math.add(r1d, r2d));
     const Sd = math.divide(math.add(math.subtract(Bcoef, qD), pD), kD);
-    ex.push({id:"17.15 c)", type:"num", texteLibre:true, enonce:`Valeurs de \\(\\alpha\\) pour lesquelles \\(\\vec{u}\\) et \\(\\vec{v}\\) sont colinéaires, avec \\(\\vec{u}\\begin{pmatrix}${pD}\\alpha${signedFracTermLatex(qD,'')}\\\\-\\alpha${signedFracTermLatex(Sd,'')}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(-kD)}\\alpha\\\\\\alpha-1\\end{pmatrix}\\)`, reponse: `{${fracToStr(r1d)};${fracToStr(r2d)}}`});
+    ex.push({id:"17.15 c)", detail: detail1713c(pD, qD, Sd, kD, r1d, r2d), type:"num", texteLibre:true, enonce:`Valeurs de \\(\\alpha\\) pour lesquelles \\(\\vec{u}\\) et \\(\\vec{v}\\) sont colinéaires, avec \\(\\vec{u}\\begin{pmatrix}${pD}\\alpha${signedFracTermLatex(qD,'')}\\\\-\\alpha${signedFracTermLatex(Sd,'')}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(-kD)}\\alpha\\\\\\alpha-1\\end{pmatrix}\\)`, reponse: `{${fracToStr(r1d)};${fracToStr(r2d)}}`});
 
-    let r1e, r2e; do { r1e = math.fraction(alea(-3,3),alea(1,2)); r2e = math.fraction(alea(-3,3),alea(1,2)); } while (math.fraction(math.subtract(r1e,r2e)).n === 0 || math.fraction(math.multiply(math.add(1,r1e),math.add(1,r2e))).n === 0);
+    let r1e, r2e; do { r1e = math.fraction(alea(-3,3),alea(1,2)); r2e = math.fraction(alea(-3,3),alea(1,2)); } while (math.fraction(math.subtract(r1e,r2e)).n === 0 || math.fraction(math.multiply(math.add(1,r1e),math.add(1,r2e))).n === 0 || r1e.equals(1) || r2e.equals(1));
     const Ae = math.divide(math.fraction(-4), math.multiply(math.add(1,r1e), math.add(1,r2e)));
     const Pe = math.add(Ae,1);
     const Qe = math.add(math.multiply(Ae, math.multiply(r1e,r2e)), 1);
-    ex.push({id:"17.15 d)", type:"num", texteLibre:true, enonce:`Valeurs de \\(\\alpha\\) pour lesquelles \\(\\vec{u}\\) et \\(\\vec{v}\\) sont colinéaires, avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{${coefPrefixeL(Pe)}\\alpha${signedFracTermLatex(Qe,'')}}{\\alpha-1}\\\\\\dfrac{1}{\\alpha+1}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\alpha-1\\\\1\\end{pmatrix}\\)`, reponse: `{${fracToStr(r1e)};${fracToStr(r2e)}}`});
+    ex.push({id:"17.15 d)", detail: detail1713d(Pe, Qe, r1e, r2e), type:"num", texteLibre:true, enonce:`Valeurs de \\(\\alpha\\) pour lesquelles \\(\\vec{u}\\) et \\(\\vec{v}\\) sont colinéaires, avec \\(\\vec{u}\\begin{pmatrix}\\dfrac{${coefPrefixeL(Pe)}\\alpha${signedFracTermLatex(Qe,'')}}{\\alpha-1}\\\\\\dfrac{1}{\\alpha+1}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\alpha-1\\\\1\\end{pmatrix}\\)`, reponse: `{${fracToStr(r1e)};${fracToStr(r2e)}}`});
   })();
 
   // renumerotation (05/10/2026) : ancien identifiant -> nouveau, dans l'ordre de la fiche
   const parId = {};
   ex.forEach(e => { parId[e.id] = e; });
-  return [...auto, ...RENUMEROTATION_17.map(([ancien, nouveau]) => Object.assign(parId[ancien], {id: nouveau}))];
+  const res = [...auto, ...RENUMEROTATION_17.map(([ancien, nouveau]) => Object.assign(parId[ancien], {id: nouveau}))];
+  Detail.preparer(res);   // « < » des étapes : \lt
+  Detail.couper(res, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  res.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
+  return res;
 }
 const RENUMEROTATION_17 = [
   ['17.3 e)', '17.4 a)'], ['17.3 a)', '17.4 b)'], ['17.3 b)', '17.4 c)'], ['17.3 c)', '17.4 d)'],
@@ -2947,7 +3200,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
