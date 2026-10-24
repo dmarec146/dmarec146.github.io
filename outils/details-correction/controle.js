@@ -153,6 +153,7 @@ async function controlerDansLaPage(opts) {
   // doivent être égaux pour toute valeur des lettres (identité) ; un membre numérique à côté d'un membre littéral exprime une
   // équation ou une substitution et n'est pas comparable. Un membre qui reprend l'énoncé (équation à résoudre) est ignoré.
   function verifierChaine(partie, enonce, dansEquivalence) {
+    partie = String(partie).replace(/^\s*\\(?:small|scriptsize)\s*/, '');      // « \small x = … » : « x » reste un symbole seul
     if (enonce && nz(partie).length >= 5 && nz(enonce).includes(nz(partie))) return null;
     const segs = partie.split('=').map((s) => s.trim()).filter(Boolean).filter((s) => !estSymboleSeul(s) && !/\\Delta/.test(s) && !aIndice(s) && !estApplication(s) && !estEtiquetteProba(s) && !/[A-Za-z]'/.test(s));   // (a', b', c' : coefficients nommés, pas des valeurs)
     if (segs.length < 2) return null;
@@ -386,6 +387,7 @@ async function controlerDansLaPage(opts) {
     }
     // résultat nul d'une somme de vecteurs, la réponse attendue étant « 0 »
     if (String(F).trim() === '\\vec{0}' && String(e.reponse).trim() === '0') return 'ok';
+    if (/^\\vec\{[^{}]*\}$/.test(String(F).trim()) && String(e.reponse).trim() === '0') return 'faux';      // « \vec{1} » à la place du vecteur nul
     // tableau croisé à compléter : les effectifs des cases à compléter, dans l'ordre de aCompleter
     // (« 28 \text{ et } 12 », ou « \left(28\,;\,12\,;\,6\,;\,54\right) » ; les milliers « 2\,700 » sont recollés)
     if (e.type === 'tableauCroiseRempli' && e.tcr) {
@@ -396,6 +398,17 @@ async function controlerDansLaPage(opts) {
     if (e.type === 'tableauProgramme') {
       const m = String(F).replace(/\s/g, '').match(/^(-?\d+)\\text\{et\}(-?\d+)$/);
       return m && Number(m[1]) === e.resultatK3 && Number(m[2]) === e.x0 ? 'ok' : 'faux';
+    }
+    // vecteur écrit comme combinaison de vecteurs de base (formeVecteur) : mêmes coordonnées que la cible (comme checkCombinaisonVecteurs de la fiche)
+    if (e.formeVecteur && e.vecteursBase && e.cibleXY) {
+      try {
+        const sc = {}; let k = 0;
+        let s = String(F).replace(/\\(?:overrightarrow|vec)\{([A-Za-z]+)\}/g, (m, l) => { if (!Object.prototype.hasOwnProperty.call(e.vecteursBase, l)) throw new Error('vecteur inconnu'); const t = 'VECTOK' + k++; sc[t] = e.vecteursBase[l]; return t; });
+        s = s.replace(/\\d?frac\{([^{}]+)\}\{([^{}]+)\}/g, '(($1)/($2))').replace(/\\left|\\right/g, '').replace(/\\cdot|\\times/g, '*').replace(/\s+/g, '').replace(/(\d|\))(VECTOK)/g, '$1*$2');
+        const r = math.parse(s).evaluate(sc), arr = Array.isArray(r) ? r : (r && r.toArray ? r.toArray() : null);
+        if (!arr || arr.length !== 2 || k === 0) return 'faux';
+        return Math.abs(arr[0] - e.cibleXY[0]) < 1e-9 * (1 + Math.abs(e.cibleXY[0])) && Math.abs(arr[1] - e.cibleXY[1]) < 1e-9 * (1 + Math.abs(e.cibleXY[1])) ? 'ok' : 'faux';
+      } catch (er) { return 'non-verifiable'; }
     }
     // couples, vecteurs, triplets : « (a ; b) »
     const liste = (s) => String(s).replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ' ').replace(/^\s*\(|\)\s*$/g, '').split(/;/).map((x) => x.trim());
@@ -459,6 +472,21 @@ async function controlerDansLaPage(opts) {
       try { return Math.abs(evaluer(m[1], 0) - e.cx) < 1e-9 && Math.abs(evaluer(m[2], 0) - e.cy) < 1e-9 && Math.abs(evaluer(m[3], 0) - e.r) < 1e-9 ? 'ok' : 'faux'; } catch (er) { return 'non-verifiable'; }
     }
     if (typeof e.reponse !== 'string') return 'non-verifiable';
+    // combinaison de vecteurs nommés (\overrightarrow{AB}, \vec{v}) écrite en LaTeX, la réponse l'étant en ASCII (« 3*(1-a)AB », « 1/4NF », « (a-1)v ») :
+    // chaque vecteur est une inconnue indépendante (valeur au hasard), les deux écritures doivent donner la même valeur (20/10/2026)
+    if (e.type === 'texte' && /\\overrightarrow|\\vec\{/.test(String(F))) {
+      const nom = (s) => s.replace(/'/g, 'p');
+      const fin = String(F).replace(/\\left|\\right/g, '').replace(/\\alpha/g, 'a').replace(/\\vec\{0\}/g, '0').replace(/\\overrightarrow\{([A-Z]'?)([A-Z]'?)\}/g, (m, p, q) => ' V_' + nom(p) + nom(q) + ' ').replace(/\\vec\{([a-z])\}/g, ' V_$1 ');
+      const att = String(e.reponse).replace(/([A-Z]'?[A-Z]'?)/g, (m) => ' V_' + nom(m) + ' ').replace(/(?<![A-Za-z_])v(?![A-Za-z_])/g, ' V_v ');
+      try {
+        for (let k = 0; k < NB_PORTEES; k++) {
+          const m = versMathjs(fin), sc = portee(m + ' + ' + att, k), a = math.evaluate(att, sc), b = math.evaluate(m, sc);
+          if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b)) return 'non-verifiable';
+          if (!egal(a, b)) return 'faux';
+        }
+        return 'ok';
+      } catch (er) { return 'non-verifiable'; }
+    }
     // réponses textuelles (« > », « < », « oui », « non ») : comparées telles quelles
     if (e.type === 'texte') {
       const norm = (s) => String(s).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\gt\s*/g, '>').replace(/_\{(\d)\}/g, '$1').replace(/\s+/g, '').toLowerCase();
@@ -633,9 +661,10 @@ async function controlerDansLaPage(opts) {
         }
       }
       // assertions propres aux phrases (outils/phrases-details/assertions.js) : la condition qu'une phrase affirme doit être vraie dans ce tirage
+      const lSansTaille = l.replace(/^\\(?:small|scriptsize)\s*/, '');      // « \small … » : la taille de police ne fait pas partie de l'affirmation
       for (const A of ctx.assertions || []) {
-        if (!A.motif.test(l)) continue;
-        let ok; try { ok = A.verifie(l, e, ctx.environnement); } catch (er) { ok = false; }
+        if (!A.motif.test(lSansTaille)) continue;
+        let ok; try { ok = A.verifie(lSansTaille, e, ctx.environnement); } catch (er) { ok = false; }
         if (ok === null || ok === undefined) continue;
         ctx.assertionsVerifiees = (ctx.assertionsVerifiees || 0) + 1;
         if (ok === false) noter('erreur', 'assertion-fausse : ' + A.nom, l);
@@ -718,7 +747,7 @@ async function controlerDansLaPage(opts) {
       // M1 : la réponse finale (dernière ligne et final) est décalée
       if (e.type !== 'intervalle' && !Array.isArray(e.valeurApprox) && !e.margeLecture && !e.tolerance && comparerFinal({ ...e, detail: D }) === 'ok') {   // (plusieurs antécédents possibles : le chiffre décalé peut en être un autre)
         const M = copie(); const n = chiffreAlterne(D.final);
-        if (n && n !== D.final) { M.final = n; M.lignes[M.lignes.length - 1] = D.lignes[D.lignes.length - 1].replace(D.final, n); compte('reponse-finale-decalee', () => verifierDetail(e, M, ctx).some((t) => t.motif === 'final-different-de-la-reponse')); }
+        if (n && n !== D.final) { M.final = n; M.lignes[M.lignes.length - 1] = D.lignes[D.lignes.length - 1].replace(D.final, n); compte('reponse-finale-decalee', () => verifierDetail(e, M, ctx).some((t) => t.motif === 'final-different-de-la-reponse'), `${e.id} : ${D.final} -> ${n}`); }
       }
       // M2 : un nombre d'une chaîne d'égalités numérique est modifié
       D.lignes.forEach((l, i) => {
@@ -810,10 +839,14 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
       const refus = [];
       for (const { e, i } of avecDetail) {
         const inp = document.getElementById('input-' + i); if (!inp) continue;
-        if (e.type === 'discussionParametre' || e.type === 'somme') continue;   // réponse « si m<s alors … » ou somme \sum : la fiche la contrôle elle-même (audit-reponses)
+        if (e.type === 'discussionParametre' || e.type === 'somme') continue;
+        if (e.type === 'texte' && /\\overrightarrow|\\vec\{/.test(e.detail.final) && e.detail.final.trim() !== '\\vec{0}') continue;   // combinaison de vecteurs nommés : la fiche exige l'écriture ASCII exacte de la réponse (« 3*(1-a)AB »), comparée à part par le contrôle des réponses finales   // réponse « si m<s alors … » ou somme \sum : la fiche la contrôle elle-même (audit-reponses)
         const ensembleSeul = e.detail.final.match(/^\\mathbb\{([NZDQR])\}$/);   // « \mathbb{N} » : l'élève tape la lettre dans un champ texte
         const cercle = e.detail.final.match(/^\\Omega\((.+?)\\,;\\,(.+?)\) \\text\{ et \} r=(.+)$/);   // « \Omega(a\,;\,b) \text{ et } r=c » : l'élève tape « a;b;c »
+        const eqCart = e.type === 'eqcart' ? e.detail.final.match(/^(.+?)\s*=\s*0$/) : null;   // « 2x-7y+20 = 0 » : l'élève tape « a;b;c » (coefficients, éventuellement en fonction d'un paramètre)
         if (cercle) inp.value = [cercle[1], cercle[2], cercle[3]].map(versTexte).join(';');
+        else if (e.detail.final.trim() === '\\vec{0}') { if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue('0', { format: 'latex' }); } else inp.value = '0'; }   // vecteur nul : l'élève tape « 0 »
+        else if (eqCart) { const L = versTexte(eqCart[1]), M = (X, Y) => '(' + L.replace(/(?<![A-Za-z])x(?![A-Za-z])/g, '(' + X + ')').replace(/(?<![A-Za-z])y(?![A-Za-z])/g, '(' + Y + ')') + ')'; inp.value = [M(1, 0) + '-' + M(0, 0), M(0, 1) + '-' + M(0, 0), M(0, 0)].join(';'); }
         else if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = e.type === 'texte' ? String(e.detail.final).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\s+/g, ' ').trim() : ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
         await dormir(25);
         let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }

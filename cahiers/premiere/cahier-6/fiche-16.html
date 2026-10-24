@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"16.1 a)":0.5,"16.1 b)":0.5,"16.2 a)":1,"16.2 b)":0.5,"16.3 a)":0.5,"16.3 b)":0.5,"16.4":0.5,"16.5 a)":0.75,"16.5 b)":1,"16.5 c)":1,"16.5 d)":1,"16.6 a)":0.5,"16.6 b)":0.75,"16.6 c)":0.75,"16.7 a)":0.5,"16.7 b)":1,"16.8 a)":0.5,"16.8 b)":0.75,"16.8 c)":0.75,"16.8 d)":1,"16.9":0.5,"16.10 a)":0.5,"16.10 b)":0.5,"16.11 a)":1,"16.11 b)":1,"16.12 a)":0.75,"16.12 b)":0.75,"16.13":1.25,"16.14":1.5,"16.15":1.5,"16.16":1.5,"16.17 a)":1.5,"16.17 b)":1.5,"16.17 c)":1.5,"16.17 d)":1.5},"bonus":["16.15","16.16","16.17 a)","16.17 b)","16.17 c)","16.17 d)"]});
@@ -1224,6 +1226,230 @@ const POOL_FRAC_SIMPLE = [[1,2],[1,3],[2,3],[1,4],[3,4]];
 function tirerFracPositive() { const [n,d] = POOL_FRAC_SIMPLE[alea(0,POOL_FRAC_SIMPLE.length-1)]; return math.fraction(n,d); }
 function tirerFracSigned() { const f = tirerFracPositive(); return alea(0,1)===0 ? f : math.multiply(-1,f); }
 
+// ---------- details de correction (24/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, lignesDelta2, phraseDelta2, lignesRacines2 } = DetailQ;
+const lin16 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const cp16 = (v) => (v === 1 ? '' : v === -1 ? '-' : String(v));                          // coefficient devant une parenthese ou une lettre
+const INV16 = { '\\lt ': '>', '>': '\\lt ', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const fr16 = (n, d) => fracD(math.fraction(n, d));                                          // fraction irreductible, signe devant
+const shift16 = (v, c) => (c === 0 ? v : `${v}${c > 0 ? '+' : '-'}${Math.abs(c)}`);        // x + c
+const pm16 = (a, b) => `\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}`;
+const ajout16 = (t) => (t === '0' ? '' : t.startsWith('-') ? t : `+${t}`);                  // « + t » sans signe double
+const vec16 = (X, Y) => `\\overrightarrow{${X}${Y}}`;
+const cfr16 = (f) => coefPrefixeL(f);                                                       // coefficient fractionnaire devant un vecteur (« », « - », « 2 », « \dfrac{1}{3} »)
+// comme Detail.lignesSomme, mais le premier terme peut etre negatif
+function sommeSignee16(termes) {
+  const den = termes.reduce((t, x) => Detail.ppcm(t, x.d), 1), num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+  const sg = (x, i) => (i === 0 ? (x.s < 0 ? '-' : '') : (x.s < 0 ? ' - ' : ' + ')), brute = fracBrute(num, den), simple = fracTexte(num, den);
+  const origine = termes.map((x, i) => sg(x, i) + fracBrute(x.n, x.d)).join('');
+  const converti = termes.map((x, i) => { const m = den / x.d; return sg(x, i) + (m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+  const meme = termes.map((x, i) => sg(x, i) + fracBrute(x.n * (den / x.d), den)).join('');
+  return { lignes: [`${origine} = ${converti}`, `${meme} = ${brute}${brute === simple ? '' : ` = ${simple}`}`], final: simple };
+}
+// somme de fractions math.js (la premiere peut etre negative) : { lignes, final }
+function sommeFr16(...fs) { return sommeSignee16(fs.map((f, i) => { f = math.fraction(f); return { s: f.s, n: f.n, d: f.d }; })); }
+// fin d'une inequation « c x op D » (c non nul) : division par c (changement de sens si c < 0), solution, intervalle
+function finIneq16(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV16[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// lignes « facteur = 0 ⟺ x = racine » puis signe du facteur affine (racines : {f, v, tex, interdit, a, b})
+function lignesRacines16(racines) {
+  return racines.flatMap(r => [
+    ...(r.f === 'x' ? ["\\text{Le facteur } x \\text{ s'annule en } 0"]
+      : r.interdit ? [`${r.f} = 0`, `\\iff x = ${r.tex} \\text{ (valeur interdite)}`]
+      : [`${r.f} = 0 \\iff x = ${r.tex}`]),
+    ...(r.a !== undefined && r.f !== 'x' ? Detail.lignesSigneAffine(r.a, r.b) : [])]);
+}
+// 16.1 a) (x+p)^2-(x+q)^2 op c
+function detail161a(p, q, c, op, spec) {
+  const A = 2 * (p - q), K = p * p - q * q, rhs = c - K, sq = (r) => polyF2([{ c: 1, v: 'x^{2}' }, { c: 2 * r, v: 'x' }, { c: r * r, v: '' }]);
+  return { lignes: [`\\left(${shift16('x', p)}\\right)^{2}-\\left(${shift16('x', q)}\\right)^{2} ${op} ${c}`, `\\iff ${sq(p)}-\\left(${sq(q)}\\right) ${op} ${c}`, `\\iff ${polyF2([{ c: A, v: 'x' }, { c: K, v: '' }])} ${op} ${c}`,
+    `\\iff ${polyF2([{ c: A, v: 'x' }])} ${op} ${rhs}`, ...finIneq16(A, op, rhs, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 16.1 b) k/x op m
+function detail161b(k, m, op, spec) {
+  const N = lin16(-m, k), R = [{ f: N, v: k / m, tex: fracTexte(k, m), a: -m, b: k }, { f: 'x', v: 0, tex: '0', a: 1, b: 0, interdit: true }];
+  const petit = l => (l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length > 30 ? '\\small ' + l : l);
+  const fk = `${k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{x}`, lignes = [`${fk} ${op} ${m}`, `\\iff ${fk} ${m < 0 ? '+' : '-'} ${Math.abs(m)} ${op} 0`, `\\iff \\dfrac{${N}}{x} ${op} 0`, ...lignesRacines16(R), '\\text{Tableau de signes du quotient}'];
+  lignes.push(Detail.tableauSignesFacteurs(R.map(r => ({ label: r.f, v: r.v, tex: r.tex, sgn: Math.sign(r.a), denom: !!r.interdit })), 'signe'));
+  lignes.push('\\text{On cherche les valeurs de } x', `\\text{pour lesquelles le quotient est } ${op}\\ 0`, petit('\\text{La valeur interdite } 0 \\text{ est exclue dans tous les cas}'), `S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes, final: formaterIntervalleSpec(spec) };
+}
+// 16.2 a) a/x + b/(x+c) = d, deux solutions entieres r1 < r2
+function detail162a(a, b, c, d, r1, r2) {
+  const xc = shift16('x', c), f1 = (n, den) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${den}}`, bb = Math.abs(b) === 1 ? '' : Math.abs(b), B2 = d * c - a - b, C2 = -a * c;
+  const signe = d < 0 ? -1 : 1, A3 = signe * d, B3 = signe * B2, C3 = signe * C2, D3 = B3 * B3 - 4 * A3 * C3, dl = lignesDelta2(A3, B3, C3), S = `\\{${r1}\\,;\\,${r2}\\}`;
+  const l = [`\\text{Valeurs interdites : } 0 \\text{ et } ${-c}`, `${f1(a, 'x')} ${b > 0 ? '+' : '-'} \\dfrac{${Math.abs(b)}}{${xc}} = ${d}`, `\\iff \\dfrac{${cp16(a)}\\left(${xc}\\right) ${b < 0 ? '-' : '+'} ${bb}x}{x\\left(${xc}\\right)} = ${d}`,
+    `\\iff ${cp16(a)}\\left(${xc}\\right) ${b < 0 ? '-' : '+'} ${bb}x = ${cp16(d)}x\\left(${xc}\\right)`, `\\iff ${lin16(a + b, a * c)} = ${polyF2([{ c: d, v: 'x^{2}' }, { c: d * c, v: 'x' }])}`,
+    `\\iff ${polyF2([{ c: d, v: 'x^{2}' }, { c: B2, v: 'x' }, { c: C2, v: '' }])} = 0`];
+  if (d < 0) l.push(`\\iff ${polyF2([{ c: A3, v: 'x^{2}' }, { c: B3, v: 'x' }, { c: C3, v: '' }])} = 0`);
+  l.push('\\text{Discriminant : } b^{2}-4ac', ...dl.lignes, phraseDelta2(dl.D), ...lignesRacines2(A3, B3, D3).lignes, '\\small \\text{Aucune des deux racines n\'est une valeur interdite}', `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 16.2 b) x^2 - 2k x + k^2 = m^2
+function detail162b(k, m) {
+  const S = `\\{${k - m}\\,;\\,${k + m}\\}`, xk = shift16('x', -k), gauche = polyF2([{ c: 1, v: 'x^{2}' }, { c: -2 * k, v: 'x' }, { c: k * k, v: '' }]);
+  return { lignes: [`${gauche} = ${m * m}`, `\\iff \\left(${xk}\\right)^{2} = ${m * m}`, `\\iff ${xk} = -${m} \\text{ ou } ${xk} = ${m}`, `\\iff x = ${k - m} \\text{ ou } x = ${k + m}`, `S = ${S}`], final: S };
+}
+// 16.3 a) A - B x (C - D)
+function detail163a(A, B, C, D) {
+  const f = (x) => fracBrute(x.n, x.d), dif = math.subtract(C, D), prod = math.multiply(B, dif), res = math.subtract(A, prod);
+  const l1 = sommeFr16(C, math.multiply(-1, D)).lignes[0], par = (x) => (x.s < 0 ? `\\left(${fracD(x)}\\right)` : fracD(x));
+  const l2 = dedup2(`${f(B)}\\times ${par(dif)}`, `\\dfrac{${B.n}\\times ${dP(dif.s * dif.n)}}{${B.d}\\times ${dif.d}}`, fracBrute(prod.s * prod.n, prod.d), fracD(prod));
+  const S = Detail.lignesSomme([{ s: 1, n: A.n, d: A.d }, { s: prod.s > 0 ? -1 : 1, n: prod.n, d: prod.d }]);
+  return { lignes: [`${f(C)}-${f(D)} = ${l1.split(' = ').slice(1).join(' = ')}`, l2, ...S.lignes], final: S.final };
+}
+// 16.3 b) (a + s c sqrt(n))^2
+function detail163b(n, a, c, s) {
+  const ent = a * a + c * c * n, co = 2 * s * a * c, rc = c === 1 ? `\\sqrt{${n}}` : `${c}\\sqrt{${n}}`, sg = s > 0 ? '+' : '-', fin = `${ent}${co > 0 ? '+' : '-'}${Math.abs(co)}\\sqrt{${n}}`;
+  return { lignes: [`\\left(${a}${sg}${rc}\\right)^{2} = ${a}^{2}${sg}2\\times ${a}\\times ${rc}+\\left(${rc}\\right)^{2}`, `= ${a * a}${sg}${Math.abs(co)}\\sqrt{${n}}+${c === 1 ? n : `${c * c}\\times ${n}`}`, `= ${fin}`], final: fin };
+}
+// 16.4 : regle du parallelogramme
+function detail164() {
+  return { lignes: ['ABCD \\text{ est un parallélogramme}', '\\overrightarrow{AB} = \\overrightarrow{DC}', '\\overrightarrow{BA} = -\\overrightarrow{AB} = -\\overrightarrow{DC} = \\overrightarrow{CD}', '\\text{Réponse : } c'], final: 'c' };
+}
+// 16.5 : decomposition sur AB(-2 ; -2) et CD(0 ; 4) d'un vecteur lu sur le quadrillage ; terms = [[k, nom, [vx, vy]], ...]
+function detail165(terms) {
+  const sx = terms.reduce((s, [k, , v]) => s + k * v[0], 0), sy = terms.reduce((s, [k, , v]) => s + k * v[1], 0), x = math.fraction(-sx, 2), y = math.fraction(sy - sx, 4), fin = combF16([[x, 'AB'], [y, 'CD']]);
+  const l = ['\\text{On lit les coordonnées sur le quadrillage :}', `\\overrightarrow{AB}${pm16(-2, -2)} \\text{ et } \\overrightarrow{CD}${pm16(0, 4)}`, ...terms.map(([, sym, v]) => `\\vec{${sym}}${pm16(v[0], v[1])}`)];
+  if (terms.length > 1) {
+    const comb = terms.map(([k, sym], i) => `${k < 0 ? '-' : i === 0 ? '' : '+'}${Math.abs(k) === 1 ? '' : Math.abs(k)}\\vec{${sym}}`).join(''), coord = terms.map(([k, , v], i) => `${k < 0 ? '-' : i === 0 ? '' : '+'}${Math.abs(k) === 1 ? '' : Math.abs(k)}${pm16(v[0], v[1])}`).join('');
+    l.push(comb, `= ${coord}`, `= ${pm16(sx, sy)}`);
+  }
+  l.push(`x\\overrightarrow{AB}+y\\overrightarrow{CD} = ${pm16(sx, sy)}`, '\\text{Abscisses :}', `-2x = ${sx}`, `\\iff x = ${fracD(x)}`, '\\text{Ordonnées :}', `-2x+4y = ${sy}`, `${sx}+4y = ${sy}`, `\\iff 4y = ${sy - sx}`, `\\iff y = ${fracD(y)}`, `x\\overrightarrow{AB}+y\\overrightarrow{CD} = ${fin}`);
+  return { lignes: l, final: fin };
+}
+// somme de termes [fraction, nom] sur des vecteurs \overrightarrow{nom} : signes propres, coefficient 1 omis, termes nuls ignores
+function combF16(liste) {
+  return liste.map(([f, nom]) => [math.fraction(f), nom]).filter(([f]) => f.n !== 0).map(([f, nom], i) => `${f.s < 0 ? '-' : i === 0 ? '' : '+'}${f.n === 1 && f.d === 1 ? '' : (f.d === 1 ? f.n : `\\dfrac{${f.n}}{${f.d}}`)}\\overrightarrow{${nom}}`).join('') || '\\vec{0}';
+}
+// 16.6 : somme de vecteurs a partir des points du quadrillage (e = { enonce, cible, chemin, parties })
+function detail166(e, pts) {
+  const ch = e.chemin, n = ch.length - 1, suite = ch.slice(0, -1).map((P, i) => vec16(P, ch[i + 1])).join('+'), A = ch[0], Z = ch[n], fin = vec16(A, Z);
+  const l = [];
+  if (e.parties.some(p => p.negatif)) l.push(`${e.enonce} = ${suite}`);
+  l.push(`${suite} = ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 16.7 a) u = A alpha v + B (1 - alpha) v + C (1 + alpha) v
+function detail167a(A, B, C) {
+  const E = `${cp16(A)}\\alpha+${cp16(B)}\\left(1-\\alpha\\right)+${cp16(C)}\\left(1+\\alpha\\right)`, co = A - B + C, sol = fr16(-(B + C), co), poly = co < 0 ? polyF2([{ c: B + C, v: '' }, { c: co, v: '\\alpha' }]) : polyF2([{ c: co, v: '\\alpha' }, { c: B + C, v: '' }]), S = `\\{${sol}\\}`;
+  const l = [`\\vec{u} = \\left(${E}\\right)\\vec{v}`, `= \\left(${poly}\\right)\\vec{v}`, "\\text{Comme } \\vec{v} \\text{ n'est pas nul}", `\\vec{u} = \\vec{0} \\iff ${poly} = 0`, `\\iff ${polyF2([{ c: co, v: '\\alpha' }])} = ${-(B + C)}`];
+  if (co !== 1) l.push(`\\iff \\alpha = ${sol}`);
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 16.7 b) u = p AB + q BC + alpha BA + q CA
+// 16.8 : simplifications vectorielles (lettres tirees)
+function detail168a(X1, X2, X3, X4) {
+  const fin = vec16(X4, X3);
+  return { lignes: [`${vec16(X1, X2)}+${vec16(X2, X3)} = ${vec16(X1, X3)}`, `${vec16(X1, X3)}-${vec16(X1, X4)} = ${vec16(X4, X1)}+${vec16(X1, X3)}`, `= ${fin}`], final: fin };
+}
+function detail168b(P1, P2, P3, P4, P5) {
+  return { lignes: [`${vec16(P3, P1)}+${vec16(P1, P2)} = ${vec16(P3, P2)}`, `${vec16(P3, P2)}-${vec16(P5, P2)} = ${vec16(P3, P2)}+${vec16(P2, P5)} = ${vec16(P3, P5)}`, `-${vec16(P3, P4)}-${vec16(P4, P5)} = -\\left(${vec16(P3, P4)}+${vec16(P4, P5)}\\right) = -${vec16(P3, P5)}`,
+    `${vec16(P3, P5)}-${vec16(P3, P5)} = \\vec{0}`], final: '\\vec{0}' };
+}
+function detail168c(Y1, Y2, Y3, p, q, r) {
+  const sm = math.add(p, q), fin = chaslesEnonceLatex([{ coef: r.coef, from: r.from, to: r.to }]);
+  const l = [`${cfr16(p)}\\left(${vec16(Y1, Y2)}+${vec16(Y2, Y3)}\\right)${math.fraction(q).s < 0 ? '' : '+'}${chaslesEnonceLatex([{ coef: q, from: Y1, to: Y3 }])}`, `= ${chaslesEnonceLatex([{ coef: p, from: Y1, to: Y3 }, { coef: q, from: Y1, to: Y3 }])}`,
+    `= ${chaslesEnonceLatex([{ coef: sm, from: Y1, to: Y3 }])}`];
+  if (sm.s < 0) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 16.9 : lettre inconnue
+function detail169(P1, P2, P3, P4, lettre) {
+  return { lignes: [`${vec16(P4, P1)}+${vec16(P1, P2)}+${vec16(P2, P3)}+${vec16(P3, 'X')} = ${vec16(P4, 'X')}`, `${vec16(P4, 'X')} = \\vec{0} \\iff X = ${P4}`, `\\text{Réponse : } ${lettre}`], final: lettre };
+}
+// 16.10 : u en fonction de AB et AC
+// 16.11 : u = k AB, k dependant de alpha
+function detail1611a(m) {
+  const fin = `${m + 1}\\left(1-\\alpha\\right)\\overrightarrow{AB}`;
+  return { lignes: ['-\\left(\\alpha-1\\right) = 1-\\alpha', `\\vec{u} = \\left(1-\\alpha\\right)\\left(${m === 1 ? '' : m}\\overrightarrow{AB}-\\overrightarrow{BC}+\\overrightarrow{AC}\\right)`, '-\\overrightarrow{BC}+\\overrightarrow{AC} = \\overrightarrow{AC}+\\overrightarrow{CB} = \\overrightarrow{AB}', `\\vec{u} = \\left(1-\\alpha\\right)\\left(${m === 1 ? '' : m}\\overrightarrow{AB}+\\overrightarrow{AB}\\right)`, `= ${fin}`], final: fin };
+}
+function detail1611b(m) {
+  const fin = `${m === 1 ? '-' : `-${m}`}\\alpha\\overrightarrow{AB}`, cm = m === 1 ? '' : m;
+  return { lignes: ['\\dfrac{\\alpha}{1-\\alpha}-\\dfrac{1}{1-\\alpha} = \\dfrac{\\alpha-1}{1-\\alpha} = -1', `\\vec{u} = ${cm}\\left(\\left(1-\\dfrac{1}{1-\\alpha}+\\dfrac{\\alpha}{1-\\alpha}\\right)\\overrightarrow{AC}+\\alpha\\overrightarrow{BA}\\right)`, `= ${cm}\\left(\\left(1-1\\right)\\overrightarrow{AC}+\\alpha\\overrightarrow{BA}\\right)`, `= ${cm}\\alpha\\overrightarrow{BA}`, `= ${fin}`], final: fin };
+}
+// 16.12 : colinearite (figure fixe)
+function detail1612(q) {
+  const lire = ['\\text{On lit les coordonnées sur le quadrillage :}', `\\vec{u}${pm16(2, -3)} \\text{ et } \\vec{v}${pm16(2, 2)}`, `\\vec{w}${pm16(-4, 0)} \\text{ et } \\overrightarrow{AB}${pm16(3, -2)}`, `\\overrightarrow{CD}${pm16(1, 2)} \\text{ et } \\overrightarrow{EF}${pm16(2, -1)}`];
+  if (q === 'a') return { lignes: [...lire, '\\vec{u}+\\dfrac{1}{2}\\vec{v}', `= ${pm16(2, -3)}+\\dfrac{1}{2}${pm16(2, 2)}`, `= ${pm16(3, -2)}`, '= \\overrightarrow{AB}', '\\text{Réponse : } a'], final: 'a' };
+  return { lignes: [...lire, '\\vec{v}+\\vec{u}+\\dfrac{1}{2}\\vec{w}', `= ${pm16(2, 2)}+${pm16(2, -3)}+\\dfrac{1}{2}${pm16(-4, 0)}`, `= ${pm16(2, -1)}`, '= \\overrightarrow{EF}', '\\text{Réponse : } c'], final: 'c' };
+}
+// 16.13 : a1 GA - a2 BG + a3 GC + a4 BC = 0, a4 = a2
+// 16.14 : AP = k1 BA, NC = k2 BC, AM = k3 AC ; PN en fonction de PM
+// 16.15 : u = m1 AB + m1 (alpha^2 - 1) AC, v = 1/(alpha - 1) AB + (alpha + 1) AC
+function detail1615(m1) {
+  const cm = m1 === 1 ? '' : m1, fin = m1 === 1 ? '\\left(\\alpha-1\\right)\\vec{v}' : `${m1}\\left(\\alpha-1\\right)\\vec{v}`;
+  return { lignes: ['\\left(\\alpha-1\\right)\\vec{v} = \\overrightarrow{AB}+\\left(\\alpha-1\\right)\\left(\\alpha+1\\right)\\overrightarrow{AC}', '= \\overrightarrow{AB}+\\left(\\alpha^{2}-1\\right)\\overrightarrow{AC}', `\\vec{u} = ${m1 === 1 ? '\\overrightarrow{AB}+\\left(\\alpha^{2}-1\\right)\\overrightarrow{AC}' : `${cm}\\left(\\overrightarrow{AB}+\\left(\\alpha^{2}-1\\right)\\overrightarrow{AC}\\right)`}`, `= ${fin}`], final: fin };
+}
+// 16.16 : p MI - p NA - r BI + (p + r) IA, I milieu de [AB]
+// 16.17 : centre de gravite
+function detail1617(q) {
+  const GA = vec16('G', 'A'), AB = vec16('A', 'B'), AC = vec16('A', 'C'), AG = vec16('A', 'G'), AA = "\\overrightarrow{AA'}", BB = "\\overrightarrow{BB'}", CC = "\\overrightarrow{CC'}";
+  if (q === 'a') return { lignes: [`${vec16('G', 'B')} = ${GA}+${AB}`, `${vec16('G', 'C')} = ${GA}+${AC}`, `${GA}+${vec16('G', 'B')}+${vec16('G', 'C')} = 3${GA}+${AB}+${AC}`, `3${GA}+${AB}+${AC} = \\vec{0}`, `\\iff 3${AG} = ${AB}+${AC}`, `\\iff ${AG} = \\dfrac{1}{3}\\left(${AB}+${AC}\\right)`], final: `\\dfrac{1}{3}\\left(${AB}+${AC}\\right)` };
+  if (q === 'b') return { lignes: [`${AB}+${AC} = ${AA}+\\overrightarrow{A'B}+${AA}+\\overrightarrow{A'C}`, `= 2${AA}+\\left(\\overrightarrow{A'B}+\\overrightarrow{A'C}\\right)`, "\\scriptsize \\text{Comme } A' \\text{ est le milieu de } [BC] \\text{, } \\overrightarrow{A'B}+\\overrightarrow{A'C} = \\vec{0}", `= 2${AA}`, `${AG} = \\dfrac{1}{3}\\left(${AB}+${AC}\\right) = \\dfrac{1}{3}\\times 2${AA}`, `= \\dfrac{2}{3}${AA}`], final: `\\dfrac{2}{3}${AA}` };
+  if (q === 'c') return { lignes: [`${AA} = \\dfrac{1}{2}\\left(${AB}+${AC}\\right)`, `${BB} = \\dfrac{1}{2}\\left(${vec16('B', 'A')}+${vec16('B', 'C')}\\right)`, `${CC} = \\dfrac{1}{2}\\left(${vec16('C', 'A')}+${vec16('C', 'B')}\\right)`,
+    `${AA}+${BB}+${CC} = \\dfrac{1}{2}\\left(${AB}+${vec16('B', 'A')}+${AC}+${vec16('C', 'A')}+${vec16('B', 'C')}+${vec16('C', 'B')}\\right)`, '= \\dfrac{1}{2}\\times\\vec{0}', '= \\vec{0}'], final: '\\vec{0}' };
+  return { lignes: ["\\overrightarrow{GA'} = \\dfrac{1}{2}\\left(" + vec16('G', 'B') + '+' + vec16('G', 'C') + '\\right)', "\\overrightarrow{GB'} = \\dfrac{1}{2}\\left(" + vec16('G', 'C') + '+' + GA + '\\right)', "\\overrightarrow{GC'} = \\dfrac{1}{2}\\left(" + GA + '+' + vec16('G', 'B') + '\\right)',
+    "\\overrightarrow{GA'}+\\overrightarrow{GB'}+\\overrightarrow{GC'} = " + GA + '+' + vec16('G', 'B') + '+' + vec16('G', 'C'), '= \\vec{0}'], final: '\\vec{0}' };
+}
+
+// somme de termes [coefficient, nom] sur des vecteurs \overrightarrow{nom} : signes propres, coefficient 1 omis, termes nuls ignores
+function comb16(liste) {
+  return liste.filter(([k]) => k !== 0).map(([k, nom], i) => `${k < 0 ? '-' : i === 0 ? '' : '+'}${Math.abs(k) === 1 ? '' : Math.abs(k)}\\overrightarrow{${nom}}`).join('') || '\\vec{0}';
+}
+// 16.7 b) u = p AB + q BC + alpha BA + q CA
+function detail167b(p, q) {
+  const qb = cp16(q), S = `\\{${p - q}\\}`;
+  return { lignes: ['\\overrightarrow{BC}+\\overrightarrow{CA} = \\overrightarrow{BA}', `\\vec{u} = ${p}\\overrightarrow{AB}+${qb}\\overrightarrow{BA}+\\alpha\\overrightarrow{BA}`, '\\overrightarrow{BA} = -\\overrightarrow{AB}', `\\vec{u} = \\left(${p - q}-\\alpha\\right)\\overrightarrow{AB}`,
+    "\\text{Comme } \\overrightarrow{AB} \\text{ n'est pas nul}", `\\vec{u} = \\vec{0} \\iff ${p - q}-\\alpha = 0`, `\\iff \\alpha = ${p - q}`, `S = ${S}`], final: S };
+}
+function detail168d(W1, W2, W3, pw, r) {
+  const fin = chaslesEnonceLatex([{ coef: r.coef, from: r.from, to: r.to }]), w1 = vec16(W1, W2), w3 = vec16(W3, W2), c2 = cp16(2 * pw), brut = `${c2}${vec16(W3, W1)}`;
+  const l = [`${w1}-2\\left(${w1}-${w3}\\right) = -${w1}+2${w3}`, `${cp16(pw)}\\left(-${w1}+2${w3}\\right)${pw > 0 ? '-' : '+'}${Math.abs(pw) === 1 ? '' : Math.abs(pw)}${w1}`,
+    `= ${chaslesEnonceLatex([{ coef: -2 * pw, from: W1, to: W2 }, { coef: 2 * pw, from: W3, to: W2 }])}`, `= ${c2}\\left(${w3}+${vec16(W2, W1)}\\right)`, `= ${brut}`];
+  if (brut !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 16.10 : u en fonction de AB et AC
+function detail1610a(k) {
+  const fin = comb16([[k, 'AB'], [-k, 'AC']]);
+  return { lignes: ['\\overrightarrow{CB} = \\overrightarrow{CA}+\\overrightarrow{AB} = \\overrightarrow{AB}-\\overrightarrow{AC}', `\\vec{u} = ${cp16(k)}\\left(\\overrightarrow{AB}-\\overrightarrow{AC}\\right)`, `= ${fin}`], final: fin };
+}
+function detail1610c(p, q) {
+  const fin = comb16([[q - p, 'AB'], [2 * p, 'AC']]), ap = Math.abs(p) === 1 ? '' : Math.abs(p), aq = Math.abs(q) === 1 ? '' : Math.abs(q);
+  return { lignes: ['\\overrightarrow{CB} = \\overrightarrow{CA}+\\overrightarrow{AB} = \\overrightarrow{AB}-\\overrightarrow{AC}', `\\vec{u} = ${cp16(p)}\\overrightarrow{AC}${p > 0 ? '-' : '+'}${ap}\\left(\\overrightarrow{AB}-\\overrightarrow{AC}\\right)${q < 0 ? '-' : '+'}${aq}\\overrightarrow{AB}`,
+    `= ${comb16([[p, 'AC'], [-p, 'AB'], [p, 'AC'], [q, 'AB']])}`, `= ${fin}`], final: fin };
+}
+// 16.13 : a1 GA - a2 BG + a3 GC + a4 BC = 0, a4 = a2
+function detail1613(a1, a2, a3) {
+  const t = math.fraction(-(a2 + a3), a1), fin = chaslesEnonceLatex([{ coef: t, from: 'G', to: 'C' }]), ca = (k) => (k === 1 ? '' : k);
+  return { lignes: [`-${ca(a2)}\\overrightarrow{BG}+${ca(a2)}\\overrightarrow{BC} = ${ca(a2)}\\left(\\overrightarrow{BC}-\\overrightarrow{BG}\\right)`, '\\overrightarrow{BC}-\\overrightarrow{BG} = \\overrightarrow{GB}+\\overrightarrow{BC} = \\overrightarrow{GC}',
+    `${ca(a1)}\\overrightarrow{GA}+${ca(a2)}\\overrightarrow{GC}+${ca(a3)}\\overrightarrow{GC} = \\vec{0}`, `${ca(a1)}\\overrightarrow{GA}+${a2 + a3}\\overrightarrow{GC} = \\vec{0}`, `\\overrightarrow{GA} = ${fin}`], final: fin };
+}
+// 16.14 : AP = k1 BA, NC = k2 BC, AM = k3 AC ; PN en fonction de PM
+function detail1614(k1, k2, k3) {
+  const t = math.divide(math.add(k1, k2), k1), c2 = math.subtract(1, k2), s12 = math.add(k1, k2), vk = (k, X, Y) => chaslesEnonceLatex([{ coef: k, from: X, to: Y }]), sg = (k) => (math.fraction(k).s < 0 ? '' : '+');
+  const S1 = sommeFr16(k1, k2), fin = vk(t, 'P', 'M'), s1 = math.add(k1, 1);
+  return { lignes: ['\\overrightarrow{PA} = -\\overrightarrow{AP}', `= ${vk(math.multiply(-1, k1), 'B', 'A')} = ${vk(k1, 'A', 'B')}`, `\\overrightarrow{PM} = \\overrightarrow{PA}+\\overrightarrow{AM} = ${vk(k1, 'A', 'B')}${sg(k3)}${vk(k3, 'A', 'C')}`,
+    `\\overrightarrow{BN} = \\overrightarrow{BC}+\\overrightarrow{CN} = \\overrightarrow{BC}-\\overrightarrow{NC} = ${vk(c2, 'B', 'C')}`, '\\overrightarrow{BC} = \\overrightarrow{BA}+\\overrightarrow{AC} = \\overrightarrow{AC}-\\overrightarrow{AB}',
+    `\\overrightarrow{PN} = \\overrightarrow{PA}+\\overrightarrow{AB}+\\overrightarrow{BN} = ${vk(s1, 'A', 'B')}${sg(c2)}${cfr16(c2)}\\left(\\overrightarrow{AC}-\\overrightarrow{AB}\\right)`, `= ${vk(s12, 'A', 'B')}${sg(c2)}${vk(c2, 'A', 'C')}`,
+    `t = ${fracDP(s12)} \\div ${fracDP(k1)} = ${fracD(t)}`, `t\\times ${fracDP(k3)} = ${dedup2(fracD(math.multiply(t, k3)), fracD(c2))}`,
+    `${fin} = ${vk(math.multiply(t, k1), 'A', 'B')}${sg(math.multiply(t, k3))}${vk(math.multiply(t, k3), 'A', 'C')}`, `\\overrightarrow{PN} = ${fin}`].filter(Boolean), final: fin };
+}
+// 16.16 : p MI - p NA - r BI + (p + r) IA, I milieu de [AB]
+function detail1616(p, r) {
+  const fin = chaslesEnonceLatex([{ coef: p, from: 'M', to: 'N' }]);
+  return { lignes: [`${vec16('N', 'A')} = ${vec16('N', 'I')}+${vec16('I', 'A')}`, `${vec16('B', 'I')} = -${vec16('I', 'B')}`,
+    `${chaslesEnonceLatex([{ coef: p, from: 'M', to: 'I' }, { coef: -p, from: 'N', to: 'A' }, { coef: -r, from: 'B', to: 'I' }, { coef: p + r, from: 'I', to: 'A' }])} = ${chaslesEnonceLatex([{ coef: p, from: 'M', to: 'I' }, { coef: -p, from: 'N', to: 'I' }, { coef: -p, from: 'I', to: 'A' }, { coef: r, from: 'I', to: 'B' }, { coef: p + r, from: 'I', to: 'A' }])}`,
+    `= ${cp16(p)}\\left(${vec16('M', 'I')}+${vec16('I', 'N')}\\right)${r < 0 ? '-' : '+'}${Math.abs(r) === 1 ? '' : Math.abs(r)}\\left(${vec16('I', 'A')}+${vec16('I', 'B')}\\right)`, '\\text{Comme } I \\text{ est le milieu de } [AB] \\text{, } \\overrightarrow{IA}+\\overrightarrow{IB} = \\vec{0}', `= ${fin}`], final: fin };
+}
 function genererExercices() {
   const ex = [], auto = [];
   // ---------- 16.1 a 16.3 : automatismes (05/10/2026, modele de Premiere : inequations, equations,
@@ -1256,14 +1482,16 @@ function genererExercices() {
     let p, q; do { p = aleaNonNul(-6,6); q = aleaNonNul(-6,6); } while (p === q);
     const c = alea(-9,9), op = OPS16[alea(0,3)];
     const A = 2*(p - q), B = p*p - q*q - c;   // A x + B op 0
-    auto.push({id:"16.1 a)", type:"intervalle", texteLibre:true, enonce:`\\(${carre16(p)}-${carre16(q)}${op}${c}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne16([-B/A], [], x => A*x + B, op)}});
+    const spec16a = {type:'intervalles', liste: parSigne16([-B/A], [], x => A*x + B, op)};
+    auto.push({id:"16.1 a)", detail: detail161a(p, q, c, op, spec16a), type:"intervalle", texteLibre:true, enonce:`\\(${carre16(p)}-${carre16(q)}${op}${c}\\)`,
+      intervalleSpec: spec16a});
   }
   // b) inverse compare a un nombre : k/x op m (valeur interdite 0, jamais incluse)
   {
     const k = aleaNonNul(-9,9), m = aleaNonNul(-5,5), op = OPS16[alea(0,3)];
-    auto.push({id:"16.1 b)", type:"intervalle", texteLibre:true, enonce:`\\(${frac16(k, 'x')}${op}${m}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne16([k/m], [0], x => k/x - m, op)}});
+    const spec16b = {type:'intervalles', liste: parSigne16([k/m], [0], x => k/x - m, op)};
+    auto.push({id:"16.1 b)", detail: detail161b(k, m, op, spec16b), type:"intervalle", texteLibre:true, enonce:`\\(${frac16(k, 'x')}${op}${m}\\)`,
+      intervalleSpec: spec16b});
   }
   // 16.2 a) equation rationnelle a/x + b/(x+c) = d : meme denominateur puis second degre ; deux racines
   // entieres r1 < r2, jamais valeurs interdites
@@ -1276,13 +1504,13 @@ function genererExercices() {
       a = -d*r1*r2/c; b = d*c + d*(r1 + r2) - a;   // a(x+c) + bx = d x (x+c)  <=>  d x^2 - d(r1+r2) x + d r1 r2 = 0
       ok = a !== 0 && b !== 0 && Math.abs(a) <= 20 && Math.abs(b) <= 20;
     } while (!ok);
-    auto.push({id:"16.2 a)", type:"num", texteLibre:true,
+    auto.push({id:"16.2 a)", detail: detail162a(a, b, c, d, r1, r2), type:"num", texteLibre:true,
       enonce:`\\(${frac16(a, 'x')}${b > 0 ? '+' : '-'}\\dfrac{${Math.abs(b)}}{x${c > 0 ? '+' : '-'}${Math.abs(c)}}=${d}\\)`, reponse:`{${r1};${r2}}`});
   }
   // b) carre parfait a reconnaitre : x^2-2kx+k^2 = m^2, solutions k-m et k+m
   {
     const k = aleaNonNul(-6,6), m = alea(1,7);
-    auto.push({id:"16.2 b)", type:"num", texteLibre:true,
+    auto.push({id:"16.2 b)", detail: detail162b(k, m), type:"num", texteLibre:true,
       enonce:`\\(x^2${k > 0 ? '-' : '+'}${Math.abs(2*k)}x+${k*k}=${m*m}\\)`, reponse:`{${k - m};${k + m}}`});
   }
   // 16.3 a) fractions avec des parentheses : a/b - c/d x (e/f - g/h), fraction irreductible
@@ -1292,18 +1520,18 @@ function genererExercices() {
     let A, B, C, D, r;
     do { A = fr(); B = fr(); C = fr(); D = fr(); r = math.subtract(A, math.multiply(B, math.subtract(C, D))); }
     while (C.equals(D) || r.n === 0 || r.d === 1);
-    auto.push({id:"16.3 a)", type:"num", fractionIrreductible:true, avecEgal:true,
+    auto.push({id:"16.3 a)", detail: detail163a(A, B, C, D), type:"num", fractionIrreductible:true, avecEgal:true,
       enonce:`${fl(A)}-${fl(B)}\\times \\left(${fl(C)}-${fl(D)}\\right)`, reponse: fracToStr(r)});
   }
   // b) carre d'une somme avec une racine : (a + s c sqrt(n))^2 = a^2 + c^2 n + 2 s a c sqrt(n), forme p + q sqrt(n)
   {
     const n = [2,3,5,6,7][alea(0,4)], a = alea(1,6), c = alea(1,3), s = [1,-1][alea(0,1)];
     const ent = a*a + c*c*n, co = 2*s*a*c;
-    auto.push({id:"16.3 b)", type:"num", formeRacine:true, avecEgal:true,
+    auto.push({id:"16.3 b)", detail: detail163b(n, a, c, s), type:"num", formeRacine:true, avecEgal:true,
       enonce:`\\left(${a}${s > 0 ? '+' : '-'}${c === 1 ? '' : c}\\sqrt{${n}}\\right)^2`, reponse:`${ent}${co > 0 ? '+' : '-'}${Math.abs(co)}*sqrt(${n})`});
   }
   // Calcul 16.3 - regle du parallelogramme (1 item, QCM) - theoreme fixe, non randomisable
-  ex.push({id:"16.3", type:"qcm", texteLibre:true, enonce:"Si \\(ABCD\\) est un parallélogramme, alors :", bonneReponse:"c", options:[{lettre:"a",texte:"\\overrightarrow{AB}=\\overrightarrow{CD}"},{lettre:"b",texte:"\\overrightarrow{AC}=\\overrightarrow{BD}"},{lettre:"c",texte:"\\overrightarrow{BA}=\\overrightarrow{CD}"}]});
+  ex.push({id:"16.3", detail: detail164(), type:"qcm", texteLibre:true, enonce:"Si \\(ABCD\\) est un parallélogramme, alors :", bonneReponse:"c", options:[{lettre:"a",texte:"\\overrightarrow{AB}=\\overrightarrow{CD}"},{lettre:"b",texte:"\\overrightarrow{AC}=\\overrightarrow{BD}"},{lettre:"c",texte:"\\overrightarrow{BA}=\\overrightarrow{CD}"}]});
   // Calcul 16.4 - vecteurs sur quadrillage, base AB=(-2,-2), CD=(0,4) fixe (le graphique reste lisible)
   (function() {
     const detAB = -8; // AB[0]*CD[1]-AB[1]*CD[0] = -2*4 - (-2)*0
@@ -1328,16 +1556,16 @@ function genererExercices() {
     window.__f21vecteurs = { u: vU, v: vV, w: vW, p: vP };
     const baseAB_CD = { AB: [-2,-2], CD: [0,4] };
     const du = decompose(vU[0], vU[1]), dv = decompose(vV[0], vV[1]), dw = decompose(vW[0], vW[1]), dp = decompose(vP[0], vP[1]);
-    ex.push({id:"16.4 a)", type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: vU, texteLibre:true, enonce:"\\(\\vec{u}\\)", pa: fracToStr(du.x), pb: fracToStr(du.y)});
-    ex.push({id:"16.4 b)", type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: vV, texteLibre:true, enonce:"\\(\\vec{v}\\)", pa: fracToStr(dv.x), pb: fracToStr(dv.y)});
+    ex.push({id:"16.4 a)", detail: detail165([[1, 'u', vU]]), type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: vU, texteLibre:true, enonce:"\\(\\vec{u}\\)", pa: fracToStr(du.x), pb: fracToStr(du.y)});
+    ex.push({id:"16.4 b)", detail: detail165([[1, 'v', vV]]), type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: vV, texteLibre:true, enonce:"\\(\\vec{v}\\)", pa: fracToStr(dv.x), pb: fracToStr(dv.y)});
     let k1, k2, combo1;
     do { k1 = aleaNonNul(-3,3); k2 = aleaNonNul(-3,3); combo1 = [k1*vU[0]+k2*vP[0], k1*vU[1]+k2*vP[1]]; } while (combo1[0] === 0 && combo1[1] === 0);
     const d1 = decompose(combo1[0], combo1[1]);
-    ex.push({id:"16.4 c)", type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: combo1, texteLibre:true, enonce:`\\(${coefPrefixeL(k1)}\\vec{u}${k2>=0?'+':''}${coefPrefixeL(k2)}\\vec{p}\\)`, pa: fracToStr(d1.x), pb: fracToStr(d1.y)});
+    ex.push({id:"16.4 c)", detail: detail165([[k1, 'u', vU], [k2, 'p', vP]]), type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: combo1, texteLibre:true, enonce:`\\(${coefPrefixeL(k1)}\\vec{u}${k2>=0?'+':''}${coefPrefixeL(k2)}\\vec{p}\\)`, pa: fracToStr(d1.x), pb: fracToStr(d1.y)});
     let k3, k4, k5, combo2;
     do { k3 = aleaNonNul(-3,3); k4 = aleaNonNul(-3,3); k5 = aleaNonNul(-3,3); combo2 = [k3*vV[0]+k4*vU[0]+k5*vW[0], k3*vV[1]+k4*vU[1]+k5*vW[1]]; } while (combo2[0] === 0 && combo2[1] === 0);
     const d2 = decompose(combo2[0], combo2[1]);
-    ex.push({id:"16.4 d)", type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: combo2, texteLibre:true, enonce:`\\(${coefPrefixeL(k3)}\\vec{v}${k4>=0?'+':''}${coefPrefixeL(k4)}\\vec{u}${k5>=0?'+':''}${coefPrefixeL(k5)}\\vec{w}\\)`, pa: fracToStr(d2.x), pb: fracToStr(d2.y)});
+    ex.push({id:"16.4 d)", detail: detail165([[k3, 'v', vV], [k4, 'u', vU], [k5, 'w', vW]]), type:"paire", formeVecteur:"combinaison", vecteursBase: baseAB_CD, cibleXY: combo2, texteLibre:true, enonce:`\\(${coefPrefixeL(k3)}\\vec{v}${k4>=0?'+':''}${coefPrefixeL(k4)}\\vec{u}${k5>=0?'+':''}${coefPrefixeL(k5)}\\vec{w}\\)`, pa: fracToStr(d2.x), pb: fracToStr(d2.y)});
   })();
   // Calcul 16.5 - points fixes sur quadrillage A-H (le graphique reste lisible).
   // Construction par relation de Chasles : on tire une CHAINE de points distincts P0-P1-...-Pn au hasard,
@@ -1372,24 +1600,24 @@ function genererExercices() {
       for (let i = 1; i < parties.length; i++) enonce += (parties[i].negatif ? '-' : '+') + parties[i].texte;
       const p0 = points21_5[chemin[0]], pn = points21_5[chemin[longueur]];
       const cible = [pn[0] - p0[0], pn[1] - p0[1]];
-      return { enonce, cible };
+      return { enonce, cible, chemin, parties };
     }
     const exA = construireExempleChasles(2);
-    ex.push({id:"16.5 a)", type:"paire", formeVecteur:"nomme", vecteursBase: baseTousPoints, cibleXY: exA.cible, texteLibre:true, enonce:`\\(${exA.enonce}\\)`, pa: String(exA.cible[0]), pb: String(exA.cible[1])});
+    ex.push({id:"16.5 a)", detail: detail166(exA, points21_5), type:"paire", formeVecteur:"nomme", vecteursBase: baseTousPoints, cibleXY: exA.cible, texteLibre:true, enonce:`\\(${exA.enonce}\\)`, pa: String(exA.cible[0]), pb: String(exA.cible[1])});
 
     const exB = construireExempleChasles(2);
 
     const exC = construireExempleChasles(3);
-    ex.push({id:"16.5 b)", type:"paire", formeVecteur:"nomme", vecteursBase: baseTousPoints, cibleXY: exC.cible, texteLibre:true, enonce:`\\(${exC.enonce}\\)`, pa: String(exC.cible[0]), pb: String(exC.cible[1])});
+    ex.push({id:"16.5 b)", detail: detail166(exC, points21_5), type:"paire", formeVecteur:"nomme", vecteursBase: baseTousPoints, cibleXY: exC.cible, texteLibre:true, enonce:`\\(${exC.enonce}\\)`, pa: String(exC.cible[0]), pb: String(exC.cible[1])});
 
     const exD = construireExempleChasles(4);
-    ex.push({id:"16.5 c)", type:"paire", formeVecteur:"nomme", vecteursBase: baseTousPoints, cibleXY: exD.cible, texteLibre:true, enonce:`\\(${exD.enonce}\\)`, pa: String(exD.cible[0]), pb: String(exD.cible[1])});
+    ex.push({id:"16.5 c)", detail: detail166(exD, points21_5), type:"paire", formeVecteur:"nomme", vecteursBase: baseTousPoints, cibleXY: exD.cible, texteLibre:true, enonce:`\\(${exD.enonce}\\)`, pa: String(exD.cible[0]), pb: String(exD.cible[1])});
   })();
   // Calcul 16.6 - equations vectorielles I (4 items)
   (function() {
     let A,B,C;
     do { A=alea(1,4); B=alea(1,4); C=alea(1,4); } while (A-B+C === 0);   // plages elargies le 05/10/2026 (variete)
-    ex.push({id:"16.6 a)", type:"num", texteLibre:true, enonce:`\\(\\vec{u}=${A===1?'':A}\\alpha\\vec{v}+${B===1?'':B}(1-\\alpha)\\vec{v}+${C===1?'':C}(1+\\alpha)\\vec{v}\\)`, reponse:`{${fracToStr(math.fraction(-(B+C), A-B+C))}}`});
+    ex.push({id:"16.6 a)", detail: detail167a(A, B, C), type:"num", texteLibre:true, enonce:`\\(\\vec{u}=${A===1?'':A}\\alpha\\vec{v}+${B===1?'':B}(1-\\alpha)\\vec{v}+${C===1?'':C}(1+\\alpha)\\vec{v}\\)`, reponse:`{${fracToStr(math.fraction(-(B+C), A-B+C))}}`});
     const A2=alea(1,3), B2=alea(0,4), C2=alea(1,3);
     const A3=alea(1,3), B3=alea(1,3), C3=alea(1,3);
     const Bd = alea(1,4), Cd = Bd*Bd;
@@ -1404,7 +1632,7 @@ function genererExercices() {
     let [X1,X2,X3,X4] = randomLettres(4);
     let pc = pcAdd(pcVec(X1,X2), pcVec(X2,X3), pcScale(pcVec(X1,X4),-1));
     let r = pcToSingleVec(pc);
-    ex.push({id:"16.7 a)", type:"texte", texteLibre:true, enonce:`\\(${chaslesEnonceLatex([{coef:1,from:X1,to:X2},{coef:1,from:X2,to:X3},{coef:-1,from:X1,to:X4}])}\\)`, reponse: vecTerm(fracToStr(r.coef), r.from+r.to)});
+    ex.push({id:"16.7 a)", detail: detail168a(X1, X2, X3, X4), type:"texte", texteLibre:true, enonce:`\\(${chaslesEnonceLatex([{coef:1,from:X1,to:X2},{coef:1,from:X2,to:X3},{coef:-1,from:X1,to:X4}])}\\)`, reponse: vecTerm(fracToStr(r.coef), r.from+r.to)});
 
     let [Y1,Y2,Y3] = randomLettres(3);
 
@@ -1427,7 +1655,7 @@ function genererExercices() {
   // Calcul 16.10 - simplifier (1 item) : toujours 0 (identite de Chasles), lettres fraiches
   (function() {
     const [P1,P2,P3,P4,P5] = randomLettres(5);
-    ex.push({id:"16.7 d)", type:"texte", texteLibre:true, vecteurNul:true, enonce:`\\(${chaslesEnonceLatex([{coef:1,from:P1,to:P2},{coef:-1,from:P3,to:P4},{coef:-1,from:P5,to:P2},{coef:1,from:P3,to:P1},{coef:-1,from:P4,to:P5}])}\\)`, reponse:"0"});
+    ex.push({id:"16.7 d)", detail: detail168b(P1, P2, P3, P4, P5), type:"texte", texteLibre:true, vecteurNul:true, enonce:`\\(${chaslesEnonceLatex([{coef:1,from:P1,to:P2},{coef:-1,from:P3,to:P4},{coef:-1,from:P5,to:P2},{coef:1,from:P3,to:P1},{coef:-1,from:P4,to:P5}])}\\)`, reponse:"0"});
   })();
   // Calcul 16.9 - remplacer X (1 item, QCM) : X = P4 toujours (identite de Chasles)
   (function() {
@@ -1435,13 +1663,13 @@ function genererExercices() {
     const lettresOptions = [P1,P2,P3,P4,P5];
     for (let i = lettresOptions.length - 1; i > 0; i--) { const j = alea(0,i); [lettresOptions[i],lettresOptions[j]] = [lettresOptions[j],lettresOptions[i]]; }
     const bonneLettre = 'abcde'[lettresOptions.indexOf(P4)];
-    ex.push({id:"16.8", type:"qcm", texteLibre:true, enonce:`Par quelle lettre faut-il remplacer \\(X\\) pour que \\(${chaslesEnonceLatex([{coef:1,from:P1,to:P2},{coef:1,from:P3,to:'X'},{coef:1,from:P2,to:P3},{coef:1,from:P4,to:P1}])}=\\vec{0}\\) ?`, bonneReponse: bonneLettre, options: lettresOptions.map((l,i) => ({lettre:'abcde'[i], texte:l, texteLibreOption:true}))});
+    ex.push({id:"16.8", detail: detail169(P1, P2, P3, P4, bonneLettre), type:"qcm", texteLibre:true, enonce:`Par quelle lettre faut-il remplacer \\(X\\) pour que \\(${chaslesEnonceLatex([{coef:1,from:P1,to:P2},{coef:1,from:P3,to:'X'},{coef:1,from:P2,to:P3},{coef:1,from:P4,to:P1}])}=\\vec{0}\\) ?`, bonneReponse: bonneLettre, options: lettresOptions.map((l,i) => ({lettre:'abcde'[i], texte:l, texteLibreOption:true}))});
   })();
   // Calcul 16.11 - exprimer u en fonction de AB, AC (points A,B,C fixes, coefficients randomises)
   (function() {
     const k1 = aleaNonNul(-3,3);
     let pc = pcScale(pcVec('C','B'), k1);
-    ex.push({id:"16.9 a)", type:"texte", texteLibre:true, enonce:`\\(\\vec{u}=${chaslesEnonceLatex([{coef:k1,from:'C',to:'B'}])}\\)`, reponse: formatBasisAnswer([pc['B']||math.fraction(0), pc['C']||math.fraction(0)], ['AB','AC'])});
+    ex.push({id:"16.9 a)", detail: detail1610a(k1), type:"texte", texteLibre:true, enonce:`\\(\\vec{u}=${chaslesEnonceLatex([{coef:k1,from:'C',to:'B'}])}\\)`, reponse: formatBasisAnswer([pc['B']||math.fraction(0), pc['C']||math.fraction(0)], ['AB','AC'])});
 
     const p2 = aleaNonNul(-3,3), q2 = aleaNonNul(-3,3);
     pc = pcAdd(pcScale(pcVec('C','A'), p2), pcScale(pcVec('B','C'), q2));
@@ -1451,7 +1679,7 @@ function genererExercices() {
 
     const p4 = aleaNonNul(-3,3), q4 = aleaNonNul(-3,3);
     pc = pcAdd(pcScale(pcVec('A','C'), p4), pcScale(pcVec('C','B'), -p4), pcScale(pcVec('A','B'), q4));
-    ex.push({id:"16.9 c)", type:"texte", texteLibre:true, enonce:`\\(\\vec{u}=${chaslesEnonceLatex([{coef:p4,from:'A',to:'C'},{coef:-p4,from:'C',to:'B'},{coef:q4,from:'A',to:'B'}])}\\)`, reponse: formatBasisAnswer([pc['B']||math.fraction(0), pc['C']||math.fraction(0)], ['AB','AC'])});
+    ex.push({id:"16.9 c)", detail: detail1610c(p4, q4), type:"texte", texteLibre:true, enonce:`\\(\\vec{u}=${chaslesEnonceLatex([{coef:p4,from:'A',to:'C'},{coef:-p4,from:'C',to:'B'},{coef:q4,from:'A',to:'B'}])}\\)`, reponse: formatBasisAnswer([pc['B']||math.fraction(0), pc['C']||math.fraction(0)], ['AB','AC'])});
   })();
   // Calcul 16.12 - simplifier (lettres fraiches, coefficients randomises)
   (function() {
@@ -1466,7 +1694,7 @@ function genererExercices() {
     do { p = tirerFracSigned(); q = tirerFracSigned(); } while (math.fraction(math.add(p,q)).n === 0);
     pc = pcAdd(pcScale(pcVec(Y1,Y2),p), pcScale(pcVec(Y2,Y3),p), pcScale(pcVec(Y1,Y3),q));
     r = pcToSingleVec(pc);
-    ex.push({id:"16.10 b)", type:"texte", texteLibre:true, enonce:`\\(${chaslesEnonceLatex([{coef:p,from:Y1,to:Y2},{coef:p,from:Y2,to:Y3},{coef:q,from:Y1,to:Y3}])}\\)`, reponse: vecTerm(fracToStr(r.coef), r.from+r.to)});
+    ex.push({id:"16.10 b)", detail: detail168c(Y1, Y2, Y3, p, q, r), type:"texte", texteLibre:true, enonce:`\\(${chaslesEnonceLatex([{coef:p,from:Y1,to:Y2},{coef:p,from:Y2,to:Y3},{coef:q,from:Y1,to:Y3}])}\\)`, reponse: vecTerm(fracToStr(r.coef), r.from+r.to)});
 
     let [V1,V2,V3] = randomLettres(3);
     let pr, rr;
@@ -1478,12 +1706,12 @@ function genererExercices() {
     const pw = aleaNonNul(-3,3);
     pc = pcAdd(pcScale(pcVec(W1,W2), -2*pw), pcScale(pcVec(W3,W2), 2*pw));
     r = pcToSingleVec(pc);
-    ex.push({id:"16.10 c)", type:"texte", texteLibre:true, enonce:`\\(${coefPrefixeL(pw)}(\\overrightarrow{${W1}${W2}}-2(\\overrightarrow{${W1}${W2}}-\\overrightarrow{${W3}${W2}}))${chaslesEnonceLatex([{coef:-pw,from:W1,to:W2}]).replace(/^(?!-)/, '+')}\\)`, reponse: vecTerm(fracToStr(r.coef), r.from+r.to)});
+    ex.push({id:"16.10 c)", detail: detail168d(W1, W2, W3, pw, r), type:"texte", texteLibre:true, enonce:`\\(${coefPrefixeL(pw)}(\\overrightarrow{${W1}${W2}}-2(\\overrightarrow{${W1}${W2}}-\\overrightarrow{${W3}${W2}}))${chaslesEnonceLatex([{coef:-pw,from:W1,to:W2}]).replace(/^(?!-)/, '+')}\\)`, reponse: vecTerm(fracToStr(r.coef), r.from+r.to)});
   })();
   // Calcul 16.13 - determiner alpha (3 items)
   (function() {
     let p, q; do { p = alea(1,8); q = alea(1,5); } while (p === q);   // plages elargies le 05/10/2026 (variete)
-    ex.push({id:"16.11 a)", type:"num", texteLibre:true, enonce:`\\(\\vec{u}=${p}\\overrightarrow{AB}+${q===1?'':q}\\overrightarrow{BC}+\\alpha\\overrightarrow{BA}+${q===1?'':q}\\overrightarrow{CA}\\)`, reponse: `{${p-q}}`});
+    ex.push({id:"16.11 a)", detail: detail167b(p, q), type:"num", texteLibre:true, enonce:`\\(\\vec{u}=${p}\\overrightarrow{AB}+${q===1?'':q}\\overrightarrow{BC}+\\alpha\\overrightarrow{BA}+${q===1?'':q}\\overrightarrow{CA}\\)`, reponse: `{${p-q}}`});
     const p2 = alea(2,5);
     const target = alea(2,6), D = alea(3,8);
     const pFrac = math.fraction(target, D);
@@ -1492,14 +1720,14 @@ function genererExercices() {
   (function() {
     const k = alea(1,4);
     const m = alea(1,4);
-    ex.push({id:"16.12 a)", type:"texte", texteLibre:true, enonce:`\\(\\vec{u}=(1-\\alpha)(${m===1?'':m}\\overrightarrow{AB}-\\overrightarrow{BC})-(\\alpha-1)\\overrightarrow{AC}\\)`, reponse: vecTerm(`${m+1}*(1-a)`, "AB")});
+    ex.push({id:"16.12 a)", detail: detail1611a(m), type:"texte", texteLibre:true, enonce:`\\(\\vec{u}=(1-\\alpha)(${m===1?'':m}\\overrightarrow{AB}-\\overrightarrow{BC})-(\\alpha-1)\\overrightarrow{AC}\\)`, reponse: vecTerm(`${m+1}*(1-a)`, "AB")});
     const m2 = alea(1,3);
-    ex.push({id:"16.12 b)", type:"texte", pleineLargeur:true, texteLibre:true, enonce:`\\(\\vec{u}=${m2===1?'':m2}\\left(\\left(1-\\dfrac{1}{1-\\alpha}\\right)\\overrightarrow{AC}+\\alpha\\left(\\overrightarrow{BA}+\\dfrac{1}{1-\\alpha}\\overrightarrow{AC}\\right)\\right)\\)`, reponse: vecTerm(numTimesA(-m2), "AB")});
+    ex.push({id:"16.12 b)", detail: detail1611b(m2), type:"texte", pleineLargeur:true, texteLibre:true, enonce:`\\(\\vec{u}=${m2===1?'':m2}\\left(\\left(1-\\dfrac{1}{1-\\alpha}\\right)\\overrightarrow{AC}+\\alpha\\left(\\overrightarrow{BA}+\\dfrac{1}{1-\\alpha}\\overrightarrow{AC}\\right)\\right)\\)`, reponse: vecTerm(numTimesA(-m2), "AB")});
     const m3 = alea(1,3);
   })();
   // Calcul 16.15 - colinearite (4 items) - figure fixe (lisibilite), reponses fixes
-  ex.push({id:"16.13 a)", type:"qcm", texteLibre:true, enonce:"\\(\\vec{u}+\\dfrac{1}{2}\\vec{v}\\)", bonneReponse:"a", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]});
-  ex.push({id:"16.13 c)", type:"qcm", texteLibre:true, enonce:"\\(\\vec{v}+\\vec{u}+\\dfrac{1}{2}\\vec{w}\\)", bonneReponse:"c", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]});
+  ex.push({id:"16.13 a)", detail: detail1612('a'), type:"qcm", texteLibre:true, enonce:"\\(\\vec{u}+\\dfrac{1}{2}\\vec{v}\\)", bonneReponse:"a", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]});
+  ex.push({id:"16.13 c)", detail: detail1612('c'), type:"qcm", texteLibre:true, enonce:"\\(\\vec{v}+\\vec{u}+\\dfrac{1}{2}\\vec{w}\\)", bonneReponse:"c", options:[{lettre:"a",texte:"\\overrightarrow{AB}"},{lettre:"b",texte:"\\overrightarrow{CD}"},{lettre:"c",texte:"\\overrightarrow{EF}"}]});
   // Calcul 16.16 - exprimer u en fonction de v (equations scalaires)
   (function() {
     const p1 = aleaNonNul(-5,5), q1 = aleaNonNul(-6,6);
@@ -1542,7 +1770,7 @@ function genererExercices() {
     do { a1 = aleaNonNul(1,3); a2 = alea(1,3); a3 = alea(1,4); } while (a1+a2+a3 === 0);
     const a4 = a2;
     window.__f21ctx19 = { a1, a2, a3, a4 };
-    ex.push({id:"16.15", type:"texte", texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{GA}\\) en fonction du vecteur \\(\\overrightarrow{GC}\\)", reponse: vecTerm(fracToStr(math.fraction(-(a2+a3), a1)), "GC")});
+    ex.push({id:"16.15", detail: detail1613(a1, a2, a3), type:"texte", texteLibre:true, enonce:"Exprimer le vecteur \\(\\overrightarrow{GA}\\) en fonction du vecteur \\(\\overrightarrow{GC}\\)", reponse: vecTerm(fracToStr(math.fraction(-(a2+a3), a1)), "GC")});
   })();
   // Calcul 16.20 - exprimer PN en fonction de PM (contexte partage, synchronise par mettreAJourTextesAvances)
   (function() {
@@ -1551,12 +1779,12 @@ function genererExercices() {
     const k3 = math.divide(math.multiply(k1, math.subtract(1,k2)), math.add(k1,k2));
     const t = math.divide(math.add(k1,k2), k1);
     window.__f21ctx20 = { k1, k2, k3 };
-    ex.push({id:"16.16", type:"texte", texteLibre:true, enonce:"", reponse: vecTerm(fracToStr(t), "PM")});
+    ex.push({id:"16.16", detail: detail1614(k1, k2, k3), type:"texte", texteLibre:true, enonce:"", reponse: vecTerm(fracToStr(t), "PM")});
   })();
   // Calcul 16.21 - avance, u en fonction de v et alpha (mise a l'echelle globale des identites originales)
   (function() {
     const m1 = alea(1,3);
-    ex.push({id:"16.17 a)", type:"texte", texteLibre:true, enonce:`Si \\(\\vec{u}=${m1===1?'':m1}\\overrightarrow{AB}+${m1===1?'':m1}(\\alpha^2-1)\\overrightarrow{AC}\\) et \\(\\vec{v}=\\dfrac{1}{\\alpha-1}\\overrightarrow{AB}+(\\alpha+1)\\overrightarrow{AC}\\)`, reponse: vecTerm(m1===1?'(a-1)':`${m1}*(a-1)`, "v")});
+    ex.push({id:"16.17 a)", detail: detail1615(m1), type:"texte", texteLibre:true, enonce:`Si \\(\\vec{u}=${m1===1?'':m1}\\overrightarrow{AB}+${m1===1?'':m1}(\\alpha^2-1)\\overrightarrow{AC}\\) et \\(\\vec{v}=\\dfrac{1}{\\alpha-1}\\overrightarrow{AB}+(\\alpha+1)\\overrightarrow{AC}\\)`, reponse: vecTerm(m1===1?'(a-1)':`${m1}*(a-1)`, "v")});
     const m2 = alea(1,3);
     const m3 = alea(1,3);
     const m4 = alea(1,3);
@@ -1568,18 +1796,22 @@ function genererExercices() {
     let p, r;
     do { p = aleaNonNul(-3,3); r = aleaNonNul(-3,3); } while (p + r === 0);
     const q = p, s = p + r;
-    ex.push({id:"16.18 d)", type:"texte", texteLibre:true, enonce:`Simplifier \\(${chaslesEnonceLatex([{coef:p,from:'M',to:'I'},{coef:-q,from:'N',to:'A'},{coef:-r,from:'B',to:'I'},{coef:s,from:'I',to:'A'}])}\\)`, reponse: vecTerm(fracToStr(p), "MN")});
+    ex.push({id:"16.18 d)", detail: detail1616(p, r), type:"texte", texteLibre:true, enonce:`Simplifier \\(${chaslesEnonceLatex([{coef:p,from:'M',to:'I'},{coef:-q,from:'N',to:'A'},{coef:-r,from:'B',to:'I'},{coef:s,from:'I',to:'A'}])}\\)`, reponse: vecTerm(fracToStr(p), "MN")});
   })();
   // Calcul 16.23 - centre de gravite (theoremes fixes, non randomisables)
-  ex.push({id:"16.19 a)", type:"texte", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\)", reponse:"1/3(AB+AC)"});
-  ex.push({id:"16.19 b)", type:"texte", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AA'}\\)", reponse:"2/3AA'"});
-  ex.push({id:"16.19 c)", type:"num", texteLibre:true, vecteurNul:true, enonce:"Simplifier la somme \\(\\overrightarrow{AA'}+\\overrightarrow{BB'}+\\overrightarrow{CC'}\\)", reponse:"0"});
-  ex.push({id:"16.19 d)", type:"num", texteLibre:true, vecteurNul:true, enonce:"Simplifier la somme \\(\\overrightarrow{GA'}+\\overrightarrow{GB'}+\\overrightarrow{GC'}\\)", reponse:"0"});
+  ex.push({id:"16.19 a)", detail: detail1617('a'), type:"texte", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AB}\\) et \\(\\overrightarrow{AC}\\)", reponse:"1/3(AB+AC)"});
+  ex.push({id:"16.19 b)", detail: detail1617('b'), type:"texte", texteLibre:true, enonce:"Exprimer \\(\\overrightarrow{AG}\\) en fonction de \\(\\overrightarrow{AA'}\\)", reponse:"2/3AA'"});
+  ex.push({id:"16.19 c)", detail: detail1617('c'), type:"num", texteLibre:true, vecteurNul:true, enonce:"Simplifier la somme \\(\\overrightarrow{AA'}+\\overrightarrow{BB'}+\\overrightarrow{CC'}\\)", reponse:"0"});
+  ex.push({id:"16.19 d)", detail: detail1617('d'), type:"num", texteLibre:true, vecteurNul:true, enonce:"Simplifier la somme \\(\\overrightarrow{GA'}+\\overrightarrow{GB'}+\\overrightarrow{GC'}\\)", reponse:"0"});
 
   // renumerotation (05/10/2026 ; l'ancien 16.14, devenu 16.13, supprime le meme jour a la demande de David) : ancien identifiant -> nouveau, dans l'ordre de la fiche
   const parId = {};
   ex.forEach(e => { parId[e.id] = e; });
-  return [...auto, ...RENUMEROTATION_16.map(([ancien, nouveau]) => Object.assign(parId[ancien], {id: nouveau}))];
+  const res = [...auto, ...RENUMEROTATION_16.map(([ancien, nouveau]) => Object.assign(parId[ancien], {id: nouveau}))];
+  Detail.preparer(res);   // « < » des étapes : \lt
+  Detail.couper(res, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  res.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
+  return res;
 }
 const RENUMEROTATION_16 = [
   ['16.3', '16.4'],
@@ -2995,7 +3227,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

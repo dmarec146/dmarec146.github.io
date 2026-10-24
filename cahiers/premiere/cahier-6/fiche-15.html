@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"15.1 a)":0.75,"15.1 b)":0.5,"15.2 a)":0.75,"15.2 b)":0.75,"15.3 a)":0.5,"15.3 b)":0.5,"15.4 a)":0.75,"15.4 b)":0.75,"15.4 c)":1,"15.4 d)":1,"15.5 a)":0.75,"15.5 b)":0.75,"15.5 c)":0.75,"15.6 a)":0.75,"15.6 b)":1,"15.6 c)":1,"15.7 a)":1.25,"15.7 b)":1,"15.7 c)":1.25,"15.8 a)":1,"15.8 b)":0.75,"15.8 c)":0.75,"15.8 d)":1.25,"15.9 a)":1.5,"15.9 b)":0.75,"15.10 a)":1.5,"15.10 b)":0.75,"15.11 a)":1.5,"15.11 b)":1.5,"15.12 a)":1.75,"15.12 b)":1.75,"15.13 a)":1.75,"15.13 b)":1.75,"15.14 a)":1.5,"15.14 b)":1.5,"15.14 c)":2},"bonus":["15.11 a)","15.11 b)","15.12 a)","15.12 b)","15.13 a)","15.13 b)","15.14 a)","15.14 b)","15.14 c)"]});
@@ -1238,6 +1240,275 @@ function fmtLin(a, b) {
   return s;
 }
 
+// ---------- details de correction (24/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, lignesDelta2, phraseDelta2, lignesRacines2, lignesRacinesRat2, ligneRacineDouble2, detailInequation2 } = DetailQ;
+const lin15 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const cp15 = (v) => (v === 1 ? '' : v === -1 ? '-' : String(v));                          // coefficient devant une parenthese ou une lettre
+const INV15 = { '<': '>', '>': '<', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const OPM15 = { '<': '<', '>': '>', '\\leqslant ': '<=', '\\geqslant ': '>=' };
+const fr15 = (n, d) => fracD(math.fraction(n, d));                                          // fraction irreductible, signe devant
+const surd15 = (c, r) => (r === 1 ? [{ c, v: '' }] : [{ c, v: `\\sqrt{${r}}` }]);          // c racine(r)
+const shift15 = (v, c) => (c === 0 ? v : `${v}${c > 0 ? '+' : '-'}${Math.abs(c)}`);        // x - h
+const sumProd15 = (items) => items.filter(([k]) => k !== 0).reduce((s, [k, v], i) => s + (i === 0 ? (k < 0 ? '-' : '') : (k < 0 ? ' - ' : ' + ')) + (Math.abs(k) === 1 ? v : `${Math.abs(k)}\\times ${v}`), '') || '0';
+const ajout15 = (t) => (t === '0' ? '' : t.startsWith('-') ? t : `+${t}`);                   // « + t » sans signe double
+const combi15 = (items) => items.filter(([k]) => k !== 0).reduce((s, [k, e], i) => s + (i === 0 ? (k < 0 ? '-' : '') : (k < 0 ? ' - ' : ' + ')) + `${Math.abs(k) === 1 ? '' : Math.abs(k)}\\left(${e}\\right)`, '') || '0';
+// comme Detail.lignesSomme, mais le premier terme peut etre negatif
+function sommeSignee15(termes) {
+  const den = termes.reduce((t, x) => Detail.ppcm(t, x.d), 1), num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+  const sg = (x, i) => (i === 0 ? (x.s < 0 ? '-' : '') : (x.s < 0 ? ' - ' : ' + ')), brute = fracBrute(num, den), simple = fracTexte(num, den);
+  const origine = termes.map((x, i) => sg(x, i) + fracBrute(x.n, x.d)).join('');
+  const converti = termes.map((x, i) => { const m = den / x.d; return sg(x, i) + (m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+  const meme = termes.map((x, i) => sg(x, i) + fracBrute(x.n * (den / x.d), den)).join('');
+  return { lignes: [`${origine} = ${converti}`, `${meme} = ${brute}${brute === simple ? '' : ` = ${simple}`}`], final: simple };
+}
+// fin d'une inequation « c x op D » (c non nul) : division par c (changement de sens si c < 0), solution, intervalle
+function finIneq15(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV15[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// 15.1 a) (Ax+B)/C op (Dx+E)/F
+function detail151a(A, B, C, D, E, F, op, spec) {
+  const den = A * F - C * D, num = C * E - F * B;
+  return { lignes: [`\\dfrac{${lin15(A, B)}}{${C}} ${op} \\dfrac{${lin15(D, E)}}{${F}}`, `\\iff \\dfrac{${F}\\left(${lin15(A, B)}\\right)}{${C * F}} ${op} \\dfrac{${C}\\left(${lin15(D, E)}\\right)}{${C * F}}`,
+    `\\iff ${F}\\left(${lin15(A, B)}\\right) ${op} ${C}\\left(${lin15(D, E)}\\right)`, `\\iff ${lin15(F * A, F * B)} ${op} ${lin15(C * D, C * E)}`,
+    `\\iff ${polyF2([{ c: den, v: 'x' }])} ${op} ${num}`, ...finIneq15(den, op, num, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 15.1 b) A x^2 + Bc op 0
+function detail151b(A, Bc, op, spec) {
+  const d = detailInequation2('x', A, 0, Bc, OPM15[op], spec, [], formaterIntervalleSpec);
+  return { lignes: d.lignes, final: d.final };
+}
+// 15.2 a) x^2 + b x + c = 0 : deux solutions (sols = [r1, r2]), une solution double ([r]) ou aucune ([])
+function detail152a(b, c, sols) {
+  const d = lignesDelta2(1, b, c), l = ['\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D)];
+  if (sols.length === 2) l.push(...lignesRacines2(1, b, b * b - 4 * c).lignes);
+  else if (sols.length === 1) l.push(ligneRacineDouble2(1, b).ligne);
+  const S = sols.length ? `\\{${sols.join('\\,;\\,')}\\}` : '\\emptyset';
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 15.2 b) c1 sqrt(k) x - D1 sqrt(k) = c2 sqrt(k) x - D2 sqrt(k), apres simplification des racines
+function detail152b(kc, c1, c2, out1, in1, out2, in2) {
+  const D1 = out1 * in1, D2 = out2 * in2, sk = `\\sqrt{${kc}}`, sol = fr15(D1 - D2, c1 - c2), simpl = [...new Set([c1, in1, c2, in2].filter(m => m > 1))];
+  return { lignes: [...simpl.map(m => `\\sqrt{${kc * m * m}} = ${m}${sk}`), `${cp15(c1)}${sk}x - ${cp15(D1)}${sk} = ${cp15(c2)}${sk}x - ${cp15(D2)}${sk}`,
+    `\\iff ${cp15(c1 - c2)}${sk}x = ${D1 - D2 === 0 ? '0' : `${cp15(D1 - D2)}${sk}`}`, `\\iff ${polyF2([{ c: c1 - c2, v: 'x' }])} = ${D1 - D2}`, `\\iff x = ${sol}`, `S = \\{${sol}\\}`], final: `\\{${sol}\\}` };
+}
+// 15.3 a) P1/Q1 x P2/Q2 - P3/Q3
+function detail153a(P1, Q1, P2, Q2, P3, Q3) {
+  const f1 = (n, d) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`, par = (n, d) => (n < 0 ? `\\left(${f1(n, d)}\\right)` : f1(n, d)), pf = math.fraction(P1 * P2, Q1 * Q2);
+  const prod = dedup2(`${f1(P1, Q1)}\\times ${par(P2, Q2)}`, `\\dfrac{${P1}\\times ${dP(P2)}}{${Q1}\\times ${Q2}}`, fracBrute(P1 * P2, Q1 * Q2), fracD(pf));
+  const S = sommeSignee15([{ s: pf.s, n: pf.n, d: pf.d }, { s: -1, n: P3, d: Q3 }]);
+  return { lignes: [prod, ...S.lignes], final: S.final };
+}
+// 15.3 b) Pb/Qb sqrt(k m1^2) - Rb/Sb sqrt(k m2^2)
+// 15.4 : equation cartesienne a partir d'un vecteur directeur (ux ; uy) et d'un point (x0 ; y0)
+function lignesCart15(ux, uy, x0, y0, avant) {
+  const c = -uy * x0 + ux * y0, fin = `${polyF2([{ c: uy, v: 'x' }, { c: -ux, v: 'y' }, { c, v: '' }])} = 0`;
+  return { lignes: [...avant, '\\scriptsize \\text{Une droite d\'équation } ax+by+c=0 \\text{ est dirigée par } \\begin{pmatrix}-b\\\\a\\end{pmatrix}', '\\scriptsize \\text{On choisit } a \\text{ et } b \\text{ pour que ce vecteur soit celui de l\'énoncé}', `a = ${uy}`, `-b = ${ux} \\iff b = ${-ux}`,
+    `${polyF2([{ c: uy, v: 'x' }, { c: -ux, v: 'y' }, { c: 1, v: 'c' }])} = 0`, `${sumProd15([[uy, dP(x0)], [-ux, dP(y0)]])} + c = 0`, `\\iff c = ${c}`, fin], final: fin };
+}
+function detail154a(ux, uy, x0, y0) { return lignesCart15(ux, uy, x0, y0, []); }
+function detail154c(xA, yA, xB, yB) {
+  const ux = xB - xA, uy = yB - yA;
+  return lignesCart15(ux, uy, xA, yA, [`\\overrightarrow{AB}\\begin{pmatrix}${xB}-${dP(xA)}\\\\${yB}-${dP(yA)}\\end{pmatrix} = \\begin{pmatrix}${ux}\\\\${uy}\\end{pmatrix}`]);
+}
+// 15.4 b) equation reduite par deux points
+function detail154b(xA, yA, xB, yB) {
+  const P = Detail.lignesPente(xA, yA, xB, yB), O = Detail.lignesOrdonnee(P.m, xA, yA), fin = `y = ${polyF2([{ c: P.m, v: 'x' }, { c: O.p, v: '' }])}`;
+  return { lignes: ['m = \\dfrac{y_{B}-y_{A}}{x_{B}-x_{A}}', ...P.lignes, ...O.lignes, fin], final: fin };
+}
+// 15.4 d) points a coordonnees A(a1 sqrt2 ; a2 sqrt3), B(b1 sqrt2 ; b2 sqrt3)
+function detail154d(a1, a2, b1, b2) {
+  const P = b1 - a1, Q = b2 - a2, cc = P * a2 - Q * a1, sr = (k, r) => (k === 0 ? '0' : `${cp15(k)}\\sqrt{${r}}`);
+  const eq = (c) => `${sr(Q, 3)}x ${-P < 0 ? '-' : '+'} ${P === -1 || P === 1 ? '' : Math.abs(P)}\\sqrt{2}y${c}`;
+  const cT = cc === 0 ? '' : ` ${cc < 0 ? '-' : '+'} ${Math.abs(cc) === 1 ? '' : Math.abs(cc)}\\sqrt{6}`, fin = `${eq(cT)} = 0`;
+  return { lignes: [`\\overrightarrow{AB}\\begin{pmatrix}${cp15(P)}\\sqrt{2}\\\\${cp15(Q)}\\sqrt{3}\\end{pmatrix}`, '\\scriptsize \\text{Une droite d\'équation } ax+by+c=0 \\text{ est dirigée par } \\begin{pmatrix}-b\\\\a\\end{pmatrix}', '\\scriptsize \\text{On choisit } a \\text{ et } b \\text{ pour que ce vecteur soit celui de l\'énoncé}',
+    `a = ${sr(Q, 3)} \\text{ et } b = ${sr(-P, 2)}`, `${eq(' + c')} = 0`, `\\sqrt{2}\\times\\sqrt{3} = \\sqrt{6}`, `${sr(Q * a1, 6)} ${-P * a2 < 0 ? '-' : '+'} ${Math.abs(P * a2) === 1 ? '' : Math.abs(P * a2)}\\sqrt{6} + c = 0`.replace(/ \+ 0\\sqrt\{6\}/, ''), `\\iff c = ${sr(cc, 6)}`, fin], final: fin };
+}
+// 15.5 : lectures sur le graphique (d1 : pente P7/Q7, ordonnee a l'origine B7 ; d2 : y = K7)
+function detail155(q, g) {
+  const { P7, Q7, B7, K7 } = g, pts = ["\\text{On lit deux points de } (d_1)", `A(0\\,;\\,${B7})`, `B(${Q7}\\,;\\,${B7 + P7})`];
+  if (q === 'a') return { lignes: [...pts, `\\overrightarrow{AB}\\begin{pmatrix}${Q7}-0\\\\${dP(B7 + P7)}-${dP(B7)}\\end{pmatrix} = \\begin{pmatrix}${Q7}\\\\${P7}\\end{pmatrix}`, `\\left(${Q7}\\,;\\,${P7}\\right)`], final: `\\left(${Q7}\\,;\\,${P7}\\right)` };
+  if (q === 'b') { const L = Detail.lignesPente(0, B7, Q7, B7 + P7), fin = `y = ${polyF2([{ c: L.m, v: 'x' }, { c: B7, v: '' }])}`; return { lignes: ["\\text{On lit l'ordonnée à l'origine :}", `p = ${B7}`, '\\text{puis un autre point de la droite :}', `B(${Q7}\\,;\\,${B7 + P7})`, ...L.lignes, fin], final: fin }; }
+  return { lignes: ['\\text{La droite } (d_2) \\text{ est parallèle à l\'axe des abscisses}', `\\text{Elle passe par le point } \\left(0\\,;\\,${K7}\\right)`, `y = ${K7}`], final: `y = ${K7}` };
+}
+// 15.6 : equation cartesienne eqa x + eqb y + eqc = 0
+function detail156a(ea, eb, ec, Yn, Yd) {
+  const Y = math.fraction(Yn, Yd), R = math.subtract(math.multiply(-eb, Y), ec), x = math.divide(R, ea);
+  return { lignes: ['\\text{On remplace } y \\text{ par } ' + fracD(Y), `${polyF2([{ c: ea, v: 'x' }])} ${eb < 0 ? '-' : '+'} ${Math.abs(eb) === 1 ? '' : Math.abs(eb) + '\\times '}${fracDP(Y)}${ec === 0 ? '' : ` ${ec < 0 ? '-' : '+'} ${Math.abs(ec)}`} = 0`,
+    `\\iff ${polyF2([{ c: ea, v: 'x' }])} = ${fracD(R)}`, `\\iff x = ${dedup2(`${fracD(R)} \\div ${dP(ea)}`, fracD(x))}`], final: fracD(x) };
+}
+function detail156b(ea, eb, ec) {
+  const x = math.fraction(-ec, ea + eb), fin = `\\left(${fracD(x)}\\,;\\,${fracD(x)}\\right)`;
+  return { lignes: ['\\text{On remplace } y \\text{ par } x', `${polyF2([{ c: ea, v: 'x' }, { c: eb, v: 'x' }, { c: ec, v: '' }])} = 0`, `\\iff ${polyF2([{ c: ea + eb, v: 'x' }])} = ${-ec}`, `\\iff x = ${dedup2(`${-ec} \\div ${dP(ea + eb)}`, fracD(x))}`, fin], final: fin };
+}
+function detail156c(af, bf, c0, x1, y1) {
+  const c1 = math.multiply(-1, math.add(math.multiply(af, x1), math.multiply(bf, y1)));
+  const fin = `${polyF2([{ c: af, v: 'x' }, { c: bf, v: 'y' }, { c: c1, v: '' }])} = 0`;
+  return { lignes: ['\\scriptsize \\text{Une droite parallèle à } (d) \\text{ a une équation avec les mêmes } a \\text{ et } b', `${polyF2([{ c: af, v: 'x' }, { c: bf, v: 'y' }, { c: 1, v: 'c' }])} = 0`,
+    `${fracDP(af)}\\times ${dP(x1)} + ${fracDP(bf)}\\times ${dP(y1)} + c = 0`.replace('+ c', '+ c'), `\\iff c = ${fracD(c1)}`, fin], final: fin };
+}
+// 15.7 : droites dependant d'un parametre t
+function detail157a(c1, c2, c3, c4, x0, y0) {
+  const ux = polyL([c2, c1], 't'), uy = polyL([c4, c3], 't'), b = polyL([-c2, -c1], 't'), cT = polyL([-c4 * x0 + c2 * y0, -c3 * x0 + c1 * y0], 't');
+  const fin = `\\left(${uy}\\right)x+\\left(${b}\\right)y${cT === '0' ? '' : `+\\left(${cT}\\right)`} = 0`;
+  return { lignes: ['\\scriptsize \\text{Une droite d\'équation } ax+by+c=0 \\text{ est dirigée par } \\begin{pmatrix}-b\\\\a\\end{pmatrix}', '\\scriptsize \\text{On choisit } a \\text{ et } b \\text{ pour que ce vecteur soit celui de l\'énoncé}', `a = ${uy}`, `-b = ${ux} \\iff b = ${b}`, `\\left(${uy}\\right)x+\\left(${b}\\right)y+c = 0`,
+    `\\left(${uy}\\right)\\times ${dP(x0)}+\\left(${b}\\right)\\times ${dP(y0)}+c = 0`, `\\iff c = ${combi15([[-x0, uy], [-y0, b]])}`, `= ${cT}`, fin], final: fin };
+}
+function detail157b(c3, c4) {
+  const sol = fr15(-c4, c3), uy = polyL([c4, c3], 't');
+  return { lignes: ['\\text{La droite est parallèle à } (Ox) \\text{ lorsque } u_{y} = 0', `${uy} = 0`, `\\iff ${polyF2([{ c: c3, v: 't' }])} = ${-c4}`, ...(c3 === 1 ? [] : [`\\iff t = ${sol}`])], final: sol };
+}
+// systeme a1 x + b1 y = c1, a2 x + b2 y = c2 (entiers) resolu par combinaison : { lignes, x, y } (fractions) ; u, w = noms des inconnues
+function lignesSysteme15(a1, b1, c1, a2, b2, c2, u = 'x', w = 'y') {
+  const eq = (a, b, c) => `${polyF2([{ c: a, v: u }, { c: b, v: w }])} = ${c}`, det = a1 * b2 - a2 * b1, xn = c1 * b2 - c2 * b1, x = math.fraction(xn, det);
+  const y = math.divide(math.subtract(math.fraction(c1), math.multiply(a1, x)), math.fraction(b1)), l = [eq(a1, b1, c1), eq(a2, b2, c2), `\\text{On élimine } ${w} \\text{ en multipliant}`, `\\text{la 1re équation par } ${b2} \\text{ et la 2e par } ${b1}`,
+    eq(a1 * b2, b1 * b2, c1 * b2), eq(a2 * b1, b2 * b1, c2 * b1), '\\text{On soustrait membre à membre :}', `${polyF2([{ c: det, v: u }])} = ${xn}`];
+  if (det !== 1) l.push(`\\iff ${u} = ${dedup2(det < 0 ? fracBrute(-xn, -det) : fracBrute(xn, det), fracD(x))}`);
+  l.push(`\\text{On remplace } ${u} \\text{ dans la 1re équation :}`);
+  const reste = math.subtract(math.fraction(c1), math.multiply(a1, x)), t1 = `${a1 === 1 ? '' : a1 === -1 ? '-' : `${a1}\\times `}${fracDP(x)} ${b1 < 0 ? '-' : '+'} ${Math.abs(b1) === 1 ? '' : Math.abs(b1)}${w} = ${c1}`;
+  l.push(t1, `\\iff ${polyF2([{ c: b1, v: w }])} = ${fracD(reste)}`);
+  if (b1 !== 1) l.push(`\\iff ${w} = ${dedup2(`${fracD(reste)} \\div ${dP(b1)}`, fracD(y))}`);
+  return { lignes: l, x, y };
+}
+// 15.8 a) a1 x + b1 y + c1 = 0 et a2 x + b2 y + c2 = 0
+function detail158a(a1, b1, c1, a2, b2, c2) {
+  const S = lignesSysteme15(a1, b1, -c1, a2, b2, -c2), fin = `\\left(${fracD(S.x)}\\,;\\,${fracD(S.y)}\\right)`;
+  return { lignes: [...S.lignes, fin], final: fin };
+}
+// 15.8 b) et c) droite a x + b y + c = 0 (fractions) avec l'axe des abscisses ou la droite y = x
+function detail158b(af, bf, cf) {
+  const x = math.divide(math.multiply(-1, cf), af), fin = `\\left(${fracD(x)}\\,;\\,0\\right)`;
+  return { lignes: ["\\small \\text{Un point de l'axe des abscisses a pour ordonnée } 0", `${polyF2([{ c: af, v: 'x' }, { c: cf, v: '' }])} = 0`, `\\iff ${polyF2([{ c: af, v: 'x' }])} = ${fracD(math.multiply(-1, cf))}`,
+    `\\iff x = ${dedup2(`${fracD(math.multiply(-1, cf))} \\div ${fracDP(af)}`, fracD(x))}`, fin], final: fin };
+}
+function detail158c(af, bf, cf) {
+  const s = math.add(af, bf), x = math.divide(math.multiply(-1, cf), s), fin = `\\left(${fracD(x)}\\,;\\,${fracD(x)}\\right)`;
+  return { lignes: ['\\text{On remplace } y \\text{ par } x', `${polyF2([{ c: af, v: 'x' }, { c: bf, v: 'x' }, { c: cf, v: '' }])} = 0`, `\\iff ${polyF2([{ c: s, v: 'x' }])} = ${fracD(math.multiply(-1, cf))}`,
+    `\\iff x = ${dedup2(`${fracD(math.multiply(-1, cf))} \\div ${fracDP(s)}`, fracD(x))}`, fin], final: fin };
+}
+// 15.8 d) A1 sqrt3 x + B1 sqrt2 y + C1 = 0 et A2 sqrt3 x + B2 sqrt2 y + C2 = 0 : X = sqrt3 x, Y = sqrt2 y
+// 15.9 : droite (ea x + eb y + ec = 0) et parabole y = x^2 + bP x + cP
+function detail159(q, g) {
+  const { eqa16: ea, eqb16: eb, eqc16: ec, bP, cP } = g, m = math.fraction(-ea, eb), p = math.fraction(-ec, eb), cl = math.subtract(bP, m), cc = math.subtract(cP, p);
+  const D = math.subtract(math.multiply(cl, cl), math.multiply(4, cc)), droite = polyF2([{ c: m, v: 'x' }, { c: p, v: '' }]), sg = q === 'a' ? -1 : 1, numero = q === 'a' ? 1 : 2;
+  const l = [`${polyF2([{ c: ea, v: 'x' }, { c: eb, v: 'y' }, { c: ec, v: '' }])} = 0 \\iff y = ${droite}`, `${polyF2([{ c: 1, v: 'x^{2}' }, { c: bP, v: 'x' }, { c: cP, v: '' }])} = ${droite}`,
+    `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: cl, v: 'x' }, { c: cc, v: '' }])} = 0`, '\\text{Discriminant : } b^{2}-4ac', ...lignesDelta2(1, cl, cc).lignes, phraseDelta2(D)];
+  const nD = D.s * D.n, dD = D.d, rr = simplifierRacine(nD * dD), half = math.divide(cl, -2);
+  let xT, yT;
+  if (rr.radicand === 1) {
+    const r = lignesRacinesRat2(1, cl, D), x = sg < 0 ? r.x1 : r.x2, y = math.add(math.multiply(m, x), p);
+    l.push(...r.lignes); xT = fracD(x); yT = fracD(y);
+    l.push(`y = ${droite.replace(/x/, `\\left(${xT}\\right)`)} = ${yT}`);
+  } else {
+    const sc = math.divide(math.fraction(rr.coef, dD), 2), sk = `\\sqrt{${rr.radicand}}`;
+    l.push(dD === 1 ? dedup2(`\\sqrt{\\Delta} = \\sqrt{${nD}}`, `${cp15(rr.coef)}${sk}`) : dedup2(`\\sqrt{\\Delta} = \\sqrt{\\dfrac{${nD}}{${dD}}}`, `\\dfrac{\\sqrt{${nD * dD}}}{${dD}}`, `\\dfrac{${rr.coef === 1 ? '' : rr.coef}${sk}}{${dD}}`));
+    xT = polyF2([{ c: half, v: '' }, { c: math.multiply(sg, sc), v: sk }]);
+    yT = polyF2([{ c: math.add(math.multiply(m, half), p), v: '' }, { c: math.multiply(m, math.multiply(sg, sc)), v: sk }]);
+    l.push(`x_{${numero}} = \\dfrac{-b ${sg < 0 ? '-' : '+'} \\sqrt{\\Delta}}{2a} = ${xT}`, `y = ${droite.replace(/x/, `\\left(${xT}\\right)`)} = ${yT}`);
+  }
+  const fin = `\\left(${xT}\\,;\\,${yT}\\right)`;
+  l.push(fin);
+  return { lignes: l, final: fin };
+}
+// 15.10 : droite y - k = m (x - h) et cercle (x-h)^2 + (y-k)^2 = r^2
+function detail1510(q, g) {
+  const { h17: h, k17: k, m17: m, r17: r } = g, S = 1 + m * m, rr = simplifierRacine(S), sk = `\\sqrt{${rr.radicand}}`, sg = q === 'a' ? -1 : 1, numero = q === 'a' ? 1 : 2;
+  const off = math.fraction(r * rr.coef, S), offT = polyF2([{ c: off, v: sk }]), sq = (v, c) => (c === 0 ? `${v}^{2}` : `\\left(${shift15(v, c)}\\right)^{2}`);
+  const lf = (mm, v, c) => (c === 0 ? `${cp15(mm)}${v}` : `${cp15(mm)}\\left(${shift15(v, c)}\\right)`);
+  const xs = polyF2([{ c: h, v: '' }, { c: math.multiply(sg, off), v: sk }]), ys = polyF2([{ c: k, v: '' }, { c: math.multiply(m, math.multiply(sg, off)), v: sk }]);
+  const eqd = polyF2([{ c: -m, v: 'x' }, { c: 1, v: 'y' }, { c: m * h - k, v: '' }]), signe = sg < 0 ? '-' : '';
+  const l = [`${eqd} = 0 \\iff ${shift15('y', -k)} = ${lf(m, 'x', -h)}`, `${sq('x', -h)}+${sq('y', -k)} = ${r * r}`, `\\iff ${sq('x', -h)}+${m * m === 1 ? '' : m * m}${sq('x', -h)} = ${r * r}`,
+    `\\iff ${S}${sq('x', -h)} = ${r * r}`, `\\iff ${sq('x', -h)} = \\dfrac{${r * r}}{${S}}`, `\\iff ${shift15('x', -h)} = -\\dfrac{${r}}{\\sqrt{${S}}} \\text{ ou } ${shift15('x', -h)} = \\dfrac{${r}}{\\sqrt{${S}}}`,
+    `\\dfrac{${r}}{\\sqrt{${S}}} = ${dedup2(`\\dfrac{${r}${sk}}{${S}}`, offT)}`, `${shift15('x', -h)} = ${signe}${offT}`, `x_{${numero}} = ${xs}`,
+    `y = ${k === 0 ? '' : `${k} `}${m < 0 || k === 0 ? (m < 0 ? '- ' : '') : '+ '}${Math.abs(m) === 1 ? '' : `${Math.abs(m)}\\times `}\\left(${signe}${offT}\\right)`, `= ${ys}`];
+  const fin = `\\left(${xs}\\,;\\,${ys}\\right)`;
+  l.push(fin);
+  return { lignes: l, final: fin };
+}
+// 15.11 : droite 1/(a^2+N) x + (a^2-N) y - C = 0
+function detail1511(q, g) {
+  const { N18: N, C18: C, K18: K } = g, aN = polyL([N, 0, 1], 'a'), aMN = polyL([-N, 0, 1], 'a');
+  if (q === 'a') {
+    const num = polyL([C * N, -1, C], 'a'), den = polyL([-N * N, 0, 0, 0, 1], 'a');
+    return { lignes: [`\\small \\text{Si } ${aMN} = 0 \\text{, la droite est verticale :}`, `x = ${2 * N * C}`, `\\scriptsize \\text{or } a = ${N === 1 ? '\\pm 1' : `\\pm\\sqrt{${N}}`} \\neq ${2 * N * C} \\text{ : aucun de ses points n'a pour abscisse } a`, `\\text{Si } ${aMN} \\neq 0 \\text{ :}`,`\\dfrac{a}{${aN}}+\\left(${aMN}\\right)y-${C} = 0`, `\\iff \\left(${aMN}\\right)y = ${C}-\\dfrac{a}{${aN}}`, `\\iff \\left(${aMN}\\right)y = \\dfrac{${C}\\left(${aN}\\right)-a}{${aN}}`,
+      `\\iff y = \\dfrac{${C}\\left(${aN}\\right)-a}{\\left(${aN}\\right)\\left(${aMN}\\right)}`, `= \\dfrac{${num}}{${den}}`], final: `\\dfrac{${num}}{${den}}` };
+  }
+  const y0 = polyL([-K, 1], 'a'), prod = polyL([N * K, -N, -K, 1], 'a'), inner = polyL([C - N * K, N, K, -1], 'a'), fin = polyL([N * C - N * N * K, N * N, C, 0, K, -1], 'a');
+  return { lignes: [`\\dfrac{x}{${aN}}+\\left(${aMN}\\right)\\left(${y0}\\right)-${C} = 0`, `\\iff \\dfrac{x}{${aN}} = ${C}-\\left(${aMN}\\right)\\left(${y0}\\right)`, `\\iff x = \\left(${aN}\\right)\\left(${C}-\\left(${aMN}\\right)\\left(${y0}\\right)\\right)`,
+    `\\left(${aMN}\\right)\\left(${y0}\\right) = ${prod}`, `x = \\left(${aN}\\right)\\left(${inner}\\right)`, `= ${fin}`], final: fin };
+}
+// 15.12 : (d1) m x + (P m + Q) y + R = 0 et (d2) S x + m y + T = 0
+// 15.13 : f(x) = A x^2 + B x + C, tangente en m, intersection avec la droite ea x + eb y + ec = 0
+// 15.14 : f(x) = A1 x^2 + C1, g(x) = A2 x^2 + C2, tangentes en a (f) et en -a (g)
+
+function detail153b(k, m1, m2, Pb, Qb, Rb, Sb) {
+  const sk = `\\sqrt{${k}}`, a1 = math.fraction(Pb * m1, Qb), a2 = math.fraction(Rb * m2, Sb), co = math.subtract(a1, a2), f1 = (n, d) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`;
+  const S = sommeSignee15([{ s: a1.s, n: a1.n, d: a1.d }, { s: -a2.s, n: a2.n, d: a2.d }]);
+  const fin = co.d === 1 ? `${cp15(co.s * co.n)}${sk}` : `${co.s < 0 ? '-' : ''}\\dfrac{${co.n === 1 ? '' : co.n}${sk}}{${co.d}}`;
+  return { lignes: [...[...new Set([m1, m2].filter(m => m > 1))].map(m => `\\sqrt{${k * m * m}} = ${m}${sk}`),
+    `${f1(Pb, Qb)}${m1 > 1 ? `\\times ${m1}` : ''}${sk} ${Rb < 0 ? '+' : '-'} \\dfrac{${Math.abs(Rb)}}{${Sb}}${m2 > 1 ? `\\times ${m2}` : ''}${sk}`, `\\text{Coefficient de } ${sk} \\text{ :}`, ...S.lignes, fin], final: fin };
+}
+function detail157c(cB, cD, x0, y0) {
+  const uy = polyL([cD, cB], 't'), cpoly = polyF2([{ c: y0, v: 't^{2}' }, { c: math.multiply(-cB, x0), v: 't' }, { c: math.multiply(-cD, x0), v: '' }]), k = math.multiply(-1, x0);
+  const fin = `\\left(${uy}\\right)x-t^{2}y${cpoly === '0' ? '' : `+\\left(${cpoly}\\right)`} = 0`, coefx = `${k.s < 0 ? '-' : ''}${k.n === 1 && k.d === 1 ? '' : fracD(math.abs(k))}`;
+  return { lignes: ['\\scriptsize \\text{Une droite d\'équation } ax+by+c=0 \\text{ est dirigée par } \\begin{pmatrix}-b\\\\a\\end{pmatrix}', '\\scriptsize \\text{On choisit } a \\text{ et } b \\text{ pour que ce vecteur soit celui de l\'énoncé}', `a = ${uy}`, '-b = t^{2} \\iff b = -t^{2}', `\\left(${uy}\\right)x-t^{2}y+c = 0`,
+    `\\left(${uy}\\right)\\times ${fracDP(x0)}-t^{2}\\times ${fracDP(y0)}+c = 0`, `\\iff c = ${coefx}\\left(${uy}\\right)${ajout15(polyF2([{ c: y0, v: 't^{2}' }]))}`, `= ${cpoly}`, fin], final: fin };
+}
+// 15.8 d) A1 sqrt3 x + B1 sqrt2 y + C1 = 0 et A2 sqrt3 x + B2 sqrt2 y + C2 = 0 : X = sqrt3 x, Y = sqrt2 y
+function detail158d(A1, B1, C1, A2, B2, C2) {
+  const S = lignesSysteme15(A1, B1, -C1, A2, B2, -C2, 'X', 'Y'), xs = math.divide(S.x, 3), ys = math.divide(S.y, 2);
+  const tx = polyF2(surd15(xs, 3)), ty = polyF2(surd15(ys, 2)), fin = `\\left(${tx}\\,;\\,${ty}\\right)`;
+  return { lignes: ['\\text{On pose } X = \\sqrt{3}x \\text{ et } Y = \\sqrt{2}y', `${polyF2([{ c: A1, v: 'X' }, { c: B1, v: 'Y' }, { c: C1, v: '' }])} = 0`, `${polyF2([{ c: A2, v: 'X' }, { c: B2, v: 'Y' }, { c: C2, v: '' }])} = 0`, ...S.lignes,
+    `x = \\dfrac{X}{\\sqrt{3}} = \\dfrac{\\sqrt{3}X}{3} = ${tx}`, `y = \\dfrac{Y}{\\sqrt{2}} = \\dfrac{\\sqrt{2}Y}{2} = ${ty}`, fin], final: fin };
+}
+// 15.12 : (d1) m x + (P m + Q) y + R = 0 et (d2) S x + m y + T = 0
+function detail1512(q, g) {
+  const { P19: P, Q19: Q, R19: R, S19: S, T19: T } = g, b1 = polyL([Q, P], 'm'), SP = S * P, SQ = S * Q, Dm = polyL([-SQ, -SP, 1], 'm'), disc = SP * SP + 4 * SQ;
+  const moinsS = (e) => `${S > 0 ? '-' : '+'}${Math.abs(S) === 1 ? '' : Math.abs(S)}\\left(${e}\\right)`;
+  const d1 = `mx+\\left(${b1}\\right)y${ajout15(String(R))} = 0`, d2 = `${polyF2([{ c: S, v: 'x' }, { c: 1, v: 'my' }, { c: T, v: '' }])} = 0`;
+  if (q === 'a') {
+    const d = lignesDelta2(1, -SP, -SQ), r = lignesRacines2(1, -SP, disc), S2 = `\\{${r.t1}\\,;\\,${r.t2}\\}`;
+    return { lignes: ['\\small \\text{Les droites } ax+by+c=0 \\text{ et } a\'x+b\'y+c\'=0', '\\small \\text{sont sécantes si et seulement si } ab\'-a\'b \\neq 0', `m\\times m${moinsS(b1)} = ${Dm}`, `\\text{Valeurs à exclure : } ${Dm} = 0`, '\\text{Discriminant : } b^{2}-4ac', ...d.lignes, phraseDelta2(d.D), ...r.lignes.map(t => t.replace(/^x_(\d)/, 'm_$1')), `S = ${S2}`], final: S2 };
+  }
+  const nx = polyL([Q * T, P * T - R], 'm'), ny = polyL([R * S, -T], 'm'), xf = `\\dfrac{${nx}}{${Dm}}`, yf = `\\dfrac{${ny}}{${Dm}}`, cs = Math.abs(S) === 1 ? '' : Math.abs(S);
+  return { lignes: [d1, d2, '\\text{On élimine } y \\text{ en multipliant}', `\\text{la 1re équation par } m \\text{ et la 2e par } \\left(${b1}\\right)`,
+    `m^{2}x+m\\left(${b1}\\right)y${ajout15(polyL([0, R], 'm'))} = 0`, `${S === 1 ? '' : S === -1 ? '-' : S}\\left(${b1}\\right)x+m\\left(${b1}\\right)y${T === 0 ? '' : ` ${T < 0 ? '-' : '+'} ${Math.abs(T) === 1 ? '' : Math.abs(T)}\\left(${b1}\\right)`} = 0`,
+    '\\text{On soustrait membre à membre :}', `\\left(m^{2}${moinsS(b1)}\\right)x${ajout15(polyL([0, R], 'm'))}${T === 0 ? '' : ` ${T < 0 ? '+' : '-'} ${Math.abs(T) === 1 ? '' : Math.abs(T)}\\left(${b1}\\right)`} = 0`,
+    `\\iff \\left(${Dm}\\right)x = ${nx}`, `\\iff x = ${xf}`, '\\text{De même, on élimine } x \\text{ en multipliant}', `\\text{la 1re équation par } ${S} \\text{ et la 2e par } m`,`${S === 1 ? '' : S === -1 ? '-' : S}mx${S > 0 ? '+' : '-'}${cs}\\left(${b1}\\right)y${ajout15(String(S * R))} = 0`,
+    `${S === 1 ? '' : S === -1 ? '-' : S}mx+m^{2}y${ajout15(polyL([0, T], 'm'))} = 0`, '\\text{On soustrait membre à membre :}', `\\left(${S === 1 ? '' : S === -1 ? '-' : S}\\left(${b1}\\right)-m^{2}\\right)y${ajout15(String(S * R))}${ajout15(polyL([0, -T], 'm'))} = 0`, `\\iff \\left(${Dm}\\right)y = ${ny}`, `\\iff y = ${yf}`, `\\left(${xf}\\,;\\,${yf}\\right)`], final: `\\left(${xf}\\,;\\,${yf}\\right)` };
+}
+// 15.13 : f(x) = A x^2 + B x + C, tangente en m, intersection avec la droite ea x + eb y + ec = 0
+function detail1513(q, g) {
+  const { A20: A, B20: B, C20: C, eqa20: ea, eqb20: eb, eqc20: ec } = g, fp = polyL([B, 2 * A], 'x'), M = polyL([B, 2 * A], 'm'), tq = polyL([C, 0, -A], 'm'), fm = polyL([C, B, A], 'm');
+  if (q === 'a') {
+    const fin = `y = \\left(${M}\\right)x${ajout15(tq)}`;
+    return { lignes: [`f'(x) = ${fp}`, `f'(m) = ${M}`, `f(m) = ${fm}`, "y = f'(m)\\left(x-m\\right)+f(m)", `y = \\left(${M}\\right)\\left(x-m\\right)${ajout15(fm)}`, `= \\left(${M}\\right)x-m\\left(${M}\\right)${ajout15(fm)}`, fin], final: fin };
+  }
+  const numX = polyL([-eb * C - ec, 0, eb * A], 'm'), den = polyL([ea + eb * B, 2 * eb * A], 'm'), Tm = `\\left(${M}\\right)x${ajout15(tq)}`;
+  const sg = eb * A < 0 ? -1 : 1, numN = polyL([sg * (-eb * C - ec), 0, sg * eb * A], 'm'), denN = polyL([sg * (ea + eb * B), sg * 2 * eb * A], 'm');   // dénominateur écrit avec un coefficient dominant positif
+  const xf = `\\dfrac{${numN}}{${denN}}`, xBrut = `\\dfrac{${numX}}{${den}}`, yfin = `\\left(${M}\\right)\\times ${xf}${ajout15(tq)}`;
+  return { lignes: [`y = ${Tm}`, `${polyF2([{ c: ea, v: 'x' }, { c: eb, v: 'y' }, { c: ec, v: '' }])} = 0`, `${polyF2([{ c: ea, v: 'x' }])} ${eb < 0 ? '-' : '+'} ${Math.abs(eb) === 1 ? '' : Math.abs(eb)}\\left(${Tm}\\right)${ec === 0 ? '' : ` ${ec < 0 ? '-' : '+'} ${Math.abs(ec)}`} = 0`,
+    `\\iff \\left(${den}\\right)x = ${numX}`, `\\small \\text{Il y a un point d'intersection si } ${den} \\neq 0`, `\\iff x = ${dedup2(xBrut, xf)}`, `y = ${yfin}`, `\\left(${xf}\\,;\\,${yfin}\\right)`], final: `\\left(${xf}\\,;\\,${yfin}\\right)` };
+}
+// 15.14 : f(x) = A1 x^2 + C1, g(x) = A2 x^2 + C2, tangentes en a (f) et en -a (g)
+function detail1514(q, g) {
+  const { A1_21: A1, C1_21: C1, A2_21: A2, C2_21: C2 } = g, qf = polyL([C1, 0, -A1], 'a'), qg = polyL([C2, 0, -A2], 'a');
+  const Tf = `${polyL([0, 2 * A1], 'a')}x${ajout15(qf)}`, Tg = `${polyL([0, -2 * A2], 'a')}x${ajout15(qg)}`;
+  if (q === 'a') return { lignes: [`f'(x) = ${polyL([0, 2 * A1], 'x')}`, `f'(a) = ${polyL([0, 2 * A1], 'a')}`, `f(a) = ${polyL([C1, 0, A1], 'a')}`, "y = f'(a)\\left(x-a\\right)+f(a)", `y = ${polyL([0, 2 * A1], 'a')}\\left(x-a\\right)${ajout15(polyL([C1, 0, A1], 'a'))}`,
+    `= ${polyL([0, 2 * A1], 'a')}x${ajout15(polyL([0, 0, -2 * A1], 'a'))}${ajout15(polyL([C1, 0, A1], 'a'))}`, `y = ${Tf}`], final: `y = ${Tf}` };
+  if (q === 'b') return { lignes: [`g'(x) = ${polyL([0, 2 * A2], 'x')}`, `g'(-a) = ${polyL([0, -2 * A2], 'a')}`, `g(-a) = ${polyL([C2, 0, A2], 'a')}`, "y = g'(-a)\\left(x+a\\right)+g(-a)", `y = ${polyL([0, -2 * A2], 'a')}\\left(x+a\\right)${ajout15(polyL([C2, 0, A2], 'a'))}`,
+    `= ${polyL([0, -2 * A2], 'a')}x${ajout15(polyL([0, 0, -2 * A2], 'a'))}${ajout15(polyL([C2, 0, A2], 'a'))}`, `y = ${Tg}`], final: `y = ${Tg}` };
+  const nx = polyL([C2 - C1, 0, A1 - A2], 'a'), dx = `${2 * (A1 + A2)}a`, sg = A1 + A2 < 0 ? -1 : 1, xBrut = `\\dfrac{${nx}}{${dx}}`;
+  const lead = sg * (A1 !== A2 ? A1 - A2 : C2 - C1), neg = lead < 0, sx = neg ? -sg : sg;     // le signe moins d'un numerateur negatif s'ecrit devant la fraction
+  const xNorm = `${neg ? '-' : ''}\\dfrac{${polyL([sx * (C2 - C1), 0, sx * (A1 - A2)], 'a')}}{${sg * 2 * (A1 + A2)}a}`, xSimple = polyF2([{ c: math.fraction(A1 - A2, 2 * (A1 + A2)), v: 'a' }]);
+  const xf = C1 === C2 ? xSimple : xNorm, yf = `${polyL([0, 2 * A1], 'a')}\\times ${xf.startsWith('-') || C1 === C2 ? `\\left(${xf}\\right)` : xf}${ajout15(qf)}`;
+  return { lignes: [`${Tf} = ${Tg}`, `\\iff ${polyL([0, 2 * A1 + 2 * A2], 'a')}x = ${nx}`, `\\iff x = ${C1 === C2 ? dedup2(xBrut, xNorm, xSimple) : dedup2(xBrut, xNorm)}`, `y = ${yf}`, `\\left(${xf}\\,;\\,${yf}\\right)`], final: `\\left(${xf}\\,;\\,${yf}\\right)` };
+}
 function genererExercices() {
   const ex = [];
   paramsAvances = {};
@@ -1267,18 +1538,20 @@ function genererExercices() {
     do { A = aleaNonNul(-5,5); B = alea(-9,9); C = alea(2,6); D = aleaNonNul(-5,5); E = alea(-9,9); F = alea(2,6); } while (A*F === D*C);
     const op = OPS[alea(0,3)];
     const den = A*F - C*D, num = C*E - F*B;   // (A F - C D) x ◊ (C E - F B)
-    ex.push({id:"15.1 a)", type:"intervalle", texteLibre:true,
+    const spec15a = {type:'intervalles', liste: parSigne([num / den], x => den * x - num, op)};
+    ex.push({id:"15.1 a)", detail: detail151a(A, B, C, D, E, F, op, spec15a), type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{${fmtLin(A,B)}}{${C}}${op}\\dfrac{${fmtLin(D,E)}}{${F}}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([num / den], x => den * x - num, op)}});
+      intervalleSpec: spec15a});
   }
   // b) a x^2 - b ◊ 0 avec a = q^2, b = p^2 (bornes ± p/q), signe quelconque
   {
     let p, q; do { q = alea(1,4); p = alea(1,7); } while (pgcd(p, q) !== 1);
     const s = [1,-1][alea(0,1)], op = OPS[alea(0,3)];
     const A = s*q*q, Bc = -s*p*p;
-    ex.push({id:"15.1 b)", type:"intervalle", texteLibre:true,
+    const spec15b = {type:'intervalles', liste: parSigne([-p/q, p/q], x => A*x*x + Bc, op)};
+    ex.push({id:"15.1 b)", detail: detail151b(A, Bc, op, spec15b), type:"intervalle", texteLibre:true,
       enonce:`\\(${coefPrefixeL(A)}x^2${Bc > 0 ? '+' : '-'}${Math.abs(Bc)}${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([-p/q, p/q], x => A*x*x + Bc, op)}});
+      intervalleSpec: spec15b});
   }
 
   // ---------- 15.2 : equations (ensemble des solutions) ----------
@@ -1289,7 +1562,7 @@ function genererExercices() {
     if (t <= 1) { let r1, r2; do { r1 = alea(-7,7); r2 = alea(-7,7); } while (r1 >= r2); b = -(r1 + r2); c = r1 * r2; rep = `{${r1};${r2}}`; }
     else if (t === 2) { const r = aleaNonNul(-7,7); b = -2*r; c = r*r; rep = `{${r}}`; }
     else { do { b = alea(-6,6); c = alea(Math.floor(b*b/4) + 1, Math.floor(b*b/4) + 9); } while (b*b - 4*c >= 0); rep = '{}'; }
-    ex.push({id:"15.2 a)", type:"num", texteLibre:true, enonce:`\\(${tex(b, c)}\\)`, reponse: rep});
+    ex.push({id:"15.2 a)", detail: detail152a(b, c, rep === '{}' ? [] : rep.slice(1, -1).split(';').map(Number)), type:"num", texteLibre:true, enonce:`\\(${tex(b, c)}\\)`, reponse: rep});
   }
   // b) equation a radicaux, solution rationnelle (ancien 15.2 b)
   {
@@ -1297,7 +1570,7 @@ function genererExercices() {
     let c1c, c2c; do { c1c = aleaNonNul(1,4); c2c = aleaNonNul(1,4); } while (c1c === c2c);
     const out1 = aleaNonNul(1,5), in1 = alea(1,3), out2 = aleaNonNul(1,5), in2 = alea(1,3);
     const D1c = out1*in1, D2c = out2*in2;
-    ex.push({id:"15.2 b)", type:"num", texteLibre:true,
+    ex.push({id:"15.2 b)", detail: detail152b(kc, c1c, c2c, out1, in1, out2, in2), type:"num", texteLibre:true,
       enonce:`\\(\\sqrt{${kc*c1c*c1c}}x-${coefPrefixeL(out1)}\\sqrt{${kc*in1*in1}}=\\sqrt{${kc*c2c*c2c}}x-${coefPrefixeL(out2)}\\sqrt{${kc*in2*in2}}\\)`,
       reponse:`{${fracStr(D1c-D2c, c1c-c2c)}}`});
   }
@@ -1311,7 +1584,7 @@ function genererExercices() {
       [P1,Q1] = irr(-9,9); [P2,Q2] = irr(-9,9); [P3,Q3] = irr(1,9);
       r1 = math.subtract(math.multiply(math.fraction(P1,Q1), math.fraction(P2,Q2)), math.fraction(P3,Q3));
     } while (r1.n === 0);
-    ex.push({id:"15.3 a)", type:"num", fractionIrreductible:true, avecEgal:true,
+    ex.push({id:"15.3 a)", detail: detail153a(P1, Q1, P2, Q2, P3, Q3), type:"num", fractionIrreductible:true, avecEgal:true,
       enonce:`${fS(P1,Q1)}\\times ${P2<0?'\\left('+fS(P2,Q2)+'\\right)':fS(P2,Q2)}-${fS(P3,Q3)}`, reponse: fracToStr(r1)});
   }
   {
@@ -1321,7 +1594,7 @@ function genererExercices() {
       Pb = aleaNonNul(-6,6); Qb = aleaNonNul(2,6); Rb = aleaNonNul(-6,6); Sb = aleaNonNul(2,6);
       coefB = math.subtract(math.multiply(math.fraction(Pb,Qb), m1), math.multiply(math.fraction(Rb,Sb), m2));
     } while (pgcd(Math.abs(Pb), Qb) !== 1 || pgcd(Math.abs(Rb), Sb) !== 1 || coefB.n === 0);
-    ex.push({id:"15.3 b)", type:"num", formeRacine:true, avecEgal:true,
+    ex.push({id:"15.3 b)", detail: detail153b(k, m1, m2, Pb, Qb, Rb, Sb), type:"num", formeRacine:true, avecEgal:true,
       enonce:`${fS(Pb,Qb)}\\sqrt{${k*m1*m1}}${Rb<0?'+':'-'}\\dfrac{${Math.abs(Rb)}}{${Sb}}\\sqrt{${k*m2*m2}}`,
       // forme attendue (et affichee au corrige) : le radical au numerateur, « -5sqrt(7)/4 »
       reponse: coefB.d === 1 ? surdTerm(coefB, k) : `(${coefB.s < 0 ? '-' : ''}${coefB.n === 1 ? '' : coefB.n + '*'}sqrt(${k}))/${coefB.d}`});
@@ -1331,7 +1604,7 @@ function genererExercices() {
   const vecLatex = (ux, uy) => `\\vec{u}\\begin{pmatrix}${ux}\\\\${uy}\\end{pmatrix}`;
   {
     const x0 = alea(-9,9), y0 = alea(-9,9), ux = aleaNonNul(-9,9), uy = aleaNonNul(-9,9);
-    ex.push({id:"15.4 a)", type:"eqcart", texteLibre:true,
+    ex.push({id:"15.4 a)", detail: detail154a(ux, uy, x0, y0), type:"eqcart", texteLibre:true,
       enonce:`Déterminer une équation cartésienne de la droite \\((d)\\) passant par \\(A(${x0};${y0})\\) et de vecteur directeur \\(${vecLatex(ux, uy)}\\)`,
       eqa:String(uy), eqb:String(-ux), eqc:String(-uy*x0 + ux*y0)});
   }
@@ -1343,13 +1616,13 @@ function genererExercices() {
   {
     const {xA, yA, xB, yB, ux, uy} = deuxPoints();
     const eqa = uy, eqb = -ux, eqc = -uy*xA + ux*yA;
-    ex.push({id:"15.4 b)", type:"alg", texteLibre:true, formeYax:true,
+    ex.push({id:"15.4 b)", detail: detail154b(xA, yA, xB, yB), type:"alg", texteLibre:true, formeYax:true,
       enonce:`Déterminer l'équation réduite de la droite \\((d)\\) passant par \\(A(${xA};${yA})\\) et \\(B(${xB};${yB})\\)`,
       reponse: equationReduiteAscii(fracStr(eqa, -eqb), fracStr(eqc, -eqb))});
   }
   {
     const {xA, yA, xB, yB, ux, uy} = deuxPoints();
-    ex.push({id:"15.4 c)", type:"eqcart", texteLibre:true,
+    ex.push({id:"15.4 c)", detail: detail154c(xA, yA, xB, yB), type:"eqcart", texteLibre:true,
       enonce:`Déterminer une équation cartésienne de la droite \\((d)\\) passant par \\(A(${xA};${yA})\\) et \\(B(${xB};${yB})\\)`,
       eqa:String(uy), eqb:String(-ux), eqc:String(-uy*xA + ux*yA)});
   }
@@ -1358,7 +1631,7 @@ function genererExercices() {
     do { a1 = aleaNonNul(-4,4); a2 = aleaNonNul(-4,4); b1 = aleaNonNul(-4,4); b2 = aleaNonNul(-4,4); P = b1 - a1; Q = b2 - a2; } while (P === 0 || Q === 0);
     const G = pgcd(Math.abs(P), Math.abs(Q)), divisor = -Math.sign(P) * G;
     const coefA3 = Q / divisor, coefB2 = -P / divisor, coefC6 = (P*a2 - Q*a1) / divisor;
-    ex.push({id:"15.4 d)", type:"eqcart", texteLibre:true,
+    ex.push({id:"15.4 d)", detail: detail154d(a1, a2, b1, b2), type:"eqcart", texteLibre:true,
       enonce:`Déterminer une équation cartésienne de la droite \\((d)\\) passant par \\(A(${coefSqrtLatexTerm(a1,'\\sqrt{2}')};${coefSqrtLatexTerm(a2,'\\sqrt{3}')})\\) et \\(B(${coefSqrtLatexTerm(b1,'\\sqrt{2}')};${coefSqrtLatexTerm(b2,'\\sqrt{3}')})\\)`,
       eqa:`${coefA3}*sqrt(3)`, eqb:`${coefB2}*sqrt(2)`, eqc:`${coefC6}*sqrt(6)`});
   }
@@ -1372,9 +1645,9 @@ function genererExercices() {
       B7 = alea(-3,3);
     } while (Math.abs(4*P7/Q7 + B7) > 3.5 || Math.abs(-4*P7/Q7 + B7) > 3.5);
     let K7; do { K7 = alea(-3,3); } while (K7 === B7);
-    ex.push({id:"15.5 a)", type:"vecteur", texteLibre:true, enonce:"Les coordonnées d'un vecteur directeur de \\((d_1)\\)", vx:String(Q7), vy:String(P7), vars:[]});
-    ex.push({id:"15.5 b)", type:"alg", texteLibre:true, formeYax:true, enonce:"L'équation réduite de \\((d_1)\\)", reponse: equationReduiteAscii(fracStr(P7, Q7), B7)});
-    ex.push({id:"15.5 c)", type:"alg", texteLibre:true, formeYax:true, enonce:"L'équation réduite de \\((d_2)\\)", reponse: equationReduiteAscii(0, K7)});
+    ex.push({id:"15.5 a)", detail: detail155('a', {P7, Q7, B7, K7}), type:"vecteur", texteLibre:true, enonce:"Les coordonnées d'un vecteur directeur de \\((d_1)\\)", vx:String(Q7), vy:String(P7), vars:[]});
+    ex.push({id:"15.5 b)", detail: detail155('b', {P7, Q7, B7, K7}), type:"alg", texteLibre:true, formeYax:true, enonce:"L'équation réduite de \\((d_1)\\)", reponse: equationReduiteAscii(fracStr(P7, Q7), B7)});
+    ex.push({id:"15.5 c)", detail: detail155('c', {P7, Q7, B7, K7}), type:"alg", texteLibre:true, formeYax:true, enonce:"L'équation réduite de \\((d_2)\\)", reponse: equationReduiteAscii(0, K7)});
     paramsAvances.g5 = {P7, Q7, B7, K7};
   }
 
@@ -1387,9 +1660,9 @@ function genererExercices() {
     const eqTex = jsVersLatex(joinSigned([signedFracTerm(eqa,'x'), signedFracTerm(eqb,'y'), signedFracTerm(eqc)]));
     const x1 = fracStr(-(eqb*Y1n) - eqc*Y1d, eqa*Y1d);
     const xEqY = fracStr(-eqc, eqa + eqb);
-    ex.push({id:"15.6 a)", type:"num", texteLibre:true,
+    ex.push({id:"15.6 a)", detail: detail156a(eqa, eqb, eqc, Y1n, Y1d), type:"num", texteLibre:true,
       enonce:`Soit \\((d)\\) la droite d'équation cartésienne \\(${eqTex}=0\\). Calculer l'abscisse du point de \\((d)\\) d'ordonnée \\(${Y1n<0?'-':''}\\dfrac{${Math.abs(Y1n)}}{${Y1d}}\\)`, reponse: x1});
-    ex.push({id:"15.6 b)", type:"paire", formePoint:true, texteLibre:true,
+    ex.push({id:"15.6 b)", detail: detail156b(eqa, eqb, eqc), type:"paire", formePoint:true, texteLibre:true,
       enonce:`Soit \\((d)\\) la droite d'équation cartésienne \\(${eqTex}=0\\). Déterminer les coordonnées du point de \\((d)\\) dont l'abscisse et l'ordonnée sont égales`, pa:xEqY, pb:xEqY});
   }
   {
@@ -1397,7 +1670,7 @@ function genererExercices() {
     const eqc0 = math.fraction(aleaNonNul(-6,6), aleaNonNul(2,6));
     const x1 = alea(-9,9), y1 = alea(-9,9);
     const eqc1 = math.multiply(-1, math.add(math.multiply(eqaf, x1), math.multiply(eqbf, y1)));
-    ex.push({id:"15.6 c)", type:"eqcart", texteLibre:true,
+    ex.push({id:"15.6 c)", detail: detail156c(eqaf, eqbf, eqc0, x1, y1), type:"eqcart", texteLibre:true,
       enonce:`Soit \\((d)\\) la droite d'équation cartésienne \\(${joinSigned([signedFracTermLatex(eqaf,'x'), signedFracTermLatex(eqbf,'y'), signedFracTermLatex(eqc0)])}=0\\). Déterminer une équation cartésienne de la droite \\((d')\\), parallèle à \\((d)\\), passant par le point \\((${x1};${y1})\\)`,
       eqa:fracToStr(eqaf), eqb:fracToStr(eqbf), eqc:fracToStr(eqc1)});
   }
@@ -1412,17 +1685,17 @@ function genererExercices() {
     const eqaStr = joinSigned([signedFracTerm(c3,'t'), signedFracTerm(c4)]);
     const eqbStr = joinSigned([signedFracTerm(-c1,'t'), signedFracTerm(-c2)]);
     const eqcStr = joinSigned([signedFracTerm(-c3*x0 + c1*y0,'t'), signedFracTerm(-c4*x0 + c2*y0)]);
-    ex.push({id:"15.7 a)", type:"eqcart", texteLibre:true, vars:["t"],
+    ex.push({id:"15.7 a)", detail: detail157a(c1, c2, c3, c4, x0, y0), type:"eqcart", texteLibre:true, vars:["t"],
       enonce:`Déterminer une équation cartésienne de la droite \\((d)\\) dirigée par le vecteur \\(${vecLatex(jsVersLatex(uxT), jsVersLatex(uyT))}\\) et passant par \\(A(${x0};${y0})\\)`,
       eqa:eqaStr, eqb:eqbStr, eqc:eqcStr});
-    ex.push({id:"15.7 b)", type:"num", texteLibre:true,
+    ex.push({id:"15.7 b)", detail: detail157b(c3, c4), type:"num", texteLibre:true,
       enonce:`Déterminer la valeur de \\(t\\) pour que la droite dirigée par le vecteur \\(${vecLatex(jsVersLatex(uxT), jsVersLatex(uyT))}\\) soit parallèle à \\((Ox)\\)`, reponse: fracStr(-c4, c3)});
   }
   {
     const cB = aleaNonNul(-3,3), cD = aleaNonNul(-4,4);
     const x0f = math.fraction(aleaNonNul(-9,9), aleaNonNul(2,9)), y0f = math.fraction(aleaNonNul(-9,9), aleaNonNul(2,9));
     const uyT = joinSigned([signedFracTerm(cB,'t'), signedFracTerm(cD)]);
-    ex.push({id:"15.7 c)", type:"eqcart", texteLibre:true, vars:["t"],
+    ex.push({id:"15.7 c)", detail: detail157c(cB, cD, x0f, y0f), type:"eqcart", texteLibre:true, vars:["t"],
       enonce:`Déterminer une équation cartésienne de la droite \\((d)\\) dirigée par le vecteur \\(${vecLatex('t^2', jsVersLatex(uyT))}\\) et passant par \\(A\\left(${fracLatexSigned(x0f)};${fracLatexSigned(y0f)}\\right)\\)`,
       eqa:uyT, eqb:"-t^2",
       eqc:joinSigned([signedFracTerm(y0f,'t^2'), signedFracTerm(math.multiply(-cB, x0f),'t'), signedFracTerm(math.multiply(-cD, x0f))])});
@@ -1434,7 +1707,7 @@ function genererExercices() {
     do { eqa1 = aleaNonNul(-6,6); eqb1 = aleaNonNul(-6,6); eqa2 = aleaNonNul(-6,6); eqb2 = aleaNonNul(-6,6); D14 = eqa1*eqb2 - eqa2*eqb1; } while (D14 === 0);
     const eqc1 = alea(-9,9), eqc2 = alea(-9,9);
     const eq = (a, b, c) => jsVersLatex(joinSigned([signedFracTerm(a,'x'), signedFracTerm(b,'y'), signedFracTerm(c)]));
-    ex.push({id:"15.8 a)", type:"paire", formePoint:true, texteLibre:true,
+    ex.push({id:"15.8 a)", detail: detail158a(eqa1, eqb1, eqc1, eqa2, eqb2, eqc2), type:"paire", formePoint:true, texteLibre:true,
       enonce:`Soient \\((d_1)\\) la droite d'équation \\(${eq(eqa1,eqb1,eqc1)}=0\\) et \\((d_2)\\) la droite d'équation \\(${eq(eqa2,eqb2,eqc2)}=0\\). Calculer les coordonnées de leur point d'intersection`,
       pa:fracStr(eqb1*eqc2 - eqb2*eqc1, D14), pb:fracStr(eqc1*eqa2 - eqc2*eqa1, D14)});
   }
@@ -1446,11 +1719,11 @@ function genererExercices() {
     } while (denAB.n === 0);
     const eqcf = math.fraction(aleaNonNul(-9,9), 1);
     const eqTex = joinSigned([signedFracTermLatex(eqaf,'x'), signedFracTermLatex(eqbf,'y'), signedFracTermLatex(eqcf)]);
-    ex.push({id:"15.8 b)", type:"paire", formePoint:true, texteLibre:true,
+    ex.push({id:"15.8 b)", detail: detail158b(eqaf, eqbf, eqcf), type:"paire", formePoint:true, texteLibre:true,
       enonce:`Soit \\((d)\\) la droite d'équation \\(${eqTex}=0\\). Calculer les coordonnées du point d'intersection de \\((d)\\) avec l'axe des abscisses`,
       pa:fracToStr(math.divide(math.multiply(-1, eqcf), eqaf)), pb:"0"});
     const xEqY = fracToStr(math.divide(math.multiply(-1, eqcf), math.add(eqaf, eqbf)));
-    ex.push({id:"15.8 c)", type:"paire", formePoint:true, texteLibre:true,
+    ex.push({id:"15.8 c)", detail: detail158c(eqaf, eqbf, eqcf), type:"paire", formePoint:true, texteLibre:true,
       enonce:`Soit \\((d)\\) la droite d'équation \\(${eqTex}=0\\). Calculer les coordonnées du point d'intersection de \\((d)\\) avec la droite d'équation \\(y=x\\)`,
       pa:xEqY, pb:xEqY});
   }
@@ -1461,7 +1734,7 @@ function genererExercices() {
     const K1 = math.fraction(B1*C2 - B2*C1, det15), K2 = math.fraction(C1*A2 - C2*A1, det15);
     const signedSqrtY = (n) => (n >= 0 ? '+' : '') + coefSqrtLatexTerm(n, '\\sqrt{2}');
     const eqRad = (A, B, C) => `${coefSqrtLatexTerm(A,'\\sqrt{3}')}x${signedSqrtY(B)}y${signedFracTermRawL(String(C))}=0`;
-    ex.push({id:"15.8 d)", type:"paire", formePoint:true, texteLibre:true,
+    ex.push({id:"15.8 d)", detail: detail158d(A1, B1, C1, A2, B2, C2), type:"paire", formePoint:true, texteLibre:true,
       enonce:`Soient \\((d_1)\\) la droite d'équation \\(${eqRad(A1,B1,C1)}\\) et \\((d_2)\\) la droite d'équation \\(${eqRad(A2,B2,C2)}\\). Déterminer les coordonnées de leur point d'intersection`,
       pa:surdTerm(math.divide(K1, 3), 3), pb:surdTerm(math.divide(K2, 2), 2)});
   }
@@ -1492,8 +1765,8 @@ function genererExercices() {
     const yConst = math.add(math.multiply(mLine, halfCoefLin), pLine), yCoefSurd = math.multiply(mLine, halfSqrtCoef);
     const ySmall = joinSigned([signedFracTerm(yConst), signedSurdTerm(math.multiply(-1, yCoefSurd), radicand)]);
     const yBig = joinSigned([signedFracTerm(yConst), signedSurdTerm(yCoefSurd, radicand)]);
-    ex.push({id:"15.9 a)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de P (celui d'abscisse la plus petite)", pa:xSmall, pb:ySmall});
-    ex.push({id:"15.9 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig, pb:yBig});
+    ex.push({id:"15.9 a)", detail: detail159('a', {eqa16, eqb16, eqc16, bP, cP: cP2}), type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de P (celui d'abscisse la plus petite)", pa:xSmall, pb:ySmall});
+    ex.push({id:"15.9 b)", detail: detail159('b', {eqa16, eqb16, eqc16, bP, cP: cP2}), type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig, pb:yBig});
     paramsAvances.g9 = {eqa16, eqb16, eqc16, bP, cP:cP2};
   }
 
@@ -1507,8 +1780,8 @@ function genererExercices() {
     const xBig17 = joinSigned([signedFracTerm(h17), signedSurdTerm(offXcoef, rad17)]);
     const ySmall17 = joinSigned([signedFracTerm(k17), signedSurdTerm(math.multiply(-1, offYcoef), rad17)]);
     const yBig17 = joinSigned([signedFracTerm(k17), signedSurdTerm(offYcoef, rad17)]);
-    ex.push({id:"15.10 a)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de C (celui d'abscisse la plus petite)", pa:xSmall17, pb:ySmall17});
-    ex.push({id:"15.10 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig17, pb:yBig17});
+    ex.push({id:"15.10 a)", detail: detail1510('a', {h17, k17, m17, r17}), type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du premier point d'intersection de (d) et de C (celui d'abscisse la plus petite)", pa:xSmall17, pb:ySmall17});
+    ex.push({id:"15.10 b)", detail: detail1510('b', {h17, k17, m17, r17}), type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du second point d'intersection (celui d'abscisse la plus grande)", pa:xBig17, pb:yBig17});
     paramsAvances.g10 = {h17, k17, m17, r17};
   }
 
@@ -1517,8 +1790,8 @@ function genererExercices() {
     const N18 = [1,2,3][alea(0,2)], C18 = alea(1,4), K18 = alea(-2,3);
     const reponse18a = `(${C18}*a^2-a+${C18*N18})/(a^4-${N18*N18})`;
     const reponse18b = joinSigned(["-a^5", signedFracTerm(K18,'a^4'), signedFracTerm(C18,'a^2'), signedFracTerm(N18*N18,'a'), signedFracTerm(N18*C18 - N18*N18*K18)]);
-    ex.push({id:"15.11 a)", type:"alg", texteLibre:true, enonce:"Déterminer, si elle existe, l'ordonnée du point de \\((d)\\) d'abscisse \\(a\\)", reponse: reponse18a});
-    ex.push({id:"15.11 b)", type:"alg", texteLibre:true, enonce:`Déterminer l'abscisse du point de \\((d)\\) d'ordonnée \\(a${K18===0?'':(K18>0?'-'+K18:'+'+(-K18))}\\)`, reponse: reponse18b});
+    ex.push({id:"15.11 a)", detail: detail1511('a', {N18, C18, K18}), type:"alg", texteLibre:true, enonce:"Déterminer, si elle existe, l'ordonnée du point de \\((d)\\) d'abscisse \\(a\\)", reponse: reponse18a});
+    ex.push({id:"15.11 b)", detail: detail1511('b', {N18, C18, K18}), type:"alg", texteLibre:true, enonce:`Déterminer l'abscisse du point de \\((d)\\) d'ordonnée \\(a${K18===0?'':(K18>0?'-'+K18:'+'+(-K18))}\\)`, reponse: reponse18b});
     paramsAvances.g11 = {N18, C18, K18};
   }
 
@@ -1537,8 +1810,8 @@ function genererExercices() {
     const xNum = joinSigned([signedFracTerm(P19*T19 - R19,'m'), signedFracTerm(Q19*T19)]);
     const yNum = joinSigned([signedFracTerm(-T19,'m'), signedFracTerm(R19*S19)]);
     const Dstr = joinSigned(['m^2', signedFracTerm(-SP,'m'), signedFracTerm(-SQ)]);
-    ex.push({id:"15.12 a)", type:"num", texteLibre:true, enonce:"Déterminer les deux valeurs de \\(m\\) à exclure pour que les droites \\((d_1)\\) et \\((d_2)\\) soient sécantes", reponse:`{${root1};${root2}}`});
-    ex.push({id:"15.12 b)", type:"paire", formePoint:true, texteLibre:true, enonce:"Dans les conditions précédentes, déterminer les coordonnées du point d'intersection de \\((d_1)\\) et \\((d_2)\\) en fonction de \\(m\\)", pa:`(${xNum})/(${Dstr})`, pb:`(${yNum})/(${Dstr})`, vars:["m"]});
+    ex.push({id:"15.12 a)", detail: detail1512('a', {P19, Q19, R19, S19, T19}), type:"num", texteLibre:true, enonce:"Déterminer les deux valeurs de \\(m\\) à exclure pour que les droites \\((d_1)\\) et \\((d_2)\\) soient sécantes", reponse:`{${root1};${root2}}`});
+    ex.push({id:"15.12 b)", detail: detail1512('b', {P19, Q19, R19, S19, T19}), type:"paire", formePoint:true, texteLibre:true, enonce:"Dans les conditions précédentes, déterminer les coordonnées du point d'intersection de \\((d_1)\\) et \\((d_2)\\) en fonction de \\(m\\)", pa:`(${xNum})/(${Dstr})`, pb:`(${yNum})/(${Dstr})`, vars:["m"]});
     paramsAvances.g12 = {P19, Q19, R19, S19, T19};
   }
 
@@ -1549,11 +1822,11 @@ function genererExercices() {
     const reponse20a = joinSigned([signedFracTerm(2*A20,'m*x'), signedFracTerm(B20,'x'), signedFracTerm(C20), signedFracTerm(-A20,'m^2')]);
     const numX = joinSigned([signedFracTerm(eqb20*A20,'m^2'), signedFracTerm(-eqb20*C20 - eqc20)]);
     const denX = joinSigned([signedFracTerm(2*eqb20*A20,'m'), signedFracTerm(eqa20 + eqb20*B20)]);
-    ex.push({id:"15.13 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"On note \\(T_{f,m}\\) la tangente à la courbe de \\(f\\) au point d'abscisse \\(m\\). Déterminer une équation de \\(T_{f,m}\\)", reponse: reponse20a});
+    ex.push({id:"15.13 a)", detail: detail1513('a', {A20, B20, C20, eqa20, eqb20, eqc20}), type:"alg", formeYax:true, texteLibre:true, enonce:"On note \\(T_{f,m}\\) la tangente à la courbe de \\(f\\) au point d'abscisse \\(m\\). Déterminer une équation de \\(T_{f,m}\\)", reponse: reponse20a});
     const m1Str = joinSigned([signedFracTerm(2*A20,'m'), signedFracTerm(B20)]);
     const pbExpr = `(${m1Str})*((${numX})/(${denX}))${signedFracTerm(C20)}${signedFracTerm(-A20,'m^2')}`;
     const eqEnonce20 = joinSigned([signedFracTerm(eqa20,'x'), signedFracTerm(eqb20,'y'), signedFracTerm(eqc20)]);
-    ex.push({id:"15.13 b)", type:"paire", formePoint:true, texteLibre:true, enonce:`Soit \\((d)\\) la droite d'équation \\(${jsVersLatex(eqEnonce20)}=0\\). Déterminer les coordonnées de l'éventuel point d'intersection de \\(T_{f,m}\\) et \\((d)\\), en fonction de \\(m\\)`, pa:`(${numX})/(${denX})`, pb:pbExpr, vars:["m"]});
+    ex.push({id:"15.13 b)", detail: detail1513('b', {A20, B20, C20, eqa20, eqb20, eqc20}), type:"paire", formePoint:true, texteLibre:true, enonce:`Soit \\((d)\\) la droite d'équation \\(${jsVersLatex(eqEnonce20)}=0\\). Déterminer les coordonnées de l'éventuel point d'intersection de \\(T_{f,m}\\) et \\((d)\\), en fonction de \\(m\\)`, pa:`(${numX})/(${denX})`, pb:pbExpr, vars:["m"]});
     paramsAvances.g13 = {A20, B20, C20, eqa20, eqb20, eqc20};
   }
 
@@ -1563,18 +1836,24 @@ function genererExercices() {
     do { A1_21 = aleaNonNul(-4,4); A2_21 = aleaNonNul(-4,4); C1_21 = alea(-6,6); C2_21 = alea(-6,6); } while (A1_21 + A2_21 === 0 || (A1_21 === A2_21 && C1_21 === C2_21));   // f = g exclu
     const reponse21a = joinSigned([signedFracTerm(2*A1_21,'a*x'), signedFracTerm(C1_21), signedFracTerm(-A1_21,'a^2')]);
     const reponse21b = joinSigned([signedFracTerm(-2*A2_21,'a*x'), signedFracTerm(C2_21), signedFracTerm(-A2_21,'a^2')]);
-    const xNum21 = joinSigned([signedFracTerm(A1_21 - A2_21,'a^2'), signedFracTerm(C2_21 - C1_21)]);
-    const xDen21 = `${2*(A1_21 + A2_21)}*a`;
-    ex.push({id:"15.14 a)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{f,a}\\), la tangente à la courbe de \\(f\\) au point d'abscisse \\(a\\)", reponse: reponse21a});
-    ex.push({id:"15.14 b)", type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{g,-a}\\), la tangente à la courbe de \\(g\\) au point d'abscisse \\(-a\\)", reponse: reponse21b});
+    const sg21 = A1_21 + A2_21 < 0 ? -1 : 1;
+    const lead21 = sg21 * (A1_21 !== A2_21 ? A1_21 - A2_21 : C2_21 - C1_21), neg21 = lead21 < 0, sx21 = neg21 ? -sg21 : sg21, signeFrac21 = neg21 ? '-' : '';
+    const xNum21 = joinSigned([signedFracTerm(sx21 * (A1_21 - A2_21),'a^2'), signedFracTerm(sx21 * (C2_21 - C1_21))]);
+    const xDen21 = `${sg21 * 2 * (A1_21 + A2_21)}*a`;
+    ex.push({id:"15.14 a)", detail: detail1514('a', {A1_21, C1_21, A2_21, C2_21}), type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{f,a}\\), la tangente à la courbe de \\(f\\) au point d'abscisse \\(a\\)", reponse: reponse21a});
+    ex.push({id:"15.14 b)", detail: detail1514('b', {A1_21, C1_21, A2_21, C2_21}), type:"alg", formeYax:true, texteLibre:true, enonce:"Déterminer une équation de \\(T_{g,-a}\\), la tangente à la courbe de \\(g\\) au point d'abscisse \\(-a\\)", reponse: reponse21b});
     const m1_21 = joinSigned([signedFracTerm(2*A1_21,'a')]);
-    const pb21 = `(${m1_21})*((${xNum21})/(${xDen21}))${signedFracTerm(C1_21)}${signedFracTerm(-A1_21,'a^2')}`;
-    ex.push({id:"15.14 c)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,-a}\\), en fonction de \\(a\\)", pa:`(${xNum21})/(${xDen21})`, pb:pb21, vars:["a"]});
+    const pb21 = `${signeFrac21}(${m1_21})*((${xNum21})/(${xDen21}))${signedFracTerm(C1_21)}${signedFracTerm(-A1_21,'a^2')}`;
+    ex.push({id:"15.14 c)", detail: detail1514('c', {A1_21, C1_21, A2_21, C2_21}), type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les coordonnées du point d'intersection de \\(T_{f,a}\\) et \\(T_{g,-a}\\), en fonction de \\(a\\)", pa:`${signeFrac21}(${xNum21})/(${xDen21})`, pb:pb21, vars:["a"]});
     paramsAvances.g14 = {A1_21, C1_21, A2_21, C2_21};
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
   ex.forEach(e => { if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt '); });
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20, e => !/^15\.(4 [acd]|6 c|7 [ac]|13 a|14 [ab])/.test(e.id)); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  Detail.couper(ex, 44, e => /^15\.(4 [acd]|6 c|7 [ac]|13 a|14 [ab])/.test(e.id));  // ces exercices finissent par une équation « … = 0 » ou « y = … » : jamais coupée en « … » puis « = 0 »
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 
@@ -2955,7 +3234,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
