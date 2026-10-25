@@ -9156,3 +9156,15 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   `automatismes.css?v=20261025a` (4 pages). Vérifié : 25 tirages × 4 pages de travail (fiche et sujet blanc, Automatismes et QCM) à 360 px, aucun débordement.
 
 - **Mention de fréquentation simplifiée (25/10/2026).** Le pied de page des pages publiques passe de « Mesure de fréquentation anonyme : aucune donnée personnelle, aucun cookie. » à « Visites comptées anonymement, sans cookie. » (25 pages). Mention non obligatoire (compteurs anonymes, sans identifiant), gardée par transparence.
+
+- **Réglages d'entrée des Automatismes et du QCM Terminale (25/10/2026).** Question de David : l'en-tête de la page d'entrée est long, puis le choix fiche / sujet blanc, puis les
+  panneaux de mode et de niveau au milieu de la page de travail : ne pourrait-on pas choisir mode et niveau avant de générer ? Maquette présentée (`.claude/scratch/maquette-entree.html`),
+  **variante A choisie par David, pour tous les écrans, automatismes et QCM (avec le rappel de la pénalité de 0,25 point au niveau 3), devoir inchangé**. Réalisé : bloc « Mes réglages »
+  (mode, niveau, durée en chrono) sur les deux pages d'entrée, « Comment ça marche ? » repliable à la place du long paragraphe, « Lancer » sur les deux lignes, titres « Lancer une série » /
+  « Ou un thème précis » ; lecture de `?mode=&niveau=&duree=` dans `moteur.js` (hors devoir) ; rappel sur une ligne + « Changer » sur la page de travail (CSS dans `automatismes.css`).
+  Choix de conception : pas de bouton « Commencer » séparé (toucher la ligne lance : un geste de moins que la variante B) ; en chrono on arrive sur l'écran « Démarrer » existant. Versions :
+  `moteur.js?v=20261025a`, `automatismes.css?v=20261025b`, `style.css?v=20261025d`, `reglages-entree.js?v=20261025a`. **Vérifié** (Chrome piloté, 375 px et 1280 px) : liens modifiés selon les
+  réglages, passage des paramètres jusqu'à la page de travail (fiche, thème précis, chrono avec durée), rappel et « Changer » (3 panneaux rouverts, durée conservée), mémorisation au retour,
+  sujets blancs Automatismes et QCM en chrono (durée 60 s, sans limite), absence de « Changer » une fois le chrono démarré, aucune erreur de console. **Non vérifié** : un devoir réel (le code du
+  panneau verrouillé n'est pas touché, les paramètres d'adresse sont ignorés quand `verrouille` est présent). **À faire** : le guide de l'élève (pages Automatismes / QCM et captures
+  `auto-panneaux`, `chrono-intro`, `qcm-accueil`, script `captures-qcm.js`) décrit encore les anciens panneaux.

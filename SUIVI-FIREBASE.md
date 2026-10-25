@@ -185,6 +185,14 @@ depuis la réorganisation du 02/10/2026 »).
   `maximum-scale=1` retiré des 27 pages à en-tête standard (zoom autorisé ; leurs champs ont 16 px, pas de zoom automatique sous iOS) et **conservé** sur les 54 pages
   de travail (champs MathLive). **Piège** : sous Git Bash, `sed -i` convertit les fins de ligne CRLF des pages en LF — passer par un script Node qui les préserve.
   Vérification : 50 fiches × 360/414 px sans débordement, barre sur une ligne, cibles ≥ 44 px, première question visible dans les 700 px du haut.
+- **Réglages d'entrée des Automatismes et du QCM Terminale (25/10/2026, partout : téléphone, tablette, ordinateur)** : le mode (fiche / chrono), le niveau (1, 2, 3)
+  et, en chrono, le temps par question se règlent **une fois sur la page d'entrée** (`automatismes/premiere/index.html`, `qcm-bac/index.html`) dans le bloc « Mes réglages »
+  (`automatismes/assets/reglages-entree.js`, configuré par `window.REGLAGES_ENTREE = { cle, niveaux }` ; **les textes de niveau de la page d'entrée sont à tenir d'accord avec
+  `textesNiveau` de `qcm-bac/fiche.html` et avec le texte par défaut de `moteur.js`**). Toucher une ligne (fiche, sujet blanc, thème précis) lance la série : les réglages sont ajoutés à
+  l'adresse (`?mode=chrono&niveau=3&duree=90`) et lus par `moteur.js` (`demarrer`), **jamais pendant un devoir** (`verrouille` prioritaire). Valeurs par défaut fiche / niveau 2 ;
+  dernier choix mémorisé en `localStorage` (`reglages-entree-auto` / `reglages-entree-qcm`). Sur la page de travail, les deux panneaux sont remplacés par une ligne
+  « Mode fiche · ★★ Niveau 2 — Changer » (`recapReglagesHTML`, `ETAT.reglagesOuverts`) ; « Changer » rouvre les panneaux d'avant, absent pendant un chrono en cours.
+  En devoir : panneau « niveau et mode imposés » **inchangé**. Un accès direct à `fiche.html` sans paramètre donne fiche / niveau 2.
 - **Export PDF d'une fiche** : bouton qui appelle `window.print()` (+ `@media print`). **Ne pas retenter** html2pdf / html2canvas /
   jsPDF : le navigateur se bloque sur les champs `<math-field>` (essai du 04/09/2026). L'export d'un **cahier entier** en un seul
   PDF (`assets/js/export-cahier.js`) est en pause depuis le 11/09/2026, quatre architectures tentées (voir `HISTORIQUE.md`).

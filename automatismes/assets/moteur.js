@@ -384,6 +384,17 @@
         ETAT.config.labelNouvelle = 'Nouvelle fiche';
       }
     }
+    // Réglages venus de la page d'entrée (25/10/2026, voir assets/reglages-entree.js) : ?mode=chrono&niveau=3&duree=90.
+    // Jamais pendant un devoir : mode, niveau et durée y sont imposés par le professeur (verrouille, ci-dessus).
+    if (!ETAT.config.verrouille) {
+      const p = new URLSearchParams(window.location.search);
+      const m = p.get('mode');
+      if (m === 'fiche' || m === 'chrono') ETAT.mode = m;
+      const n = Number(p.get('niveau'));
+      if (n === 1 || n === 2 || n === 3) ETAT.niveau = n;
+      const d = p.get('duree');
+      if (d !== null && ['0', '60', '90', '120', '180'].indexOf(d) !== -1) ETAT.duree = Number(d);
+    }
     // un thème unique peut être imposé par l'adresse : fiche.html?theme=droites
     // -- jamais en même temps qu'un devoir (verrouille prioritaire, voir
     // ci-dessus : les thèmes du devoir ne doivent jamais être court-circuités
@@ -582,8 +593,24 @@
       <span class="mode-explication">${v.titre ? `« ${echapper(v.titre)} »` : 'Ce devoir'}${echeanceTxt} : niveau et mode fixés par ton professeur, entraînement libre à nouveau après cette date.</span>
     </div>`;
   }
+  // Durée par question en clair (« 2 min », « 1 min 30 », « sans limite de temps »)
+  function texteDureeQuestion(d) {
+    if (d === 0) return 'sans limite de temps';
+    return (d >= 60 ? Math.floor(d / 60) + ' min' : '') + (d % 60 ? ' ' + (d % 60) + ' s' : '') + ' par question';
+  }
+  // Réglages repliés (25/10/2026) : mode et niveau se choisissent sur la page d'entrée ; ici une seule ligne les rappelle,
+  // avec « Changer » qui rouvre les deux panneaux habituels (ETAT.reglagesOuverts). Pas de « Changer » pendant un chrono en cours.
+  function recapReglagesHTML(peutChanger) {
+    const fiche = ETAT.mode === 'fiche';
+    const mode = fiche ? 'Mode fiche' : 'Mode chrono ⏱' + (' · ' + texteDureeQuestion(ETAT.duree));
+    return `<div class="reglages-recap">
+      <span class="reglages-recap-texte">${mode} · ${'★'.repeat(ETAT.niveau)} Niveau ${ETAT.niveau}</span>
+      ${peutChanger ? '<button type="button" class="reglages-recap-btn" data-action="reglages">Changer</button>' : ''}
+    </div>${fiche ? '<p class="reglages-recap-indice">Réponds à ton rythme, puis clique sur « Voir toutes les réponses » en bas de la page.</p>' : ''}`;
+  }
   function panneauModesHTML() {
     if (ETAT.config.verrouille) return panneauVerrouilleHTML();
+    if (!ETAT.reglagesOuverts || !(ETAT.mode === 'fiche' || ETAT.chrono.phase === 'intro')) return recapReglagesHTML(ETAT.mode === 'fiche' || ETAT.chrono.phase === 'intro');
     const fiche = ETAT.mode === 'fiche';
     const expl = fiche
       ? 'Toutes les questions sont affichées. Répondez à votre rythme, puis cliquez sur « Voir toutes les réponses » en bas de la page.'
@@ -625,6 +652,7 @@
         <span class="mode-explication">Quand le temps est écoulé, on passe automatiquement à la question suivante.</span>
       </div>`;
     }
+    html += '<div class="reglages-reduire"><button type="button" class="reglages-recap-btn" data-action="reglages">Réduire</button></div>';
     return html;
   }
 
@@ -1349,7 +1377,8 @@
       if (action === 'zoom') { ev.preventDefault(); ouvrirZoom(cible); return; }
       if (action === 'curseur') { ev.preventDefault(); basculerCurseur(); return; }
       if (action === 'fermer-zoom') { if (ev.target === cible) fermerZoom(); return; }
-      if (action === 'mode') changerMode(cible.dataset.mode);
+      if (action === 'reglages') { ETAT.reglagesOuverts = !ETAT.reglagesOuverts; rendre(); }
+      else if (action === 'mode') changerMode(cible.dataset.mode);
       else if (action === 'niveau') changerNiveau(Number(cible.dataset.niveau));
       else if (action === 'opt') clicOption(Number(cible.dataset.q), Number(cible.dataset.k));
       else if (action === 'reponses') basculerReponses();
