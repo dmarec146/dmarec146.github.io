@@ -9066,3 +9066,21 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   erreur, aucune remarque de rejet restante), 50 fiches : 0 erreur de syntaxe, aucun outil ne dépendait de ces phrases.
   Règle ajoutée à `REGLES-FICHES.md` §4. Hors périmètre : les « ? » des pages d'automatismes et QCM Bac n'ont
   pas été relevés.
+
+- **« QCM Bac » devient « QCM Terminale », ambre → anthracite clair (25/10/2026).** Demande de David (« je n'aime
+  finalement pas l'ambre ; un gris anthracite clair ; le libellé doit être juste QCM Terminale »), appliquée **partout** (il
+  a choisi la nuance « anthracite clair » `#5A6068`, texte blanc, contraste 6,35:1) après maquette sur téléphone. **Visible** :
+  lien de navigation des 27 pages concernées (accueil, cahiers et leurs 18 pages de cahier, automatismes, connexion, mes
+  devoirs, tableau de bord, QCM), carte et titre de section de l'accueil (« Automatismes et QCM Terminale », étiquette
+  « QCM Terminale », titre « Spécialité mathématiques »), titres, fils d'Ariane et intitulés de `qcm-bac/index.html`,
+  `fiche.html`, `sujet-blanc.html`, formulaire d'attribution des devoirs (types « QCM Terminale » et « Sujet blanc QCM
+  Terminale »), titres des nouveaux devoirs créés (`devoirs.js`), ligne du tableau de fréquentation. **Couleur** : classes
+  renommées `nav-vedette-ambre` → `nav-vedette-anthracite`, `bento-carte--ambre` → `bento-carte--anthracite`,
+  `voir-tout--ambre` (inutilisée) et `fiche-badge-ambre` → `-anthracite`, étiquettes de thèmes de `qcm-bac/index.html` en gris
+  clair. **Inchangé** : adresses `/qcm-bac/`, identifiants de devoirs (`cible:'qcm-bac'`, `'qcm-bac-sujet'`), clés Firestore
+  (`s_qcm_bac`), noms de dossiers et de fichiers, pastilles jaune pâle du barème en points (autre usage), couleur « Devoirs » du
+  guide de l'élève. **Les devoirs QCM déjà créés gardent leur titre enregistré « QCM Bac — … »** (texte stocké dans Firestore).
+  **Effet sur l'en-tête** : « QCM Terminale » est plus long ; mesure à 360-560 px : aucun changement (la navigation passait déjà
+  à la ligne) ; à 700 px elle passait de 1 à 2 lignes : règle ajoutée dans `style.css` (de 481 à 720 px, boutons resserrés),
+  navigation sur une ligne dès 680 px. Vérifié : 50 fiches 0 erreur de syntaxe, `devoirs.js` et `frequentation.js` valides,
+  aucune classe `*-ambre` restante, accueil et page QCM Terminale vus dans le navigateur.
