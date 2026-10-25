@@ -9098,3 +9098,21 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   l'élargissement ou à la rotation ; titre de l'onglet, adresses et identifiants inchangés ; les 50 fiches de calcul sont exclues
   (aucun libellé, contenu très mobile). **Vérifié** dans des cadres de 375 et 800 px : accueil, page QCM, fiche QCM, sujet blanc,
   page de cahier, aller-retour 375 → 800 → 375, texte écrit après coup par la page.
+
+- **Guide de l'élève : section « QCM Terminale » (25/10/2026).** Demande de David : « il faut insérer la section QCM de
+  terminale dans le guide de l'élève ». Le guide passe de 11 à **13 pages**. **Nouvelles pages 9 et 10** (couleur de
+  section anthracite clair `#5A6068`, comme le bouton du site) : 9 « Les QCM de Terminale » (pour qui, calculatrice autorisée,
+  quatre réponses sans justification, les trois niveaux dont le niveau 3 à −0,25 point, la page d'entrée, les trois façons de
+  s'entraîner : thème précis / fiche à deux thèmes / sujet blanc de 12 questions, les neuf thèmes, mode chrono renvoyé à la page 8) ;
+  10 « Répondre, corriger, noter » (mode fiche en trois étapes, tableau de la note, question corrigée, bilan du niveau 3 :
+  2 bonnes et 4 mauvaises = 1 point sur 10, rappel du devoir). **Le nom du bouton** est donné dans les deux versions (« QCM Bac »
+  sur ordinateur et tablette, « QCM Terminale » sur téléphone) puisque le libellé téléphone est propre au téléphone. **Renumérotation** :
+  Devoirs = pages 11 et 12 (section 5), Mémo = page 13 ; couverture à **quatre tuiles** et sommaire de 12 entrées (trois libellés
+  raccourcis), page 2 (« trois grandes entrées », boîte « Sans connexion », renvoi aux pages 11 et 12), introduction des devoirs
+  (« un QCM de Terminale »), mention de la calculatrice sur la couverture, carte du guide de l'accueil (« PDF · 13 pages »).
+  **Captures** : `outils/guide-eleve/captures-qcm.js` (nouveau, indépendant de `captures.js`) : trois images du bloc QCM Terminale, et
+  refont `accueil.png` et `connexion.png` qui ne montraient pas le bouton gris. **Vérifié** : `node pdf.js` (aucune page ne déborde sur le pied
+  de page ; la page 11, devoirs, est à 0 px de marge : à surveiller si on y ajoute du texte), pages rendues relues une à une (couverture, 2, 9, 10).
+  Ajout au passage d'une règle de prudence : une première version du conseil du niveau 3 (« mieux vaut ne pas répondre ») était
+  fausse mathématiquement (au hasard, 0,25 × 1 − 0,75 × 0,25 > 0) ; remplacée par un constat (« une mauvaise réponse coûte 0,25
+  point, une question vide ne coûte rien »).

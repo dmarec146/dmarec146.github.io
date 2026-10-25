@@ -1,7 +1,7 @@
 # Guide de l'élève (PDF)
 
 Mode d'emploi du site à distribuer aux élèves : fiches de calcul, fiches
-d'automatismes, devoirs (11 pages A4, couverture avec sommaire cliquable).
+d'automatismes, QCM de Terminale, devoirs (13 pages A4, couverture avec sommaire cliquable).
 
 - **PDF à mettre en téléchargement** : `assets/docs/guide-eleve.pdf`
   (adresse publique une fois sur `master` :
@@ -19,6 +19,12 @@ d'automatismes, devoirs (11 pages A4, couverture avec sommaire cliquable).
    `npm install` dans `outils/audit-reponses`, rien d'autre à télécharger). Le script
    signale toute page dont le contenu déborde sur le pied de page : réduire
    alors une capture (`style="width:80%;margin:0 auto"`) ou un texte.
+
+## Captures du QCM Terminale (25/10/2026)
+
+`node captures-qcm.js` (site servi sur le port 8791, pilote de `navigateur.js`, **aucun** `node_modules` à part : les bibliothèques viennent
+des CDN habituels, Firestore est coupé) : `qcm-accueil`, `qcm-carte-corrigee`, `qcm-bilan-niveau3`, et refait `accueil` et
+`connexion` (page 2) pour montrer le bouton gris de la barre. Pages 9 et 10 du guide.
 
 ## Refaire les captures (si le site change d'apparence)
 

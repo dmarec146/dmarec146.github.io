@@ -155,8 +155,8 @@ depuis la réorganisation du 02/10/2026 »).
   `automatismes/assets/moteur.js`, banques dans `automatismes/premiere/banques/` (de 6 à 13 familles par niveau depuis le
   16/10/2026) ; outil de contrôle des banques (rédaction + justesse recalculée) : `outils/automatismes-controle/`, mode d'emploi
   dans `REGLES-FICHES.md` §7.
-- **Guide de l'élève** (PDF de 11 pages, mode d'emploi des fiches, des
-  automatismes et des devoirs) : `assets/docs/guide-eleve.pdf` ; source HTML,
+- **Guide de l'élève** (PDF de 13 pages, mode d'emploi des fiches, des
+  automatismes, des QCM de Terminale et des devoirs) : `assets/docs/guide-eleve.pdf` ; source HTML,
   captures et scripts de génération dans `outils/guide-eleve/` (voir son
   `README.md`). Lié depuis l'accueil (carte « Guide de l'élève », dernière
   section, ouverture dans un nouvel onglet).
