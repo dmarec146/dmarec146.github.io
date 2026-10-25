@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"24.1 a)":0.5,"24.1 b)":0.75,"24.2 a)":0.75,"24.2 b)":0.5,"24.3 a)":0.5,"24.3 b)":0.75,"24.4 a)":0.5,"24.4 b)":0.75,"24.4 c)":1,"24.4 d)":1.25,"24.5 a)":1.25,"24.5 b)":1.25,"24.6 a)":0.5,"24.6 b)":0.5,"24.6 c)":0.75,"24.7 a)":0.5,"24.7 b)":0.75,"24.8 a)":0.5,"24.8 b)":1,"24.9":1,"24.10 a)":1,"24.10 b)":1.25,"24.10 c)":1.25,"24.10 d)":1.25,"24.11 a)":1.5,"24.11 b)":1.75,"24.12 a)":1.75,"24.12 b)":2,"24.13 a)":1.5,"24.13 b)":2},"bonus":["24.11 a)","24.11 b)","24.12 a)","24.12 b)","24.13 a)","24.13 b)"]});
@@ -1084,6 +1086,147 @@ function melanger(tableau) { for (let i = tableau.length - 1; i > 0; i--) { cons
 function coefPrefixe(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}*`; }
 function coefPrefixeL(n) { if (n === 1) return ''; if (n === -1) return '-'; return `${n}`; }
 
+// ---------- details de correction (25/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, sommeF2 } = DetailQ;
+const lg24 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const ft24 = (f) => fracD(math.fraction(f));
+const par24 = (T) => (String(T).startsWith('-') ? `\\left(${T}\\right)` : String(T));
+const INV24 = { '<': '>', '>': '<', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const SYM24 = (op) => (op === '<' ? '\\lt ' : op);
+const nP24 = (v) => (v === 0 ? 'n' : v > 0 ? `n+${v}` : `n-${-v}`);
+const sansDoublons24 = (l) => l.filter((x, i, t) => i === 0 || x !== t[i - 1]);
+const PROD24 = (lo, hi, t) => `\\displaystyle\\prod_{k=${lo}}^{${hi}}${t}`;
+const SOMME24 = (lo, hi, t) => `\\displaystyle\\sum_{k=${lo}}^{${hi}}${t}`;
+const simpl24 = '\\text{Les facteurs communs se simplifient}';
+function finIneq24(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV24[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// 24.1 a) (x + a)(x - b) op (x - c)(x + d)
+function detail241a(a, b, c, d, op, spec) {
+  const o = SYM24(op), k = a - b + c - d, D = a * b - c * d;
+  return { lignes: [`\\left(${lg24(1, a)}\\right)\\left(${lg24(1, -b)}\\right) ${o} \\left(${lg24(1, -c)}\\right)\\left(${lg24(1, d)}\\right)`, `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: a - b, v: 'x' }, { c: -a * b, v: '' }])} ${o} ${polyF2([{ c: 1, v: 'x^{2}' }, { c: d - c, v: 'x' }, { c: -c * d, v: '' }])}`, `\\iff ${polyF2([{ c: k, v: 'x' }])} ${o} ${D}`, ...finIneq24(k, op, D, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 24.1 b) (ax + b)/((x - c)(x - d)) op 0
+function detail241b(a, b, c, d, op, spec, z) {
+  const o = SYM24(op), N = lg24(a, b), Dc = lg24(1, -c), Dd = lg24(1, -d), S = formaterIntervalleSpec(spec);
+  const tableau = Detail.tableauSignesFacteurs([{ label: N, v: z, tex: ft24(math.fraction(-b, a)), sgn: a > 0 ? 1 : -1 }, { label: Dc, v: c, tex: String(c), sgn: 1, denom: true }, { label: Dd, v: d, tex: String(d), sgn: 1, denom: true }], 'signe');
+  return { lignes: [`\\dfrac{${N}}{\\left(${Dc}\\right)\\left(${Dd}\\right)} ${o} 0`, ...Detail.lignesSigneAffine(a, b), ...Detail.lignesSigneAffine(1, -c), ...Detail.lignesSigneAffine(1, -d), '\\text{Tableau de signes du quotient}', tableau, '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles le quotient est } ${op}\\ 0`, `\\scriptsize \\text{Les valeurs interdites } ${c} \\text{ et } ${d} \\text{ sont exclues dans tous les cas}`, `S = ${S}`], final: S };
+}
+// 24.2 a) x^3 - a x^2 - m x + a m = 0, m = k^2
+function detail242a(a, k) {
+  const m = k * k, p = polyF2([{ c: 1, v: 'x^{3}' }, { c: -a, v: 'x^{2}' }, { c: -m, v: 'x' }, { c: a * m, v: '' }]), xa = lg24(1, -a), sols = [a, k, -k].sort((u, v) => u - v), S = `\\{${sols.join('\\,;\\,')}\\}`;
+  return { lignes: [`${p} = 0`, `\\iff x^{2}\\left(${xa}\\right)-${m}\\left(${xa}\\right) = 0`, `\\iff \\left(${xa}\\right)\\left(x^{2}-${m}\\right) = 0`, `\\iff \\left(${xa}\\right)\\left(x-${k}\\right)\\left(x+${k}\\right) = 0`, `\\iff x = ${a} \\text{ ou } x = ${k} \\text{ ou } x = -${k}`, `S = ${S}`], final: S };
+}
+// 24.2 b) |ax + b| = |cx + d|
+function detail242b(a, b, c, d) {
+  const A = lg24(a, b), C = lg24(c, d), x1 = math.fraction(d - b, a - c), x2 = math.fraction(-(b + d), a + c), [lo, hi] = math.compare(x1, x2) < 0 ? [x1, x2] : [x2, x1], S = `\\{${ft24(lo)}\\,;\\,${ft24(hi)}\\}`;
+  return { lignes: sansDoublons24([`\\left|${A}\\right| = \\left|${C}\\right|`, `\\iff ${A} = ${C} \\text{ ou } ${A} = -\\left(${C}\\right)`, `\\iff ${polyF2([{ c: a - c, v: 'x' }])} = ${d - b} \\text{ ou } ${polyF2([{ c: a + c, v: 'x' }])} = ${-d - b}`, `\\iff x = ${ft24(x1)} \\text{ ou } x = ${ft24(x2)}`, `S = ${S}`]), final: S };
+}
+// 24.3 a) produit de (1 -/+ 1/k) : il se telescope
+function detail243a(k0, nb, moins) {
+  const ks = Array.from({ length: nb }, (_, i) => k0 + i), num = ks.map((k) => (moins ? k - 1 : k + 1)), P = ks.reduce((t, k) => math.multiply(t, math.fraction(moins ? k - 1 : k + 1, k)), math.fraction(1));
+  const sans1 = (t) => { const r = t.filter((v) => v !== 1); return r.length ? r.join('\\times ') : '1'; };
+  const fr = ks.map((k, i) => `\\dfrac{${num[i]}}{${k}}`).join('\\times ');
+  return { lignes: [`1${moins ? '-' : '+'}\\dfrac{1}{k} = \\dfrac{k${moins ? '-' : '+'}1}{k}`, `${fr} = \\dfrac{${sans1(num)}}{${sans1(ks)}} = ${fracD(P)}`], final: fracD(P) };
+}
+// 24.3 b) (c sqrt(n) + p)^2 + (c sqrt(n) - p)^2
+function detail243b(c, p, n) {
+  const r = `${c === 1 ? '' : c}\\sqrt{${n}}`, tot = 2 * c * c * n + 2 * p * p;
+  return { lignes: ['\\left(a+b\\right)^{2}+\\left(a-b\\right)^{2} = 2a^{2}+2b^{2}', `2\\left(${r}\\right)^{2}+2\\times ${p}^{2} = 2\\times ${c * c * n}+2\\times ${p * p} = ${2 * c * c * n}+${2 * p * p} = ${tot}`], final: String(tot) };
+}
+// 24.4 : ecriture avec le symbole produit
+function detail244(general, lo, hi) { const fin = PROD24(lo, hi, general); return { lignes: [`\\text{Facteur général : } u_{k} = ${general}`, `\\text{Indices : } k \\text{ de } ${lo} \\text{ à } ${hi}`, fin], final: fin }; }
+// 24.5 : melange de sommes et de produits
+function detail245(general, lo, hi, signe) { const fin = (signe === 'somme' ? SOMME24 : PROD24)(lo, hi, general); return { lignes: [`\\text{${signe === 'somme' ? 'Terme' : 'Facteur'} général : } u_{k} = ${general}`, `\\text{Indices : } k \\text{ de } ${lo} \\text{ à } ${hi}`, fin], final: fin }; }
+// 24.6 a) produit d'entiers consecutifs
+function detail246a(A, N) {
+  let f = 1; const fs = []; for (let i = A; i <= N; i++) { f *= i; if (i !== 1) fs.push(i); }
+  return { lignes: [`${PROD24(A, N, 'k')} = ${fs.join('\\times ')} = ${f}`], final: String(f) };
+}
+// 24.6 b) produit de facteurs affines
+function detail246b(a, b, sg, k0, N) {
+  const ks = Array.from({ length: N - k0 + 1 }, (_, i) => k0 + i), vals = ks.map((k) => a * k + sg * b), P = vals.reduce((t, v) => t * v, 1);
+  const terme = (k) => (k === 0 ? String(b) : `\\left(${k === 1 ? a : (a === 1 ? k : `${a}\\times ${k}`)}${sg > 0 ? '+' : '-'}${b}\\right)`), garde = (k, v) => !(k === 0 && v === 1);
+  return { lignes: [`${ks.filter((k, i) => garde(k, vals[i])).map((k) => terme(k)).join('\\times ')} = ${vals.filter((v, i) => garde(ks[i], v)).join('\\times ')} = ${P}`], final: String(P) };
+}
+// 24.6 c) produit de k/(k+g)
+function detail246c(A, N, g) {
+  const nb = N - A + 1, tf = (k) => '\\dfrac{' + k + '}{' + (k + g) + '}';
+  const ks = nb <= 4 ? Array.from({ length: nb }, (_, i) => tf(A + i)) : [tf(A), tf(A + 1), '\\cdots', tf(N)];
+  let P = math.fraction(1); for (let k = A; k <= N; k++) P = math.multiply(P, math.fraction(k, k + g));
+  const hauts = g === 1 ? [A] : [A, A + 1], bas = g === 1 ? [N + 1] : [N + 1, N + 2], sans1 = (t) => { const r = t.filter((v) => v !== 1); return r.length ? r.join('\\times ') : '1'; };
+  const ecrit = '\\dfrac{' + sans1(hauts) + '}{' + bas.join('\\times ') + '}', brut = fracBrute(hauts.reduce((t, v) => t * v, 1), bas.reduce((t, v) => t * v, 1)), fin = fracD(P);
+  const suite = [ecrit]; if (brut !== ecrit) suite.push(brut); if (fin !== suite[suite.length - 1]) suite.push(fin);
+  return { lignes: [ks.join('\\times '), simpl24, '= ' + suite.join(' = ')], final: fin };
+}
+// 24.7 : produit d'un terme constant (QCM)
+function detail247a(C, bonne) { return { lignes: ['\\text{Nombre de facteurs : } n+1', `${PROD24(0, 'n', C)} = ${C}^{n+1}`, `\\text{Réponse : } ${bonne}`], final: bonne }; }
+function detail247b(C, M, bonne) { return { lignes: [`\\text{Nombre de facteurs : } ${M}n+1`, `${PROD24(0, `${M}n`, C)} = ${C}^{${M}n+1}`, `\\text{Réponse : } ${bonne}`], final: bonne }; }
+// 24.8 : telescopage I
+function detail248a() { return { lignes: ['b_{2} = \\dfrac{a_{2}}{a_{1}}\\times\\dfrac{a_{3}}{a_{2}}', simpl24, '= \\dfrac{a_{3}}{a_{1}}'], final: '\\dfrac{a_{3}}{a_{1}}' }; }
+function detail248b() { return { lignes: ['b_{n-1} = \\dfrac{a_{2}}{a_{1}}\\times\\dfrac{a_{3}}{a_{2}}\\times\\cdots\\times\\dfrac{a_{n}}{a_{n-1}}', simpl24, '= \\dfrac{a_{n}}{a_{1}}'], final: '\\dfrac{a_{n}}{a_{1}}' }; }
+// 24.9 : telescopage II (QCM)
+function detail249() { return { lignes: ['\\dfrac{a_{p-1}}{a_{p}}\\times\\dfrac{a_{p}}{a_{p+1}}\\times\\cdots\\times\\dfrac{a_{n-1}}{a_{n}}', simpl24, '= \\dfrac{a_{p-1}}{a_{n}}', '\\text{Réponse : } e'], final: 'e' }; }
+// 24.10 a) (k + A)/(k + A + 1) ou son inverse
+function detail2410a(A, inverse) {
+  const fr = (a, b) => '\\dfrac{' + a + '}{' + b + '}';
+  const premier = inverse ? (A === 0 ? '2' : fr(A + 2, A + 1)) : fr(A + 1, A + 2), second = inverse ? fr(A + 3, A + 2) : fr(A + 2, A + 3);
+  const dern = A === 0 ? (inverse ? '\\dfrac{n+1}{n}' : '\\dfrac{n}{n+1}') : (inverse ? '\\dfrac{n+' + (A + 1) + '}{n+' + A + '}' : '\\dfrac{n+' + A + '}{n+' + (A + 1) + '}');
+  const fin = inverse ? (A === 0 ? 'n+1' : '\\dfrac{n+' + (A + 1) + '}{' + (A + 1) + '}') : '\\dfrac{' + (A + 1) + '}{n+' + (A + 1) + '}';
+  return { lignes: [premier + '\\times ' + second + '\\times\\cdots\\times ' + dern, simpl24, '= ' + fin], final: fin };
+}
+// 24.10 b) (Ab k + Bb)/(Ab k + Bb - Ab)
+function detail2410b(Ab, Bb) {
+  const Db = Bb - Ab, coef = Ab === 1 ? '' : String(Ab), denom = `${coef}k${Db === 0 ? '' : (Db > 0 ? `+${Db}` : `${Db}`)}`, g = pgcd(Ab, Bb), aB = Ab / g, bB = Bb / g;
+  const fk = (i) => Ab * i + Bb, dn = `${coef}n${Db === 0 ? '' : (Db > 0 ? `+${Db}` : `${Db}`)}`;
+  const brut = Bb === 1 ? `${coef}n+1` : `\\dfrac{${coef}n+${Bb}}{${Bb}}`, fin = bB === 1 ? `${aB === 1 ? '' : aB}n+1` : `\\dfrac{${aB === 1 ? '' : aB}n+${bB}}{${bB}}`;
+  return { lignes: [`\\dfrac{${coef}k+${Bb}}{${denom}} = \\dfrac{${coef}k+${Bb}}{${Ab === 1 ? '' : Ab}\\left(k-1\\right)+${Bb}}`, `${Bb === 1 ? fk(1) : `\\dfrac{${fk(1)}}{${fk(0)}}`}\\times\\dfrac{${fk(2)}}{${fk(1)}}\\times\\cdots\\times\\dfrac{${coef}n+${Bb}}{${dn}}`, simpl24, `= ${brut}${brut === fin ? '' : ` = ${fin}`}`], final: fin };
+}
+// 24.10 c) deux variantes : (k + a)(k + a + 2)/(k + a + 1)^2 ou ((k + a + 1)^2 - 1)/(k + a + 1)^2
+function detail2410c(a, variante) {
+  const tk = a === 0 ? 'k' : `k+${a}`, t1 = `k+${a + 1}`, t2 = `k+${a + 2}`, fa = a === 0 ? '(n+2)' : `${a + 1}\\left(n+${a + 2}\\right)`, num = a === 0 ? 'n+2' : fa, den = `${a + 2}\\left(n+${a + 1}\\right)`, fin = `\\dfrac{${num}}{${den}}`;
+  const split = `\\dfrac{${tk}}{${t1}}\\times\\dfrac{${t2}}{${t1}}`, l = [];
+  if (variante) l.push(`\\dfrac{\\left(${t1}\\right)^{2}-1}{\\left(${t1}\\right)^{2}} = \\dfrac{\\left(${tk}\\right)\\left(${t2}\\right)}{\\left(${t1}\\right)^{2}} = ${split}`);
+  else l.push(`\\dfrac{${a === 0 ? 'k' : `\\left(${tk}\\right)`}\\left(${t2}\\right)}{\\left(${t1}\\right)^{2}} = ${split}`);
+  l.push('\\text{Deux produits télescopiques}', `${PROD24(1, 'n', `\\dfrac{${tk}}{${t1}}`)} = \\dfrac{${a + 1}}{n+${a + 1}}`, `${PROD24(1, 'n', `\\dfrac{${t2}}{${t1}}`)} = \\dfrac{n+${a + 2}}{${a + 2}}`, `\\dfrac{${a + 1}}{n+${a + 1}}\\times\\dfrac{n+${a + 2}}{${a + 2}} = ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 24.10 d) f(k)/f(k+1), f(k) = k^2 + p k + q
+function detail2410d(p, q, f1) {
+  const pk = (v, pp, qq) => polyF2([{ c: 1, v: `${v}^{2}` }, { c: pp, v }, { c: qq, v: '' }]), f = (k) => k * k + p * k + q, fin = `\\dfrac{${f1}}{${pk('n', p + 2, f1)}}`;
+  return { lignes: [`\\left(k+1\\right)^{2}${p === 0 ? '' : `+${p === 1 ? '' : p}\\left(k+1\\right)`}${q === 0 ? '' : (q > 0 ? `+${q}` : `${q}`)} = ${pk('k', p + 2, f1)}`, `\\dfrac{${f(1)}}{${f(2)}}\\times\\dfrac{${f(2)}}{${f(3)}}\\times\\cdots\\times\\dfrac{${pk('n', p, q)}}{${pk('n', p + 2, f1)}}`, simpl24, `= ${fin}`], final: fin };
+}
+// 24.11 : produit de (k + h)/(k - h) ou de son inverse
+function detail2411(h, S, inverse) {
+  const hauts = h === 1 ? ['n', '\\left(n+1\\right)'] : ['\\left(n-1\\right)', 'n', '\\left(n+1\\right)', '\\left(n+2\\right)'], bas = h === 1 ? [S - 1, S] : [S - 2, S - 1, S, S + 1], c = bas.reduce((t, v) => t * v, 1);
+  const fr = (a, b) => (b === 1 ? String(a) : '\\dfrac{' + a + '}{' + b + '}');
+  const fk = (k0) => (inverse ? fr(k0 - h, k0 + h) : fr(k0 + h, k0 - h)), fn = inverse ? '\\dfrac{n-' + h + '}{n+' + h + '}' : '\\dfrac{n+' + h + '}{n-' + h + '}';
+  const fin = inverse ? '\\dfrac{' + c + '}{' + hauts.join('') + '}' : '\\dfrac{' + hauts.join('') + '}{' + c + '}';
+  return { lignes: [fk(S) + '\\times ' + fk(S + 1) + '\\times\\cdots\\times ' + fn, simpl24, '= ' + fin], final: fin };
+}
+// 24.12 a) produit de puissances d'une meme base
+function detail2412a(B, m, c) {
+  const e = { '1,0': '\\dfrac{n\\left(n+1\\right)}{2}', '2,0': 'n\\left(n+1\\right)', '3,0': '\\dfrac{3n\\left(n+1\\right)}{2}', '1,1': '\\dfrac{n\\left(n+3\\right)}{2}', '2,1': 'n\\left(n+2\\right)', '3,-1': '\\dfrac{n\\left(3n+1\\right)}{2}' }[`${m},${c}`], ex = `${m === 1 ? '' : m}k${c === 0 ? '' : (c > 0 ? `+${c}` : `${c}`)}`;
+  const decomp = `${m === 1 ? '' : `${m}`}${SOMME24(1, 'n', 'k')}${c === 0 ? '' : `${c > 0 ? '+' : '-'}${Math.abs(c) === 1 ? '' : `${Math.abs(c)}`}${SOMME24(1, 'n', '1')}`}`;
+  const calc = `${m === 1 ? '' : `${m}\\times `}\\dfrac{n\\left(n+1\\right)}{2}${c === 0 ? '' : `${c > 0 ? '+' : '-'}${Math.abs(c) === 1 ? '' : Math.abs(c)}n`}`;
+  return { lignes: [`${PROD24(1, 'n', `${B}^{${ex}}`)} = ${B}^{${SOMME24(1, 'n', `\\left(${ex}\\right)`)}}`, '\\text{On additionne les exposants}', `${SOMME24(1, 'n', `\\left(${ex}\\right)`)} = ${decomp} = ${calc} = ${e}`, `${PROD24(1, 'n', `${B}^{${ex}}`)} = ${B}^{${e}}`], final: `${B}^{${e}}` };
+}
+// 24.12 b) produit de B^(m a^k)
+function detail2412b(B, m, debut) {
+  const bornes = debut === 0 ? [0, 'n-1'] : [1, 'n'], cm = m === 1 ? '' : String(m), geo = debut === 0 ? '\\dfrac{a^{n}-1}{a-1}' : 'a\\times\\dfrac{a^{n}-1}{a-1}', expo = `${cm}${cm ? '\\times ' : ''}${geo}`;
+  return { lignes: [`${PROD24(bornes[0], bornes[1], `${B}^{${cm}a^{k}}`)} = ${B}^{${cm}${SOMME24(bornes[0], bornes[1], 'a^{k}')}}`, '\\text{On additionne les exposants}', `\\text{Suite géométrique de raison } a`, `${SOMME24(bornes[0], bornes[1], 'a^{k}')} = ${geo}`, `${PROD24(bornes[0], bornes[1], `${B}^{${cm}a^{k}}`)} = ${B}^{${expo}}`], final: `${B}^{${expo}}` };
+}
+// 24.13 : factorielle
+function detail2413a() { return { lignes: ['\\left(n+1\\right)! = \\left(n+1\\right)\\times n\\times\\left(n-1\\right)\\times\\cdots\\times 1', '= \\left(n+1\\right)\\times n!'], final: '\\left(n+1\\right)\\times n!' }; }
+function detail2413b() {
+  const fin = '\\dfrac{\\left(2n\\right)!}{2^{2n}\\left(n!\\right)^{2}}';
+  return { lignes: [`${PROD24(1, 'n', '2k')} = 2^{n}\\times n!`, '\\scriptsize \\text{On sépare les entiers de 1 à } 2n \\text{ en impairs et en pairs}', `\\left(2n\\right)! = ${PROD24(1, 'n', '\\left(2k-1\\right)')}\\times ${PROD24(1, 'n', '2k')}`, `${PROD24(1, 'n', '\\left(2k-1\\right)')} = \\dfrac{\\left(2n\\right)!}{2^{n}\\times n!}`, `${PROD24(1, 'n', '\\dfrac{2k-1}{2k}')} = \\dfrac{\\left(2n\\right)!}{2^{n}\\times n!}\\times\\dfrac{1}{2^{n}\\times n!} = ${fin}`], final: fin };
+}
 function genererExercices() {
   const ex = [];
 
@@ -1128,9 +1271,10 @@ function genererExercices() {
     let a, b, c, d; do { a = aleaNonNul(-6,6); b = aleaNonNul(-6,6); c = aleaNonNul(-6,6); d = aleaNonNul(-6,6); } while (a - b + c - d === 0);
     const op = OPS[alea(0,3)];
     const k = a - b + c - d, k0 = -a*b + c*d;   // (x+a)(x-b) - (x-c)(x+d) = kx + k0
-    ex.push({id:"24.1 a)", type:"intervalle", texteLibre:true,
+    const spec241a = {type:'intervalles', liste: parSigne([-k0 / k], [], x => k*x + k0, op)};
+    ex.push({id:"24.1 a)", detail: detail241a(a, b, c, d, op, spec241a), type:"intervalle", texteLibre:true,
       enonce:`\\((x${a>0?'+':'-'}${Math.abs(a)})(x${-b>0?'+':'-'}${Math.abs(b)})${op}(x${-c>0?'+':'-'}${Math.abs(c)})(x${d>0?'+':'-'}${Math.abs(d)})\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([-k0 / k], [], x => k*x + k0, op)}});
+      intervalleSpec: spec241a});
   }
   // b) quotient a denominateur produit : (ax + b)/((x - c)(x - d)) op 0
   {
@@ -1139,9 +1283,10 @@ function genererExercices() {
       a = aleaNonNul(-4,4); b = aleaNonNul(-8,8); c = aleaNonNul(-6,6); d = aleaNonNul(-6,6); op = OPS[alea(0,3)];
       z = -b / a; g = x => (a*x + b) / ((x - c) * (x - d));
     } while (c === d || z === c || z === d || zeroIsole([z], [c, d], g, op));
-    ex.push({id:"24.1 b)", type:"intervalle", texteLibre:true,
+    const spec241b = {type:'intervalles', liste: parSigne([z], [c, d], g, op)};
+    ex.push({id:"24.1 b)", detail: detail241b(a, b, c, d, op, spec241b, z), type:"intervalle", texteLibre:true,
       enonce:`\\(\\dfrac{${fmtLin(a,b,false)}}{(${fmtLin(1,-c,false)})(${fmtLin(1,-d,false)})}${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([z], [c, d], g, op)}});
+      intervalleSpec: spec241b});
   }
 
   // ---------- 16.2 : equations (ensemble des solutions) ----------
@@ -1149,7 +1294,7 @@ function genererExercices() {
   {
     let a, k; do { a = aleaNonNul(-7,7); k = alea(2,5); } while (Math.abs(a) === k);
     const m = k*k, signe = v => (v < 0 ? '-' : '+') + (Math.abs(v) === 1 ? '' : Math.abs(v));
-    ex.push({id:"24.2 a)", type:"num", texteLibre:true,
+    ex.push({id:"24.2 a)", detail: detail242a(a, k), type:"num", texteLibre:true,
       enonce:`\\(x^3${signe(-a)}x^2-${m}x${a*m > 0 ? '+' : '-'}${Math.abs(a*m)}=0\\)`,
       reponse: ensembleDe([a, k, -k].sort((u, v) => u - v).map(v => math.fraction(v)))});
   }
@@ -1163,7 +1308,7 @@ function genererExercices() {
       }
     } while (sols.length === 0 || sols.some(s => s.d > 4) || b*c === a*d);   // b*c = a*d : expressions proportionnelles, une seule solution par construction
     sols.sort((p, q) => math.compare(p, q));
-    ex.push({id:"24.2 b)", type:"num", texteLibre:true,
+    ex.push({id:"24.2 b)", detail: detail242b(a, b, c, d), type:"num", texteLibre:true,
       enonce:`\\(\\left|${fmtLin(a,b,false)}\\right|=\\left|${fmtLin(c,d,false)}\\right|\\)`, reponse: ensembleDe(sols)});
   }
 
@@ -1177,26 +1322,26 @@ function genererExercices() {
       P = math.multiply(P, math.fraction(moins ? k - 1 : k + 1, k));
       facteurs.push(`\\left(1${moins ? '-' : '+'}\\dfrac{1}{${k}}\\right)`);
     }
-    ex.push({id:"24.3 a)", type:"num", fractionIrreductible:true, enonce: facteurs.join(''), reponse: fracToStr(P)});
+    ex.push({id:"24.3 a)", detail: detail243a(k0, nb, moins), type:"num", fractionIrreductible:true, enonce: facteurs.join(''), reponse: fracToStr(P)});
   }
   // b) identite remarquable numerique : (c sqrt(n) + p)^2 + (c sqrt(n) - p)^2 = 2 c^2 n + 2 p^2
   {
     let n; do { n = alea(2,30); } while (Number.isInteger(Math.sqrt(n)));
     const c = alea(1,3), p = alea(1,6), r = `${c === 1 ? '' : c}\\sqrt{${n}}`;
     const t1 = `\\left(${r}+${p}\\right)^2`, t2 = `\\left(${r}-${p}\\right)^2`;
-    ex.push({id:"24.3 b)", type:"num", fractionIrreductible:true,
+    ex.push({id:"24.3 b)", detail: detail243b(c, p, n), type:"num", fractionIrreductible:true,
       enonce: alea(0,1) === 0 ? `${t1}+${t2}` : `${t2}+${t1}`, reponse: String(2*c*c*n + 2*p*p)});
   }
 
   // ---------- 18.3 : ecritures I ----------
   {
     const N = alea(30, 150);
-    ex.push({id:"24.4 a)", type: "produit", texteLibre: true, enonce: `\\(1\\times 2\\times 3\\times \\cdots \\times ${N}\\)`, reponse: `prod(k,1,${N},k)`});
+    ex.push({id:"24.4 a)", detail: detail244('k', 1, N), type: "produit", texteLibre: true, enonce: `\\(1\\times 2\\times 3\\times \\cdots \\times ${N}\\)`, reponse: `prod(k,1,${N},k)`});
 
     const S = alea(2, 4), E = S + alea(4, 7);
 
     const Sc = alea(3, 5), Ec = Sc + alea(8, 12), D = alea(1, 3);
-    ex.push({id:"24.4 b)", type: "produit", texteLibre: true, enonce: `\\(${Sc}^{${Sc+D}}\\times ${Sc+1}^{${Sc+1+D}}\\times ${Sc+2}^{${Sc+2+D}}\\times \\cdots \\times ${Ec}^{${Ec+D}}\\)`, reponse: `prod(k,${Sc},${Ec},k^(k+${D}))`});
+    ex.push({id:"24.4 b)", detail: detail244('k^{k+' + D + '}', Sc, Ec), type: "produit", texteLibre: true, enonce: `\\(${Sc}^{${Sc+D}}\\times ${Sc+1}^{${Sc+1+D}}\\times ${Sc+2}^{${Sc+2+D}}\\times \\cdots \\times ${Ec}^{${Ec+D}}\\)`, reponse: `prod(k,${Sc},${Ec},k^(k+${D}))`});
 
     const C = alea(2, 9), M = alea(6, 10);
   }
@@ -1204,7 +1349,7 @@ function genererExercices() {
   // ---------- 18.4 : ecritures II ----------
   {
     const C = alea(1, 5), M = alea(2, 5);
-    ex.push({id:"24.4 c)", type: "produit", texteLibre: true, enonce: `\\(${1+C}x_1\\times ${4+C}x_2\\times ${9+C}x_3\\times \\cdots \\times (${M*M}n^2+${C})x_{${M}n}\\)`, reponse: `prod(k,1,${M}n,(k^2+${C})*x_k)`});
+    ex.push({id:"24.4 c)", detail: detail244('\\left(k^{2}+' + C + '\\right)x_{k}', 1, M + 'n'), type: "produit", texteLibre: true, enonce: `\\(${1+C}x_1\\times ${4+C}x_2\\times ${9+C}x_3\\times \\cdots \\times (${M*M}n^2+${C})x_{${M}n}\\)`, reponse: `prod(k,1,${M}n,(k^2+${C})*x_k)`});
     const vd = alea(0, 3);
     const dEnonce = [
       "\\((x_0+y_n)(x_1+y_{n-1})\\times \\cdots \\times (x_n+y_0)\\)",
@@ -1212,19 +1357,19 @@ function genererExercices() {
       "\\((x_0-x_1)(x_1-x_2)\\times \\cdots \\times (x_{n-1}-x_n)\\)",
       "\\((x_1+x_2)(x_2+x_3)\\times \\cdots \\times (x_{n-1}+x_n)\\)"][vd];
     const dRep = ["prod(k,0,n,x_k+y_(n-k))", "prod(k,1,n,x_k*y_(n+1-k))", "prod(k,0,n-1,x_k-x_(k+1))", "prod(k,1,n-1,x_k+x_(k+1))"][vd];
-    ex.push({id:"24.4 d)", type: "produit", texteLibre: true, enonce: dEnonce, reponse: dRep});
+    ex.push({id:"24.4 d)", detail: detail244(['\\left(x_{k}+y_{n-k}\\right)', 'x_{k}y_{n+1-k}', '\\left(x_{k}-x_{k+1}\\right)', '\\left(x_{k}+x_{k+1}\\right)'][vd], [0, 1, 0, 1][vd], ['n', 'n', 'n-1', 'n-1'][vd]), type: "produit", texteLibre: true, enonce: dEnonce, reponse: dRep});
   }
 
   // ---------- 18.5 : melange produits et sommes (fixe) ----------
   if (alea(0, 1) === 0) {
-    ex.push({id:"24.5 a)", type: "somme", texteLibre: true, enonce: "\\(x_1+x_1x_2+x_1x_2x_3+\\cdots +(x_1x_2x_3\\cdots x_n)\\)", reponse: "sum(k,1,n,prod(i,1,k,x_i))"});
+    ex.push({id:"24.5 a)", detail: detail245('\\prod_{i=1}^{k}x_{i}', 1, 'n', 'somme'), type: "somme", texteLibre: true, enonce: "\\(x_1+x_1x_2+x_1x_2x_3+\\cdots +(x_1x_2x_3\\cdots x_n)\\)", reponse: "sum(k,1,n,prod(i,1,k,x_i))"});
   } else {
-    ex.push({id:"24.5 a)", type: "somme", texteLibre: true, enonce: "\\((x_1x_2\\cdots x_n)+(x_2x_3\\cdots x_n)+\\cdots +x_{n-1}x_n+x_n\\)", reponse: "sum(k,1,n,prod(i,k,n,x_i))"});
+    ex.push({id:"24.5 a)", detail: detail245('\\prod_{i=k}^{n}x_{i}', 1, 'n', 'somme'), type: "somme", texteLibre: true, enonce: "\\((x_1x_2\\cdots x_n)+(x_2x_3\\cdots x_n)+\\cdots +x_{n-1}x_n+x_n\\)", reponse: "sum(k,1,n,prod(i,k,n,x_i))"});
   }
   if (alea(0, 1) === 0) {
-    ex.push({id:"24.5 b)", type: "produit", texteLibre: true, enonce: "\\(x_1\\times (x_1+x_2)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,1,k,x_i))"});
+    ex.push({id:"24.5 b)", detail: detail245('\\sum_{i=1}^{k}x_{i}', 1, 'n', 'produit'), type: "produit", texteLibre: true, enonce: "\\(x_1\\times (x_1+x_2)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,1,k,x_i))"});
   } else {
-    ex.push({id:"24.5 b)", type: "produit", texteLibre: true, enonce: "\\(x_n\\times (x_{n-1}+x_n)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,n+1-k,n,x_i))"});
+    ex.push({id:"24.5 b)", detail: detail245('\\sum_{i=n+1-k}^{n}x_{i}', 1, 'n', 'produit'), type: "produit", texteLibre: true, enonce: "\\(x_n\\times (x_{n-1}+x_n)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,n+1-k,n,x_i))"});
   }
 
   // ---------- 18.6 : valeurs de produits ----------
@@ -1232,7 +1377,7 @@ function genererExercices() {
     // a) produit d'entiers consecutifs
     const A1 = alea(1, 4), N1 = alea(A1 + 3, 8);
     let f = 1; for (let i = A1; i <= N1; i++) f *= i;
-    ex.push({id:"24.6 a)", type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${A1}}^{${N1}}k\\)`, reponse: String(f)});
+    ex.push({id:"24.6 a)", detail: detail246a(A1, N1), type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${A1}}^{${N1}}k\\)`, reponse: String(f)});
 
     // b) facteurs affines (tous strictement positifs, produit raisonnable)
     let a2, b2, sg2, k02, N2, p2;
@@ -1240,12 +1385,12 @@ function genererExercices() {
       a2 = alea(1, 3); b2 = alea(1, 3); sg2 = alea(0, 1) === 0 ? 1 : -1; k02 = sg2 > 0 ? alea(0, 1) : 1; N2 = k02 + alea(2, 4);
       p2 = 1; for (let k = k02; k <= N2; k++) p2 *= a2 * k + sg2 * b2;
     } while (a2 * k02 + sg2 * b2 <= 0 || p2 <= 1 || p2 > 2000);
-    ex.push({id:"24.6 b)", type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${k02}}^{${N2}}(${coefPrefixeL(a2)}k${sg2 > 0 ? '+' : '-'}${b2})\\)`, reponse: String(p2)});
+    ex.push({id:"24.6 b)", detail: detail246b(a2, b2, sg2, k02, N2), type: "num", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${k02}}^{${N2}}(${coefPrefixeL(a2)}k${sg2 > 0 ? '+' : '-'}${b2})\\)`, reponse: String(p2)});
 
     // c) quotient k/(k+g) : fraction irreductible
     const g3 = alea(1, 2), A3 = alea(1, 2), N3 = alea(5, 9);
     let P3 = math.fraction(1); for (let k = A3; k <= N3; k++) P3 = math.multiply(P3, math.fraction(k, k + g3));
-    ex.push({id:"24.6 c)", type: "num", texteLibre: true, fractionIrreductible: true, enonce: `\\(\\displaystyle\\prod_{k=${A3}}^{${N3}}\\dfrac{k}{k+${g3}}\\)`, reponse: fracToStr(P3)});
+    ex.push({id:"24.6 c)", detail: detail246c(A3, N3, g3), type: "num", texteLibre: true, fractionIrreductible: true, enonce: `\\(\\displaystyle\\prod_{k=${A3}}^{${N3}}\\dfrac{k}{k+${g3}}\\)`, reponse: fracToStr(P3)});
   }
 
   // ---------- 18.7 : produit constant (QCM) ----------
@@ -1263,7 +1408,7 @@ function genererExercices() {
     const lettresQCM = ["a", "b", "c", "d", "e", "f"];
     let bonne = "";
     const options = opts.map((o, i) => { const L = lettresQCM[i]; if (o.correct) bonne = L; return {lettre: L, texte: o.texte}; });
-    ex.push({id:"24.7 a)", type: "qcm", texteLibre: true, enonce: `Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{n}${C}\\) ?`, bonneReponse: bonne, options, optionsSurUneLigne: true});
+    ex.push({id:"24.7 a)", detail: detail247a(C, bonne), type: "qcm", texteLibre: true, enonce: `Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{n}${C}\\) ?`, bonneReponse: bonne, options, optionsSurUneLigne: true});
   }
 
   // ---------- 18.8 : produit constant, bis (QCM) ----------
@@ -1281,25 +1426,25 @@ function genererExercices() {
     const lettresQCM = ["a", "b", "c", "d", "e", "f"];
     let bonne = "";
     const options = opts.map((o, i) => { const L = lettresQCM[i]; if (o.correct) bonne = L; return {lettre: L, texte: o.texte}; });
-    ex.push({id:"24.7 b)", type: "qcm", texteLibre: true, enonce: `Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{${M}n}${C}\\) ?`, bonneReponse: bonne, options, optionsSurUneLigne: true});
+    ex.push({id:"24.7 b)", detail: detail247b(C, M, bonne), type: "qcm", texteLibre: true, enonce: `Soit \\(n\\in\\mathbb{N}\\). Que vaut \\(\\displaystyle\\prod_{k=0}^{${M}n}${C}\\) ?`, bonneReponse: bonne, options, optionsSurUneLigne: true});
   }
 
   // ---------- 18.9 : telescopage I (fixe) ----------
-  ex.push({id:"24.8 a)", type: "alg", texteLibre: true, enonce: "Que vaut \\(b_2\\) ?", reponse: "a3/a1"});
-  ex.push({id:"24.8 b)", type: "alg", texteLibre: true, enonce: "Que vaut \\(b_{n-1}\\) ?", reponse: "an/a1"});
+  ex.push({id:"24.8 a)", detail: detail248a(), type: "alg", texteLibre: true, enonce: "Que vaut \\(b_2\\) ?", reponse: "a3/a1"});
+  ex.push({id:"24.8 b)", detail: detail248b(), type: "alg", texteLibre: true, enonce: "Que vaut \\(b_{n-1}\\) ?", reponse: "an/a1"});
 
   // ---------- 18.10 : telescopage II (QCM, fixe) ----------
-  ex.push({id:"24.9", type: "qcm", texteLibre: true, enonce: "On considère deux entiers naturels \\(n\\) et \\(p\\) tels que \\(2\\leqslant p\\leqslant n\\), et des réels non nuls \\(a_1,\\ldots,a_n\\). À laquelle des expressions suivantes est égal \\(\\displaystyle\\prod_{k=p}^{n}\\dfrac{a_{k-1}}{a_k}\\) ?", bonneReponse: "e", options: [{lettre: "a", texte: "\\dfrac{a_1}{a_n}"}, {lettre: "b", texte: "\\dfrac{a_n}{a_1}"}, {lettre: "c", texte: "\\dfrac{a_2}{a_n}"}, {lettre: "d", texte: "\\dfrac{a_n}{a_2}"}, {lettre: "e", texte: "\\dfrac{a_{p-1}}{a_n}"}, {lettre: "f", texte: "\\dfrac{a_n}{a_{p-1}}"}, {lettre: "g", texte: "\\dfrac{a_p}{a_n}"}, {lettre: "h", texte: "\\dfrac{a_n}{a_p}"}], optionsSurUneLigne: true});
+  ex.push({id:"24.9", detail: detail249(), type: "qcm", texteLibre: true, enonce: "On considère deux entiers naturels \\(n\\) et \\(p\\) tels que \\(2\\leqslant p\\leqslant n\\), et des réels non nuls \\(a_1,\\ldots,a_n\\). À laquelle des expressions suivantes est égal \\(\\displaystyle\\prod_{k=p}^{n}\\dfrac{a_{k-1}}{a_k}\\) ?", bonneReponse: "e", options: [{lettre: "a", texte: "\\dfrac{a_1}{a_n}"}, {lettre: "b", texte: "\\dfrac{a_n}{a_1}"}, {lettre: "c", texte: "\\dfrac{a_2}{a_n}"}, {lettre: "d", texte: "\\dfrac{a_n}{a_2}"}, {lettre: "e", texte: "\\dfrac{a_{p-1}}{a_n}"}, {lettre: "f", texte: "\\dfrac{a_n}{a_{p-1}}"}, {lettre: "g", texte: "\\dfrac{a_p}{a_n}"}, {lettre: "h", texte: "\\dfrac{a_n}{a_p}"}], optionsSurUneLigne: true});
 
   // ---------- 18.11 : telescopages en situation ----------
   {
     const A = alea(0, 6), k0a = 1, inverse = alea(0, 1) === 1;
     const fa = (t) => t === 0 ? 'k' : `k+${t}`;
     if (!inverse) {
-      ex.push({id:"24.10 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${k0a}}^{n}\\dfrac{${fa(A)}}{${fa(A + 1)}}\\)`,
+      ex.push({id:"24.10 a)", detail: detail2410a(A, false), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${k0a}}^{n}\\dfrac{${fa(A)}}{${fa(A + 1)}}\\)`,
         reponse: `${k0a + A}/(n+${A + 1})`});
     } else {
-      ex.push({id:"24.10 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${k0a}}^{n}\\dfrac{${fa(A + 1)}}{${fa(A)}}\\)`,
+      ex.push({id:"24.10 a)", detail: detail2410a(A, true), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${k0a}}^{n}\\dfrac{${fa(A + 1)}}{${fa(A)}}\\)`,
         reponse: k0a + A === 1 ? `n+${A + 1}` : `(n+${A + 1})/${k0a + A}`});
     }
 
@@ -1308,24 +1453,25 @@ function genererExercices() {
     const denomB = `${coefPrefixeL(Ab)}k${Db === 0 ? '' : (Db > 0 ? `+${Db}` : `${Db}`)}`;
     const gB = pgcd(Ab, Bb), aB = Ab / gB, bB = Bb / gB;   // (Ab n + Bb)/Bb sous forme irreductible
     const repB = bB === 1 ? (aB === 1 ? 'n+1' : `${aB}*n+1`) : `(${aB}*n+${bB})/${bB}`;
-    ex.push({id:"24.10 b)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${coefPrefixeL(Ab)}k+${Bb}}{${denomB}}\\)`, reponse: repB});
+    ex.push({id:"24.10 b)", detail: detail2410b(Ab, Bb), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${coefPrefixeL(Ab)}k+${Bb}}{${denomB}}\\)`, reponse: repB});
 
     {
       const a = alea(0, 5);
       const num = a === 0 ? '(n+2)' : `${a + 1}*(n+${a + 2})`;
       const den = `${a + 2}*(n+${a + 1})`;
       const tk = a === 0 ? 'k' : `k+${a}`, t1 = `k+${a + 1}`, t2 = `k+${a + 2}`;
-      const enonce = alea(0, 1) === 0
+      const var10c = alea(0, 1) === 0;
+      const enonce = var10c
         ? `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${a === 0 ? 'k' : `(${tk})`}(${t2})}{(${t1})^2}\\)`
         : `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{(${t1})^2-1}{(${t1})^2}\\)`;
-      ex.push({id:"24.10 c)", type: "alg", texteLibre: true, enonce, reponse: `${num}/(${den})`});
+      ex.push({id:"24.10 c)", detail: detail2410c(a, !var10c), type: "alg", texteLibre: true, enonce, reponse: `${num}/(${den})`});
     }
 
     // d) f(k)/f(k+1) avec f(k) = k^2 + p k + q : le produit vaut f(1)/f(n+1)
     let pD, qD, f1;
     do { pD = alea(0, 3); qD = alea(-3, 3); f1 = 1 + pD + qD; } while (f1 < 1 || (pD === 0 && qD === 0));
     const polyK = (p, q) => `k^2${p === 0 ? '' : `+${p === 1 ? '' : p}k`}${q === 0 ? '' : (q > 0 ? `+${q}` : `${q}`)}`;
-    ex.push({id:"24.10 d)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${polyK(pD, qD)}}{${polyK(pD + 2, f1)}}\\)`, reponse: `${f1}/(n^2+${pD + 2}*n+${f1})`});
+    ex.push({id:"24.10 d)", detail: detail2410d(pD, qD, f1), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{${polyK(pD, qD)}}{${polyK(pD + 2, f1)}}\\)`, reponse: `${f1}/(n^2+${pD + 2}*n+${f1})`});
   }
 
   // ---------- 18.12 : produits avances ----------
@@ -1334,13 +1480,13 @@ function genererExercices() {
     const hA = alea(1, 2), S = alea(hA + 1, 6);
     const facsN = hA === 1 ? ['n', '(n+1)'] : ['(n-1)', 'n', '(n+1)', '(n+2)'];
     const cA = hA === 1 ? (S - 1) * S : (S - 2) * (S - 1) * S * (S + 1);
-    ex.push({id:"24.11 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${S}}^{n}\\dfrac{k+${hA}}{k-${hA}}\\)`, reponse: `${facsN.join('*')}/${cA}`});
+    ex.push({id:"24.11 a)", detail: detail2411(hA, S, false), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${S}}^{n}\\dfrac{k+${hA}}{k-${hA}}\\)`, reponse: `${facsN.join('*')}/${cA}`});
 
     // b) (k-h)/(k+h) : l'inverse
     const hB = alea(1, 2), S2 = alea(hB + 1, 6);
     const facsB = hB === 1 ? ['n', '(n+1)'] : ['(n-1)', 'n', '(n+1)', '(n+2)'];
     const cB = hB === 1 ? (S2 - 1) * S2 : (S2 - 2) * (S2 - 1) * S2 * (S2 + 1);
-    ex.push({id:"24.11 b)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${S2}}^{n}\\dfrac{k-${hB}}{k+${hB}}\\)`, reponse: `${cB}/(${facsB.join('*')})`});
+    ex.push({id:"24.11 b)", detail: detail2411(hB, S2, true), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=${S2}}^{n}\\dfrac{k-${hB}}{k+${hB}}\\)`, reponse: `${cB}/(${facsB.join('*')})`});
   }
 
   // ---------- 18.13 : valeurs de produits avances ----------
@@ -1348,19 +1494,22 @@ function genererExercices() {
     const B1 = alea(2, 6);
     const formes = [[1, 0, 'n*(n+1)/2'], [2, 0, 'n*(n+1)'], [3, 0, '3*n*(n+1)/2'], [1, 1, 'n*(n+3)/2'], [2, 1, 'n*(n+2)'], [3, -1, 'n*(3*n+1)/2']];
     const [mE, cE, sE] = formes[alea(0, formes.length - 1)];
-    ex.push({id:"24.12 a)", type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}${B1}^{${fmtLin(mE, cE, false, 'k')}}\\)`, reponse: `${B1}^(${sE})`});
+    ex.push({id:"24.12 a)", detail: detail2412a(B1, mE, cE), type: "alg", texteLibre: true, enonce: `\\(\\displaystyle\\prod_{k=1}^{n}${B1}^{${fmtLin(mE, cE, false, 'k')}}\\)`, reponse: `${B1}^(${sE})`});
 
     const B2 = alea(2, 6), m2 = alea(1, 3), debut2 = alea(0, 1);
     const exposant2 = `${m2 === 1 ? '' : m2}a^k`;
     const bornes2 = debut2 === 0 ? 'k=0}^{n-1' : 'k=1}^{n';
     const rep2 = debut2 === 0 ? `${m2 === 1 ? '' : m2 + '*'}(a^n-1)/(a-1)` : `${m2 === 1 ? '' : m2 + '*'}a*(a^n-1)/(a-1)`;
-    ex.push({id:"24.12 b)", type: "alg", texteLibre: true, enonce: `Pour \\(a\\ne 1\\), \\(\\displaystyle\\prod_{${bornes2}}${B2}^{${exposant2}}\\)`, reponse: `${B2}^(${rep2})`});
+    ex.push({id:"24.12 b)", detail: detail2412b(B2, m2, debut2), type: "alg", texteLibre: true, enonce: `Pour \\(a\\ne 1\\), \\(\\displaystyle\\prod_{${bornes2}}${B2}^{${exposant2}}\\)`, reponse: `${B2}^(${rep2})`});
   }
 
   // ---------- 18.14 : factorielle (fixe) ----------
-  ex.push({id:"24.13 a)", type: "alg", texteLibre: true, enonce: "Donner une relation simple entre \\((n+1)!\\) et \\(n!\\)", reponse: "(n+1)*n!"});
-  ex.push({id:"24.13 b)", type: "alg", texteLibre: true, enonce: "Donner une expression simple du produit \\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{2k-1}{2k}\\) ne faisant intervenir que des puissances de 2 et des factorielles", reponse: "(2*n)!/(2^(2*n)*(n!)^2)"});
+  ex.push({id:"24.13 a)", detail: detail2413a(), type: "alg", texteLibre: true, enonce: "Donner une relation simple entre \\((n+1)!\\) et \\(n!\\)", reponse: "(n+1)*n!"});
+  ex.push({id:"24.13 b)", detail: detail2413b(), type: "alg", texteLibre: true, enonce: "Donner une expression simple du produit \\(\\displaystyle\\prod_{k=1}^{n}\\dfrac{2k-1}{2k}\\) ne faisant intervenir que des puissances de 2 et des factorielles", reponse: "(2*n)!/(2^(2*n)*(n!)^2)"});
 
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 
@@ -2828,7 +2977,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

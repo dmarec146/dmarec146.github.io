@@ -513,8 +513,9 @@ async function controlerDansLaPage(opts) {
     }
     try {
       for (let k = 0; k < NB_PORTEES; k++) {
-        const m = versMathjs(String(F).replace(/^\s*(?:y|f\(x\))\s*=\s*/, '')).replace(/\by\*t\b/g, 'yt'), sc = portee(m + ' + ' + rep, k);     // équation réduite « y = mx + p » ou « f(x) = mx + p » : on compare mx + p
-        const a = math.evaluate(rep, sc), b = math.evaluate(m, sc);
+        const repN = rep.replace(/\ban\b/g, 'a9');      // a_{3} -> a3 et a_{n} -> « an » (convention interne de la fiche) ; « a9 » évite que « an » soit lu a*n
+        const m = versMathjs(String(F).replace(/^\s*(?:y|f\(x\))\s*=\s*/, '').replace(/\ba_\{n\}/g, 'a9').replace(/\ba_\{([1-4])\}/g, 'a$1')).replace(/\by\*t\b/g, 'yt'), sc = portee(m + ' + ' + repN, k);     // équation réduite « y = mx + p » ou « f(x) = mx + p » : on compare mx + p
+        const a = math.evaluate(repN, sc), b = math.evaluate(m, sc);
         if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b)) return 'non-verifiable';
         if (!egal(a, b)) return 'faux';
       }
@@ -850,7 +851,7 @@ async function controlerInterface(page, viewport, regenerations, serveurUrl) {
         if (cercle) inp.value = [cercle[1], cercle[2], cercle[3]].map(versTexte).join(';');
         else if (e.detail.final.trim() === '\\vec{0}') { if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue('0', { format: 'latex' }); } else inp.value = '0'; }   // vecteur nul : l'élève tape « 0 »
         else if (eqCart) { const L = versTexte(eqCart[1]), M = (X, Y) => '(' + L.replace(/(?<![A-Za-z])x(?![A-Za-z])/g, '(' + X + ')').replace(/(?<![A-Za-z])y(?![A-Za-z])/g, '(' + Y + ')') + ')'; inp.value = [M(1, 0) + '-' + M(0, 0), M(0, 1) + '-' + M(0, 0), M(0, 0)].join(';'); }
-        else if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = e.type === 'texte' ? String(e.detail.final).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\s+/g, ' ').trim() : ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
+        else if (inp.tagName === 'MATH-FIELD') { inp.setValue(''); inp.setValue(e.detail.final.replace(/\\displaystyle\s*/g, '').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\\[,;! ]/g, ''), { format: 'latex' }); } else inp.value = e.type === 'texte' ? String(e.detail.final).replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\s+/g, ' ').trim() : ensembleSeul ? ensembleSeul[1] : versTexte(e.detail.final);
         await dormir(25);
         let ok; try { ok = verifierUne(i); } catch (er) { ok = 'erreur'; }
         if (ok !== true) refus.push({ id: e.id, final: e.detail.final, resultat: String(ok) });
