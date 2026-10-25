@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"21.1 a)":0.5,"21.1 b)":0.75,"21.2 a)":0.75,"21.2 b)":0.5,"21.3 a)":0.5,"21.3 b)":0.75,"21.4 a)":0.5,"21.4 b)":0.5,"21.4 c)":0.75,"21.5 a)":0.5,"21.5 b)":0.75,"21.6 a)":1.25,"21.6 b)":1,"21.7 a)":0.5,"21.7 b)":0.5,"21.7 c)":0.5,"21.7 d)":0.5,"21.8 a)":0.75,"21.8 b)":0.75,"21.9 a)":0.75,"21.9 b)":1,"21.10 a)":1,"21.10 b)":1.25,"21.11 a)":1,"21.11 b)":1.25,"21.12":1.25,"21.14":1.75,"21.13":1.75},"bonus":["21.14","21.13"]});
@@ -1337,6 +1339,172 @@ function parSigneQuotient(rN, rD, g, op) {
 }
 
 
+// ---------- details de correction (25/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, sommeF2, lignesDelta2, phraseDelta2, ENTETE_RACINES2, lignesRacines2, ligneRacineDouble2 } = DetailQ;
+const lg21 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const ft21 = (f) => fracD(math.fraction(f));
+const par21 = (T) => (String(T).startsWith('-') ? `\\left(${T}\\right)` : String(T));
+const fp21 = (f) => par21(ft21(f));
+const INV21 = { '\\lt ': '>', '>': '\\lt ', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const pm21 = (a, b) => `\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}`;
+const couple21 = (a, b) => `\\left(${a}\\,;\\,${b}\\right)`;
+const triplet21 = (a, b, c) => `\\left(${a}\\,;\\,${b}\\,;\\,${c}\\right)`;
+const rt21 = (c, r) => (r === 1 ? String(c) : c === 1 ? `\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+const extrait21 = (N, s) => `\\sqrt{${N}} = \\sqrt{${s.coef}^{2}${s.radicand === 1 ? '' : `\\times ${s.radicand}`}} = ${rt21(s.coef, s.radicand)}`;
+const term21 = (c, inner) => (c === 1 ? inner : c === -1 ? `-${inner}` : `${c}${inner}`);
+const somme21 = (t1, t2) => (t2.startsWith('-') ? t1 + t2 : `${t1}+${t2}`);
+const pv21 = (x, y) => { const a = math.fraction(x), b = math.fraction(y); if (a.n === 1 && a.d === 1 && a.s > 0) return fp21(y); if (b.n === 1 && b.d === 1 && b.s > 0) return fp21(x); return `${fp21(x)}\\times ${fp21(y)}`; };
+function surdFracTex21(signe, coef, rad, den) {
+  const g = pgcd(coef, den), cc = coef / g, dd = den / g, num = rad === 1 ? String(cc) : `${cc === 1 ? '' : cc}\\sqrt{${rad}}`;
+  return `${signe < 0 ? '-' : ''}${dd === 1 ? num : `\\dfrac{${num}}{${dd}}`}`;
+}
+const ex21 = (b, e) => (e === 1 ? String(b) : `${b}^{${e}}`);                                   // jamais d'exposant 1
+const eqx21 =(a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: 'y' }]);
+function finIneq21(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV21[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// 21.1 a) m(px+q) op n(rx+s)
+function detail211a(m, p, q, n, r, s, op, spec) {
+  const A1 = m * p - n * r, C = n * s - m * q, g1 = (c, a, b) => (c === 1 ? lg21(a, b) : term21(c, `\\left(${lg21(a, b)}\\right)`));
+  const l = [`${g1(m, p, q)} ${op} ${g1(n, r, s)}`];
+  if (m !== 1 || n !== 1) l.push(`\\iff ${polyF2([{ c: m * p, v: 'x' }, { c: m * q, v: '' }])} ${op} ${polyF2([{ c: n * r, v: 'x' }, { c: n * s, v: '' }])}`);
+  l.push(`\\iff ${polyF2([{ c: A1, v: 'x' }])} ${op} ${C}`, ...finIneq21(A1, op, C, spec));
+  return { lignes: l, final: formaterIntervalleSpec(spec) };
+}
+// 21.1 b) (ax+b)/(cx+d) op 0, ecrit sous la forme signe * (An x + Bn)/(Cn x + Dn)
+function detail211b(a, b, c, d, op, spec) {
+  const signe = (a < 0 ? -1 : 1) * (c < 0 ? -1 : 1), An = Math.abs(a), Bn = a < 0 ? -b : b, Cn = Math.abs(c), Dn = c < 0 ? -d : d, S = formaterIntervalleSpec(spec), pole = fracD(math.fraction(-d, c));
+  const q = `\\dfrac{${lg21(An, Bn)}}{${lg21(Cn, Dn)}}`, op2 = signe < 0 ? INV21[op] : op, l = [`${signe < 0 ? '-' : ''}${q} ${op} 0`];
+  if (signe < 0) l.push('\\text{On multiplie par } -1 \\lt 0', "\\text{donc le sens de l'inégalité change}", `\\iff ${q} ${op2} 0`);
+  const tableau = Detail.tableauSignesFacteurs([{ label: lg21(An, Bn), v: -Bn / An, tex: fracTexte(-Bn, An), sgn: 1 }, { label: lg21(Cn, Dn), v: -Dn / Cn, tex: fracTexte(-Dn, Cn), sgn: 1, denom: true }], 'signe');
+  l.push(...Detail.lignesSigneAffine(An, Bn), ...Detail.lignesSigneAffine(Cn, Dn), '\\text{Tableau de signes du quotient}', tableau, '\\text{On cherche les valeurs de } x', ...(signe < 0 ? [`\\text{où } ${q} \\text{ est } ${op2}\\ 0`] : [`\\text{pour lesquelles le quotient est } ${op2}\\ 0`]), `\\small \\text{La valeur interdite } ${pole} \\text{ est exclue dans tous les cas}`, `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 21.2 a) A x^2 + B x + C = 0
+function detail212a(A, B, C, sols) {
+  const d = lignesDelta2(A, B, C), l = [...ENTETE_RACINES2, ...d.lignes, phraseDelta2(d.D)];
+  const Dn = math.number(d.D);
+  if (Dn < 0) { l.push('S = \\emptyset'); return { lignes: l, final: '\\emptyset' }; }
+  if (Dn === 0) { const r = ligneRacineDouble2(A, B), S = `\\{${ft21(r.x0)}\\}`; l.push(r.ligne, `S = ${S}`); return { lignes: l, final: S }; }
+  const r = lignesRacines2(A, B, Dn), xs = [math.fraction(-B - Math.sqrt(Dn), 2 * A), math.fraction(-B + Math.sqrt(Dn), 2 * A)], S = `\\{${ft21(xs[0])}\\,;\\,${ft21(xs[1])}\\}`;
+  l.push(...r.lignes, `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 21.2 b) sqrt(ax+b) = c
+function detail212b(a, b, c) {
+  const L = lg21(a, b);
+  if (c < 0) return { lignes: [`\\sqrt{${L}} = ${c}`, '\\text{Une racine carrée est positive ou nulle}', "\\text{donc il n'y a aucune solution}", 'S = \\emptyset'], final: '\\emptyset' };
+  const x = math.fraction(c * c - b, a), S = `\\{${ft21(x)}\\}`;
+  if (c === 0) return { lignes: [`\\sqrt{${L}} = 0`, '\\text{Une racine carrée est nulle}', "\\text{si et seulement si son radicande l'est}", `${L} = 0`, `\\iff ${polyF2([{ c: a, v: 'x' }])} = ${-b}`, `\\iff x = ${ft21(x)}`, `S = ${S}`], final: S };
+  return { lignes: [`\\sqrt{${L}} = ${c}`, `\\iff ${L} = ${c * c}`, `\\iff ${polyF2([{ c: a, v: 'x' }])} = ${c * c - b}`, `\\iff x = ${ft21(x)}`, `S = ${S}`], final: S };
+}
+// 21.3 a) produit scalaire
+function detail213a(a, b, c, d) {
+  const fin = String(a * c + b * d);
+  return { lignes: [`\\vec{u}\\cdot\\vec{v} = ${pv21(a, c)}+${pv21(b, d)}`, `= ${a * c}${b * d < 0 ? '' : '+'}${b * d}`, `= ${fin}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: fin };
+}
+// 21.3 b) puissances 3^A 8^B / ((-9)^C 2^D)
+function detail213b(A, B, C, D, p, q) {
+  const fin = `-\\dfrac{${Math.pow(3, p)}}{${Math.pow(2, q)}}`;
+  return { lignes: [`\\dfrac{3^{${A}}\\times 8^{${B}}}{(-9)^{${C}}\\times 2^{${D}}}`, `= \\dfrac{3^{${A}}\\times\\left(2^{3}\\right)^{${B}}}{\\left(-3^{2}\\right)^{${C}}\\times 2^{${D}}}`, `= \\dfrac{3^{${A}}\\times 2^{${3 * B}}}{-3^{${2 * C}}\\times 2^{${D}}}`, `= -${ex21(3, A - 2 * C)}\\times ${ex21(2, 3 * B - D)}`,
+    `= -\\dfrac{${ex21(3, p)}}{${ex21(2, q)}}`, `= ${fin}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: fin };
+}
+// 21.4 : QCM droites et vecteurs
+function detail214a(a, b, c, bonne) {
+  return { lignes: [`\\text{Pour } ${polyF2([{ c: a, v: 'x' }, { c: b, v: 'y' }, { c: c, v: '' }])} = 0 \\text{ :}`, `\\vec{n}${pm21(a, b)}`, '\\text{est un vecteur normal}', `\\text{Réponse : } ${bonne}`], final: bonne };
+}
+function detail214b(ux, uy, bonne) {
+  return { lignes: [`\\vec{u}\\cdot\\vec{n} = ${pv21(ux, -uy)}+${pv21(uy, ux)}`, `= ${-ux * uy}${ux * uy < 0 ? '' : '+'}${uy * ux}`, '= 0', `\\vec{n}${pm21(-uy, ux)}`, `\\text{Réponse : } ${bonne}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: bonne };
+}
+function detail214c(nx, ny, bonne) {
+  return { lignes: ['\\text{Un vecteur normal à } (d_1)', '\\text{dirige } (d_2)', `\\vec{u}${pm21(nx, ny)}`, `\\text{Réponse : } ${bonne}`], final: bonne };
+}
+// 21.5 : vecteur normal a (AB)
+function detail215(A, B) {
+  const dx = math.subtract(B[0], A[0]), dy = math.subtract(B[1], A[1]), v = vecteurEntierReduit(math.multiply(-1, dy), dx), fin = couple21(v.x, v.y), nrm = [math.multiply(-1, dy), dx];
+  const l = [`\\overrightarrow{AB}${pm21(`${ft21(B[0])}-${fp21(A[0])}`, `${ft21(B[1])}-${fp21(A[1])}`)} = ${pm21(ft21(dx), ft21(dy))}`, `\\vec{n}${pm21(ft21(nrm[0]), ft21(nrm[1]))}`];
+  const f0 = math.fraction(nrm[0]), f1 = math.fraction(nrm[1]), L = lcm(f0.d, f1.d), w = [f0.s * f0.n * (L / f0.d), f1.s * f1.n * (L / f1.d)], G = pgcd(w[0], w[1]);
+  if (L > 1) l.push(`\\text{On multiplie par } ${L}`, `\\vec{n}${pm21(w[0], w[1])}`);
+  if (G > 1) l.push(`\\text{On simplifie par } ${G}`, `\\vec{n}${pm21(v.x, v.y)}`);
+  l.push(fin);
+  return { lignes: l, final: fin };
+}
+// 21.6 a) u(a1 m + A ; a2 m + B) . n(c1 m + C ; c2 m + D) = 0
+function detail216a(a1, A, a2, B, c1, C, c2, D, P2, P1, P0, m1, m2) {
+  const lm = (a, b) => polyF2([{ c: a, v: 'm' }, { c: b, v: '' }]), eq = polyF2([{ c: P2, v: 'm^{2}' }, { c: P1, v: 'm' }, { c: P0, v: '' }]), S = `\\{${ft21(m1)}\\,;\\,${ft21(m2)}\\}`, [lo, hi] = math.number(m1) < math.number(m2) ? [m1, m2] : [m2, m1], SS = `\\{${ft21(lo)}\\,;\\,${ft21(hi)}\\}`;
+  const l = ['\\vec{u}\\cdot\\vec{n} = 0', `\\scriptsize \\iff \\left(${lm(a1, A)}\\right)\\left(${lm(c1, C)}\\right)+\\left(${lm(a2, B)}\\right)\\left(${lm(c2, D)}\\right) = 0`, `\\iff ${eq} = 0`];
+  const Q = P2 < 0 ? [-P2, -P1, -P0] : [P2, P1, P0];
+  if (P2 < 0) l.push(`\\iff ${polyF2([{ c: Q[0], v: 'm^{2}' }, { c: Q[1], v: 'm' }, { c: Q[2], v: '' }])} = 0`);
+  const d = lignesDelta2(Q[0], Q[1], Q[2]), rD = Math.round(Math.sqrt(math.number(d.D))), fs = (ts) => { const s = sommeF2(ts); return /^-\d+$/.test(s) ? `-\\dfrac{${s.slice(1)}}{${2 * Q[0]}}` : `\\dfrac{${s}}{${2 * Q[0]}}`; };
+  l.push(d.lignes[0].replace(/\\Delta/, '\\Delta'), `\\sqrt{\\Delta} = ${rD}`, `m_{1} = ${dedup2(fs([-Q[1], -rD]), ft21(math.fraction(-Q[1] - rD, 2 * Q[0])))}`, `m_{2} = ${dedup2(fs([-Q[1], rD]), ft21(math.fraction(-Q[1] + rD, 2 * Q[0])))}`, `S = ${SS}`);
+  return { lignes: l, final: SS };
+}
+// 21.6 b) n normal a (AB), B(m ; By)
+function detail216b(Ax, Ay, By, nx, ny, m) {
+  const fin = ft21(m);
+  return { lignes: [`\\overrightarrow{AB}${pm21(`m-${dP(Ax)}`, By - Ay)}`, '\\overrightarrow{AB}\\cdot\\vec{n} = 0', `\\iff ${term21(nx, `\\left(${polyF2([{ c: 1, v: 'm' }, { c: -Ax, v: '' }])}\\right)`)}${ny * (By - Ay) < 0 ? '-' : '+'}${Math.abs(ny * (By - Ay))} = 0`.replace(/\+0 = 0$/, ' = 0'), `\\iff ${polyF2([{ c: nx, v: 'm' }])} = ${nx * Ax - ny * (By - Ay)}`, `\\iff m = ${fin}`], final: fin };
+}
+// 21.7 : vecteurs directeurs et normaux
+function detail217(nom, vx, vy) { const fin = couple21(ft21(vx), ft21(vy)); return { lignes: nom === 'n' ? ['\\text{Pour } ax+by+c = 0 \\text{ :}', '\\vec{n}\\begin{pmatrix}a\\\\b\\end{pmatrix}', `\\vec{n}${pm21(ft21(vx), ft21(vy))}`, fin] : ['\\text{Pour } ax+by+c = 0 \\text{ :}', '\\vec{u}\\begin{pmatrix}-b\\\\a\\end{pmatrix}', `\\vec{u}${pm21(ft21(vx), ft21(vy))}`, fin], final: fin }; }
+// 21.8 : droites perpendiculaires ?
+function detail218(a1, b1, a2, b2, veut) {
+  const p = a1 * a2 + b1 * b2, lettre = veut ? 'a' : 'b';
+  return { lignes: [`\\vec{n_1}${pm21(a1, b1)} \\text{ et } \\vec{n_2}${pm21(a2, b2)}`, `\\vec{n_1}\\cdot\\vec{n_2} = ${pv21(a1, a2)}+${pv21(b1, b2)}`, `= ${a1 * a2}${b1 * b2 < 0 ? '' : '+'}${b1 * b2}`, `= ${p}`,
+    veut ? '\\text{Les vecteurs normaux sont orthogonaux}' : "\\text{Les vecteurs normaux ne sont pas orthogonaux}", veut ? '\\text{donc les droites sont perpendiculaires}' : '\\text{donc les droites ne sont pas perpendiculaires}', `\\text{Réponse : } ${lettre}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: lettre };
+}
+// 21.9 : equation cartesienne par un point et un vecteur normal ou directeur
+function detail219(Ax, Ay, vx, vy, directeur, nx, ny, c) {
+  const fin = `${polyF2([{ c: nx, v: 'x' }, { c: ny, v: 'y' }, { c: c, v: '' }])} = 0`, l = [], axT = ft21(Ax), ayT = ft21(Ay), dif = (T) => (T === '0' ? '' : T.startsWith('-') ? `+${T.slice(1)}` : `-${T}`), pw = (t) => (/[+-]/.test(t) ? `\\left(${t}\\right)` : t);
+  if (directeur) l.push(`\\vec{u}${pm21(vx, vy)}`, `\\vec{n}${pm21(-vy, vx)}`);
+  l.push(`${somme21(term21(nx, pw(`x${dif(axT)}`)), term21(ny, pw(`y${dif(ayT)}`)))} = 0`, `\\iff ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 21.10 : projete orthogonal de M sur (d) : ax + by + c = 0
+function detail2110(Mx, My, a, b, c, Hx, Hy) {
+  const N = math.add(math.add(math.multiply(a, Mx), math.multiply(b, My)), c), den = a * a + b * b, t = math.divide(math.multiply(-1, N), den), fin = couple21(ft21(Hx), ft21(Hy));
+  const xH = `${ft21(Mx)}${a < 0 ? '' : '+'}${a === 1 ? '' : a === -1 ? '-' : a}t`, yH = `${ft21(My)}${b < 0 ? '' : '+'}${b === 1 ? '' : b === -1 ? '-' : b}t`;
+  return { lignes: ['\\overrightarrow{MH} = t\\vec{n}', `H${couple21(xH, yH)}`, `${term21(a, `\\left(${xH}\\right)`)}${b < 0 ? '' : '+'}${term21(b, `\\left(${yH}\\right)`)}${c < 0 ? c : (c === 0 ? '' : `+${c}`)} = 0`, `\\iff ${polyF2([{ c: den, v: 't' }])} = ${ft21(math.multiply(-1, N))}`, `\\iff t = ${ft21(t)}`,
+    `H${couple21(somme21(ft21(Mx), pv21(a, t)), somme21(ft21(My), pv21(b, t)))}`, fin], final: fin };
+}
+// 21.11 a) distance d'un point a une droite (PYTHA)
+function detail2111a(Mx, My, a, b, c, R, D) {
+  const N = a * Mx + b * My + c;
+  return { lignes: ['d = \\dfrac{\\left|ax_{M}+by_{M}+c\\right|}{\\sqrt{a^{2}+b^{2}}}', `d = \\dfrac{\\left|${pv21(a, Mx)}+${pv21(b, My)}${c < 0 ? c : (c === 0 ? '' : `+${c}`)}\\right|}{\\sqrt{${par21(a)}^{2}+${par21(b)}^{2}}}`.replace(/\+\\left\(/g, '+\\left('), `d = \\dfrac{\\left|${N}\\right|}{\\sqrt{${a * a + b * b}}}`, `\\sqrt{${a * a + b * b}} = ${R}`, `d = \\dfrac{${Math.abs(N)}}{${R}}`, `d = ${D}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: String(D) };
+}
+// 21.11 b) distance de A a la droite (BC)
+function detail2111b(A, B, C, a, b, c, Nraw, Dsq, s) {
+  const fin = s.radicand === 1 ? ft21(math.fraction(Math.abs(Nraw), s.coef)) : surdFracTex21(1, Math.abs(Nraw), s.radicand, s.coef * s.radicand), BC = [C[0] - B[0], C[1] - B[1]];
+  const l = [`\\overrightarrow{BC}${pm21(`${C[0]}-${dP(B[0])}`, `${C[1]}-${dP(B[1])}`)} = ${pm21(BC[0], BC[1])}`, `\\vec{n}${pm21(a, b)}`, `${eqx21(a, b)}${c < 0 ? c : (c === 0 ? '' : `+${c}`)} = 0`,
+    `d = \\dfrac{\\left|${pv21(a, A[0])}+${pv21(b, A[1])}${c < 0 ? c : (c === 0 ? '' : `+${c}`)}\\right|}{\\sqrt{${par21(a)}^{2}+${par21(b)}^{2}}}`, `d = \\dfrac{${Math.abs(Nraw)}}{\\sqrt{${Dsq}}}`];
+  if (Dsq === 1) { l.push('\\sqrt{1} = 1', `d = ${Math.abs(Nraw)}`); return { lignes: l, final: fin }; }
+  if (s.coef !== 1 || s.radicand === 1) l.push(extrait21(Dsq, s));
+  if (s.radicand === 1) l.push(`d = \\dfrac{${Math.abs(Nraw)}}{${s.coef}}`, ...(`\\dfrac{${Math.abs(Nraw)}}{${s.coef}}` === fin ? [] : [`d = ${fin}`]));
+  else { const brut = `\\dfrac{${Math.abs(Nraw)}}{${rt21(s.coef, s.radicand)}}`, ration = `\\dfrac{${Math.abs(Nraw)}\\sqrt{${s.radicand}}}{${s.coef * s.radicand}}`; for (const t of [brut, ration, fin].filter((x, i, tt) => i === 0 || x !== tt[i - 1])) l.push(`d = ${t}`); }
+  return { lignes: l.filter((x, i, t) => i === 0 || x !== t[i - 1]), final: fin };
+}
+// 21.12 : cercle de diametre [AB]
+function detail2112(A, B, ta, tb, tc) {
+  const fin = triplet21(ta, tb, tc), xA = polyF2([{ c: A[0], v: '' }, { c: -1, v: 'x' }]), xB = polyF2([{ c: B[0], v: '' }, { c: -1, v: 'x' }]), yA = polyF2([{ c: A[1], v: '' }, { c: -1, v: 'y' }]), yB = polyF2([{ c: B[1], v: '' }, { c: -1, v: 'y' }]);
+  return { lignes: ['\\overrightarrow{MA}\\cdot\\overrightarrow{MB} = 0', `\\iff \\left(${xA}\\right)\\left(${xB}\\right)+\\left(${yA}\\right)\\left(${yB}\\right) = 0`, `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: ta, v: 'x' }, { c: A[0] * B[0], v: '' }, { c: 1, v: 'y^{2}' }, { c: tb, v: 'y' }, { c: A[1] * B[1], v: '' }])} = 0`,
+    `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: 1, v: 'y^{2}' }, { c: ta, v: 'x' }, { c: tb, v: 'y' }, { c: tc, v: '' }])} = 0`, fin], final: fin };
+}
+// 21.13 : tangente au cercle (x-h)^2 + (y-k)^2 = D au point A
+function detail2113(h, k, Ax, Ay, p, q, eqc) {
+  const fin = `${polyF2([{ c: p, v: 'x' }, { c: q, v: 'y' }, { c: eqc, v: '' }])} = 0`, dif = (v) => (v < 0 ? `+${-v}` : `-${v}`);
+  return { lignes: [`\\overrightarrow{\\Omega A}${pm21(`${Ax}-${dP(h)}`, `${Ay}-${dP(k)}`)} = ${pm21(p, q)}`, '\\overrightarrow{\\Omega A} \\text{ est normal à la tangente}', `${somme21(term21(p, `\\left(x${dif(Ax)}\\right)`), term21(q, `\\left(y${dif(Ay)}\\right)`))} = 0`, `\\iff ${fin}`], final: fin };
+}
+// 21.14 : cercle de centre Omega(h ; k) tangent a (D) : ax + by + c = 0
+function detail2114(a, b, c, h, k, num, r2, tc) {
+  const fin = triplet21(-2 * h, -2 * k, ft21(tc)), r2T = ft21(r2), r2b = `\\dfrac{${num * num}}{${a * a + b * b}}`;
+  const xh = polyF2([{ c: 1, v: 'x' }, { c: -h, v: '' }]), yk = polyF2([{ c: 1, v: 'y' }, { c: -k, v: '' }]);
+  return { lignes: ['r = d\\left(\\Omega,(D)\\right)', `r = \\dfrac{\\left|${pv21(a, h)}+${pv21(b, k)}${c < 0 ? c : (c === 0 ? '' : `+${c}`)}\\right|}{\\sqrt{${par21(a)}^{2}+${par21(b)}^{2}}}`, `r = \\dfrac{${Math.abs(num)}}{\\sqrt{${a * a + b * b}}}`, `r^{2} = ${dedup2(r2b, r2T)}`, `\\left(${xh}\\right)^{2}+\\left(${yk}\\right)^{2} = ${r2T}`,
+    `\\scriptsize \\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: -2 * h, v: 'x' }, { c: h * h, v: '' }, { c: 1, v: 'y^{2}' }, { c: -2 * k, v: 'y' }, { c: k * k, v: '' }, { c: math.multiply(-1, r2), v: '' }])} = 0`, `\\iff ${polyF2([{ c: 1, v: 'x^{2}' }, { c: 1, v: 'y^{2}' }, { c: -2 * h, v: 'x' }, { c: -2 * k, v: 'y' }, { c: tc, v: '' }])} = 0`, fin], final: fin };
+}
 function genererExercices() {
   const ex = [];
   // ---------- 21.1 : inequations (automatismes) ----------
@@ -1350,8 +1518,9 @@ function genererExercices() {
     } while (m*p - n*r === 0 || n*s - m*q === 0 || Math.abs(m) === 1 && Math.abs(n) === 1);
     const op = OPS[alea(0,3)];
     const A1 = m*p - n*r, B1 = m*q - n*s;   // m(px+q) - n(rx+s) = A1 x + B1
-    ex.push({id:"21.1 a)", type:"intervalle", texteLibre:true, enonce:`\\(${m === 1 ? lin(p, q) : coefPrefixeL(m) + '(' + lin(p, q) + ')'}${op}${n === 1 ? lin(r, s) : coefPrefixeL(n) + '(' + lin(r, s) + ')'}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([-B1/A1], (x) => A1*x + B1, op)}});
+    const spec211a = {type:'intervalles', liste: parSigne([-B1/A1], (x) => A1*x + B1, op)};
+    ex.push({id:"21.1 a)", detail: detail211a(m, p, q, n, r, s, op, spec211a), type:"intervalle", texteLibre:true, enonce:`\\(${m === 1 ? lin(p, q) : coefPrefixeL(m) + '(' + lin(p, q) + ')'}${op}${n === 1 ? lin(r, s) : coefPrefixeL(n) + '(' + lin(r, s) + ')'}\\)`,
+      intervalleSpec: spec211a});
   })();
   // b) quotient : (ax+b)/(cx+d) op 0, la valeur interdite n'est jamais incluse
   (function() {
@@ -1362,14 +1531,15 @@ function genererExercices() {
     const signe = (a < 0 ? -1 : 1) * (c < 0 ? -1 : 1);
     const An = Math.abs(a), Bn = a < 0 ? -b : b, Cn = Math.abs(c), Dn = c < 0 ? -d : d;
     const enonce = `${signe < 0 ? '-' : ''}\\dfrac{${lin(An, Bn)}}{${lin(Cn, Dn)}}${op}0`;
-    ex.push({id:"21.1 b)", type:"intervalle", texteLibre:true, enonce:`\\(${enonce}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigneQuotient(-b/a, -d/c, (x) => (a*x + b)/(c*x + d), op)}});
+    const spec211b = {type:'intervalles', liste: parSigneQuotient(-b/a, -d/c, (x) => (a*x + b)/(c*x + d), op)};
+    ex.push({id:"21.1 b)", detail: detail211b(a, b, c, d, op, spec211b), type:"intervalle", texteLibre:true, enonce:`\\(${enonce}\\)`,
+      intervalleSpec: spec211b});
   })();
   // ---------- 21.2 : equations (automatismes) ----------
   // a) second degre : (alpha x + beta)(gamma x + delta) = 0 developpe (deux solutions, une solution double) ou sans solution
   (function() {
     const r = Math.random();
-    let enonce, sols;
+    let enonce, sols, coefs;
     if (r < 0.75) {
       let al, be, ga, de, x1, x2;
       do {
@@ -1377,29 +1547,30 @@ function genererExercices() {
         x1 = math.fraction(-be, al); x2 = math.fraction(-de, ga);
       } while (r < 0.55 && x1.equals(x2) || r >= 0.55 && !x1.equals(x2) || pgcd(al, be) !== 1 || pgcd(ga, de) !== 1);
       if (r >= 0.55) { ga = al; de = be; x2 = x1; }
-      const A = al*ga, B = al*de + be*ga, C = be*de;
+      const A = al*ga, B = al*de + be*ga, C = be*de; coefs = [A, B, C];
       sols = [x1].concat(x1.equals(x2) ? [] : [x2]);
       enonce = `${coefPrefixeL(A)}x^2${B === 0 ? '' : (B > 0 ? '+' : '-') + (Math.abs(B) === 1 ? '' : Math.abs(B)) + 'x'}${C === 0 ? '' : (C > 0 ? '+' : '-') + Math.abs(C)}=0`;
     } else {
       let A, B, C;
       do { A = alea(1,3); B = aleaNonNul(-5,5); C = alea(1,9); } while (B*B - 4*A*C >= 0);
+      coefs = [A, B, C];
       sols = [];
       enonce = `${coefPrefixeL(A)}x^2${(B > 0 ? '+' : '-') + (Math.abs(B) === 1 ? '' : Math.abs(B)) + 'x'}+${C}=0`;
     }
-    ex.push({id:"21.2 a)", type:"num", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: ensembleStr(sols)});
+    ex.push({id:"21.2 a)", detail: detail212a(coefs[0], coefs[1], coefs[2], sols), type:"num", texteLibre:true, enonce:`\\(${enonce}\\)`, reponse: ensembleStr(sols)});
   })();
   // b) racine carree : sqrt(ax+b) = c (aucune solution si c < 0)
   (function() {
     const a = aleaNonNul(-5,5), c = Math.random() < 0.8 ? alea(0,6) : -alea(1,5), b = aleaNonNul(-9,9);
     const sols = c < 0 ? [] : [math.fraction(c*c - b, a)];
-    ex.push({id:"21.2 b)", type:"num", texteLibre:true, enonce:`\\(\\sqrt{${lin(a, b)}}=${c}\\)`, reponse: ensembleStr(sols)});
+    ex.push({id:"21.2 b)", detail: detail212b(a, b, c), type:"num", texteLibre:true, enonce:`\\(\\sqrt{${lin(a, b)}}=${c}\\)`, reponse: ensembleStr(sols)});
   })();
   // ---------- 21.3 : calcul numerique (produit scalaire ; puissances), sous forme simplifiee ----------
   // a) produit scalaire de deux vecteurs a coordonnees entieres
   (function() {
     let a, b, c, d;
     do { a = aleaNonNul(-7,7); b = aleaNonNul(-7,7); c = aleaNonNul(-7,7); d = aleaNonNul(-7,7); } while (a*c + b*d === 0);
-    ex.push({id:"21.3 a)", type:"num", texteLibre:true, enonce:`\\(\\vec{u}\\cdot\\vec{v}\\), avec \\(\\vec{u}\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${c}\\\\${d}\\end{pmatrix}\\)`, reponse: String(a*c + b*d)});
+    ex.push({id:"21.3 a)", detail: detail213a(a, b, c, d), type:"num", texteLibre:true, enonce:`\\(\\vec{u}\\cdot\\vec{v}\\), avec \\(\\vec{u}\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${c}\\\\${d}\\end{pmatrix}\\)`, reponse: String(a*c + b*d)});
   })();
   // b) puissances : 3^A 8^B / ((-9)^C 2^D) = -3^p / 2^q, fraction irreductible
   (function() {
@@ -1409,14 +1580,14 @@ function genererExercices() {
     const B = alea(3,10);
     const qAbs = alea(1,4);
     const D = 3*B + qAbs;
-    ex.push({id:"21.3 b)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`\\(\\dfrac{3^{${A}}\\times 8^{${B}}}{(-9)^{${C}}\\times 2^{${D}}}\\)`, reponse: fracToStr(math.fraction(-Math.pow(3, p), Math.pow(2, qAbs)))});
+    ex.push({id:"21.3 b)", detail: detail213b(A, B, C, D, p, qAbs), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`\\(\\dfrac{3^{${A}}\\times 8^{${B}}}{(-9)^{${C}}\\times 2^{${D}}}\\)`, reponse: fracToStr(math.fraction(-Math.pow(3, p), Math.pow(2, qAbs)))});
   })();
   // Calcul 21.4 - droites et vecteurs (3 items) : equation -> normal ; directeur -> normal ; normal -> directeur de la perpendiculaire
   (function() {
     let a,b; do { a=aleaNonNul(-5,5); b=aleaNonNul(-5,5); } while (Math.abs(a)===Math.abs(b));
     const c=alea(-9,9);
     const {options,bonneReponse} = qcmTrouverNormal(a,b);
-    ex.push({id:"21.4 a)", type:"qcm", texteLibre:true, enonce:`Soit \\((D)\\) la droite d'équation \\(${equationDroiteLatex(a,b,c)}=0\\). Parmi les vecteurs suivants, lequel est un vecteur normal ?`, bonneReponse, options, optionsSurUneLigne:true});
+    ex.push({id:"21.4 a)", detail: detail214a(a, b, c, bonneReponse), type:"qcm", texteLibre:true, enonce:`Soit \\((D)\\) la droite d'équation \\(${equationDroiteLatex(a,b,c)}=0\\). Parmi les vecteurs suivants, lequel est un vecteur normal ?`, bonneReponse, options, optionsSurUneLigne:true});
   })();
   (function() {
     let ux,uy; do { ux=aleaNonNul(-6,6); uy=aleaNonNul(-6,6); } while (Math.abs(ux)===Math.abs(uy));
@@ -1425,7 +1596,7 @@ function genererExercices() {
     const lettresQ=['a','b','c','d'];
     const options = shuffled.map((v,i)=>({lettre:lettresQ[i], texte:`\\vec{n_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
     const bonne = lettresQ[shuffled.findIndex(v=>v.ok)];
-    ex.push({id:"21.4 b)", type:"qcm", texteLibre:true, enonce:`La droite \\((d)\\) a pour vecteur directeur \\(\\vec{u}\\begin{pmatrix}${ux}\\\\${uy}\\end{pmatrix}\\). Parmi les vecteurs suivants, lequel est normal à \\((d)\\) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"21.4 b)", detail: detail214b(ux, uy, bonne), type:"qcm", texteLibre:true, enonce:`La droite \\((d)\\) a pour vecteur directeur \\(\\vec{u}\\begin{pmatrix}${ux}\\\\${uy}\\end{pmatrix}\\). Parmi les vecteurs suivants, lequel est normal à \\((d)\\) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
   })();
   (function() {
     let nx,ny; do { nx=aleaNonNul(-6,6); ny=aleaNonNul(-6,6); } while (Math.abs(nx)===Math.abs(ny));
@@ -1434,20 +1605,20 @@ function genererExercices() {
     const lettresQ=['a','b','c','d'];
     const options = shuffled.map((v,i)=>({lettre:lettresQ[i], texte:`\\vec{u_${i+1}}\\begin{pmatrix}${v.x}\\\\${v.y}\\end{pmatrix}`}));
     const bonne = lettresQ[shuffled.findIndex(v=>v.ok)];
-    ex.push({id:"21.4 c)", type:"qcm", texteLibre:true, enonce:`La droite \\((d_1)\\) a pour vecteur normal \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\). La droite \\((d_2)\\) est perpendiculaire à \\((d_1)\\). Parmi les vecteurs suivants, lequel est un vecteur directeur de \\((d_2)\\) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"21.4 c)", detail: detail214c(nx, ny, bonne), type:"qcm", texteLibre:true, enonce:`La droite \\((d_1)\\) a pour vecteur normal \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\). La droite \\((d_2)\\) est perpendiculaire à \\((d_1)\\). Parmi les vecteurs suivants, lequel est un vecteur directeur de \\((d_2)\\) ?`, bonneReponse:bonne, options, optionsSurUneLigne:true});
   })();
   // Calcul 21.5 - vecteurs normaux a AB (4 items)
   (function() {
     let Ax,Ay,Bx,By; do {Ax=alea(-5,5);Ay=alea(-5,5);Bx=alea(-5,5);By=alea(-5,5);} while(Ax===Bx&&Ay===By);
     const v = vecteurEntierReduit(-(By-Ay), Bx-Ax);
-    ex.push({id:"21.5 a)", type:"vecteur", texteLibre:true, enonce:`Avec \\(A(${Ax};${Ay})\\) et \\(B(${Bx};${By})\\)`, vx:String(v.x), vy:String(v.y), vars:[]});
+    ex.push({id:"21.5 a)", detail: detail215([Ax, Ay], [Bx, By]), type:"vecteur", texteLibre:true, enonce:`Avec \\(A(${Ax};${Ay})\\) et \\(B(${Bx};${By})\\)`, vx:String(v.x), vy:String(v.y), vars:[]});
   })();
   (function() {
     const Ax=alea(-5,5), Ay=alea(-5,5);
     let Bx,By2; do { Bx=alea(-5,5); By2=aleaNonNul(-9,9); } while (Bx===Ax && By2===2*Ay);
     const By = math.fraction(By2,2);
     const v = vecteurEntierReduit(math.multiply(-1, math.subtract(By,Ay)), Bx-Ax);
-    ex.push({id:"21.5 b)", type:"vecteur", texteLibre:true, enonce:`Avec \\(A(${Ax};${Ay})\\) et \\(B\\left(${Bx};${coordLatex(By)}\\right)\\)`, vx:String(v.x), vy:String(v.y), vars:[]});
+    ex.push({id:"21.5 b)", detail: detail215([Ax, Ay], [Bx, By]), type:"vecteur", texteLibre:true, enonce:`Avec \\(A(${Ax};${Ay})\\) et \\(B\\left(${Bx};${coordLatex(By)}\\right)\\)`, vx:String(v.x), vy:String(v.y), vars:[]});
   })();
   // Calcul 21.6 - deux equations (2 items) ; a) u(a1 m + A ; a2 m + B) . n(c1 m + C ; c2 m + D) = 0 : equation du second degre en m (deux solutions rationnelles)
   (function() {
@@ -1461,19 +1632,19 @@ function genererExercices() {
       disc = P1*P1 - 4*P2*P0; r = Math.round(Math.sqrt(Math.max(disc, 0)));
     } while (P2 === 0 || disc <= 0 || r*r !== disc);
     const m1 = math.fraction(-P1 - r, 2*P2), m2 = math.fraction(-P1 + r, 2*P2);
-    ex.push({id:"21.6 a)", type:"num", texteLibre:true, enonce:`Trouver les valeurs du réel \\(m\\) pour que \\(\\vec{u}\\begin{pmatrix}${linM(a1, A)}\\\\${linM(a2, B)}\\end{pmatrix}\\) et \\(\\vec{n}\\begin{pmatrix}${linM(c1, C)}\\\\${linM(c2, D)}\\end{pmatrix}\\) soient orthogonaux`, reponse: ensembleStr([m1, m2])});
+    ex.push({id:"21.6 a)", detail: detail216a(a1, A, a2, B, c1, C, c2, D, P2, P1, P0, m1, m2), type:"num", texteLibre:true, enonce:`Trouver les valeurs du réel \\(m\\) pour que \\(\\vec{u}\\begin{pmatrix}${linM(a1, A)}\\\\${linM(a2, B)}\\end{pmatrix}\\) et \\(\\vec{n}\\begin{pmatrix}${linM(c1, C)}\\\\${linM(c2, D)}\\end{pmatrix}\\) soient orthogonaux`, reponse: ensembleStr([m1, m2])});
   })();
   (function() {
     const Ax=alea(-6,6), Ay=alea(-6,6), By=alea(-6,6);
     const nx=aleaNonNul(-5,5), ny=aleaNonNul(-5,5);
     const m = math.subtract(Ax, math.divide(math.multiply(ny, By-Ay), nx));
-    ex.push({id:"21.6 b)", type:"num", texteLibre:true, enonce:`On considère les points \\(A(${Ax};${Ay})\\) et \\(B(m;${By})\\). Trouver l'unique valeur de \\(m\\) pour que le vecteur \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\) soit normal à \\((AB)\\)`, reponse:fracToStr(m)});
+    ex.push({id:"21.6 b)", detail: detail216b(Ax, Ay, By, nx, ny, m), type:"num", texteLibre:true, enonce:`On considère les points \\(A(${Ax};${Ay})\\) et \\(B(m;${By})\\). Trouver l'unique valeur de \\(m\\) pour que le vecteur \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\) soit normal à \\((AB)\\)`, reponse:fracToStr(m)});
   })();
   // Calcul 21.7 - quatre calculs de vecteurs directeurs et normaux (8 items)
   (function() {
     const a1=aleaNonNul(-6,6), b1=aleaNonNul(-6,6), c1=alea(-9,9);
-    ex.push({id:"21.7 a)", type:"vecteur", texteLibre:true, enonce:`Pour \\((D_1): ${equationDroiteLatex(a1,b1,c1)}=0\\), donner \\(\\vec{n}\\)`, vx:String(a1), vy:String(b1), vars:[]});
-    ex.push({id:"21.7 b)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_1)\\), donner \\(\\vec{u}\\)", vx:String(-b1), vy:String(a1), vars:[]});
+    ex.push({id:"21.7 a)", detail: detail217('n', a1, b1), type:"vecteur", texteLibre:true, enonce:`Pour \\((D_1): ${equationDroiteLatex(a1,b1,c1)}=0\\), donner \\(\\vec{n}\\)`, vx:String(a1), vy:String(b1), vars:[]});
+    ex.push({id:"21.7 b)", detail: detail217('u', -b1, a1), type:"vecteur", texteLibre:true, enonce:"Pour \\((D_1)\\), donner \\(\\vec{u}\\)", vx:String(-b1), vy:String(a1), vars:[]});
 
     const a2=aleaNonNul(-6,6), b2=aleaNonNul(-6,6), c2=alea(-9,9);
 
@@ -1481,8 +1652,8 @@ function genererExercices() {
     const a3 = math.fraction(1,K3);
     const termB3 = b3>=0 ? `+${b3===1?'':b3}y` : `${b3===-1?'-':b3}y`;
     const termC3 = c3===0?'':(c3>0?`+${c3}`:`${c3}`);
-    ex.push({id:"21.7 c)", type:"vecteur", texteLibre:true, enonce:`Pour \\((D_2): \\dfrac{x}{${K3}}${termB3}${termC3}=0\\), donner \\(\\vec{u}\\)`, vx:String(-b3), vy:fracToStr(a3), vars:[]});
-    ex.push({id:"21.7 d)", type:"vecteur", texteLibre:true, enonce:"Pour \\((D_2)\\), donner \\(\\vec{n}\\)", vx:fracToStr(a3), vy:String(b3), vars:[]});
+    ex.push({id:"21.7 c)", detail: detail217('u', -b3, a3), type:"vecteur", texteLibre:true, enonce:`Pour \\((D_2): \\dfrac{x}{${K3}}${termB3}${termC3}=0\\), donner \\(\\vec{u}\\)`, vx:String(-b3), vy:fracToStr(a3), vars:[]});
+    ex.push({id:"21.7 d)", detail: detail217('n', a3, b3), type:"vecteur", texteLibre:true, enonce:"Pour \\((D_2)\\), donner \\(\\vec{n}\\)", vx:fracToStr(a3), vy:String(b3), vars:[]});
 
   })();
   // Calcul 21.9 - droites perpendiculaires (4 items)
@@ -1498,7 +1669,7 @@ function genererExercices() {
   ['a','b'].forEach((lettre, i) => {
     const veut = ordreOuiNon[i];
     const {a1,b1,c1,a2,b2,c2} = droitesPerp(veut);
-    ex.push({id:`21.8 ${lettre})`, type:"qcm", texteLibre:true, enonce:`\\((d_1): ${equationDroiteLatex(a1,b1,c1)}=0\\) et \\((d_2): ${equationDroiteLatex(a2,b2,c2)}=0\\)`, bonneReponse: veut?'a':'b', options:[{lettre:'a',texte:'oui',texteLibreOption:true},{lettre:'b',texte:'non',texteLibreOption:true}]});
+    ex.push({id:`21.8 ${lettre})`, detail: detail218(a1, b1, a2, b2, veut), type:"qcm", texteLibre:true, enonce:`\\((d_1): ${equationDroiteLatex(a1,b1,c1)}=0\\) et \\((d_2): ${equationDroiteLatex(a2,b2,c2)}=0\\)`, bonneReponse: veut?'a':'b', options:[{lettre:'a',texte:'oui',texteLibreOption:true},{lettre:'b',texte:'non',texteLibreOption:true}]});
   });
   // Calcul 21.9 - equations cartesiennes (2 items) : un cas donne le vecteur normal, l'autre le vecteur directeur (lequel est tire au hasard)
   (function() {
@@ -1513,7 +1684,7 @@ function genererExercices() {
       const c = math.subtract(0, math.add(nx*Ax, math.multiply(ny, Ay)));
       const point = i === 0 ? `A(${Ax};${Ay})` : `A\\left(${Ax};${coordLatex(Ay)}\\right)`;
       const vecteur = directeur ? `de vecteur directeur \\(\\vec{u}\\begin{pmatrix}${vx}\\\\${vy}\\end{pmatrix}\\)` : `de vecteur normal \\(\\vec{n}\\begin{pmatrix}${vx}\\\\${vy}\\end{pmatrix}\\)`;
-      ex.push({id: i === 0 ? "21.9 a)" : "21.9 b)", type:"eqcart", texteLibre:true, enonce:`la droite passant par \\(${point}\\) et ${vecteur}`, eqa:String(nx), eqb:String(ny), eqc:fracToStr(c)});
+      ex.push({id: i === 0 ? "21.9 a)" : "21.9 b)", detail: detail219(Ax, Ay, vx, vy, directeur, nx, ny, c), type:"eqcart", texteLibre:true, enonce:`la droite passant par \\(${point}\\) et ${vecteur}`, eqa:String(nx), eqb:String(ny), eqc:fracToStr(c)});
     });
   })();
   // Calcul 21.11 - projection orthogonale I (2 items)
@@ -1521,7 +1692,7 @@ function genererExercices() {
     const Mx=alea(-5,5), My=alea(-5,5);
     const a=aleaNonNul(-4,4), b=aleaNonNul(-4,4), c=alea(-6,6);
     const {Hx,Hy} = projeteOrthogonal(Mx,My,a,b,c);
-    ex.push({id:"21.10 a)", type:"paire", formeSimplifiee:true, formePoint:true, texteLibre:true, enonce:`\\(H\\), le projeté orthogonal de \\(M(${Mx};${My})\\) sur la droite \\((d)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\)`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
+    ex.push({id:"21.10 a)", detail: detail2110(Mx, My, a, b, c, Hx, Hy), type:"paire", formeSimplifiee:true, formePoint:true, texteLibre:true, enonce:`\\(H\\), le projeté orthogonal de \\(M(${Mx};${My})\\) sur la droite \\((d)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\)`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
   })();
   // Calcul 21.12 - projection orthogonale II (2 items)
   (function() {
@@ -1529,7 +1700,7 @@ function genererExercices() {
     const a=aleaNonNul(-6,6), b=aleaNonNul(-6,6), c=alea(-9,9);
     const Mx = math.fraction(Mx2,2);
     const {Hx,Hy} = projeteOrthogonal(Mx,My,a,b,c);
-    ex.push({id:"21.10 b)", type:"paire", formeSimplifiee:true, formePoint:true, texteLibre:true, enonce:`\\(H\\), le projeté orthogonal de \\(M\\left(${coordLatex(Mx)};${My}\\right)\\) sur la droite \\((d)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\)`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
+    ex.push({id:"21.10 b)", detail: detail2110(Mx, My, a, b, c, Hx, Hy), type:"paire", formeSimplifiee:true, formePoint:true, texteLibre:true, enonce:`\\(H\\), le projeté orthogonal de \\(M\\left(${coordLatex(Mx)};${My}\\right)\\) sur la droite \\((d)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\)`, pa:fracToStr(Hx), pb:fracToStr(Hy)});
   })();
   // Calcul 21.13 - une distance I (1 item)
   (function() {
@@ -1539,7 +1710,7 @@ function genererExercices() {
     const Dtarget = alea(1,6);
     const sign = alea(0,1)?1:-1;
     const c = sign*Dtarget*R - a*Mx - b*My;
-    ex.push({id:"21.11 a)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Calculer la distance entre le point \\(M(${Mx};${My})\\) et la droite \\((d)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\)`, reponse:String(Dtarget)});
+    ex.push({id:"21.11 a)", detail: detail2111a(Mx, My, a, b, c, R, Dtarget), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Calculer la distance entre le point \\(M(${Mx};${My})\\) et la droite \\((d)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\)`, reponse:String(Dtarget)});
   })();
   // Calcul 21.12 - une distance II (1 item)
   (function() {
@@ -1553,13 +1724,13 @@ function genererExercices() {
     const {coef, radicand} = simplifierRacine(Dsq);
     // distance = |N| / (coef sqrt(radicand)) = |N| sqrt(radicand) / (coef radicand)
     const reponseStr = radicand === 1 ? fracToStr(math.fraction(Math.abs(Nraw), coef)) : surdFrac(1, Math.abs(Nraw), radicand, coef * radicand);
-    ex.push({id:"21.11 b)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`On considère les points \\(A(${Ax};${Ay})\\), \\(B(${Bx};${By})\\) et \\(C(${Cx};${Cy})\\). Déterminer la distance entre le point \\(A\\) et la droite \\((BC)\\)`, reponse:reponseStr});
+    ex.push({id:"21.11 b)", detail: detail2111b([Ax, Ay], [Bx, By], [Cx, Cy], a, b, c, Nraw, Dsq, {coef, radicand}), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`On considère les points \\(A(${Ax};${Ay})\\), \\(B(${Bx};${By})\\) et \\(C(${Cx};${Cy})\\). Déterminer la distance entre le point \\(A\\) et la droite \\((BC)\\)`, reponse:reponseStr});
   })();
   // Calcul 21.14 - des cercles inconnus (3 items)
   (function() {
     let Ax,Ay,Bx,By; do { Ax=alea(-6,6);Ay=alea(-6,6);Bx=alea(-6,6);By=alea(-6,6); } while(Ax===Bx&&Ay===By);
     const ta=-(Ax+Bx), tb=-(Ay+By), tc=Ax*Bx+Ay*By;
-    ex.push({id:"21.12", type:"triplet", texteLibre:true, enonce:`de diamètre \\([AB]\\) avec \\(A(${Ax};${Ay})\\) et \\(B(${Bx};${By})\\)`, ta:String(ta), tb:String(tb), tc:String(tc)});
+    ex.push({id:"21.12", detail: detail2112([Ax, Ay], [Bx, By], ta, tb, tc), type:"triplet", texteLibre:true, enonce:`de diamètre \\([AB]\\) avec \\(A(${Ax};${Ay})\\) et \\(B(${Bx};${By})\\)`, ta:String(ta), tb:String(tb), tc:String(tc)});
   })();
   // Calcul 21.21 - tangente connaissant le cercle (1 item, avance)
   (function() {
@@ -1568,7 +1739,7 @@ function genererExercices() {
     const Ax=h+p, Ay=k+q;
     const D=p*p+q*q;
     const eqc=-(p*Ax+q*Ay);
-    ex.push({id:"21.13", type:"eqcart", texteLibre:true, enonce:`On considère le cercle \\(\\mathcal{C}\\) d'équation \\((x${termeSoustrait(h)})^2+(y${termeSoustrait(k)})^2=${D}\\). Déterminer une équation de la tangente au cercle \\(\\mathcal{C}\\) au point \\(A(${Ax};${Ay})\\)`, eqa:String(p), eqb:String(q), eqc:String(eqc)});
+    ex.push({id:"21.13", detail: detail2113(h, k, Ax, Ay, p, q, eqc), type:"eqcart", texteLibre:true, enonce:`On considère le cercle \\(\\mathcal{C}\\) d'équation \\((x${termeSoustrait(h)})^2+(y${termeSoustrait(k)})^2=${D}\\). Déterminer une équation de la tangente au cercle \\(\\mathcal{C}\\) au point \\(A(${Ax};${Ay})\\)`, eqa:String(p), eqb:String(q), eqc:String(eqc)});
   })();
   // Calcul 21.22 - cercle connaissant la tangente (1 item, avance)
   (function() {
@@ -1577,8 +1748,11 @@ function genererExercices() {
     const num = a*h+b*k+c;
     const r2 = math.fraction(num*num, a*a+b*b);
     const tc = math.subtract(h*h+k*k, r2);
-    ex.push({id:"21.14", type:"triplet", formeSimplifiee:true, texteLibre:true, enonce:`On considère la droite \\((D)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\) et le point \\(\\Omega(${h};${k})\\). Déterminer une équation du cercle de centre \\(\\Omega\\) tangent à \\((D)\\), sous la forme \\(x^2+y^2+ax+by+c=0\\)`, ta:String(-2*h), tb:String(-2*k), tc:fracToStr(tc)});
+    ex.push({id:"21.14", detail: detail2114(a, b, c, h, k, num, r2, tc), type:"triplet", formeSimplifiee:true, texteLibre:true, enonce:`On considère la droite \\((D)\\) d'équation \\(${equationDroiteLatex(a,b,c)}=0\\) et le point \\(\\Omega(${h};${k})\\). Déterminer une équation du cercle de centre \\(\\Omega\\) tangent à \\((D)\\), sous la forme \\(x^2+y^2+ax+by+c=0\\)`, ta:String(-2*h), tb:String(-2*k), tc:fracToStr(tc)});
   })();
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 
@@ -2901,7 +3075,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
