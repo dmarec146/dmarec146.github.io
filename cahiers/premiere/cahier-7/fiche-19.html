@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"19.1 a)":0.5,"19.1 b)":0.75,"19.2 a)":0.5,"19.2 b)":0.75,"19.3 a)":0.5,"19.3 b)":0.75,"19.4 a)":0.75,"19.4 b)":0.75,"19.4 c)":1,"19.4 d)":1,"19.5 a)":0.5,"19.5 b)":1,"19.5 c)":0.5,"19.5 d)":1.25,"19.6 a)":1.25,"19.6 b)":1.25,"19.6 c)":1.5,"19.6 d)":1.5,"19.7 a)":0.5,"19.7 b)":0.5,"19.7 c)":0.5,"19.7 d)":0.5,"19.8 a)":0.75,"19.8 b)":1.25,"19.9 a)":1.5,"19.9 b)":1.5,"19.9 c)":1.75,"19.10 a)":1.75,"19.10 b)":1.75,"19.10 c)":1.75},"bonus":["19.9 a)","19.9 b)","19.9 c)","19.10 a)","19.10 b)","19.10 c)"]});
@@ -1144,43 +1146,245 @@ function piocheDistinct(tableau, n) {
   return res;
 }
 
+// ---------- details de correction (25/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, sommeF2, lignesDelta2 } = DetailQ;
+const lg19 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const ft19 = (f) => fracD(math.fraction(f));                                                // fraction irreductible, signe devant
+// multiple rationnel de pi : « -\dfrac{5\pi}{6} », « \pi », « 2\pi », « 0 »
+const pt19 = (f) => { f = math.fraction(f); if (f.n === 0) return '0'; const s = f.s < 0 ? '-' : '', n = f.n === 1 ? '\\pi' : `${f.n}\\pi`; return f.d === 1 ? `${s}${n}` : `${s}\\dfrac{${n}}{${f.d}}`; };
+// valeur remarquable ecrite en ASCII dans les tables (« -sqrt(3)/2 ») -> LaTeX
+const vt19 = (a) => { const m = String(a).match(/^(-?)(?:(\d+)|sqrt\((\d+)\))(?:\/(\d+))?$/), num = m[2] ? m[2] : `\\sqrt{${m[3]}}`; return m[4] ? `${m[1]}\\dfrac{${num}}{${m[4]}}` : `${m[1]}${num}`; };
+const rt19 = (c, r) => (r === 1 ? String(c) : c === 1 ? `\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+const extrait19 = (N, s) => `\\sqrt{${N}} = \\sqrt{${s.coef}^{2}${s.radicand === 1 ? '' : `\\times ${s.radicand}`}} = ${rt19(s.coef, s.radicand)}`;
+const fr19 = (n, d) => (d === 1 ? String(n) : `\\dfrac{${n}}{${d}}`);
+const fb19 = (n, d) => (d === 1 ? String(n) : `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${d}}`);
+// signe * coef sqrt(rad) / den, fraction reduite
+function surdFracTex19(signe, coef, rad, den) {
+  const g = pgcd(coef, den), cc = coef / g, dd = den / g, num = rad === 1 ? String(cc) : `${cc === 1 ? '' : cc}\\sqrt{${rad}}`;
+  return `${signe < 0 ? '-' : ''}${fr19(num, dd)}`;
+}
+// ensemble « {a*pi/b;...} » (ASCII de la reponse) -> LaTeX et liste de fractions
+const jetonPi19 = (t) => { const neg = t.startsWith('-'), u = neg ? t.slice(1) : t; if (u === '0') return math.fraction(0); const m = u.match(/^(?:(\d+)\*)?pi(?:\/(\d+))?$/), f = math.fraction(+(m[1] || 1), +(m[2] || 1)); return neg ? math.multiply(-1, f) : f; };
+const ensTex19 = (s) => `\\{${s.slice(1, -1).split(';').filter(Boolean).map((t) => pt19(jetonPi19(t))).join('\\,;\\,')}\\}`;
+// valeurs entieres de k pour lesquelles u + k per (multiples de pi) est dans ]-1 ; 1]
+const ensK19 = (u, per) => { const ks = []; for (let j = -15; j <= 15; j++) { const v = math.add(math.fraction(u), math.multiply(j, math.fraction(per))).valueOf(); if (v > -1 + 1e-12 && v <= 1 + 1e-12) ks.push(j); } return ks.length === 1 ? `k = ${ks[0]}` : `k \\in \\{${ks.join('\\,;\\,')}\\}`; };
+const plus2k19 = (f) => (math.fraction(f).n === 0 ? '2k\\pi' : `${pt19(f)}+2k\\pi`);
+// familles de solutions x = u + k per : ecriture, restriction a ]-pi ; pi], valeurs de k, ensemble
+function famillesLignes19(u1, per1, u2, per2, S) {
+  const pas = (per) => { per = math.fraction(per); return per.d === 1 && per.n === 2 ? '2k\\pi' : per.d === 1 && per.n === 1 ? 'k\\pi' : `k\\times ${pt19(per)}`; };
+  const fam = (u, per) => (math.fraction(u).n === 0 ? pas(per) : `${pt19(u)}+${pas(per)}`);
+  return [`\\iff x = ${fam(u1, per1)} \\text{ ou } x = ${fam(u2, per2)}`, 'k \\in \\mathbb{Z}', "\\text{On garde les valeurs qui sont dans } \\left]-\\pi\\,;\\pi\\right]", `\\text{Pour la 1re famille : } ${ensK19(u1, per1)}`, `\\text{Pour la 2e famille : } ${ensK19(u2, per2)}`, `S = ${S}`];
+}
+// terme c sqrt(rad) trig, c fraction math.js : « -\dfrac{\sqrt{3}}{2}\cos(2x) » ; signe '+' devant un terme qui n'est pas le premier
+function terme19(c, rad, trig, premier) {
+  c = math.fraction(c); if (c.n === 0) return '';
+  const signe = c.s < 0 ? '-' : (premier ? '' : '+'), unite = rad === 1 && c.n === 1 && c.d === 1;
+  return signe + (unite ? '' : latexValeur(math.abs(c), rad)) + trig;
+}
+// 19.1 a) (ax+b)^2 = K^2
+function detail191a(A, B, K, x1, x2) {
+  const L = lg19(A, B), [lo, hi] = math.number(x1) < math.number(x2) ? [x1, x2] : [x2, x1], S = `\\{${ft19(lo)}\\,;\\,${ft19(hi)}\\}`;
+  return { lignes: [`\\left(${L}\\right)^{2} = ${K * K}`, `\\iff ${L} = ${K} \\text{ ou } ${L} = ${-K}`, `\\iff ${polyF2([{ c: A, v: 'x' }])} = ${K - B} \\text{ ou } ${polyF2([{ c: A, v: 'x' }])} = ${-K - B}`, `\\iff x = ${ft19(x1)} \\text{ ou } x = ${ft19(x2)}`, `S = ${S}`], final: S };
+}
+// 19.1 b) (ax+b)^2 = (cx+d)^2
+function detail191b(A, B, C, D, x1, x2) {
+  const L = lg19(A, B), M = lg19(C, D), [lo, hi] = math.number(x1) < math.number(x2) ? [x1, x2] : [x2, x1], S = `\\{${ft19(lo)}\\,;\\,${ft19(hi)}\\}`;
+  return { lignes: [`\\left(${L}\\right)^{2} = \\left(${M}\\right)^{2}`, `\\iff ${L} = ${M} \\text{ ou } ${L} = -\\left(${M}\\right)`, `\\iff ${polyF2([{ c: A - C, v: 'x' }])} = ${D - B} \\text{ ou } ${polyF2([{ c: A + C, v: 'x' }])} = ${-D - B}`, `\\iff x = ${ft19(x1)} \\text{ ou } x = ${ft19(x2)}`, `S = ${S}`], final: S };
+}
+// 19.2 a) |ax+b| = k
+function detail192a(A, B, k, x1, x2) {
+  const L = lg19(A, B), [lo, hi] = math.number(x1) < math.number(x2) ? [x1, x2] : [x2, x1], S = `\\{${ft19(lo)}\\,;\\,${ft19(hi)}\\}`;
+  return { lignes: [`\\left|${L}\\right| = ${k}`, `\\iff ${L} = ${k} \\text{ ou } ${L} = ${-k}`, `\\iff ${polyF2([{ c: A, v: 'x' }])} = ${k - B} \\text{ ou } ${polyF2([{ c: A, v: 'x' }])} = ${-k - B}`, `\\iff x = ${ft19(x1)} \\text{ ou } x = ${ft19(x2)}`, `S = ${S}`], final: S };
+}
+// 19.2 b) |a1 x+b1| = |a2 x+b2|
+function detail192b(A1, B1, A2, B2, x1, x2) {
+  const L = lg19(A1, B1), M = lg19(A2, B2), [lo, hi] = math.number(x1) < math.number(x2) ? [x1, x2] : [x2, x1], S = `\\{${ft19(lo)}\\,;\\,${ft19(hi)}\\}`;
+  return { lignes: [`\\left|${L}\\right| = \\left|${M}\\right|`, `\\iff ${L} = ${M} \\text{ ou } ${L} = -\\left(${M}\\right)`, `\\iff ${polyF2([{ c: A1 - A2, v: 'x' }])} = ${B2 - B1} \\text{ ou } ${polyF2([{ c: A1 + A2, v: 'x' }])} = ${-B2 - B1}`, `\\iff x = ${ft19(x1)} \\text{ ou } x = ${ft19(x2)}`, `S = ${S}`], final: S };
+}
+// 19.3 a) x^2 > K
+function detail193a(K, spec) {
+  const r = Math.sqrt(K), S = formaterIntervalleSpec(spec);
+  return { lignes: [`x^{2} \\gt ${K}`, `\\iff x \\lt ${formaterUneBorne(-r)} \\text{ ou } x \\gt ${formaterUneBorne(r)}`, `S = ${S}`], final: S };
+}
+// 19.3 b) |ax+b| >= k
+function detail193b(A, B, k, spec) {
+  const L = lg19(A, B), S = formaterIntervalleSpec(spec);
+  return { lignes: [`\\left|${L}\\right| \\geqslant ${k}`, `\\iff ${L} \\leqslant ${-k} \\text{ ou } ${L} \\geqslant ${k}`, `\\iff ${polyF2([{ c: A, v: 'x' }])} \\leqslant ${-k - B} \\text{ ou } ${polyF2([{ c: A, v: 'x' }])} \\geqslant ${k - B}`,
+    `\\iff x \\leqslant ${ft19(math.fraction(-k - B, A))} \\text{ ou } x \\geqslant ${ft19(math.fraction(k - B, A))}`, `S = ${S}`], final: S };
+}
+// 19.4 a cos(bx+c) ou a sin(bx+c) : developpement
+function detail194(fn, a, b, k) {
+  const cosC = valRad(COS_TABLE[mod24(k)]), sinC = valRad(SIN_TABLE[mod24(k)]), arg = b === 1 ? 'x' : `${b}x`, c = angleLatex(k), pa = coefPref(a);
+  const iC = fn === 'cos' ? cosC : sinC, iS = fn === 'cos' ? { coef: math.multiply(-1, sinC.coef), rad: sinC.rad } : cosC;   // coefficients de cos(bx) et sin(bx) dans la parenthese
+  const coefCos = echelleRad(a, iC), coefSin = echelleRad(a, iS);
+  const dev = fn === 'cos' ? `\\cos(${arg})\\cos\\left(${c}\\right)-\\sin(${arg})\\sin\\left(${c}\\right)` : `\\sin(${arg})\\cos\\left(${c}\\right)+\\cos(${arg})\\sin\\left(${c}\\right)`;
+  const inter = terme19(iC.coef, iC.rad, `\\cos(${arg})`, true) + terme19(iS.coef, iS.rad, `\\sin(${arg})`, false), fin = terme19(coefCos.coef, coefCos.rad, `\\cos(${arg})`, true) + terme19(coefSin.coef, coefSin.rad, `\\sin(${arg})`, false);
+  const phase = `${arg}${k < 0 ? '-' : '+'}${angleLatex(Math.abs(k))}`;
+  const env = (t) => (a === 1 ? t : `${pa}\\left(${t}\\right)`);
+  return { lignes: [`${pa}\\${fn}\\left(${phase}\\right) = ${env(dev)}`, `= ${env(inter)}`, ...(env(inter) === fin ? [] : [`= ${fin}`])], final: fin };
+}
+// 19.5 a) cos x = p/q -> cos 2x
+function detail195a(p, q) {
+  const c2 = math.subtract(math.multiply(2, math.fraction(p * p, q * q)), 1), par = p < 0 ? `-\\dfrac{${-p}}{${q}}` : `\\dfrac{${p}}{${q}}`, fin = ft19(c2), num = 2 * p * p - q * q;
+  const l = ['\\cos(2x) = 2\\cos^{2}(x)-1', `= 2\\left(${par}\\right)^{2}-1`, `= ${fb19(2 * p * p, q * q)}-1`, `= ${fb19(num, q * q)}`];
+  if (fb19(num, q * q) !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 19.5 b) cos x = +-p/q, x dans un quadrant -> sin 2x
+function detail195b(p, q, s, interv, sCos, sSin) {
+  const N = q * q - p * p, co = sCos < 0 ? '-' : '', si = sSin < 0 ? '-' : '', I = `\\left[${interv}\\right]`, fin = surdFracTex19(sSin * sCos, 2 * p * s.coef, s.radicand, q * q);
+  const l = ['\\sin^{2}(x)+\\cos^{2}(x) = 1', `\\sin^{2}(x) = 1-\\left(${co}\\dfrac{${p}}{${q}}\\right)^{2}`, `= 1-\\dfrac{${p * p}}{${q * q}} = \\dfrac{${N}}{${q * q}}`, `\\text{Le sinus est ${sSin > 0 ? 'positif' : 'négatif'} sur } ${I}`, `\\sin(x) = ${si}\\dfrac{\\sqrt{${N}}}{${q}}`];
+  if (s.coef !== 1) l.push(extrait19(N, s), `\\sin(x) = ${si}\\dfrac{${rt19(s.coef, s.radicand)}}{${q}}`);
+  l.push('\\sin(2x) = 2\\sin(x)\\cos(x)', `= 2\\times\\left(${si}\\dfrac{${rt19(s.coef, s.radicand)}}{${q}}\\right)\\times\\left(${co}\\dfrac{${p}}{${q}}\\right)`, `= ${sSin * sCos < 0 ? '-' : ''}\\dfrac{${rt19(2 * p * s.coef, s.radicand)}}{${q * q}}`);
+  if (`${sSin * sCos < 0 ? '-' : ''}\\dfrac{${rt19(2 * p * s.coef, s.radicand)}}{${q * q}}` !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 19.5 c) sin x = p/q -> cos 2x
+function detail195c(p, q) {
+  const c2 = math.subtract(1, math.multiply(2, math.fraction(p * p, q * q))), par = p < 0 ? `-\\dfrac{${-p}}{${q}}` : `\\dfrac{${p}}{${q}}`, fin = ft19(c2), num = q * q - 2 * p * p;
+  const l = ['\\cos(2x) = 1-2\\sin^{2}(x)', `= 1-2\\left(${par}\\right)^{2}`, `= 1-${fb19(2 * p * p, q * q)}`, `= ${fb19(num, q * q)}`];
+  if (fb19(num, q * q) !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 19.5 d) cos 2x = k, x dans un quadrant -> cos x
+function detail195d(m, n, s, k, interv, sCos) {
+  const co = sCos < 0 ? '-' : '', I = `\\left[${interv}\\right]`, fin = surdFracTex19(sCos, s.coef, s.radicand, n), kt = ft19(k), kp = math.fraction(k).s < 0 ? `\\left(${kt}\\right)` : kt;
+  const l = ['\\cos^{2}(x) = \\dfrac{1+\\cos(2x)}{2}', `= \\dfrac{1+${kp}}{2} = ${fr19(m, n)}`, `\\text{Le cosinus est ${sCos > 0 ? 'positif' : 'négatif'} sur } ${I}`, `\\cos(x) = ${co}\\sqrt{\\dfrac{${m}}{${n}}} = ${co}\\dfrac{${m === 1 ? '1' : `\\sqrt{${m}}`}}{\\sqrt{${n}}}`, `= ${co}\\dfrac{\\sqrt{${m * n}}}{${n}}`];
+  if (s.coef !== 1) l.push(extrait19(m * n, s), `\\cos(x) = ${co}\\dfrac{${rt19(s.coef, s.radicand)}}{${n}}`);
+  if (`${co}\\dfrac{${rt19(s.coef, s.radicand)}}{${n}}` !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 19.6 a) b) : a X^2 + b X + c = 0 avec X = cos(x) ou sin(x), solutions dans ]-pi ; pi]
+const SOLS_COS19 = { '-1': ['\\pi'], '-1/2': ['-\\dfrac{2\\pi}{3}', '\\dfrac{2\\pi}{3}'], '0': ['-\\dfrac{\\pi}{2}', '\\dfrac{\\pi}{2}'], '1/2': ['-\\dfrac{\\pi}{3}', '\\dfrac{\\pi}{3}'], '1': ['0'] };
+const SOLS_SIN19 = { '-1': ['-\\dfrac{\\pi}{2}'], '-1/2': ['-\\dfrac{5\\pi}{6}', '-\\dfrac{\\pi}{6}'], '0': ['0', '\\pi'], '1/2': ['\\dfrac{\\pi}{6}', '\\dfrac{5\\pi}{6}'], '1': ['\\dfrac{\\pi}{2}'] };
+function detail196ab(fn, a, b, c0, s) {
+  const D = lignesDelta2(a, b, c0), rD = Math.round(Math.sqrt(math.number(D.D))), S = ensTex19(s), F = `\\${fn}`, T = fn === 'cos' ? SOLS_COS19 : SOLS_SIN19;
+  const r1 = math.fraction(-b - rD, 2 * a), r2 = math.fraction(-b + rD, 2 * a), eq = polyF2([{ c: a, v: 'X^{2}' }, { c: b, v: 'X' }, { c: c0, v: '' }]);
+  const fs = (ts) => { const s = sommeF2(ts); return /^-\d+$/.test(s) ? `-\\dfrac{${s.slice(1)}}{${2 * a}}` : `\\dfrac{${s}}{${2 * a}}`; };
+  const l = [`\\text{On pose } X = ${F}(x)`, `${eq} = 0`, D.lignes[0], `\\sqrt{\\Delta} = ${rD}`, `X_{1} = ${dedup2(fs([-b, -rD]), ft19(r1))}`, `X_{2} = ${dedup2(fs([-b, rD]), ft19(r2))}`, "\\text{Solutions dans } \\left]-\\pi\\,;\\pi\\right]"];
+  for (const r of [r1, r2]) { const sol = T[fracToStr(r)]; l.push(`${F}(x) = ${ft19(r)}`, `x = ${sol.join(' \\text{ ou } x = ')}`); }
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 19.6 c) cos(ax) = cos(bx) ou sin(ax) = sin(bx)
+function detail196c(fn, a, b, s) {
+  const S = ensTex19(s), F = `\\${fn}`, bx = b === 1 ? 'x' : `${b}x`, cos = fn === 'cos';
+  const u2 = cos ? 0 : math.fraction(1, a + b);
+  return { lignes: [`${F}(${a}x) = ${F}(${bx})`, `\\iff ${a}x = ${bx}+2k\\pi \\text{ ou } ${a}x = ${cos ? '-' : '\\pi-'}${bx}+2k\\pi`, `\\iff ${polyF2([{ c: a - b, v: 'x' }])} = 2k\\pi \\text{ ou } ${polyF2([{ c: a + b, v: 'x' }])} = ${cos ? '' : '\\pi+'}2k\\pi`,
+    ...famillesLignes19(0, math.fraction(2, a - b), u2, math.fraction(2, a + b), S)], final: S };
+}
+// 19.6 d) g(2x) = e h(x), g et h dans {cos, sin}
+function detail196d(g, h, e, s) {
+  const S = ensTex19(s), G = `\\${g}`;
+  const SPEC = { 'cos,cos,1': [0, 1], 'cos,cos,-1': [1, -1], 'cos,sin,1': [math.fraction(1, 2), -1], 'cos,sin,-1': [math.fraction(1, 2), 1], 'sin,sin,1': [0, 1], 'sin,sin,-1': [0, -1], 'sin,cos,1': [math.fraction(1, 2), -1], 'sin,cos,-1': [math.fraction(-1, 2), 1] };
+  const [c0r, sg] = SPEC[`${g},${h},${e}`], c0 = math.fraction(c0r), c0p = c0.n === 0 ? null : pt19(c0);
+  const phi = sg === 1 ? (c0p === null ? 'x' : c0.s > 0 ? `${c0p}+x` : `x-${pt19(math.abs(c0))}`) : (c0p === null ? '-x' : `${c0p}-x`);
+  const cc = g === 'cos', d1 = 2 - sg, d2 = 2 + sg, k1 = c0, k2 = cc ? math.multiply(-1, c0) : math.subtract(1, c0);
+  const cst = (f, pi2) => (math.fraction(f).n === 0 ? '2k\\pi' : `${pt19(f)}+2k\\pi`);
+  const pphi = phi === 'x' ? 'x' : `\\left(${phi}\\right)`;
+  return { lignes: [`${G}(2x) = ${e < 0 ? '-' : ''}\\${h}(x)`, ...(phi === 'x' ? [] : [`\\iff ${G}(2x) = ${G}\\left(${phi}\\right)`]), `\\iff 2x = ${phi}+2k\\pi \\text{ ou } 2x = ${cc ? '-' : '\\pi-'}${pphi}+2k\\pi`,
+    `\\iff ${polyF2([{ c: d1, v: 'x' }])} = ${cst(k1)} \\text{ ou } ${polyF2([{ c: d2, v: 'x' }])} = ${cst(k2)}`, ...famillesLignes19(math.divide(k1, d1), math.fraction(2, d1), math.divide(k2, d2), math.fraction(2, d2), S)], final: S };
+}
+// 19.7 monotonie du cosinus et du sinus (QCM)
+function detail197(fn, borne, lettre) {
+  const F = `\\${fn}`, I = `\\left[0\\,;${borne === 'pi' ? '\\pi' : '\\dfrac{\\pi}{2}'}\\right]`;
+  if (fn === 'cos') return { lignes: ['\\text{La fonction cosinus est}', `\\text{strictement décroissante sur } ${I}`, `\\text{donc } t_1 \\lt t_2 \\text{ entraîne } \\cos(t_1) \\gt \\cos(t_2)`, `\\text{Réponse : } ${lettre}`], final: lettre };
+  if (borne === 'pi2') return { lignes: ['\\text{La fonction sinus est}', `\\text{strictement croissante sur } ${I}`, `\\text{donc } t_1 \\lt t_2 \\text{ entraîne } \\sin(t_1) \\lt \\sin(t_2)`, `\\text{Réponse : } ${lettre}`], final: lettre };
+  return { lignes: ['\\text{La fonction sinus est}', '\\text{strictement croissante sur } \\left[0\\,;\\dfrac{\\pi}{2}\\right]', '\\text{puis strictement décroissante}', '\\text{sur } \\left[\\dfrac{\\pi}{2}\\,;\\pi\\right]', '\\text{donc les deux sont possibles}', `\\text{Réponse : } ${lettre}`], final: lettre };
+}
+// 19.8 a) sin(x) <= cos(x) en six points
+function detail198a(ks, reponses, bonne) {
+  const lignes = ks.map((k, i) => `${angleLatex(k)} & ${vt19(SIN_TABLE[k])} & ${vt19(COS_TABLE[k])} & \\text{${reponses[i] ? 'oui' : 'non'}}`).join(' \\\\ ');
+  return { lignes: [`\\scriptsize\\begin{array}{c|c|c|c} x & \\sin(x) & \\cos(x) & \\sin(x) \\leqslant \\cos(x) \\\\ \\hline ${lignes} \\end{array}`, `\\text{Réponse : } ${bonne}`], final: bonne };
+}
+// 19.8 b) intervalles fixes
+function detail198b() {
+  return { lignes: ['\\text{Sur le cercle trigonométrique,}', '\\sin(x) \\leqslant \\cos(x)', '\\text{exactement pour}', 'x \\in \\left[-\\dfrac{3\\pi}{4}\\,;\\dfrac{\\pi}{4}\\right]', '\\text{à } 2k\\pi \\text{ près } \\left(k \\in \\mathbb{Z}\\right)', '\\text{Les intervalles } I_2 \\text{ et } I_3', '\\text{sont dans cet intervalle}', '\\text{En retirant } 2\\pi \\text{ à } I_6 \\text{ :}', '\\left[-\\dfrac{\\pi}{2}\\,;\\dfrac{\\pi}{4}\\right]', '\\text{c\'est dans cet intervalle}',
+    '\\text{Les autres intervalles contiennent}', '\\text{un point où c\'est faux :}', 'I_1 \\text{ et } I_4 \\text{ contiennent } \\dfrac{\\pi}{2}', '\\sin\\left(\\dfrac{\\pi}{2}\\right) = 1', '\\cos\\left(\\dfrac{\\pi}{2}\\right) = 0', '1 \\gt 0', 'I_5 \\text{ contient } \\dfrac{7\\pi}{6}', '\\sin\\left(\\dfrac{7\\pi}{6}\\right) = -\\dfrac{1}{2}', '\\cos\\left(\\dfrac{7\\pi}{6}\\right) = -\\dfrac{\\sqrt{3}}{2}', '-\\dfrac{1}{2} \\gt -\\dfrac{\\sqrt{3}}{2}', '\\text{Réponse : } b,c,f'], final: 'b,c,f' };
+}
+// 19.9 a) formule d'addition de la tangente
+function detail199a(bonne) {
+  return { lignes: ['\\tan(a+b) = \\dfrac{\\tan(a)+\\tan(b)}{1-\\tan(a)\\tan(b)}', `\\text{Réponse : } ${bonne}`], final: bonne };
+}
+// 19.9 b) tan(a+b) a partir de tan(a) et tan(b)
+function detail199b(A, B) {
+  const S = math.add(A, B), P = math.multiply(A, B), D = math.subtract(1, P), t = math.divide(S, D), par = (f) => (math.fraction(f).s < 0 ? `\\left(${ft19(f)}\\right)` : ft19(f)), fin = ft19(t);
+  const l = ['\\tan(a+b) = \\dfrac{\\tan(a)+\\tan(b)}{1-\\tan(a)\\tan(b)}', `= \\dfrac{${sommeF2([A, B])}}{1-${math.number(A) === 1 ? par(B) : math.number(B) === 1 ? par(A) : `${par(A)}\\times ${par(B)}`}}`];
+  const sS = math.fraction(S), dD = math.fraction(D), neg = sS.s * dD.s < 0 && sS.n !== 0;
+  if (dD.n === 1 && dD.d === 1) l.push(`= ${fin}`);
+  else { const quot = `${neg ? '-' : ''}\\dfrac{${ft19(math.abs(sS))}}{${ft19(math.abs(dD))}}`; l.push(`= ${quot}`); if (quot !== fin) l.push(`= ${fin}`); }
+  return { lignes: l, final: fin };
+}
+// 19.9 c) tan(k pi/12), k impair : formule d'addition
+const TAN12_19 = {
+  1: ['\\tan\\left(\\dfrac{\\pi}{12}\\right) = \\tan\\left(\\dfrac{\\pi}{3}-\\dfrac{\\pi}{4}\\right)', '= \\dfrac{\\sqrt{3}-1}{1+\\sqrt{3}}', '= \\dfrac{\\left(\\sqrt{3}-1\\right)^{2}}{\\left(\\sqrt{3}+1\\right)\\left(\\sqrt{3}-1\\right)}', '= \\dfrac{4-2\\sqrt{3}}{2}'],
+  5: ['\\tan\\left(\\dfrac{5\\pi}{12}\\right) = \\tan\\left(\\dfrac{\\pi}{4}+\\dfrac{\\pi}{6}\\right)', '= \\dfrac{1+\\dfrac{\\sqrt{3}}{3}}{1-\\dfrac{\\sqrt{3}}{3}}', '= \\dfrac{3+\\sqrt{3}}{3-\\sqrt{3}}', '= \\dfrac{\\left(3+\\sqrt{3}\\right)^{2}}{\\left(3-\\sqrt{3}\\right)\\left(3+\\sqrt{3}\\right)}', '= \\dfrac{12+6\\sqrt{3}}{6}'],
+  7: ['\\tan\\left(\\dfrac{7\\pi}{12}\\right) = \\tan\\left(\\dfrac{\\pi}{3}+\\dfrac{\\pi}{4}\\right)', '= \\dfrac{\\sqrt{3}+1}{1-\\sqrt{3}}', '= \\dfrac{\\left(\\sqrt{3}+1\\right)^{2}}{\\left(1-\\sqrt{3}\\right)\\left(1+\\sqrt{3}\\right)}', '= \\dfrac{4+2\\sqrt{3}}{-2}'],
+  11: ['\\tan\\left(\\dfrac{11\\pi}{12}\\right) = \\tan\\left(\\dfrac{2\\pi}{3}+\\dfrac{\\pi}{4}\\right)', '= \\dfrac{1-\\sqrt{3}}{1+\\sqrt{3}}', '= \\dfrac{\\left(1-\\sqrt{3}\\right)^{2}}{\\left(1+\\sqrt{3}\\right)\\left(1-\\sqrt{3}\\right)}', '= \\dfrac{4-2\\sqrt{3}}{-2}']
+};
+function detail199c(k, rep) {
+  const ak = Math.abs(k), base = { 1: '2-\\sqrt{3}', 5: '2+\\sqrt{3}', 7: '-2-\\sqrt{3}', 11: '\\sqrt{3}-2' }[ak], fin = rep.replace(/sqrt\(3\)/g, '\\sqrt{3}'), l = [];
+  if (k < 0) l.push(`\\tan\\left(-\\dfrac{${ak === 1 ? '' : ak}\\pi}{12}\\right) = -\\tan\\left(\\dfrac{${ak === 1 ? '' : ak}\\pi}{12}\\right)`);
+  l.push(...TAN12_19[ak], `= ${base}`);
+  if (k < 0) l.push(`\\tan\\left(-\\dfrac{${ak === 1 ? '' : ak}\\pi}{12}\\right) = -\\left(${base}\\right)`, `= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 19.10 a cos(x) + b sin(x) = c dans ]-pi ; pi]
+const ALPHA19 = { '0/1/1': [1, 2], '1/2/1': [1, 3], '-1/2/1': [2, 3], '1/2/2': [1, 4], '-1/2/2': [3, 4], '1/2/3': [1, 6], '-1/2/3': [5, 6] };
+function detail1910(fam, k, aV, bV, cV, cn, cd, cr, s) {
+  const S = ensTex19(s), RT = latexValeur(fam.R.coef, fam.R.rad), N = math.number(fam.R.coef) ** 2 * fam.R.rad, phi = angleLatex(k), arg = `x${k < 0 ? '+' : '-'}${angleLatex(Math.abs(k))}`;
+  const aT = latexValeur(aV.coef, aV.rad), bT = latexValeur(bV.coef, bV.rad), a2 = math.number(aV.coef) ** 2 * aV.rad, b2 = math.number(bV.coef) ** 2 * bV.rad;
+  const lat = (v, trig, premier) => { const unite = v.rad === 1 && v.coef.n === 1 && v.coef.d === 1, signe = v.coef.s < 0 ? '-' : (premier ? '' : '+'); return signe + (unite ? '' : latexValeur(math.abs(v.coef), v.rad)) + '\\' + trig + '(x)'; };
+  const sg = (v) => (v.coef.s < 0 ? '-' : ''), ab = (v) => latexValeur(math.abs(v.coef), v.rad), expr = `${lat(aV, 'cos', true)}${lat(bV, 'sin', false)}`;
+  const tT = latexValeur(math.fraction(cn, cd), cr), [an, ad] = ALPHA19[`${cn}/${cd}/${cr}`], al = math.fraction(an, ad), phi12 = math.fraction(k, 12), u1 = math.add(phi12, al), u2 = math.subtract(phi12, al);
+  const pr = (T) => (T.startsWith('-') || T.includes('\\sqrt') ? `\\left(${T}\\right)` : T);
+  const fsg = (v) => `${sg(v)}\\dfrac{${ab(v)}}{${RT}}`, fsg2 = (v) => `${v.coef.s < 0 ? '-' : '+'}\\dfrac{${ab(v)}}{${RT}}`;
+  const l = [`${expr} = ${latexValeur(cV.coef, cV.rad)}`, `\\text{On factorise par } R = \\sqrt{a^{2}+b^{2}}`, `R = ${dedup2(`\\sqrt{${pr(aT)}^{2}+${pr(bT)}^{2}}`,`\\sqrt{${a2}+${b2}}`, `\\sqrt{${N}}`, RT)}`,
+    `${expr} = ${RT}\\left(${fsg(aV)}\\cos(x)${fsg2(bV)}\\sin(x)\\right)`, `${dedup2(fsg(aV), vt19(COS_TABLE[mod24(k)]), `\\cos\\left(${phi}\\right)`)}`, `${dedup2(fsg(bV), vt19(SIN_TABLE[mod24(k)]), `\\sin\\left(${phi}\\right)`)}`,
+    `${expr} = ${RT}\\cos\\left(${arg}\\right)`, `\\iff ${RT}\\cos\\left(${arg}\\right) = ${latexValeur(cV.coef, cV.rad)}`, `\\iff \\cos\\left(${arg}\\right) = ${tT}`, `\\iff \\cos\\left(${arg}\\right) = \\cos\\left(${pt19(al)}\\right)`,
+    `\\iff ${arg} = ${plus2k19(al)} \\text{ ou } ${arg} = ${plus2k19(math.multiply(-1, al))}`, ...famillesLignes19(u1, 2, u2, 2, S)];
+  return { lignes: l, final: S };
+}
 function genererExercices() {
   const ex = [];
   // Calcul 19.1 - equations avec carres (8 items)
   (function() {
     const A = alea(2,4), B = aleaNonNul(-6,6), K = alea(2,7), C = K*K;
     const [x1,x2] = resoudreAxPlusBEgaleK(A,B,K);
-    ex.push({id:"19.1 a)", type:"num", texteLibre:true, enonce:`\\((${coefLatex(A)}${fracLatexSigned(B)})^2=${C}\\)`, reponse: ensembleStr([x1,x2])});
+    ex.push({id:"19.1 a)", detail: detail191a(A, B, K, x1, x2), type:"num", texteLibre:true, enonce:`\\((${coefLatex(A)}${fracLatexSigned(B)})^2=${C}\\)`, reponse: ensembleStr([x1,x2])});
   })();
   (function() {
     let A,C; do { A = alea(1,4); C = alea(1,4); } while (A === C);
-    const B = aleaNonNul(-6,6), D = aleaNonNul(-6,6);
+    let B, D; do { B = aleaNonNul(-6,6); D = aleaNonNul(-6,6); } while (A*D === B*C);
     const x1 = math.divide(math.subtract(D,B), math.subtract(A,C));
     const x2 = math.divide(math.subtract(-D,B), math.add(A,C));
-    ex.push({id:"19.1 b)", type:"num", texteLibre:true, enonce:`\\((${coefLatex(A)}${fracLatexSigned(B)})^2=(${coefLatex(C)}${fracLatexSigned(D)})^2\\)`, reponse: ensembleStr([x1,x2])});
+    ex.push({id:"19.1 b)", detail: detail191b(A, B, C, D, x1, x2), type:"num", texteLibre:true, enonce:`\\((${coefLatex(A)}${fracLatexSigned(B)})^2=(${coefLatex(C)}${fracLatexSigned(D)})^2\\)`, reponse: ensembleStr([x1,x2])});
   })();
   // Calcul 19.2 - equations avec valeurs absolues (6 items)
   (function() {
     const A = alea(2,5), B = aleaNonNul(-8,8), k = alea(2,9);
     const [x1,x2] = resoudreAxPlusBEgaleK(A,B,k);
-    ex.push({id:"19.2 a)", type:"num", texteLibre:true, enonce:`\\(|${coefLatex(A)}${fracLatexSigned(B)}|=${k}\\)`, reponse: ensembleStr([x1,x2])});
+    ex.push({id:"19.2 a)", detail: detail192a(A, B, k, x1, x2), type:"num", texteLibre:true, enonce:`\\(|${coefLatex(A)}${fracLatexSigned(B)}|=${k}\\)`, reponse: ensembleStr([x1,x2])});
   })();
   (function() {
     let A1,A2; do { A1 = aleaNonNul(-4,4); A2 = aleaNonNul(-4,4); } while (A1 === A2 || A1 === -A2);
-    const B1 = aleaNonNul(-8,8), B2 = aleaNonNul(-8,8);
+    let B1, B2; do { B1 = aleaNonNul(-8,8); B2 = aleaNonNul(-8,8); } while (A1*B2 === A2*B1);
     const x1 = math.divide(math.subtract(B2,B1), math.subtract(A1,A2));
     const x2 = math.divide(math.subtract(-B2,B1), math.add(A1,A2));
-    ex.push({id:"19.2 b)", type:"num", texteLibre:true, enonce:`\\(|${coefLatex(A1)}${fracLatexSigned(B1)}|=|${coefLatex(A2)}${fracLatexSigned(B2)}|\\)`, reponse: ensembleStr([x1,x2])});
+    ex.push({id:"19.2 b)", detail: detail192b(A1, B1, A2, B2, x1, x2), type:"num", texteLibre:true, enonce:`\\(|${coefLatex(A1)}${fracLatexSigned(B1)}|=|${coefLatex(A2)}${fracLatexSigned(B2)}|\\)`, reponse: ensembleStr([x1,x2])});
   })();
   // Calcul 19.3 - inequations avec carres ou valeurs absolues (6 items)
   (function() {
     const K = alea(2,9), r = Math.sqrt(K);
-    ex.push({id:"19.3 a)", type:"intervalle", texteLibre:true, enonce:`\\(x^2>${K}\\)`, intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:-r,inclusBas:false,inclusHaut:false},{bas:r,haut:Infinity,inclusBas:false,inclusHaut:false}]}});
+    const spec193a = {type:'intervalles', liste:[{bas:-Infinity,haut:-r,inclusBas:false,inclusHaut:false},{bas:r,haut:Infinity,inclusBas:false,inclusHaut:false}]};
+    ex.push({id:"19.3 a)", detail: detail193a(K, spec193a), type:"intervalle", texteLibre:true, enonce:`\\(x^2>${K}\\)`, intervalleSpec: spec193a});
   })();
   (function() {
     const A = alea(2,5), B = aleaNonNul(-8,8), k = alea(2,9);
     const lower = (-k-B)/A, upper = (k-B)/A;
-    ex.push({id:"19.3 b)", type:"intervalle", texteLibre:true, enonce:`\\(|${coefLatex(A)}${fracLatexSigned(B)}|\\geqslant ${k}\\)`, intervalleSpec:{type:'intervalles', liste:[{bas:-Infinity,haut:lower,inclusBas:false,inclusHaut:true},{bas:upper,haut:Infinity,inclusBas:true,inclusHaut:false}]}});
+    const spec193b = {type:'intervalles', liste:[{bas:-Infinity,haut:lower,inclusBas:false,inclusHaut:true},{bas:upper,haut:Infinity,inclusBas:true,inclusHaut:false}]};
+    ex.push({id:"19.3 b)", detail: detail193b(A, B, k, spec193b), type:"intervalle", texteLibre:true, enonce:`\\(|${coefLatex(A)}${fracLatexSigned(B)}|\\geqslant ${k}\\)`, intervalleSpec: spec193b});
   })();
   // ---------- Calcul 19.4 - developpement de a cos(bx+c) et a sin(bx+c) (4 items) ----------
   (function() {
@@ -1197,7 +1401,7 @@ function genererExercices() {
       const rep = joinSignes([termeAscii(coefCos.coef, coefCos.rad, 'cos(' + argb + ')'), termeAscii(coefSin.coef, coefSin.rad, 'sin(' + argb + ')')]);
       const { p, q } = angleFrac(k);
       const phase = (p < 0 ? '-' : '+') + '\\dfrac{' + (Math.abs(p) === 1 ? '' : Math.abs(p)) + '\\pi}{' + q + '}';
-      ex.push({id:`19.4 ${l}`, type:"alg", formeDeveloppee: b, texteLibre:true, enonce:`\\(${coefPref(a)}\\${fn}\\left(${b === 1 ? '' : b}x${phase}\\right)\\)`, reponse: rep});
+      ex.push({id:`19.4 ${l}`, detail: detail194(fn, a, b, k), type:"alg", formeDeveloppee: b, texteLibre:true, enonce:`\\(${coefPref(a)}\\${fn}\\left(${b === 1 ? '' : b}x${phase}\\right)\\)`, reponse: rep});
     });
   })();
   // ---------- Calcul 19.5 - formules de duplication, valeurs exactes (4 items) ----------
@@ -1207,20 +1411,20 @@ function genererExercices() {
     {
       const q = alea(3,9); let p; do { p = aleaNonNul(-(q-1), q-1); } while (pgcd(p, q) !== 1);
       const c2 = math.subtract(math.multiply(2, math.fraction(p*p, q*q)), 1);
-      ex.push({id:"19.5 a)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${latexFrac(math.fraction(p, q))}\\), que vaut \\(\\cos(2x)\\) ?`, reponse: fracToStr(c2)});
+      ex.push({id:"19.5 a)", detail: detail195a(p, q), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${latexFrac(math.fraction(p, q))}\\), que vaut \\(\\cos(2x)\\) ?`, reponse: fracToStr(c2)});
     }
     // b) cos(x) = +-p/q et x dans un quadrant : sin(2x) = 2 sin(x) cos(x)
     {
       let q, p, s;
       do { q = alea(3,9); p = alea(1,q-1); s = simplifierRacine(q*q - p*p); } while (pgcd(p, q) !== 1 || s.radicand === 1);
       const [interv, sCos, sSin] = QUADS[alea(0,3)];
-      ex.push({id:"19.5 b)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${sCos < 0 ? '-' : ''}\\dfrac{${p}}{${q}}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\sin(2x)\\) ?`, reponse: surdFrac(sSin * sCos, 2 * p * s.coef, s.radicand, q * q)});
+      ex.push({id:"19.5 b)", detail: detail195b(p, q, s, interv, sCos, sSin), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${sCos < 0 ? '-' : ''}\\dfrac{${p}}{${q}}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\sin(2x)\\) ?`, reponse: surdFrac(sSin * sCos, 2 * p * s.coef, s.radicand, q * q)});
     }
     // c) sin(x) = +-p/q : cos(2x) = 1 - 2sin^2(x)
     {
       const q = alea(3,9); let p; do { p = aleaNonNul(-(q-1), q-1); } while (pgcd(p, q) !== 1);
       const c2 = math.subtract(1, math.multiply(2, math.fraction(p*p, q*q)));
-      ex.push({id:"19.5 c)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\sin(x)=${latexFrac(math.fraction(p, q))}\\), que vaut \\(\\cos(2x)\\) ?`, reponse: fracToStr(c2)});
+      ex.push({id:"19.5 c)", detail: detail195c(p, q), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\sin(x)=${latexFrac(math.fraction(p, q))}\\), que vaut \\(\\cos(2x)\\) ?`, reponse: fracToStr(c2)});
     }
     // d) cos(2x) = k et x dans un quadrant : cos(x) = +-sqrt((1+k)/2)
     {
@@ -1228,7 +1432,7 @@ function genererExercices() {
       do { n = alea(2,9); m = alea(1,n-1); s = simplifierRacine(m * n); } while (pgcd(m, n) !== 1 || s.radicand === 1);
       const k = math.subtract(math.fraction(2*m, n), 1);
       const [interv, sCos] = QUADS[alea(0,3)];
-      ex.push({id:"19.5 d)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(2x)=${latexFrac(k)}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\cos(x)\\) ?`, reponse: surdFrac(sCos, s.coef, s.radicand, n)});
+      ex.push({id:"19.5 d)", detail: detail195d(m, n, s, k, interv, sCos), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(2x)=${latexFrac(k)}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\cos(x)\\) ?`, reponse: surdFrac(sCos, s.coef, s.radicand, n)});
     }
   })();
   // ---------- Calcul 19.6 - equations trigonometriques plus delicates dans ]-pi ; pi] (4 items) ----------
@@ -1241,34 +1445,34 @@ function genererExercices() {
       let a = 4, b = -4 * math.add(r1, r2).valueOf(), c0 = 4 * math.multiply(r1, r2).valueOf();
       const g = pgcd(pgcd(a, b), c0); a /= g; b /= g; c0 /= g;
       const F = fn === 'cos' ? Math.cos : Math.sin;
-      return { latex: polyTrigLatex(a, b, c0, fn) + '=0', f: (x) => a * F(x) * F(x) + b * F(x) + c0 };
+      return { latex: polyTrigLatex(a, b, c0, fn) + '=0', f: (x) => a * F(x) * F(x) + b * F(x) + c0, a, b, c0 };
     };
     // a) second degre en cos ; b) second degre en sin
     [['a)','cos'],['b)','sin']].forEach(([l, fn]) => {
       const e = second(fn), s = ensembleParSubstitution(e.f);
-      ex.push({id:`19.6 ${l}`, type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(${e.latex}\\)`, reponse: s});
+      ex.push({id:`19.6 ${l}`, detail: detail196ab(fn, e.a, e.b, e.c0, s), type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(${e.latex}\\)`, reponse: s});
     });
     // c) cos(ax) = cos(bx) ou sin(ax) = sin(bx)
     {
       const [a, b] = [[2,1],[3,1],[3,2]][alea(0,2)], fn = alea(0,1) === 0 ? 'cos' : 'sin', F = fn === 'cos' ? Math.cos : Math.sin;
       const s = ensembleParSubstitution((x) => F(a * x) - F(b * x));
-      ex.push({id:"19.6 c)", type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(\\${fn}(${a}x)=\\${fn}(${b === 1 ? '' : b}x)\\)`, reponse: s});
+      ex.push({id:"19.6 c)", detail: detail196c(fn, a, b, s), type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(\\${fn}(${a}x)=\\${fn}(${b === 1 ? '' : b}x)\\)`, reponse: s});
     }
     // d) duplication : cos(2x) = +-cos(x), cos(2x) = +-sin(x), sin(2x) = +-cos(x), sin(2x) = +-sin(x)
     {
       const g = alea(0,1) === 0 ? 'cos' : 'sin', h = alea(0,1) === 0 ? 'cos' : 'sin', e = alea(0,1) === 0 ? 1 : -1;
       const G = g === 'cos' ? Math.cos : Math.sin, H = h === 'cos' ? Math.cos : Math.sin;
       const s = ensembleParSubstitution((x) => G(2 * x) - e * H(x));
-      ex.push({id:"19.6 d)", type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(\\${g}(2x)=${e < 0 ? '-' : ''}\\${h}(x)\\)`, reponse: s});
+      ex.push({id:"19.6 d)", detail: detail196d(g, h, e, s), type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(\\${g}(2x)=${e < 0 ? '-' : ''}\\${h}(x)\\)`, reponse: s});
     }
   })();
   // Calcul 19.7 - monotonie (4 items, QCM, theoreme fixe) ; la consigne commune est dans l'introduction
   const OPT_COS = [{lettre:"a",texte:"\\cos(t_1)\\lt\\cos(t_2)"},{lettre:"b",texte:"\\cos(t_1)>\\cos(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}];
   const OPT_SIN = [{lettre:"a",texte:"\\sin(t_1)\\lt\\sin(t_2)"},{lettre:"b",texte:"\\sin(t_1)>\\sin(t_2)"},{lettre:"c",texte:"les deux sont possibles",texteLibreOption:true}];
-  ex.push({id:"19.7 a)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"b", options:OPT_COS});
-  ex.push({id:"19.7 b)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"a", options:OPT_SIN});
-  ex.push({id:"19.7 c)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"b", options:OPT_COS});
-  ex.push({id:"19.7 d)", type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"c", options:OPT_SIN});
+  ex.push({id:"19.7 a)", detail: detail197('cos', 'pi2', 'b'), type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"b", options:OPT_COS});
+  ex.push({id:"19.7 b)", detail: detail197('sin', 'pi2', 'a'), type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\dfrac{\\pi}{2}\\)", bonneReponse:"a", options:OPT_SIN});
+  ex.push({id:"19.7 c)", detail: detail197('cos', 'pi', 'b'), type:"qcm", texteLibre:true, enonce:"Fonction \\(\\cos\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"b", options:OPT_COS});
+  ex.push({id:"19.7 d)", detail: detail197('sin', 'pi', 'c'), type:"qcm", texteLibre:true, enonce:"Fonction \\(\\sin\\), avec \\(0\\leqslant t_1\\lt t_2\\leqslant\\pi\\)", bonneReponse:"c", options:OPT_SIN});
   // Calcul 19.8 - comparaison sin/cos en des points (1 item, plusieurs bonnes reponses, randomise)
   (function() {
     let ks, reponses;
@@ -1279,10 +1483,10 @@ function genererExercices() {
     const lettresOpt = ['a','b','c','d','e','f'];
     const options = ks.map((k,i) => ({lettre: lettresOpt[i], texte: `x=${angleLatex(k)}`}));
     const bonne = lettresOpt.filter((l,i) => reponses[i]).join(',');
-    ex.push({id:"19.8 a)", type:"qcm", pleineLargeur:true, texteLibre:true, enonce:"Pour quelles valeurs du réel \\(x\\) a-t-on \\(\\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse: bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"19.8 a)", detail: detail198a(ks, reponses, bonne), type:"qcm", pleineLargeur:true, texteLibre:true, enonce:"Pour quelles valeurs du réel \\(x\\) a-t-on \\(\\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse: bonne, options, optionsSurUneLigne:true});
   })();
   // Calcul 19.8 - comparaison sin/cos sur intervalle (1 item, theoreme fixe : la region est fixe, les intervalles proposes sont fixes)
-  ex.push({id:"19.8 b)", type:"qcm", texteLibre:true, enonce:"Sur quel(s) intervalle(s) \\(I\\) a-t-on \\(\\forall x\\in I,\\ \\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse:"b,c,f", options:[{lettre:"a",texte:"I_1=\\left[0;\\dfrac{\\pi}{2}\\right]"},{lettre:"b",texte:"I_2=\\left[0;\\dfrac{\\pi}{4}\\right]"},{lettre:"c",texte:"I_3=\\left[-\\dfrac{2\\pi}{3};-\\dfrac{\\pi}{3}\\right]"},{lettre:"d",texte:"I_4=\\left[\\dfrac{\\pi}{2};\\pi\\right]"},{lettre:"e",texte:"I_5=\\left[\\dfrac{7\\pi}{6};\\dfrac{5\\pi}{4}\\right]"},{lettre:"f",texte:"I_6=\\left[\\dfrac{3\\pi}{2};\\dfrac{9\\pi}{4}\\right]"}], optionsSurUneLigne:true});
+  ex.push({id:"19.8 b)", detail: detail198b(), type:"qcm", texteLibre:true, enonce:"Sur quel(s) intervalle(s) \\(I\\) a-t-on \\(\\forall x\\in I,\\ \\sin(x)\\leqslant\\cos(x)\\) ?", bonneReponse:"b,c,f", options:[{lettre:"a",texte:"I_1=\\left[0;\\dfrac{\\pi}{2}\\right]"},{lettre:"b",texte:"I_2=\\left[0;\\dfrac{\\pi}{4}\\right]"},{lettre:"c",texte:"I_3=\\left[-\\dfrac{2\\pi}{3};-\\dfrac{\\pi}{3}\\right]"},{lettre:"d",texte:"I_4=\\left[\\dfrac{\\pi}{2};\\pi\\right]"},{lettre:"e",texte:"I_5=\\left[\\dfrac{7\\pi}{6};\\dfrac{5\\pi}{4}\\right]"},{lettre:"f",texte:"I_6=\\left[\\dfrac{3\\pi}{2};\\dfrac{9\\pi}{4}\\right]"}], optionsSurUneLigne:true});
   // ---------- Calcul 19.9 - formule d'addition de la tangente (3 items) ----------
   (function() {
     const optionsBase = [
@@ -1295,19 +1499,19 @@ function genererExercices() {
     const lettresQCM = ['a','b','c','d'];
     const options = shuffled.map((o,i) => ({lettre: lettresQCM[i], texte: o.texte}));
     const bonne = lettresQCM[shuffled.findIndex(o=>o.correct)];
-    ex.push({id:"19.9 a)", type:"qcm", texteLibre:true, enonce:"Choisir parmi les propositions une expression de \\(\\tan(a+b)\\) :", bonneReponse: bonne, options, optionsSurUneLigne:true});
+    ex.push({id:"19.9 a)", detail: detail199a(bonne), type:"qcm", texteLibre:true, enonce:"Choisir parmi les propositions une expression de \\(\\tan(a+b)\\) :", bonneReponse: bonne, options, optionsSurUneLigne:true});
   })();
   (function() {
     // b) tan(a+b) a partir de tan(a) et tan(b)
     let A, B;
     do { A = math.fraction(aleaNonNul(-3,3), alea(1,5)); B = math.fraction(aleaNonNul(-3,3), alea(1,5)); } while (math.multiply(A, B).valueOf() === 1);
     const t = math.divide(math.add(A, B), math.subtract(1, math.multiply(A, B)));
-    ex.push({id:"19.9 b)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\tan(a)=${latexFrac(A)}\\) et \\(\\tan(b)=${latexFrac(B)}\\), que vaut \\(\\tan(a+b)\\) ?`, reponse: fracToStr(t)});
+    ex.push({id:"19.9 b)", detail: detail199b(A, B), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\tan(a)=${latexFrac(A)}\\) et \\(\\tan(b)=${latexFrac(B)}\\), que vaut \\(\\tan(a+b)\\) ?`, reponse: fracToStr(t)});
     // c) tan(k*pi/12), k impair : +-2 +-sqrt(3)
     const k = [1,5,7,11,-1,-5,-7,-11][alea(0,7)], v = Math.tan(k * Math.PI / 12);
     let rep = null;
     for (const s0 of [2,-2]) for (const s1 of [1,-1]) if (Math.abs(s0 + s1 * Math.sqrt(3) - v) < 1e-9) rep = s1 > 0 && s0 < 0 ? 'sqrt(3)-' + (-s0) : s0 + (s1 < 0 ? '-' : '+') + 'sqrt(3)';
-    ex.push({id:"19.9 c)", type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: rep});
+    ex.push({id:"19.9 c)", detail: detail199c(k, rep), type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: rep});
   })();
   // ---------- Calcul 19.10 - equations a cos(x) + b sin(x) = c dans ]-pi ; pi] (3 items) ----------
   (function() {
@@ -1330,9 +1534,12 @@ function genererExercices() {
       const num = (v) => v.coef.valueOf() * Math.sqrt(v.rad);
       const A = num(aV), B = num(bV), Cc = num(cV);
       const s = ensembleParSubstitution((x) => A * Math.cos(x) + B * Math.sin(x) - Cc);
-      ex.push({id:`19.10 ${l}`, type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(${lat(aV, 'cos', true)}${lat(bV, 'sin', false)}=${latexValeur(cV.coef, cV.rad)}\\)`, reponse: s});
+      ex.push({id:`19.10 ${l}`, detail: detail1910(fam, k, aV, bV, cV, cn, cd, cr, s), type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true, enonce:`\\(${lat(aV, 'cos', true)}${lat(bV, 'sin', false)}=${latexValeur(cV.coef, cV.rad)}\\)`, reponse: s});
     });
   })();
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 let exercices = genererExercices();
@@ -2937,7 +3144,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);

@@ -148,7 +148,7 @@ async function controlerDansLaPage(opts) {
   // P(A\cap B), P_A(B), P_{\overline{C}}(D), E(X), E\left(X^{2}\right), V(X) : probabilité, espérance ou variance nommées par l'énoncé (pas des produits de lettres)
   // (et cos(x), sin(x), tan(x) ou leur carre : valeurs liees a l'enonce, pas des identités ; trigonométrie, fiche 18)
   const estEtiquetteProba = (s) => /(^|[^A-Za-z\\])[PEV](_\{.*?\}\}|_\{[^{}]*\}|_[A-Za-z0-9])?\s*(\\left)?\(/.test(s) || /\\(?:cos|sin|tan)(\^\{2\})?\s*(\\left)?\(\s*x\s*(\\right)?\)/.test(s);
-  const aDesLettres = (s) => /[A-Za-z]/.test(s.replace(/\\(?:dfrac|frac|sqrt|times|cdot|div|left|right|pi|infty|lt|gt)(?![A-Za-z])/g, ''));
+  const aDesLettres = (s) => /[A-Za-z]/.test(s.replace(/\\(?:dfrac|frac|sqrt|times|cdot|div|left|right|pi|infty|lt|gt|cos|sin|tan)(?![A-Za-z])/g, ''));   // (cos, sin, tan d'un nombre : valeur numérique)
   const nz = (s) => String(s).replace(/\\\(|\\\)/g, '').replace(/\\lt\s*/g, '<').replace(/\\left|\\right|\\[,;! ]|\s+/g, '');
   // Une chaîne « A = B = C » est vérifiée par paires voisines : deux membres numériques doivent être égaux ; deux membres littéraux
   // doivent être égaux pour toute valeur des lettres (identité) ; un membre numérique à côté d'un membre littéral exprime une
@@ -632,7 +632,7 @@ async function controlerDansLaPage(opts) {
       if (/^\s*=(?!=)/.test(l0) && dernierMembre) l = dernierMembre + ' ' + l0.trim();
       dernierMembre = /\\iff|\\Leftrightarrow|\\text|\\begin|\\q?quad/.test(l) ? null : l.split('=').pop().trim();
       // une ligne suivie d'une ligne qui commence par ⟺ est la première partie d'une équivalence : « A = B » littéral y est une équation à résoudre
-      const prolongee = idxL + 1 < D.lignes.length && /^\s*(\\iff|\\Leftrightarrow)/.test(D.lignes[idxL + 1]);
+      const prolongee = idxL + 1 < D.lignes.length && /^\s*(?:\\(?:small|scriptsize)\s*)?(\\iff|\\Leftrightarrow)/.test(D.lignes[idxL + 1]);
       if (/\\begin/.test(l)) { precedent = null; continue; }                    // tableau de signes : relu à la main
       const clauses = l.split(/\\q?quad/);
       for (const clause of clauses) {
@@ -718,7 +718,7 @@ async function controlerDansLaPage(opts) {
         for (const l of D.lignes) {
           styler(e, l);
           // phrase « en clair » : le texte des \text{…} dans l'ordre, les formules étant remplacées par […]
-          if (/\\text\{/.test(l)) {
+          if (/\\text\{/.test(l) && !/\\begin\{array\}/.test(l)) {   // (un tableau n'est pas une phrase : ses « oui / non » varient à chaque tirage)
             const clair = String(l).replace(/^\\(?:small|scriptsize)\s*/, '').split(/(\\text\{[^{}]*\})/).map((s) => (/^\\text\{/.test(s) ? s.slice(6, -1) : (s.replace(/[\s\\,;:]/g, '') ? ' […] ' : ' '))).join('').replace(/\s+/g, ' ').replace(/\\lt\s*/g, '<').trim();
             if (!phrases.has(clair)) phrases.set(clair, { ids: new Set(), exemple: l, enonce: String(e.enonce).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), lignes: D.lignes.slice() });
             phrases.get(clair).ids.add(e.id);
