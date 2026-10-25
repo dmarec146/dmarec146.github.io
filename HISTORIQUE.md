@@ -9116,3 +9116,15 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   Ajout au passage d'une règle de prudence : une première version du conseil du niveau 3 (« mieux vaut ne pas répondre ») était
   fausse mathématiquement (au hasard, 0,25 × 1 − 0,75 × 0,25 > 0) ; remplacée par un constat (« une mauvaise réponse coûte 0,25
   point, une question vide ne coûte rien »).
+
+- **Décision finale du 25/10/2026 : « QCM Terminale » partout.** David change d'avis (« il faut le même libellé partout pour les
+  QCM ; juste que sur ordi et tablette, les sous-titres plus longs me plaisent »). **Résultat** : le libellé « QCM Terminale » est
+  écrit dans les pages et les scripts, pour tous les appareils ; le remplacement propre au téléphone (bloc ajouté le même jour à
+  `assets/js/pied-droits.js`) est supprimé ; le resserrement de la navigation de 481 à 720 px, nécessaire avec le libellé plus
+  long, est rétabli (navigation sur une ligne dès 680 px). **Sous-titres longs conservés sur ordinateur et tablette** : carte de l'accueil
+  (« QCM du baccalauréat », « Terminale spécialité mathématiques », description complète) et titres de page ; sur téléphone, la refonte
+  prévue (maquette « QCM Terminale · Spécialité maths ») ne raccourcira que le téléphone, **quand elle sera réalisée**. Titre de page
+  « QCM Terminale — spécialité mathématiques » (sans répétition de « Terminale »). Vérifié dans des cadres de 375 et 800 px : même
+  libellé partout. **Guide de l'élève** : le nom unique « QCM Terminale » (suppression de la mention des deux noms), captures
+  `qcm-accueil`, `accueil` et `connexion` refaites, PDF régénéré (13 pages, aucun débordement). Remplace les entrées
+  intermédiaires du jour (« partout », puis « téléphone seulement »).

@@ -862,10 +862,10 @@ formulaire.addEventListener('submit', async (evenement) => {
       if (themes.length === 0) { afficherEtat(zoneErreurFormulaire, 'Merci de choisir au moins un thème.'); return; }
       const libellesThemes = themesDuType(type).filter((t) => themes.includes(t.id)).map((t) => t.titre);
       donnees = type === 'qcm-bac'
-        ? { type: 'automatismes', cible: 'qcm-bac', themes, niveau, mode, titre: `QCM Bac — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` }
+        ? { type: 'automatismes', cible: 'qcm-bac', themes, niveau, mode, titre: `QCM Terminale — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` }
         : { type: 'automatismes', cible: 'fiche', themes, niveau, mode, titre: `Fiche d'automatismes — ${libellesThemes.join(', ')} — Niveau ${niveau} (mode ${libelleMode})` };
     } else if (type === 'qcm-bac-sujet') {
-      donnees = { type: 'automatismes', cible: 'qcm-bac-sujet', niveau, mode, titre: `Sujet blanc QCM Bac — Niveau ${niveau} (mode ${libelleMode})` };
+      donnees = { type: 'automatismes', cible: 'qcm-bac-sujet', niveau, mode, titre: `Sujet blanc QCM Terminale — Niveau ${niveau} (mode ${libelleMode})` };
     } else {
       donnees = { type: 'automatismes', cible: 'sujet-blanc', niveau, mode, titre: `Sujet blanc — Niveau ${niveau} (mode ${libelleMode})` };
     }
