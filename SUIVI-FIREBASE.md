@@ -167,6 +167,24 @@ depuis la réorganisation du 02/10/2026 »).
   un autre vert) ; l'accueil ne met en vedette que deux cahiers (le reste via « Voir tous les cahiers ») ; largeur de page des
   fiches `max-width: 980px`. Pour prévisualiser accueil et pages de cahier, passer par le serveur local (`file://` ne charge pas
   `assets/css/style.css`) ; les fiches, au CSS en ligne, s'ouvrent en `file://`.
+- **Téléphone en portrait (refonte du 25/10/2026, validée par David)** : uniquement écran de **560 px au plus ET orientation portrait**
+  (ordinateur, tablette et téléphone en paysage inchangés : tout est sous `@media (max-width: 560px) and (orientation: portrait)`).
+  Aucune page modifiée une à une pour la mise en page : **(1) pages à en-tête standard** (27 pages, `.site-nav`) : bloc « TELEPHONE EN PORTRAIT »
+  en fin de `assets/css/style.css` — en-tête de 56 px (logo + icône de profil de 44 px) ; **barre d'onglets fixée en bas** construite avec les quatre
+  liens existants de `.site-nav` (`display: contents` sur la nav, liens en `position: fixed`, icônes en SVG dans le CSS) ; l'onglet de la section en
+  cours reçoit `aria-current` (posé par `pied-droits.js`, d'après le dossier de l'adresse) ; la barre disparaît pendant la saisie dans un champ
+  (`body:has(input:focus…)`) ; carte « Mes devoirs » indigo pleine largeur ; **accueil** : trois grosses cartes (bloc `.accueil-tel` de `index.html`, classe
+  `tel-seulement` ; la section « Automatismes et QCM Terminale » est masquée, ses sous-titres longs restent sur ordinateur/tablette) et « en vedette » en défilement
+  horizontal ; **Tous les cahiers** : sélecteur Seconde / Première / Terminale (script en ligne de `cahiers/index.html`, dernier choix gardé en `localStorage`),
+  lignes compactes numérotées par un compteur CSS (le numéro affiché = la position du cahier dans la liste : **à garder vrai** si on insère un cahier) ; sommaires de cahier :
+  flèches ‹ › + PDF sur une ligne. **(2) Pages de travail** (50 fiches de calcul, fiche et sujet blanc d'automatismes, fiche et sujet blanc QCM Terminale, sans en-tête
+  standard) : `assets/js/haut-fiche-telephone.js` (balise **juste après la balise viewport, dans le `<head>`** de ces 54 pages ; **toute nouvelle fiche doit la
+  contenir**) — fil d'Ariane masqué, barre de navigation sur une ligne de cibles de 44 px (fiches de calcul : Sommaire, ‹, ›, PDF, profil), bandeau de calculatrice, consigne
+  et panneaux de mode compacts (boutons en deux colonnes), bandeau « Devoir » remonté sous la barre, et en **devoir** « Enregistrer / Valider ma fiche » fixés dans une
+  barre en bas (toujours visibles ; le clavier MathLive passe devant). Chaque sélecteur y est précédé de `body` car le script passe avant le `<style>` de la page.
+  `maximum-scale=1` retiré des 27 pages à en-tête standard (zoom autorisé ; leurs champs ont 16 px, pas de zoom automatique sous iOS) et **conservé** sur les 54 pages
+  de travail (champs MathLive). **Piège** : sous Git Bash, `sed -i` convertit les fins de ligne CRLF des pages en LF — passer par un script Node qui les préserve.
+  Vérification : 50 fiches × 360/414 px sans débordement, barre sur une ligne, cibles ≥ 44 px, première question visible dans les 700 px du haut.
 - **Export PDF d'une fiche** : bouton qui appelle `window.print()` (+ `@media print`). **Ne pas retenter** html2pdf / html2canvas /
   jsPDF : le navigateur se bloque sur les champs `<math-field>` (essai du 04/09/2026). L'export d'un **cahier entier** en un seul
   PDF (`assets/js/export-cahier.js`) est en pause depuis le 11/09/2026, quatre architectures tentées (voir `HISTORIQUE.md`).

@@ -293,6 +293,10 @@ les corrections ponctuelles d'une fiche).
   `assets/js/widgets-saisie.js` après `claviers.js` — « Réponse enregistrée »
   et passage à la question suivante au clic sur « Valider », passage d'un
   champ ordinaire vers un widget, clavier numérique sur les champs du widget.
+- **Téléphone en portrait** : toute nouvelle fiche (calcul, automatismes, QCM) charge
+  `assets/js/haut-fiche-telephone.js` juste après la balise viewport (voir SUIVI-FIREBASE.md, « Téléphone en portrait ») ;
+  les barres et boutons du haut de fiche gardent les classes habituelles (`.barre-navigation`, `.nav-btn`, `.entete`,
+  `.bandeau-calculatrice`, `.mode-panneau`) pour que la mise en page téléphone s'y applique.
 - **Barème en points** (fiches pilotes Première 2 et 9, 05/10/2026) : **uniquement dans les
   devoirs** (rien en entraînement libre). L'élève ne voit que les points de chaque question et
   « Total : N points (+ M points de calculs avancés) » en tête, jamais la catégorie ni une

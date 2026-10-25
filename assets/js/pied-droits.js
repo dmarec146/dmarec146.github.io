@@ -53,6 +53,25 @@
     logo.insertBefore(span, logo.firstChild);
   }
 
+  // navigation par onglets du telephone : l'onglet de la section en cours recoit aria-current (style : style.css, bloc TELEPHONE).
+  // Les quatre liens sont, dans l'ordre : Accueil, Cahiers de calcul, Automatismes, QCM Terminale. Une page est « dans » une section
+  // si son adresse commence par le dossier du lien (l'accueil, lui, seulement pour la racine du site).
+  var nav = document.querySelector('.site-nav');
+  if (nav) {
+    var liens = nav.querySelectorAll(':scope > a:not(.nav-icone-profil)');
+    if (liens.length === 4) {
+      var racine = new URL(liens[0].getAttribute('href'), location.href).pathname.replace(/[^\/]*$/, '');
+      var chemin = location.pathname;
+      var courant = -1;
+      if (chemin === racine || chemin === racine + 'index.html') courant = 0;
+      for (var k = 1; k < 4; k++) {
+        var dossier = new URL(liens[k].getAttribute('href'), location.href).pathname.replace(/[^\/]*$/, '');
+        if (chemin.indexOf(dossier) === 0) courant = k;
+      }
+      if (courant >= 0) liens[courant].setAttribute('aria-current', 'page');
+    }
+  }
+
   // ligne de droits : dans le pied de page existant, sinon dans un pied de page cree en fin de page
   var ligne = document.createElement('span');
   ligne.className = 'site-droits-ligne';

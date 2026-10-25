@@ -9128,3 +9128,29 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   libellé partout. **Guide de l'élève** : le nom unique « QCM Terminale » (suppression de la mention des deux noms), captures
   `qcm-accueil`, `accueil` et `connexion` refaites, PDF régénéré (13 pages, aucun débordement). Remplace les entrées
   intermédiaires du jour (« partout », puis « téléphone seulement »).
+
+- **Refonte du téléphone en portrait (25/10/2026), validée par David sur maquette.** Demande : « certaines pages ne sont pas adaptées au
+  téléphone (surtout en vertical), notamment la page d'accueil (les boutons ne tiennent pas sur une ligne…) ». Mesures de départ (375 px) :
+  en-tête de 150 px (navigation sur 2 lignes), « Tous les cahiers » de 3 990 px, première question d'une fiche tout en bas du premier écran,
+  zoom bloqué, textes < 13 px. **Réalisé, uniquement sous `(max-width: 560px) and (orientation: portrait)`** (ordinateur, tablette et paysage
+  vérifiés inchangés à 1280×800, 800×1000, 700×360 et 844×390) : en-tête de 56 px, barre d'onglets fixe en bas (Accueil / Cahiers de calcul / Automatismes /
+  QCM Terminale, onglet courant surligné aux couleurs de la section, libellés à 11 px sous 380 px), accueil à trois grosses cartes + « en vedette » défilant,
+  « Tous les cahiers » avec sélecteur de niveau (≈ 1 150 px au lieu de 3 990), sommaires de cahier compacts, haut de fiche en une ligne de cibles de 44 px,
+  bandeau « Devoir » remonté sous la barre et barre fixe « Enregistrer / Valider » en devoir (première question visible dès le premier écran : y ≈ 480 px sur une
+  fiche de Première). **Écarts voulus par rapport à la maquette** : pas de menu « ⋯ » (PDF et profil restent des icônes de 44 px, un tap de moins) ; pas de compteur « 2 / 26 »
+  (le numéro est dans le badge du titre) ; Terminale ajouté au sélecteur de niveau (cahier « à venir »). **Mise en œuvre sans toucher aux pages une à une** :
+  bloc ajouté à `style.css` (pages à en-tête standard), `aria-current` posé par `pied-droits.js`, nouveau `assets/js/haut-fiche-telephone.js`
+  (balise dans les 54 pages de travail). Seules modifications de contenu : `index.html` (blocs `accueil-tel` et classes de section) et `cahiers/index.html`
+  (sélecteur de niveau). `maximum-scale=1` retiré des 27 pages à en-tête standard (conservé sur les pages de travail). Versions de cache : `style.css?v=20261025c`,
+  `pied-droits.js?v=20261025a`, `claviers.js?v=20261025a` (inchangé quant au contenu), `haut-fiche-telephone.js?v=20261025b`.
+  **Vérifié** (Chrome piloté, tactile) : 7 pages à en-tête standard × 360/375/390/414 px sans débordement, onglets ≥ 48 px de haut et au quart de la largeur,
+  50 fiches × 360 et 414 px (barre sur une ligne, cibles ≥ 44 px, première question < 700 px), barre d'onglets masquée pendant la saisie dans un champ, rendu des cartes
+  « Mes devoirs » et de la barre fixe de devoir par simulation. **Non vérifié** : pages connectées réelles (compte élève avec devoir) et vrai téléphone (clavier système,
+  barre d'adresse mobile) — à essayer par David. **Piège rencontré** : `sed -i` sous Git Bash a converti 81 pages de CRLF en LF (rétabli par script Node) ; l'émulation
+  de la fenêtre du navigateur intégré ne reproduit pas la largeur demandée, d'où les mesures par Chrome piloté (`outils/guide-eleve/navigateur.js`).
+
+- **Débordement du QCM Terminale sur téléphone corrigé (25/10/2026, découvert pendant la refonte du téléphone).** Sur le sujet blanc QCM (360 px),
+  la page défilait horizontalement de 6 à 13 px pour certains tirages (déjà vrai avant la refonte : constaté avec et sans le nouveau script) : une case de
+  réponse (`button.opt`) dont la formule est plus large que l'écran élargissait la piste de la grille `1fr`. Correctif dans `automatismes/assets/automatismes.css`
+  (écrans de 560 px au plus) : piste `minmax(0, 1fr)`, `min-width: 0` sur la case et son texte, formule MathJax réduite à la largeur de la case. Versions de cache
+  `automatismes.css?v=20261025a` (4 pages). Vérifié : 25 tirages × 4 pages de travail (fiche et sujet blanc, Automatismes et QCM) à 360 px, aucun débordement.

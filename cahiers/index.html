@@ -2,11 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tous les cahiers — Cahiers interactifs</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=20261018b">
+<link rel="stylesheet" href="../assets/css/style.css?v=20261025c">
 </head>
-<body>
+<body class="page-cahiers">
 
 <header class="site-entete">
   <div class="enveloppe">
@@ -37,6 +37,12 @@
 </div>
 
 <div class="enveloppe section">
+
+  <div class="seg-niveaux tel-seulement" id="seg-niveaux" role="group" aria-label="Niveau">
+    <button type="button" data-niveau="seconde" aria-pressed="true">Seconde</button>
+    <button type="button" data-niveau="premiere" aria-pressed="false">Première</button>
+    <button type="button" data-niveau="terminale" aria-pressed="false">Terminale</button>
+  </div>
 
   <div class="groupe-niveau" id="niveau-seconde">
     <p class="groupe-niveau-titre">Seconde</p>
@@ -180,10 +186,28 @@
   <span class="site-pied-mention">Mesure de fréquentation anonyme : aucune donnée personnelle, aucun cookie.</span>
 </footer>
 
+<script>
+// Téléphone en portrait : un seul niveau affiché à la fois (la règle .masque-tel n'existe que dans ce cas, voir style.css)
+(function () {
+  var boutons = document.querySelectorAll('#seg-niveaux button');
+  function afficher(niveau) {
+    ['seconde', 'premiere', 'terminale'].forEach(function (n) {
+      document.getElementById('niveau-' + n).classList.toggle('masque-tel', n !== niveau);
+    });
+    boutons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.niveau === niveau ? 'true' : 'false'); });
+    try { localStorage.setItem('niveau_cahiers_tel', niveau); } catch (e) {}
+  }
+  var choix = 'seconde';
+  try { choix = localStorage.getItem('niveau_cahiers_tel') || choix; } catch (e) {}
+  if (!document.getElementById('niveau-' + choix)) choix = 'seconde';
+  boutons.forEach(function (b) { b.addEventListener('click', function () { afficher(b.dataset.niveau); }); });
+  afficher(choix);
+})();
+</script>
 <script type="module" src="../assets/js/nav-auth.js"></script>
 <script type="module" src="../assets/js/statistiques.js"></script>
 <script type="module" src="../assets/js/brouillons-indicateur.js"></script>
 <script type="module" src="../assets/js/devoirs-notification.js"></script>
-<script src="../assets/js/pied-droits.js?v=20261021a"></script>
+<script src="../assets/js/pied-droits.js?v=20261025a"></script>
 </body>
 </html>
