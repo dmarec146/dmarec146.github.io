@@ -89,7 +89,7 @@ async function controlerDansLaPage(opts) {
   const comp = (m) => { let c = memoCompile.get(m); if (!c) { c = math.compile(m); if (memoCompile.size > 60000) memoCompile.clear(); memoCompile.set(m, c); } return c; };
   function versMathjs0(tex) {
     let t = String(tex).replace(/\\(?:small|scriptsize)\s*/g, '').replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
-      .replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
+      .replace(/\^\{?\\circ\}?/g, '').replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
       .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '')
       .replace(/\|([^|]*)\|/g, 'abs($1)');                                      // valeur absolue |x-3| (sans imbrication)
@@ -146,7 +146,8 @@ async function controlerDansLaPage(opts) {
   const aIndice = (s) => /_(\{[^{}]*\}|\d)/.test(s);
   const estApplication = (s) => /^\s*[fgh]\s*(\\left)?\(/.test(s);                        // f(3/2) : image définie par la fonction de l'énoncé
   // P(A\cap B), P_A(B), P_{\overline{C}}(D), E(X), E\left(X^{2}\right), V(X) : probabilité, espérance ou variance nommées par l'énoncé (pas des produits de lettres)
-  const estEtiquetteProba = (s) => /(^|[^A-Za-z\\])[PEV](_\{.*?\}\}|_\{[^{}]*\}|_[A-Za-z0-9])?\s*(\\left)?\(/.test(s);
+  // (et cos(x), sin(x), tan(x) ou leur carre : valeurs liees a l'enonce, pas des identités ; trigonométrie, fiche 18)
+  const estEtiquetteProba = (s) => /(^|[^A-Za-z\\])[PEV](_\{.*?\}\}|_\{[^{}]*\}|_[A-Za-z0-9])?\s*(\\left)?\(/.test(s) || /\\(?:cos|sin|tan)(\^\{2\})?\s*(\\left)?\(\s*x\s*(\\right)?\)/.test(s);
   const aDesLettres = (s) => /[A-Za-z]/.test(s.replace(/\\(?:dfrac|frac|sqrt|times|cdot|div|left|right|pi|infty|lt|gt)(?![A-Za-z])/g, ''));
   const nz = (s) => String(s).replace(/\\\(|\\\)/g, '').replace(/\\lt\s*/g, '<').replace(/\\left|\\right|\\[,;! ]|\s+/g, '');
   // Une chaîne « A = B = C » est vérifiée par paires voisines : deux membres numériques doivent être égaux ; deux membres littéraux
@@ -308,6 +309,7 @@ async function controlerDansLaPage(opts) {
   function comparerFinal(e) {
     const D = e.detail;
     const F = String(D.final).replace(/y_\{t\}/g, 'yt');      // la variable y_t de l'énoncé s'écrit yt dans la réponse attendue (Première 4.6)
+    if (e.type === 'texte' && e.tolereTan) return F.replace(/\\/g, '') === String(e.reponse).replace(/\\/g, '') ? 'ok' : 'faux';   // « \tan(x) » pour « tan(x) » (Première 18.10)
     if (e.type === 'intervalle' && e.intervalleSpec) {
       const exact = formaterIntervalleSpec(e.intervalleSpec);
       if (!e.tolerance) return F === exact || F === exact.replace(/(\d)\.(\d)/g, '$1{,}$2') ? 'ok' : 'faux';
@@ -635,6 +637,7 @@ async function controlerDansLaPage(opts) {
       const clauses = l.split(/\\q?quad/);
       for (const clause of clauses) {
         const parties = clause.split(/\\iff|\\Leftrightarrow/);
+        const ouEnTete = /^\s*(?:\\(?:small|scriptsize)\s*)?\\text\{\s*ou\s*\}/.test(clause);   // « \text{ou } A = B » : seconde moitié d'une disjonction d'équations
         if (parties.length > 1 && !parties[0].trim() && precedent) parties[0] = precedent;
         // chaînes d'égalités dans chaque partie (les parties avec du texte libre sont ignorées, sauf « ou » et les symboles)
         parties.forEach((p) => {
@@ -645,7 +648,7 @@ async function controlerDansLaPage(opts) {
           const pieces = p.split(/\\text\{(?!\s*ou\s*\})[^{}]*\}/).map((s) => s.replace(/[.,;:]\s*$/, '').trim()).filter(Boolean);
           pieces.forEach((piece) => {
             const morceaux = /\\text\{\s*ou\s*\}/.test(piece) ? piece.split(/\\text\{\s*ou\s*\}/) : [piece];
-            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1 || prolongee); if (r === null) return; if (r.illisible) { ctx.chainesIllisibles++; const ill = stats.illisiblesEx || (stats.illisiblesEx = {}); const o = ill[e.id] || (ill[e.id] = { n: 0, ex: q }); o.n++; } else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
+            morceaux.forEach((q) => { const r = verifierChaine(q, e.enonce, parties.length > 1 || prolongee || ouEnTete); if (r === null) return; if (r.illisible) { ctx.chainesIllisibles++; const ill = stats.illisiblesEx || (stats.illisiblesEx = {}); const o = ill[e.id] || (ill[e.id] = { n: 0, ex: q }); o.n++; } else { ctx.chaines++; if (r.faux) noter('erreur', 'chaine-d-egalites-fausse', r.valeurs); } });
           });
         });
         for (let i = 0; i + 1 < parties.length && ctx.equivActif !== false; i++) {

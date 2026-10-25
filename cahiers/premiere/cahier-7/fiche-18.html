@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"18.1 a)":0.5,"18.1 b)":0.75,"18.2 a)":0.75,"18.2 b)":0.5,"18.3 a)":0.5,"18.3 b)":0.5,"18.4 a)":0.5,"18.4 b)":0.5,"18.4 c)":1,"18.4 d)":0.75,"18.5 a)":0.5,"18.5 b)":0.5,"18.5 c)":0.5,"18.5 d)":0.5,"18.6 a)":0.75,"18.6 b)":0.75,"18.6 c)":1,"18.6 d)":1,"18.7 a)":1,"18.7 b)":1,"18.8 a)":1,"18.8 b)":1,"18.8 c)":1.75,"18.8 d)":1.5,"18.9 a)":1.5,"18.9 b)":1.5,"18.9 c)":1.5,"18.9 d)":1.5,"18.10 a)":1.5,"18.10 b)":1.5,"18.11 a)":1.5,"18.11 b)":1.75,"18.11 c)":2},"bonus":["18.9 a)","18.9 b)","18.9 c)","18.9 d)","18.10 a)","18.10 b)","18.11 a)","18.11 b)","18.11 c)"]});
@@ -1155,6 +1157,189 @@ function piFracAscii(f) {
   return f.n === 1 ? `${sign}pi/${f.d}` : `${sign}${f.n}*pi/${f.d}`;
 }
 
+// ---------- details de correction (24/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2 } = DetailQ;
+const lg18 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const ft18 = (f) => fracD(math.fraction(f));                                                // fraction irreductible, signe devant
+const INV18 = { '\\lt ': '>', '>': '\\lt ', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+// multiple rationnel de pi : « -\dfrac{5\pi}{6} », « \pi », « 2\pi », « 0 »
+const pt18 = (f) => { f = math.fraction(f); if (f.n === 0) return '0'; const s = f.s < 0 ? '-' : '', n = f.n === 1 ? '\\pi' : `${f.n}\\pi`; return f.d === 1 ? `${s}${n}` : `${s}\\dfrac{${n}}{${f.d}}`; };
+// valeur remarquable ecrite en ASCII dans les tables (« -sqrt(3)/2 ») -> LaTeX
+const vt18 = (a) => { const m = String(a).match(/^(-?)(?:(\d+)|sqrt\((\d+)\))(?:\/(\d+))?$/), num = m[2] ? m[2] : `\\sqrt{${m[3]}}`; return m[4] ? `${m[1]}\\dfrac{${num}}{${m[4]}}` : `${m[1]}${num}`; };
+// racine simplifiee c sqrt(r) ; un carre parfait (r = 1) s'ecrit sans radical
+const rt18 = (c, r) => (r === 1 ? String(c) : c === 1 ? `\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+const extrait18 = (N, s) => `\\sqrt{${N}} = \\sqrt{${s.coef}^{2}${s.radicand === 1 ? '' : `\\times ${s.radicand}`}} = ${rt18(s.coef, s.radicand)}`;
+const fr18 = (n, d) => (d === 1 ? String(n) : `\\dfrac{${n}}{${d}}`);
+// signe * coef sqrt(rad) / den, fraction reduite
+function surdFracTex18(signe, coef, rad, den) {
+  const g = pgcd(coef, den), cc = coef / g, dd = den / g, num = rad === 1 ? String(cc) : `${cc === 1 ? '' : cc}\\sqrt{${rad}}`;
+  return `${signe < 0 ? '-' : ''}${fr18(num, dd)}`;
+}
+function finIneq18(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV18[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// 18.1 a) m(px+q) op n(rx+s)
+function detail181a(m, n, pp, rr, q, s, op, spec) {
+  const A = m * pp - n * rr, C = n * s - m * q;
+  return { lignes: [`${coefPrefixeL(m)}\\left(${lg18(pp, q)}\\right) ${op} ${coefPrefixeL(n)}\\left(${lg18(rr, s)}\\right)`, `\\iff ${polyF2([{ c: m * pp, v: 'x' }, { c: m * q, v: '' }])} ${op} ${polyF2([{ c: n * rr, v: 'x' }, { c: n * s, v: '' }])}`,
+    `\\iff ${polyF2([{ c: A, v: 'x' }])} ${op} ${C}`, ...finIneq18(A, op, C, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 18.1 b) (ax+b)(cx+d) op 0
+function detail181b(a, b, cc, d, op, spec) {
+  const lu = lg18(a, b), lv = lg18(cc, d), S = formaterIntervalleSpec(spec);
+  const tableau = Detail.tableauSignesFacteurs([{ label: lu, v: -b / a, tex: fracTexte(-b, a), sgn: Math.sign(a) }, { label: lv, v: -d / cc, tex: fracTexte(-d, cc), sgn: Math.sign(cc) }], 'signe');
+  return { lignes: [`\\left(${lu}\\right)\\left(${lv}\\right) ${op} 0`, ...Detail.lignesSigneAffine(a, b), ...Detail.lignesSigneAffine(cc, d), '\\text{Tableau de signes du produit}', tableau,
+    '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles l'expression est } ${op}\\ 0`, `S = ${S}`], final: S };
+}
+// 18.2 a) k1/(x+b) = k2/(x+d)
+function detail182a(k1, k2, b, d, sol) {
+  const f = (k, den) => `${k < 0 ? '-' : ''}\\dfrac{${Math.abs(k)}}{${den}}`, S = `\\{${ft18(sol)}\\}`, num = k2 * b - k1 * d;
+  return { lignes: [`\\text{Valeurs interdites : } ${-b} \\text{ et } ${-d}`, `${f(k1, lg18(1, b))} = ${f(k2, lg18(1, d))}`, `\\iff ${coefPrefixeL(k1)}\\left(${lg18(1, d)}\\right) = ${coefPrefixeL(k2)}\\left(${lg18(1, b)}\\right)`,
+    `\\iff ${polyF2([{ c: k1, v: 'x' }, { c: k1 * d, v: '' }])} = ${polyF2([{ c: k2, v: 'x' }, { c: k2 * b, v: '' }])}`, `\\iff ${polyF2([{ c: k1 - k2, v: 'x' }])} = ${num}`,
+    `\\iff x = ${dedup2(Detail.quotientBrut(num, k1 - k2), ft18(sol))}`, "\\text{Cette valeur n'est pas interdite}", `S = ${S}`], final: S };
+}
+// 18.2 b) |ax+b| = c
+function detail182b(a, b, c0, lo, hi) {
+  const lin = lg18(a, b), x1 = math.fraction(c0 - b, a), x2 = math.fraction(-c0 - b, a), S = `\\{${ft18(lo)}\\,;\\,${ft18(hi)}\\}`;
+  return { lignes: [`\\left|${lin}\\right| = ${c0}`, `\\iff ${lin} = ${c0} \\text{ ou } ${lin} = ${-c0}`, `\\iff ${polyF2([{ c: a, v: 'x' }])} = ${c0 - b} \\text{ ou } ${polyF2([{ c: a, v: 'x' }])} = ${-c0 - b}`,
+    `\\iff x = ${ft18(x1)} \\text{ ou } x = ${ft18(x2)}`, `S = ${S}`], final: S };
+}
+// 18.3 a) p pi / q rad en degres
+function detail183a(p, q) {
+  const deg = 180 * p / q;
+  return { lignes: ['\\text{On multiplie par } \\dfrac{180}{\\pi}', `${pt18(math.fraction(p, q))}\\times\\dfrac{180}{\\pi} = \\dfrac{${180 * p}}{${q}} = ${deg}^\\circ`], final: String(deg) };
+}
+// 18.3 b) d degres en radians (d entier ou decimal en .5)
+function detail183b(p, q) {
+  const d = 180 * p / q, ent = Number.isInteger(d), dTex = ent ? String(d) : String(d).replace('.', '{,}'), fin = pt18(math.fraction(p, q));
+  const l = ['\\text{On multiplie par } \\dfrac{\\pi}{180}', `${dTex}^\\circ\\times\\dfrac{\\pi}{180} = \\dfrac{${dTex}\\pi}{180}`];
+  if (!ent) l.push(`= \\dfrac{${2 * d}\\pi}{360}`);
+  l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 18.4 mesure principale de p pi / q (p/q irreductible), q >= 2
+function detail184(p, q) {
+  const k0 = Math.floor(p / (2 * q)), r0 = p - 2 * q * k0, rp = r0 > q ? r0 - 2 * q : r0, tour = k0 === 1 ? '2\\pi' : k0 === -1 ? '-2\\pi' : `${dP(k0)}\\times 2\\pi`, l = [];
+  if (k0 !== 0) l.push(`${p} = ${k0 === 1 ? '' : k0 === -1 ? '-' : `${dP(k0)}\\times `}${2 * q}+${r0}`, `${pt18(math.fraction(p, q))} = ${tour}+${pt18(math.fraction(r0, q))}`);
+  if (r0 > q) l.push(`${pt18(math.fraction(r0, q))}-2\\pi = ${pt18(math.fraction(rp, q))}`);
+  return { lignes: l, final: pt18(math.fraction(rp, q)) };
+}
+// cos / sin d'un angle k pi/12 (k dans [0 ; 24[) par reduction au premier quadrant : lignes menant a la valeur
+function trigLignes18(fn, k) {
+  const T = fn === 'cos' ? COS_TABLE : SIN_TABLE, F = `\\${fn}`, th = angleLatex(k), val = vt18(T[k]), A = (a) => angleLatex(a);
+  if (k % 6 === 0 || k < 6) return { lignes: [`${F}\\left(${th}\\right) = ${val}`], val };
+  if (k < 12) { const a = 12 - k; return { lignes: [`${F}\\left(${th}\\right) = ${F}\\left(\\pi-${A(a)}\\right)`, `= ${fn === 'cos' ? '-' : ''}${F}\\left(${A(a)}\\right) = ${val}`], val }; }
+  if (k < 18) { const a = k - 12; return { lignes: [`${F}\\left(${th}\\right) = ${F}\\left(\\pi+${A(a)}\\right)`, `= -${F}\\left(${A(a)}\\right) = ${val}`], val }; }
+  const a = 24 - k;
+  return { lignes: [`${F}\\left(${th}\\right) = ${F}\\left(2\\pi-${A(a)}\\right)`, `= ${fn === 'cos' ? '' : '-'}${F}\\left(${A(a)}\\right) = ${val}`], val };
+}
+// 18.5 : angle remarquable (k pi/12, k dans NICE_K)
+function detail185(fn, k) { const T = trigLignes18(fn, k); return { lignes: T.lignes, final: T.val }; }
+// 18.6 : angle k pi/12 hors de [0 ; 2pi[ : on retire des tours puis on se ramene au premier quadrant
+function detail186(fn, k) {
+  const n = Math.floor(k / 24), kp = k - 24 * n, F = `\\${fn}`, T = trigLignes18(fn, kp), l = [];
+  if (n !== 0) {
+    const tours = `${n === 1 ? '' : n === -1 ? '-' : `${dP(n)}\\times `}2\\pi`;
+    l.push('\\text{On ajoute ou on retire des multiples de } 2\\pi', `${angleLatex(k)} = ${kp === 0 ? tours : n < 0 ? `${tours}+${angleLatex(kp)}` : `${angleLatex(kp)}+${tours}`}`);
+    l.push(`${F}\\left(${angleLatex(k)}\\right) = ${T.lignes[0]}`, ...T.lignes.slice(1));
+  } else l.push(...T.lignes);
+  return { lignes: l, final: T.val };
+}
+// 18.7 a) sin x = n/d -> cos x
+function detail187a(n, d, positif, s) {
+  const N = d * d - n * n, sg = positif ? '' : '-', fin = surdFracTex18(positif ? 1 : -1, s.coef, s.radicand, d), cur = `${sg}${fr18(rt18(s.coef, s.radicand), d)}`;
+  const l = ['\\cos^{2}(x)+\\sin^{2}(x) = 1', `\\cos^{2}(x) = 1-\\left(\\dfrac{${n}}{${d}}\\right)^{2}`, `= 1-\\dfrac{${n * n}}{${d * d}} = \\dfrac{${N}}{${d * d}}`,
+    positif ? '\\text{Le cosinus est positif sur } \\left[0\\,;\\dfrac{\\pi}{2}\\right]' : '\\text{Le cosinus est négatif sur } \\left[\\dfrac{\\pi}{2}\\,;\\pi\\right]', `\\cos(x) = ${sg}\\sqrt{\\dfrac{${N}}{${d * d}}} = ${sg}\\dfrac{\\sqrt{${N}}}{${d}}`];
+  if (s.coef !== 1) l.push(extrait18(N, s), `\\cos(x) = ${cur}`);
+  if (cur !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 18.7 b) cos x = sqrt(D)/d -> sin x
+function detail187b(D, d, positif, s) {
+  const N = d * d - D, sg = positif ? '' : '-', fin = surdFracTex18(positif ? 1 : -1, s.coef, s.radicand, d), cur = `${sg}${fr18(rt18(s.coef, s.radicand), d)}`;
+  const l = ['\\cos^{2}(x)+\\sin^{2}(x) = 1', `\\sin^{2}(x) = 1-\\left(\\dfrac{\\sqrt{${D}}}{${d}}\\right)^{2}`, `= 1-\\dfrac{${D}}{${d * d}} = \\dfrac{${N}}{${d * d}}`,
+    positif ? '\\text{Le sinus est positif sur } \\left[0\\,;\\dfrac{\\pi}{2}\\right]' : '\\text{Le sinus est négatif sur } \\left[-\\dfrac{\\pi}{2}\\,;0\\right]', `\\sin(x) = ${sg}\\sqrt{\\dfrac{${N}}{${d * d}}} = ${sg}\\dfrac{\\sqrt{${N}}}{${d}}`];
+  if (s.coef !== 1) l.push(extrait18(N, s), `\\sin(x) = ${cur}`);
+  if (cur !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 18.8 a) b) : a cos(x) = d ou a sin(x) = d, solutions dans ]-pi ; pi]
+// valeurs entieres de k pour lesquelles u + k per (multiples de pi) est dans ]-1 ; 1]
+const ensK18 = (u, per) => { const ks = []; for (let j = -15; j <= 15; j++) { const v = math.add(math.fraction(u), math.multiply(j, per)).valueOf(); if (v > -1 + 1e-12 && v <= 1 + 1e-12) ks.push(j); } return ks.length === 1 ? `k = ${ks[0]}` : `k \\in \\{${ks.join('\\,;\\,')}\\}`; };
+const plus2k18 = (f) => (math.fraction(f).n === 0 ? '2k\\pi' : `${pt18(f)}+2k\\pi`);
+const ramener18 = (f) => { // valeur (multiple de pi) ramenee dans ]-1 ; 1] : { texte des lignes, valeur }
+  f = math.fraction(f); const l = [];
+  if (f.valueOf() > 1) { const g = math.subtract(f, 2); l.push(`${pt18(f)}-2\\pi = ${pt18(g)}`); f = g; }
+  else if (f.valueOf() <= -1) { const g = math.add(f, 2); l.push(`${pt18(f)}+2\\pi = ${pt18(g)}`); f = g; }
+  return { l, f };
+};
+function detail188ab(fn, a, tTex, dTex, al, xs) {
+  const A = math.fraction(al), B = fn === 'cos' ? math.multiply(-1, A) : math.subtract(1, A), F = `\\${fn}`, S = `\\{${xs.map(pt18).join('\\,;\\,')}\\}`;
+  const l = [`${coefPrefixeL(a)}${F}(x) = ${dTex}`, `\\iff ${F}(x) = ${tTex}`, `\\iff ${F}(x) = ${F}\\left(${pt18(A)}\\right)`, `\\iff x = ${plus2k18(A)} \\text{ ou } x = ${plus2k18(B)}`, 'k \\in \\mathbb{Z}', "\\text{On garde les valeurs qui sont dans } \\left]-\\pi\\,;\\pi\\right]"];
+  const r1 = ramener18(A), r2 = ramener18(B);
+  l.push(...r1.l, ...r2.l, `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 18.8 c) d) : a cos(bx+c) = d ou a sin(bx+c) = d
+function detail188cd(fn, a, tTex, dTex, al, b, cc, arg, xs) {
+  const A = math.fraction(al), B = fn === 'cos' ? math.multiply(-1, A) : math.subtract(1, A), F = `\\${fn}`, S = `\\{${xs.map(pt18).join('\\,;\\,')}\\}`, ab = Math.abs(b), per = math.fraction(2, ab);
+  const u1 = math.divide(math.subtract(A, cc), b), u2 = math.divide(math.subtract(B, cc), b), pas = ab === 1 ? '2k\\pi' : ab === 2 ? 'k\\pi' : `k\\times ${pt18(per)}`, bx = polyF2([{ c: b, v: 'x' }]), fam = (u) => (math.fraction(u).n === 0 ? pas : `${pt18(u)}+${pas}`);
+  const l = [`${coefPrefixeL(a)}${F}\\left(${arg}\\right) = ${dTex}`, `\\iff ${F}\\left(${arg}\\right) = ${tTex}`, `\\iff ${F}\\left(${arg}\\right) = ${F}\\left(${pt18(A)}\\right)`,
+    `\\iff ${arg} = ${plus2k18(A)}`, `\\text{ou } ${arg} = ${plus2k18(B)}`, ...(b === 1 ? [] : [`\\iff ${bx} = ${plus2k18(math.subtract(A, cc))} \\text{ ou } ${bx} = ${plus2k18(math.subtract(B, cc))}`]),
+    `\\iff x = ${fam(u1)} \\text{ ou } x = ${fam(u2)}`, 'k \\in \\mathbb{Z}', "\\text{On garde les valeurs qui sont dans } \\left]-\\pi\\,;\\pi\\right]", `\\text{Pour la 1re famille : } ${ensK18(u1, per)}`, `\\text{Pour la 2e famille : } ${ensK18(u2, per)}`, `S = ${S}`];
+  return { lignes: l, final: S };
+}
+// 18.9 tangente d'un angle remarquable
+function detail189(k) {
+  const th = angleLatex(k), s = vt18(SIN_TABLE[k]), c = vt18(COS_TABLE[k]), res = vt18(TAN_TABLE[k]), t = TAN_TABLE[k], neg = t.startsWith('-');
+  const l = [`\\tan\\left(${th}\\right) = \\dfrac{\\sin\\left(${th}\\right)}{\\cos\\left(${th}\\right)}`];
+  if (c !== '1') l.push(`= \\dfrac{${s}}{${c}}`);
+  if (/sqrt\(3\)\/3/.test(t)) l.push(`= ${neg ? '-' : ''}\\dfrac{1}{\\sqrt{3}}`);
+  l.push(`= ${res}`);
+  return { lignes: l, final: res };
+}
+// 18.10 a) parite de la tangente
+function detail1810a() {
+  return { lignes: ['\\tan(-x) = \\dfrac{\\sin(-x)}{\\cos(-x)}', '= \\dfrac{-\\sin(x)}{\\cos(x)}', '= -\\tan(x)', '\\text{La fonction tangente est impaire}', '\\text{Réponse : } b'], final: 'b' };
+}
+// 18.10 b) simplifier tan(expr)
+function detail1810b(famille, expr, reponse) {
+  const fin = reponse === 'tan(x)' ? '\\tan(x)' : '-\\tan(x)';
+  const per = '\\text{La tangente est périodique de période } \\pi';
+  if (famille === 0) return { lignes: [per, `\\tan\\left(${expr}\\right) = \\tan(x)`], final: fin };
+  return { lignes: [per, `\\tan\\left(${expr}\\right) = \\tan(-x)`, '\\text{La tangente est impaire}', '\\tan(-x) = -\\tan(x)'], final: fin };
+}
+// 18.11 a) cos x = +-u/c, quadrant -> tan x
+function detail1811a(u, v, c1, interv, sCos, sSin) {
+  const tan = math.fraction(sSin * sCos * v, u), fin = ft18(tan), si = sSin < 0 ? '-' : '', co = sCos < 0 ? '-' : '', I = `\\left[${interv}\\right]`;
+  return { lignes: ['\\sin^{2}(x)+\\cos^{2}(x) = 1', `\\sin^{2}(x) = 1-\\left(${co}\\dfrac{${u}}{${c1}}\\right)^{2}`, `= 1-\\dfrac{${u * u}}{${c1 * c1}} = \\dfrac{${v * v}}{${c1 * c1}}`,
+    `\\text{Le sinus est ${sSin > 0 ? 'positif' : 'négatif'} sur } ${I}`, `\\sin(x) = ${si}\\dfrac{${v}}{${c1}}`, '\\tan(x) = \\dfrac{\\sin(x)}{\\cos(x)}', `= \\dfrac{${si}\\dfrac{${v}}{${c1}}}{${co}\\dfrac{${u}}{${c1}}}`, `= ${fin}`], final: fin };
+}
+// 18.11 b) cos x = +-a/sqrt(D), x dans [0 ; pi] -> tan x
+function detail1811b(a, D, neg, s) {
+  const N = D - a * a, sg = neg ? '-' : '', fin = surdFracTex18(neg ? -1 : 1, s.coef, s.radicand, a), cur = `${sg}${fr18(rt18(s.coef, s.radicand), a)}`;
+  const l = ['\\sin^{2}(x)+\\cos^{2}(x) = 1', `\\sin^{2}(x) = 1-\\left(${sg}\\dfrac{${a}}{\\sqrt{${D}}}\\right)^{2}`, `= 1-\\dfrac{${a * a}}{${D}} = \\dfrac{${N}}{${D}}`, '\\text{Le sinus est positif sur } \\left[0\\,;\\pi\\right]',
+    `\\sin(x) = \\sqrt{\\dfrac{${N}}{${D}}} = \\dfrac{\\sqrt{${N}}}{\\sqrt{${D}}}`, '\\tan(x) = \\dfrac{\\sin(x)}{\\cos(x)}', `= \\dfrac{\\dfrac{\\sqrt{${N}}}{\\sqrt{${D}}}}{${sg}\\dfrac{${a}}{\\sqrt{${D}}}}`, `= ${sg}${fr18(`\\sqrt{${N}}`, a)}`];
+  if (s.coef !== 1) l.push(extrait18(N, s), `\\tan(x) = ${cur}`);
+  if (cur !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 18.11 c) tan x = +-p/q, quadrant -> sin x
+function detail1811c(pp, q, interv, sCos, sSin, s) {
+  const N = pp * pp + q * q, neg = sSin * sCos < 0, tn = q === 1 ? String(pp) : `\\dfrac{${pp}}{${q}}`, si = sSin < 0 ? '-' : '', co = sCos < 0 ? '-' : '', I = `\\left[${interv}\\right]`, den = s.coef * s.radicand;
+  const fin = surdFracTex18(sSin, pp, s.radicand, den), l = ['\\cos^{2}(x) = \\dfrac{1}{1+\\tan^{2}(x)}', `= \\dfrac{1}{1+${q === 1 ? `${pp}^{2}` : `\\left(${tn}\\right)^{2}`}} = \\dfrac{${q * q}}{${N}}`,
+    `\\text{Le cosinus est ${sCos > 0 ? 'positif' : 'négatif'} sur } ${I}`, `\\cos(x) = ${co}\\dfrac{${q}}{\\sqrt{${N}}}`, '\\sin(x) = \\tan(x)\\cos(x)', `= \\left(${neg ? '-' : ''}${tn}\\right)\\times\\left(${co}\\dfrac{${q}}{\\sqrt{${N}}}\\right)`,`= ${si}\\dfrac{${pp}}{\\sqrt{${N}}}`];
+  if (s.coef !== 1) l.push(extrait18(N, s));
+  if (s.coef !== 1) l.push(`= ${si}\\dfrac{${pp}}{${rt18(s.coef, s.radicand)}}`);
+  l.push(`= ${si}\\dfrac{${pp}\\sqrt{${s.radicand}}}{${den}}`);
+  if (`${si}\\dfrac{${pp}\\sqrt{${s.radicand}}}{${den}}` !== fin) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
 function genererExercices() {
   const ex = [];
   // ---------- 18.1 a 18.3 : automatismes (06/10/2026 : regle de diversite -- inequations, equations,
@@ -1188,16 +1373,18 @@ function genererExercices() {
       A = m*pp - n*rr; B = m*q - n*s;
     } while (A === 0);
     const op = OPS18[alea(0,3)];
-    ex.push({id:"18.1 a)", type:"intervalle", texteLibre:true, enonce:`\\(${coefPrefixeL(m)}(${lin18(pp,q)})${op}${coefPrefixeL(n)}(${lin18(rr,s)})\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne18([-B/A], x => A*x + B, op)}});
+    const spec181a = {type:'intervalles', liste: parSigne18([-B/A], x => A*x + B, op)};
+    ex.push({id:"18.1 a)", detail: detail181a(m, n, pp, rr, q, s, op, spec181a), type:"intervalle", texteLibre:true, enonce:`\\(${coefPrefixeL(m)}(${lin18(pp,q)})${op}${coefPrefixeL(n)}(${lin18(rr,s)})\\)`,
+      intervalleSpec: spec181a});
   }
   // 18.1 b) produit de deux facteurs affines : (ax+b)(cx+d) op 0
   {
     let a, b, cc, d;
     do { a = aleaNonNul(-3,3); cc = aleaNonNul(-3,3); b = aleaNonNul(-8,8); d = aleaNonNul(-8,8); } while (b * cc === d * a);   // racines distinctes
     const op = OPS18[alea(0,3)];
-    ex.push({id:"18.1 b)", type:"intervalle", texteLibre:true, enonce:`\\((${lin18(a,b)})(${lin18(cc,d)})${op}0\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne18([-b/a, -d/cc], x => (a*x + b)*(cc*x + d), op)}});
+    const spec181b = {type:'intervalles', liste: parSigne18([-b/a, -d/cc], x => (a*x + b)*(cc*x + d), op)};
+    ex.push({id:"18.1 b)", detail: detail181b(a, b, cc, d, op, spec181b), type:"intervalle", texteLibre:true, enonce:`\\((${lin18(a,b)})(${lin18(cc,d)})${op}0\\)`,
+      intervalleSpec: spec181b});
   }
   // 18.2 a) equation rationnelle : k1/(x+b) = k2/(x+d)
   {
@@ -1206,24 +1393,24 @@ function genererExercices() {
       k1 = aleaNonNul(-5,5); k2 = aleaNonNul(-5,5); b = aleaNonNul(-6,6); d = aleaNonNul(-6,6);
       sol = math.fraction(k2*b - k1*d, k1 - k2 || 1);
     } while (k1 === k2 || b === d || sol.valueOf() === -b || sol.valueOf() === -d);
-    ex.push({id:"18.2 a)", type:"num", texteLibre:true, enonce:`\\(${fracSigne18(k1, lin18(1,b))}=${fracSigne18(k2, lin18(1,d))}\\)`, reponse:`{${fracToStr(sol)}}`});
+    ex.push({id:"18.2 a)", detail: detail182a(k1, k2, b, d, sol), type:"num", texteLibre:true, enonce:`\\(${fracSigne18(k1, lin18(1,b))}=${fracSigne18(k2, lin18(1,d))}\\)`, reponse:`{${fracToStr(sol)}}`});
   }
   // 18.2 b) valeur absolue : |ax+b| = c (deux solutions)
   {
     const a = aleaNonNul(-5,5), b = aleaNonNul(-9,9), c0 = alea(1,9);
     const s1 = math.fraction(c0 - b, a), s2 = math.fraction(-c0 - b, a);
     const [lo, hi] = s1.valueOf() < s2.valueOf() ? [s1, s2] : [s2, s1];
-    ex.push({id:"18.2 b)", type:"num", texteLibre:true, enonce:`\\(\\left|${lin18(a,b)}\\right|=${c0}\\)`, reponse:`{${fracToStr(lo)};${fracToStr(hi)}}`});
+    ex.push({id:"18.2 b)", detail: detail182b(a, b, c0, lo, hi), type:"num", texteLibre:true, enonce:`\\(\\left|${lin18(a,b)}\\right|=${c0}\\)`, reponse:`{${fracToStr(lo)};${fracToStr(hi)}}`});
   }
   // 18.3 : conversions ; l'angle est p*pi/q avec p/q irreductible, entre 0 et 2*pi
   {
     const QA = [2,3,4,5,6,9,10,12,15,18,20], QB = [2,3,4,5,6,8,9,10,12,15,18,20];
     const tirer = (pool) => { let p, q; do { q = pool[alea(0,pool.length-1)]; p = alea(1, 2*q - 1); } while (pgcd(p,q) !== 1); return [p, q]; };
     const [p1, q1] = tirer(QA);
-    ex.push({id:"18.3 a)", type:"num", texteLibre:true, uniteDegre:true, enonce: (p1 === 1 ? `\\(\\dfrac{\\pi}{${q1}}` : `\\(\\dfrac{${p1}\\pi}{${q1}}`) + '\\ \\text{rad}\\)', reponse: String(180*p1/q1)});
+    ex.push({id:"18.3 a)", detail: detail183a(p1, q1), type:"num", texteLibre:true, uniteDegre:true, enonce: (p1 === 1 ? `\\(\\dfrac{\\pi}{${q1}}` : `\\(\\dfrac{${p1}\\pi}{${q1}}`) + '\\ \\text{rad}\\)', reponse: String(180*p1/q1)});
     const [p2, q2] = tirer(QB);
     const deg = 180*p2/q2, degAff = Number.isInteger(deg) ? String(deg) : String(deg).replace('.', '{,}');
-    ex.push({id:"18.3 b)", type:"num", texteLibre:true, fractionIrreductible:true, facteurSymbolique:"pi", enonce:`\\(${degAff}^\\circ\\)`, reponse: piFracAscii(math.fraction(p2, q2))});
+    ex.push({id:"18.3 b)", detail: detail183b(p2, q2), type:"num", texteLibre:true, fractionIrreductible:true, facteurSymbolique:"pi", enonce:`\\(${degAff}^\\circ\\)`, reponse: piFracAscii(math.fraction(p2, q2))});
   }
   // Calcul 18.4 - mesure principale d'un angle (4 items, du plus simple au plus delicat) : l'angle est p*pi/q
   // (p/q irreductible) et sa mesure principale appartient a ]-pi ; pi]
@@ -1240,7 +1427,7 @@ function genererExercices() {
     ];
     ['a)','b)','c)','d)'].forEach((l, i) => {
       const [pp, q] = niveaux[i]();
-      ex.push({id:`18.4 ${l}`, type:"num", texteLibre:true, fractionIrreductible:true, facteurSymbolique:"pi", enonce:`\\(${angle(pp, q)}\\)`, reponse: piFracAscii(mesurePrincipale(pp, q))});
+      ex.push({id:`18.4 ${l}`, detail: detail184(pp, q), type:"num", texteLibre:true, fractionIrreductible:true, facteurSymbolique:"pi", enonce:`\\(${angle(pp, q)}\\)`, reponse: piFracAscii(mesurePrincipale(pp, q))});
     });
   })();
   // Calcul 18.5 - premiers angles, directs, distincts ; deux cosinus et deux sinus dans un ordre tire au hasard
@@ -1250,7 +1437,7 @@ function genererExercices() {
     ['a)','b)','c)','d)'].forEach((l,i) => {
       const k = ks[i], fn = fns[i];
       const table = fn === 'cos' ? COS_TABLE : SIN_TABLE;
-      ex.push({id:`18.5 ${l}`, type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[k]});
+      ex.push({id:`18.5 ${l}`, detail: detail185(fn, k), type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[k]});
     });
   })();
   // Calcul 18.6 - autres angles : la mesure principale doit etre cherchee (angle hors de ]-pi ; pi])
@@ -1268,7 +1455,7 @@ function genererExercices() {
         // la mesure principale, la lecture sur un cercle ne suffit plus (06/10/2026, demande de David)
         do { k = (alea(0,1)===0 ? 1 : -1) * NICE_K[alea(0,NICE_K.length-1)] + 12*(alea(0,1)===0 ? 1 : -1)*alea(8,40); } while (Math.abs(k) < 96);   // au moins 8 demi-tours (8*pi)
       }
-      ex.push({id:`18.6 ${l}`, type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[mod24(k)]});
+      ex.push({id:`18.6 ${l}`, detail: detail186(fn, k), type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\${fn}\\left(${angleLatex(k)}\\right)\\)`, reponse: table[mod24(k)]});
     });
   })();
   // fraction a/den reduite, signe devant : « -2*sqrt(7)/3 » ; rad = 1 donne un rationnel
@@ -1282,13 +1469,13 @@ function genererExercices() {
     let n1, d1; do { n1 = alea(1,6); d1 = alea(n1+1,9); } while (pgcd(n1,d1) !== 1);
     const s1 = simplifierRacine(d1*d1-n1*n1);
     const positif1 = alea(0,1) === 0;   // x dans [0;pi/2] (cos > 0) ou [pi/2;pi] (cos < 0)
-    ex.push({id:"18.7 a)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\sin(x)=\\dfrac{${n1}}{${d1}}\\) et \\(x\\in\\left[${positif1 ? '0;\\dfrac{\\pi}{2}' : '\\dfrac{\\pi}{2};\\pi'}\\right]\\), que vaut \\(\\cos(x)\\) ?`, reponse: surdFrac(positif1 ? 1 : -1, s1.coef, s1.radicand, d1)});
+    ex.push({id:"18.7 a)", detail: detail187a(n1, d1, positif1, s1), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\sin(x)=\\dfrac{${n1}}{${d1}}\\) et \\(x\\in\\left[${positif1 ? '0;\\dfrac{\\pi}{2}' : '\\dfrac{\\pi}{2};\\pi'}\\right]\\), que vaut \\(\\cos(x)\\) ?`, reponse: surdFrac(positif1 ? 1 : -1, s1.coef, s1.radicand, d1)});
 
     const d2 = alea(2,6);
     let D2; do { D2 = alea(1,d2*d2-1); } while (Number.isInteger(Math.sqrt(D2)) || Number.isInteger(Math.sqrt(d2*d2-D2)));
     const c2 = simplifierRacine(d2*d2 - D2);
     const positif2 = alea(0,1) === 0;   // x dans [0;pi/2] (sin > 0) ou [-pi/2;0] (sin < 0)
-    ex.push({id:"18.7 b)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=\\dfrac{\\sqrt{${D2}}}{${d2}}\\) et \\(x\\in\\left[${positif2 ? '0;\\dfrac{\\pi}{2}' : '-\\dfrac{\\pi}{2};0'}\\right]\\), que vaut \\(\\sin(x)\\) ?`, reponse: surdFrac(positif2 ? 1 : -1, c2.coef, c2.radicand, d2)});
+    ex.push({id:"18.7 b)", detail: detail187b(D2, d2, positif2, c2), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=\\dfrac{\\sqrt{${D2}}}{${d2}}\\) et \\(x\\in\\left[${positif2 ? '0;\\dfrac{\\pi}{2}' : '-\\dfrac{\\pi}{2};0'}\\right]\\), que vaut \\(\\sin(x)\\) ?`, reponse: surdFrac(positif2 ? 1 : -1, c2.coef, c2.radicand, d2)});
   })();
   // Calcul 18.8 - equations trigonometriques dans ]-pi ; pi] (4 items) : a cos(x) = b, a sin(x) = b, puis
   // a cos(2x+c) = d, a sin(2x+c) = d (angles remarquables). Les angles sont comptes en multiples de pi.
@@ -1329,7 +1516,7 @@ function genererExercices() {
     ['cos','sin'].forEach((fn, i) => {
       const v = VAL[fn][alea(0, VAL[fn].length-1)], a = a0();
       const d = math.multiply(a, math.fraction(v.c[0], v.c[1]));
-      ex.push({id:`18.8 ${['a)','b)'][i]}`, type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true,
+      ex.push({id:`18.8 ${['a)','b)'][i]}`, detail: detail188ab(fn, a, latexValeur(math.fraction(v.c[0], v.c[1]), v.r), latexValeur(d, v.r), math.fraction(v.al[0], v.al[1]), resoudre(fn, math.fraction(v.al[0], v.al[1]), 1, math.fraction(0))), type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true,
         enonce:`\\(${coefPrefixeL(a)}\\${fn}(x)=${latexValeur(d, v.r)}\\)`,
         reponse: ensemble(resoudre(fn, math.fraction(v.al[0], v.al[1]), 1, math.fraction(0)))});
     });
@@ -1340,7 +1527,7 @@ function genererExercices() {
       const k = v.f === 'S' ? aleaNonNul(-5,5) : aleaNonNul(-3,3);
       const cc = math.fraction(k, v.f === 'S' ? 6 : 4);
       const d = math.multiply(a, math.fraction(v.c[0], v.c[1]));
-      ex.push({id:`18.8 ${['c)','d)'][i]}`, type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true,
+      ex.push({id:`18.8 ${['c)','d)'][i]}`, detail: detail188cd(fn, a, latexValeur(math.fraction(v.c[0], v.c[1]), v.r), latexValeur(d, v.r), math.fraction(v.al[0], v.al[1]), b, cc, argLatex(b, cc), resoudre(fn, math.fraction(v.al[0], v.al[1]), b, cc)), type:"num", ensembleMath:true, ensemblePi:true, texteLibre:true,
         enonce:`\\(${coefPrefixeL(a)}\\${fn}\\left(${argLatex(b, cc)}\\right)=${latexValeur(d, v.r)}\\)`,
         reponse: ensemble(resoudre(fn, math.fraction(v.al[0], v.al[1]), b, cc))});
     });
@@ -1350,11 +1537,11 @@ function genererExercices() {
     const ks = piocheDistinct(NICE_K_TAN, 4);
     ['a)','b)','c)','d)'].forEach((l,i) => {
       const k = ks[i];
-      ex.push({id:`18.9 ${l}`, type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: TAN_TABLE[k]});
+      ex.push({id:`18.9 ${l}`, detail: detail189(k), type:"num", formeValeur:true, texteLibre:true, enonce:`\\(\\tan\\left(${angleLatex(k)}\\right)\\)`, reponse: TAN_TABLE[k]});
     });
   })();
   // Calcul 18.10 - parite et periodicite de la tangente (2 items)
-  ex.push({id:"18.10 a)", type:"qcm", texteLibre:true, enonce:"La fonction \\(x\\mapsto\\tan(x)\\) est :", bonneReponse:"b", options:[{lettre:"a",texte:"paire",texteLibreOption:true},{lettre:"b",texte:"impaire",texteLibreOption:true},{lettre:"c",texte:"aucune des deux",texteLibreOption:true}]});
+  ex.push({id:"18.10 a)", detail: detail1810a(), type:"qcm", texteLibre:true, enonce:"La fonction \\(x\\mapsto\\tan(x)\\) est :", bonneReponse:"b", options:[{lettre:"a",texte:"paire",texteLibreOption:true},{lettre:"b",texte:"impaire",texteLibreOption:true},{lettre:"c",texte:"aucune des deux",texteLibreOption:true}]});
   (function() {
     const n = alea(1,9), nAff = n===1 ? '' : String(n);
     const signe = alea(0,1)===0 ? '+' : '-';
@@ -1363,7 +1550,7 @@ function genererExercices() {
     if (famille === 0) { expr = `x${signe}${nAff}\\pi`; reponse = 'tan(x)'; }
     else if (famille === 1) { expr = `${nAff}\\pi-x`; reponse = '-tan(x)'; }
     else { expr = `-x${signe}${nAff}\\pi`; reponse = '-tan(x)'; }
-    ex.push({id:"18.10 b)", type:"texte", tolereTan:true, texteLibre:true, enonce:`Pour \\(x\\in\\left]-\\dfrac{\\pi}{2};\\dfrac{\\pi}{2}\\right[\\), simplifier \\(\\tan(${expr})\\)`, reponse});
+    ex.push({id:"18.10 b)", detail: detail1810b(famille, expr, reponse), type:"texte", tolereTan:true, texteLibre:true, enonce:`Pour \\(x\\in\\left]-\\dfrac{\\pi}{2};\\dfrac{\\pi}{2}\\right[\\), simplifier \\(\\tan(${expr})\\)`, reponse});
   })();
   // Calcul 18.11 - avec la tangente (3 items, avance)
   (function() {
@@ -1380,7 +1567,7 @@ function genererExercices() {
       const [u, v] = alea(0,1) === 0 ? [t0,t1] : [t1,t0];
       const [interv, signeCos, signeSin] = QUADRANTS[alea(0,3)];
       const tan = math.fraction(signeSin*signeCos*v, u);
-      ex.push({id:"18.11 a)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${signeCos < 0 ? '-' : ''}\\dfrac{${u}}{${c1}}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\tan(x)\\) ?`, reponse: fracToStr(tan)});
+      ex.push({id:"18.11 a)", detail: detail1811a(u, v, c1, interv, signeCos, signeSin), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${signeCos < 0 ? '-' : ''}\\dfrac{${u}}{${c1}}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\tan(x)\\) ?`, reponse: fracToStr(tan)});
     }
     // b) cos(x) = +-a/sqrt(D) avec x dans [0;pi] (sin > 0) : tan(x) = +-sqrt(D-a^2)/a
     {
@@ -1389,7 +1576,7 @@ function genererExercices() {
         a = alea(1,3); D = alea(a*a+1, a*a+10); s = simplifierRacine(D - a*a);
       } while (Number.isInteger(Math.sqrt(D)) || simplifierRacine(D).coef !== 1 || s.radicand === 1);
       const neg = alea(0,1) === 0;
-      ex.push({id:"18.11 b)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${neg ? '-' : ''}\\dfrac{${a}}{\\sqrt{${D}}}\\) et \\(x\\in\\left[0;\\pi\\right]\\), que vaut \\(\\tan(x)\\) ?`, reponse: surdFrac(neg ? -1 : 1, s.coef, s.radicand, a)});
+      ex.push({id:"18.11 b)", detail: detail1811b(a, D, neg, s), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\cos(x)=${neg ? '-' : ''}\\dfrac{${a}}{\\sqrt{${D}}}\\) et \\(x\\in\\left[0;\\pi\\right]\\), que vaut \\(\\tan(x)\\) ?`, reponse: surdFrac(neg ? -1 : 1, s.coef, s.radicand, a)});
     }
     // c) tan(x) = +-p/q, x dans un quadrant : sin(x) = +-p/sqrt(p^2+q^2)
     {
@@ -1397,9 +1584,12 @@ function genererExercices() {
       do { pp = alea(1,6); q = alea(1,5); N = pp*pp + q*q; s = simplifierRacine(N); } while (pgcd(pp,q) !== 1 || s.radicand === 1);
       const [interv, signeCos, signeSin] = QUADRANTS[alea(0,3)];
       const neg = signeSin * signeCos < 0;
-      ex.push({id:"18.11 c)", type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\tan(x)=${neg ? '-' : ''}${q === 1 ? pp : '\\dfrac{' + pp + '}{' + q + '}'}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\sin(x)\\) ?`, reponse: surdFrac(signeSin, pp, s.radicand, s.coef * s.radicand)});
+      ex.push({id:"18.11 c)", detail: detail1811c(pp, q, interv, signeCos, signeSin, s), type:"num", formeValeur:true, texteLibre:true, enonce:`Sachant que \\(\\tan(x)=${neg ? '-' : ''}${q === 1 ? pp : '\\dfrac{' + pp + '}{' + q + '}'}\\) et \\(x\\in\\left[${interv}\\right]\\), que vaut \\(\\sin(x)\\) ?`, reponse: surdFrac(signeSin, pp, s.radicand, s.coef * s.radicand)});
     }
   })();
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 let exercices = genererExercices();
@@ -2804,7 +2994,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
