@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"20.1 a)":0.5,"20.1 b)":0.75,"20.2 a)":0.5,"20.2 b)":0.75,"20.3 a)":0.75,"20.3 b)":0.5,"20.4 a)":0.5,"20.4 b)":0.75,"20.4 c)":0.75,"20.5 a)":0.5,"20.5 b)":0.75,"20.6 a)":0.5,"20.6 b)":1.25,"20.6 c)":1,"20.7 a)":0.5,"20.7 b)":0.5,"20.7 c)":0.75,"20.8 a)":0.75,"20.8 b)":1,"20.8 c)":1.25,"20.9 a)":0.75,"20.9 b)":1,"20.10":1.25,"20.11 a)":1.25,"20.11 b)":1.25,"20.12 a)":1.5,"20.12 b)":1.5,"20.12 c)":1.5,"20.12 d)":1.75,"20.13":1.75,"20.14":2},"bonus":["20.12 a)","20.12 b)","20.12 c)","20.12 d)","20.13","20.14"]});
@@ -1384,6 +1386,282 @@ function estSimplifie(val, ex) {
   return estValeurSimplifiee(s);
 }
 
+// ---------- details de correction (25/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, sommeF2 } = DetailQ;
+const lg20 = (a, b) => polyF2([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const ft20 = (f) => fracD(math.fraction(f));                                                // fraction irreductible, signe devant
+const par20 = (T) => (String(T).startsWith('-') ? `\\left(${T}\\right)` : String(T));       // entre parentheses si negatif
+const fp20 = (f) => par20(ft20(f));
+const INV20 = { '\\lt ': '>', '>': '\\lt ', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const pm20 = (a, b) => `\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}`;
+const couple20 = (a, b) => `\\left(${a}\\,;\\,${b}\\right)`;
+const rt20 = (c, r) => (r === 1 ? String(c) : c === 1 ? `\\sqrt{${r}}` : `${c}\\sqrt{${r}}`);
+const extrait20 = (N, s) => `\\sqrt{${N}} = \\sqrt{${s.coef}^{2}${s.radicand === 1 ? '' : `\\times ${s.radicand}`}} = ${rt20(s.coef, s.radicand)}`;
+const fr20 = (n, d) => (d === 1 ? String(n) : `\\dfrac{${n}}{${d}}`);
+function surdFracTex20(signe, coef, rad, den) {
+  const g = pgcd(coef, den), cc = coef / g, dd = den / g, num = rad === 1 ? String(cc) : `${cc === 1 ? '' : cc}\\sqrt{${rad}}`;
+  return `${signe < 0 ? '-' : ''}${fr20(num, dd)}`;
+}
+const term20 = (c, inner) => (c === 1 ? inner : c === -1 ? `-${inner}` : `${c}${inner}`);   // coefficient devant un groupe : jamais « 1(… ) »
+const somme20 = (t1, t2) => (t2.startsWith('-') ? t1 + t2 : `${t1}+${t2}`);
+const pw20 = (t) => (/[+-]/.test(String(t).replace(/^-/, '')) ? `\\left(${t}\\right)` : String(t));
+const pv20 = (x, y) => { const a = math.fraction(x), b = math.fraction(y); if (a.n === 1 && a.d === 1 && a.s > 0) return fp20(y); if (b.n === 1 && b.d === 1 && b.s > 0) return fp20(x); return `${fp20(x)}\\times ${fp20(y)}`; };   // produit sans « 1\times »
+const pvs20 = (xT, yT) => (xT === '1' ? yT : yT === '1' ? xT : `${par20(xT)}\\times ${par20(yT)}`);
+const frs20 = (p, den) => `${p < 0 ? '-' : ''}\\dfrac{${Math.abs(p)}}{${den}}`;
+const mul20 = (c, t) => (c === 1 ? t : c === -1 ? `-${t}` : `${c}\\times ${t}`);               // coefficient entier devant un terme (jamais « 1\times »)
+function finIneq20(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV20[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// 20.1 a) (ax+b)/p op (cx+d)/q
+function detail201a(a, b, c, d, p, q, op, spec) {
+  const A1 = a * q - c * p, B1 = b * q - p * d, fl = (u, v, den) => (u < 0 ? `-\\dfrac{${lg20(-u, -v)}}{${den}}` : `\\dfrac{${lg20(u, v)}}{${den}}`);
+  return { lignes: [`${fl(a, b, p)} ${op} ${fl(c, d, q)}`, `\\text{On multiplie par } ${p * q} \\gt 0`, `\\iff ${q}\\left(${lg20(a, b)}\\right) ${op} ${p}\\left(${lg20(c, d)}\\right)`,
+    `\\iff ${polyF2([{ c: q * a, v: 'x' }, { c: q * b, v: '' }])} ${op} ${polyF2([{ c: p * c, v: 'x' }, { c: p * d, v: '' }])}`, `\\iff ${polyF2([{ c: A1, v: 'x' }])} ${op} ${-B1}`, ...finIneq20(A1, op, -B1, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 20.1 b) |ax+b| op k
+function detail201b(A, B, k, op, spec) {
+  const L = lg20(A, B), Ax = polyF2([{ c: A, v: 'x' }]), r1 = math.fraction(-k - B, A), r2 = math.fraction(k - B, A), [lo, hi] = math.number(r1) < math.number(r2) ? [r1, r2] : [r2, r1], inf = op === '\\lt ' || op === '\\leqslant ';
+  const strict = op === '\\lt ' || op === '>', sBas = strict ? '\\lt ' : '\\leqslant ', sHaut = strict ? '>' : '\\geqslant ', l = [`\\left|${L}\\right| ${op} ${k}`];
+  if (inf) {
+    l.push(`\\iff ${-k} ${op} ${L} ${op} ${k}`, `\\iff ${-k - B} ${op} ${Ax} ${op} ${k - B}`);
+    if (A < 0) l.push(`\\text{On divise par } ${A} \\lt 0`, '\\text{donc les sens des inégalités changent}', `\\iff ${ft20(r1)} ${INV20[op]} x ${INV20[op]} ${ft20(r2)}`);
+    l.push(`\\iff ${ft20(lo)} ${op} x ${op} ${ft20(hi)}`);
+  } else {
+    l.push(`\\iff ${L} ${sBas} ${-k} \\text{ ou } ${L} ${sHaut} ${k}`, `\\iff ${Ax} ${sBas} ${-k - B} \\text{ ou } ${Ax} ${sHaut} ${k - B}`);
+    if (A < 0) l.push(`\\text{On divise par } ${A} \\lt 0`, '\\text{donc les sens des inégalités changent}', `\\iff x ${INV20[sBas]} ${ft20(r1)} \\text{ ou } x ${INV20[sHaut]} ${ft20(r2)}`);
+    l.push(`\\iff x ${sBas} ${ft20(lo)} \\text{ ou } x ${sHaut} ${ft20(hi)}`);
+  }
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return { lignes: l, final: formaterIntervalleSpec(spec) };
+}
+// 20.2 a) |ax+b| = c
+function detail202a(A, B, c) {
+  const L = lg20(A, B), Ax = polyF2([{ c: A, v: 'x' }]);
+  if (c < 0) return { lignes: [`\\left|${L}\\right| = ${c}`, '\\text{Une valeur absolue est positive ou nulle}', '\\text{donc il n\'y a aucune solution}', 'S = \\emptyset'], final: '\\emptyset' };
+  if (c === 0) { const x0 = math.fraction(-B, A), S = `\\{${ft20(x0)}\\}`; return { lignes: [`\\left|${L}\\right| = 0`, `\\iff ${L} = 0`, `\\iff ${Ax} = ${-B}`, `\\iff x = ${ft20(x0)}`, `S = ${S}`], final: S }; }
+  const x1 = math.fraction(c - B, A), x2 = math.fraction(-c - B, A), [lo, hi] = math.number(x1) < math.number(x2) ? [x1, x2] : [x2, x1], S = `\\{${ft20(lo)}\\,;\\,${ft20(hi)}\\}`;
+  return { lignes: [`\\left|${L}\\right| = ${c}`, `\\iff ${L} = ${c} \\text{ ou } ${L} = ${-c}`, `\\iff ${Ax} = ${c - B} \\text{ ou } ${Ax} = ${-c - B}`, `\\iff x = ${ft20(x1)} \\text{ ou } x = ${ft20(x2)}`, `S = ${S}`], final: S };
+}
+// 20.2 b) (ax+b)/(cx+d) = k
+function detail202b(a, b, c, d, k, x0) {
+  const fl = (u, v, den) => (u < 0 ? `-\\dfrac{${lg20(-u, -v)}}{${den}}` : `\\dfrac{${lg20(u, v)}}{${den}}`), S = `\\{${ft20(x0)}\\}`;
+  return { lignes: [`\\text{Valeur interdite : } ${ft20(math.fraction(-d, c))}`, `${fl(a, b, lg20(c, d))} = ${k}`, `\\iff ${lg20(a, b)} = ${term20(k, `\\left(${lg20(c, d)}\\right)`)}`, `\\iff ${polyF2([{ c: a, v: 'x' }, { c: b, v: '' }])} = ${polyF2([{ c: k * c, v: 'x' }, { c: k * d, v: '' }])}`,
+    `\\iff ${polyF2([{ c: a - k * c, v: 'x' }])} = ${k * d - b}`, `\\iff x = ${ft20(x0)}`, "\\text{Cette valeur n'est pas interdite}", `S = ${S}`], final: S };
+}
+// 20.3 a) p = u AB + v AC
+function detail203a(A, B, C, u, v, px, py) {
+  const d1 = [B[0] - A[0], B[1] - A[1]], d2 = [C[0] - A[0], C[1] - A[1]], terme = (cu, cv, x1, x2) => `${mul20(cu, dP(x1))}${cv < 0 ? '-' : '+'}${mul20(Math.abs(cv), dP(x2))}`, fin = couple20(px, py);
+  return { lignes: [`\\overrightarrow{AB}${pm20(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm20(d1[0], d1[1])}`, `\\overrightarrow{AC}${pm20(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm20(d2[0], d2[1])}`,
+    `\\vec{p}${pm20(terme(u, v, d1[0], d2[0]), terme(u, v, d1[1], d2[1]))}`, `= ${pm20(px, py)}`, fin], final: fin };
+}
+// 20.3 b) norme de AB
+function detail203b(A, B, n, s) {
+  const dx = B[0] - A[0], dy = B[1] - A[1], fin = rt20(s.coef, s.radicand), l = [`\\overrightarrow{AB}${pm20(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm20(dx, dy)}`,
+    `\\left\\|\\overrightarrow{AB}\\right\\| = ${dedup2(`\\sqrt{${dP(dx)}^{2}+${dP(dy)}^{2}}`, `\\sqrt{${dx * dx}+${dy * dy}}`, `\\sqrt{${n}}`)}`];
+  if (s.coef !== 1 || s.radicand === 1) l.push(extrait20(n, s));
+  return { lignes: l, final: fin };
+}
+// 20.4 a) u.v = |u| |v| cos(angle)
+function detail204a(a, b, ang, cos) {
+  const c = math.fraction(cos), fin = ft20(math.multiply(a * b, c)), l = ['\\vec{u}\\cdot\\vec{v} = \\left\\|\\vec{u}\\right\\|\\times\\left\\|\\vec{v}\\right\\|\\times\\cos\\left(\\vec{u},\\vec{v}\\right)', `= ${a}\\times ${b}\\times\\cos\\left(${ang}\\right)`, c.n === 1 && c.d === 1 && c.s > 0 ? `= ${a}\\times ${b}` : `= ${a}\\times ${b}\\times ${fp20(c)}`];
+  l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 20.4 b) norme k sqrt(f), angle pi/4, 3pi/4, pi/6, 5pi/6
+function detail204b(k, b, c) {
+  const COS = { '\\dfrac{\\pi}{3}': [1, 1, 2], '\\dfrac{2\\pi}{3}': [-1, 1, 2], '\\dfrac{\\pi}{4}': [1, 2, 2], '\\dfrac{3\\pi}{4}': [-1, 2, 2], '\\dfrac{\\pi}{6}': [1, 3, 2], '\\dfrac{5\\pi}{6}': [-1, 3, 2] }, [sg, f, den] = COS[c.ang];
+  const norme = c.fact === 1 ? String(k + 1) : rt20(k, f), valeur = c.fact === 1 ? math.multiply((k + 1) * b, c.cos) : math.multiply(k * b, c.cos), fin = ft20(valeur);
+  const cosT = f === 1 ? `${sg < 0 ? '-' : ''}\\dfrac{1}{${den}}` : `${sg < 0 ? '-' : ''}\\dfrac{\\sqrt{${f}}}{${den}}`, s = sg < 0 ? '-' : '';
+  const l = ['\\vec{u}\\cdot\\vec{v} = \\left\\|\\vec{u}\\right\\|\\times\\left\\|\\vec{v}\\right\\|\\times\\cos\\left(\\vec{u},\\vec{v}\\right)', `= ${norme}\\times ${b}\\times\\cos\\left(${c.ang}\\right)`, `= ${norme}\\times ${b}\\times ${par20(cosT)}`];
+  if (f !== 1) l.push(`= ${s}\\dfrac{${rt20(k * b, f)}\\times\\sqrt{${f}}}{${den}}`, `= ${s}\\dfrac{${k * b}\\times ${f}}{${den}}`);
+  if (l[l.length - 1] !== `= ${fin}`) l.push(`= ${fin}`);
+  return { lignes: l, final: fin };
+}
+// 20.4 c) triangle equilateral ou carre de cote a
+function detail204c(a, fig, pq, val) {
+  const fin = ft20(val), tri = /équilatéral/.test(fig), mm = `${a}\\times ${a}`;
+  const T = {
+    'AB;AC': ['\\overrightarrow{AB}\\cdot\\overrightarrow{AC} = AB\\times AC\\times\\cos\\left(\\dfrac{\\pi}{3}\\right)', `= ${mm}\\times\\dfrac{1}{2}`],
+    'AB;BC': ['\\overrightarrow{AB}\\cdot\\overrightarrow{BC} = -\\overrightarrow{BA}\\cdot\\overrightarrow{BC}', `= -BA\\times BC\\times\\cos\\left(\\dfrac{\\pi}{3}\\right)`, `= -${mm}\\times\\dfrac{1}{2}`],
+    'BA;BC': ['\\overrightarrow{BA}\\cdot\\overrightarrow{BC} = BA\\times BC\\times\\cos\\left(\\dfrac{\\pi}{3}\\right)', `= ${mm}\\times\\dfrac{1}{2}`]
+  };
+  const Sq = {
+    'AB;AC': [`AC = ${a}\\sqrt{2}`, '\\overrightarrow{AB}\\cdot\\overrightarrow{AC} = AB\\times AC\\times\\cos\\left(\\dfrac{\\pi}{4}\\right)', `= ${a}\\times ${a}\\sqrt{2}\\times\\dfrac{\\sqrt{2}}{2}`],
+    'AB;CD': ['\\overrightarrow{CD} = -\\overrightarrow{AB}', '\\overrightarrow{AB}\\cdot\\overrightarrow{CD} = -AB\\times AB', `= -${mm}`],
+    'AC;BD': ['\\text{Les diagonales sont perpendiculaires}', '\\overrightarrow{AC}\\cdot\\overrightarrow{BD} = 0'],
+    'AC;DA': ['\\overrightarrow{DA} = -\\overrightarrow{AD}', '\\overrightarrow{AC}\\cdot\\overrightarrow{DA} = -\\overrightarrow{AC}\\cdot\\overrightarrow{AD}', `= -AC\\times AD\\times\\cos\\left(\\dfrac{\\pi}{4}\\right)`, `= -${a}\\sqrt{2}\\times ${a}\\times\\dfrac{\\sqrt{2}}{2}`]
+  };
+  const l = [...(tri ? T : Sq)[pq]];
+  if (pq !== 'AC;BD') l.push(`= ${fin}`); else l[l.length - 1] = `\\overrightarrow{AC}\\cdot\\overrightarrow{BD} = 0`;
+  return { lignes: l, final: fin };
+}
+// 20.5 a) u.v en coordonnees
+function detail205a(a, b, c, d) {
+  const fin = String(a * c + b * d);
+  return { lignes: [`\\vec{u}\\cdot\\vec{v} = ${pv20(a, c)}+${pv20(b, d)}`, `= ${a * c}${b * d < 0 ? '' : '+'}${b * d}`, `= ${fin}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: fin };
+}
+// 20.5 b) AB.AC avec trois points
+function detail205b(A, B, C, v) {
+  const d1 = [B[0] - A[0], B[1] - A[1]], d2 = [C[0] - A[0], C[1] - A[1]], fin = String(v);
+  return { lignes: [`\\overrightarrow{AB}${pm20(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm20(d1[0], d1[1])}`, `\\overrightarrow{AC}${pm20(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm20(d2[0], d2[1])}`,
+    `\\overrightarrow{AB}\\cdot\\overrightarrow{AC} = ${pv20(d1[0], d2[0])}+${pv20(d1[1], d2[1])}`, `= ${d1[0] * d2[0]}${d1[1] * d2[1] < 0 ? '' : '+'}${d1[1] * d2[1]}`, `= ${fin}`], final: fin };
+}
+// 20.6 : angle BAC (A, B, C, u = AB, v = AC)
+function detail206a(A, B, C, u, v, p) {
+  const fin = String(p);
+  return { lignes: [`\\overrightarrow{AB}${pm20(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm20(u[0], u[1])}`, `\\overrightarrow{AC}${pm20(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm20(v[0], v[1])}`,
+    `\\overrightarrow{AB}\\cdot\\overrightarrow{AC} = ${pv20(u[0], v[0])}+${pv20(u[1], v[1])}`, `= ${u[0] * v[0]}${u[1] * v[1] < 0 ? '' : '+'}${u[1] * v[1]}`, `= ${fin}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: fin };
+}
+function cosTex20(p, s) { return s.radicand === 1 ? ft20(math.fraction(p, s.coef)) : surdFracTex20(Math.sign(p), Math.abs(p), s.radicand, s.coef * s.radicand); }
+function detail206b(u, v, p, n1, n2, s) {
+  const fin = cosTex20(p, s), pp = dP(p), l = ['\\cos\\left(\\widehat{BAC}\\right) = \\dfrac{\\overrightarrow{AB}\\cdot\\overrightarrow{AC}}{AB\\times AC}', `AB = \\sqrt{${dP(u[0])}^{2}+${dP(u[1])}^{2}} = \\sqrt{${n1}}`, `AC = \\sqrt{${dP(v[0])}^{2}+${dP(v[1])}^{2}} = \\sqrt{${n2}}`,
+    `\\cos\\left(\\widehat{BAC}\\right) = ${frs20(p, `\\sqrt{${n1}}\\times\\sqrt{${n2}}`)}`, `= ${frs20(p, `\\sqrt{${n1 * n2}}`)}`];
+  if (s.coef !== 1 || s.radicand === 1) l.push(extrait20(n1 * n2, s));
+  if (s.radicand === 1) l.push(`\\cos\\left(\\widehat{BAC}\\right) = ${frs20(p, s.coef)}`, ...(frs20(p, s.coef) === fin ? [] : [`= ${fin}`]));
+  else { const g = (p < 0 ? '-' : ''); l.push(`\\cos\\left(\\widehat{BAC}\\right) = ${g}\\dfrac{${Math.abs(p)}}{${rt20(s.coef, s.radicand)}}`, `= ${g}\\dfrac{${Math.abs(p)}\\sqrt{${s.radicand}}}{${s.coef * s.radicand}}`); if (`${g}\\dfrac{${Math.abs(p)}\\sqrt{${s.radicand}}}{${s.coef * s.radicand}}` !== fin) l.push(`= ${fin}`); }
+  return { lignes: l, final: fin };
+}
+function detail206c(p, s, theta) {
+  const fin = (Math.round(theta * 10) / 10).toFixed(1), tx = fin.replace('.', '{,}');
+  return { lignes: [`\\cos\\left(\\widehat{BAC}\\right) = ${cosTex20(p, s)}`, `\\widehat{BAC} = \\arccos\\left(${cosTex20(p, s)}\\right)`, `\\widehat{BAC} \\approx ${tx}^\\circ`], final: tx };
+}
+// 20.7 orthogonalite (QCM) : u.v = 0 ?
+const verdict207 = (nul, lettre) => [nul ? '\\text{Le produit scalaire est nul}' : "\\text{Le produit scalaire n'est pas nul}", nul ? '\\text{donc les vecteurs sont orthogonaux}' : '\\text{donc les vecteurs ne sont pas orthogonaux}', `\\text{Réponse : } ${lettre}`];
+function detail207q(ux, uy, vx, vy, orth) {
+  const p1 = math.multiply(ux, vx), p2 = math.multiply(uy, vy), S = math.add(p1, p2), lettre = orth ? 'a' : 'b';
+  const l = [`\\vec{u}\\cdot\\vec{v} = ${pv20(ux, vx)}+${pv20(uy, vy)}`, `= ${ft20(p1)}${math.fraction(p2).s < 0 ? '' : '+'}${ft20(p2)}`, `= ${ft20(S)}`, ...verdict207(orth, lettre)];
+  return { lignes: l, final: lettre };
+}
+function detail207r1(a, D, b, s, orth) {
+  const eps = orth ? -1 : 1, t = s * a * b, lettre = orth ? 'a' : 'b', ct = (c) => `${c < 0 ? '-' : ''}${Math.abs(c) === 1 ? '' : Math.abs(c)}\\sqrt{${D}}`;
+  const l = [`\\vec{u}\\cdot\\vec{v} = ${somme20(pvs20(ct(a), String(s * b)), pvs20(String(b), ct(eps * s * a)))}`, `= ${ct(t)}${eps * t < 0 ? '' : '+'}${ct(eps * t)}`, `= ${orth ? '0' : ct(2 * t)}`, ...verdict207(orth, lettre)];
+  return { lignes: l, final: lettre };
+}
+function detail207r2(m, n, s, orth) {
+  const eps = orth ? -1 : 1, lettre = orth ? 'a' : 'b', sq = simplifierRacine(m * n);
+  const l = [`\\vec{u}\\cdot\\vec{v} = \\sqrt{${m}}\\times ${par20(`${s < 0 ? '-' : ''}\\sqrt{${n}}`)}+\\sqrt{${n}}\\times ${par20(`${eps * s < 0 ? '-' : ''}\\sqrt{${m}}`)}`, `= ${s < 0 ? '-' : ''}\\sqrt{${m * n}}${eps * s < 0 ? '-' : '+'}\\sqrt{${m * n}}`,
+    `= ${orth ? '0' : `${s < 0 ? '-' : ''}${rt20(2 * sq.coef, sq.radicand)}`}`, ...verdict207(orth, lettre)];
+  return { lignes: l, final: lettre };
+}
+function detail207c(a, b, orth) {
+  const lettre = orth ? 'a' : 'b', xa = polyF2([{ c: 1, v: 'x' }, { c: -a, v: '' }]), xb = polyF2([{ c: 1, v: 'x' }, { c: a, v: '' }]), bx = polyF2([{ c: b, v: '' }, { c: 1, v: 'x' }]), bmx = polyF2([{ c: b, v: '' }, { c: -1, v: 'x' }]);
+  return { lignes: [`\\vec{u}\\cdot\\vec{v} = \\left(${xa}\\right)\\left(${xb}\\right)+\\left(${bx}\\right)\\left(${bmx}\\right)`, `= x^{2}-${a * a}+${b * b}-x^{2}`, `= ${b * b - a * a}`, ...verdict207(orth, lettre)], final: lettre };
+}
+// 20.8 a) u(sx ; B), v(p ; x - C) orthogonaux
+function detail208a(B, C, sg, pFrac, x) {
+  const pl = math.multiply(sg, pFrac), coef = math.add(pl, B), xc = polyF2([{ c: 1, v: 'x' }, { c: -C, v: '' }]), S = `\\{${ft20(x)}\\}`;
+  return { lignes: ['\\vec{u}\\cdot\\vec{v} = 0', `\\iff ${somme20(`${sg < 0 ? '-' : ''}x\\times ${fp20(pFrac)}`, term20(B, `\\left(${xc}\\right)`))} = 0`, `\\iff ${polyF2([{ c: coef, v: 'x' }, { c: -B * C, v: '' }])} = 0`, `\\iff ${polyF2([{ c: coef, v: 'x' }])} = ${B * C}`, `\\iff x = ${dedup2(math.fraction(coef).d === 1 ? Detail.quotientBrut(B * C, math.number(coef)) : `${B * C} \\div ${fp20(coef)}`, ft20(x))}`, `S = ${S}`], final: S };
+}
+// 20.8 b) u(P x - a ; b + Q x), v(P x + a ; b - Q x) : (P2 - Q2) x^2 + b^2 - a^2 = 0
+function detail208b(Ptex, Qtex, P2, Q2, a, b) {
+  const n = b * b - a * a, d = Q2 - P2, q = math.fraction(n, d), sq = simplifierRacine(n * d), x0 = surdFracTex20(1, sq.coef, sq.radicand, d), S = `\\{-${x0}\\,;\\,${x0}\\}`;
+  const l = ['\\vec{u}\\cdot\\vec{v} = 0', `\\scriptsize \\iff \\left(${Ptex}x-${a}\\right)\\left(${Ptex}x+${a}\\right)+\\left(${b}+${Qtex}x\\right)\\left(${b}-${Qtex}x\\right) = 0`,
+    `\\iff ${polyF2([{ c: P2, v: 'x^{2}' }, { c: -a * a, v: '' }, { c: b * b, v: '' }, { c: -Q2, v: 'x^{2}' }])} = 0`, `\\iff ${polyF2([{ c: P2 - Q2, v: 'x^{2}' }, { c: n, v: '' }])} = 0`, `\\iff ${polyF2([{ c: d, v: 'x^{2}' }])} = ${n}`,
+    `\\iff x^{2} = ${dedup2(fr20(n, d), ft20(q))}`, `\\iff x = -\\sqrt{${ft20(q)}} \\text{ ou } x = \\sqrt{${ft20(q)}}`, `\\sqrt{${ft20(q)}} = \\dfrac{\\sqrt{${n * d}}}{${d}}`];
+  if (sq.coef !== 1 || sq.radicand === 1) l.push(extrait20(n * d, sq));
+  l.push(`\\sqrt{${ft20(q)}} = ${x0}`, `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 20.8 c) u(Ax+B ; x+C), v(Ax+B ; kAx+kB)
+function detail208c(A, B, C, k, x1, x2) {
+  const u1 = lg20(A, B), S = `\\{${ft20(x1)}\\,;\\,${ft20(x2)}\\}`, [lo, hi] = math.number(x1) < math.number(x2) ? [x1, x2] : [x2, x1], SS = `\\{${ft20(lo)}\\,;\\,${ft20(hi)}\\}`, xc = lg20(1, C);
+  return { lignes: ['\\vec{u}\\cdot\\vec{v} = 0', `\\iff \\left(${u1}\\right)\\left(${u1}\\right)+\\left(${xc}\\right)\\left(${polyF2([{ c: k * A, v: 'x' }, { c: k * B, v: '' }])}\\right) = 0`, `\\iff \\left(${u1}\\right)\\left(\\left(${u1}\\right)${k < 0 ? '-' : '+'}${Math.abs(k) === 1 ? '' : Math.abs(k)}\\left(${xc}\\right)\\right) = 0`,
+    `\\iff \\left(${u1}\\right)\\left(${polyF2([{ c: A + k, v: 'x' }, { c: B + k * C, v: '' }])}\\right) = 0`, `\\iff ${u1} = 0 \\text{ ou } ${polyF2([{ c: A + k, v: 'x' }, { c: B + k * C, v: '' }])} = 0`, `\\iff x = ${ft20(x1)} \\text{ ou } x = ${ft20(x2)}`, `S = ${SS}`], final: SS };
+}
+// droite par un point et de vecteur normal (nx ; ny) : y = m x + p
+function lignesNormale20(nx, ny, AxT, AyT, KT, mTx, pT) {
+  const dif = (T) => (T.startsWith('-') ? `+${T.slice(1)}` : `-${T}`), mx = mTx === '0' ? '' : mTx, droite = `${mx}${pT === '0' ? '' : (mx === '' || pT.startsWith('-') ? pT : `+${pT}`)}`, fin = `y = ${droite || '0'}`;
+  const second = mx === '' ? KT : `${polyF2([{ c: -nx, v: 'x' }])}${KT === '0' ? '' : (KT.startsWith('-') ? KT : `+${KT}`)}`;
+  const l1 = [nx === 0 ? '' : term20(nx, `\\left(x${dif(AxT)}\\right)`), term20(ny, `\\left(y${dif(AyT)}\\right)`)].filter(Boolean).reduce((a, b) => somme20(a, b));
+  return { l: [`${l1} = 0`, `\\iff ${polyF2([{ c: nx, v: 'x' }, { c: ny, v: 'y' }])}${KT === '0' ? '' : dif(KT)} = 0`, `\\iff ${polyF2([{ c: ny, v: 'y' }])} = ${second}`, `\\iff ${fin}`], fin };
+}
+// 20.9 a) point entier
+function detail209a(Ax, Ay, nx, ny) {
+  const m = math.fraction(-nx, ny), p = math.divide(nx * Ax + ny * Ay, ny), K = nx * Ax + ny * Ay, r = lignesNormale20(nx, ny, String(Ax), String(Ay), String(K), polyF2([{ c: m, v: 'x' }]), ft20(p));
+  return { lignes: r.l, final: r.fin };
+}
+// 20.9 b) point rationnel
+function detail209b1(Bx, By, nx, ny) {
+  const m = math.fraction(-nx, ny), K = math.add(math.multiply(nx, Bx), math.multiply(ny, By)), p = math.divide(K, ny), r = lignesNormale20(nx, ny, ft20(Bx), ft20(By), ft20(K), polyF2([{ c: m, v: 'x' }]), ft20(p));
+  return { lignes: r.l, final: r.fin };
+}
+// 20.9 b) C(k sqrt(D) ; km sqrt(D))
+function detail209b2(D, nx, ny, k, km) {
+  const V = nx * k + ny * km, m = math.fraction(-nx, ny), pT = surdFracTex20(Math.sign(V) * Math.sign(ny), Math.abs(V), D, Math.abs(ny)), KT = `${V < 0 ? '-' : ''}${rt20(Math.abs(V), D)}`;
+  const r = lignesNormale20(nx, ny, `${k < 0 ? '-' : ''}${rt20(Math.abs(k), D)}`, `${km < 0 ? '-' : ''}${rt20(Math.abs(km), D)}`, KT, polyF2([{ c: m, v: 'x' }]), pT);
+  return { lignes: r.l, final: r.fin };
+}
+// 20.9 b) C(p0 / sqrt(D) ; q0 / sqrt(D))
+function detail209b3(D, nx, ny, p0, q0) {
+  const V = nx * p0 + ny * q0, m = math.fraction(-nx, ny), sg = Math.sign(V) * Math.sign(ny), pT = surdFracTex20(sg, Math.abs(V), D, Math.abs(ny) * D);
+  const fr = (c) => `${c < 0 ? '-' : ''}\\dfrac{${Math.abs(c)}}{\\sqrt{${D}}}`, KT = `${V < 0 ? '-' : ''}\\dfrac{${Math.abs(V)}}{\\sqrt{${D}}}`;
+  const r = lignesNormale20(nx, ny, fr(p0), fr(q0), KT, polyF2([{ c: m, v: 'x' }]), pT);
+  const mx = polyF2([{ c: m, v: 'x' }]), sgn = sg < 0 ? '-' : '+', brut = `\\dfrac{${Math.abs(V)}}{${rt20(Math.abs(ny), D)}}`, ration = `\\dfrac{${Math.abs(V)}\\sqrt{${D}}}{${Math.abs(ny) * D}}`, tails = [brut, ration, pT.replace(/^-/, '')].filter((x, i, t) => i === 0 || x !== t[i - 1]);
+  r.l.pop();
+  for (const t of tails) r.l.push(`\\iff y = ${mx}${sgn}${t}`);
+  return { lignes: r.l, final: r.fin };
+}
+// 20.10 : perpendiculaire a (D) : ax + by + c = 0 passant par E(Ex ; e)
+function detail2010(c7) {
+  if (!c7.rad) {
+    const { a, b, Ex, e } = c7, m = math.fraction(b, a), p = math.add(math.fraction(-b * Ex, a), e), K = -b * Ex + a * e, r = lignesNormale20(-b, a, String(Ex), String(e), String(K), polyF2([{ c: m, v: 'x' }]), ft20(p));
+    return { lignes: [`\\text{Un vecteur directeur de } (D)`, `\\vec{d}${pm20(-b, a)}`, '\\text{est normal à la perpendiculaire}', ...r.l], final: r.fin };
+  }
+  const { D0, a, s, eps, k, e } = c7, t = eps * s, pente = math.fraction(t, a), ord = math.add(math.fraction(-t * k * D0, a), e), g = pgcd(s, a), cc = s / g, dd = a / g;
+  const penteTex = `${eps < 0 ? '-' : ''}${fr20(rt20(cc, D0), dd)}x`, ordTex = ft20(ord), sq = `${eps < 0 ? '-' : ''}${s === 1 ? '' : s}\\sqrt{${D0}}`, kT = `${k < 0 ? '-' : ''}${Math.abs(k) === 1 ? '' : Math.abs(k)}\\sqrt{${D0}}`, nxT = `${eps < 0 ? '' : '-'}${s === 1 ? '' : s}\\sqrt{${D0}}`;
+  const kd = -t * k * D0;
+  return { lignes: ['\\text{Un vecteur directeur de } (D)', `\\vec{d}${pm20(`${eps < 0 ? '' : '-'}${s === 1 ? '' : s}\\sqrt{${D0}}`, a)}`, '\\text{est normal à la perpendiculaire}', `${somme20(`${nxT}\\left(x${kT.startsWith('-') ? '+' + kT.slice(1) : '-' + kT}\\right)`, term20(a, `\\left(y${e < 0 ? '+' + (-e) : '-' + e}\\right)`))} = 0`,
+    `\\iff ${nxT}x${-t * k * D0 * -1 < 0 ? '-' : '+'}${Math.abs(t * k * D0)}${a === 1 ? '+y' : `+${a}y`}${-a * e < 0 ? '-' : '+'}${Math.abs(a * e)} = 0`,
+    `\\iff ${a === 1 ? '' : a}y =${t < 0 ? '-' : ''}${Math.abs(t) === 1 ? '' : Math.abs(t)}\\sqrt{${D0}}x${kd < 0 ? '-' : '+'}${Math.abs(kd) === 1 ? '' : Math.abs(kd)}${'' }${a * e < 0 ? '' : '+'}${a * e}`.replace(/\+-/, '-'),
+    `\\iff y = ${penteTex}${ord.n === 0 ? '' : (ord.s < 0 ? '' : '+')}${ord.n === 0 ? '' : ordTex}`], final: `y = ${penteTex}${ord.n === 0 ? '' : (ord.s < 0 ? '' : '+')}${ord.n === 0 ? '' : ordTex}` };
+}
+// 20.11 : droite par un point P et perpendiculaire a (Q R)
+function detail2011(NOMS, P, iPoint, i1, i2) {
+  const dx = P[i2][0] - P[i1][0], dy = P[i2][1] - P[i1][1], m = math.fraction(-dx, dy), K = dx * P[iPoint][0] + dy * P[iPoint][1], p = math.divide(K, dy), nom = `${NOMS[i1]}${NOMS[i2]}`, nomPt = NOMS[iPoint];
+  const r = lignesNormale20(dx, dy, String(P[iPoint][0]), String(P[iPoint][1]), String(K), polyF2([{ c: m, v: 'x' }]), ft20(p));
+  return { lignes: [`\\overrightarrow{${NOMS[i1]}${NOMS[i2]}}${pm20(`${P[i2][0]}-${dP(P[i1][0])}`, `${P[i2][1]}-${dP(P[i1][1])}`)} = ${pm20(dx, dy)}`, `\\overrightarrow{${nom}} \\text{ est normal à la perpendiculaire}`, ...r.l], final: r.fin };
+}
+// 20.12 : rectangle ABDC
+function detail2012a(AB, AC) {
+  return { lignes: [`\\overrightarrow{AB}${pm20(AB[0], AB[1])} \\text{ et } \\overrightarrow{AC}${pm20(AC[0], AC[1])}`, `\\overrightarrow{AB}\\cdot\\overrightarrow{AC} = ${pv20(AB[0], AC[0])}+${pv20(AB[1], AC[1])}`, `= ${AB[0] * AC[0]}${AB[1] * AC[1] < 0 ? '' : '+'}${AB[1] * AC[1]}`, '= 0'], final: '0' };
+}
+function detail2012b(A, C, AC) {
+  const fin = polyF2([{ c: AC[0], v: 'x' }, { c: AC[1], v: 'y' }, { c: -(AC[0] * C[0] + AC[1] * C[1]), v: '' }]), xc = polyF2([{ c: 1, v: 'x' }, { c: -C[0], v: '' }]), yc = polyF2([{ c: 1, v: 'y' }, { c: -C[1], v: '' }]);
+  return { lignes: [`\\overrightarrow{AC}${pm20(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm20(AC[0], AC[1])}`, `\\overrightarrow{CD}${pm20(xc, yc)}`, `\\overrightarrow{AC}\\cdot\\overrightarrow{CD} = ${somme20(term20(AC[0], pw20(xc)), term20(AC[1], pw20(yc)))}`, `= ${fin}`], final: fin };
+}
+function detail2012c(A, B, AB) {
+  const fin = polyF2([{ c: AB[0], v: 'x' }, { c: AB[1], v: 'y' }, { c: -(AB[0] * B[0] + AB[1] * B[1]), v: '' }]), xb = polyF2([{ c: 1, v: 'x' }, { c: -B[0], v: '' }]), yb = polyF2([{ c: 1, v: 'y' }, { c: -B[1], v: '' }]);
+  return { lignes: [`\\overrightarrow{AB}${pm20(`${B[0]}-${dP(A[0])}`, `${B[1]}-${dP(A[1])}`)} = ${pm20(AB[0], AB[1])}`, `\\overrightarrow{BD}${pm20(xb, yb)}`, `\\overrightarrow{AB}\\cdot\\overrightarrow{BD} = ${somme20(term20(AB[0], pw20(xb)), term20(AB[1], pw20(yb)))}`, `= ${fin}`], final: fin };
+}
+function detail2012d(A, B, C, D) {
+  const AC = [C[0] - A[0], C[1] - A[1]], fin = couple20(D[0], D[1]);
+  return { lignes: [`\\text{D'après a), } \\left(AB\\right) \\perp \\left(AC\\right)`, '\\text{il suffit que } ABDC', '\\text{soit un parallélogramme}', `\\overrightarrow{BD} = \\overrightarrow{AC}`, `\\overrightarrow{AC}${pm20(`${C[0]}-${dP(A[0])}`, `${C[1]}-${dP(A[1])}`)} = ${pm20(AC[0], AC[1])}`, `\\overrightarrow{BD}${pm20(`x-${dP(B[0])}`, `y-${dP(B[1])}`)}`, `x-${dP(B[0])} = ${AC[0]} \\iff x = ${D[0]}`, `y-${dP(B[1])} = ${AC[1]} \\iff y = ${D[1]}`, fin], final: fin };
+}
+// 20.13 : f(x) = a x^2 + beta x + d, tangentes aux abscisses x et -x perpendiculaires
+function detail2013(a, b, D, surd, s) {
+  const N = b * b * D, bT = surd ? `${b < 0 ? '-' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}\\sqrt{${D}}` : String(b), den = 4 * a * a, q = math.fraction(N + 1, den), S0 = surdFracTex20(1, s.coef, s.radicand, 2 * Math.abs(a)), S = `\\{-${S0}\\,;\\,${S0}\\}`;
+  const sbeta = (t) => (bT.startsWith('-') ? bT : `+${bT}`), f1 = `${polyF2([{ c: 2 * a, v: 'x' }])}${sbeta()}`, f2 = `${polyF2([{ c: -2 * a, v: 'x' }])}${sbeta()}`;
+  const l = [`f'(x) = ${f1}`, '\\text{Tangentes perpendiculaires :}', '\\text{produit des pentes égal à } -1',`\\left(${f1}\\right)\\left(${f2}\\right) = -1`, `\\iff ${polyF2([{ c: N, v: '' }, { c: -den, v: 'x^{2}' }])} = -1`, `\\iff ${polyF2([{ c: den, v: 'x^{2}' }])} = ${N + 1}`, `\\iff x^{2} = ${dedup2(fr20(N + 1, den), ft20(q))}`,
+    `\\iff x = -\\sqrt{${ft20(q)}} \\text{ ou } x = \\sqrt{${ft20(q)}}`, `\\sqrt{${ft20(q)}} = \\dfrac{\\sqrt{${N + 1}}}{${2 * Math.abs(a)}}`];
+  if (s.coef !== 1 || s.radicand === 1) l.push(extrait20(N + 1, s));
+  if (`\\dfrac{${rt20(s.coef, s.radicand)}}{${2 * Math.abs(a)}}` !== S0) l.push(`\\sqrt{${ft20(q)}} = ${S0}`);
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 20.14 : f(x) = a x^2 + b x, tangentes aux abscisses n/2 et -n/2 perpendiculaires
+function detail2014(a, n, s, t) {
+  const an = a * n, mm = Math.abs(an), tt = surdFracTex20(1, s.coef, s.radicand, 1), S = `\\{-${tt}\\,;\\,${tt}\\}`, p =math.fraction(n, 2), b1 = polyF2([{ c: 1, v: 'b' }, { c: an, v: '' }]), b2 = polyF2([{ c: 1, v: 'b' }, { c: -an, v: '' }]);
+  const tTex = surdFracTex20(1, s.coef, s.radicand, 1), l = ["f'(x) = " + `${polyF2([{ c: 2 * a, v: 'x' }])}+b`, `f'\\left(${ft20(p)}\\right) = ${b1}`, `f'\\left(${ft20(math.multiply(-1, p))}\\right) = ${b2}`, '\\text{Tangentes perpendiculaires :}', '\\text{produit des pentes égal à } -1',`\\left(${b1}\\right)\\left(${b2}\\right) = -1`,
+    `\\iff ${polyF2([{ c: 1, v: 'b^{2}' }, { c: -an * an, v: '' }])} = -1`, `\\iff b^{2} = ${mm * mm - 1}`, `\\iff b = -\\sqrt{${mm * mm - 1}} \\text{ ou } b = \\sqrt{${mm * mm - 1}}`];
+  if (s.coef !== 1 || s.radicand === 1) l.push(extrait20(mm * mm - 1, s));
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
 let contexte25 = {};
 
 function genererExercices() {
@@ -1404,15 +1682,17 @@ function genererExercices() {
     } while (p === q || a*q - c*p === 0 || p*d - q*b === 0 || pgcd(pgcd(a, b), p) !== 1 || pgcd(pgcd(c, d), q) !== 1);
     const op = OPS_INEQ[alea(0,3)];
     const A1 = a*q - c*p, B1 = b*q - p*d;   // (ax+b)/p op (cx+d)/q  <=>  A1 x + B1 op 0  (on multiplie par pq > 0)
-    ex.push({id:"20.1 a)", type:"intervalle", texteLibre:true, enonce:`\\(${fracLin(a, b, p)}${op}${fracLin(c, d, q)}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([-B1/A1], (x) => A1*x + B1, op)}});
+    const spec201a = {type:'intervalles', liste: parSigne([-B1/A1], (x) => A1*x + B1, op)};
+    ex.push({id:"20.1 a)", detail: detail201a(a, b, c, d, p, q, op, spec201a), type:"intervalle", texteLibre:true, enonce:`\\(${fracLin(a, b, p)}${op}${fracLin(c, d, q)}\\)`,
+      intervalleSpec: spec201a});
   }
   // b) valeur absolue : |ax+b| op k
   {
     const A = aleaNonNul(-5,5), B = aleaNonNul(-9,9), k = alea(1,9), op = OPS_INEQ[alea(0,3)];
     const r1 = (-k - B) / A, r2 = (k - B) / A;
-    ex.push({id:"20.1 b)", type:"intervalle", texteLibre:true, enonce:`\\(|${lin(A, B)}|${op}${k}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([Math.min(r1, r2), Math.max(r1, r2)], (x) => Math.abs(A*x + B) - k, op)}});
+    const spec201b = {type:'intervalles', liste: parSigne([Math.min(r1, r2), Math.max(r1, r2)], (x) => Math.abs(A*x + B) - k, op)};
+    ex.push({id:"20.1 b)", detail: detail201b(A, B, k, op, spec201b), type:"intervalle", texteLibre:true, enonce:`\\(|${lin(A, B)}|${op}${k}\\)`,
+      intervalleSpec: spec201b});
   }
 
   // ---------- 20.2 : equations (automatismes) ----------
@@ -1421,7 +1701,7 @@ function genererExercices() {
     const A = aleaNonNul(-5,5), B = aleaNonNul(-9,9), r = Math.random();
     const c = r < 0.7 ? alea(1,9) : (r < 0.85 ? 0 : -alea(1,9));
     const sols = c < 0 ? [] : (c === 0 ? [math.fraction(-B, A)] : [math.fraction(c - B, A), math.fraction(-c - B, A)]);
-    ex.push({id:"20.2 a)", type:"num", texteLibre:true, enonce:`\\(|${lin(A, B)}|=${c}\\)`, reponse: ensembleStr(sols)});
+    ex.push({id:"20.2 a)", detail: detail202a(A, B, c), type:"num", texteLibre:true, enonce:`\\(|${lin(A, B)}|=${c}\\)`, reponse: ensembleStr(sols)});
   }
   // b) quotient : (ax+b)/(cx+d) = k, la valeur interdite n'est jamais la solution
   {
@@ -1430,7 +1710,7 @@ function genererExercices() {
       a = aleaNonNul(-5,5); b = aleaNonNul(-9,9); c = alea(1,5); d = aleaNonNul(-9,9); k = aleaNonNul(-4,4);
     } while (a - k*c === 0 || a*d === b*c);
     const x0 = math.fraction(k*d - b, a - k*c);
-    ex.push({id:"20.2 b)", type:"num", texteLibre:true, enonce:`\\(${fracLin(a, b, lin(c, d))}=${k}\\)`, reponse: ensembleStr([x0])});
+    ex.push({id:"20.2 b)", detail: detail202b(a, b, c, d, k, x0), type:"num", texteLibre:true, enonce:`\\(${fracLin(a, b, lin(c, d))}=${k}\\)`, reponse: ensembleStr([x0])});
   }
 
   // ---------- 20.3 : vecteurs (automatismes) ----------
@@ -1443,7 +1723,7 @@ function genererExercices() {
       px = u*(B[0]-A[0]) + v*(C[0]-A[0]); py = u*(B[1]-A[1]) + v*(C[1]-A[1]);
     } while ((px === 0 && py === 0) || (A[0] === B[0] && A[1] === B[1]) || (A[0] === C[0] && A[1] === C[1]));
     const t1 = `${coefPrefixeL(u)}\\overrightarrow{AB}`, t2 = `${v < 0 ? '-' : '+'}${coefPrefixeL(Math.abs(v))}\\overrightarrow{AC}`;
-    ex.push({id:"20.3 a)", type:"paire", formePoint:true, formeVecteur:true, formeSimplifiee:true, texteLibre:true,
+    ex.push({id:"20.3 a)", detail: detail203a(A, B, C, u, v, px, py), type:"paire", formePoint:true, formeVecteur:true, formeSimplifiee:true, texteLibre:true,
       enonce:`les coordonnées du vecteur \\(\\vec{p}=${t1}${t2}\\), avec \\(A${pt(A[0], A[1])}\\), \\(B${pt(B[0], B[1])}\\) et \\(C${pt(C[0], C[1])}\\)`,
       pa: String(px), pb: String(py)});
   }
@@ -1455,7 +1735,7 @@ function genererExercices() {
       A = [alea(-8,8), alea(-8,8)]; B = [alea(-8,8), alea(-8,8)];
       n = (B[0]-A[0]) ** 2 + (B[1]-A[1]) ** 2; s = simplifierRacine(n);
     } while (n === 0 || (s.radicand === 1) !== carre);
-    ex.push({id:"20.3 b)", type:"num", formeSimplifiee:true, texteLibre:true,
+    ex.push({id:"20.3 b)", detail: detail203b(A, B, n, s), type:"num", formeSimplifiee:true, texteLibre:true,
       enonce:`la norme du vecteur \\(\\overrightarrow{AB}\\), avec \\(A${pt(A[0], A[1])}\\) et \\(B${pt(B[0], B[1])}\\)`,
       reponse: surdFrac(1, s.coef, s.radicand, 1)});
   }
@@ -1466,7 +1746,7 @@ function genererExercices() {
     const a = alea(2,9), b = alea(2,9);
     const ANGLES = [{ang: '0', cos: 1}, {ang: '\\dfrac{\\pi}{3}', cos: math.fraction(1, 2)}, {ang: '\\dfrac{\\pi}{2}', cos: 0}, {ang: '\\dfrac{2\\pi}{3}', cos: math.fraction(-1, 2)}, {ang: '\\pi', cos: -1}];
     const { ang, cos } = ANGLES[alea(0, 4)];
-    ex.push({id:"20.4 a)", type:"num", formeSimplifiee:true, texteLibre:true,
+    ex.push({id:"20.4 a)", detail: detail204a(a, b, ang, cos), type:"num", formeSimplifiee:true, texteLibre:true,
       enonce:`Calculer \\(\\vec{u}\\cdot\\vec{v}\\), sachant que \\(\\|\\vec{u}\\|=${a}\\), \\(\\|\\vec{v}\\|=${b}\\) et \\(\\left(\\vec{u},\\vec{v}\\right)=${ang}\\ [2\\pi]\\)`,
       reponse: fracToStr(math.multiply(a * b, cos))});
   }
@@ -1483,7 +1763,7 @@ function genererExercices() {
     const valeurNorme = c.fact === 1 ? math.fraction(k + 1, 1) : math.fraction(k, 1);
     // |u| = k sqrt(f) : |u||v| cos = k b (f cos_sqrt) ; pi/4 : k sqrt2 b sqrt2/2 = k b ; pi/6 : k sqrt3 b sqrt3/2 = 3kb/2
     const produit = c.fact === 1 ? math.multiply((k + 1) * b, c.cos) : math.multiply(k * b, c.cos);
-    ex.push({id:"20.4 b)", type:"num", formeSimplifiee:true, texteLibre:true,
+    ex.push({id:"20.4 b)", detail: detail204b(k, b, c), type:"num", formeSimplifiee:true, texteLibre:true,
       enonce:`Calculer \\(\\vec{u}\\cdot\\vec{v}\\), sachant que \\(\\|\\vec{u}\\|=${norme}\\), \\(\\|\\vec{v}\\|=${b}\\) et \\(\\left(\\vec{u},\\vec{v}\\right)=${c.ang}\\ [2\\pi]\\)`,
       reponse: fracToStr(produit)});
   }
@@ -1501,7 +1781,7 @@ function genererExercices() {
     ];
     const c = CAS[alea(0, CAS.length - 1)];
     const [p, q] = c.pq.split(';');
-    ex.push({id:"20.4 c)", type:"num", formeSimplifiee:true, texteLibre:true,
+    ex.push({id:"20.4 c)", detail: detail204c(a, c.fig, c.pq, c.val), type:"num", formeSimplifiee:true, texteLibre:true,
       enonce:`${c.fig}. Calculer \\(\\overrightarrow{${p}}\\cdot\\overrightarrow{${q}}\\)`, reponse: fracToStr(c.val)});
   }
 
@@ -1510,7 +1790,7 @@ function genererExercices() {
   {
     let a, b, c, d;
     do { a = aleaNonNul(-7,7); b = aleaNonNul(-7,7); c = aleaNonNul(-7,7); d = aleaNonNul(-7,7); } while (a*c + b*d === 0);
-    ex.push({id:"20.5 a)", type:"num", texteLibre:true, enonce:`\\(\\vec{u}\\cdot\\vec{v}\\), avec \\(\\vec{u}\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${c}\\\\${d}\\end{pmatrix}\\)`, reponse: String(a*c + b*d)});
+    ex.push({id:"20.5 a)", detail: detail205a(a, b, c, d), type:"num", texteLibre:true, enonce:`\\(\\vec{u}\\cdot\\vec{v}\\), avec \\(\\vec{u}\\begin{pmatrix}${a}\\\\${b}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${c}\\\\${d}\\end{pmatrix}\\)`, reponse: String(a*c + b*d)});
   }
   // b) AB.AC avec trois points
   {
@@ -1519,7 +1799,7 @@ function genererExercices() {
       A = [alea(-6,6), alea(-6,6)]; B = [alea(-6,6), alea(-6,6)]; C = [alea(-6,6), alea(-6,6)];
       v = (B[0]-A[0])*(C[0]-A[0]) + (B[1]-A[1])*(C[1]-A[1]);
     } while (v === 0 || (A[0] === B[0] && A[1] === B[1]) || (A[0] === C[0] && A[1] === C[1]));
-    ex.push({id:"20.5 b)", type:"num", texteLibre:true, enonce:`\\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\), avec \\(A${pt(A[0], A[1])}\\), \\(B${pt(B[0], B[1])}\\) et \\(C${pt(C[0], C[1])}\\)`, reponse: String(v)});
+    ex.push({id:"20.5 b)", detail: detail205b(A, B, C, v), type:"num", texteLibre:true, enonce:`\\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\), avec \\(A${pt(A[0], A[1])}\\), \\(B${pt(B[0], B[1])}\\) et \\(C${pt(C[0], C[1])}\\)`, reponse: String(v)});
   }
 
   // ---------- 20.6 : mesure d'un angle (produit scalaire en coordonnees, puis cosinus, puis angle en degres) ----------
@@ -1540,15 +1820,15 @@ function genererExercices() {
     ctx.c6 = {A, B, C};
     // cos = p / (k sqrt(r)) = p sqrt(r) / (k r)
     const cosStr = s.radicand === 1 ? fracToStr(math.fraction(p, s.coef)) : surdFrac(Math.sign(p), Math.abs(p), s.radicand, s.coef * s.radicand);
-    ex.push({id:"20.6 a)", type:"num", texteLibre:true, enonce:"\\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\)", reponse: String(p)});
-    ex.push({id:"20.6 b)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:"\\(\\cos\\left(\\widehat{BAC}\\right)\\)", reponse: cosStr});
-    ex.push({id:"20.6 c)", type:"num", texteLibre:true, approx: theta, approxDec: 1, approxCos: p / Math.sqrt(n1 * n2), approxMarge: 0.005, enonce:"la mesure de l'angle \\(\\widehat{BAC}\\) en degrés", reponse: (Math.round(theta * 10) / 10).toFixed(1)});
+    ex.push({id:"20.6 a)", detail: detail206a(A, B, C, u, v, p), type:"num", texteLibre:true, enonce:"\\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\)", reponse: String(p)});
+    ex.push({id:"20.6 b)", detail: detail206b(u, v, p, n1, n2, s), type:"num", formeSimplifiee:true, texteLibre:true, enonce:"\\(\\cos\\left(\\widehat{BAC}\\right)\\)", reponse: cosStr});
+    ex.push({id:"20.6 c)", detail: detail206c(p, s, theta), type:"num", texteLibre:true, approx: theta, approxDec: 1, approxCos: p / Math.sqrt(n1 * n2), approxMarge: 0.005, enonce:"la mesure de l'angle \\(\\widehat{BAC}\\) en degrés", reponse: (Math.round(theta * 10) / 10).toFixed(1)});
   })();
 
   // ---------- 20.7 : orthogonalite, oui / non (au moins un oui et un non) ----------
   let orth;
   do { orth = [0, 1, 2].map(() => Math.random() < 0.5); } while (orth.every(Boolean) || orth.every((o) => !o));
-  const ouiNon = (id, enonce, estOrtho) => ex.push({id, type:"qcm", texteLibre:true, enonce, bonneReponse: estOrtho ? "a" : "b",
+  const ouiNon = (id, enonce, estOrtho, detail) => ex.push({id, detail, type:"qcm", texteLibre:true, enonce, bonneReponse: estOrtho ? "a" : "b",
     options:[{lettre:"a", texte:"oui", texteLibreOption:true}, {lettre:"b", texte:"non", texteLibreOption:true}]});
   const vect = (x, y) => `\\begin{pmatrix}${x}\\\\${y}\\end{pmatrix}`;
   const avecUV = (ux, uy, vx, vy, fin = '') => `Avec \\(\\vec{u}${vect(ux, uy)}\\) et \\(\\vec{v}${vect(vx, vy)}\\)${fin}`;
@@ -1556,7 +1836,7 @@ function genererExercices() {
   {
     const ux = math.fraction(aleaNonNul(-4,4), alea(2,4)), uy = math.fraction(aleaNonNul(-4,4), alea(2,4)), s = Math.random() < 0.5 ? 1 : -1;
     const vx = math.multiply(s, uy), vy = math.multiply(orth[0] ? -s : s, ux);
-    ouiNon("20.7 a)", avecUV(coordLatex(ux), coordLatex(uy), coordLatex(vx), coordLatex(vy)), orth[0]);
+    ouiNon("20.7 a)", avecUV(coordLatex(ux), coordLatex(uy), coordLatex(vx), coordLatex(vy)), orth[0], detail207q(ux, uy, vx, vy, orth[0]));
   }
   // b) coordonnees entieres, ou racines carrees (deux modeles)
   {
@@ -1564,16 +1844,16 @@ function genererExercices() {
     const r = Math.random();
     if (r < 0.5) {   // coordonnees entieres
       const a = aleaNonNul(-6,6), b = aleaNonNul(-6,6), t = alea(1,2);
-      ouiNon("20.7 b)", avecUV(String(a), String(b), String(s*t*b), String(orth[1] ? -s*t*a : s*t*a)), orth[1]);
+      ouiNon("20.7 b)", avecUV(String(a), String(b), String(s*t*b), String(orth[1] ? -s*t*a : s*t*a)), orth[1], detail207q(a, b, s*t*b, orth[1] ? -s*t*a : s*t*a, orth[1]));
     } else if (r < 0.75) {
       const D = SQFREE[alea(0, SQFREE.length-1)], a = aleaNonNul(-4,4), b = aleaNonNul(-6,6);
       const ux = `${coefPrefixeL(a)}\\sqrt{${D}}`;
       const vx = String(s*b), vy = `${coefPrefixeL(orth[1] ? -s*a : s*a)}\\sqrt{${D}}`;
-      ouiNon("20.7 b)", avecUV(ux, String(b), vx, vy), orth[1]);
+      ouiNon("20.7 b)", avecUV(ux, String(b), vx, vy), orth[1], detail207r1(a, D, b, s, orth[1]));
     } else {
       let m, n; do { m = SQFREE[alea(0, SQFREE.length-1)]; n = SQFREE[alea(0, SQFREE.length-1)]; } while (m === n);
       const rac = (k, sg) => `${sg < 0 ? '-' : ''}\\sqrt{${k}}`;
-      ouiNon("20.7 b)", avecUV(rac(m, 1), rac(n, 1), rac(n, s), rac(m, orth[1] ? -s : s)), orth[1]);
+      ouiNon("20.7 b)", avecUV(rac(m, 1), rac(n, 1), rac(n, s), rac(m, orth[1] ? -s : s)), orth[1], detail207r2(m, n, s, orth[1]));
     }
   }
   // c) avec un reel x : u(x-a ; b+x), v(x+a ; b-x) ont pour produit scalaire b^2-a^2 (orthogonaux si |a| = |b|)
@@ -1582,7 +1862,7 @@ function genererExercices() {
     let b;
     if (orth[2]) b = Math.random() < 0.5 ? a : -a;
     else do { b = aleaNonNul(-6,6); } while (Math.abs(b) === Math.abs(a));
-    ouiNon("20.7 c)", avecUV(`x${fracLatexSigned(-a)}`, `x${fracLatexSigned(b)}`, `x${fracLatexSigned(a)}`, `${b}-x`, ' où \\(x\\) est un réel'), orth[2]);
+    ouiNon("20.7 c)", avecUV(`x${fracLatexSigned(-a)}`, `x${fracLatexSigned(b)}`, `x${fracLatexSigned(a)}`, `${b}-x`, ' où \\(x\\) est un réel'), orth[2], detail207c(a, b, orth[2]));
   }
 
   // ---------- 20.8 : trouver le(s) reel(s) x tel(s) que u et v soient orthogonaux ----------
@@ -1593,7 +1873,7 @@ function genererExercices() {
     while (math.equal(math.multiply(sg, math.fraction(pN, pD)), -B) || pgcd(pN, pD) !== 1);
     const pFrac = math.fraction(pN, pD);
     const x = math.divide(B*C, math.add(math.multiply(sg, pFrac), B));
-    ex.push({id:"20.8 a)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${sg < 0 ? '-' : ''}x\\\\${B}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coordLatex(pFrac)}\\\\x${fracLatexSigned(-C)}\\end{pmatrix}\\)`, reponse: ensembleStr([x])});
+    ex.push({id:"20.8 a)", detail: detail208a(B, C, sg, pFrac, x), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${sg < 0 ? '-' : ''}x\\\\${B}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coordLatex(pFrac)}\\\\x${fracLatexSigned(-C)}\\end{pmatrix}\\)`, reponse: ensembleStr([x])});
   }
   // b) u(px-a ; b+qx), v(px+a ; b-qx) : (p^2-q^2)x^2 + b^2 - a^2 = 0, x = +-sqrt((b^2-a^2)/(q^2-p^2)) ;
   // une fois sur deux avec p = sqrt(D) (solution irrationnelle), sinon coefficients entiers a solution rationnelle
@@ -1606,7 +1886,7 @@ function genererExercices() {
         s = d > 0 ? simplifierRacine(n * d) : null;
       } while (d <= 0 || s.radicand === 1);
       const t = surdFrac(1, s.coef, s.radicand, d);
-      ex.push({id:"20.8 b)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}\\sqrt{${D}}x-${a}\\\\${b}+${k}x\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\sqrt{${D}}x+${a}\\\\${b}-${k}x\\end{pmatrix}\\)`, reponse: `{-${t};${t}}`});
+      ex.push({id:"20.8 b)", detail: detail208b(`\\sqrt{${D}}`, String(k), D, k*k, a, b), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}\\sqrt{${D}}x-${a}\\\\${b}+${k}x\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}\\sqrt{${D}}x+${a}\\\\${b}-${k}x\\end{pmatrix}\\)`, reponse: `{-${t};${t}}`});
     } else {
       const cas = [];
       for (let p = 1; p <= 4; p++) for (let q = p + 1; q <= 6; q++) for (let a = 1; a <= 8; a++) for (let b = a + 1; b <= 12; b++) {
@@ -1614,7 +1894,7 @@ function genererExercices() {
         if (r*r === n*d) cas.push([p, q, a, b, math.fraction(r, d)]);
       }
       const [p, q, a, b, x0] = cas[alea(0, cas.length - 1)];
-      ex.push({id:"20.8 b)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${coefPrefixeL(p)}x-${a}\\\\${b}+${coefPrefixeL(q)}x\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(p)}x+${a}\\\\${b}-${coefPrefixeL(q)}x\\end{pmatrix}\\)`, reponse: ensembleStr([x0, math.multiply(-1, x0)])});
+      ex.push({id:"20.8 b)", detail: detail208b(coefPrefixeL(p), coefPrefixeL(q), p*p, q*q, a, b), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${coefPrefixeL(p)}x-${a}\\\\${b}+${coefPrefixeL(q)}x\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(p)}x+${a}\\\\${b}-${coefPrefixeL(q)}x\\end{pmatrix}\\)`, reponse: ensembleStr([x0, math.multiply(-1, x0)])});
     }
   })();
   // c) u(Ax+B ; x+C), v(Ax+B ; k(Ax+B)) : (Ax+B)((A+k)x+B+kC) = 0
@@ -1626,7 +1906,7 @@ function genererExercices() {
       x1 = math.fraction(-B, A); x2 = math.fraction(-(B + k*C), A + k);
     } while (A + k === 0 || math.equal(x1, x2));
     const kB = k*A, kC = k*B;
-    ex.push({id:"20.8 c)", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${coefPrefixeL(A)}x${fracLatexSigned(B)}\\\\x${fracLatexSigned(C)}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(A)}x${fracLatexSigned(B)}\\\\${coefPrefixeL(kB)}x${fracLatexSigned(kC)}\\end{pmatrix}\\)`, reponse: ensembleStr([x1, x2])});
+    ex.push({id:"20.8 c)", detail: detail208c(A, B, C, k, x1, x2), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Avec \\(\\vec{u}\\begin{pmatrix}${coefPrefixeL(A)}x${fracLatexSigned(B)}\\\\x${fracLatexSigned(C)}\\end{pmatrix}\\) et \\(\\vec{v}\\begin{pmatrix}${coefPrefixeL(A)}x${fracLatexSigned(B)}\\\\${coefPrefixeL(kB)}x${fracLatexSigned(kC)}\\end{pmatrix}\\)`, reponse: ensembleStr([x1, x2])});
   })();
 
   // ---------- 20.9 : equation reduite d'une droite donnee par un point et un vecteur normal ----------
@@ -1635,7 +1915,7 @@ function genererExercices() {
     const Ax = aleaNonNul(-6,6), Ay = aleaNonNul(-6,6), nx = aleaNonNul(-6,6), ny = aleaNonNul(-6,6);
     const m = math.fraction(-nx, ny);
     const p = math.divide(nx*Ax + ny*Ay, ny);
-    ex.push({id:"20.9 a)", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`La droite passant par le point \\(A${pt(Ax, Ay)}\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, p)});
+    ex.push({id:"20.9 a)", detail: detail209a(Ax, Ay, nx, ny), type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`La droite passant par le point \\(A${pt(Ax, Ay)}\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, p)});
   })();
   // b) un point a coordonnees rationnelles, ou (une fois sur deux) avec des racines carrees : sqrt(D) en facteur ou au denominateur
   (function() {
@@ -1644,25 +1924,25 @@ function genererExercices() {
       const nx = aleaNonNul(-6,6), ny = aleaNonNul(-6,6);
       const m = math.fraction(-nx, ny);
       const p = math.divide(math.add(math.multiply(nx, Bx), math.multiply(ny, By)), ny);
-      ex.push({id:"20.9 b)", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`La droite passant par le point \\(B\\left(${coordLatex(Bx)};${coordLatex(By)}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, p)});
+      ex.push({id:"20.9 b)", detail: detail209b1(Bx, By, nx, ny), type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`La droite passant par le point \\(B\\left(${coordLatex(Bx)};${coordLatex(By)}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`, reponse: equationReduiteAscii(m, p)});
       return;
     }
     const D = SQFREE[alea(0, SQFREE.length-1)];
     const nx = aleaNonNul(-6,6), ny = aleaNonNul(-6,6);
     const m = math.fraction(-nx, ny);
-    let enonce, p;
+    let enonce, p, detailB;
     if (Math.random() < 0.5) {
       let k, km, V;
       do { k = aleaNonNul(-4,4); km = aleaNonNul(-4,4); V = nx*k + ny*km; } while (V === 0);
-      p = surdFrac(Math.sign(V) * Math.sign(ny), Math.abs(V), D, Math.abs(ny));
+      p = surdFrac(Math.sign(V) * Math.sign(ny), Math.abs(V), D, Math.abs(ny)); detailB = detail209b2(D, nx, ny, k, km);
       enonce = `La droite passant par le point \\(C(${coefPrefixeL(k)}\\sqrt{${D}};${coefPrefixeL(km)}\\sqrt{${D}})\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`;
     } else {
       let p0, q0, V;
       do { p0 = aleaNonNul(-5,5); q0 = aleaNonNul(-5,5); V = nx*p0 + ny*q0; } while (V === 0);
-      p = surdFrac(Math.sign(V) * Math.sign(ny), Math.abs(V), D, Math.abs(ny) * D);
+      p = surdFrac(Math.sign(V) * Math.sign(ny), Math.abs(V), D, Math.abs(ny) * D); detailB = detail209b3(D, nx, ny, p0, q0);
       enonce = `La droite passant par le point \\(C\\left(${p0 < 0 ? '-' : ''}\\dfrac{${Math.abs(p0)}}{\\sqrt{${D}}};${q0 < 0 ? '-' : ''}\\dfrac{${Math.abs(q0)}}{\\sqrt{${D}}}\\right)\\) et dont un vecteur normal est \\(\\vec{n}\\begin{pmatrix}${nx}\\\\${ny}\\end{pmatrix}\\)`;
     }
-    ex.push({id:"20.9 b)", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce, reponse: equationReduiteAscii(m, p)});
+    ex.push({id:"20.9 b)", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, detail: detailB, enonce, reponse: equationReduiteAscii(m, p)});
   })();
 
   // ---------- 20.10 : perpendiculaire a une droite (D) : ax + by + c = 0 ----------
@@ -1676,12 +1956,12 @@ function genererExercices() {
       const g = pgcd(s, a), cc = s / g, dd = a / g;
       const pente = `${eps < 0 ? '-' : ''}${cc === 1 ? '' : cc + '*'}sqrt(${D0})*x${dd === 1 ? '' : '/' + dd}`;
       const ord = math.add(math.fraction(-eps*s*k*D0, a), e);
-      ex.push({id:"20.10", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:"", reponse: equationReduiteAscii(pente, ord)});
+      ex.push({id:"20.10", detail: detail2010(ctx.c7), type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:"", reponse: equationReduiteAscii(pente, ord)});
     } else {
       const a = aleaNonNul(-5,5), b = aleaNonNul(-6,6), c = aleaNonNul(-9,9), Ex = aleaNonNul(-6,6), e = aleaNonNul(-6,6);
       ctx.c7 = {rad: false, a, b, c, Ex, e};
       const ord = math.add(math.fraction(-b * Ex, a), e);
-      ex.push({id:"20.10", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:"", reponse: equationReduiteAscii(math.fraction(b, a), ord)});
+      ex.push({id:"20.10", detail: detail2010(ctx.c7), type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:"", reponse: equationReduiteAscii(math.fraction(b, a), ord)});
     }
   })();
 
@@ -1702,8 +1982,8 @@ function genererExercices() {
       return equationReduiteAscii(m, p);
     };
     const nomDroite = (i, j) => `(${NOMS[Math.min(i, j)]}${NOMS[Math.max(i, j)]})`;
-    ex.push({id:"20.11 a)", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`passant par le point \\(${NOMS[ix]}\\) et perpendiculaire à la droite \\(${nomDroite(ix, iy)}\\)`, reponse: perp(ix, ix, iy)});
-    ex.push({id:"20.11 b)", type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`passant par le point \\(${NOMS[iz]}\\) et perpendiculaire à la droite \\(${nomDroite(iu, iv)}\\)`, reponse: perp(iz, iu, iv)});
+    ex.push({id:"20.11 a)", detail: detail2011(NOMS, P, ix, ix, iy), type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`passant par le point \\(${NOMS[ix]}\\) et perpendiculaire à la droite \\(${nomDroite(ix, iy)}\\)`, reponse: perp(ix, ix, iy)});
+    ex.push({id:"20.11 b)", detail: detail2011(NOMS, P, iz, iu, iv), type:"alg", formeSimplifiee:true, texteLibre:true, formeYax:true, enonce:`passant par le point \\(${NOMS[iz]}\\) et perpendiculaire à la droite \\(${nomDroite(iu, iv)}\\)`, reponse: perp(iz, iu, iv)});
   })();
 
   // ---------- 20.12 : un rectangle quelconque ABDC (AB perpendiculaire a AC, coordonnees entieres) ----------
@@ -1715,12 +1995,12 @@ function genererExercices() {
     const A = [alea(-5,5), alea(-5,5)];
     const B = [A[0] + AB[0], A[1] + AB[1]], C = [A[0] + AC[0], A[1] + AC[1]], D = [B[0] + AC[0], B[1] + AC[1]];
     ctx.c9 = {A, B, C};
-    ex.push({id:"20.12 a)", type:"num", texteLibre:true, enonce:"Calculer \\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\)", reponse:"0"});
+    ex.push({id:"20.12 a)", detail: detail2012a(AB, AC), type:"num", texteLibre:true, enonce:"Calculer \\(\\overrightarrow{AB}\\cdot\\overrightarrow{AC}\\)", reponse:"0"});
     // AC.CD = ACx (x - Cx) + ACy (y - Cy)
-    ex.push({id:"20.12 b)", type:"alg", formeSimplifiee:true, texteLibre:true, enonce:"Exprimer en fonction de \\(x\\) et \\(y\\) le produit scalaire \\(\\overrightarrow{AC}\\cdot\\overrightarrow{CD}\\)", reponse: lineaireAscii(AC[0], AC[1], -(AC[0]*C[0] + AC[1]*C[1]))});
+    ex.push({id:"20.12 b)", detail: detail2012b(A, C, AC), type:"alg", formeSimplifiee:true, texteLibre:true, enonce:"Exprimer en fonction de \\(x\\) et \\(y\\) le produit scalaire \\(\\overrightarrow{AC}\\cdot\\overrightarrow{CD}\\)", reponse: lineaireAscii(AC[0], AC[1], -(AC[0]*C[0] + AC[1]*C[1]))});
     // AB.BD = ABx (x - Bx) + ABy (y - By)
-    ex.push({id:"20.12 c)", type:"alg", formeSimplifiee:true, texteLibre:true, enonce:"Exprimer en fonction de \\(x\\) et \\(y\\) le produit scalaire \\(\\overrightarrow{AB}\\cdot\\overrightarrow{BD}\\)", reponse: lineaireAscii(AB[0], AB[1], -(AB[0]*B[0] + AB[1]*B[1]))});
-    ex.push({id:"20.12 d)", type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les réels \\(x\\) et \\(y\\) pour que le quadrilatère \\(ABDC\\) soit un rectangle", pa: String(D[0]), pb: String(D[1])});
+    ex.push({id:"20.12 c)", detail: detail2012c(A, B, AB), type:"alg", formeSimplifiee:true, texteLibre:true, enonce:"Exprimer en fonction de \\(x\\) et \\(y\\) le produit scalaire \\(\\overrightarrow{AB}\\cdot\\overrightarrow{BD}\\)", reponse: lineaireAscii(AB[0], AB[1], -(AB[0]*B[0] + AB[1]*B[1]))});
+    ex.push({id:"20.12 d)", detail: detail2012d(A, B, C, D), type:"paire", formePoint:true, texteLibre:true, enonce:"Déterminer les réels \\(x\\) et \\(y\\) pour que le quadrilatère \\(ABDC\\) soit un rectangle", pa: String(D[0]), pb: String(D[1])});
   })();
 
   // ---------- 20.13 : f(x) = a x^2 + beta x + d, tangentes aux abscisses x et -x perpendiculaires ----------
@@ -1735,7 +2015,7 @@ function genererExercices() {
     const d = aleaNonNul(-6,6);
     ctx.c10 = {a, b, D, surd, d};
     const t = surdFrac(1, s.coef, s.radicand, 2*Math.abs(a));
-    ex.push({id:"20.13", type:"num", formeSimplifiee:true, texteLibre:true, enonce:"Déterminer les valeurs de \\(x\\) telles que les tangentes aux points d'abscisse \\(x\\) et \\(-x\\) soient perpendiculaires", reponse: `{-${t};${t}}`});
+    ex.push({id:"20.13", detail: detail2013(a, b, D, surd, s), type:"num", formeSimplifiee:true, texteLibre:true, enonce:"Déterminer les valeurs de \\(x\\) telles que les tangentes aux points d'abscisse \\(x\\) et \\(-x\\) soient perpendiculaires", reponse: `{-${t};${t}}`});
   })();
 
   // ---------- 20.14 : f(x) = a x^2 + b x, tangentes aux abscisses p et -p perpendiculaires ----------
@@ -1747,10 +2027,13 @@ function genererExercices() {
     ctx.c11 = {a};
     const s = simplifierRacine(mm*mm - 1);
     const t = surdFrac(1, s.coef, s.radicand, 1);
-    ex.push({id:"20.14", type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Déterminer les valeurs possibles de \\(b\\), en sachant que les tangentes aux points d'abscisse \\(${coordLatex(p)}\\) et \\(${coordLatex(math.multiply(-1, p))}\\) sont perpendiculaires`, reponse: `{-${t};${t}}`});
+    ex.push({id:"20.14", detail: detail2014(a, n, s, t), type:"num", formeSimplifiee:true, texteLibre:true, enonce:`Déterminer les valeurs possibles de \\(b\\), en sachant que les tangentes aux points d'abscisse \\(${coordLatex(p)}\\) et \\(${coordLatex(math.multiply(-1, p))}\\) sont perpendiculaires`, reponse: `{-${t};${t}}`});
   })();
 
   contexte25 = ctx;
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 let exercices = genererExercices();
@@ -3102,7 +3385,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
