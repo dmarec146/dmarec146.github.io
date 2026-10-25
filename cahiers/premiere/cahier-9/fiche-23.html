@@ -20,6 +20,8 @@ window.MathJax = {
 <script src="../../../assets/js/moteur-reponses.js"></script>
 <script src="../../../assets/js/devoir-partiel.js"></script>
 <script src="../../../assets/js/bareme.js"></script>
+<script src="../../../assets/js/details-correction.js?v=20261021b"></script>
+<script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
 Bareme.definir({"points":{"23.1 a)":0.5,"23.1 b)":0.75,"23.2 a)":0.75,"23.2 b)":1,"23.3 a)":0.5,"23.3 b)":0.5,"23.4 a)":1.25,"23.4 b)":1.25,"23.5":1.25,"23.6 a)":0.5,"23.6 b)":0.75,"23.7 a)":0.75,"23.7 b)":1,"23.8":0.75,"23.9 a)":1.25,"23.9 b)":1.25,"23.10 a)":1.25,"23.10 b)":1.25,"23.11 a)":1.75,"23.11 b)":1.75,"23.12":1.75,"23.13":2,"23.14 a)":1.75,"23.14 b)":1.75},"bonus":["23.12","23.13","23.14 a)","23.14 b)"]});
@@ -1224,6 +1226,234 @@ function mettreAJourTextesAvances() {
   document.getElementById('texte-23-14').innerHTML = `On considère la suite \\(\\left(u_n\\right)\\) définie pour \\(n\\geqslant 1\\) par \\(u_n=\\displaystyle\\sum_{k=1}^{n}\\dfrac{${p16.s === 1 ? '(-1)^k' : '(-1)^{k+1}'}}{k${p16.p === 2 ? '^2' : ''}}\\), et les deux suites \\(\\left(v_n\\right)\\) et \\(\\left(w_n\\right)\\) définies par \\(v_n=u_{2n}\\) et \\(w_n=u_{2n+1}\\).`;
 }
 
+// ---------- details de correction (25/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, fracD, fracDP, fracTexte, fracBrute, polyL } = Detail;
+const { dedup2, polyF2, sommeF2 } = DetailQ;
+// polynome LaTeX : un coefficient devant une puissance de nombre s'ecrit « 6\times 2^{n} » (jamais « 62^{n} »)
+function polyT23(termes) {
+  let s = '';
+  for (const { c, v } of termes) {
+    const f = math.fraction(c); if (f.n === 0) continue;
+    const t = fracTexte(f.n, f.d), corps = (t === '1' && v) ? v : (/^\d/.test(v) ? `${t}\\times ${v}` : `${t}${v}`);
+    s += (f.s < 0 ? '-' : (s ? '+' : '')) + corps;
+  }
+  return s || '0';
+}
+const lg23 = (a, b) => polyT23([{ c: a, v: 'x' }, { c: b, v: '' }]);
+const ft23 = (f) => fracD(math.fraction(f));
+const par23 = (T) => (String(T).startsWith('-') ? `\\left(${T}\\right)` : String(T));
+const fp23 = (f) => par23(ft23(f));
+const INV23 = { '<': '>', '>': '<', '\\leqslant ': '\\geqslant ', '\\geqslant ': '\\leqslant ' };
+const SYM23 = (op) => (op === '<' ? '\\lt ' : op);
+const nP23 = (v) => (v === 0 ? 'n' : v > 0 ? `n+${v}` : `n-${-v}`);
+const ex23 = (b, e) => (e === 1 ? String(b) : `${b}^{${e}}`);
+const sansDoublons23 = (l) => l.filter((x, i, t) => i === 0 || x !== t[i - 1]);
+// terme « coefficient fois corps » avec son signe devant (jamais « 1\times »), c fraction ou entier non nul
+const ct23 = (c, corps) => { const f = math.fraction(c); if (f.n === 0) return ''; const s = f.s < 0 ? '-' : '+', a = fracTexte(f.n, f.d); return a === '1' ? `${s}${corps}` : `${s}${a}\\times ${corps}`; };
+const somme23 = (...termes) => { const t = termes.join(''); return t.startsWith('+') ? t.slice(1) : (t === '' ? '0' : t); };
+// polynome a coefficients rationnels sur un denominateur commun : [[coef, 'N^{2}'], [coef, 'N'], [coef, '']]
+function finPoly23(cs) {
+  const fr = cs.map(([c, v]) => [math.fraction(c), v]).filter(([c]) => c.n !== 0);
+  let L = 1; fr.forEach(([c]) => { L = L * c.d / pgcd(L, c.d); });
+  const num = polyT23(fr.map(([c, v]) => ({ c: c.s * c.n * (L / c.d), v })));
+  return L === 1 ? num : `\\dfrac{${num}}{${L}}`;
+}
+// sommes de fractions signees (la premiere peut etre negative) : { lignes, final }
+function sommeSignee23(...fs) {
+  const tous = fs.map((f) => { f = math.fraction(f); return { s: f.s, n: f.n, d: f.d }; }), termes = tous.some((x) => x.n !== 0) ? tous.filter((x) => x.n !== 0) : tous;   // un terme nul n'est pas ecrit
+  const den = termes.reduce((t, x) => Detail.ppcm(t, x.d), 1), num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+  const sg = (x, i) => (i === 0 ? (x.s < 0 ? '-' : '') : (x.s < 0 ? ' - ' : ' + ')), brute = num === 0 ? '0' : fracBrute(num, den), simple = fracTexte(num, den);
+  if (termes.length === 1 && num !== 0) return { lignes: [fracBrute(num, den)], final: simple };
+  const origine = termes.map((x, i) => sg(x, i) + fracBrute(x.n, x.d)).join('');
+  const converti = termes.map((x, i) => { const m = den / x.d; return sg(x, i) + (m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+  const meme = termes.map((x, i) => sg(x, i) + fracBrute(x.n * (den / x.d), den)).join('');
+  const conversion = termes.some((x) => x.d !== den);
+  const fin = den === 1 ? `${num}` : `${brute}${brute === simple ? '' : ` = ${simple}`}`;
+  if (!conversion) return { lignes: [`${origine} = ${fin}`], final: simple };
+  return { lignes: [`${origine} = ${converti} = ${meme} = ${fin}`], final: simple };
+}
+function finIneq23(c, op, D, spec) {
+  const l = [];
+  if (c < 0) l.push(`\\text{On divise par } ${c} \\lt 0`, "\\text{donc le sens de l'inégalité change}");
+  if (c !== 1) l.push(`\\iff x ${c < 0 ? INV23[op] : op} ${fracD(math.fraction(D, c))}`);
+  l.push(`S = ${formaterIntervalleSpec(spec)}`);
+  return l;
+}
+// 23.1 a) (x + a)^2 - (x + b)^2 op c
+function detail231a(a, b, c, op, spec) {
+  const o = SYM23(op), k = 2 * (a - b), s = a * a - b * b, sq = (v) => polyT23([{ c: 1, v: 'x^{2}' }, { c: 2 * v, v: 'x' }, { c: v * v, v: '' }]);
+  const l = sansDoublons23([`\\left(${lg23(1, a)}\\right)^{2}-\\left(${lg23(1, b)}\\right)^{2} ${o} ${c}`, `\\iff \\left(${sq(a)}\\right)-\\left(${sq(b)}\\right) ${o} ${c}`, `\\iff ${polyT23([{ c: k, v: 'x' }, { c: s, v: '' }])} ${o} ${c}`, `\\iff ${polyT23([{ c: k, v: 'x' }])} ${o} ${c - s}`]);
+  return { lignes: [...l, ...finIneq23(k, op, c - s, spec)], final: formaterIntervalleSpec(spec) };
+}
+// 23.1 b) a/(x - b) op c/(x - d)
+function detail231b(a, b, c, d, op, spec, z) {
+  const o = SYM23(op), Db = lg23(1, -b), Dd = lg23(1, -d), fs = (n, D) => `${n < 0 ? '-' : ''}\\dfrac{${Math.abs(n)}}{${D}}`, An = a - c, Bn = c * b - a * d, N = lg23(An, Bn), S = formaterIntervalleSpec(spec);
+  const pf = (n, D) => (D === 'x' ? (n === 1 ? 'x' : n === -1 ? '-x' : `${n}x`) : (n === 1 ? `\\left(${D}\\right)` : n === -1 ? `-\\left(${D}\\right)` : `${n}\\left(${D}\\right)`));
+  const num = `${pf(a, Dd)}${-c < 0 ? '' : '+'}${pf(-c, Db)}`, den = [Db, Dd].map((D) => (D === 'x' ? 'x' : `\\left(${D}\\right)`)).join('');
+  const racine = math.fraction(-Bn, An), q = `\\dfrac{${N}}{${den}}`;
+  const tableau = Detail.tableauSignesFacteurs([{ label: N, v: math.number(racine), tex: ft23(racine), sgn: An > 0 ? 1 : -1 }, { label: Db, v: b, tex: String(b), sgn: 1, denom: true }, { label: Dd, v: d, tex: String(d), sgn: 1, denom: true }], 'signe');
+  const l = [`${fs(a, Db)} ${o} ${fs(c, Dd)}`, `\\iff ${fs(a, Db)}${c < 0 ? '+' : '-'}\\dfrac{${Math.abs(c)}}{${Dd}} ${o} 0`, `\\iff \\dfrac{${num}}{${den}} ${o} 0`, `\\iff ${q} ${o} 0`, ...Detail.lignesSigneAffine(An, Bn)];
+  if (b !== 0) l.push(...Detail.lignesSigneAffine(1, -b));
+  if (d !== 0) l.push(...Detail.lignesSigneAffine(1, -d));
+  l.push('\\text{Tableau de signes du quotient}', tableau, '\\text{On cherche les valeurs de } x', `\\text{pour lesquelles le quotient est } ${op}\\ 0`, `\\scriptsize \\text{Les valeurs interdites } ${b} \\text{ et } ${d} \\text{ sont exclues dans tous les cas}`, `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 23.2 a) |ax + b| = cx + d
+function detail232a(a, b, c, d) {
+  const A = lg23(a, b), C = lg23(c, d), x1 = math.fraction(d - b, a - c), x2 = math.fraction(-(d + b), a + c), negC = polyT23([{ c: -c, v: 'x' }, { c: -d, v: '' }]);
+  const l = [`\\left|${A}\\right| = ${C}`, '\\text{Une valeur absolue est positive ou nulle}', `\\text{Il faut } ${C} \\geqslant 0`, '\\text{Deux cas :}', `${A} = ${C}`, `\\iff ${polyT23([{ c: a - c, v: 'x' }])} = ${d - b}`];
+  if (a - c !== 1) l.push(`\\iff x = ${ft23(x1)}`);
+  l.push(`${A} = -\\left(${C}\\right)`, `\\iff ${A} = ${negC}`, `\\iff ${polyT23([{ c: a + c, v: 'x' }])} = ${-d - b}`);
+  if (a + c !== 1) l.push(`\\iff x = ${ft23(x2)}`);
+  const sols = [];
+  [x1, x2].forEach((x) => {
+    if (sols.some((s) => math.equal(s.x, x)) || sols.some((s) => s.rej && math.equal(s.x, x))) return;
+    const v = math.add(math.multiply(c, x), d), cx = c === 1 ? ft23(x) : c === -1 ? `-${fp23(x)}` : `${c}\\times ${fp23(x)}`, ok = math.largerEq(v, 0);
+    l.push(`${cx}${d > 0 ? '+' : d < 0 ? '-' : ''}${d === 0 ? '' : Math.abs(d)} = ${ft23(v)}`, ok ? `${ft23(v)} \\geqslant 0 \\text{ : convient}` : `${ft23(v)} \\lt 0 \\text{ : à rejeter}`);
+    sols.push({ x, rej: !ok });
+  });
+  const ens = sols.filter((s) => !s.rej).map((s) => s.x).sort((p, q) => math.compare(p, q)), S = `\\{${ens.map(ft23).join('\\,;\\,')}\\}`;
+  l.push(`S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 23.2 b) (x + a)/(x + b) = (x + c)/(x + d)
+function detail232b(a, b, c, d, x) {
+  const fx = (p) => (p === 0 ? 'x' : `\\left(${lg23(1, p)}\\right)`), prod = (p, q) => (p === 0 && q === 0 ? 'x^{2}' : `${fx(p)}${fx(q)}`), dev = (p, q) => polyT23([{ c: 1, v: 'x^{2}' }, { c: p + q, v: 'x' }, { c: p * q, v: '' }]);
+  const D = a + d - b - c, S = `\\{${ft23(x)}\\}`;
+  const l = [`\\text{Valeurs interdites : } ${-b} \\text{ et } ${-d}`, `\\dfrac{${lg23(1, a)}}{${lg23(1, b)}} = \\dfrac{${lg23(1, c)}}{${lg23(1, d)}}`, `\\iff ${prod(a, d)} = ${prod(c, b)}`, `\\iff ${dev(a, d)} = ${dev(c, b)}`, `\\iff ${polyT23([{ c: D, v: 'x' }])} = ${b * c - a * d}`];
+  if (D !== 1) l.push(`\\iff x = ${ft23(x)}`);
+  l.push("\\text{Cette valeur n'est pas interdite}", `S = ${S}`);
+  return { lignes: l, final: S };
+}
+// 23.3 a) A^(-m) +/- B^(-n)
+function detail233a(A, B, m, n, plus) {
+  const sg = plus ? '+' : '-', S = sommeSignee23(math.fraction(1, Math.pow(A, m)), math.multiply(plus ? 1 : -1, math.fraction(1, Math.pow(B, n))));
+  const sym = `\\dfrac{1}{${ex23(A, m)}}${sg}\\dfrac{1}{${ex23(B, n)}}`;
+  return { lignes: [`${A}^{-${m}}${sg}${B}^{-${n}} = ${m === 1 && n === 1 ? '' : `${sym} = `}${S.lignes[0]}`], final: S.final };
+}
+// 23.3 b) (p x q)/r avec un chiffre apres la virgule
+function detail233b(p, q, r) {
+  const dec = (v) => String(v / 10).replace('.', '{,}'), P = p * q, R = 10 * r, br = fracBrute(P, R), si = fracTexte(P, R);
+  return { lignes: [`\\dfrac{${dec(p)}\\times ${dec(q)}}{${dec(r)}} = \\dfrac{\\dfrac{${p}}{10}\\times\\dfrac{${q}}{10}}{\\dfrac{${r}}{10}} = \\dfrac{${P}}{100}\\times\\dfrac{10}{${r}} = ${br}${br === si ? '' : ` = ${si}`}`], final: si };
+}
+// 23.4 a) (a - b) Somme a^k b^(N-k)
+function detail234a(N, sens) {
+  const t = sens === 0 ? [`a^{k}b^{${N}-k}`, `a^{k+1}b^{${N}-k}`, `a^{k}b^{${N + 1}-k}`] : [`a^{${N}-k}b^{k}`, `a^{${N + 1}-k}b^{k}`, `a^{${N}-k}b^{k+1}`], fin = `a^{${N + 1}}-b^{${N + 1}}`;
+  return { lignes: [`\\left(a-b\\right)\\displaystyle\\sum_{k=0}^{${N}}${t[0]}`, `= \\displaystyle\\sum_{k=0}^{${N}}\\left(${t[1]}-${t[2]}\\right)`, '\\text{La somme se télescope}', `= ${fin}`], final: fin };
+}
+// 23.4 b) (a + b) Somme (-1)^k a^(N-k) b^k, N pair
+function detail234b(N, sens) {
+  const t = sens === 0 ? [`\\left(-1\\right)^{k}a^{${N}-k}b^{k}`, `\\left(-1\\right)^{k}a^{${N + 1}-k}b^{k}`, `\\left(-1\\right)^{k+1}a^{${N}-k}b^{k+1}`, `a^{${N + 1}}-\\left(-1\\right)^{${N + 1}}b^{${N + 1}}`] : [`\\left(-1\\right)^{k}a^{k}b^{${N}-k}`, `\\left(-1\\right)^{k}a^{k}b^{${N + 1}-k}`, `\\left(-1\\right)^{k+1}a^{k+1}b^{${N}-k}`, `b^{${N + 1}}-\\left(-1\\right)^{${N + 1}}a^{${N + 1}}`], fin = `a^{${N + 1}}+b^{${N + 1}}`;
+  return { lignes: [`\\left(a+b\\right)\\displaystyle\\sum_{k=0}^{${N}}${t[0]}`, `= \\displaystyle\\sum_{k=0}^{${N}}\\left(${t[1]}-${t[2]}\\right)`, '\\text{La somme se télescope}', `= ${t[3]}`, `= ${fin}`], final: fin };
+}
+// 23.5 : (1 - b) Somme b^k et variantes
+function detail235(r) {
+  const D = {
+    '1-b^(n+1)': { e: '\\left(1-b\\right)\\displaystyle\\sum_{k=0}^{n}b^{k}', lo: 0, hi: 'n', t: 'b^{k}-b^{k+1}', f: '1-b^{n+1}' },
+    'b^(n+1)-1': { e: '\\left(b-1\\right)\\displaystyle\\sum_{k=0}^{n}b^{k}', lo: 0, hi: 'n', t: 'b^{k+1}-b^{k}', f: 'b^{n+1}-1' },
+    'b-b^(n+1)': { e: '\\left(1-b\\right)\\displaystyle\\sum_{k=1}^{n}b^{k}', lo: 1, hi: 'n', t: 'b^{k}-b^{k+1}', f: 'b-b^{n+1}' },
+    '1-b^n': { e: '\\left(1-b\\right)\\displaystyle\\sum_{k=0}^{n-1}b^{k}', lo: 0, hi: 'n-1', t: 'b^{k}-b^{k+1}', f: '1-b^{n}' }
+  }[r];
+  return { lignes: [D.e, `= \\displaystyle\\sum_{k=${D.lo}}^{${D.hi}}\\left(${D.t}\\right)`, '\\text{La somme se télescope}', `= ${D.f}`], final: D.f };
+}
+// 23.6 a) somme de termes d'une suite arithmetique
+function detail236a(L, U, u0, r) {
+  const uL = u0 + L * r, uU = u0 + U * r, nb = U - L + 1, S = nb * (uL + uU) / 2, term = (i, v) => `u_{${i}} = ${u0}${r < 0 ? '-' : '+'}${Math.abs(r) === 1 ? i : `${i}\\times ${Math.abs(r)}`} = ${v}`;
+  return { lignes: [`\\text{Nombre de termes : } ${U}-${L}+1 = ${nb}`, term(L, uL), term(U, uU), `S = \\dfrac{${nb}\\times\\left(${uL}+${par23(uU)}\\right)}{2}`, `S = ${S}`], final: String(S) };
+}
+// 23.6 b) somme de u_0 a u_N en fonction de N
+function detail236b(u0, r) {
+  const uN = polyT23([{ c: r, v: 'N' }, { c: u0, v: '' }]), fin = finPoly23([[math.fraction(r, 2), 'N^{2}'], [math.add(u0, math.fraction(r, 2)), 'N'], [u0, '']]);
+  const sommeDeux = `\\dfrac{\\left(N+1\\right)\\left(${polyT23([{ c: r, v: 'N' }, { c: 2 * u0, v: '' }])}\\right)}{2}`;
+  return { lignes: ['\\text{Nombre de termes : } N+1', `u_{N} = ${uN}`, `S = \\dfrac{\\left(N+1\\right)\\left(u_{0}+u_{N}\\right)}{2}${u0 === 0 ? '' : ` = \\dfrac{\\left(N+1\\right)\\left(${u0}+\\left(${uN}\\right)\\right)}{2}`} = ${sommeDeux} = ${fin}`], final: fin };
+}
+// 23.7 a) raison fractionnaire
+function termeArith23(i, u0, rp, rq) {
+  if (i === 0) return `u_{0} = ${u0}`;
+  const rr = math.multiply(i, math.fraction(rp, rq));
+  return `u_{${i}} = ${u0}${rp < 0 ? '-' : '+'}${i}\\times\\dfrac{${Math.abs(rp)}}{${rq}} = ${sommeSignee23(u0, rr).lignes[0]}`;
+}
+function detail237a(L, U, u0, rp, rq) {
+  const rF = math.fraction(rp, rq), uL = math.add(u0, math.multiply(L, rF)), uU = math.add(u0, math.multiply(U, rF)), nb = U - L + 1, t = math.add(uL, uU), St = sommeSignee23(uL, uU), S = math.multiply(math.fraction(nb, 2), t), fin = fracD(S);
+  return { lignes: [`\\text{Nombre de termes : } ${U}-${L}+1 = ${nb}`, termeArith23(L, u0, rp, rq), termeArith23(U, u0, rp, rq), `u_{${L}}+u_{${U}} = ${St.lignes[0]}`, `S = ${fracBrute(nb, 2)}\\times ${fracDP(t)} = ${fin}`], final: fin };
+}
+// 23.7 b) somme de u_0 a u_(M N) en fonction de N
+function detail237b(M, u0, rp, rq) {
+  const rF = math.fraction(rp, rq), c = math.multiply(M, rF), coefN2 = math.divide(math.multiply(M * M, rF), 2), coefN = math.divide(math.multiply(M, math.add(math.multiply(2, u0), rF)), 2), fin = finPoly23([[coefN2, 'N^{2}'], [coefN, 'N'], [u0, '']]);
+  const uMN = polyT23([{ c, v: 'N' }, { c: u0, v: '' }]), facteur = polyT23([{ c, v: 'N' }, { c: 2 * u0, v: '' }]);
+  return { lignes: [`\\text{Nombre de termes : } ${M}N+1`, `u_{${M}N} = ${u0}${rp < 0 ? '-' : '+'}${M}N\\times\\dfrac{${Math.abs(rp)}}{${rq}} = ${uMN}`, `S = \\dfrac{\\left(${M}N+1\\right)\\left(u_{0}+u_{${M}N}\\right)}{2} = \\dfrac{\\left(${M}N+1\\right)\\left(${facteur}\\right)}{2} = ${fin}`], final: fin };
+}
+// 23.8 : QCM somme geometrique
+function detail238(L, U, bonne) {
+  const nb = U - L + 1;
+  return { lignes: [`\\text{Nombre de termes : } ${U}-${L}+1 = ${nb}`, `\\text{Premier terme : } u_{${L}}`, `S = u_{${L}}\\times\\dfrac{1-q^{${nb}}}{1-q}`, `\\text{Réponse : } ${bonne}`], final: bonne };
+}
+// 23.9 a) somme de k = L a n, premier terme u_0 = p/q, raison Q
+function detail239a(p, q, Q, L) {
+  const u0F = math.fraction(p, q), uL = math.multiply(u0F, Math.pow(Q, L)), nm = nP23(1 - L), QQ = par23(Q), A = math.divide(uL, 1 - Q), B = math.divide(math.multiply(u0F, Q), 1 - Q), Qn = `${QQ}^{n}`;
+  const comb = polyT23([{ c: A, v: '' }, { c: math.multiply(-1, B), v: Qn }]), fin = finPoly23([[math.multiply(-1, B), Qn], [A, '']]);
+  return { lignes: sansDoublons23([`\\text{Nombre de termes : } n-${L}+1 = ${nm}`, `u_{${L}} = \\dfrac{${p}}{${q}}\\times ${L === 1 ? QQ : `${QQ}^{${L}}`} = ${ft23(uL)}`, `S = ${fp23(uL)}\\times\\dfrac{1-${QQ}^{${nm}}}{1-${QQ}} = ${comb}${comb === fin ? '' : ` = ${fin}`}`]), final: fin };
+}
+// 23.9 b) somme de k = 1 a 2n, u_0 entier, raison p/q
+function detail239b(u0, p, q) {
+  const r = math.fraction(p, q), u1 = math.multiply(u0, r), A = math.divide(u1, math.subtract(1, r)), r2 = math.multiply(r, r), pw = `\\left(${ft23(r2)}\\right)^{n}`, comb = polyT23([{ c: A, v: '' }, { c: math.multiply(-1, A), v: pw }]), fin = finPoly23([[math.multiply(-1, A), pw], [A, '']]);
+  return { lignes: sansDoublons23(['\\text{Nombre de termes : } 2n-1+1 = 2n', `u_{1} = ${u0}\\times\\dfrac{${p}}{${q}} = ${ft23(u1)}`, `S = ${fp23(u1)}\\times\\dfrac{1-\\left(\\dfrac{${p}}{${q}}\\right)^{2n}}{1-\\dfrac{${p}}{${q}}} = ${polyT23([{ c: A, v: `\\left(1-${pw}\\right)` }])} = ${comb}${comb === fin ? '' : ` = ${fin}`}`]), final: fin };
+}
+// 23.10 a) Somme A^k / B^(k+1)
+function detail2310a(A, B) {
+  const P = `\\left(\\dfrac{${A}}{${B}}\\right)^{n+1}`, fin = B - A === 1 ? `1-${P}` : A - B === 1 ? `${P}-1` : B > A ? `\\dfrac{1-${P}}{${B - A}}` : `\\dfrac{${P}-1}{${A - B}}`;
+  const brut = A > B ? (A - B === 1 ? `-\\left(1-${P}\\right)` : `-\\dfrac{1-${P}}{${A - B}}`) : fin;
+  const s = `S = \\dfrac{1}{${B}}\\times\\dfrac{1-${P}}{1-\\dfrac{${A}}{${B}}} = ${brut}${brut === fin ? '' : ` = ${fin}`}`;
+  return { lignes: [`\\text{Suite géométrique de raison } \\dfrac{${A}}{${B}}`, `\\dfrac{${A}^{k}}{${B}^{k+1}} = \\dfrac{1}{${B}}\\times\\left(\\dfrac{${A}}{${B}}\\right)^{k}`, s], final: fin };
+}
+// 23.10 b) Somme (A^k - B^(k+1))
+function detail2310b(A, B) {
+  const constTotal = math.add(math.fraction(-1, A - 1), math.fraction(B, B - 1)), fin = finPoly23([[math.fraction(1, A - 1), `${A}^{n+1}`], [math.fraction(-B, B - 1), `${B}^{n+1}`], [constTotal, '']]);
+  const gA = A === 2 ? '2^{n+1}-1' : `\\dfrac{${A}^{n+1}-1}{${A - 1}}`, gB = B === 2 ? `\\left(2^{n+1}-1\\right)` : `\\dfrac{${B}^{n+1}-1}{${B - 1}}`;
+  return { lignes: [`\\displaystyle\\sum_{k=0}^{n}\\left(${A}^{k}-${B}^{k+1}\\right) = \\displaystyle\\sum_{k=0}^{n}${A}^{k}-${B}\\displaystyle\\sum_{k=0}^{n}${B}^{k}`, `\\text{Deux suites géométriques, de raisons } ${A} \\text{ et } ${B}`, `= ${gA}-${B}\\times ${gB}`, `= ${fin}`], final: fin };
+}
+// 23.11 a) u_(n+1) = B u_n + C
+function detail2311a(u0, B, C) {
+  const lam = math.divide(C, 1 - B), v0 = math.subtract(u0, lam), lp = fp23(lam), Cs = `${C > 0 ? '+' : ''}${C}`, vn = polyT23([{ c: v0, v: `${B}^{n}` }]);
+  const fin = finPoly23([[lam, ''], [v0, `${B}^{n}`]]);
+  return { lignes: [`\\text{On cherche } x \\text{ tel que } x = ${B}x${Cs}`, `\\iff ${polyT23([{ c: 1 - B, v: 'x' }])} = ${C}`, `\\iff x = ${ft23(lam)}`, '\\text{On pose}', `v_{n} = u_{n}-${lp}`, `v_{n+1} = u_{n+1}-${lp}`, `= ${B}u_{n}${Cs}-${lp}`, `= ${B}\\left(u_{n}-${lp}\\right)`, `= ${B}v_{n}`, `\\text{Suite géométrique de raison } ${B}`, `v_{0} = ${u0}-${lp} = ${ft23(v0)}`, `v_{n} = ${vn}`, `u_{n} = v_{n}+${lp}`, `u_{n} = ${fin}`], final: fin };
+}
+// 23.11 b) somme des u_k
+function detail2311b(u0, B, C) {
+  const lam = math.divide(C, 1 - B), v0 = math.subtract(u0, lam), K3 = math.divide(v0, B - 1), uk = polyT23([{ c: lam, v: '' }, { c: v0, v: `${B}^{k}` }]), fin = finPoly23([[math.multiply(K3, B), `${B}^{n}`], [lam, 'n'], [math.subtract(lam, K3), '']]);
+  const geo = B === 2 ? `\\left(2^{n+1}-1\\right)` : `\\dfrac{${B}^{n+1}-1}{${B - 1}}`, somme = (c, corps) => ct23(c, corps);
+  const decomp = somme23(somme(lam, '\\left(n+1\\right)'), somme(v0, `\\displaystyle\\sum_{k=0}^{n}${B}^{k}`)), calc = somme23(somme(lam, '\\left(n+1\\right)'), somme(v0, geo));
+  const dev = polyT23([{ c: math.multiply(K3, B), v: `${B}^{n}` }, { c: lam, v: 'n' }, { c: math.subtract(lam, K3), v: '' }]);
+  return { lignes: [`\\text{Terme général : } u_{k} = ${uk}`, `\\displaystyle\\sum_{k=0}^{n}u_{k} = \\displaystyle\\sum_{k=0}^{n}\\left(${uk}\\right)`, `= ${decomp}`, `\\text{Suite géométrique de raison } ${B}`, `= ${calc}`, ...(dev === fin ? [] : [`= ${dev}`]), `= ${fin}`].filter((x, i, t) => i === 0 || x !== t[i - 1]), final: fin };
+}
+// 23.12 : S(n) = A n (n + K)
+function detail2312(A, K) {
+  const cA = A === 1 ? '' : String(A), fx = (v) => (v === 0 ? 'n' : `\\left(${nP23(v)}\\right)`), fin = polyT23([{ c: 2 * A, v: 'n' }, { c: A * (K - 1), v: '' }]);
+  const dev = `\\left(${polyT23([{ c: 1, v: 'n^{2}' }, { c: K, v: 'n' }])}\\right)-\\left(${polyT23([{ c: 1, v: 'n^{2}' }, { c: K - 2, v: 'n' }, { c: -(K - 1), v: '' }])}\\right)`;
+  const l = [`\\text{Pour } n \\geqslant 1 \\text{ : } u_{n} = S\\left(n\\right)-S\\left(n-1\\right)`, `= ${cA}n\\left(n+${K}\\right)-${cA}\\left(n-1\\right)${fx(K - 1)}`, A === 1 ? `= ${dev}` : `= ${A}\\left(${dev}\\right)`];
+  if (A !== 1) l.push(`= ${A}\\left(${polyT23([{ c: 2, v: 'n' }, { c: K - 1, v: '' }])}\\right)`);
+  l.push(`= ${fin}`);
+  return { lignes: sansDoublons23(l), final: fin };
+}
+// 23.13 : S(x) = Somme k x^k (v = 0) ou (k + 1) x^k (v = 1)
+function detail2313(v) {
+  if (v === 1) {
+    const fin = '\\dfrac{1-\\left(n+2\\right)x^{n+1}+\\left(n+1\\right)x^{n+2}}{\\left(1-x\\right)^{2}}';
+    return { lignes: ['S = \\displaystyle\\sum_{k=0}^{n}\\left(k+1\\right)x^{k}', '\\left(1-x\\right)S = \\displaystyle\\sum_{k=0}^{n}\\left(k+1\\right)x^{k}-\\displaystyle\\sum_{k=0}^{n}\\left(k+1\\right)x^{k+1}', '= \\displaystyle\\sum_{k=0}^{n}\\left(k+1\\right)x^{k}-\\displaystyle\\sum_{k=1}^{n+1}kx^{k}', '= \\displaystyle\\sum_{k=0}^{n}x^{k}-\\left(n+1\\right)x^{n+1}', '= \\dfrac{1-x^{n+1}}{1-x}-\\left(n+1\\right)x^{n+1}', '= \\dfrac{1-x^{n+1}-\\left(n+1\\right)x^{n+1}\\left(1-x\\right)}{1-x}', '= \\dfrac{1-\\left(n+2\\right)x^{n+1}+\\left(n+1\\right)x^{n+2}}{1-x}', `S = ${fin}`], final: fin };
+  }
+  const fin = '\\dfrac{x\\left(1-\\left(n+1\\right)x^{n}+nx^{n+1}\\right)}{\\left(1-x\\right)^{2}}';
+  return { lignes: ['S = \\displaystyle\\sum_{k=1}^{n}kx^{k}', '\\left(1-x\\right)S = \\displaystyle\\sum_{k=1}^{n}kx^{k}-\\displaystyle\\sum_{k=1}^{n}kx^{k+1}', '= \\displaystyle\\sum_{k=1}^{n}kx^{k}-\\displaystyle\\sum_{k=2}^{n+1}\\left(k-1\\right)x^{k}', '= \\displaystyle\\sum_{k=1}^{n}x^{k}-nx^{n+1}', '= \\dfrac{x\\left(1-x^{n}\\right)}{1-x}-nx^{n+1}', '= \\dfrac{x\\left(1-x^{n}\\right)-nx^{n+1}\\left(1-x\\right)}{1-x}', '= \\dfrac{x\\left(1-\\left(n+1\\right)x^{n}+nx^{n+1}\\right)}{1-x}', `S = ${fin}`], final: fin };
+}
+// 23.14 : monotonie de v_n = u_(2n) (est = 'v') ou w_n = u_(2n+1) (est = 'w')
+function detail2314(est, s, p, dir, mot, rep) {
+  const v = est === 'v', i0 = v ? '2n+1' : '2n+2', i1 = v ? '2n+2' : '2n+3', pw = (b) => (p === 1 ? b : `\\left(${b}\\right)^{${p}}`);
+  const e0 = `2n+${(v ? 1 : 2) + (s === 1 ? 0 : 1)}`, e1 = `2n+${(v ? 2 : 3) + (s === 1 ? 0 : 1)}`;      // exposants de (-1) pour les indices i0 et i1
+  const petitPositif = s === 1 ? !v : v;                                                                   // le terme positif est-il celui de l'indice le plus petit ?
+  const petit = pw(i0), grand = pw(i1);
+  const diff = petitPositif ? `\\dfrac{1}{${petit}}-\\dfrac{1}{${grand}}` : `\\dfrac{1}{${grand}}-\\dfrac{1}{${petit}}`, signe = petitPositif ? '\\gt' : '\\lt';
+  const X = v ? 'v' : 'w', U = v ? 'u_{2n+2}-u_{2n}' : 'u_{2n+3}-u_{2n+1}';
+  return { lignes: [`${X}_{n+1}-${X}_{n} = ${U}`, `= \\dfrac{\\left(-1\\right)^{${e0}}}{${petit}}+\\dfrac{\\left(-1\\right)^{${e1}}}{${grand}}`, `= ${diff}`, `0 \\lt ${i0} \\lt ${i1}`, `\\dfrac{1}{${grand}} \\lt \\dfrac{1}{${petit}}`, `${X}_{n+1}-${X}_{n} ${signe} 0`, `\\text{La suite est ${dir === 1 ? 'croissante' : 'décroissante'}}`, `\\text{Réponse : } ${rep}`], final: rep };
+}
 function genererExercices() {
   const ex = [];
   paramsAvances = {};
@@ -1269,9 +1499,10 @@ function genererExercices() {
     let a, b; do { a = aleaNonNul(-6,6); b = aleaNonNul(-6,6); } while (a === b);
     const c = aleaNonNul(-12,12), op = OPS[alea(0,3)];
     const k = 2*(a - b), k0 = a*a - b*b - c;   // (x+a)^2 - (x+b)^2 - c = kx + k0
-    ex.push({id:"23.1 a)", type:"intervalle", texteLibre:true,
+    const spec231a = {type:'intervalles', liste: parSigne([-k0 / k], [], x => k*x + k0, op)};
+    ex.push({id:"23.1 a)", detail: detail231a(a, b, c, op, spec231a), type:"intervalle", texteLibre:true,
       enonce:`\\((x${a>0?'+':'-'}${Math.abs(a)})^2-(x${b>0?'+':'-'}${Math.abs(b)})^2${op}${c}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([-k0 / k], [], x => k*x + k0, op)}});
+      intervalleSpec: spec231a});
   }
   // b) quotients : a/(x - b) op c/(x - d), deux valeurs interdites
   {
@@ -1280,9 +1511,10 @@ function genererExercices() {
       a = aleaNonNul(-6,6); c = aleaNonNul(-6,6); b = alea(-6,6); d = alea(-6,6); op = OPS[alea(0,3)];
       z = (a*d - c*b) / (a - c); g = x => a / (x - b) - c / (x - d);
     } while (a === c || b === d || zeroIsole([z], [b, d], g, op));
-    ex.push({id:"23.1 b)", type:"intervalle", texteLibre:true,
+    const spec231b = {type:'intervalles', liste: parSigne([z], [b, d], g, op)};
+    ex.push({id:"23.1 b)", detail: detail231b(a, b, c, d, op, spec231b, z), type:"intervalle", texteLibre:true,
       enonce:`\\(${fracSigne(a, fmtLin(1,-b,false))}${op}${fracSigne(c, fmtLin(1,-d,false))}\\)`,
-      intervalleSpec:{type:'intervalles', liste: parSigne([z], [b, d], g, op)}});
+      intervalleSpec: spec231b});
   }
 
   // ---------- 15.2 : equations (ensemble des solutions) ----------
@@ -1298,7 +1530,7 @@ function genererExercices() {
       }
     } while (sols.length === 0 || sols.some(s => s.d > 3));
     sols.sort((p, q) => math.compare(p, q));
-    ex.push({id:"23.2 a)", type:"num", texteLibre:true,
+    ex.push({id:"23.2 a)", detail: detail232a(a, b, c, d), type:"num", texteLibre:true,
       enonce:`\\(\\left|${fmtLin(a,b,false)}\\right|=${fmtLin(c,d,false)}\\)`, reponse: ensembleDe(sols)});
   }
   // b) egalite de deux quotients : (x + a)/(x + b) = (x + c)/(x + d), le terme en x^2 disparait
@@ -1309,7 +1541,7 @@ function genererExercices() {
       const D = a + d - b - c;
       x = D === 0 ? null : math.fraction(b*c - a*d, D);
     } while (x === null || a === b || c === d || b === d || x.d > 6 || math.equal(x, -b) || math.equal(x, -d));
-    ex.push({id:"23.2 b)", type:"num", texteLibre:true,
+    ex.push({id:"23.2 b)", detail: detail232b(a, b, c, d, x), type:"num", texteLibre:true,
       enonce:`\\(\\dfrac{${fmtLin(1,a,false)}}{${fmtLin(1,b,false)}}=\\dfrac{${fmtLin(1,c,false)}}{${fmtLin(1,d,false)}}\\)`, reponse: ensembleDe([x])});
   }
 
@@ -1321,14 +1553,14 @@ function genererExercices() {
       A = [2,3,4,5][alea(0,3)]; B = [2,3,4,5][alea(0,3)]; m = alea(1,3); n = alea(1,3); plus = alea(0,1) === 0;
       v = math.add(math.fraction(1, Math.pow(A, m)), math.multiply(plus ? 1 : -1, math.fraction(1, Math.pow(B, n))));
     } while ((A === B && m === n) || math.equal(v, 0));
-    ex.push({id:"23.3 a)", type:"num", fractionIrreductible:true,
+    ex.push({id:"23.3 a)", detail: detail233a(A, B, m, n, plus), type:"num", fractionIrreductible:true,
       enonce:`${A}^{-${m}}${plus ? '+' : '-'}${B}^{-${n}}`, reponse: fracToStr(v)});
   }
   // b) quotient de decimaux : (p x q)/r avec un chiffre apres la virgule
   {
     const dec = v => String(v / 10).replace('.', '{,}');
     let p, q, r; do { p = alea(2,19); q = alea(2,19); r = alea(2,19); } while (p % 10 === 0 || q % 10 === 0 || r % 10 === 0);
-    ex.push({id:"23.3 b)", type:"num", fractionIrreductible:true,
+    ex.push({id:"23.3 b)", detail: detail233b(p, q, r), type:"num", fractionIrreductible:true,
       enonce:`\\dfrac{${dec(p)}\\times ${dec(q)}}{${dec(r)}}`, reponse: fracToStr(math.fraction(p*q, 10*r))});
   }
 
@@ -1336,12 +1568,12 @@ function genererExercices() {
   {
     const N = alea(3,9), sens = alea(0,1);
     const terme = sens === 0 ? `a^kb^{${N}-k}` : `a^{${N}-k}b^k`;
-    ex.push({id:"23.4 a)", type:"alg", texteLibre:true, enonce:`\\((a-b)\\displaystyle\\sum_{k=0}^{${N}}${terme}\\)`, reponse:`a^${N+1}-b^${N+1}`});
+    ex.push({id:"23.4 a)", detail: detail234a(N, sens), type:"alg", texteLibre:true, enonce:`\\((a-b)\\displaystyle\\sum_{k=0}^{${N}}${terme}\\)`, reponse:`a^${N+1}-b^${N+1}`});
   }
   {
     const N = [2,4,6,8,10][alea(0,4)], sens = alea(0,1);
     const terme = sens === 0 ? `(-1)^ka^{${N}-k}b^k` : `(-1)^ka^kb^{${N}-k}`;
-    ex.push({id:"23.4 b)", type:"alg", texteLibre:true, enonce:`\\((a+b)\\displaystyle\\sum_{k=0}^{${N}}${terme}\\)`, reponse:`a^${N+1}+b^${N+1}`});
+    ex.push({id:"23.4 b)", detail: detail234b(N, sens), type:"alg", texteLibre:true, enonce:`\\((a+b)\\displaystyle\\sum_{k=0}^{${N}}${terme}\\)`, reponse:`a^${N+1}+b^${N+1}`});
   }
 
   // ---------- 23.5 : formule phare (quatre formes) ----------
@@ -1352,7 +1584,7 @@ function genererExercices() {
       {e:"(1-b)\\displaystyle\\sum_{k=1}^{n}b^k", r:"b-b^(n+1)"},
       {e:"(1-b)\\displaystyle\\sum_{k=0}^{n-1}b^k", r:"1-b^n"}
     ][alea(0,3)];
-    ex.push({id:"23.5", type:"alg", texteLibre:true, enonce:`\\(${CAS.e}\\)`, reponse:CAS.r});
+    ex.push({id:"23.5", detail: detail235(CAS.r), type:"alg", texteLibre:true, enonce:`\\(${CAS.e}\\)`, reponse:CAS.r});
   }
 
   // ---------- 23.6 : suite arithmetique ----------
@@ -1360,8 +1592,8 @@ function genererExercices() {
     const u0 = alea(-5,5), r = aleaNonNul(-6,6);
     const u = n => u0+n*r;
     const L1 = alea(1,3), U1 = alea(L1+5,L1+12);
-    ex.push({id:"23.6 a)", type:"num", texteLibre:true, enonce:`\\(\\displaystyle\\sum_{n=${L1}}^{${U1}}u_n\\)`, reponse: String((U1-L1+1)*(u(L1)+u(U1))/2)});
-    ex.push({id:"23.6 b)", type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\sum_{n=0}^{N}u_n\\) en fonction de \\(N\\)", reponse: exprCommune([[math.fraction(r,2),'N^2'],[math.add(u0, math.fraction(r,2)),'N'],[u0,'']])});
+    ex.push({id:"23.6 a)", detail: detail236a(L1, U1, u0, r), type:"num", texteLibre:true, enonce:`\\(\\displaystyle\\sum_{n=${L1}}^{${U1}}u_n\\)`, reponse: String((U1-L1+1)*(u(L1)+u(U1))/2)});
+    ex.push({id:"23.6 b)", detail: detail236b(u0, r), type:"alg", texteLibre:true, enonce:"\\(\\displaystyle\\sum_{n=0}^{N}u_n\\) en fonction de \\(N\\)", reponse: exprCommune([[math.fraction(r,2),'N^2'],[math.add(u0, math.fraction(r,2)),'N'],[u0,'']])});
     paramsAvances.g7 = {u0,r};
   }
 
@@ -1375,8 +1607,8 @@ function genererExercices() {
     const M = alea(2,5);
     const coefN2 = math.divide(math.multiply(M*M,rF),2);
     const coefN = math.divide(math.multiply(M, math.add(math.multiply(2,u0), rF)), 2);
-    ex.push({id:"23.7 a)", type:"num", texteLibre:true, enonce:`\\(\\displaystyle\\sum_{n=${L2}}^{${U2}}u_n\\)`, reponse: fracToStr(math.multiply(U2-L2+1, math.divide(math.add(u(L2),u(U2)),2)))});
-    ex.push({id:"23.7 b)", type:"alg", texteLibre:true, enonce:`\\(\\displaystyle\\sum_{n=0}^{${M}N}u_n\\) en fonction de \\(N\\)`, reponse: exprCommune([[coefN2,'N^2'],[coefN,'N'],[u0,'']])});
+    ex.push({id:"23.7 a)", detail: detail237a(L2, U2, u0, rp, rq), type:"num", texteLibre:true, enonce:`\\(\\displaystyle\\sum_{n=${L2}}^{${U2}}u_n\\)`, reponse: fracToStr(math.multiply(U2-L2+1, math.divide(math.add(u(L2),u(U2)),2)))});
+    ex.push({id:"23.7 b)", detail: detail237b(M, u0, rp, rq), type:"alg", texteLibre:true, enonce:`\\(\\displaystyle\\sum_{n=0}^{${M}N}u_n\\) en fonction de \\(N\\)`, reponse: exprCommune([[coefN2,'N^2'],[coefN,'N'],[u0,'']])});
     paramsAvances.g8 = {u0,rp,rq};
   }
 
@@ -1394,7 +1626,7 @@ function genererExercices() {
     const lettres = ['a','b','c','d'];
     let bonneReponse = '';
     const optionsFinal = options.map((o,i) => { if (o.correct) bonneReponse = lettres[i]; return {lettre:lettres[i], texte:o.texte}; });
-    ex.push({id:"23.8", type:"qcm", texteLibre:true, enonce:"Choisir la bonne réponse :", bonneReponse, optionsSurUneLigne:true, options: optionsFinal});
+    ex.push({id:"23.8", detail: detail238(L, U, bonneReponse), type:"qcm", texteLibre:true, enonce:"Choisir la bonne réponse :", bonneReponse, optionsSurUneLigne:true, options: optionsFinal});
     paramsAvances.g9 = {L,U};
   }
 
@@ -1406,7 +1638,7 @@ function genererExercices() {
     const L = alea(1,4);
     const A = math.divide(math.multiply(u0F, Math.pow(Q,L)), 1-Q);
     const negB = math.multiply(-1, math.divide(math.multiply(u0F,Q), 1-Q));
-    ex.push({id:"23.9 a)", type:"alg", texteLibre:true, enonce:`Avec \\(u_0=\\dfrac{${p}}{${q}}\\), \\(q=${Q}\\), exprimer \\(S=\\displaystyle\\sum_{k=${L}}^{n}u_k\\) en fonction de \\(n\\)`, reponse: exprCommune([[negB, `${Q < 0 ? '(' + Q + ')' : Q}^n`],[A,'']])});
+    ex.push({id:"23.9 a)", detail: detail239a(p, q, Q, L), type:"alg", texteLibre:true, enonce:`Avec \\(u_0=\\dfrac{${p}}{${q}}\\), \\(q=${Q}\\), exprimer \\(S=\\displaystyle\\sum_{k=${L}}^{n}u_k\\) en fonction de \\(n\\)`, reponse: exprCommune([[negB, `${Q < 0 ? '(' + Q + ')' : Q}^n`],[A,'']])});
   }
   {
     const u0 = alea(1,5);
@@ -1414,7 +1646,7 @@ function genererExercices() {
     const qF = math.fraction(p,q);
     const Af = math.divide(math.multiply(u0,qF), math.subtract(1,qF));
     const q2 = math.multiply(qF,qF);
-    ex.push({id:"23.9 b)", type:"alg", texteLibre:true, enonce:`Avec \\(u_0=${u0}\\), \\(q=\\dfrac{${p}}{${q}}\\), exprimer \\(S=\\displaystyle\\sum_{k=1}^{2n}u_k\\) en fonction de \\(n\\)`, reponse: exprCommune([[math.multiply(-1,Af), `(${fracToStr(q2)})^n`],[Af,'']])});
+    ex.push({id:"23.9 b)", detail: detail239b(u0, p, q), type:"alg", texteLibre:true, enonce:`Avec \\(u_0=${u0}\\), \\(q=\\dfrac{${p}}{${q}}\\), exprimer \\(S=\\displaystyle\\sum_{k=1}^{2n}u_k\\) en fonction de \\(n\\)`, reponse: exprCommune([[math.multiply(-1,Af), `(${fracToStr(q2)})^n`],[Af,'']])});
   }
 
   // ---------- 23.10 : calculs de sommes ----------
@@ -1423,12 +1655,12 @@ function genererExercices() {
     // S = (1 - (A/B)^(n+1)) / (B-A)
     const puiss = `(${A}/${B})^(n+1)`;
     const rep = B - A === 1 ? `1-${puiss}` : (A - B === 1 ? `${puiss}-1` : (B > A ? `(1-${puiss})/${B-A}` : `(${puiss}-1)/${A-B}`));
-    ex.push({id:"23.10 a)", type:"alg", texteLibre:true, enonce:`\\(S=\\displaystyle\\sum_{k=0}^{n}\\dfrac{${A}^k}{${B}^{k+1}}\\)`, reponse: rep});
+    ex.push({id:"23.10 a)", detail: detail2310a(A, B), type:"alg", texteLibre:true, enonce:`\\(S=\\displaystyle\\sum_{k=0}^{n}\\dfrac{${A}^k}{${B}^{k+1}}\\)`, reponse: rep});
   }
   {
     const A = [2,3,4,5][alea(0,3)], B = [2,3,4,5].filter(x=>x!==A)[alea(0,2)];
     const constTotal = math.add(math.fraction(-1, A-1), math.fraction(B, B-1));
-    ex.push({id:"23.10 b)", type:"alg", texteLibre:true, enonce:`\\(S=\\displaystyle\\sum_{k=0}^{n}(${A}^k-${B}^{k+1})\\)`, reponse: exprCommune([[math.fraction(1, A-1), `${A}^(n+1)`],[math.fraction(-B, B-1), `${B}^(n+1)`],[constTotal,'']])});
+    ex.push({id:"23.10 b)", detail: detail2310b(A, B), type:"alg", texteLibre:true, enonce:`\\(S=\\displaystyle\\sum_{k=0}^{n}(${A}^k-${B}^{k+1})\\)`, reponse: exprCommune([[math.fraction(1, A-1), `${A}^(n+1)`],[math.fraction(-B, B-1), `${B}^(n+1)`],[constTotal,'']])});
   }
 
   // ---------- 23.11 : suite arithmetico-geometrique (sans indiquer l'astuce) ----------
@@ -1439,22 +1671,22 @@ function genererExercices() {
     const lambda = math.divide(C, 1-B);
     const v0 = math.subtract(u0, lambda);
     const K3 = math.divide(v0, B-1);
-    ex.push({id:"23.11 a)", type:"alg", texteLibre:true, enonce:"Donner l'expression de \\(u_n\\) en fonction de \\(n\\)", reponse: exprCommune([[lambda,''],[v0,`${B}^n`]])});
-    ex.push({id:"23.11 b)", type:"alg", texteLibre:true, enonce:"Calculer \\(\\displaystyle\\sum_{k=0}^{n}u_k\\)", reponse: exprCommune([[math.multiply(K3,B), `${B}^n`],[lambda,'n'],[math.subtract(lambda,K3),'']])});
+    ex.push({id:"23.11 a)", detail: detail2311a(u0, B, C), type:"alg", texteLibre:true, enonce:"Donner l'expression de \\(u_n\\) en fonction de \\(n\\)", reponse: exprCommune([[lambda,''],[v0,`${B}^n`]])});
+    ex.push({id:"23.11 b)", detail: detail2311b(u0, B, C), type:"alg", texteLibre:true, enonce:"Calculer \\(\\displaystyle\\sum_{k=0}^{n}u_k\\)", reponse: exprCommune([[math.multiply(K3,B), `${B}^n`],[lambda,'n'],[math.subtract(lambda,K3),'']])});
     paramsAvances.g13 = {u0,B,C};
   }
 
   // ---------- 23.12 : terme general a partir de S(n) (une seule question) ----------
   {
     const A = aleaNonNul(1,6), K = alea(1,5);
-    ex.push({id:"23.12", type:"alg", texteLibre:true, enonce:"Exprimer \\(u_n\\) en fonction de \\(n\\), pour \\(n\\in\\mathbb{N}^*\\)", reponse: fmtLin(2*A, A*(K-1), true, 'n')});
+    ex.push({id:"23.12", detail: detail2312(A, K), type:"alg", texteLibre:true, enonce:"Exprimer \\(u_n\\) en fonction de \\(n\\), pour \\(n\\in\\mathbb{N}^*\\)", reponse: fmtLin(2*A, A*(K-1), true, 'n')});
     paramsAvances.g14 = {A,K};
   }
 
   // ---------- 23.13 : somme de k x^k (une seule question) ----------
   {
     const v = alea(0,1);
-    ex.push({id:"23.13", type:"alg", texteLibre:true, enonce:"Exprimer \\(S(x)\\) en fonction de \\(x\\) et \\(n\\)",
+    ex.push({id:"23.13", detail: detail2313(v), type:"alg", texteLibre:true, enonce:"Exprimer \\(S(x)\\) en fonction de \\(x\\) et \\(n\\)",
       reponse: v === 0 ? "x*(1-(n+1)*x^n+n*x^(n+1))/(1-x)^2" : "(1-(n+2)*x^(n+1)+(n+1)*x^(n+2))/(1-x)^2",
       verifSomme: v});
     paramsAvances.g15 = {v};
@@ -1468,11 +1700,14 @@ function genererExercices() {
     const mot1 = alea(0,1) === 0 ? 'croissante' : 'décroissante', mot2 = alea(0,1) === 0 ? 'croissante' : 'décroissante';
     const rep = (dir, mot) => ((mot === 'croissante') === (dir === 1)) ? 'a' : 'b';
     const oui = {lettre:"a",texte:"oui",texteLibreOption:true}, non = {lettre:"b",texte:"non",texteLibreOption:true};
-    ex.push({id:"23.14 a)", type:"qcm", texteLibre:true, enonce:`La suite \\(\\left(v_n\\right)\\) est-elle ${mot1} ?`, bonneReponse: rep(dirV, mot1), options:[oui,non]});
-    ex.push({id:"23.14 b)", type:"qcm", texteLibre:true, enonce:`La suite \\(\\left(w_n\\right)\\) est-elle ${mot2} ?`, bonneReponse: rep(dirW, mot2), options:[oui,non]});
+    ex.push({id:"23.14 a)", detail: detail2314('v', s, p, dirV, mot1, rep(dirV, mot1)), type:"qcm", texteLibre:true, enonce:`La suite \\(\\left(v_n\\right)\\) est-elle ${mot1} ?`, bonneReponse: rep(dirV, mot1), options:[oui,non]});
+    ex.push({id:"23.14 b)", detail: detail2314('w', s, p, dirW, mot2, rep(dirW, mot2)), type:"qcm", texteLibre:true, enonce:`La suite \\(\\left(w_n\\right)\\) est-elle ${mot2} ?`, bonneReponse: rep(dirW, mot2), options:[oui,non]});
     paramsAvances.g16 = {s,p};
   }
 
+  Detail.preparer(ex);   // « < » des étapes : \lt
+  Detail.couper(ex, 20); // lignes d'égalités longues coupées en « A = B » puis « = C » (téléphone)
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (l.length > 52 && !/^\\(small|scriptsize|text|begin)/.test(l) ? `\\small ${l}` : l)); }); // lignes larges pour un téléphone : police réduite
   return ex;
 }
 
@@ -2835,7 +3070,7 @@ function verifierTout() {
     correctionDiv.innerHTML = erreurs.map(idx => {
       const ex = exercices[idx];
       const reponseFormatee = formaterReponse(ex);
-      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)</div>`;
+      return `<div class="correction-ligne"><span class="id">${ex.id}</span> — réponse attendue : \\(${reponseFormatee}\\)${Detail.html(ex, idx)}</div>`;
     }).join('');
   }
   if (window.MathJax) MathJax.typesetPromise([correctionDiv]);
