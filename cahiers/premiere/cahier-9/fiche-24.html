@@ -1367,9 +1367,9 @@ function genererExercices() {
     ex.push({id:"24.5 a)", detail: detail245('\\prod_{i=k}^{n}x_{i}', 1, 'n', 'somme'), type: "somme", texteLibre: true, enonce: "\\((x_1x_2\\cdots x_n)+(x_2x_3\\cdots x_n)+\\cdots +x_{n-1}x_n+x_n\\)", reponse: "sum(k,1,n,prod(i,k,n,x_i))"});
   }
   if (alea(0, 1) === 0) {
-    ex.push({id:"24.5 b)", detail: detail245('\\sum_{i=1}^{k}x_{i}', 1, 'n', 'produit'), type: "produit", texteLibre: true, enonce: "\\(x_1\\times (x_1+x_2)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,1,k,x_i))"});
+    ex.push({id:"24.5 b)", detail: detail245('\\left(\\sum_{i=1}^{k}x_{i}\\right)', 1, 'n', 'produit'), type: "produit", texteLibre: true, enonce: "\\(x_1\\times (x_1+x_2)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,1,k,x_i))"});
   } else {
-    ex.push({id:"24.5 b)", detail: detail245('\\sum_{i=n+1-k}^{n}x_{i}', 1, 'n', 'produit'), type: "produit", texteLibre: true, enonce: "\\(x_n\\times (x_{n-1}+x_n)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,n+1-k,n,x_i))"});
+    ex.push({id:"24.5 b)", detail: detail245('\\left(\\sum_{i=n+1-k}^{n}x_{i}\\right)', 1, 'n', 'produit'), type: "produit", texteLibre: true, enonce: "\\(x_n\\times (x_{n-1}+x_n)\\times \\cdots \\times (x_1+x_2+\\cdots +x_n)\\)", reponse: "prod(k,1,n,sum(i,n+1-k,n,x_i))"});
   }
 
   // ---------- 18.6 : valeurs de produits ----------
@@ -2068,10 +2068,26 @@ function substituerIndices(expr, scope) {
   });
 }
 
+// « (sum_(i=1)^k x_i) » : les parentheses qui enveloppent tout le terme sont retirees (un eleve ecrit naturellement
+// prod_(k=1)^n (sum_(i=1)^k x_i) ; sans cela la somme n'etait pas reconnue et une reponse juste etait refusee, 25/10/2026)
+function retirerParenthesesExternes(s) {
+  s = String(s).trim();
+  while (s.startsWith('(') && s.endsWith(')')) {
+    let d = 0, enveloppe = true;
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === '(') d++;
+      else if (s[i] === ')') { d--; if (d === 0 && i < s.length - 1) { enveloppe = false; break; } }
+    }
+    if (!enveloppe || d !== 0) break;
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 function evaluerExpressionSomme(str, scope) {
   // attention : la conversion virgule-decimale de normaliserSaisie ne doit PAS s'appliquer avant d'avoir
   // isole les 4 arguments separes par des virgules de la forme sum(k,1,n,expr) - sinon "1,60" devient "1.60"
-  const brut = String(str).trim();
+  const brut = retirerParenthesesExternes(str);
   let idxVar, borneInf, borneSup, expr;
   // attention : matcher la structure "_(...)^..." AVANT normaliserSaisie, qui inserterait sinon un '*' parasite
   // entre "_" et "(" (l'identifiant "_" seul n'est jamais une fonction connue)
@@ -2110,7 +2126,7 @@ function evaluerExpressionSomme(str, scope) {
 function evaluerExpressionProduit(str, scope) {
   // attention : la conversion virgule-decimale de normaliserSaisie ne doit PAS s'appliquer avant d'avoir
   // isole les 4 arguments separes par des virgules de la forme prod(k,1,n,expr) - sinon "1,60" devient "1.60"
-  const brut = String(str).trim();
+  const brut = retirerParenthesesExternes(str);
   let idxVar, borneInf, borneSup, expr;
   // attention : matcher la structure "_(...)^..." AVANT normaliserSaisie, qui inserterait sinon un '*' parasite
   // entre "_" et "(" (l'identifiant "_" seul n'est jamais une fonction connue)
@@ -2836,12 +2852,27 @@ function jsVersLatex(expr) {
   }
 }
 
+// terme qui contient une somme ou une difference au niveau 0 (x_k+y_(n-k)) : il doit etre entre parentheses derriere un Pi ou un Sigma
+function aSommeAuNiveau0(s) {
+  let d = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '(') d++;
+    else if (c === ')') d--;
+    else if (d === 0 && i > 0 && (c === '+' || c === '-')) return true;
+  }
+  return false;
+}
+function corpsSommeProduitVersLatex(corps) {
+  const t = sommeOuProduitVersLatex(corps);
+  return (/^(sum|prod)\(/.test(corps) || !aSommeAuNiveau0(corps)) ? t : `\\left(${t}\\right)`;
+}
 function sommeOuProduitVersLatex(str) {
   const s = String(str);
   const mSum = s.match(/^sum\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
-  if (mSum) return `\\displaystyle\\sum_{${mSum[1]}=${jsVersLatex(mSum[2])}}^{${jsVersLatex(mSum[3])}} ${sommeOuProduitVersLatex(mSum[4])}`;
+  if (mSum) return `\\displaystyle\\sum_{${mSum[1]}=${jsVersLatex(mSum[2])}}^{${jsVersLatex(mSum[3])}} ${corpsSommeProduitVersLatex(mSum[4])}`;
   const mProd = s.match(/^prod\(([a-zA-Z]+),([^,]+),([^,]+),(.+)\)$/);
-  if (mProd) return `\\displaystyle\\prod_{${mProd[1]}=${jsVersLatex(mProd[2])}}^{${jsVersLatex(mProd[3])}} ${sommeOuProduitVersLatex(mProd[4])}`;
+  if (mProd) return `\\displaystyle\\prod_{${mProd[1]}=${jsVersLatex(mProd[2])}}^{${jsVersLatex(mProd[3])}} ${corpsSommeProduitVersLatex(mProd[4])}`;
   return jsVersLatex(s);
 }
 function sommeVersLatex(reponse) { return sommeOuProduitVersLatex(reponse); }
