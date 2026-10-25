@@ -3,7 +3,7 @@
 // navigateur de navigateur.js (npm install dans outils/audit-reponses). Les bibliotheques (MathJax, MathLive,
 // math.js) sont chargees depuis leurs CDN habituels ; les appels a Firestore sont coupes (aucune ecriture,
 // aucune donnee d'eleve) et les navigateurs pilotes ne sont de toute facon pas comptes dans la frequentation.
-// Usage : node captures-qcm.js   (ecrit les images dans ./img : qcm-accueil, qcm-carte-corrigee, qcm-bilan-niveau3, accueil, connexion)
+// Usage : node captures-qcm.js   (ecrit les images dans ./img : qcm-carte-corrigee, qcm-bilan-niveau3, accueil, connexion)
 const { lancer } = require('./navigateur'); const path = require('path');
 const OUT = path.join(__dirname, 'img'); const BASE = 'http://localhost:8791';
 
@@ -27,10 +27,7 @@ async function clip(p, nom, sel, marge = 8, sel2) {
 (async () => {
   const b = await lancer();
 
-  // 1. page d'entree : titre, consigne, deux fiches, themes
-  { const p = await page(b, '/qcm-bac/index.html', 2500);
-    await clip(p, 'qcm-accueil', 'h1', 10, '.themes-note');
-    await p.context().close(); }
+  // 1. (la page d'entree, avec « Mes reglages », est capturee par captures-reglages.js)
 
   // 2. une fiche a deux themes tires au sort
   { const p = await page(b, '/qcm-bac/fiche.html');
@@ -41,8 +38,8 @@ async function clip(p, nom, sel, marge = 8, sel2) {
     await p.context().close(); }
 
   // 4. niveau 3 : bilan avec la penalite (une reponse sur deux au hasard, les autres sans reponse)
-  { const p = await page(b, '/qcm-bac/fiche.html');
-    await p.locator('[data-action="niveau"][data-niveau="3"]').click(); await p.waitForTimeout(1500);
+  { const p = await page(b, '/qcm-bac/fiche.html?mode=fiche&niveau=3');   // reglage venu de la page d'entree (25/10/2026)
+    await p.waitForTimeout(1500);
     const n = await p.locator('[data-action="opt"][data-k="0"]').count();
     for (let q = 0; q < 6; q++) { await p.locator(`[data-action="opt"][data-q="${q}"][data-k="${q % 4}"]`).click(); await p.waitForTimeout(150); }
     await p.locator('[data-action="reponses"]').click(); await p.waitForTimeout(2500);

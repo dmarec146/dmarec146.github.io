@@ -22,8 +22,11 @@ d'automatismes, QCM de Terminale, devoirs (13 pages A4, couverture avec sommaire
 
 ## Captures du QCM Terminale (25/10/2026)
 
+`node captures-reglages.js` (25/10/2026, mêmes prérequis) : `auto-reglages`, `auto-recap`, `chrono-intro` et `qcm-accueil`, c'est-à-dire la page d'entrée
+avec « Mes réglages » et la ligne de rappel de la page de travail (pages 7 à 9 du guide).
+
 `node captures-qcm.js` (site servi sur le port 8791, pilote de `navigateur.js`, **aucun** `node_modules` à part : les bibliothèques viennent
-des CDN habituels, Firestore est coupé) : `qcm-accueil`, `qcm-carte-corrigee`, `qcm-bilan-niveau3`, et refait `accueil` et
+des CDN habituels, Firestore est coupé) : `qcm-carte-corrigee`, `qcm-bilan-niveau3` (niveau passé par l'adresse `?niveau=3`), et refait `accueil` et
 `connexion` (page 2) pour montrer le bouton gris de la barre. Pages 9 et 10 du guide.
 
 ## Refaire les captures (si le site change d'apparence)

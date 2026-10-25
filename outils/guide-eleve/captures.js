@@ -108,13 +108,12 @@ const typeset = p => p.evaluate(() => window.MathJax && MathJax.typesetPromise ?
 
   // 8. automatismes : fiche (mode fiche)
   { const p = await page(b, '/automatismes/premiere/fiche.html', { attente: 4500 });
-    await clip(p, 'auto-panneaux', '.mode-panneau', 6, '.themes-bandeau');
+    // (auto-panneaux, chrono-intro et auto-recap : captures-reglages.js depuis le 25/10/2026, les panneaux de mode n'existent plus qu'apres « Changer »)
     await p.locator('[data-action="opt"][data-q="0"][data-k="1"]').click(); await p.waitForTimeout(300);
     await p.locator('[data-action="reponses"]').click(); await p.waitForTimeout(1500);
     await clip(p, 'auto-carte-corrigee', '#carte-0', 6);
     // mode chrono
-    await p.locator('[data-action="mode"][data-mode="chrono"]').click(); await p.waitForTimeout(800);
-    await clip(p, 'chrono-intro', '.mode-panneau', 6, '.chrono-intro');
+    await p.goto(BASE + '/automatismes/premiere/fiche.html?mode=chrono&niveau=2&duree=120', { waitUntil: 'load' }); await p.waitForTimeout(4000);
     await p.locator('[data-action="demarrer-chrono"]').click(); await p.waitForTimeout(1500);
     await p.locator('[data-action="opt"]').first().click(); await p.waitForTimeout(300);
     await clip(p, 'chrono-question', '.progression', 6, '.barre-controle');
