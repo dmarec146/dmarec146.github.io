@@ -9047,3 +9047,22 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
 - **Recalcul indépendant** `verif-p24d.js` : valeurs et ensembles recalculés depuis l'énoncé affiché ; facteurs écrits avant et après « ⋯ » comparés au facteur général de la réponse (24.4) ; QCM résolus numériquement ; chaînes d'égalités contenant des Σ ou des Π évaluées (deux altérations volontaires détectées). Aucun défaut sur 150 tirages.
 - **Contrôle complet** (800 tirages, ordinateur et téléphone, auto-tests) : 0 erreur, 0 point de style ; audit des réponses : 0 anomalie. Les fiches 1 à 24 de Première sont faites (les 25 et 26 sont écartées).
 - **Corrections de la fiche 24 faites à la demande de David (25/10/2026)** : (1) la validation des réponses en Π et en Σ retire maintenant les parenthèses qui enveloppent tout le terme (`retirerParenthesesExternes`) : `\prod_{k=1}^{n}\left(\sum_{i=1}^{k}x_{i}\right)` est accepté, avec ou sans parenthèses, et une écriture fausse reste refusée (essais sur les deux variantes de 24.5 b et les quatre de 24.4 d) ; (2) la réponse affichée met entre parenthèses un terme qui contient une somme ou une différence derrière un Π ou un Σ (24.4 d : `\prod_{k=0}^{n}\left(x_{k}+y_{n-k}\right)`). Le détail de 24.5 b retrouve ses parenthèses. Contrôle complet de nouveau à 0 erreur, 0 point de style ; audit des réponses : 0 anomalie.
+
+- **Bouton « ? » épuré (25/10/2026).** David : « il est très souvent écrit "recopier l'énoncé…" : ces remarques,
+  faites ensemble, ne méritent pas d'être écrites ; il faut juste faire apparaître ce qui est nécessaire ».
+  **Relevé** : les textes d'aide réellement produits par `aideContextuellePour` (3 tirages de chacune des 50
+  fiches) : 111 textes distincts. **Retiré** (26 fichiers : `assets/js/moteur-reponses.js` + 25 fiches), uniquement
+  les phrases de **rejet** placées après la consigne de format : « Recopier l'énoncé n'est pas accepté » (forme
+  « simplifiée », 40 fiches), « une forme factorisée / canonique / développée / une somme / une expression développée /
+  un numérateur développé n'est pas acceptée, même si elle est égale » (moteur et 13 fiches), « une réponse sans
+  parenthèses n'est pas acceptée » (Première 17), « une réponse 2x-3 seule n'est pas acceptée : c'est une expression »
+  (Seconde 16 et 24), « une écriture où n reste au numérateur… » (Première 4), pourcentages (« recopier le
+  coefficient / la fraction ne convient pas », « jamais un nombre seul sans le signe % », « une fraction ou un calcul
+  comme 90/137 ne convient pas, ni 65,69 % » : Seconde 9, 10, 18, 19), « pas seulement le symbole seul » (11
+  fiches de Seconde). **Gardé** : la forme demandée, les exemples, les astuces de clavier, les tolérances
+  (« 0,2 près », fautes d'orthographe de la négation). **Non touché, à décider avec David** : les contre-exemples
+  « et non 4/6, ni 0,666… », « 2401 pour 7^4 », « √2/2 et non 1/√2 » (22 textes distincts, présents dans 38 fiches) et la liste entre parenthèses
+  de la forme « entièrement simplifiée ». **Vérifié** : relevé refait sur les 50 fiches (107 textes distincts, aucune
+  erreur, aucune remarque de rejet restante), 50 fiches : 0 erreur de syntaxe, aucun outil ne dépendait de ces phrases.
+  Règle ajoutée à `REGLES-FICHES.md` §4. Hors périmètre : les « ? » des pages d'automatismes et QCM Bac n'ont
+  pas été relevés.

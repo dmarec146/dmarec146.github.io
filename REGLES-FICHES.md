@@ -231,6 +231,11 @@ les corrections ponctuelles d'une fiche).
   réponse attendue a au moins deux facteurs non constants, un scalaire peut rester dans une parenthèse
   (`(x+6)(9x+9)` accepté pour `9(x+6)(x+1)`), mais jamais une expression non factorisée ; avec un seul facteur non
   constant (`9(8x+5)`), le facteur numérique commun doit être extrait en entier.
+- **Bouton « ? » : seulement ce qui est nécessaire** (David, 25/10/2026). L'aide dit **ce qu'il faut écrire** (forme, exemple,
+  astuce de clavier) et **rien sur ce que la fiche refuse** : jamais « recopier l'énoncé n'est pas accepté », « une forme
+  développée n'est pas acceptée, même si elle est égale », « ne convient pas », « une réponse sans parenthèses n'est pas
+  acceptée », « pas seulement le symbole seul ». Ces remarques viennent des échanges de mise au point ; l'élève n'en a pas besoin
+  quand la forme demandée est dite. Une nouvelle aide (`aideContextuellePour`, `MoteurReponses.aide`) suit la même règle.
 - **Aucune réponse saisie** (David, 20/10/2026) : « Voir la correction des erreurs » sans aucune réponse affiche « Aucune réponse n’a été saisie. », et non « Toutes les réponses saisies sont correctes » (réservé au cas où au moins une réponse est saisie et où aucune n'est fausse) ; corrigé dans les 50 fiches.
 - **Lectures graphiques : marge de ±0,2** sur toute réponse numérique lue sur
   un graphique (les élèves lisent sur téléphone) : `margeLecture:0.2`, et

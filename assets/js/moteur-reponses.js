@@ -671,11 +671,11 @@
       + (o.fraction ? ', ou une fraction comme <code>1/5^4</code> quand il y a un exposant négatif à supprimer' : ', ou <code>2^3*5</code> s’il y a plusieurs bases')
       + '. Chaque base ne doit apparaître qu’une fois, avec un exposant entier positif.',
     monome: () => 'La réponse doit être <strong>un seul terme simplifié</strong> : le coefficient une seule fois, puis chaque lettre une seule fois avec son exposant, par exemple <code>18x^2</code> ou <code>3*2^n</code> ; pas de parenthèse ni de somme à réduire.',
-    developpe: () => 'La réponse doit être la <strong>forme développée et réduite</strong> : une somme de termes de la forme <code>ax^k</code>, un seul terme par puissance de x, sans parenthèse à développer. Une forme factorisée ou canonique n’est pas acceptée, même si elle est égale.',
-    simplifie: () => 'La réponse doit être <strong>entièrement simplifiée</strong> : plus aucun calcul à faire (pas de <code>3+4</code>, de fraction réductible, de racine <code>√8</code> à simplifier, de termes semblables à regrouper, de même base écrite deux fois). Recopier l’énoncé n’est pas accepté.',
+    developpe: () => 'La réponse doit être la <strong>forme développée et réduite</strong> : une somme de termes de la forme <code>ax^k</code>, un seul terme par puissance de x, sans parenthèse à développer.',
+    simplifie: () => 'La réponse doit être <strong>entièrement simplifiée</strong> : plus aucun calcul à faire (pas de <code>3+4</code>, de fraction réductible, de racine <code>√8</code> à simplifier, de termes semblables à regrouper, de même base écrite deux fois).',
     decimal: () => 'La réponse doit être écrite en <strong>notation décimale</strong> (par exemple <code>0,0072</code>), pas sous forme de fraction ni de puissance de 10.',
-    factorise: () => 'La réponse doit être <strong>un produit</strong> (par exemple <code>9(8x+5)</code> ou <code>(x-4)(x+4)</code>) : factoriser complètement. Quand il n’y a qu’un seul facteur non constant, extraire entièrement le facteur numérique commun (<code>9(8x+5)</code> et non <code>3(24x+15)</code>). Une somme, même égale, n’est pas acceptée.',
-    canonique: () => 'La réponse doit être écrite sous la <strong>forme canonique</strong> <code>a(x-α)^2+β</code> : x n’apparaît qu’une seule fois, dans une parenthèse élevée au carré (par exemple <code>2(x-4)^2+6</code>). La forme développée n’est pas acceptée, même si elle est égale.'
+    factorise: () => 'La réponse doit être <strong>un produit</strong> (par exemple <code>9(8x+5)</code> ou <code>(x-4)(x+4)</code>) : factoriser complètement. Quand il n’y a qu’un seul facteur non constant, extraire entièrement le facteur numérique commun (<code>9(8x+5)</code> et non <code>3(24x+15)</code>).',
+    canonique: () => 'La réponse doit être écrite sous la <strong>forme canonique</strong> <code>a(x-α)^2+β</code> : x n’apparaît qu’une seule fois, dans une parenthèse élevée au carré (par exemple <code>2(x-4)^2+6</code>).'
   };
   function aide(ex) { return (AIDES[ex.forme] || (() => ''))(ex.formeOptions || {}); }
 
