@@ -163,7 +163,7 @@ depuis la réorganisation du 02/10/2026 »).
 
 - **Conventions d'interface** (fixées avec David le 04/09/2026) : barre de navigation identique sur toutes les pages, la couleur
   appartient à la section (pas à la page courante) — « Cahiers de calcul » en pastille rouge `#E8695E` (`.nav-vedette`),
-  « QCM Terminale » en anthracite clair `#5A6068` / texte blanc (`.nav-vedette-anthracite`, ajouté le 18/10/2026 en ambre sous le nom « QCM Bac » ; renommé et recoloré le 25/10/2026 à la demande de David) ; « Automatismes » en vert pastel `#B4DFC5` / texte `#17492E` (`.nav-vedette-vert`, fond de bandeau `#D8EEDF`, ne pas inventer
+  « QCM Bac » en anthracite clair `#5A6068` / texte blanc (`.nav-vedette-anthracite`, ajouté le 18/10/2026 en ambre ; recoloré le 25/10/2026 à la demande de David ; **le libellé « QCM Terminale » ne s'affiche que sur téléphone** (écran de 560 px au plus) : remplacement de texte dans `assets/js/pied-droits.js`, ordinateur et tablette gardent « QCM Bac ») ; « Automatismes » en vert pastel `#B4DFC5` / texte `#17492E` (`.nav-vedette-vert`, fond de bandeau `#D8EEDF`, ne pas inventer
   un autre vert) ; l'accueil ne met en vedette que deux cahiers (le reste via « Voir tous les cahiers ») ; largeur de page des
   fiches `max-width: 980px`. Pour prévisualiser accueil et pages de cahier, passer par le serveur local (`file://` ne charge pas
   `assets/css/style.css`) ; les fiches, au CSS en ligne, s'ouvrent en `file://`.
@@ -349,8 +349,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
 - **Bloc « QCM Bac » (Terminale spécialité)** — neuf banques codées les 17-18/10/2026 (`qcm-bac/banques/01…09`), page d'accueil
   `qcm-bac/index.html`, fiche `qcm-bac/fiche.html` (`?theme=<id>` pour un thème seul), contrôle
-  `outils/qcm-bac/controle-banques.js`. **Lié depuis le site et fusionné dans `master` le 18/10/2026** (en ligne) : pastille « QCM Terminale » anthracite clair `#5A6068` / texte blanc (même fond que la carte `.bento-carte--anthracite` ; ambre `#FBE9B7` et « QCM Bac » jusqu'au 25/10/2026 ; **seul le libellé visible a changé : adresse `/qcm-bac/`, `cible:'qcm-bac'`, `s_qcm_bac` et dossier restent**) (`.nav-vedette-anthracite`) dans la barre de
-  navigation des 26 pages à en-tête standard, carte anthracite `.bento-carte--anthracite` sur l'accueil, à côté de la carte Première dans la section « Automatismes et QCM Terminale ». Les devoirs QCM déjà créés gardent leur ancien titre « QCM Bac — … » (texte enregistré) tant qu'on ne les modifie pas ; les pastilles jaune pâle du barème en points ne changent pas (autre usage). **Ouvert à tous les élèves, sans
+  `outils/qcm-bac/controle-banques.js`. **Lié depuis le site et fusionné dans `master` le 18/10/2026** (en ligne) : pastille « QCM Bac » anthracite clair `#5A6068` / texte blanc (même fond que la carte `.bento-carte--anthracite` ; ambre `#FBE9B7` jusqu'au 25/10/2026 ; **libellé « QCM Terminale » sur téléphone seulement** ; adresse `/qcm-bac/`, `cible:'qcm-bac'`, `s_qcm_bac` et dossier inchangés) (`.nav-vedette-anthracite`) dans la barre de
+  navigation des 26 pages à en-tête standard, carte anthracite `.bento-carte--anthracite` sur l'accueil, à côté de la carte Première dans la section « Automatismes et QCM Bac » (« Terminale » sur téléphone). Les pastilles jaune pâle du barème en points ne changent pas (autre usage). **Ouvert à tous les élèves, sans
   compte** pour la pratique libre. **Devoirs QCM Bac (18/10/2026)** : type « QCM Bac » du formulaire d'attribution (`type:'automatismes'`,
   `cible:'qcm-bac'`, thèmes de `THEMES_QCM_BAC` dans `assets/js/devoirs.js`, à tenir à jour à la main) ; `qcm-bac/fiche.html` charge
   `suivi.js` et se verrouille via `devoirAutomatismeActif('qcm-bac')` ; tentative enregistrée en points sur 10 (pénalité du niveau 3

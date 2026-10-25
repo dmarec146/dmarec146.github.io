@@ -18,7 +18,7 @@ const PARTIES = [
   ['fiches_premiere', 'Fiches de Première'],
   ['fiches_terminale', 'Fiches de Terminale'],
   ['automatismes', 'Automatismes'],
-  ['qcm_bac', 'QCM Terminale'],
+  ['qcm_bac', 'QCM Bac'],
   ['mes_devoirs', 'Mes devoirs'],
   ['connexion', 'Connexion'],
   ['autres', 'Autres pages'],

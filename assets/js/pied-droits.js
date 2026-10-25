@@ -71,3 +71,45 @@
     document.body.appendChild(f);
   }
 })();
+
+// --- Libelle « QCM Terminale » sur TELEPHONE seulement (David, 25/10/2026) --------------------------------------
+// Les pages et les scripts ecrivent « QCM Bac » ; ordinateur et tablette ne changent pas. Sur un ecran de 560 px au
+// plus (telephone en vertical), « QCM Bac » est remplace par « QCM Terminale », et inversement quand l'ecran
+// s'elargit (rotation). Les deux titres qui disent aussi « Terminale » sont reformules pour ne pas le repeter.
+// Les textes ecrits plus tard par les scripts (sous-titres, titres de devoirs) sont traites aussi.
+// Le titre de l'onglet (document.title), les adresses et les identifiants ne changent pas.
+(function () {
+  if (!window.matchMedia) return;
+  // fiches de calcul : aucun libelle « QCM » et un contenu qui bouge beaucoup (MathJax, saisie) : on ne les surveille pas
+  if (/\/fiche-\d+\.html$/.test(location.pathname)) return;
+  var mq = window.matchMedia('(max-width: 560px)');
+  var OMIS = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
+  // [texte ordinateur, texte telephone] ; les formes longues d'abord
+  var PAIRES = [
+    ['QCM Bac — Terminale spécialité', 'QCM Terminale — spécialité mathématiques'],
+    ['QCM Bac de Terminale spécialité', 'QCM Terminale (spécialité mathématiques)'],
+    ['QCM Bac', 'QCM Terminale']
+  ];
+  var planifie = false;
+
+  function remplacer() {
+    planifie = false;
+    if (!document.body) return;
+    var tel = mq.matches;
+    var arbre = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var noeud, tous = [];
+    while ((noeud = arbre.nextNode())) { if (!OMIS[noeud.parentNode && noeud.parentNode.nodeName]) tous.push(noeud); }
+    tous.forEach(function (n) {
+      var v = n.nodeValue, w = v;
+      PAIRES.forEach(function (p) { w = w.split(tel ? p[0] : p[1]).join(tel ? p[1] : p[0]); });
+      if (w !== v) n.nodeValue = w;
+    });
+  }
+  function planifier() { if (!planifie) { planifie = true; (window.requestAnimationFrame || setTimeout)(remplacer); } }
+
+  remplacer();
+  if (mq.addEventListener) mq.addEventListener('change', remplacer); else if (mq.addListener) mq.addListener(remplacer);
+  if (window.MutationObserver && document.body) {
+    new MutationObserver(planifier).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+})();

@@ -9084,3 +9084,17 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   à la ligne) ; à 700 px elle passait de 1 à 2 lignes : règle ajoutée dans `style.css` (de 481 à 720 px, boutons resserrés),
   navigation sur une ligne dès 680 px. Vérifié : 50 fiches 0 erreur de syntaxe, `devoirs.js` et `frequentation.js` valides,
   aucune classe `*-ambre` restante, accueil et page QCM Terminale vus dans le navigateur.
+
+- **Correction du 25/10/2026 : « QCM Terminale » sur téléphone seulement.** David : « les libellés sur ordinateurs et tablettes
+  n'ont pas changé n'est-ce pas ? Il ne le faut pas ». Ils avaient changé : sa réponse « change partout » (à ma question
+  « tout le site ou seulement le téléphone ? ») avait été appliquée à tout le site, ce que j'ai reconnu. **Corrigé avant toute
+  publication** (rien n'avait été poussé) : les textes des pages et des scripts redeviennent « QCM Bac » (navigation des 27 pages,
+  accueil, pages QCM, formulaire d'attribution des devoirs, titres de devoirs, tableau de fréquentation) ; le resserrement de la
+  navigation de 481 à 720 px, devenu inutile, est retiré. **La couleur anthracite clair reste partout** (David ne l'a pas remise
+  en cause ; à lui de dire s'il veut l'ambre sur ordinateur). **Libellé téléphone** : bloc ajouté à `assets/js/pied-droits.js`
+  (script partagé, chargé par toutes les pages publiques) : sur un écran de 560 px au plus, « QCM Bac » devient « QCM Terminale » dans
+  les textes de la page (navigation, titres, fil d'Ariane, sous-titres, titres de devoirs écrits par les scripts), « QCM Bac —
+  Terminale spécialité » devient « QCM Terminale — spécialité mathématiques » (pas de « Terminale » répété), retour automatique à
+  l'élargissement ou à la rotation ; titre de l'onglet, adresses et identifiants inchangés ; les 50 fiches de calcul sont exclues
+  (aucun libellé, contenu très mobile). **Vérifié** dans des cadres de 375 et 800 px : accueil, page QCM, fiche QCM, sujet blanc,
+  page de cahier, aller-retour 375 → 800 → 375, texte écrit après coup par la page.
