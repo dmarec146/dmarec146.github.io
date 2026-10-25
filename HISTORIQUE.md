@@ -9154,3 +9154,5 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
   réponse (`button.opt`) dont la formule est plus large que l'écran élargissait la piste de la grille `1fr`. Correctif dans `automatismes/assets/automatismes.css`
   (écrans de 560 px au plus) : piste `minmax(0, 1fr)`, `min-width: 0` sur la case et son texte, formule MathJax réduite à la largeur de la case. Versions de cache
   `automatismes.css?v=20261025a` (4 pages). Vérifié : 25 tirages × 4 pages de travail (fiche et sujet blanc, Automatismes et QCM) à 360 px, aucun débordement.
+
+- **Mention de fréquentation simplifiée (25/10/2026).** Le pied de page des pages publiques passe de « Mesure de fréquentation anonyme : aucune donnée personnelle, aucun cookie. » à « Visites comptées anonymement, sans cookie. » (25 pages). Mention non obligatoire (compteurs anonymes, sans identifiant), gardée par transparence.

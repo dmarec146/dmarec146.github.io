@@ -140,7 +140,7 @@ depuis la réorganisation du 02/10/2026 »).
     pour l'attribution, à tenir à jour à la main), `export-cahier.js`.
   - `assets/js/statistiques.js` (module, chargé par les 76 pages publiques) :
     mesure de fréquentation anonyme, une écriture Firestore par page vue
-    (voir §3). Pied de page : « Mesure de fréquentation anonyme… ».
+    (voir §3). Pied de page : « Visites comptées anonymement, sans cookie. » (simplifié le 25/10/2026).
   - `assets/js/pied-droits.js` (script classique, 81 pages publiques, hors `outils/`) :
     icône sigma (`assets/img/`) à gauche du titre « Cahiers interactifs », favicon
     et ligne « © 2026 dmarec146 · Tous droits réservés » en pied de page (ajoutée au
