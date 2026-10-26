@@ -416,6 +416,12 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   dans l'arbre (`texteEvenementSVG`) ; aucun effet visible constaté, cause
   non trouvée. **Mis de côté par David (01/09/2026) : n'y revenir que sur
   sa demande.**
+- **Pages légales préparées, NON publiées (26/10/2026)** : branche locale **`pages-legales`** (non poussée, un *worktree* dans `.claude/worktrees/pages-legales`, pour ne pas toucher à `master`) :
+  `mentions-legales/index.html`, `confidentialite/index.html`, `assets/css/legal.css`, liens « Mentions légales · Politique de confidentialité » ajoutés en pied de page par `assets/js/pied-droits.js`
+  (donc sur les 81 pages publiques), et garde-fou dans `outils/hosting/publier-hosting.js` : **refus de publier tant qu'une page contient `class="a-completer"`**. Texte source : document Claude Docs
+  « Cahiers interactifs, mentions légales et confidentialité » (https://claude.ai/artifact/2yTXVrjUuUvkJYbSWcobSf). **À faire avant de fusionner dans `master`** : avis du délégué à la protection des
+  données de l'académie ; remplacer les trois `<mark class="a-completer">` (garanties de transfert hors Union européenne, exemption de consentement de la mesure d'audience, date de mise à jour) ;
+  décider si la ligne de droits (`AUTEUR = 'dmarec146'` dans `pied-droits.js`) doit afficher le même nom que les mentions légales (« Marec David »). Ne fusionner qu'à la demande de David, puis pousser et publier sur Hosting.
 - **Fin d'année scolaire (décision de David, 26/10/2026 : suppression des comptes d'élèves le 30 juin, à la main)** : `outils/fin-annee/fin-annee.js` — comptage (sans option d'action), `--exporter` (sauvegarde complète + `resultats-des-devoirs.csv` pour Excel), `--supprimer --oui` (refusé sans l'export du jour) ; options `--classes=`, `--toutes`, `--garder=`, `--orphelins`, `--devoirs` (mode d'emploi en tête du script). **À lancer vers le 30/06/2027** : prévenir David en juin. Le compte `admin.jetable` (administrateur jetable jamais connecté, sans donnée) a été supprimé le 26/10/2026 après sauvegarde (`2026-10-26-avant-suppression-admin-jetable`) ; l'outil ne traite jamais un compte portant le droit admin comme un élève.
 - Données orphelines des 21 comptes supprimés (journaux de connexion surtout, 117 documents après la purge) : à effacer avec l'accord de David (voir le brouillon de
   confidentialité, durées de conservation).
