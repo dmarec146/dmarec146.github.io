@@ -79,12 +79,14 @@ const frNombre = (n) => String(n).replace('.', ',');
   const profils = new Map();
   for (const r of refsEleves) { const d = await r.get(); if (d.exists) profils.set(r.id, d.data()); }
 
-  const eleves = comptes.filter((u) => (u.email || '').endsWith(SUFFIXE_ELEVE)).map((u) => {
+  // Un compte qui porte le droit administrateur n'est JAMAIS traite comme un eleve, meme avec une adresse fictive.
+  const estAdmin = (u) => !!(u.customClaims && u.customClaims.admin);
+  const eleves = comptes.filter((u) => (u.email || '').endsWith(SUFFIXE_ELEVE) && !estAdmin(u)).map((u) => {
     const p = profils.get(u.uid) || {};
     const pseudo = (p.pseudo || (u.email || '').replace(SUFFIXE_ELEVE, '')).toLowerCase();
     return { uid: u.uid, pseudo, nom: p.nom || '', prenom: p.prenom || '', classe: p.classe || (profils.has(u.uid) ? 'hors-classe' : '(sans profil)') };
   });
-  const protegesAdmin = comptes.filter((u) => !(u.email || '').endsWith(SUFFIXE_ELEVE));
+  const protegesAdmin = comptes.filter((u) => !(u.email || '').endsWith(SUFFIXE_ELEVE) || estAdmin(u));
   const cibles = eleves.filter((e) => (toutes || classesCiblees.includes(e.classe)) && !garder.has(e.pseudo));
   const gardes = eleves.filter((e) => !cibles.includes(e));
   const orphelins = refsEleves.filter((r) => !uidsAuth.has(r.id));
