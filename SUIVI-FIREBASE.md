@@ -346,13 +346,19 @@ depuis la réorganisation du 02/10/2026 »).
 
 - **MIGRATION EN COURS vers Firebase Hosting + nom de domaine (démarrée le 26/10/2026)** — plan pas à pas, décisions et journal dans l'artefact claude.ai privé
   « Feuille de route du site » (https://claude.ai/artifact/Hq8uwxmdaWvtCbZENxcJuh), à lire avant toute action de publication. **État** : `master` publié par GitHub Pages
-  (`dmarec146.github.io`) reste la **seule production** ; Firebase Hosting n'a qu'un canal de test (`essai`, expire le 02/11/2026) ; Blaze activé (alerte de budget à 5 €),
-  sauvegardes faites (`Documents\sauvegardes-site\2026-10-26\`, hors dépôt). Fichiers **locaux, non suivis** : `firebase.json`, `.firebaserc`, dossier `publication/` (liste blanche
-  de 136 fichiers ; **ne jamais publier un dossier par liste d'exclusion** : le contenu de `.git` est parti ainsi une fois) ; commande de test :
-  `npx firebase-tools@15.34.1 hosting:channel:deploy essai --expires 7d --project cahiers-interactifs` (sous PowerShell : `npx.cmd`). **RÈGLE À APPLIQUER DÈS QUE LE DOMAINE
-  EST RELIÉ À HOSTING** : pendant la période des deux adresses en parallèle, **chaque `git push` du site doit être suivi de la publication sur Hosting** (sinon les deux sites divergent) ;
-  Hosting ne se met pas à jour tout seul. Cette procédure doit alors être mise dans `Publier le site.bat` et décrite ici. Après la bascule (annonce aux élèves prévue vers le 05/11/2026) :
-  nouveau dépôt privé (option B), l'ancien dépôt public ne garde qu'une page de redirection. Comptes enseignants pour 10 collègues : phase 3 de la feuille de route.
+  (`dmarec146.github.io`) reste la production annoncée aux élèves ; le même site est publié **en parallèle** sur Firebase Hosting, **non annoncé et non indexé**
+  (`noindex`) : `https://cahiers-interactifs.fr` (OVHcloud, DNS A + TXT ; `www` en CNAME vers `cahiers-interactifs.web.app`, redirigé vers le nom principal) et
+  `https://cahiers-interactifs.web.app`. Blaze activé (alerte de budget à 5 €), sauvegardes faites (`Documents\sauvegardes-site\2026-10-26\`, hors dépôt). Les deux adresses
+  partagent les mêmes comptes, devoirs et brouillons (même projet Firebase) ; une session ouverte sur l'une ne l'est pas sur l'autre (reconnexion à demander à l'annonce).
+  **RÈGLE : chaque `git push` du site doit être suivi de la publication sur Hosting** (sinon les deux sites divergent ; Hosting ne se met pas à jour tout seul). Un seul geste :
+  **`Publier le site.bat`** (commit, push, puis publication) ou, à la main, `node outils/hosting/publier-hosting.js` (`--construire` : contrôles sans publier ; `--canal=essai` :
+  adresse de test temporaire ; `--parite` : compare tous les fichiers avec GitHub Pages). Le script publie **le dernier commit de `master`** (jamais le dossier de travail), construit
+  `publication/` par **liste blanche** (**ne jamais publier un dossier par liste d'exclusion** : le contenu de `.git` est parti ainsi une fois), refuse tout fichier suspect, refuse de
+  publier si des commits ne sont pas poussés, régénère `firebase.json` et `.firebaserc` (ignorés par Git) et vérifie ensuite le site en ligne (empreintes, chemins sensibles en 404).
+  Prérequis par PC : Node.js, `npx firebase-tools@15.34.1 login` fait par David (compte propriétaire du projet) ; sous PowerShell, `npx` est bloqué : le script appelle `npx.cmd`.
+  **Constante `INDEXATION_AUTORISEE`** en tête du script : `false` tant que le site n'est pas annoncé (en-tête `noindex`) ; à passer à `true` à l'annonce (avec sitemap, robots.txt et titres, étape 2.2).
+  Après la bascule (annonce aux élèves prévue vers le 05/11/2026) : nouveau dépôt privé (option B), l'ancien dépôt public ne garde qu'une page de redirection.
+  Comptes enseignants pour 10 collègues : phase 3 de la feuille de route.
 
 - **Devoirs QCM Bac testés par David avec `demo-eleve` (18/10/2026)** : un devoir enregistré puis validé, « cela fonctionne » (sa
   formule ; c'était un sujet blanc de Terminale en mode fiche ; non précisé : s'il a regardé

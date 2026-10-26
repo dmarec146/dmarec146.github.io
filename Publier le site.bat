@@ -43,9 +43,30 @@ if errorlevel 1 (
 )
 
 echo.
+echo Publication sur le nouveau site (Firebase Hosting)...
+set "PATH=C:\Program Files\nodejs;%PATH%"
+where node >nul 2>nul
+if errorlevel 1 (
+    echo.
+    echo Node.js est introuvable : le nouveau site n'est PAS mis a jour.
+    echo Une fois Node.js installe, lance : node outils\hosting\publier-hosting.js
+    pause
+    exit /b
+)
+node outils\hosting\publier-hosting.js
+if errorlevel 1 (
+    echo.
+    echo ATTENTION : GitHub est a jour mais la publication sur Firebase Hosting a echoue ou n'est pas verifiee.
+    echo Les deux adresses ne sont peut-etre pas identiques. Relance : node outils\hosting\publier-hosting.js
+    pause
+    exit /b
+)
+
+echo.
 echo ============================================
-echo  Site mis a jour ! Visible en ligne dans 1-2 minutes.
-echo  https://dmarec146.github.io/
+echo  Site mis a jour sur les deux adresses.
+echo  https://dmarec146.github.io/  (1-2 minutes)
+echo  https://cahiers-interactifs.fr/
 echo ============================================
 echo.
 pause
