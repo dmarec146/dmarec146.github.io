@@ -23,7 +23,7 @@ const crypto = require('crypto');
 // ---- Reglages ---------------------------------------------------------------------------------
 const PROJET = 'cahiers-interactifs';
 const VERSION_FIREBASE_TOOLS = '15.34.1';
-const LISTE_BLANCHE = ['index.html', 'LICENSE', 'assets', 'automatismes', 'cahiers', 'connexion', 'mes-devoirs', 'qcm-bac', 'tableau-de-bord'];
+const LISTE_BLANCHE = ['index.html', 'LICENSE', 'robots.txt', 'sitemap.xml', 'assets', 'automatismes', 'cahiers', 'connexion', 'mes-devoirs', 'qcm-bac', 'tableau-de-bord'];
 const ADRESSES_EN_LIGNE = ['https://cahiers-interactifs.fr'];
 const ADRESSE_GITHUB_PAGES = 'https://dmarec146.github.io';
 // Tant que cette valeur est false, le site envoie "noindex, nofollow" : les moteurs de recherche ne
