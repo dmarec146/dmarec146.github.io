@@ -350,8 +350,9 @@ depuis la réorganisation du 02/10/2026 »).
   (`noindex`) : `https://cahiers-interactifs.fr` (OVHcloud, DNS A + TXT ; `www` en CNAME vers `cahiers-interactifs.web.app`, redirigé vers le nom principal) et
   `https://cahiers-interactifs.web.app`. Blaze activé (alerte de budget à 5 €), sauvegardes faites (`Documents\sauvegardes-site\2026-10-26\`, hors dépôt). Les deux adresses
   partagent les mêmes comptes, devoirs et brouillons (même projet Firebase) ; une session ouverte sur l'une ne l'est pas sur l'autre (reconnexion à demander à l'annonce).
-  **RÈGLE : chaque `git push` du site doit être suivi de la publication sur Hosting** (sinon les deux sites divergent ; Hosting ne se met pas à jour tout seul). Un seul geste :
-  **`Publier le site.bat`** (commit, push, puis publication) ou, à la main, `node outils/hosting/publier-hosting.js` (`--construire` : contrôles sans publier ; `--canal=essai` :
+  **RÈGLE : chaque `git push` du site doit être suivi de la publication sur Hosting** (sinon les deux sites divergent ; Hosting ne se met pas à jour tout seul). **David ne double-clique jamais sur
+  `Publier le site.bat` : c'est la session Claude qui pousse quand il le demande** ; elle doit donc lancer **elle-même, juste après chaque `git push` du site**,
+  `node outils/hosting/publier-hosting.js` (le `.bat` fait la même chose pour qui l'utiliserait) (`--construire` : contrôles sans publier ; `--canal=essai` :
   adresse de test temporaire ; `--parite` : compare tous les fichiers avec GitHub Pages). Le script publie **le dernier commit de `master`** (jamais le dossier de travail), construit
   `publication/` par **liste blanche** (**ne jamais publier un dossier par liste d'exclusion** : le contenu de `.git` est parti ainsi une fois), refuse tout fichier suspect, refuse de
   publier si des commits ne sont pas poussés, régénère `firebase.json` et `.firebaserc` (ignorés par Git) et vérifie ensuite le site en ligne (empreintes, chemins sensibles en 404).
