@@ -8,7 +8,7 @@
   window.__piedDroitsPose = true;
 
   var ANNEE = '2026';
-  var AUTEUR = 'Marec David';
+  var AUTEUR = 'David Marec';
   var TEXTE = '© ' + ANNEE + ' ' + AUTEUR + ' · Tous droits réservés';
   window.SITE_DROITS = TEXTE;   // repris par l'export PDF des cahiers (assets/js/export-cahier.js)
 
