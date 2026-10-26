@@ -8,15 +8,11 @@
 // lignes) ; ce module s'expose donc sur window.<fonction> plutot que d'etre
 // importe directement.
 //
-// Deux modeles de suivi coexistent le temps de migrer les 44 fiches de
-// calcul vers le second :
-//
-// - Ancien modele (enregistrerTentative, ci-dessous) : une ecriture par
-//   question verifiee. Encore utilise par la plupart des fiches.
-// - Nouveau modele (enregistrerBrouillon / chargerBrouillon / validerFiche,
-//   plus bas) : deux documents mis a jour en place au lieu d'un journal
-//   append-only, avec reprise possible d'une fiche interrompue. Voir le
-//   commentaire au-dessus de enregistrerBrouillon pour le detail.
+// Modele de suivi (enregistrerBrouillon / chargerBrouillon / validerFiche,
+// plus bas) : documents mis a jour en place au lieu d'un journal
+// append-only, avec reprise possible d'une fiche interrompue. Voir le
+// commentaire au-dessus de enregistrerBrouillon pour le detail. L'ancien
+// modele (une ecriture par question) a ete supprime le 26/10/2026.
 
 import { auth, db } from './firebase-config.js';
 import { appliquerDerogation } from './derogations.js';
@@ -93,29 +89,13 @@ export async function estConnecte() {
   return !!utilisateurCourant;
 }
 
-// Ne bloque jamais la fiche : la correction affichee a l'eleve reste
-// 100% locale (calculee avant cet appel) ; cet enregistrement n'est qu'un
-// effet secondaire, silencieux en cas d'echec (hors ligne, visiteur non
-// connecte, quota Firestore depasse...).
-export async function enregistrerTentative(ficheId, exerciceId, resultat, passe, totalExercices) {
-  if (!utilisateurCourant) return;
-  try {
-    await addDoc(collection(db, 'eleves', utilisateurCourant.uid, 'tentatives'), {
-      ficheId,
-      exercice: exerciceId,
-      resultat,
-      passe,
-      totalExercices,
-      horodatage: serverTimestamp(),
-    });
-  } catch (erreur) {
-    console.warn('Suivi : enregistrement de la tentative impossible.', erreur);
-  }
-}
+// (L'ancienne fonction enregistrerTentative, qui ecrivait une ligne par question verifiee dans
+// eleves/{uid}/tentatives meme hors devoir, a ete SUPPRIMEE le 26/10/2026 : plus lue par aucun ecran
+// et contraire a la regle « seul le travail d'un devoir est suivi ». Les 14 fiches de Seconde a tableaux
+// l'appellent encore sous la forme `if (window.enregistrerTentative)` : sans effet.)
 
-// Nouveau modele pour les cahiers de calcul (remplace progressivement
-// enregistrerTentative ci-dessus, fiche par fiche) : au lieu d'un journal
-// append-only (une ecriture par question verifiee, relu en entier par le
+// Modele pour les cahiers de calcul (il a remplace l'ancien journal) : au
+// lieu d'un journal append-only (une ecriture par question verifiee, relu en entier par le
 // tableau de bord a chaque ouverture), deux documents mis a jour en place :
 //
 //   eleves/{uid}/brouillons/{ficheId}  etat courant d'une fiche en pause
@@ -623,7 +603,6 @@ export async function enregistrerTentativeFicheAutomatismesSiDevoir(devoirId, bo
   await enregistrerTentativeAutomatismeParId(devoirId, bonnes, total, total, repondues);
 }
 
-window.enregistrerTentative = enregistrerTentative;
 window.enregistrerTentativeSujetBlancSiDevoir = enregistrerTentativeSujetBlancSiDevoir;
 window.enregistrerTentativeFicheAutomatismesSiDevoir = enregistrerTentativeFicheAutomatismesSiDevoir;
 window.enregistrerBrouillon = enregistrerBrouillon;
