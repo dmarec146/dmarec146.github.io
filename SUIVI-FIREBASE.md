@@ -344,6 +344,16 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 6. Pistes ouvertes / à faire
 
+- **MIGRATION EN COURS vers Firebase Hosting + nom de domaine (démarrée le 26/10/2026)** — plan pas à pas, décisions et journal dans l'artefact claude.ai privé
+  « Feuille de route du site » (https://claude.ai/artifact/Hq8uwxmdaWvtCbZENxcJuh), à lire avant toute action de publication. **État** : `master` publié par GitHub Pages
+  (`dmarec146.github.io`) reste la **seule production** ; Firebase Hosting n'a qu'un canal de test (`essai`, expire le 02/11/2026) ; Blaze activé (alerte de budget à 5 €),
+  sauvegardes faites (`Documents\sauvegardes-site\2026-10-26\`, hors dépôt). Fichiers **locaux, non suivis** : `firebase.json`, `.firebaserc`, dossier `publication/` (liste blanche
+  de 136 fichiers ; **ne jamais publier un dossier par liste d'exclusion** : le contenu de `.git` est parti ainsi une fois) ; commande de test :
+  `npx firebase-tools@15.34.1 hosting:channel:deploy essai --expires 7d --project cahiers-interactifs` (sous PowerShell : `npx.cmd`). **RÈGLE À APPLIQUER DÈS QUE LE DOMAINE
+  EST RELIÉ À HOSTING** : pendant la période des deux adresses en parallèle, **chaque `git push` du site doit être suivi de la publication sur Hosting** (sinon les deux sites divergent) ;
+  Hosting ne se met pas à jour tout seul. Cette procédure doit alors être mise dans `Publier le site.bat` et décrite ici. Après la bascule (annonce aux élèves prévue vers le 05/11/2026) :
+  nouveau dépôt privé (option B), l'ancien dépôt public ne garde qu'une page de redirection. Comptes enseignants pour 10 collègues : phase 3 de la feuille de route.
+
 - **Devoirs QCM Bac testés par David avec `demo-eleve` (18/10/2026)** : un devoir enregistré puis validé, « cela fonctionne » (sa
   formule ; c'était un sujet blanc de Terminale en mode fiche ; non précisé : s'il a regardé
   la note, la vue « Résultats » et « Mes devoirs »). Le reste n'est pas vérifié : si quelque chose casse, `qcm-bac/fiche.html`,
