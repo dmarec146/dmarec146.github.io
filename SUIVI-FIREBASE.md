@@ -221,10 +221,12 @@ depuis la réorganisation du 02/10/2026 »).
   sa liste `/mes-devoirs/` ; marqueur `{masqueLe}`, **règle à publier** avant
   l'envoi du code — sans elle, la lecture échoue sans casser la page et le
   bouton « Supprimer » affiche « Suppression impossible »).
-  **Orphelines** (plus lues depuis le 29/09/2026) : `resultats`,
-  `automatismes`, `tentatives` — `enregistrerTentative()` écrit encore dans
-  `tentatives` depuis 14 fiches à widget de Seconde (nettoyage possible,
-  non demandé).
+  **Anciennes sous-collections supprimées le 26/10/2026** : `resultats`, `automatismes`, `tentatives` (229 documents, sauvegardés avant dans
+  `Documents\sauvegardes-site\2026-10-26-avant-purge\`). La fonction `enregistrerTentative()` de `suivi.js`, qui écrivait dans `tentatives` hors devoir depuis 14 fiches de
+  Seconde à tableaux, est **supprimée** (ses 35 appels sont protégés par `if (window.enregistrerTentative)` : sans effet). Les règles Firestore autorisent
+  encore la création dans ces trois chemins : à retirer à la prochaine publication des règles. **Export Firestore : toujours `listDocuments()`, jamais
+  `collection().get()`** : ce dernier ignore les comptes dont le profil a été supprimé (21 « fantômes » avec 193 documents, surtout des journaux de connexion) et donne
+  une sauvegarde incomplète.
 - **Seul le travail fait dans le cadre d'un devoir est suivi** (décision de
   David, 29/09/2026). Hors devoir, un élève connecté a exactement le
   comportement d'un visiteur anonyme (choix du mode, correction immédiate,
@@ -414,8 +416,8 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
   dans l'arbre (`texteEvenementSVG`) ; aucun effet visible constaté, cause
   non trouvée. **Mis de côté par David (01/09/2026) : n'y revenir que sur
   sa demande.**
-- Nettoyage possible des écritures orphelines (`enregistrerTentative()`
-  des 14 fiches à widget de Seconde).
+- Données orphelines des 21 comptes supprimés (journaux de connexion surtout, 117 documents après la purge) : à effacer avec l'accord de David (voir le brouillon de
+  confidentialité, durées de conservation).
 - Idée non demandée : barème réglable devoir par devoir (automatismes).
 - Fiche 2 de Première : pas de titre de section entre les automatismes et
   2.3 (remarque, non traitée).
