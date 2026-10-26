@@ -107,9 +107,17 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
     const derniereActivite = tentatives.reduce((max, t) => Math.max(max, millis(t.horodatage)), 0);
 
     const partiel = Array.isArray(dv.calculs) && dv.calculs.length > 0;
-    const brouillon = dv.type === 'fiche'
+    let brouillon = dv.type === 'fiche'
       ? (partiel ? brouillonParDevoirPartiel.get(dv.id) : brouillonParFiche.get(dv.ficheId))
       : brouillonParDevoir.get(dv.id);
+    // Devoir sur la fiche entiere : un brouillon enregistre avant la creation du devoir
+    // vient d'un devoir precedent supprime puis recree (26/10/2026) : il ne lui appartient
+    // pas (meme regle que chargerBrouillon dans suivi.js) ; il sera nettoye comme perime.
+    if (brouillon && dv.type === 'fiche' && !partiel) {
+      const creeLe = millis(dv.creeLe);
+      const enregistreLe = millis(brouillon.data().horodatage);
+      if (creeLe > 0 && enregistreLe > 0 && enregistreLe < creeLe) brouillon = null;
+    }
     const enregistre = ouvert && !!brouillon;
     if (enregistre) brouillonsUtiles.add(brouillon.ref.path);
 

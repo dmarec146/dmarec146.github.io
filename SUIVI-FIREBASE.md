@@ -304,7 +304,9 @@ depuis la réorganisation du 02/10/2026 »).
   modification). Une fiche s'ouvre sur un devoir précis par
   `?devoir=<id>` (lien de `/mes-devoirs/`) : indispensable quand une
   fiche porte plusieurs devoirs ; sans paramètre, le plus proche de son
-  échéance. Brouillon d'un devoir partiel : clé
+  échéance. **Devoir supprimé puis recréé (26/10/2026)** : le brouillon d'un devoir sur la fiche entière
+  n'a pas d'identifiant de devoir ; un brouillon enregistré avant la création (`creeLe`) du devoir est ignoré
+  (`brouillonAnterieurAuDevoir` dans `suivi.js`, même règle dans `devoirs-eleve.js`). Brouillon d'un devoir partiel : clé
   `<ficheId encodé>~<devoirId>` + champ `devoirId` (un par devoir) ; devoir
   entier : clé historique. Essais épuisés : `retirer()`, toute la fiche
   redevient visible (entraînement libre). Aucune modification de
@@ -348,8 +350,8 @@ depuis la réorganisation du 02/10/2026 »).
   `qcm-bac/sujet-blanc.html`, `assets/js/devoirs.js`, `assets/js/mes-devoirs.js` (cibles `qcm-bac` et `qcm-bac-sujet`).
   **Comptage de la fréquentation du bloc : vérifié en réel le 19/10/2026** (essai automatisé, voir la puce « Fréquentation QCM Bac » plus bas ; l'essai de David, lui, était exclu par construction) ; à regarder dans le tableau de bord
   Fréquentation (partie « QCM Bac ») une fois que des élèves ou lui, hors compte enseignant, auront ouvert ces pages.
-- **RAPPEL À DAVID — comptes élèves de Terminale** : classe **`Tle-Gr 2`** (groupe 2, précisé le 18/10/2026), à créer par David avec
-  `outils/creer-comptes` ; elle apparaîtra d'elle-même dans la liste d'attribution. La carte « Terminale — Bientôt » de la page
+- **Comptes élèves de Terminale** : classe **`Tle-Gr 2`** (groupe 2, précisé le 18/10/2026) **déjà créée** (24 élèves relevés dans Firestore le 26/10/2026) ;
+  elle apparaît dans la liste d'attribution. La carte « Terminale — Bientôt » de la page
   Automatismes est volontairement conservée (décision de David).
 
 - **Fréquentation du bloc QCM Bac : fait (18/10/2026).** `s_qcm_bac` est dans les trois fonctions de `firestore.rules` (testé dans

@@ -41,9 +41,11 @@
     ['.mode-explication', 'grid-column: 1 / -1; font-size: 13px; margin: 0'],
     ['.devoir-info', 'margin: 0 0 10px; font-size: 13.5px'],
     [BAR + '#zone-enregistrer:not([hidden]), ' + BAR + '#zone-valider:not([hidden])', 'position: fixed; z-index: 81; bottom: calc(11px + env(safe-area-inset-bottom, 0px)); height: 50px; display: block'],
-    [BAR + '#zone-enregistrer', 'left: 12px; width: calc(40% - 16px)'],
-    [BAR + '#zone-valider', 'right: 12px; width: calc(60% - 16px)'],
-    [BAR + '#zone-enregistrer > button, ' + BAR + '#zone-valider > button', 'width: 100%; height: 50px; min-height: 50px; border-radius: 14px; font-size: 14.5px; line-height: 1.15; padding: 6px 8px']
+    // 46 / 54 % (et non 40 / 60) : « Enregistrer mon avancement » doit tenir sur deux lignes
+    // meme avec la police de secours, plus large que Georgia, des telephones Android (26/10/2026).
+    [BAR + '#zone-enregistrer', 'left: 12px; width: calc(46% - 16px)'],
+    [BAR + '#zone-valider', 'right: 12px; width: calc(54% - 16px)'],
+    [BAR + '#zone-enregistrer > button, ' + BAR + '#zone-valider > button', 'width: 100%; height: 50px; min-height: 50px; border-radius: 14px; font-size: 13.5px; line-height: 1.15; padding: 4px 6px; overflow-wrap: anywhere']
   ];
   var css = regles.map(function (r) {
     return r[0].split(', ').map(function (x) { return 'body ' + x; }).join(', ') + ' { ' + r[1] + ' }';

@@ -69,6 +69,14 @@ function devoirPartielDe(ficheId) {
   const devoir = devoirChoisiParFiche.get(ficheId);
   return devoir && Array.isArray(devoir.calculs) && devoir.calculs.length > 0 ? devoir : null;
 }
+// Vrai si le brouillon a ete enregistre avant la creation du devoir (devoir
+// precedent supprime puis recree : le brouillon ne peut pas lui appartenir).
+// Sans date de creation (ancien devoir) ou sans horodatage lisible : on garde.
+// Meme regle dans devoirs-eleve.js (liste « Mes devoirs »).
+function brouillonAnterieurAuDevoir(brouillon, creeLeMillis) {
+  const enregistreLe = brouillon?.horodatage?.toMillis ? brouillon.horodatage.toMillis() : 0;
+  return creeLeMillis > 0 && enregistreLe > 0 && enregistreLe < creeLeMillis;
+}
 function cleBrouillon(ficheId) {
   const partiel = devoirPartielDe(ficheId);
   return partiel ? `${idFiche(ficheId)}~${partiel.id}` : idFiche(ficheId);
@@ -183,7 +191,14 @@ export async function chargerBrouillon(ficheId) {
   if (!utilisateurCourant) return null;
   try {
     const instantane = await getDoc(doc(db, 'eleves', utilisateurCourant.uid, 'brouillons', cleBrouillon(ficheId)));
-    return instantane.exists() ? instantane.data() : null;
+    if (!instantane.exists()) return null;
+    const brouillon = instantane.data();
+    // Devoir sur la fiche entiere (cle de brouillon = la fiche, pas le devoir) :
+    // un brouillon enregistre AVANT la creation de ce devoir vient d'un devoir
+    // precedent, supprime puis recree (26/10/2026) -- le nouveau devoir repart de zero.
+    const devoir = devoirChoisiParFiche.get(ficheId);
+    if (devoir && !devoirPartielDe(ficheId) && brouillonAnterieurAuDevoir(brouillon, devoir.creeLeMillis)) return null;
+    return brouillon;
   } catch (erreur) {
     console.warn('Suivi : lecture du brouillon impossible.', erreur);
     return null;
@@ -363,7 +378,7 @@ export async function verifierEtatDevoir(ficheId, devoirId) {
     const choix = await choisirDevoirActif(candidats);
     if (!choix) { devoirChoisiParFiche.delete(ficheId); return null; }
     const { devoir, essaisUtilises } = choix;
-    devoirChoisiParFiche.set(ficheId, { id: devoir.id, calculs: Array.isArray(devoir.calculs) ? devoir.calculs : null });
+    devoirChoisiParFiche.set(ficheId, { id: devoir.id, calculs: Array.isArray(devoir.calculs) ? devoir.calculs : null, creeLeMillis: devoir.creeLe?.toMillis ? devoir.creeLe.toMillis() : 0 });
     return {
       id: devoir.id,
       calculs: Array.isArray(devoir.calculs) && devoir.calculs.length > 0 ? devoir.calculs : null,
