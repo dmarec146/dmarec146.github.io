@@ -53,9 +53,13 @@ export async function chargerDevoirsEleve(uid, { nettoyerBrouillons = false } = 
   const profil = await getDoc(doc(db, 'eleves', uid));
   if (!profil.exists()) return null;
   const classe = profil.data().classe || CLASSE_HORS_CLASSE;
+  // Seuls les devoirs de son enseignant (26/10/2026) ; pas de filtre tant que le
+  // profil n'a pas de champ enseignant (comptes d'avant la migration).
+  const enseignant = profil.data().enseignant;
+  const filtreEnseignant = enseignant ? [where('enseignant', '==', enseignant)] : [];
 
   const [instDevoirs, instTentatives, instBrouillonsFiches, instBrouillonsAuto, instMasques] = await Promise.all([
-    getDocs(query(collection(db, 'devoirs'), where('classe', '==', classe))),
+    getDocs(query(collection(db, 'devoirs'), where('classe', '==', classe), ...filtreEnseignant)),
     getDocs(collection(db, 'eleves', uid, 'devoirsTentatives')),
     getDocs(collection(db, 'eleves', uid, 'brouillons')),
     getDocs(collection(db, 'eleves', uid, 'brouillonsAutomatismes')),

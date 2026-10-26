@@ -201,6 +201,11 @@ export async function supprimerBrouillon(ficheId) {
 // ci-dessous -- evite une lecture Firestore supplementaire a CHAQUE
 // validation de fiche alors que la classe ne change jamais en session.
 let classeEleveCourant;
+// Enseignant de l'eleve (champ `enseignant` de son profil, ajoute le 26/10/2026
+// pour plusieurs enseignants) : renseigne en meme temps que la classe par
+// classeEleve(), null pour un profil encore sans enseignant (comptes crees
+// avant ce chantier tant que leur profil n'est pas migre).
+let enseignantEleveCourant = null;
 // "hors-classe" : valeur sentinelle pour un eleve cree sans classe (voir
 // outils/creer-comptes) -- AUCUN champ classe n'est ecrit sur son document
 // eleves/{uid} (ni ici ni migre a posteriori), cette chaine ne sert qu'a
@@ -222,6 +227,7 @@ async function classeEleve() {
   try {
     const profil = await getDoc(doc(db, 'eleves', utilisateurCourant.uid));
     classeEleveCourant = profil.exists() ? (profil.data().classe || CLASSE_HORS_CLASSE) : null;
+    enseignantEleveCourant = profil.exists() ? (profil.data().enseignant || null) : null;
   } catch (erreur) {
     console.warn('Suivi : lecture du profil eleve impossible.', erreur);
     classeEleveCourant = null;
@@ -242,6 +248,13 @@ function applicablePourEleve(devoir) {
   return !Array.isArray(devoir.eleves) || devoir.eleves.includes(utilisateurCourant.uid);
 }
 
+// Seuls les devoirs de SON enseignant concernent l'eleve (deux enseignants
+// peuvent avoir une classe du meme nom). Vide tant que le profil n'a pas de
+// champ enseignant (avant la migration des comptes existants).
+function contrainteEnseignant() {
+  return enseignantEleveCourant ? [where('enseignant', '==', enseignantEleveCourant)] : [];
+}
+
 // Requete brute (sans filtre d'echeance) : partagee entre
 // enregistrerTentativeDevoirSiApplicable et verifierEtatDevoir ci-dessous.
 // Seuls les devoirs de type "fiche" concernent une fiche de calcul (04/10/2026) :
@@ -249,10 +262,12 @@ function applicablePourEleve(devoir) {
 // modifie en sujet blanc) s'y appliquait a tort. Un devoir sans type est une
 // fiche (ancien format).
 async function devoirsPour(ficheId, classe) {
+  await classeEleve(); // renseigne enseignantEleveCourant (mis en cache)
   const instantane = await getDocs(query(
     collection(db, 'devoirs'),
     where('ficheId', '==', ficheId),
-    where('classe', '==', classe)
+    where('classe', '==', classe),
+    ...contrainteEnseignant()
   ));
   // Derogation individuelle (echeance / essais propres a cet eleve, voir derogations.js).
   return instantane.docs.map((d) => appliquerDerogation({ id: d.id, ...d.data() }, utilisateurCourant?.uid))
@@ -497,7 +512,8 @@ export async function devoirAutomatismeActif(cible) {
     const instantane = await getDocs(query(
       collection(db, 'devoirs'),
       where('type', '==', 'automatismes'),
-      where('classe', '==', classe)
+      where('classe', '==', classe),
+      ...contrainteEnseignant()
     ));
     const choix = await choisirDevoirActif(instantane.docs
       .map((d) => appliquerDerogation({ id: d.id, ...d.data() }, utilisateurCourant.uid))

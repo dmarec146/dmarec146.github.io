@@ -20,6 +20,13 @@ const DOSSIER_SORTIE = __dirname;
 const ALPHABET_MOT_DE_PASSE = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans 0/O/1/l/I
 
 function initialiserAdmin() {
+  // Mode test (outils/test-local) : les emulateurs Firebase sont designes par
+  // ces deux variables ; aucune cle de service, aucun vrai compte touche.
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST && process.env.FIRESTORE_EMULATOR_HOST) {
+    console.log('MODE TEST : emulateurs Firebase locaux, aucune donnee reelle.');
+    initializeApp({ projectId: 'demo-cahiers' });
+    return;
+  }
   if (!fs.existsSync(CHEMIN_CLE_SERVICE)) {
     console.error(
       `Clé de service introuvable : ${CHEMIN_CLE_SERVICE}\n` +
@@ -137,29 +144,77 @@ function lireCsvEleves(cheminCsv) {
   return genererPseudosUniques(eleves);
 }
 
-async function creerComptesEleves(cheminCsv) {
+// Compte d'un enseignant (claim "enseignant" ou "admin") retrouve par son
+// adresse e-mail ; les eleves y sont rattaches par son uid (champ `enseignant`).
+async function trouverEnseignant(email) {
+  let utilisateur;
+  try {
+    utilisateur = await getAuth().getUserByEmail(email.trim().toLowerCase());
+  } catch (erreur) {
+    if (erreur.code === 'auth/user-not-found') {
+      throw new Error(`Aucun compte pour ${email}. Le creer d'abord : node creer-comptes.js --enseignant ${email}`);
+    }
+    throw erreur;
+  }
+  const claims = utilisateur.customClaims || {};
+  if (claims.enseignant !== true) {
+    throw new Error(`Le compte ${email} n'a pas le droit "enseignant" : ce n'est pas un compte enseignant.`);
+  }
+  return utilisateur;
+}
+
+// Un meme pseudo (d.marec) peut revenir chez deux enseignants differents, ou
+// pour deux eleves homonymes : le compte deja la est-il CET eleve ? Meme
+// enseignant et, si le fichier donne les noms, memes nom et prenom. Sinon il
+// faut un autre pseudo (suffixe numerique) pour ne jamais ignorer a tort un
+// nouvel eleve.
+async function trouverPseudoLibre(pseudoSouhaite, eleve, enseignantUid, pseudoImpose) {
+  const auth = getAuth();
+  const db = getFirestore();
+  for (let n = 1; n < 100; n++) {
+    const pseudo = n === 1 ? pseudoSouhaite : `${pseudoSouhaite}${n}`;
+    let existant;
+    try {
+      existant = await auth.getUserByEmail(emailDepuisPseudo(pseudo));
+    } catch (erreur) {
+      if (erreur.code === 'auth/user-not-found') return { pseudo, existant: null };
+      throw erreur;
+    }
+    const profil = (await db.collection('eleves').doc(existant.uid).get()).data() || {};
+    const memeEnseignant = profil.enseignant === enseignantUid;
+    const memeEleve = pseudoImpose || (profil.nom === eleve.nom && profil.prenom === eleve.prenom);
+    if (memeEnseignant && memeEleve) return { pseudo, existant };
+    if (pseudoImpose) {
+      throw new Error(`Le pseudo "${pseudo}" est deja pris par un autre compte : choisir un autre pseudo dans le fichier.`);
+    }
+  }
+  throw new Error(`Aucun pseudo libre trouve a partir de "${pseudoSouhaite}".`);
+}
+
+async function creerComptesEleves(cheminCsv, emailEnseignant) {
   const eleves = lireCsvEleves(cheminCsv);
   const auth = getAuth();
   const db = getFirestore();
+  const enseignant = await trouverEnseignant(emailEnseignant);
+  const pseudoImpose = eleves.length > 0 && eleves.every((e) => !e.nom && !e.prenom);
   const resultats = [];
+  console.log(`Eleves rattaches a l'enseignant : ${enseignant.email}`);
 
-  for (const { classe, pseudo, prenom, nom } of eleves) {
-    const email = emailDepuisPseudo(pseudo);
-    let utilisateur;
-    try {
-      utilisateur = await auth.getUserByEmail(email);
+  for (const eleve of eleves) {
+    const { classe, prenom, nom } = eleve;
+    const { pseudo, existant } = await trouverPseudoLibre(eleve.pseudo, eleve, enseignant.uid, pseudoImpose);
+    if (existant) {
       console.log(`Deja existant, ignore : ${pseudo}`);
       continue;
-    } catch (erreur) {
-      if (erreur.code !== 'auth/user-not-found') throw erreur;
     }
 
     const motDePasse = genererMotDePasse();
-    utilisateur = await auth.createUser({ email, password: motDePasse });
+    const utilisateur = await auth.createUser({ email: emailDepuisPseudo(pseudo), password: motDePasse });
     // nom/prenom : optionnels si le CSV n'utilisait que classe,pseudo (pas
     // de vraie identite dans ce cas-la, uniquement le pseudo choisi a la main).
     await db.collection('eleves').doc(utilisateur.uid).set({
       pseudo,
+      enseignant: enseignant.uid,
       ...(classe && { classe }),
       ...(nom && { nom }),
       ...(prenom && { prenom }),
@@ -208,11 +263,51 @@ async function creerOuPromouvoirAdmin(email, motDePasse) {
     console.log(`Compte existant : ${email}`);
   } catch (erreur) {
     if (erreur.code !== 'auth/user-not-found') throw erreur;
+    if (!motDePasse) throw new Error(`Aucun compte pour ${email} : indiquer un mot de passe pour le creer.`);
     utilisateur = await auth.createUser({ email, password: motDePasse });
     console.log(`Compte cree : ${email}`);
   }
-  await auth.setCustomUserClaims(utilisateur.uid, { admin: true });
-  console.log(`Droit "admin" accorde a ${email}. Deconnecte-toi puis reconnecte-toi sur le site pour que ca prenne effet.`);
+  // L'administrateur est aussi enseignant : il a ses propres eleves et devoirs,
+  // comme un collegue (champ `enseignant` = son uid).
+  await auth.setCustomUserClaims(utilisateur.uid, { admin: true, enseignant: true });
+  console.log(`Droits "admin" et "enseignant" accordes a ${email}. Deconnecte-toi puis reconnecte-toi sur le site pour que ca prenne effet.`);
+}
+
+// Invitation d'un enseignant (26/10/2026) : cree le compte avec un mot de passe
+// aleatoire que personne ne connait, lui accorde le droit "enseignant" (rien
+// d'autre), puis affiche un LIEN valable un temps limite grace auquel la
+// personne choisit elle-meme son mot de passe. Le lien est a lui envoyer de
+// votre part ; il n'est ecrit nulle part. Relancer la commande sur un compte
+// existant genere simplement un nouveau lien (mot de passe oublie).
+async function inviterEnseignant(email, adresseLibre) {
+  const auth = getAuth();
+  const adresse = email.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(adresse) || adresse.endsWith('@cahiers-interactifs.local')) {
+    throw new Error(`Adresse e-mail invalide : ${email}`);
+  }
+  // Par defaut, une adresse academique (@ac-creteil.fr, @ac-paris.fr...) : preuve peu couteuse
+  // qu'il s'agit bien d'un enseignant. Autre adresse : decision explicite (--adresse-libre).
+  if (!adresseLibre && !/@ac-[a-z-]+\.fr$/.test(adresse)) {
+    throw new Error(`${adresse} n'est pas une adresse academique (@ac-xxx.fr). Pour l'accepter quand meme : ajouter --adresse-libre`);
+  }
+  let utilisateur;
+  try {
+    utilisateur = await auth.getUserByEmail(adresse);
+    console.log(`Compte existant : ${adresse}`);
+  } catch (erreur) {
+    if (erreur.code !== 'auth/user-not-found') throw erreur;
+    utilisateur = await auth.createUser({ email: adresse, password: genererMotDePasse(24) });
+    console.log(`Compte cree : ${adresse}`);
+  }
+  const claims = utilisateur.customClaims || {};
+  if (claims.enseignant !== true) await auth.setCustomUserClaims(utilisateur.uid, { ...claims, enseignant: true });
+  let lien = await auth.generatePasswordResetLink(adresse);
+  // Page de choix du mot de passe en francais (le lien porte lang=en par defaut).
+  lien = /[?&]lang=/.test(lien) ? lien.replace(/([?&])lang=[^&]*/, '$1lang=fr') : `${lien}&lang=fr`;
+  console.log(`\nDroit "enseignant" accorde a ${adresse}.`);
+  console.log('Lien a envoyer a cette personne pour qu\'elle choisisse son mot de passe (usage unique, duree limitee) :\n');
+  console.log(lien);
+  console.log('\nElle se connectera ensuite sur le site avec son adresse e-mail (page Connexion).');
 }
 
 async function main() {
@@ -220,19 +315,35 @@ async function main() {
   initialiserAdmin();
 
   if (commande === '--admin') {
-    if (!arg1 || !arg2) {
-      console.error('Usage : node creer-comptes.js --admin <email> <mot-de-passe>');
+    if (!arg1) {
+      console.error('Usage : node creer-comptes.js --admin <email> [mot-de-passe]   (mot de passe utile seulement si le compte n\'existe pas encore)');
       process.exit(1);
     }
     await creerOuPromouvoirAdmin(arg1, arg2);
     return;
   }
 
-  if (!commande) {
-    console.error('Usage : node creer-comptes.js <fichier.csv>\n   ou : node creer-comptes.js --admin <email> <mot-de-passe>');
+  if (commande === '--enseignant') {
+    if (!arg1) {
+      console.error('Usage : node creer-comptes.js --enseignant <email> [--adresse-libre]');
+      process.exit(1);
+    }
+    await inviterEnseignant(arg1, process.argv.includes('--adresse-libre'));
+    return;
+  }
+
+  // Eleves : fichier CSV + enseignant obligatoire (--enseignant=<email>), pour
+  // ne jamais creer d'eleves rattaches a personne.
+  const optionEnseignant = process.argv.slice(2).find((a) => a.startsWith('--enseignant='));
+  if (!commande || commande.startsWith('--') || !optionEnseignant) {
+    console.error(
+      'Usage : node creer-comptes.js <fichier.csv> --enseignant=<email-de-l-enseignant>\n' +
+      '   ou : node creer-comptes.js --enseignant <email>     (inviter un enseignant)\n' +
+      '   ou : node creer-comptes.js --admin <email> [mot-de-passe]'
+    );
     process.exit(1);
   }
-  await creerComptesEleves(commande);
+  await creerComptesEleves(commande, optionEnseignant.slice('--enseignant='.length));
 }
 
 main().catch((erreur) => {

@@ -333,7 +333,8 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 5. Comptes
 
-- Compte enseignant (adresse réelle, `admin`).
+- Compte enseignant de David (adresse réelle, `admin`) ; **sur la branche `comptes-enseignants`** (non fusionnée, voir §6) : droits `admin` + `enseignant`,
+  les collègues invités n'ont que `enseignant`.
 - Élèves réels : `2nde-207` (21), `1ere-Gr 1` (27), `1ere-Gr 3` (26),
   `e.marec` (hors classe, compte réel).
 - Comptes de test : `demo-eleve` (classe `1ere-demo`, utilisé par David
@@ -362,6 +363,25 @@ depuis la réorganisation du 02/10/2026 »).
   **Constante `INDEXATION_AUTORISEE`** en tête du script : `false` tant que le site n'est pas annoncé (en-tête `noindex`) ; à passer à `true` à l'annonce (avec sitemap, robots.txt et titres, étape 2.2).
   Après la bascule (annonce aux élèves prévue vers le 05/11/2026) : nouveau dépôt privé (option B), l'ancien dépôt public ne garde qu'une page de redirection.
   Comptes enseignants pour 10 collègues : phase 3 de la feuille de route.
+
+- **COMPTES ENSEIGNANTS (plusieurs enseignants) — branche `comptes-enseignants` (worktree `.claude/worktrees/comptes-enseignants`), commencée le 26/10/2026, NON fusionnée, NON publiée.**
+  Échéance voulue par David : ≈ 02/11/2026 (il revoit élèves et collègues). **Décisions de David (26/10)** : (1) compte test d'enseignant avec une autre adresse e-mail cette semaine ; (2) son compte = `admin` + `enseignant` ;
+  (3) inscription d'un enseignant **sur invitation** uniquement (pour la suite, Claude conseille une adresse académique `@ac-xxx.fr` par défaut, exception explicite : le script le refuse sans `--adresse-libre`) ;
+  (4) **seul David crée les comptes élèves des collègues**, à partir de la liste (PDF/Excel) que chacun lui envoie, avec les étiquettes ; (5) pseudos **comme pour ses propres élèves** (`d.marec`, nom et prénom dans le profil) : l'idée de pseudos aléatoires sans nom + table
+  de correspondance a été étudiée puis écartée comme trop lourde au quotidien (« nous verrons plus tard ») — **les mentions légales doivent donc continuer à dire que nom et prénom sont conservés** pour tous les élèves.
+  **Modèle** : claims `admin` (voit tout, fréquentation) et `enseignant` ; champ `enseignant` (uid) sur `eleves/{uid}` et `devoirs/{id}` ; règles Firestore : un enseignant lit les profils/journaux/brouillons de SES élèves seulement (`estSonEnseignant`, un `get()` du profil),
+  crée/modifie/supprime seulement SES devoirs (`enseignant` = son uid, immuable), jamais d'écriture sur les profils ; **lecture des devoirs encore ouverte à tout compte connecté (provisoire**, aucune donnée personnelle ; à restreindre une fois tous les navigateurs rechargés).
+  **Côté pages** : `devoirs.js` filtre toutes ses requêtes par `where('enseignant', '==', uid)` (obligatoire : Firestore refuse sinon) ; `suivi.js` et `devoirs-eleve.js` filtrent les devoirs d'un élève par son `enseignant` (deux enseignants peuvent avoir une classe du même nom) ;
+  sans champ `enseignant` sur le profil, aucun filtre (comptes d'avant la migration) ; `nav-auth.js`/`statistiques.js`/`connexion.js` : l'enseignant a l'icône du tableau de bord, n'est pas compté dans la fréquentation ni dans le journal des connexions ; la carte « Fréquentation » est masquée hors admin.
+  **Scripts** (`outils/creer-comptes`) : `--admin <email> [mdp]` (donne `admin`+`enseignant`) ; `--enseignant <email> [--adresse-libre]` (invitation : compte à mot de passe aléatoire inconnu + **lien** pour choisir son mot de passe, à envoyer par David) ;
+  `<csv> --enseignant=<email>` (élèves rattachés ; homonymes/pseudos pris par un autre enseignant → suffixe libre ; relançable) ; `migrer-enseignant.js <email> [--oui]` (rattache élèves et devoirs existants, ignore les documents « fantômes »). `fin-annee.js` ne traite jamais un compte `enseignant` comme un élève.
+  **Test local** : `node outils/test-local/lancer.js` (émulateurs Auth + Firestore + site sur `http://localhost:5173/connexion/?emulateur=1`, bandeau rouge « MODE TEST », comptes fictifs `david@exemple.test` / `collegue@exemple.test`, mot de passe `test1234`) ; le branchement sur les émulateurs
+  n'agit que sur `localhost`/`127.0.0.1` (`assets/js/firebase-config.js`). **Vérifié le 26/10/2026** : règles (112 cas, `outils/verification/regles-firestore`) ; dans le navigateur, un collègue ne voit que sa classe, ses devoirs, ses résultats (même nom de classe que David), un élève ne voit que les devoirs de son enseignant, une tentative d'élève apparaît chez son enseignant ;
+  scripts sur l'émulateur (invitation, élèves, homonyme, relance, migration avec document fantôme).
+  **ORDRE DE MISE EN PRODUCTION (à respecter)** : 1) sauvegarde (voir `outils/fin-annee` / export) ; 2) `node migrer-enseignant.js <email de David>` d'abord en simulation puis `--oui` (inoffensif pour l'ancien code) ; 3) `node creer-comptes.js --admin <email de David>` (ajoute le droit `enseignant`), puis David se déconnecte/reconnecte ;
+  4) publier les nouvelles règles dans la Console Firebase (compatibles avec l'ancien code : vérifié par construction, l'admin garde tout) ; 5) fusionner dans `master`, pousser **sur demande de David**, publier sur Hosting ; 6) inviter le compte de test (`--enseignant <autre adresse> --adresse-libre`), créer ses 2 élèves fictifs de bout en bout.
+  **Reste à faire** : essai de bout en bout en réel avec le 2ᵉ compte et les 2 élèves fictifs (David fournira noms/prénoms et classe) ; vérifier le lien d'invitation en vrai (page de choix du mot de passe, domaines autorisés d'Authentication) ; adapter les pages légales (enseignants : adresse e-mail ; élèves de collègues : créés par l'éditeur) et le message au délégué ;
+  restreindre la lecture des devoirs ; étiquettes par enseignant si besoin ; voir aussi l'artefact « Feuille de route du site » (phase 3).
 
 - **Devoirs QCM Bac testés par David avec `demo-eleve` (18/10/2026)** : un devoir enregistré puis validé, « cela fonctionne » (sa
   formule ; c'était un sujet blanc de Terminale en mode fiche ; non précisé : s'il a regardé

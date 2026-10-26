@@ -137,7 +137,8 @@ if (cible) {
     }
 
     const resultatToken = await utilisateur.getIdTokenResult();
-    if (resultatToken.claims.admin === true) {
+    // Tableau de bord : administrateur ou enseignant (chacun ne voit que ses élèves).
+    if (resultatToken.claims.admin === true || resultatToken.claims.enseignant === true) {
       // 'inline-flex' explicite (pas '' pour retomber sur la regle CSS) :
       // pour la variante barre-navigation, le display vient d'un style EN
       // LIGNE pose par styliserCommeIconeCompacte, pas d'une classe -- vider

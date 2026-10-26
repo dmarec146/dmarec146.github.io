@@ -73,7 +73,9 @@ formulaire.addEventListener('submit', async (evenement) => {
   connexionEnCours = true;
   try {
     const identifiants = await signInWithEmailAndPassword(auth, emailDepuisIdentifiant(identifiant), motDePasse);
-    await enregistrerConnexion(identifiants.user.uid);
+    // Le journal des connexions concerne les eleves : pas celles d'un enseignant ou de l'administrateur.
+    const { claims } = await identifiants.user.getIdTokenResult();
+    if (claims.admin !== true && claims.enseignant !== true) await enregistrerConnexion(identifiants.user.uid);
     window.location.replace(DESTINATION_APRES_CONNEXION);
   } catch (erreur) {
     connexionEnCours = false;

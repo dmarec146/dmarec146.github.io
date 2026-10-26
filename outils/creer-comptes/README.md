@@ -21,12 +21,49 @@ profil Firestore.
 ## Créer ton propre compte (enseignant)
 
 ```bash
-node creer-comptes.js --admin ton-email@exemple.fr un-mot-de-passe-solide
+node creer-comptes.js --admin ton-email@exemple.fr
 ```
 
-Crée le compte s'il n'existe pas encore, et lui accorde le droit `admin`
-(nécessaire pour la future page de tableau de bord). Relançable sans risque :
-si le compte existe déjà, la commande se contente de lui (re)donner ce droit.
+Accorde au compte les droits `admin` (voit tout, fréquentation comprise) et
+`enseignant` (a ses propres élèves et devoirs, comme un collègue). Si le compte
+n'existe pas encore, ajouter un mot de passe à la suite de l'adresse pour le
+créer ; ne pas le saisir pour un compte qui existe déjà. Relançable sans risque.
+Se déconnecter puis se reconnecter sur le site pour que les droits prennent effet.
+
+## Inviter un collègue (enseignant)
+
+```bash
+node creer-comptes.js --enseignant collegue@ac-creteil.fr
+```
+
+L'adresse doit être **académique** (`@ac-creteil.fr`, `@ac-paris.fr`...) : c'est
+une preuve simple qu'il s'agit d'un enseignant. Pour accepter une autre adresse
+(décision à prendre cas par cas, par exemple un compte de test), ajouter
+`--adresse-libre` à la fin de la commande.
+
+Crée le compte avec un mot de passe aléatoire que personne ne connaît, lui
+accorde le seul droit `enseignant`, puis **affiche un lien** : à envoyer à la
+personne (message de ta part), qui y choisit elle-même son mot de passe. Elle se
+connecte ensuite avec son adresse e-mail sur la page Connexion. Relancer la
+commande sur la même adresse produit un nouveau lien (mot de passe oublié).
+Un enseignant ne voit que **ses** élèves et **ses** devoirs ; il n'a pas accès à
+la fréquentation du site et ne peut pas créer de comptes élèves : c'est toi qui
+les crées pour lui (section suivante), à partir de la liste qu'il t'envoie.
+
+## Rattacher les élèves et devoirs déjà existants (une seule fois)
+
+Passage à plusieurs enseignants (26/10/2026) : chaque élève et chaque devoir
+porte désormais le champ `enseignant` (uid de son enseignant). Les anciens
+n'ont pas ce champ ; il faut les rattacher à ton compte, **après une
+sauvegarde** et avant de publier le nouveau code :
+
+```bash
+node migrer-enseignant.js ton-email@exemple.fr          # simulation : ne change rien
+node migrer-enseignant.js ton-email@exemple.fr --oui    # applique
+```
+
+Sans danger pour l'ancien code (le champ ajouté est ignoré) ; relançable (ne
+touche que ce qui n'est pas encore rattaché).
 
 ## Créer les comptes élèves
 
@@ -49,10 +86,14 @@ si le compte existe déjà, la commande se contente de lui (re)donner ce droit.
    n'est alors enregistrée : l'élève n'est rattaché à aucun niveau, n'a pas
    de devoirs, et le tableau de bord le range sous « Hors classe » avec le
    suivi des cahiers ET des automatismes (tous les niveaux).
-2. Lancer :
+2. Lancer, en indiquant **l'enseignant à qui appartiennent ces élèves** (obligatoire :
+   jamais d'élève rattaché à personne) :
    ```bash
-   node creer-comptes.js mes-eleves.csv
+   node creer-comptes.js mes-eleves.csv --enseignant=ton-email@exemple.fr
    ```
+   Si un pseudo est déjà pris par un autre élève (homonyme, ou élève d'un
+   autre enseignant), le script prend le suivant libre (`d.marec2`...) ;
+   relancer le même fichier n'ajoute rien.
 3. Le script affiche sa progression et écrit un fichier
    `comptes-crees-<date>.csv` dans ce dossier (nom, prénom, identifiant, mot
    de passe généré pour chacun — séparateur `;`, compatible Excel en

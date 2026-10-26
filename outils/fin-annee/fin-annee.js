@@ -79,8 +79,8 @@ const frNombre = (n) => String(n).replace('.', ',');
   const profils = new Map();
   for (const r of refsEleves) { const d = await r.get(); if (d.exists) profils.set(r.id, d.data()); }
 
-  // Un compte qui porte le droit administrateur n'est JAMAIS traite comme un eleve, meme avec une adresse fictive.
-  const estAdmin = (u) => !!(u.customClaims && u.customClaims.admin);
+  // Un compte qui porte le droit administrateur ou enseignant n'est JAMAIS traite comme un eleve, meme avec une adresse fictive.
+  const estAdmin = (u) => !!(u.customClaims && (u.customClaims.admin || u.customClaims.enseignant));
   const eleves = comptes.filter((u) => (u.email || '').endsWith(SUFFIXE_ELEVE) && !estAdmin(u)).map((u) => {
     const p = profils.get(u.uid) || {};
     const pseudo = (p.pseudo || (u.email || '').replace(SUFFIXE_ELEVE, '')).toLowerCase();

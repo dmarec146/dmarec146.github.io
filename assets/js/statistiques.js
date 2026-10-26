@@ -78,7 +78,7 @@ async function compter() {
   const utilisateur = await utilisateurInitial();
   if (utilisateur) {
     const jeton = await utilisateur.getIdTokenResult();
-    if (jeton.claims.admin === true) { ecrire(CLE_EXCLU, '1'); return; }
+    if (jeton.claims.admin === true || jeton.claims.enseignant === true) { ecrire(CLE_EXCLU, '1'); return; }
   }
 
   const maintenant = new Date();

@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, getDocs, collection, deleteDoc, updateDoc, increment, deleteField, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc, updateDoc, increment, deleteField, serverTimestamp } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 
 const env = await initializeTestEnvironment({
@@ -93,6 +93,100 @@ console.log('Les tentatives restent intactes (le retrait n\'est qu\'un masquage)
 await cas('élève : ne supprime pas une tentative de devoir', false, deleteDoc(doc(eleve, 'eleves/eleve1/devoirsTentatives/t1')));
 await cas('élève : ne modifie pas un devoir', false, setDoc(doc(eleve, 'devoirs/dev1'), { titre: 'x' }));
 await cas('élève : ne supprime pas un devoir', false, deleteDoc(doc(eleve, 'devoirs/dev1')));
+
+console.log('Plusieurs enseignants (26/10/2026) : chacun ne voit que ses élèves et ses devoirs');
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const d = ctx.firestore();
+  await setDoc(doc(d, 'eleves/eA1'), { pseudo: 'a1', classe: '2nde1', enseignant: 'profA' });
+  await setDoc(doc(d, 'eleves/eA2'), { pseudo: 'a2', classe: '2nde2', enseignant: 'profA' });
+  await setDoc(doc(d, 'eleves/eB1'), { pseudo: 'b1', classe: '2nde1', enseignant: 'profB' });
+  await setDoc(doc(d, 'eleves/eL'), { pseudo: 'legacy', classe: '2nde1' });
+  for (const [e, t] of [['eA1', 'tA1'], ['eA1', 'tA1bis'], ['eB1', 'tB1'], ['eL', 'tL']]) {
+    await setDoc(doc(d, `eleves/${e}/devoirsTentatives/${t}`), { devoirId: 'dA', score: 3 });
+    await setDoc(doc(d, `eleves/${e}/connexions/${t}`), { a: 1 });
+    await setDoc(doc(d, `eleves/${e}/brouillons/${t}`), { a: 1 });
+  }
+  await setDoc(doc(d, 'devoirs/dA'), { titre: 'A', classe: '2nde1', enseignant: 'profA' });
+  await setDoc(doc(d, 'devoirs/dA2'), { titre: 'A2', classe: '2nde1', enseignant: 'profA' });
+  await setDoc(doc(d, 'devoirs/dB'), { titre: 'B', classe: '2nde1', enseignant: 'profB' });
+  await setDoc(doc(d, 'devoirs/dL'), { titre: 'legacy', classe: '2nde1' });
+});
+const profA = env.authenticatedContext('profA', { enseignant: true }).firestore();
+const profB = env.authenticatedContext('profB', { enseignant: true }).firestore();
+const david = env.authenticatedContext('david', { admin: true, enseignant: true }).firestore();
+const eA1 = env.authenticatedContext('eA1').firestore();
+const simpleCompte = env.authenticatedContext('quelquun').firestore();
+
+console.log('  Profils élèves');
+await cas('enseignant A : lit le profil de son élève', true, getDoc(doc(profA, 'eleves/eA1')));
+await cas('enseignant A : ne lit pas le profil d\'un élève de B', false, getDoc(doc(profA, 'eleves/eB1')));
+await cas('enseignant A : ne lit pas un profil sans enseignant', false, getDoc(doc(profA, 'eleves/eL')));
+await cas('enseignant A : liste ses élèves (where enseignant)', true, getDocs(query(collection(profA, 'eleves'), where('enseignant', '==', profA_uid()))));
+await cas('enseignant A : liste ses élèves d\'une classe', true, getDocs(query(collection(profA, 'eleves'), where('enseignant', '==', profA_uid()), where('classe', '==', '2nde1'))));
+await cas('enseignant A : liste de TOUS les élèves refusée', false, getDocs(collection(profA, 'eleves')));
+await cas('enseignant A : liste des élèves de B refusée', false, getDocs(query(collection(profA, 'eleves'), where('enseignant', '==', 'profB'))));
+await cas('enseignant A : liste par classe seule refusée', false, getDocs(query(collection(profA, 'eleves'), where('classe', '==', '2nde1'))));
+await cas('enseignant A : n\'écrit pas un profil', false, setDoc(doc(profA, 'eleves/eA1'), { pseudo: 'x', enseignant: 'profA' }));
+await cas('enseignant A : ne crée pas de profil', false, setDoc(doc(profA, 'eleves/nouveau'), { pseudo: 'x', enseignant: 'profA' }));
+await cas('enseignant A : ne s\'attribue pas l\'élève de B', false, updateDoc(doc(profA, 'eleves/eB1'), { enseignant: 'profA' }));
+await cas('enseignant A : lit son propre uid (compte sans profil)', true, getDoc(doc(profA, 'eleves/profA')));
+await cas('élève : ne s\'attribue pas à un enseignant', false, updateDoc(doc(eA1, 'eleves/eA1'), { enseignant: 'profB' }));
+await cas('compte sans droit : ne lit pas un profil', false, getDoc(doc(simpleCompte, 'eleves/eA1')));
+await cas('compte sans droit : ne liste pas les élèves', false, getDocs(collection(simpleCompte, 'eleves')));
+
+console.log('  Journaux et brouillons de ses élèves');
+await cas('enseignant A : lit les tentatives de devoir de son élève', true, getDocs(query(collection(profA, 'eleves/eA1/devoirsTentatives'), where('devoirId', '==', 'dA'))));
+await cas('enseignant A : lit tout le journal de son élève', true, getDocs(collection(profA, 'eleves/eA1/devoirsTentatives')));
+await cas('enseignant A : ne lit pas les tentatives d\'un élève de B', false, getDocs(collection(profA, 'eleves/eB1/devoirsTentatives')));
+await cas('enseignant A : ne lit pas une tentative d\'un élève de B', false, getDoc(doc(profA, 'eleves/eB1/devoirsTentatives/tB1')));
+await cas('enseignant A : ne lit pas les tentatives d\'un élève sans enseignant', false, getDocs(collection(profA, 'eleves/eL/devoirsTentatives')));
+await cas('enseignant A : lit les connexions de son élève', true, getDocs(collection(profA, 'eleves/eA1/connexions')));
+await cas('enseignant A : ne lit pas les connexions d\'un élève de B', false, getDocs(collection(profA, 'eleves/eB1/connexions')));
+await cas('enseignant A : lit les brouillons de son élève', true, getDocs(collection(profA, 'eleves/eA1/brouillons')));
+await cas('enseignant A : ne lit pas les brouillons d\'un élève de B', false, getDocs(collection(profA, 'eleves/eB1/brouillons')));
+await cas('enseignant A : n\'écrit pas dans le brouillon de son élève', false, setDoc(doc(profA, 'eleves/eA1/brouillons/x'), { a: 1 }));
+await cas('enseignant A : n\'ajoute pas de tentative à son élève', false, setDoc(doc(profA, 'eleves/eA1/devoirsTentatives/faux'), { devoirId: 'dA', score: 99 }));
+await cas('enseignant A : ne modifie pas une tentative', false, updateDoc(doc(profA, 'eleves/eA1/devoirsTentatives/tA1'), { score: 99 }));
+await cas('enseignant B : ne supprime pas une tentative d\'un élève de A', false, deleteDoc(doc(profB, 'eleves/eA1/devoirsTentatives/tA1')));
+await cas('enseignant A : supprime une tentative de son élève', true, deleteDoc(doc(profA, 'eleves/eA1/devoirsTentatives/tA1')));
+await cas('enseignant A : ne supprime pas une tentative d\'un élève de B', false, deleteDoc(doc(profA, 'eleves/eB1/devoirsTentatives/tB1')));
+await cas('élève : lit toujours ses propres tentatives', true, getDocs(collection(eA1, 'eleves/eA1/devoirsTentatives')));
+await cas('élève : ajoute toujours sa tentative', true, setDoc(doc(eA1, 'eleves/eA1/devoirsTentatives/nouv'), { devoirId: 'dA', score: 1 }));
+
+console.log('  Devoirs');
+await cas('enseignant A : crée un devoir à son nom', true, setDoc(doc(profA, 'devoirs/nouvA'), { titre: 'n', classe: '2nde1', enseignant: 'profA' }));
+await cas('enseignant A : crée un devoir au nom de B', false, setDoc(doc(profA, 'devoirs/faux1'), { titre: 'n', classe: '2nde1', enseignant: 'profB' }));
+await cas('enseignant A : crée un devoir sans enseignant', false, setDoc(doc(profA, 'devoirs/faux2'), { titre: 'n', classe: '2nde1' }));
+await cas('enseignant A : modifie son devoir', true, updateDoc(doc(profA, 'devoirs/dA'), { titre: 'A modifié' }));
+await cas('enseignant A : modifie un devoir de B', false, updateDoc(doc(profA, 'devoirs/dB'), { titre: 'piraté' }));
+await cas('enseignant A : modifie un devoir sans enseignant', false, updateDoc(doc(profA, 'devoirs/dL'), { titre: 'piraté' }));
+await cas('enseignant A : donne son devoir à B', false, updateDoc(doc(profA, 'devoirs/dA'), { enseignant: 'profB' }));
+await cas('enseignant A : s\'approprie le devoir de B', false, updateDoc(doc(profA, 'devoirs/dB'), { enseignant: 'profA' }));
+await cas('enseignant A : liste ses devoirs (where enseignant)', true, getDocs(query(collection(profA, 'devoirs'), where('enseignant', '==', 'profA'))));
+await cas('enseignant A : supprime un devoir de B', false, deleteDoc(doc(profA, 'devoirs/dB')));
+await cas('enseignant A : supprime un devoir sans enseignant', false, deleteDoc(doc(profA, 'devoirs/dL')));
+await cas('enseignant A : supprime son devoir', true, deleteDoc(doc(profA, 'devoirs/dA2')));
+await cas('élève : lit un devoir (provisoire : tout compte connecté)', true, getDoc(doc(eA1, 'devoirs/dA')));
+await cas('élève : crée un devoir à son uid', false, setDoc(doc(eA1, 'devoirs/faux3'), { titre: 'n', classe: '2nde1', enseignant: 'eA1' }));
+await cas('compte sans droit : ne crée pas de devoir', false, setDoc(doc(simpleCompte, 'devoirs/faux4'), { titre: 'n', enseignant: 'quelquun' }));
+await cas('anonyme : ne lit toujours pas les devoirs', false, getDoc(doc(anonyme, 'devoirs/dA')));
+
+console.log('  Statistiques de fréquentation : réservées à l\'admin');
+await cas('enseignant A : ne lit pas la fréquentation', false, getDoc(doc(profA, 'statistiques', ID)));
+await cas('enseignant A : ne liste pas la fréquentation', false, getDocs(collection(profA, 'statistiques')));
+
+console.log('  Administrateur (David : admin + enseignant)');
+await cas('admin : lit le profil de l\'élève de A', true, getDoc(doc(david, 'eleves/eA1')));
+await cas('admin : liste tous les élèves', true, getDocs(collection(david, 'eleves')));
+await cas('admin : lit un élève sans enseignant', true, getDoc(doc(david, 'eleves/eL')));
+await cas('admin : lit les tentatives d\'un élève de B', true, getDocs(collection(david, 'eleves/eB1/devoirsTentatives')));
+await cas('admin : modifie le devoir de A', true, updateDoc(doc(david, 'devoirs/dA'), { titre: 'par admin' }));
+await cas('admin : modifie un devoir sans enseignant', true, updateDoc(doc(david, 'devoirs/dL'), { enseignant: 'david' }));
+await cas('admin : supprime le devoir de B', true, deleteDoc(doc(david, 'devoirs/dB')));
+await cas('admin : crée un devoir à son nom', true, setDoc(doc(david, 'devoirs/nouvD'), { titre: 'n', classe: '2nde1', enseignant: 'david' }));
+await cas('admin : lit la fréquentation', true, getDoc(doc(david, 'statistiques', ID)));
+
+function profA_uid() { return 'profA'; }
 
 console.log(`\n${ok} réussis, ${ko} échecs`);
 await env.cleanup();

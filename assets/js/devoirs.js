@@ -41,6 +41,18 @@ import { appliquerDerogation, echeanceMaxMillis, nbDerogations } from './derogat
 // where('classe','==', ...).
 const CLASSE_HORS_CLASSE = 'hors-classe';
 
+// Uid de l'enseignant connecte (renseigne par l'ecouteur d'authentification
+// ci-dessous avant tout chargement). Chaque enseignant ne voit que SES eleves
+// et SES devoirs (champ `enseignant`, voir firestore.rules) : toutes les
+// requetes de cette page passent par les deux fonctions suivantes.
+let uidEnseignant = null;
+
+// Eleves de l'enseignant connecte, avec d'eventuelles contraintes en plus
+// (ex. where('classe', '==', ...)).
+function requeteEleves(...contraintes) {
+  return query(collection(db, 'eleves'), where('enseignant', '==', uidEnseignant), ...contraintes);
+}
+
 // Themes disponibles pour un devoir "Fiche d'automatismes ciblee"
 // (28/09/2026) -- memes identifiants que la liste `banques` codee en dur
 // dans automatismes/premiere/fiche.html, memes intitules que le champ
@@ -224,12 +236,20 @@ onAuthStateChanged(auth, async (utilisateur) => {
     return;
   }
   // Même double protection que le reste du tableau de bord : vérifiée ici
-  // pour l'affichage, et par les règles Firestore (allow write: if estAdmin())
-  // pour l'écriture réelle.
+  // pour l'affichage, et par les règles Firestore pour l'accès réel. Accès :
+  // administrateur ou enseignant (26/10/2026) ; chacun ne voit que ses élèves
+  // et ses devoirs (champ `enseignant` = son uid, voir firestore.rules).
   const resultatToken = await utilisateur.getIdTokenResult();
-  if (resultatToken.claims.admin !== true) {
+  const { admin, enseignant } = resultatToken.claims;
+  if (admin !== true && enseignant !== true) {
     window.location.replace('../index.html');
     return;
+  }
+  uidEnseignant = utilisateur.uid;
+  // La fréquentation du site reste réservée à l'administrateur.
+  if (admin !== true) {
+    const carte = document.querySelector('.tdb-nav-carte[href="frequentation.html"]');
+    if (carte) carte.style.display = 'none';
   }
   initialiser();
 });
@@ -272,7 +292,7 @@ let devoirEnEdition = null;
 // le select d'attribution (bug signale le 24/09/2026, David : un eleve hors
 // classe cree la veille n'apparaissait pas dans la liste des classes).
 async function classesConnues() {
-  const instantane = await getDocs(collection(db, 'eleves'));
+  const instantane = await getDocs(requeteEleves());
   const classes = new Set();
   elevesHorsClasse = [];
   instantane.docs.forEach((d) => {
@@ -524,9 +544,9 @@ function phraseCalculs(calculs) {
 // "Hors classe", les eleves sans classe restreints a devoir.eleves si present.
 async function elevesDuDevoir(devoir) {
   return devoir.classe === CLASSE_HORS_CLASSE
-    ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) =>
+    ? (await getDocs(requeteEleves())).docs.filter((d) =>
         !d.data().classe && (!Array.isArray(devoir.eleves) || devoir.eleves.includes(d.id)))
-    : (await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)))).docs;
+    : (await getDocs(requeteEleves(where('classe', '==', devoir.classe)))).docs;
 }
 
 async function devoirADesTentatives(devoir) {
@@ -967,6 +987,7 @@ formulaire.addEventListener('submit', async (evenement) => {
         nbEssaisMax,
         creeLe: serverTimestamp(),
         creePar: auth.currentUser.email || null,
+        enseignant: uidEnseignant,
       };
       // Pas de champ `eleves` du tout ici si non hors-classe (plutot que
       // deleteField(), refuse par addDoc -- reserve a updateDoc).
@@ -1066,7 +1087,7 @@ function remplirTableauDevoirs(corps, tableauEl, videEl, titreEl, titreBase, dev
 let devoirsFaitsActuels = [];
 
 async function chargerListeDevoirs() {
-  const instantane = await getDocs(collection(db, 'devoirs'));
+  const instantane = await getDocs(query(collection(db, 'devoirs'), where('enseignant', '==', uidEnseignant)));
   const devoirs = instantane.docs.map((d) => ({ id: d.id, ...d.data() }));
   const maintenant = Date.now();
 
@@ -1113,9 +1134,9 @@ async function afficherResultats(devoir) {
   // champ est present (absent = devoir cree avant ce chantier, s'applique a
   // tout le groupe hors classe, comportement inchange).
   const eleves = (devoir.classe === CLASSE_HORS_CLASSE
-    ? (await getDocs(collection(db, 'eleves'))).docs.filter((d) =>
+    ? (await getDocs(requeteEleves())).docs.filter((d) =>
         !d.data().classe && (!Array.isArray(devoir.eleves) || devoir.eleves.includes(d.id)))
-    : (await getDocs(query(collection(db, 'eleves'), where('classe', '==', devoir.classe)))).docs
+    : (await getDocs(requeteEleves(where('classe', '==', devoir.classe)))).docs
   )
     .map((d) => ({ uid: d.id, ...d.data() }))
     .sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b)));
@@ -1218,7 +1239,7 @@ boutonRetourResultats.addEventListener('click', () => {
 // de /mes-devoirs/ (devoirs-eleve.js).
 async function tentativesDesDevoirs(devoirIds) {
   const ids = new Set(devoirIds);
-  const eleves = await getDocs(collection(db, 'eleves'));
+  const eleves = await getDocs(requeteEleves());
   const parEleve = await Promise.all(eleves.docs.map(async (e) =>
     (await getDocs(collection(db, 'eleves', e.id, 'devoirsTentatives'))).docs.filter((t) => ids.has(t.data().devoirId))));
   return parEleve.flat();
