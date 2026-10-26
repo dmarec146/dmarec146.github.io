@@ -94,6 +94,9 @@ const suspects = liste.filter((f) => {
     || /service-account|comptes-crees|secret|password|motdepasse/.test(f.toLowerCase());
 });
 if (suspects.length) fail('fichiers qui ne doivent pas etre publies, trouves dans la liste blanche :\n  ' + suspects.join('\n  '));
+// Pages legales : tant qu'un point reste a completer (<mark class="a-completer">), rien n'est publie.
+const aCompleter = liste.filter((f) => f.endsWith('.html') && fs.readFileSync(path.join(DOSSIER, f), 'utf8').includes('class="a-completer"'));
+if (aCompleter.length) fail('points « a completer » encore presents (pages legales) :\n  ' + aCompleter.join('\n  ') + '\nComplete-les (apres l\'avis du delegue a la protection des donnees) avant de publier.');
 console.log(`publication/ construit : ${liste.length} fichiers, aucun fichier suspect.`);
 
 // ---- 4. Configuration Hosting (regeneree a chaque fois, identique sur les deux PC) --------------------

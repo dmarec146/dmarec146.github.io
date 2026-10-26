@@ -29,6 +29,8 @@
   style.textContent =
     '.site-droits-ligne{display:inline-flex;align-items:center;gap:7px;font:12.5px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#6b6a66}' +
     '.site-droits-ligne svg{flex:none;display:block}' +
+    '.site-droits-liens{display:block;text-align:center;margin:0 0 6px;font:12px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:inherit}' +
+    '.site-droits-liens a{color:inherit;text-decoration:underline;text-underline-offset:2px}' +
     '.site-pied .site-droits-ligne{display:flex;justify-content:center;margin-bottom:6px;color:inherit}' +
     'footer.site-droits{text-align:center;margin:28px 0 0;padding:16px 16px 26px;border-top:1px solid #e2e2e2;clear:both}' +
     '.site-logo .icone-site{flex:none;align-self:center;display:block}' +
@@ -80,13 +82,21 @@
   texte.textContent = TEXTE;
   ligne.appendChild(texte);
 
+  // liens « Mentions légales » et « Politique de confidentialité », tout en bas de chaque page (sous la ligne de droits)
+  var racine = script && script.src ? new URL('../../', script.src).href : '/';
+  var liens = document.createElement('span');
+  liens.className = 'site-droits-liens';
+  liens.innerHTML = '<a href="' + racine + 'mentions-legales/index.html">Mentions légales</a> · <a href="' + racine + 'confidentialite/index.html">Politique de confidentialité</a>';
+
   var pied = document.querySelector('footer.site-pied');
   if (pied) {
     pied.insertBefore(ligne, pied.firstChild);
+    ligne.insertAdjacentElement('afterend', liens);
   } else {
     var f = document.createElement('footer');
     f.className = 'site-droits';
     f.appendChild(ligne);
+    f.appendChild(liens);
     document.body.appendChild(f);
   }
 })();
