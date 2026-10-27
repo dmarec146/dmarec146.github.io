@@ -2218,12 +2218,13 @@ function mettreAJourEtatBoutons() {
   if (boutonRecommencer) boutonRecommencer.hidden = eleveConnecte && !!etatDevoir;
   const boutonValider = document.getElementById('btn-valider');
   if (boutonValider) boutonValider.disabled = !!(etatDevoir && (etatDevoir.bloque || ficheValidee));
-  // Mode devoir (27/10/2026, demande de David) : dans la barre de navigation, seuls « Sommaire » (et l'export PDF et les icones
-  // du compte) restent ; « Fiche precedente » / « Fiche suivante » disparaissent le temps du devoir, pour ne pas se tromper de fiche.
+  // Mode devoir (27/10/2026, demande de David) : dans la barre de navigation, seuls « Sommaire » et les icones du compte
+  // restent ; « Fiche precedente » / « Fiche suivante » (pour ne pas se tromper de fiche) et l'export PDF (sans objet pendant un
+  // devoir) disparaissent le temps du devoir.
   if (!document.getElementById('style-mode-devoir')) {
     const st = document.createElement('style');
     st.id = 'style-mode-devoir';
-    st.textContent = 'body.mode-devoir .barre-navigation > .nav-btn:not(.nav-btn-sommaire):not(.nav-btn-pdf):not([data-nav-auth]) { display: none !important; }';
+    st.textContent = 'body.mode-devoir .barre-navigation > .nav-btn:not(.nav-btn-sommaire):not([data-nav-auth]) { display: none !important; }';
     document.head.appendChild(st);
   }
   document.body.classList.toggle('mode-devoir', !!(eleveConnecte && etatDevoir));
