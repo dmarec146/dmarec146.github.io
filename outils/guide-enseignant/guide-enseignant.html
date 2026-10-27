@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cahiers interactifs — Guide de l'enseignant</title>
+<link rel="stylesheet" href="../guide-eleve/polices/polices.css">
+<style>
+  :root {
+    --bleu: #4B46C7; --bleu-fonce: #322E9A; --bleu-clair: #D9D9FF; --bleu-pale: #EEEEFF;
+    --vert: #1D9E75; --vert-fonce: #137556; --vert-clair: #E1F5EE;
+    --rouge: #E24B4A; --rouge-clair: #FCEBEB;
+    --ambre: #D97706; --ambre-fonce: #A85A04; --ambre-clair: #FEF3E2;
+    --gris: #5F5E5A; --gris-clair: #F1EFE8; --encre: #1F1E2E; --trait: #E4E2DA;
+    --anth: #5A6068; --anth-fonce: #3F454B; --anth-clair: #E6E8EB;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Inter', 'Liberation Sans', sans-serif; color: var(--encre); font-size: 10.2pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: #fff; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .contenu { padding: 15mm 15mm 16mm; }
+  h1, h2, h3 { font-family: 'Source Serif 4', Georgia, serif; margin: 0; line-height: 1.15; }
+  p { margin: 0 0 6pt; }
+  code, .k { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.92em; background: var(--gris-clair); border: 1px solid var(--trait); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+
+  /* ---------- en-tete de section ---------- */
+  .bandeau { display: flex; align-items: center; gap: 12px; padding: 12mm 15mm 7mm; color: #fff; position: relative; }
+  .bandeau .num { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.55); display: flex; align-items: center; justify-content: center; font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 18pt; flex: none; }
+  .bandeau h2 { font-size: 22pt; color: #fff; }
+  .bandeau .sur { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; opacity: .85; margin-bottom: 2px; }
+  .bandeau .suite { margin-left: auto; font-size: 8.5pt; font-weight: 600; opacity: .85; }
+  .bleu .bandeau { background: linear-gradient(120deg, var(--bleu-fonce), var(--bleu) 70%); }
+  .vert .bandeau { background: linear-gradient(120deg, var(--vert-fonce), var(--vert) 70%); }
+  .ambre .bandeau { background: linear-gradient(120deg, var(--ambre-fonce), var(--ambre) 70%); }
+  .gris .bandeau { background: linear-gradient(120deg, #3c3b38, var(--gris) 70%); }
+  .anthracite .bandeau { background: linear-gradient(120deg, var(--anth-fonce), var(--anth) 70%); }
+  .bandeau::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 10px; background: #fff; border-radius: 10px 10px 0 0; }
+
+  h3 { font-size: 13pt; margin: 0 0 5pt; display: flex; align-items: center; gap: 7px; }
+  h3 .pastille { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .bleu h3 { color: var(--bleu-fonce); } .bleu h3 .pastille { background: var(--bleu); }
+  .vert h3 { color: var(--vert-fonce); } .vert h3 .pastille { background: var(--vert); }
+  .ambre h3 { color: var(--ambre-fonce); } .ambre h3 .pastille { background: var(--ambre); }
+  .gris h3 { color: #3c3b38; } .gris h3 .pastille { background: var(--gris); }
+  .anthracite h3 { color: var(--anth-fonce); } .anthracite h3 .pastille { background: var(--anth); }
+  section { margin-bottom: 9pt; }
+
+  .capture { border: 1px solid var(--trait); border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(40,36,120,.08); }
+  .capture img { display: block; width: 100%; }
+  .legende { font-size: 8pt; color: var(--gris); font-style: italic; margin-top: 3pt; }
+  .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .deux-un { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12pt; align-items: start; }
+  .un-deux { display: grid; grid-template-columns: 1fr 1.35fr; gap: 12pt; align-items: start; }
+  .trois { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+
+  /* encadres */
+  .encadre { border-radius: 9px; padding: 8pt 10pt; margin: 6pt 0; font-size: 9.6pt; }
+  .encadre .titre { font-weight: 700; margin-bottom: 2pt; display: flex; align-items: center; gap: 6px; }
+  .astuce { background: var(--bleu-pale); border-left: 4px solid var(--bleu); }
+  .astuce .titre { color: var(--bleu-fonce); }
+  .attention { background: var(--rouge-clair); border-left: 4px solid var(--rouge); }
+  .attention .titre { color: #B23A2E; }
+  .bon { background: var(--vert-clair); border-left: 4px solid var(--vert); }
+  .bon .titre { color: var(--vert-fonce); }
+  .devoirbox { background: var(--ambre-clair); border-left: 4px solid var(--ambre); }
+  .devoirbox .titre { color: var(--ambre-fonce); }
+
+  /* tableaux de boutons */
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 9.3pt; }
+  td, th { padding: 5pt 7pt; vertical-align: top; border-bottom: 1px solid var(--trait); text-align: left; }
+  th { font-size: 8pt; text-transform: uppercase; letter-spacing: .06em; color: var(--gris); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .tab { border: 1px solid var(--trait); border-radius: 9px; overflow: hidden; }
+  .tab td:first-child { width: 36%; }
+  .btn { display: inline-block; border: 1.5px solid var(--bleu); color: var(--bleu); border-radius: 6px; padding: 1.5pt 6pt; font-size: 8.6pt; font-weight: 600; background: #fff; white-space: nowrap; font-family: Georgia, 'Liberation Serif', serif; }
+  .btn.plein { background: var(--bleu); color: #fff; }
+  .btn.vert { border-color: var(--vert); color: var(--vert); } .btn.vert.plein { background: var(--vert); color: #fff; }
+  .btn.pdf { border-color: #f3c9c8; color: var(--rouge); }
+  .btn.gris { border-color: #ccc; color: var(--gris); }
+  .btn.anthr { border-color: var(--anth); color: var(--anth-fonce); } .btn.anthr.plein { background: var(--anth); color: #fff; }
+  .btn.inactif { opacity: .45; }
+  .ico { display: inline-flex; width: 22px; height: 22px; border: 1.5px solid #ccc; border-radius: 5px; align-items: center; justify-content: center; font-size: 12px; color: var(--gris); background: #fff; vertical-align: middle; }
+  .aide-ico { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--bleu); background: var(--bleu-clair); color: var(--bleu); font-weight: 700; font-size: 9px; align-items: center; justify-content: center; vertical-align: middle; }
+  .ico.profil { background: var(--bleu); border-color: var(--bleu); color: #fff; position: relative; margin-left: 4px; }
+  .ico.profil::after { content: ''; position: absolute; right: 1px; bottom: 1px; width: 7px; height: 7px; border-radius: 50%; background: #2fbf71; border: 1.5px solid #fff; box-sizing: border-box; }
+  .ok { color: var(--vert); font-weight: 700; } .ko { color: var(--rouge); font-weight: 700; }
+
+  /* etapes numerotees */
+  .etapes { counter-reset: e; list-style: none; padding: 0; margin: 0; }
+  .etapes li { counter-increment: e; position: relative; padding-left: 26px; margin-bottom: 5pt; }
+  .etapes li::before { content: counter(e); position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 8.5pt; display: flex; align-items: center; justify-content: center; }
+  .bleu .etapes li::before { background: var(--bleu); } .vert .etapes li::before { background: var(--vert); } .ambre .etapes li::before { background: var(--ambre); } .gris .etapes li::before { background: var(--gris); } .anthracite .etapes li::before { background: var(--anth); }
+  ul.puces { margin: 0 0 6pt; padding-left: 14px; } ul.puces li { margin-bottom: 2.5pt; }
+
+  /* pied de page */
+  .pied { position: absolute; left: 15mm; right: 15mm; bottom: 7mm; display: flex; justify-content: space-between; font-size: 7.6pt; color: #9a988f; border-top: 1px solid var(--trait); padding-top: 4pt; }
+
+  /* ---------- couverture (fond clair) ---------- */
+  .couv { background: linear-gradient(165deg, #FFFFFF 0%, #F6F5FF 50%, #F1FAF6 100%); color: var(--encre); }
+  .couv::before { content: ''; position: absolute; width: 150mm; height: 150mm; border-radius: 50%; right: -55mm; top: -60mm; background: radial-gradient(circle, rgba(75,70,199,.13), rgba(75,70,199,0) 70%); }
+  .couv::after { content: ''; position: absolute; width: 120mm; height: 120mm; border-radius: 50%; left: -50mm; bottom: -45mm; background: radial-gradient(circle, rgba(29,158,117,.12), rgba(29,158,117,0) 70%); }
+  .couv > * { position: relative; z-index: 1; }
+  .couv .haut { padding: 26mm 18mm 0; }
+  .couv .marque { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: 9pt; color: var(--bleu); }
+  .couv .marque .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--bleu); color: #fff; font-family: 'Source Serif 4', serif; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 14pt; letter-spacing: 0; }
+  .couv h1 { font-size: 42pt; margin-top: 14mm; color: var(--encre); letter-spacing: -.01em; }
+  .couv h1 em { font-style: normal; color: var(--bleu); }
+  .couv .filet-couv { width: 30mm; height: 4px; border-radius: 2px; background: var(--bleu); margin-top: 6mm; }
+  .couv .sous { font-size: 13.5pt; margin-top: 6mm; max-width: 150mm; color: var(--gris); line-height: 1.45; }
+  .couv .tuiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; padding: 0 15mm; position: absolute; left: 0; right: 0; top: 118mm; }
+  a.tuile { display: block; text-decoration: none; }
+  .tuile { background: #fff; color: var(--encre); border: 1px solid var(--trait); border-radius: 14px; padding: 7mm 7mm 6mm; box-shadow: 0 8px 24px rgba(40,36,120,.10); position: relative; overflow: hidden; }
+  .tuile::before { content: ''; position: absolute; left: 0; top: 0; right: 0; height: 6px; }
+  .tuile.b::before { background: var(--bleu); } .tuile.v::before { background: var(--vert); } .tuile.a::before { background: var(--ambre); } .tuile.n::before { background: var(--anth); }
+  .tuile.n .icone { background: var(--anth-clair); color: var(--anth-fonce); } .tuile.n .pages { color: var(--anth-fonce); }
+  .couv .tuile { padding: 6mm 4.5mm 5mm; } .couv .tuile h2 { font-size: 12.5pt; } .couv .tuile p { font-size: 8.2pt; } .couv .tuile .icone { width: 38px; height: 38px; margin-bottom: 3mm; }
+  .tuile .icone { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 4mm; }
+  .tuile.b .icone { background: var(--bleu-clair); color: var(--bleu); } .tuile.v .icone { background: var(--vert-clair); color: var(--vert); } .tuile.a .icone { background: var(--ambre-clair); color: var(--ambre); }
+  .tuile h2 { font-size: 14.5pt; margin-bottom: 2.5mm; }
+  .tuile p { font-size: 9pt; color: var(--gris); margin: 0; }
+  .tuile .pages { margin-top: 4mm; font-size: 8pt; font-weight: 700; letter-spacing: .05em; }
+  .tuile.b .pages { color: var(--bleu); } .tuile.v .pages { color: var(--vert); } .tuile.a .pages { color: var(--ambre); }
+  .couv .bas { position: absolute; left: 18mm; right: 18mm; bottom: 12mm; display: flex; justify-content: space-between; align-items: flex-end; }
+  .couv .adresse { background: var(--bleu-clair); color: var(--bleu-fonce); border-radius: 30px; padding: 3mm 6mm; font-weight: 700; font-size: 11pt; }
+  .couv .calc { font-size: 9pt; color: var(--gris); text-align: right; max-width: 80mm; }
+  .couv .sommaire { position: absolute; left: 18mm; right: 18mm; top: 193mm; background: #fff; border: 1px solid var(--trait); border-radius: 14px; padding: 6mm 8mm; display: grid; grid-template-columns: 1fr 1fr; gap: 1.8mm 10mm; font-size: 9.5pt; box-shadow: 0 6px 18px rgba(40,36,120,.06); }
+  .couv .sommaire .t { grid-column: 1 / -1; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 8pt; color: var(--gris); margin-bottom: 1mm; }
+  .couv .sommaire a { color: var(--encre); text-decoration: none; }
+  .couv .sommaire a b { display: inline-block; width: 7mm; color: var(--bleu); }
+  .couv .sommaire .note { grid-column: 1 / -1; font-size: 7.6pt; color: #9a988f; margin-top: 1mm; }
+
+  /* ---------- maquettes (devoirs) ---------- */
+  .maquette { border: 1px solid var(--trait); border-radius: 10px; background: #FAFAF7; padding: 8pt; }
+  .cloche { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid var(--bleu); color: var(--bleu); border-radius: 30px; padding: 5px 14px 5px 10px; font-family: Georgia, serif; font-weight: 700; position: relative; }
+  .cloche .badge { position: absolute; top: -7px; right: -8px; background: var(--rouge); color: #fff; font-family: Inter, sans-serif; font-size: 8pt; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .colonnes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7pt; }
+  .colonne { background: #fff; border: 1px solid var(--trait); border-radius: 9px; padding: 7pt; }
+  .colonne .t { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 11pt; margin-bottom: 4pt; display: flex; align-items: center; gap: 6px; }
+  .colonne .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .item { border: 1px solid var(--trait); border-radius: 7px; padding: 5pt 6pt; font-size: 8.2pt; margin-bottom: 4pt; background: #fff; }
+  .item b { display: block; font-size: 8.8pt; color: var(--encre); margin-bottom: 1pt; }
+  .item span { color: var(--gris); }
+  .colonne .expl { font-size: 8.2pt; color: var(--gris); margin-top: 3pt; }
+
+  /* frise du devoir */
+  .frise { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 4pt 0 2pt; position: relative; }
+  .frise .pas { text-align: center; padding: 0 4pt; position: relative; }
+  .frise .pas .rond { width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 4pt; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; position: relative; z-index: 1; }
+  .frise .pas:not(:last-child)::after { content: ''; position: absolute; top: 17px; left: 50%; width: 100%; height: 3px; background: var(--ambre-clair); z-index: 0; }
+  .frise .pas b { display: block; font-size: 9.5pt; margin-bottom: 1pt; }
+  .frise .pas span { font-size: 8.2pt; color: var(--gris); display: block; line-height: 1.3; }
+
+  .syntaxe td:first-child { width: 28%; font-weight: 600; }
+  .syntaxe td:nth-child(2) { width: 30%; }
+  .petit { font-size: 8.6pt; color: var(--gris); }
+  .pt-pastille { display: inline-block; background: #fff4d6; color: #7a5200; border: 1.5px solid #e6b94d; border-radius: 999px; padding: 0 7px; font-weight: 600; font-size: 8.4pt; white-space: nowrap; }
+  .pt-total { display: inline-block; background: #fff4d6; color: #4a3500; border: 1.5px solid #e6b94d; border-radius: 7px; padding: 0 7px; font-weight: 600; font-size: 8.6pt; }
+  .colle { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<!-- =============================== COUVERTURE =============================== -->
+<div id="p1" class="page couv">
+  <div class="haut">
+    <div class="marque"><span class="logo">C</span>Cahiers interactifs</div>
+    <h1>Guide <em>de l'enseignant</em></h1>
+    <div class="filet-couv"></div>
+    <p class="sous">Obtenir les comptes de vos élèves, attribuer des devoirs et suivre leurs résultats : tout ce qu'il faut savoir pour utiliser le tableau de bord.</p>
+  </div>
+  <div class="tuiles">
+    <a class="tuile b" href="#p2">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></div>
+      <h2>Démarrer</h2>
+      <p>Recevoir son invitation, se connecter, obtenir les comptes de ses élèves.</p>
+      <div class="pages">PAGES 2 ET 3</div>
+    </a>
+    <a class="tuile v" href="#p4">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <h2>Attribuer</h2>
+      <p>Les cinq types de devoirs, la classe, l'échéance et le nombre d'essais.</p>
+      <div class="pages">PAGES 4 À 6</div>
+    </a>
+    <a class="tuile a" href="#p7">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg></div>
+      <h2>Suivre</h2>
+      <p>Les résultats par élève, modifier ou supprimer un devoir.</p>
+      <div class="pages">PAGE 7</div>
+    </a>
+    <a class="tuile n" href="#p8">
+      <div class="icone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/></svg></div>
+      <h2>Bon à savoir</h2>
+      <p>Confidentialité, fin d'année, questions fréquentes.</p>
+      <div class="pages">PAGE 8</div>
+    </a>
+  </div>
+  <div class="sommaire" style="top:190mm">
+    <div class="t">Sommaire</div>
+    <a href="#p2"><b>2</b>Recevoir son invitation, se connecter</a>
+    <a href="#p6"><b>6</b>Ce que voit l'élève, la notation</a>
+    <a href="#p3"><b>3</b>Obtenir les comptes de ses élèves</a>
+    <a href="#p7"><b>7</b>Suivre les résultats, modifier, supprimer</a>
+    <a href="#p4"><b>4</b>Attribuer un devoir : les types</a>
+    <a href="#p8"><b>8</b>Bon à savoir, questions fréquentes</a>
+    <a href="#p5"><b>5</b>Niveaux, modes et échéances</a>
+    <span class="note">Dans la version numérique, clique sur une ligne (ou sur une tuile) pour aller directement à la page.</span>
+  </div>
+  <div class="bas">
+    <div class="adresse">cahiers-interactifs.fr</div>
+    <div class="calc">À remettre aux élèves, avec leurs identifiants : le Guide de l'élève (carte « Guide de l'élève » de la page d'accueil du site).</div>
+  </div>
+</div>
+
+<!-- =============================== DEMARRER 1 =============================== -->
+<div id="p2" class="page bleu">
+  <div class="bandeau"><div class="num">1</div><div><div class="sur">Démarrer · 1/2</div><h2>Invitation et connexion</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <h3><span class="pastille"></span>Recevoir son invitation</h3>
+      <ol class="etapes">
+        <li>L'<b>administrateur du site</b> vous invite à partir de votre adresse académique. Vous recevez un courriel : <b>pensez à regarder dans les courriers indésirables</b>.</li>
+        <li>Cliquez sur le lien du courriel et <b>choisissez votre mot de passe</b>. Le lien reste valable environ une heure ; s'il a expiré, demandez à l'administrateur de vous réinviter.</li>
+        <li>Rendez-vous sur le site et cliquez sur l'<b>icône de profil</b>, en haut à droite. Dans « Identifiant », tapez votre <b>adresse académique complète</b>, puis votre mot de passe.</li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="capture"><img src="img/entete-connecte.png"></div>
+      <div class="legende">L'en-tête du site une fois connecté : l'icône <b>grille</b> ouvre le tableau de bord, l'icône de profil (avec son point vert) permet de se déconnecter.</div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Se connecter, se déconnecter</h3>
+        <ul class="puces">
+          <li>Une fois connecté, le <b>point vert</b> sur l'icône de profil confirme la connexion ; son info-bulle rappelle votre adresse.</li>
+          <li>Pour vous déconnecter, cliquez de nouveau sur l'icône de profil.</li>
+          <li>La connexion reste ouverte même si vous fermez la page : <b>déconnectez-vous sur un poste partagé</b> (salle des professeurs, salle informatique).</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Mot de passe oublié</h3>
+        <p>Demandez à l'administrateur de vous <b>renvoyer le courriel d'invitation</b> : le lien vous laisse choisir un nouveau mot de passe.</p>
+        <div class="encadre astuce"><div class="titre">Votre adresse, pas un pseudo</div>Les élèves se connectent avec un identifiant du type <code>l.bernard</code> ; vous, avec votre adresse académique.</div>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Votre espace</h3>
+      <p>L'icône <b>grille</b> mène à votre <b>tableau de bord</b>. Il ne montre <b>que vos élèves et vos devoirs</b> : vos collègues ne voient pas les vôtres, et vous ne voyez pas les leurs. La fréquentation du site est réservée à l'administrateur.</p>
+      <p>Le tableau de bord a trois boutons : <span class="btn plein">Attribuer un devoir</span> <span class="btn anthr plein">Devoirs en cours</span> <span class="btn vert plein">Devoirs faits</span></p>
+    </section>
+
+    <div class="encadre bon"><div class="titre">✓ Pour essayer comme un élève</div>Le site fonctionne sans compte pour l'entraînement libre : fiches, automatismes et QCM de Terminale restent accessibles à tous. Seuls les <b>devoirs</b> demandent un compte élève.</div>
+    <div class="encadre devoirbox" style="margin-top:8pt"><div class="titre">★ À dire aux élèves</div>Remettez-leur le <b>Guide de l'élève</b> (page d'accueil du site) : il explique la connexion, le bloc « Devoirs », <i>Enregistrer</i> et <i>Valider</i>. La règle d'or : un devoir n'est rendu qu'une fois validé.</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>2</span></div>
+</div>
+
+<!-- =============================== DEMARRER 2 =============================== -->
+<div id="p3" class="page bleu">
+  <div class="bandeau"><div class="num">1</div><div><div class="sur">Démarrer · 2/2</div><h2>Obtenir les comptes de vos élèves</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <p>Vous ne créez pas les comptes vous-même : vous envoyez la <b>liste de vos classes</b> à l'administrateur, qui crée les comptes et vous renvoie les <b>étiquettes</b> à distribuer. Tant que vous n'avez aucun élève, votre tableau de bord affiche ce rappel :</p>
+      <div class="capture" style="width:72%;margin:0 auto"><img src="img/accueil-sans-eleve.png"></div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>1. Préparer la liste</h3>
+        <p>Un fichier Excel ou CSV à <b>trois colonnes</b>, une ligne par élève. Le bouton <span class="btn">Télécharger le modèle</span> en donne un exemple prêt à remplir.</p>
+        <div class="tab"><table>
+          <tr><th>Classe</th><th>Nom</th><th>Prénom</th></tr>
+          <tr><td>2nde-207</td><td>BERNARD</td><td>Léa</td></tr>
+          <tr><td>2nde-207</td><td>DUPONT</td><td>Hugo</td></tr>
+          <tr><td>1ere-Gr 1</td><td>GARCIA</td><td>Manon</td></tr>
+        </table></div>
+        <ul class="puces" style="margin-top:5pt">
+          <li><b>Plusieurs classes</b> possibles dans le même fichier.</li>
+          <li>Nom des classes <b>sans accent</b> : <code>2nde-207</code>, <code>1ere-Gr 1</code>, <code>Tle-Gr 2</code> (groupes de spécialité : <code>Gr</code> et leur numéro).</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>2. L'envoyer</h3>
+        <p>Envoyez le fichier <b>en pièce jointe</b>, depuis votre adresse de connexion. Le bouton <span class="btn plein">Écrire le courriel</span> ouvre un message déjà adressé à l'administrateur, avec son objet et un texte d'accompagnement.</p>
+        <h3 style="margin-top:8pt"><span class="pastille"></span>3. Recevoir les étiquettes</h3>
+        <p>L'administrateur crée les comptes et vous renvoie un dossier :</p>
+        <ul class="puces">
+          <li>un <b>PDF d'étiquettes par classe</b>, à imprimer et découper ;</li>
+          <li>une <b>étiquette en image par élève</b>, à envoyer par message si vous préférez ;</li>
+          <li>un fichier d'identifiants pour Excel.</li>
+        </ul>
+        <p>Chaque étiquette porte l'adresse du site, l'<b>identifiant</b> et le <b>mot de passe</b> de l'élève. L'identifiant est l'initiale du prénom suivie du nom (<code>l.bernard</code>) ; un numéro s'ajoute en cas de doublon.</p>
+      </div>
+    </section>
+
+    <div class="encadre attention"><div class="titre">⚠ Mots de passe en clair</div>Les étiquettes et fichiers d'identifiants contiennent les mots de passe : <b>distribuez-les, puis détruisez-les</b> (papier et fichiers). Votre liste de classes n'est utilisée que pour créer les comptes : elle est supprimée ensuite.</div>
+
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>3</span></div>
+</div>
+
+<!-- =============================== ATTRIBUER 1 =============================== -->
+<div id="p4" class="page vert">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Attribuer · 1/3</div><h2>Attribuer un devoir</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="un-deux">
+      <div>
+        <div class="capture"><img src="img/formulaire-fiche.png"></div>
+        <div class="legende">Le formulaire d'un devoir de fiche de calcul.</div>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Le principe</h3>
+        <p>Cliquez sur <span class="btn plein">Attribuer un devoir</span>, choisissez le <b>type</b>, la <b>classe</b>, l'<b>échéance</b> et le <b>nombre d'essais</b> (de 1 à 20, 3 par défaut), puis <span class="btn plein">Attribuer ce devoir</span>. Les élèves de la classe le voient dès leur prochaine connexion.</p>
+        <p>La classe proposée est choisie parmi <b>vos</b> classes. Pour des élèves <b>sans classe</b> (« Hors classe »), une liste vous laisse cocher les élèves concernés.</p>
+        <div class="encadre astuce"><div class="titre">Notation</div>C'est la <b>meilleure tentative validée avant l'échéance</b> qui compte. Une tentative moins bonne ne fait rien perdre à l'élève.</div>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Les cinq types de devoirs</h3>
+      <div class="tab"><table>
+        <tr><th>Type</th><th>Ce que vous choisissez</th><th>Ce que fait l'élève</th></tr>
+        <tr><td><b>Fiche de cahier de calcul</b></td><td>La fiche (par niveau et cahier). Option <b>Calculs retenus</b> : cochez certains calculs pour ne donner qu'une partie de la fiche.</td><td>Une fiche générée au hasard, à rendre en l'état ; les calculs non retenus sont masqués.</td></tr>
+        <tr><td><b>Sujet blanc d'automatismes</b> (Première)</td><td>Niveau 1, 2 ou 3 ; mode <b>fiche</b> ou <b>chrono</b> ; temps par question en chrono.</td><td>12 questions sur tout le programme, comme à l'épreuve anticipée.</td></tr>
+        <tr><td><b>Fiche d'automatismes ciblée</b> (Première)</td><td>Les mêmes réglages, plus les <b>thèmes</b> travaillés.</td><td>12 questions sur les thèmes choisis.</td></tr>
+        <tr><td><b>QCM Terminale</b></td><td>Niveau, mode, temps, <b>thèmes</b>.</td><td>10 questions, calculatrice autorisée.</td></tr>
+        <tr><td><b>Sujet blanc QCM Terminale</b></td><td>Niveau, mode, temps. Les thèmes ne se choisissent pas.</td><td>12 questions sur 4 thèmes tirés au sort.</td></tr>
+      </table></div>
+    </section>
+
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>4</span></div>
+</div>
+
+<!-- =============================== ATTRIBUER 2 =============================== -->
+<div id="p5" class="page vert">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Attribuer · 2/3</div><h2>Niveaux, modes et échéances</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="deux">
+      <div>
+        <div class="capture"><img src="img/formulaire-automatismes.png"></div>
+        <div class="legende">Un sujet blanc d'automatismes : niveau, mode et durée s'ajoutent au formulaire.</div>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Niveaux et modes</h3>
+        <ul class="puces">
+          <li><b>Niveau 1</b> : les bases. <b>Niveau 2</b> : le niveau de l'épreuve. <b>Niveau 3</b> : plus difficile.</li>
+          <li><b>Mode fiche</b> : toutes les questions affichées, correction à la fin ; l'élève peut <i>enregistrer</i> et reprendre plus tard.</li>
+          <li><b>Mode chrono</b> ⏱ : une question à la fois, un minuteur (1 min à 3 min, ou sans limite), correction à la fin ; la série se fait d'une traite.</li>
+        </ul>
+        <div class="encadre attention"><div class="titre">⚠ Bien choisir la classe</div>Vérifiez la classe avant d'attribuer : un devoir donné à la mauvaise classe se corrige avec <span class="btn">Modifier</span> ou <span class="btn">Supprimer</span> (page 7).</div>
+      </div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Échéance ou essais pour certains élèves</h3>
+        <p>Dans <span class="btn">Modifier</span>, cochez <i>« Modifier l'échéance et le nombre d'essais pour certains élèves seulement »</i> : les élèves cochés ont leur propre échéance et leur propre nombre d'essais, le reste du devoir ne change pas. <span class="btn">Rétablir les réglages du devoir</span> annule la dérogation.</p>
+      </div>
+      <div>
+        <div class="encadre devoirbox" style="margin-top:0"><div class="titre">★ Un devoir reste « en cours »…</div>…tant qu'une échéance (celle de la classe <b>ou</b> celle d'un élève ayant une dérogation) n'est pas passée. Il passe ensuite dans <i>Devoirs faits</i>.</div>
+      </div>
+    </section>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>5</span></div>
+</div>
+
+<!-- =============================== ATTRIBUER 3 =============================== -->
+<div id="p6" class="page vert">
+  <div class="bandeau"><div class="num">2</div><div><div class="sur">Attribuer · 3/3</div><h2>Ce que voit l'élève, la notation</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <h3><span class="pastille"></span>Du côté de l'élève</h3>
+      <div class="frise">
+        <div class="pas"><div class="rond" style="background:var(--vert)">1</div><b>Il le trouve</b><span>icône grille, bloc « Devoirs », page <i>Mes devoirs</i> (colonnes À faire, Enregistrés, Faits)</span></div>
+        <div class="pas"><div class="rond" style="background:var(--vert)">2</div><b>Il travaille</b><span>sans correction ; il peut <b>enregistrer</b> et reprendre, même sur un autre appareil</span></div>
+        <div class="pas"><div class="rond" style="background:var(--vert)">3</div><b>Il valide</b><span>une confirmation, puis la tentative est comptée et la note envoyée</span></div>
+        <div class="pas"><div class="rond" style="background:var(--vert)">✓</div><b>Il se corrige</b><span>note, correction, et nouvelle tentative s'il en reste</span></div>
+      </div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Pendant le devoir</h3>
+        <ul class="puces">
+          <li><b>Aucune correction</b> n'apparaît avant la validation : pas de vert ni de rouge, pas de « Voir toutes les réponses ».</li>
+          <li>Les réglages sont <b>verrouillés</b> : niveau, mode, durée et thèmes sont ceux que vous avez choisis.</li>
+          <li>Sur une fiche de calcul, la navigation se limite à <i>Sommaire</i> : plus de fiche précédente ou suivante, ni d'export PDF.</li>
+          <li><b>Enregistrer</b> ne compte pas de tentative et ne rend pas le devoir : seule la <b>validation</b> compte.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Dernière tentative</h3>
+        <p>Quand l'élève valide sa dernière tentative, une fenêtre le signale : la fiche <b>reste affichée</b> avec sa note et sa correction, et le bouton <i>Générer une nouvelle version</i> est grisé. S'il rouvre la fiche depuis le menu, c'est un entraînement libre.</p>
+        <p>Une validation <b>après l'échéance</b> n'est pas comptée.</p>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>La note</h3>
+      <div class="tab"><table>
+        <tr><th>Type de devoir</th><th>Note affichée</th></tr>
+        <tr><td><b>Fiche de calcul</b></td><td>Bonnes réponses / nombre de questions. Si la fiche a un <b>barème</b>, la note est en <b>points</b> (« 18,5 / 22 »), avec une pastille de points sur chaque question. Les <b>calculs plus avancés</b> sont un bonus : une bonne réponse s'ajoute à la note et au total, une réponse fausse ou absente ne coûte rien.</td></tr>
+        <tr><td><b>Fiche partielle</b> (calculs retenus)</td><td>Bonnes réponses / questions retenues. La sélection des calculs est <b>verrouillée</b> dès qu'un élève a fait une tentative.</td></tr>
+        <tr><td><b>Sujet blanc d'automatismes</b></td><td>Points : 0,5, 0,75 ou 1 par question selon la famille et le niveau, sur le total du sujet.</td></tr>
+        <tr><td><b>QCM Terminale</b> (fiche ou sujet blanc)</td><td>1 point par bonne réponse. Au <b>niveau 3</b>, −0,25 point par mauvaise réponse (une question sans réponse ne retire rien), sans descendre sous 0.</td></tr>
+      </table></div>
+    </section>
+
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>6</span></div>
+</div>
+
+<!-- =============================== SUIVRE =============================== -->
+<div id="p7" class="page ambre">
+  <div class="bandeau"><div class="num">3</div><div><div class="sur">Suivre</div><h2>Résultats, modification, suppression</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section>
+      <div class="capture"><img src="img/en-cours.png"></div>
+      <div class="legende">Devoirs en cours : le titre, la classe, l'échéance et le nombre d'essais, avec trois boutons par devoir.</div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Les boutons d'un devoir</h3>
+        <ul class="puces">
+          <li><span class="btn plein">Résultats</span> ouvre le détail par élève (ci-dessous).</li>
+          <li><span class="btn">Modifier</span> rouvre le formulaire : classe, échéance, essais, thèmes… Voir aussi les dérogations individuelles (page 5).</li>
+          <li><span class="btn" style="border-color:#f3c9c8;color:var(--rouge)">Supprimer</span> efface le devoir <b>et toutes les tentatives des élèves</b>. La fenêtre de confirmation indique leur nombre. <b>Définitif.</b></li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Devoirs faits</h3>
+        <p>Les devoirs dont l'échéance est passée sont rangés dans <span class="btn vert plein">Devoirs faits</span>. Leurs <span class="btn plein">Résultats</span> restent consultables. Un bouton <b>Tout supprimer</b> vide cette liste d'un coup (avec confirmation) ; à utiliser en fin de période, quand vous n'avez plus besoin des notes.</p>
+      </div>
+    </section>
+
+    <section class="un-deux">
+      <div>
+        <h3><span class="pastille"></span>Lire les résultats</h3>
+        <p>Une ligne par élève de la classe :</p>
+        <ul class="puces">
+          <li><b>Rendu</b> / <b>Non rendu</b> : au moins une tentative validée avant l'échéance.</li>
+          <li><b>Note</b> : celle de la <b>meilleure</b> tentative (en points si le devoir a un barème).</li>
+          <li><b>Non-réponses</b> : questions laissées vides sur cette tentative.</li>
+          <li><b>Essais</b> : tentatives utilisées sur le nombre autorisé.</li>
+          <li><b>Dernière activité</b> : date de la dernière tentative.</li>
+        </ul>
+        <p class="petit">Seules les tentatives faites <b>avant l'échéance</b> comptent ; l'heure est celle du serveur, pas de l'ordinateur de l'élève. Un élève avec une échéance individuelle est signalé.</p>
+      </div>
+      <div>
+        <div class="capture"><img src="img/resultats.png"></div>
+        <div class="legende">Le détail d'un devoir : ici, un élève n'a pas rendu, un autre a utilisé 2 essais sur 3.</div>
+      </div>
+    </section>
+
+    <div class="encadre bon"><div class="titre">✓ Ce que vous ne voyez pas</div>Les résultats portent sur les <b>devoirs</b> uniquement : le travail libre de l'élève (fiches, automatismes et QCM hors devoir) n'est pas enregistré et ne remonte pas ici.</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>7</span></div>
+</div>
+
+<!-- =============================== BON A SAVOIR =============================== -->
+<div id="p8" class="page gris">
+  <div class="bandeau"><div class="num">✓</div><div><div class="sur">À garder sous la main</div><h2>Bon à savoir, questions fréquentes</h2></div></div>
+  <div class="contenu" style="padding-top:8mm">
+    <section class="deux">
+      <div>
+        <h3><span class="pastille"></span>Données et confidentialité</h3>
+        <ul class="puces">
+          <li>Pour chaque élève, le site garde : <b>identifiant, nom, prénom, classe</b>, ses <b>tentatives de devoirs</b> et ses brouillons de devoirs.</li>
+          <li><b>Seul son enseignant</b> (et lui-même) y accède : un collègue ne voit pas vos élèves, et l'administrateur n'y accède pas depuis le site.</li>
+          <li>Les entraînements libres ne sont <b>pas enregistrés</b>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="pastille"></span>Fin d'année</h3>
+        <p>Les comptes élèves sont <b>supprimés à la fin de l'année scolaire</b> (le 30 juin). Avant cette date, les résultats peuvent être exportés dans un tableur : demandez-le à l'administrateur si vous voulez les conserver.</p>
+        <p>Votre propre compte enseignant n'est pas supprimé.</p>
+        <div class="encadre astuce"><div class="titre">Nouvelle année</div>Envoyez simplement une nouvelle liste de classes, comme au départ.</div>
+      </div>
+    </section>
+
+    <section>
+      <h3><span class="pastille"></span>Questions fréquentes</h3>
+      <div class="tab"><table>
+        <tr><td>Un élève arrive en cours d'année.</td><td>Renvoyez une liste avec ce ou ces élèves à l'administrateur : seuls les <b>nouveaux</b> comptes sont créés, les autres ne sont pas touchés.</td></tr>
+        <tr><td>Un élève a perdu son mot de passe.</td><td>Écrivez à l'administrateur, qui peut en fournir un nouveau : le compte n'a pas d'adresse de messagerie, donc pas de lien « mot de passe oublié ».</td></tr>
+        <tr><td>Je ne vois aucun élève.</td><td>Vous n'avez pas encore reçu vos comptes : suivez la page 3. Si l'encadré « Bienvenue » ne s'affiche pas, déconnectez-vous puis reconnectez-vous.</td></tr>
+        <tr><td>Le tableau de bord me renvoie à l'accueil.</td><td>Votre compte n'a pas (encore) le droit enseignant, ou la page a été ouverte avant votre invitation : déconnectez-vous, reconnectez-vous, puis contactez l'administrateur si cela persiste.</td></tr>
+        <tr><td>Un élève ne voit pas son devoir.</td><td>Il doit être <b>connecté</b> avec son compte, être dans la <b>classe</b> du devoir (ou coché pour un devoir « Hors classe »), et l'échéance ne doit pas être passée. Le devoir apparaît aussi sur <i>Mes devoirs</i> via l'icône grille.</td></tr>
+        <tr><td>Un élève dit avoir rendu, mais « Non rendu ».</td><td>Il a probablement <b>enregistré sans valider</b> (colonne « Enregistrés » de son <i>Mes devoirs</i>), ou validé après l'échéance.</td></tr>
+        <tr><td>J'ai donné le devoir à la mauvaise classe.</td><td><span class="btn">Modifier</span> pour changer la classe, ou <span class="btn">Supprimer</span> puis recommencer.</td></tr>
+        <tr><td>Je veux changer l'échéance pour un seul élève.</td><td>Voir « Échéance ou essais pour certains élèves », page 5.</td></tr>
+        <tr><td>Les formules ne s'affichent pas.</td><td>Rechargez la page et vérifiez la connexion internet.</td></tr>
+      </table></div>
+    </section>
+
+    <div class="encadre devoirbox"><div class="titre">★ Une question, une idée, un défaut constaté ?</div>Écrivez à l'administrateur du site, celui qui vous a invité. Les fiches et les devoirs évoluent : vos retours sont les bienvenus.</div>
+  </div>
+  <div class="pied"><span>Cahiers interactifs — Guide de l'enseignant</span><span>8</span></div>
+</div>
+
+</body>
+</html>

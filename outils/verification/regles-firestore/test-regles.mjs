@@ -172,7 +172,7 @@ await cas('enseignant A : liste ses devoirs (where enseignant)', true, getDocs(q
 await cas('enseignant A : supprime un devoir de B', false, deleteDoc(doc(profA, 'devoirs/dB')));
 await cas('enseignant A : supprime un devoir sans enseignant', false, deleteDoc(doc(profA, 'devoirs/dL')));
 await cas('enseignant A : supprime son devoir', true, deleteDoc(doc(profA, 'devoirs/dA2')));
-console.log('  Lecture des devoirs resserrée (28/10/2026) : propriétaire et élèves de cet enseignant seulement');
+console.log('  Lecture des devoirs resserrée (27/10/2026) : propriétaire et élèves de cet enseignant seulement');
 const eB1 = env.authenticatedContext('eB1').firestore();
 const eL = env.authenticatedContext('eL').firestore();
 const eD1 = env.authenticatedContext('eD1').firestore();
