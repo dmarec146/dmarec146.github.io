@@ -9,7 +9,9 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 
-const ADRESSE_SITE = 'dmarec146.github.io';
+// Reglables par variables d'environnement (comptes-et-etiquettes.js) : adresse affichee sur les etiquettes et dossier de sortie.
+const ADRESSE_SITE = process.env.ADRESSE_SITE_ETIQUETTES || 'dmarec146.github.io';
+const DOSSIER_SORTIE = process.env.DOSSIER_SORTIE_ETIQUETTES || __dirname;
 const COLONNES = 2;
 const LIGNES = 5;
 const MARGE = 28; // points (72pt = 1 pouce)
@@ -196,7 +198,8 @@ async function main() {
   // plutot que juste etiquettes-<date>.pdf, pour reperer le bon fichier
   // sans l'ouvrir (surtout avec plusieurs classes/groupes generes le meme jour).
   const prefixe = classe ? `${glisseFichier(classe)}-` : '';
-  const cheminSortie = path.join(__dirname, `etiquettes-${prefixe}${horodatage}.pdf`);
+  fs.mkdirSync(DOSSIER_SORTIE, { recursive: true });
+  const cheminSortie = path.join(DOSSIER_SORTIE, `etiquettes-${prefixe}${horodatage}.pdf`);
   await genererPdf(eleves, cheminSortie, classe);
 
   const parPage = COLONNES * LIGNES;

@@ -15,7 +15,7 @@ const path = require('path');
 const { createCanvas } = require('@napi-rs/canvas');
 const { lireCsvComptes } = require('./generer-etiquettes.js');
 
-const ADRESSE_SITE = 'dmarec146.github.io';
+const ADRESSE_SITE = process.env.ADRESSE_SITE_ETIQUETTES || 'dmarec146.github.io';
 const LARGEUR = 900;
 const HAUTEUR = 420;
 const ECHELLE = 3.3; // pas de la mise en page PDF (points) vers des pixels
@@ -118,7 +118,7 @@ function main() {
   if (!fs.existsSync(cheminCsv)) { console.error(`Fichier introuvable : ${cheminCsv}`); process.exit(1); }
 
   const eleves = lireCsvComptes(cheminCsv);
-  const dossier = path.join(__dirname, 'individuelles', classe.trim().replace(/[\\/:*?"<>|]/g, ''));
+  const dossier = path.join(process.env.DOSSIER_SORTIE_ETIQUETTES || __dirname, 'individuelles', classe.trim().replace(/[\\/:*?"<>|]/g, ''));
   fs.mkdirSync(dossier, { recursive: true });
   const pris = new Set();
   for (const eleve of eleves) fs.writeFileSync(path.join(dossier, nomFichier(eleve, pris)), dessinerEtiquette(eleve, classe));

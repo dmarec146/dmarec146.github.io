@@ -41,14 +41,46 @@ une preuve simple qu'il s'agit d'un enseignant. Pour accepter une autre adresse
 (décision à prendre cas par cas, par exemple un compte de test), ajouter
 `--adresse-libre` à la fin de la commande.
 
-Crée le compte avec un mot de passe aléatoire que personne ne connaît, lui
-accorde le seul droit `enseignant`, puis **affiche un lien** : à envoyer à la
-personne (message de ta part), qui y choisit elle-même son mot de passe. Elle se
-connecte ensuite avec son adresse e-mail sur la page Connexion. Relancer la
-commande sur la même adresse produit un nouveau lien (mot de passe oublié).
+Crée le compte avec un mot de passe aléatoire que personne ne connaît et lui
+accorde le seul droit `enseignant`. Avec l'option **`--envoyer`**, c'est
+**Firebase qui envoie lui-même le courriel** (en français) contenant le lien pour
+choisir son mot de passe : c'est la façon recommandée.
+
+```bash
+node creer-comptes.js --enseignant collegue@ac-creteil.fr --envoyer
+```
+
+Sans `--envoyer`, la commande affiche le lien à la place ; certaines messageries
+le « consomment » en le prévisualisant et il apparaît alors comme expiré, donc à
+éviter. Le lien est valable environ une heure : relancer la même commande envoie
+un nouveau courriel (mot de passe oublié, ou invitation trop ancienne). La
+personne se connecte ensuite avec son adresse e-mail sur la page Connexion.
 Un enseignant ne voit que **ses** élèves et **ses** devoirs ; il n'a pas accès à
 la fréquentation du site et ne peut pas créer de comptes élèves : c'est toi qui
 les crées pour lui (section suivante), à partir de la liste qu'il t'envoie.
+
+## Élèves d'un collègue : comptes et étiquettes en une commande
+
+```bash
+node comptes-et-etiquettes.js liste.csv --enseignant=collegue@ac-creteil.fr
+```
+
+Crée les comptes **nouveaux** (comme `creer-comptes.js`), puis fabrique les
+étiquettes et range tout dans un dossier au nom de l'enseignant :
+
+    Documents\comptes-enseignants\<adresse e-mail>\<AAAA-MM-JJ_HHhMM>\
+        comptes-<classe>.csv              identifiants et mots de passe (Excel)
+        etiquettes-<classe>-<date>.pdf    à imprimer et découper (2 colonnes × 5)
+        individuelles\<classe>\*.png      une étiquette par élève, à envoyer par message
+        LISEZ-MOI.txt
+
+Les étiquettes portent l'adresse `cahiers-interactifs.fr` (option
+`--site=<adresse>` pour une autre ; `--racine=<dossier>` change l'emplacement).
+Une liste avec plusieurs classes donne un jeu de fichiers par classe. Relancer
+sur la même liste n'ajoute rien. **Ces fichiers contiennent des mots de passe en
+clair et des noms d'élèves** : les envoyer à l'enseignant, puis les supprimer,
+ainsi que la liste reçue. Prérequis : `npm install` fait dans
+`outils/etiquettes`.
 
 ## Rattacher les élèves et devoirs déjà existants (une seule fois)
 

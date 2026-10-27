@@ -191,7 +191,10 @@ async function trouverPseudoLibre(pseudoSouhaite, eleve, enseignantUid, pseudoIm
   throw new Error(`Aucun pseudo libre trouve a partir de "${pseudoSouhaite}".`);
 }
 
-async function creerComptesEleves(cheminCsv, emailEnseignant) {
+// Renvoie la liste des comptes crees [{ classe, pseudo, motDePasse, prenom, nom }] (vide si rien de nouveau).
+// ecrireCsv: false pour ne pas ecrire comptes-crees-<date>.csv (utilise par comptes-et-etiquettes.js, qui produit
+// ses propres fichiers dans un dossier par enseignant).
+async function creerComptesEleves(cheminCsv, emailEnseignant, { ecrireCsv = true } = {}) {
   const eleves = lireCsvEleves(cheminCsv);
   const auth = getAuth();
   const db = getFirestore();
@@ -227,13 +230,12 @@ async function creerComptesEleves(cheminCsv, emailEnseignant) {
 
   if (resultats.length === 0) {
     console.log('Aucun nouveau compte a creer.');
-    return;
+    return resultats;
   }
+  if (!ecrireCsv) return resultats;
 
-  // Nom/prenom ne sont jamais envoyes a Firestore (seuls pseudo + classe le
-  // sont, ci-dessus) : ils ne servent qu'a produire une feuille de
-  // distribution lisible par l'enseignant, dans ce meme dossier (jamais
-  // commitee, mais synchronisee sur Google Drive comme le reste du projet).
+  // Feuille de distribution lisible par l'enseignant, dans ce dossier (jamais
+  // commitee : mots de passe en clair).
   const avecIdentite = resultats.every(r => r.nom && r.prenom);
   const horodatage = new Date().toISOString().replace(/[:.]/g, '-');
   fs.mkdirSync(DOSSIER_SORTIE, { recursive: true });
@@ -253,6 +255,7 @@ async function creerComptesEleves(cheminCsv, emailEnseignant) {
   fs.writeFileSync(cheminSortie, contenu, 'utf8');
   console.log(`\n${resultats.length} compte(s) cree(s). Identifiants ecrits dans :\n${cheminSortie}`);
   console.log('A distribuer aux eleves puis a supprimer (mots de passe en clair, jamais commite).');
+  return resultats;
 }
 
 async function creerOuPromouvoirAdmin(email, motDePasse) {
@@ -279,7 +282,29 @@ async function creerOuPromouvoirAdmin(email, motDePasse) {
 // personne choisit elle-meme son mot de passe. Le lien est a lui envoyer de
 // votre part ; il n'est ecrit nulle part. Relancer la commande sur un compte
 // existant genere simplement un nouveau lien (mot de passe oublie).
-async function inviterEnseignant(email, adresseLibre) {
+// Cle d'API publique du projet (la meme que assets/js/firebase-config.js : elle designe le projet, ce n'est pas un secret).
+const CLE_API_PUBLIQUE = 'AIzaSyAlVsufBIQmPQ2dxfaQ1tPi1JVMNYK5TlI';
+
+// Fait envoyer par Firebase lui-meme le courriel « choisir votre mot de passe » (le meme que « mot de passe oublie »,
+// en francais), a l'adresse du compte. Renvoie true si Firebase a accepte l'envoi.
+async function envoyerCourrielMotDePasse(adresse) {
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    console.log('MODE TEST : aucun courriel n\'est envoye (emulateur).');
+    return false;
+  }
+  const reponse = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${CLE_API_PUBLIQUE}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Firebase-Locale': 'fr' },
+    body: JSON.stringify({ requestType: 'PASSWORD_RESET', email: adresse }),
+  });
+  if (!reponse.ok) {
+    const detail = await reponse.text();
+    throw new Error(`Firebase a refuse l'envoi du courriel (${reponse.status}) : ${detail.slice(0, 200)}`);
+  }
+  return true;
+}
+
+async function inviterEnseignant(email, adresseLibre, envoyer) {
   const auth = getAuth();
   const adresse = email.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(adresse) || adresse.endsWith('@cahiers-interactifs.local')) {
@@ -301,12 +326,16 @@ async function inviterEnseignant(email, adresseLibre) {
   }
   const claims = utilisateur.customClaims || {};
   if (claims.enseignant !== true) await auth.setCustomUserClaims(utilisateur.uid, { ...claims, enseignant: true });
-  let lien = await auth.generatePasswordResetLink(adresse);
-  // Page de choix du mot de passe en francais (le lien porte lang=en par defaut).
-  lien = /[?&]lang=/.test(lien) ? lien.replace(/([?&])lang=[^&]*/, '$1lang=fr') : `${lien}&lang=fr`;
   console.log(`\nDroit "enseignant" accorde a ${adresse}.`);
-  console.log('Lien a envoyer a cette personne pour qu\'elle choisisse son mot de passe (usage unique, duree limitee) :\n');
-  console.log(lien);
+  if (envoyer && await envoyerCourrielMotDePasse(adresse)) {
+    console.log(`Courriel envoye par Firebase a ${adresse} : il y trouve le lien pour choisir son mot de passe (valable environ une heure ; relancer la meme commande pour en envoyer un nouveau).`);
+  } else {
+    let lien = await auth.generatePasswordResetLink(adresse);
+    // Page de choix du mot de passe en francais (le lien porte lang=en par defaut).
+    lien = /[?&]lang=/.test(lien) ? lien.replace(/([?&])lang=[^&]*/, '$1lang=fr') : `${lien}&lang=fr`;
+    console.log('Lien a envoyer a cette personne pour qu\'elle choisisse son mot de passe (usage unique, duree limitee ; certaines messageries le consomment a l\'ouverture : preferer --envoyer) :\n');
+    console.log(lien);
+  }
   console.log('\nElle se connectera ensuite sur le site avec son adresse e-mail (page Connexion).');
 }
 
@@ -325,10 +354,10 @@ async function main() {
 
   if (commande === '--enseignant') {
     if (!arg1) {
-      console.error('Usage : node creer-comptes.js --enseignant <email> [--adresse-libre]');
+      console.error('Usage : node creer-comptes.js --enseignant <email> [--adresse-libre] [--envoyer]');
       process.exit(1);
     }
-    await inviterEnseignant(arg1, process.argv.includes('--adresse-libre'));
+    await inviterEnseignant(arg1, process.argv.includes('--adresse-libre'), process.argv.includes('--envoyer'));
     return;
   }
 
@@ -338,7 +367,7 @@ async function main() {
   if (!commande || commande.startsWith('--') || !optionEnseignant) {
     console.error(
       'Usage : node creer-comptes.js <fichier.csv> --enseignant=<email-de-l-enseignant>\n' +
-      '   ou : node creer-comptes.js --enseignant <email>     (inviter un enseignant)\n' +
+      '   ou : node creer-comptes.js --enseignant <email> [--envoyer]     (inviter un enseignant ; --envoyer = courriel de Firebase)\n' +
       '   ou : node creer-comptes.js --admin <email> [mot-de-passe]'
     );
     process.exit(1);
@@ -346,7 +375,12 @@ async function main() {
   await creerComptesEleves(commande, optionEnseignant.slice('--enseignant='.length));
 }
 
-main().catch((erreur) => {
-  console.error(erreur);
-  process.exit(1);
-});
+// Importable (comptes-et-etiquettes.js) sans lancer la commande.
+if (require.main === module) {
+  main().catch((erreur) => {
+    console.error(erreur);
+    process.exit(1);
+  });
+}
+
+module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant };
