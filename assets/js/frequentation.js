@@ -234,8 +234,9 @@ async function initialiser() {
 }
 
 onAuthStateChanged(auth, async (utilisateur) => {
-  if (!utilisateur) { window.location.replace('../connexion/index.html'); return; }
+  if (!utilisateur) { if (!window.__deconnexionEnCours) window.location.replace('../connexion/index.html'); return; }
   const jeton = await utilisateur.getIdTokenResult();
   if (jeton.claims.admin !== true) { window.location.replace('../index.html'); return; }
+  document.querySelectorAll('.tdb-nav-carte[data-reserve-admin]').forEach((carte) => { carte.classList.add('admin-confirme'); });
   initialiser();
 });

@@ -232,7 +232,7 @@ boutonDevoirsFaits.addEventListener('click', () => {
 
 onAuthStateChanged(auth, async (utilisateur) => {
   if (!utilisateur) {
-    window.location.replace('../connexion/index.html');
+    if (!window.__deconnexionEnCours) window.location.replace('../connexion/index.html');
     return;
   }
   // Même double protection que le reste du tableau de bord : vérifiée ici
@@ -246,10 +246,11 @@ onAuthStateChanged(auth, async (utilisateur) => {
     return;
   }
   uidEnseignant = utilisateur.uid;
-  // La fréquentation du site reste réservée à l'administrateur.
-  if (admin !== true) {
-    const carte = document.querySelector('.tdb-nav-carte[href="frequentation.html"]');
-    if (carte) carte.style.display = 'none';
+  // Fréquentation et invitation d'enseignants : réservées à l'administrateur. Ces cartes sont cachées par défaut
+  // (CSS, marquées data-reserve-admin) et révélées ici seulement une fois le jeton vérifié : jamais l'inverse,
+  // sinon elles clignotent chez un enseignant au rechargement.
+  if (admin === true) {
+    document.querySelectorAll('.tdb-nav-carte[data-reserve-admin]').forEach((carte) => { carte.classList.add('admin-confirme'); });
   }
   initialiser();
 });
@@ -630,6 +631,34 @@ selectFiche.addEventListener('change', () => mettreAJourChampCalculs());
 
 selectMode.addEventListener('change', mettreAJourChampDuree);
 
+// Adresse a laquelle un enseignant envoie la liste de ses classes (27/10/2026) : la messagerie academique de
+// l'administrateur, pour que les noms d'eleves ne transitent que par la messagerie de l'academie. A changer ici (et dans le
+// texte du courriel d'invitation, console Firebase) si l'administrateur change d'adresse.
+const ADRESSE_ENVOI_LISTES = 'david.marec@ac-creteil.fr';
+
+// Enseignant sans aucun eleve : pas de formulaire d'attribution (il n'aurait aucune classe a choisir), mais un
+// encadre qui explique comment obtenir les comptes : modele de liste a telecharger (genere ici, jamais publie comme
+// fichier .csv : les .csv sont interdits dans la publication) et courriel pre-adresse.
+function afficherAccueilSansEleve() {
+  const encadre = document.getElementById('dev-accueil');
+  document.getElementById('dev-accueil-courriel').href = 'mailto:' + ADRESSE_ENVOI_LISTES
+    + '?subject=' + encodeURIComponent('Liste de mes classes — Cahiers interactifs')
+    + '&body=' + encodeURIComponent(['Bonjour,', '', 'Vous trouverez ci-joint la liste de mes classes (colonnes Classe, Nom, Prénom).', '', 'Cordialement'].join('\r\n'));
+  document.getElementById('dev-accueil-modele').addEventListener('click', () => {
+    // BOM + point-virgule : Excel en français l'ouvre directement, accents compris, une colonne par champ.
+    const lignes = ['Classe;Nom;Prénom', '2nde-207;EXEMPLE;Prénom1', '2nde-207;EXEMPLE;Prénom2', '1ere-Gr 1;EXEMPLE;Prénom3'];
+    const fichier = new Blob(['\uFEFF' + lignes.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    const lien = document.createElement('a');
+    lien.href = URL.createObjectURL(fichier);
+    lien.download = 'modele-liste-eleves.csv';
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+  });
+  encadre.hidden = false;
+}
+
 async function initialiser() {
   try {
     remplirSelectFiche();
@@ -637,7 +666,7 @@ async function initialiser() {
     toutesLesClasses = await classesConnues();
     if (toutesLesClasses.length === 0) {
       zoneChargement.hidden = true;
-      afficherEtat(zoneErreur, "Aucune classe enregistrée pour l'instant — impossible d'attribuer un devoir.");
+      afficherAccueilSansEleve();
       return;
     }
     remplirSelectClasse();

@@ -193,6 +193,10 @@ if (cible) {
     const [{ auth }, { signOut }] = await modulesFirebase;
     await auth.authStateReady();
     if (auth.currentUser) {
+      // Deconnexion volontaire (28/10/2026) : on previent les autres scripts de la page. Sans cela, la page protegee
+      // (tableau de bord, Mes devoirs) voyait la deconnexion et partait vers « Connexion » pendant que ce script
+      // partait vers l'accueil : deux chargements de page qui se chevauchent, visibles comme un clignotement.
+      window.__deconnexionEnCours = true;
       await signOut(auth);
       memoriserEtat(null);
       window.location.href = '/index.html';
@@ -205,7 +209,8 @@ if (cible) {
     onAuthStateChanged(auth, async (utilisateur) => {
       if (!utilisateur) {
         memoriserEtat(null);
-        afficherEtat(null);
+        // Pendant une deconnexion volontaire, la barre reste telle quelle jusqu'au changement de page.
+        if (!window.__deconnexionEnCours) afficherEtat(null);
         return;
       }
       const resultatToken = await utilisateur.getIdTokenResult();

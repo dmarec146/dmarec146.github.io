@@ -154,7 +154,7 @@ async function charger(utilisateur, nettoyerBrouillons) {
 
 onAuthStateChanged(auth, (utilisateur) => {
   if (!utilisateur) {
-    window.location.replace('../connexion/index.html');
+    if (!window.__deconnexionEnCours) window.location.replace('../connexion/index.html');
     return;
   }
   charger(utilisateur, true);
