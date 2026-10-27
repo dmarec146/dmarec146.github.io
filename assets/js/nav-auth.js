@@ -30,11 +30,26 @@
 // mettent a jour une fois l'etat de connexion (et le droit admin) connus --
 // plus jamais de noeud insere tardivement dans le DOM.
 
-import { auth } from './firebase-config.js';
-import {
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+// Chargement de Firebase LANCE tout de suite mais jamais attendu avant d'afficher les icones (27/10/2026) :
+// avec des « import » statiques, ce module ne s'executait qu'une fois le SDK telecharge depuis gstatic.com,
+// donc les deux icones n'apparaissaient qu'une demi-seconde apres le reste de la page, a chaque page
+// (impression qu'elles « s'effacent et reviennent »). Maintenant le module s'execute aussitot, pose les
+// icones dans leur dernier etat connu (CLE_ETAT ci-dessous), puis l'etat reel de la connexion les corrige.
+const modulesFirebase = Promise.all([
+  import('./firebase-config.js'),
+  import("https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js")
+]);
+
+// Dernier etat de connexion connu de CE navigateur : rien, 'eleve' ou 'enseignant' (administrateur compris).
+// Aucune donnee personnelle (ni pseudo ni adresse) ; sert uniquement a afficher d'emblee les bonnes icones,
+// l'etat reel venant ensuite de Firebase. Peut etre vide ou refuse (navigation privee) : sans consequence.
+const CLE_ETAT = 'cahiers-nav-etat';
+function lireEtatConnu() {
+  try { const v = window.localStorage.getItem(CLE_ETAT); return v === 'eleve' || v === 'enseignant' ? v : null; } catch (e) { return null; }
+}
+function memoriserEtat(role) {
+  try { if (role) window.localStorage.setItem(CLE_ETAT, role); else window.localStorage.removeItem(CLE_ETAT); } catch (e) { /* stockage indisponible */ }
+}
 
 // Icone "profil" classique (silhouette tete + epaules), reconnaissable sans
 // texte. Pas de librairie d'icones chargee juste pour ca : un seul path SVG.
@@ -131,36 +146,28 @@ if (cible) {
 
   const bouton = document.createElement('button');
   bouton.type = 'button';
-  bouton.disabled = true;
   bouton.dataset.navAuth = 'true';
   bouton.innerHTML = ICONE_PROFIL;
   if (nav) bouton.className = 'nav-icone-profil';
   else styliserCommeIconeCompacte(bouton);
   cible.appendChild(bouton);
 
-  onAuthStateChanged(auth, async (utilisateur) => {
-    bouton.disabled = false;
-    bouton.onclick = null;
-
-    if (!utilisateur) {
+  // Une seule icone « grille » pour tout compte connecte, deux destinations (27/10/2026) :
+  // - administrateur ou enseignant -> tableau de bord (chacun ne voit que ses eleves) ;
+  // - tout autre compte connecte, donc un eleve -> sa page « Mes devoirs », qui reste ainsi
+  //   joignable meme quand plus aucun devoir n'est en cours (le bloc « Devoirs » sous l'en-tete,
+  //   lui, n'apparait que s'il reste au moins un devoir : voir devoirs-notification.js).
+  // Destination posee a chaque changement d'etat (pas seulement pour un eleve) : un changement de compte sans
+  // rechargement de la page ne doit pas laisser la destination du compte precedent.
+  function afficherEtat(role, identifiant) {
+    if (!role) {
       delete bouton.dataset.connecte;
       lienTableau.style.visibility = 'hidden'; // l'icone des devoirs n'existe que connecte
       bouton.title = 'Connexion';
       bouton.setAttribute('aria-label', 'Connexion');
-      bouton.onclick = () => { window.location.href = '/connexion/'; };
       return;
     }
-
-    const resultatToken = await utilisateur.getIdTokenResult();
-    // Une seule icone « grille » pour tout compte connecte, deux destinations (27/10/2026) :
-    // - administrateur ou enseignant -> tableau de bord (chacun ne voit que ses eleves) ;
-    // - tout autre compte connecte, donc un eleve -> sa page « Mes devoirs », qui reste ainsi
-    //   joignable meme quand plus aucun devoir n'est en cours (le bloc « Devoirs » sous l'en-tete,
-    //   lui, n'apparait que s'il reste au moins un devoir : voir devoirs-notification.js).
-    const estEnseignant = resultatToken.claims.admin === true || resultatToken.claims.enseignant === true;
-    // Destination posee a chaque changement d'etat (pas seulement pour un eleve) : un changement de compte sans
-    // rechargement de la page ne doit pas laisser la destination du compte precedent.
-    const destination = estEnseignant
+    const destination = role === 'enseignant'
       ? { href: '/tableau-de-bord/devoirs.html', titre: 'Tableau de bord' }
       : { href: '/mes-devoirs/', titre: 'Mes devoirs' };
     lienTableau.href = destination.href;
@@ -173,16 +180,38 @@ if (cible) {
     // (inline), sans les proprietes flex de centrage.
     lienTableau.style.display = 'inline-flex';
     lienTableau.style.visibility = 'visible';
-
-    // Etat « connecte » visible sans survol (27/10/2026) : le bouton profil se remplit et recoit un point vert.
+    // Etat « connecte » visible sans survol : le bouton profil se remplit et recoit un point vert.
     bouton.dataset.connecte = 'true';
-
-    const identifiant = identifiantAffichable(utilisateur);
     bouton.title = identifiant ? `Se déconnecter (${identifiant})` : 'Se déconnecter';
     bouton.setAttribute('aria-label', bouton.title);
-    bouton.onclick = async () => {
+  }
+
+  // Premier affichage immediat, d'apres le dernier etat connu ; jamais de bouton grise (le clic attend, si besoin,
+  // que Firebase ait restaure la session : authStateReady).
+  afficherEtat(lireEtatConnu(), null);
+  bouton.onclick = async () => {
+    const [{ auth }, { signOut }] = await modulesFirebase;
+    await auth.authStateReady();
+    if (auth.currentUser) {
       await signOut(auth);
+      memoriserEtat(null);
       window.location.href = '/index.html';
-    };
-  });
+    } else {
+      window.location.href = '/connexion/';
+    }
+  };
+
+  modulesFirebase.then(([{ auth }, { onAuthStateChanged }]) => {
+    onAuthStateChanged(auth, async (utilisateur) => {
+      if (!utilisateur) {
+        memoriserEtat(null);
+        afficherEtat(null);
+        return;
+      }
+      const resultatToken = await utilisateur.getIdTokenResult();
+      const role = resultatToken.claims.admin === true || resultatToken.claims.enseignant === true ? 'enseignant' : 'eleve';
+      memoriserEtat(role);
+      afficherEtat(role, identifiantAffichable(utilisateur));
+    });
+  }).catch((erreur) => console.warn('Navigation : Firebase indisponible.', erreur));
 }
