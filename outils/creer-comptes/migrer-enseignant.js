@@ -66,8 +66,9 @@ async function main() {
   const utilisateur = await getAuth().getUserByEmail(email.trim().toLowerCase());
   const claims = utilisateur.customClaims || {};
   if (claims.enseignant !== true) {
-    console.error(`Le compte ${email} n'a pas le droit "enseignant". Le lui accorder d'abord : node creer-comptes.js --admin <email> <mot-de-passe>`);
-    process.exit(1);
+    const consigne = `Le compte ${email} n'a pas encore le droit "enseignant" (le lui accorder avant d'appliquer : node creer-comptes.js --admin ${email})`;
+    if (appliquer) { console.error(`${consigne}.`); process.exit(1); }
+    console.log(`ATTENTION : ${consigne}. La simulation continue, l'application sera refusee tant que ce n'est pas fait.\n`);
   }
   console.log(`Enseignant : ${email} (uid ${utilisateur.uid})${appliquer ? '' : ' -- SIMULATION, rien n\'est modifie'}\n`);
 

@@ -8,7 +8,9 @@ const env = await initializeTestEnvironment({
 });
 const anonyme = env.unauthenticatedContext().firestore();
 const eleve = env.authenticatedContext('eleve1').firestore();
-const prof = env.authenticatedContext('prof', { admin: true }).firestore();
+const prof = env.authenticatedContext('prof', { admin: true, enseignant: true }).firestore();
+// Depuis le 27/10/2026, le droit admin ne donne plus acces aux eleves : prof lit eleve1 en tant que SON enseignant.
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'eleves/eleve1'), { pseudo: 'e1', enseignant: 'prof' }); });
 const ID = '2026-10-03_2';
 let ok = 0, ko = 0;
 async function cas(nom, attendu, promesse) {
@@ -110,6 +112,10 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, 'devoirs/dA2'), { titre: 'A2', classe: '2nde1', enseignant: 'profA' });
   await setDoc(doc(d, 'devoirs/dB'), { titre: 'B', classe: '2nde1', enseignant: 'profB' });
   await setDoc(doc(d, 'devoirs/dL'), { titre: 'legacy', classe: '2nde1' });
+  await setDoc(doc(d, 'eleves/eD1'), { pseudo: 'd1', classe: '2nde3', enseignant: 'david' });
+  await setDoc(doc(d, 'eleves/eD1/devoirsTentatives/tD1'), { devoirId: 'dD', score: 2 });
+  await setDoc(doc(d, 'devoirs/dD'), { titre: 'D', classe: '2nde3', enseignant: 'david' });
+  await setDoc(doc(d, 'devoirs/dD2'), { titre: 'D2', classe: '2nde3', enseignant: 'david' });
 });
 const profA = env.authenticatedContext('profA', { enseignant: true }).firestore();
 const profB = env.authenticatedContext('profB', { enseignant: true }).firestore();
@@ -175,16 +181,38 @@ console.log('  Statistiques de fréquentation : réservées à l\'admin');
 await cas('enseignant A : ne lit pas la fréquentation', false, getDoc(doc(profA, 'statistiques', ID)));
 await cas('enseignant A : ne liste pas la fréquentation', false, getDocs(collection(profA, 'statistiques')));
 
-console.log('  Administrateur (David : admin + enseignant)');
-await cas('admin : lit le profil de l\'élève de A', true, getDoc(doc(david, 'eleves/eA1')));
-await cas('admin : liste tous les élèves', true, getDocs(collection(david, 'eleves')));
-await cas('admin : lit un élève sans enseignant', true, getDoc(doc(david, 'eleves/eL')));
-await cas('admin : lit les tentatives d\'un élève de B', true, getDocs(collection(david, 'eleves/eB1/devoirsTentatives')));
-await cas('admin : modifie le devoir de A', true, updateDoc(doc(david, 'devoirs/dA'), { titre: 'par admin' }));
-await cas('admin : modifie un devoir sans enseignant', true, updateDoc(doc(david, 'devoirs/dL'), { enseignant: 'david' }));
-await cas('admin : supprime le devoir de B', true, deleteDoc(doc(david, 'devoirs/dB')));
-await cas('admin : crée un devoir à son nom', true, setDoc(doc(david, 'devoirs/nouvD'), { titre: 'n', classe: '2nde1', enseignant: 'david' }));
-await cas('admin : lit la fréquentation', true, getDoc(doc(david, 'statistiques', ID)));
+console.log('  Droit admin seul : fréquentation uniquement, aucun accès aux élèves ni aux devoirs');
+const adminSeul = env.authenticatedContext('adminSeul', { admin: true }).firestore();
+await cas('admin seul : lit la fréquentation', true, getDoc(doc(adminSeul, 'statistiques', ID)));
+await cas('admin seul : liste la fréquentation', true, getDocs(collection(adminSeul, 'statistiques')));
+await cas('admin seul : supprime une fréquentation', true, deleteDoc(doc(adminSeul, 'statistiques', '2026-10-04_0')));
+await cas("admin seul : ne lit pas le profil d'un élève", false, getDoc(doc(adminSeul, 'eleves/eA1')));
+await cas('admin seul : ne liste pas les élèves', false, getDocs(collection(adminSeul, 'eleves')));
+await cas("admin seul : ne lit pas les tentatives d'un élève", false, getDocs(collection(adminSeul, 'eleves/eB1/devoirsTentatives')));
+await cas("admin seul : n'écrit pas un profil", false, setDoc(doc(adminSeul, 'eleves/eA1'), { pseudo: 'x' }));
+await cas('admin seul : ne supprime pas une tentative', false, deleteDoc(doc(adminSeul, 'eleves/eA1/devoirsTentatives/tA1bis')));
+await cas('admin seul : ne modifie pas un devoir', false, updateDoc(doc(adminSeul, 'devoirs/dA'), { titre: 'par admin' }));
+await cas('admin seul : ne supprime pas un devoir', false, deleteDoc(doc(adminSeul, 'devoirs/dB')));
+await cas('admin seul : ne crée pas de devoir', false, setDoc(doc(adminSeul, 'devoirs/nouvAdmin'), { titre: 'n', classe: '2nde1', enseignant: 'adminSeul' }));
+
+console.log('  David (admin + enseignant) : ses élèves et ses devoirs, la fréquentation, rien de plus');
+await cas('david : lit la fréquentation', true, getDoc(doc(david, 'statistiques', ID)));
+await cas('david : lit le profil de son élève', true, getDoc(doc(david, 'eleves/eD1')));
+await cas('david : liste ses élèves', true, getDocs(query(collection(david, 'eleves'), where('enseignant', '==', 'david'))));
+await cas('david : liste de tous les élèves refusée', false, getDocs(collection(david, 'eleves')));
+await cas('david : lit les tentatives de son élève', true, getDocs(collection(david, 'eleves/eD1/devoirsTentatives')));
+await cas("david : ne lit pas le profil d'un élève de A", false, getDoc(doc(david, 'eleves/eA1')));
+await cas("david : ne lit pas les tentatives d'un élève de B", false, getDocs(collection(david, 'eleves/eB1/devoirsTentatives')));
+await cas('david : ne lit pas un élève sans enseignant', false, getDoc(doc(david, 'eleves/eL')));
+await cas("david : n'écrit pas un profil", false, setDoc(doc(david, 'eleves/eD1'), { pseudo: 'x', enseignant: 'david' }));
+await cas('david : ne modifie pas le devoir de A', false, updateDoc(doc(david, 'devoirs/dA'), { titre: 'par david' }));
+await cas('david : ne supprime pas le devoir de B', false, deleteDoc(doc(david, 'devoirs/dB')));
+await cas('david : ne modifie pas un devoir sans enseignant', false, updateDoc(doc(david, 'devoirs/dL'), { titre: 'x' }));
+await cas('david : crée un devoir à son nom', true, setDoc(doc(david, 'devoirs/nouvD'), { titre: 'n', classe: '2nde3', enseignant: 'david' }));
+await cas('david : crée un devoir au nom de B', false, setDoc(doc(david, 'devoirs/fauxD'), { titre: 'n', classe: '2nde3', enseignant: 'profB' }));
+await cas('david : modifie son devoir', true, updateDoc(doc(david, 'devoirs/dD'), { titre: 'D modifié' }));
+await cas('david : supprime son devoir', true, deleteDoc(doc(david, 'devoirs/dD2')));
+await cas('david : supprime une tentative de son élève', true, deleteDoc(doc(david, 'eleves/eD1/devoirsTentatives/tD1')));
 
 function profA_uid() { return 'profA'; }
 

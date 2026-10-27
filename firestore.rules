@@ -36,7 +36,11 @@
 // outils/creer-comptes, SDK Admin, qui ignore ces règles). Les droits sont des
 // custom claims posés par ce même script — pas des UID codés en dur, pour ne pas
 // casser les règles si un compte est recréé :
-//   admin       David : voit et gère tout (élèves, devoirs, fréquentation).
+//   admin       David : fréquentation du site (statistiques) uniquement. Depuis le
+//               27/10/2026 ce droit ne donne AUCUN accès, depuis le site, aux élèves
+//               ni aux devoirs des enseignants (les siens, il les a par « enseignant »).
+//               Les scripts et la console Firebase (SDK Admin) ignorent ces règles :
+//               c'est la seule porte vers les données des collègues, volontaire.
 //   enseignant  un enseignant (invité) : ne voit et ne gère que SES élèves et
 //               SES devoirs. David a les deux claims.
 // Propriété (multi-enseignants, 26/10/2026) : le champ « enseignant » (uid de
@@ -69,17 +73,16 @@ service cloud.firestore {
     }
 
     function accesEleve(uid) {
-      return estProprietaire(uid) || estAdmin() || estSonEnseignant(uid);
+      return estProprietaire(uid) || estSonEnseignant(uid);
     }
 
     match /eleves/{uid} {
-      // Profil : l'élève lit le sien, l'admin lit/écrit tout (création en masse
-      // mise à part, gérée par le SDK Admin qui contourne ces règles), un
-      // enseignant lit les profils de ses élèves seulement (jamais d'écriture :
-      // les comptes élèves sont créés par l'admin).
-      allow read: if estProprietaire(uid) || estAdmin()
+      // Profil : l'élève lit le sien, un enseignant lit les profils de SES élèves
+      // seulement. Aucune écriture depuis le site : les comptes sont créés et
+      // modifiés par les scripts (SDK Admin, qui contourne ces règles).
+      allow read: if estProprietaire(uid)
         || (estEnseignant() && resource.data.enseignant == request.auth.uid);
-      allow write: if estAdmin();
+      allow write: if false;
 
       match /tentatives/{tentativeId} {
         // Journal d'usage : l'élève ajoute ses propres tentatives, personne
@@ -88,7 +91,7 @@ service cloud.firestore {
         allow read: if accesEleve(uid);
         allow create: if estProprietaire(uid);
         allow update: if false;
-        allow delete: if estAdmin() || estSonEnseignant(uid);
+        allow delete: if estSonEnseignant(uid);
       }
 
       match /connexions/{connexionId} {
@@ -98,7 +101,7 @@ service cloud.firestore {
         allow read: if accesEleve(uid);
         allow create: if estProprietaire(uid);
         allow update: if false;
-        allow delete: if estAdmin() || estSonEnseignant(uid);
+        allow delete: if estSonEnseignant(uid);
       }
 
       match /automatismes/{automatismeId} {
@@ -107,7 +110,7 @@ service cloud.firestore {
         allow read: if accesEleve(uid);
         allow create: if estProprietaire(uid);
         allow update: if false;
-        allow delete: if estAdmin() || estSonEnseignant(uid);
+        allow delete: if estSonEnseignant(uid);
       }
 
       match /brouillons/{ficheId} {
@@ -134,7 +137,7 @@ service cloud.firestore {
         // l'eleve, comme les journaux ci-dessus.
         allow read: if accesEleve(uid);
         allow create, update: if estProprietaire(uid);
-        allow delete: if estAdmin() || estSonEnseignant(uid);
+        allow delete: if estSonEnseignant(uid);
       }
 
       match /devoirsTentatives/{tentativeId} {
@@ -145,7 +148,7 @@ service cloud.firestore {
         allow read: if accesEleve(uid);
         allow create: if estProprietaire(uid);
         allow update: if false;
-        allow delete: if estAdmin() || estSonEnseignant(uid);
+        allow delete: if estSonEnseignant(uid);
       }
 
       match /devoirsMasques/{devoirId} {
@@ -158,7 +161,7 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['masqueLe'])
           && request.resource.data.masqueLe == request.time;
         allow update: if false;
-        allow delete: if estProprietaire(uid) || estAdmin() || estSonEnseignant(uid);
+        allow delete: if estProprietaire(uid) || estSonEnseignant(uid);
       }
     }
 
@@ -168,15 +171,12 @@ service cloud.firestore {
       // l'enseignant propriétaire et à ses élèves quand tous les navigateurs
       // auront rechargé le site (les pages filtrent déjà par enseignant).
       allow read: if request.auth != null;
-      // Écriture : l'admin pour tout ; un enseignant seulement pour SES devoirs
-      // (champ enseignant = son uid, à la création comme ensuite).
-      allow create: if estAdmin()
-        || (estEnseignant() && request.resource.data.enseignant == request.auth.uid);
-      allow update: if estAdmin()
-        || (estEnseignant() && resource.data.enseignant == request.auth.uid
-            && request.resource.data.enseignant == request.auth.uid);
-      allow delete: if estAdmin()
-        || (estEnseignant() && resource.data.enseignant == request.auth.uid);
+      // Écriture : un enseignant seulement pour SES devoirs (champ enseignant =
+      // son uid, à la création comme ensuite). Le droit admin n'y change rien.
+      allow create: if estEnseignant() && request.resource.data.enseignant == request.auth.uid;
+      allow update: if estEnseignant() && resource.data.enseignant == request.auth.uid
+        && request.resource.data.enseignant == request.auth.uid;
+      allow delete: if estEnseignant() && resource.data.enseignant == request.auth.uid;
     }
 
     // ---------- Fréquentation anonyme (03/10/2026) ----------
