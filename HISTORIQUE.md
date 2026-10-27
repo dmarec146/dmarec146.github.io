@@ -9232,3 +9232,9 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
 - Aucun changement de code du site nécessaire : toutes les requêtes de devoirs filtraient déjà par `enseignant` (devoirs-eleve.js, suivi.js x3, devoirs.js). Vérifié en production avant : 100 élèves sur 100 et 12 devoirs sur 12 portent `enseignant` ; aucun compte sans profil ni droit.
 - Test : 154 cas réussis sur l’émulateur (131 + 23 nouveaux : élève de A / de B / sans enseignant, requêtes de liste avec et sans filtre, enseignant A/B, admin seul, david, compte sans profil).
 - Comptes de test `davidmrc92@gmail.com` supprimés (compte, 3 élèves, 2 devoirs) avec `supprimer-enseignant.js --oui`. Dossier local d’étiquettes : PDF verrouillés au moment de la suppression, à effacer à la main.
+
+
+### 28/10/2026 (soir) — fiches : icônes du compte à droite, bouton Accueil en bas
+
+- Sur une fiche de calcul, les icônes du compte (grille, profil) se collaient contre « Sommaire » en mode devoir (les autres boutons de la barre étant masqués). nav-auth.js leur donne maintenant `margin-left:auto` dans la barre d’une fiche : elles restent à l’extrémité droite, comme dans l’en-tête des autres pages. Sans effet hors mode devoir (les boutons étirés les repoussaient déjà à droite).
+- Nouveau bouton « Accueil » (`.nav-btn-accueil`, lien `../../../index.html`) dans la barre du BAS de page des 50 fiches, juste après « Sommaire » ; ordinateur seulement (masqué sous 760 px) ; reste visible en mode devoir (exclu de la règle qui masque les autres boutons). Ajout par script (CRLF conservés), 50 fiches sur 50 de structure identique. Vérifié dans le navigateur (1280 px et 400 px, mode devoir simulé).

@@ -140,7 +140,12 @@ if (cible) {
   lienTableau.innerHTML = ICONE_TABLEAU_DE_BORD;
   lienTableau.dataset.navAuth = 'true';
   if (nav) lienTableau.className = 'nav-icone-profil';
-  else styliserCommeIconeCompacte(lienTableau);
+  else {
+    styliserCommeIconeCompacte(lienTableau);
+    // Sur une fiche, les icones du compte vont a l'extremite droite de la barre, comme dans l'en-tete des autres pages
+    // (28/10/2026) : sans cela, en mode devoir (les autres boutons masques) elles se collaient contre « Sommaire ».
+    lienTableau.style.marginLeft = 'auto';
+  }
   lienTableau.style.visibility = 'hidden';
   cible.appendChild(lienTableau);
 
