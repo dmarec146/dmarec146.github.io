@@ -214,6 +214,7 @@ if (cible) {
     onAuthStateChanged(auth, async (utilisateur) => {
       if (!utilisateur) {
         memoriserEtat(null);
+        try { window.localStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ }
         // Pendant une deconnexion volontaire, la barre reste telle quelle jusqu'au changement de page.
         if (!window.__deconnexionEnCours) afficherEtat(null);
         return;
@@ -221,6 +222,7 @@ if (cible) {
       const resultatToken = await utilisateur.getIdTokenResult();
       const role = resultatToken.claims.admin === true || resultatToken.claims.enseignant === true ? 'enseignant' : 'eleve';
       memoriserEtat(role);
+      if (resultatToken.claims.admin !== true) { try { window.localStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ } }
       afficherEtat(role, identifiantAffichable(utilisateur));
     });
   }).catch((erreur) => console.warn('Navigation : Firebase indisponible.', erreur));
