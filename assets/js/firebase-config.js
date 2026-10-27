@@ -43,6 +43,7 @@ const app = initializeApp(MODE_EMULATEUR
   ? { apiKey: 'cle-emulateur', authDomain: 'localhost', projectId: 'demo-cahiers' }
   : firebaseConfig);
 
+export { app, MODE_EMULATEUR };
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 

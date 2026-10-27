@@ -33,16 +33,18 @@ const FICHIER_CONFIG = path.join(RACINE, 'firebase.test-local.json');
 // ---- Emulateurs -----------------------------------------------------------
 fs.writeFileSync(FICHIER_CONFIG, JSON.stringify({
   firestore: { rules: 'firestore.rules' },
+  functions: { source: 'functions' },
   emulators: {
     auth: { host: '127.0.0.1', port: 9099 },
     firestore: { host: '127.0.0.1', port: 8080 },
+    functions: { host: '127.0.0.1', port: 5001 },
     ui: { enabled: false },
   },
 }, null, 2));
 
 const bin = path.join(RACINE, 'outils', 'verification', 'regles-firestore', 'node_modules', '.bin',
   process.platform === 'win32' ? 'firebase.cmd' : 'firebase');
-const emulateurs = spawn(bin, ['emulators:start', '--only', 'auth,firestore', '--project', 'demo-cahiers',
+const emulateurs = spawn(bin, ['emulators:start', '--only', 'auth,firestore,functions', '--project', 'demo-cahiers',
   '--config', FICHIER_CONFIG], { cwd: RACINE, shell: process.platform === 'win32' });
 
 let pret = false;

@@ -105,10 +105,12 @@ function detecterSeparateur(entete) {
 }
 
 function lireCsvEleves(cheminCsv) {
-  const lignes = fs.readFileSync(cheminCsv, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  // Excel enregistre un « CSV UTF-8 » avec un BOM en tete : sans ce retrait, la premiere colonne ne serait pas reconnue.
+  const lignes = fs.readFileSync(cheminCsv, 'utf8').replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const [entete, ...reste] = lignes;
   const sep = detecterSeparateur(entete);
-  const colonnes = entete.split(sep).map(c => c.trim().toLowerCase());
+  // En-tetes sans tenir compte de la casse ni des accents : « Prénom » = « prenom » (modele donne aux enseignants).
+  const colonnes = entete.split(sep).map(c => c.trim().toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, ''));
   const iClasse = colonnes.indexOf('classe');
   const iPseudo = colonnes.indexOf('pseudo');
   const iPrenom = colonnes.indexOf('prenom');
@@ -383,4 +385,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant };
+module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant, lireCsvEleves };
