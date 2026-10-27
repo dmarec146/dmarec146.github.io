@@ -72,6 +72,19 @@ const barreNav = nav ? null : document.querySelector('.barre-navigation');
 const cible = nav || barreNav;
 
 if (cible) {
+  // Style de l'etat « connecte » du bouton profil, injecte ici pour couvrir les deux cibles (.site-nav et
+  // .barre-navigation des fiches, qui n'ont pas la meme feuille de style) : fond plein de la couleur d'accent
+  // du site, icone blanche, point vert avec liseré blanc en bas a droite. Hors connexion, l'icone garde son
+  // contour habituel. Les !important l'emportent sur le survol et sur les styles propres a chaque fiche.
+  const styleConnecte = document.createElement('style');
+  styleConnecte.textContent =
+    'button[data-nav-auth][data-connecte]{position:relative;background:var(--accent,var(--bleu,#4B46C7))!important;' +
+    'color:#fff!important;border-color:var(--accent,var(--bleu,#4B46C7))!important}' +
+    'button[data-nav-auth][data-connecte]:hover{filter:brightness(1.1)}' +
+    'button[data-nav-auth][data-connecte]::after{content:"";position:absolute;right:4px;bottom:4px;width:10px;height:10px;' +
+    'border-radius:50%;background:#2fbf71;border:2px solid #fff;box-sizing:border-box}';
+  document.head.appendChild(styleConnecte);
+
   // Icone Tableau de bord : creee et inseree tout de suite (comme le bouton
   // profil ci-dessous) -- reste admin uniquement, n'apparait donc jamais
   // pour la tres grande majorite des visiteurs. La rendre visible plus tard
@@ -130,6 +143,8 @@ if (cible) {
     bouton.onclick = null;
 
     if (!utilisateur) {
+      delete bouton.dataset.connecte;
+      lienTableau.style.visibility = 'hidden'; // l'icone des devoirs n'existe que connecte
       bouton.title = 'Connexion';
       bouton.setAttribute('aria-label', 'Connexion');
       bouton.onclick = () => { window.location.href = '/connexion/'; };
@@ -137,16 +152,30 @@ if (cible) {
     }
 
     const resultatToken = await utilisateur.getIdTokenResult();
-    // Tableau de bord : administrateur ou enseignant (chacun ne voit que ses élèves).
-    if (resultatToken.claims.admin === true || resultatToken.claims.enseignant === true) {
-      // 'inline-flex' explicite (pas '' pour retomber sur la regle CSS) :
-      // pour la variante barre-navigation, le display vient d'un style EN
-      // LIGNE pose par styliserCommeIconeCompacte, pas d'une classe -- vider
-      // style.display retomberait sur le display par defaut d'un <a>
-      // (inline), sans les proprietes flex de centrage.
-      lienTableau.style.display = 'inline-flex';
-      lienTableau.style.visibility = 'visible';
-    }
+    // Une seule icone « grille » pour tout compte connecte, deux destinations (27/10/2026) :
+    // - administrateur ou enseignant -> tableau de bord (chacun ne voit que ses eleves) ;
+    // - tout autre compte connecte, donc un eleve -> sa page « Mes devoirs », qui reste ainsi
+    //   joignable meme quand plus aucun devoir n'est en cours (le bloc « Devoirs » sous l'en-tete,
+    //   lui, n'apparait que s'il reste au moins un devoir : voir devoirs-notification.js).
+    const estEnseignant = resultatToken.claims.admin === true || resultatToken.claims.enseignant === true;
+    // Destination posee a chaque changement d'etat (pas seulement pour un eleve) : un changement de compte sans
+    // rechargement de la page ne doit pas laisser la destination du compte precedent.
+    const destination = estEnseignant
+      ? { href: '/tableau-de-bord/devoirs.html', titre: 'Tableau de bord' }
+      : { href: '/mes-devoirs/', titre: 'Mes devoirs' };
+    lienTableau.href = destination.href;
+    lienTableau.title = destination.titre;
+    lienTableau.setAttribute('aria-label', destination.titre);
+    // 'inline-flex' explicite (pas '' pour retomber sur la regle CSS) :
+    // pour la variante barre-navigation, le display vient d'un style EN
+    // LIGNE pose par styliserCommeIconeCompacte, pas d'une classe -- vider
+    // style.display retomberait sur le display par defaut d'un <a>
+    // (inline), sans les proprietes flex de centrage.
+    lienTableau.style.display = 'inline-flex';
+    lienTableau.style.visibility = 'visible';
+
+    // Etat « connecte » visible sans survol (27/10/2026) : le bouton profil se remplit et recoit un point vert.
+    bouton.dataset.connecte = 'true';
 
     const identifiant = identifiantAffichable(utilisateur);
     bouton.title = identifiant ? `Se déconnecter (${identifiant})` : 'Se déconnecter';
