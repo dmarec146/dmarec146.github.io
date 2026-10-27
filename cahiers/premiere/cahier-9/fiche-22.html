@@ -2143,6 +2143,13 @@ function mettreAJourEtatBoutons() {
   if (boutonRecommencer) boutonRecommencer.hidden = eleveConnecte && !!etatDevoir;
   const boutonValider = document.getElementById('btn-valider');
   if (boutonValider) boutonValider.disabled = !!(etatDevoir && (etatDevoir.bloque || ficheValidee));
+  // Derniere tentative validee (27/10/2026) : la fiche reste affichee, mais plus aucune nouvelle version possible.
+  const boutonGenerer = document.querySelector('button[onclick="genererNouvelleFiche()"]');
+  if (boutonGenerer) {
+    const epuise = !!(etatDevoir && etatDevoir.bloque);
+    boutonGenerer.disabled = epuise;
+    boutonGenerer.title = epuise ? "Toutes tes tentatives sont utilisées : pour t'entraîner, rouvre la fiche depuis le menu." : '';
+  }
   const zoneEnregistrer = document.getElementById('zone-enregistrer');
   // !etatDevoir : ne jamais reafficher "Enregistrer" hors devoir (29/09/2026)
   // -- avant ce garde, un eleve connecte en entrainement le voyait
@@ -2169,6 +2176,10 @@ function mettreAJourInfoDevoir() {
   if (devoirTermine) {
     zone.textContent = `Devoir « ${devoirTermine.titre} » : tu as utilisé tes ${devoirTermine.nbEssaisMax} tentatives — ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`;
   } else {
+    if (etatDevoir.bloque) {
+      zone.textContent = `Devoir « ${etatDevoir.titre} » : tu as utilisé ${etatDevoir.nbEssaisMax > 1 ? `tes ${etatDevoir.nbEssaisMax} tentatives` : 'ta tentative'} — ta meilleure note a été retenue. Cette fiche reste affichée avec sa note ; pour t'entraîner, rouvre la fiche depuis le menu.` + DevoirPartiel.phrase();
+      return;
+    }
     zone.textContent = `Devoir « ${etatDevoir.titre} » — ${etatDevoir.essaisUtilises} / ${etatDevoir.nbEssaisMax} tentative${etatDevoir.essaisUtilises > 1 ? 's' : ''} utilisée${etatDevoir.essaisUtilises > 1 ? 's' : ''}, à rendre avant le ${formaterEcheanceDevoir(etatDevoir.echeance)}.` + DevoirPartiel.phrase();
   }
 }
@@ -2427,8 +2438,11 @@ async function validerFicheActuelle() {
       etatDevoir.essaisUtilises += 1;
       if (etatDevoir.essaisUtilises >= etatDevoir.nbEssaisMax) {
         etatDevoir.bloque = true;
-        afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatDevoir.titre} », ${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax}). Ta meilleure note a été retenue. Tu peux continuer à t'entraîner librement.`);
-        passerEnEntrainementLibre();
+        afficherModaleDevoir(`C'était ta dernière tentative autorisée pour ce devoir (« ${etatDevoir.titre} », ${etatDevoir.essaisUtilises}/${etatDevoir.nbEssaisMax}). Ta meilleure note a été retenue. Cette fiche reste affichée avec sa note et sa correction ; pour t'entraîner, rouvre la fiche depuis le menu.`);
+        // Plus de passage en entrainement libre ici (27/10/2026, demande de David) : la fiche du devoir reste a l'ecran,
+        // notee et corrigeable comme apres une premiere tentative ; seule "Generer une nouvelle version" est desactivee
+        // (voir mettreAJourEtatBoutons). Recharger la fiche donne l'entrainement libre (voir initialiserFiche).
+        mettreAJourEtatBoutons();
       } else {
         mettreAJourEtatBoutons();
       }
@@ -2799,6 +2813,7 @@ function reinitialiser() {
 }
 
 async function genererNouvelleFiche() {
+  if (etatDevoir && etatDevoir.bloque) return; // toutes les tentatives sont utilisees : la fiche du devoir reste affichee (27/10/2026)
   // En devoir, "Recommencer" a disparu (30/09/2026) : generer une nouvelle
   // version est desormais le SEUL moyen de rejouer, et demarre une nouvelle
   // tentative -- l'eleve doit le savoir avant de perdre sa fiche actuelle

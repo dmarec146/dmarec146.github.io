@@ -50,7 +50,13 @@ onAuthStateChanged(auth, async (utilisateur) => {
     if (!resultat) return; // pas un profil eleve (ex. compte admin)
     if (resultat.nbDevoirs === 0) return; // jamais aucun devoir attribue
 
-    afficherBloc(resultat.aFaire.length + resultat.enregistres.length);
+    // Le bouton n'a d'utilite que tant qu'il reste au moins un devoir a faire ou enregistre (27/10/2026, demande de
+    // David) : quand tous sont « faits » (tentatives epuisees ou echeance passee, meme si l'echeance n'est pas
+    // atteinte), il disparait ; l'icone « Mes devoirs » en haut a droite (nav-auth.js) donne toujours acces aux notes.
+    const aTraiter = resultat.aFaire.length + resultat.enregistres.length;
+    if (aTraiter === 0) return;
+
+    afficherBloc(aTraiter);
   } catch (erreur) {
     console.warn('Devoirs : vérification impossible.', erreur);
   }

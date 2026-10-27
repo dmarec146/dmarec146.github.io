@@ -451,7 +451,20 @@
     }
   }
 
+  // Devoir dont la DERNIERE tentative vient d'etre validee (27/10/2026, demande de David) : la serie reste
+  // affichee, corrigee et notee, comme apres une premiere tentative, mais plus aucune nouvelle serie n'est
+  // possible (boutons « Nouvelle ... » inactifs). Pour s'entrainer, l'eleve rouvre la page depuis le menu.
+  // Remplace leverVerrouille(), qui rendait aussitot la main sur toute la page.
+  const devoirEpuise = () => !!(ETAT.config.verrouille && ETAT.config.verrouille.epuise);
+  const TITRE_DEVOIR_EPUISE = "Toutes tes tentatives sont utilisées : pour t'entraîner, rouvre la page depuis le menu.";
+  function epuiserDevoir() {
+    if (!ETAT.config.verrouille) return;
+    ETAT.config.verrouille.epuise = true;
+    rendre();
+  }
+
   function nouvelleSerie() {
+    if (devoirEpuise()) return;
     arreterChrono();
     supprimerBrouillonDevoirSiApplicable();
     ETAT.questions = tirerSerie(ETAT.config, ETAT.niveau);
@@ -465,6 +478,7 @@
 
   // nouvelle série, mêmes thèmes que la série actuelle (mode fiche à plusieurs thèmes uniquement)
   function nouvelleSerieMemeThemes() {
+    if (devoirEpuise()) return;
     arreterChrono();
     supprimerBrouillonDevoirSiApplicable();
     const ids = ETAT.questions.themesIds;
@@ -586,6 +600,14 @@
     const essaisTxt = (v.nbEssaisMax !== undefined && v.essaisUtilises !== undefined)
       ? `<span class="mode-verrouille-resume">Tentatives utilisées : ${v.essaisUtilises} / ${v.nbEssaisMax}</span>`
       : '';
+    if (v.epuise) {
+      return `<div class="mode-panneau mode-panneau-verrouille">
+      <span class="mode-label">Devoir terminé — toutes tes tentatives sont utilisées</span>
+      <span class="mode-verrouille-resume">${'★'.repeat(ETAT.niveau)} Niveau ${ETAT.niveau} · ${modeTxt}${dureeTxt}</span>
+      ${essaisTxt}
+      <span class="mode-explication">${v.titre ? `« ${echapper(v.titre)} »` : 'Ce devoir'} : ta dernière série reste affichée avec sa note et sa correction. Pour t'entraîner, rouvre la page depuis le menu.</span>
+    </div>`;
+    }
     return `<div class="mode-panneau mode-panneau-verrouille">
       <span class="mode-label">Devoir en cours — niveau et mode imposés</span>
       <span class="mode-verrouille-resume">${'★'.repeat(ETAT.niveau)} Niveau ${ETAT.niveau} · ${modeTxt}${dureeTxt}</span>
@@ -865,8 +887,8 @@
       <div class="barre-controle">
         <button class="btn-principal" data-action="reponses" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>${revelees ? 'Masquer les réponses' : 'Voir toutes les réponses'}</button>
         ${boutonsControle}
-        ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes && !ETAT.config.masquerEtiquette ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
-        <button class="btn-secondaire" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
+        ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes && !ETAT.config.masquerEtiquette ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes" ${devoirEpuise() ? `disabled title="${TITRE_DEVOIR_EPUISE}"` : ''}>Nouvelle fiche (mêmes thèmes)</button>` : ''}
+        <button class="btn-secondaire" data-action="nouvelle" ${devoirEpuise() ? `disabled title="${TITRE_DEVOIR_EPUISE}"` : ''}>${echapper(ETAT.config.labelNouvelle)}</button>
       </div>`;
   }
 
@@ -1176,8 +1198,8 @@
       return `<div class="score-panneau visible" id="score-panneau">${scoreHTML()}
           <div class="barre-controle">
             <button class="btn-secondaire" data-action="basculer-revue" ${bloque ? `disabled title="${TITRE_CORRECTION_BLOQUEE}"` : ''}>Voir la correction détaillée</button>
-            ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes && !ETAT.config.masquerEtiquette ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes">Nouvelle fiche (mêmes thèmes)</button>` : ''}
-            <button class="btn-principal" data-action="nouvelle">${echapper(ETAT.config.labelNouvelle)}</button>
+            ${ETAT.config.nbThemes && !ETAT.config.themeImpose && !ETAT.config.themesImposes && !ETAT.config.masquerEtiquette ? `<button class="btn-secondaire" data-action="nouvelle-memes-themes" ${devoirEpuise() ? `disabled title="${TITRE_DEVOIR_EPUISE}"` : ''}>Nouvelle fiche (mêmes thèmes)</button>` : ''}
+            <button class="btn-principal" data-action="nouvelle" ${devoirEpuise() ? `disabled title="${TITRE_DEVOIR_EPUISE}"` : ''}>${echapper(ETAT.config.labelNouvelle)}</button>
           </div>
         </div>
         <div class="liste-questions" id="revue" style="display:none">${cartes}</div>`;
@@ -1439,6 +1461,7 @@
     demarrer: demarrer,
     titreBanque: id => (banques[id] ? banques[id].titre : null),
     leverVerrouille: leverVerrouille,
+    epuiserDevoir: epuiserDevoir,
     etat: ETAT
   };
 })();
