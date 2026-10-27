@@ -9224,3 +9224,11 @@ Deuxième et troisième fiches du lot 14-15-16, sans devoir ouvert (relu dans Fi
 - Cartes réservées à l’administrateur (Fréquentation, Inviter) : elles clignotaient chez un enseignant au rechargement (visibles dans le HTML, cachées ensuite par le script). Désormais cachées par défaut en CSS (`.tdb-nav-carte[data-reserve-admin]:not(.admin-confirme)`), révélées par le script seulement une fois le jeton admin vérifié (devoirs.js, inviter.js, frequentation.js). Défaut d’affichage uniquement : la vraie protection reste le jeton (fonction serveur + règles Firestore).
 - Clignotement de la barre du haut à la déconnexion : `window.__deconnexionEnCours` posé par nav-auth.js avant `signOut` ; la barre ne bouge plus et les pages protégées (devoirs, inviter, frequentation, mes-devoirs) ne redirigent plus vers Connexion pendant ce temps. Vérifié par la syntaxe seulement ; à confirmer par David après publication.
 - Reste décidé : resserrer ensuite la lecture des devoirs (règle `allow read: if request.auth != null`).
+
+
+### 28/10/2026 — lecture des devoirs resserrée (règles Firestore)
+
+- Avant : `allow read: if request.auth != null` sur `devoirs/{id}` (provisoire) ; un élève ou un enseignant pouvait lire les devoirs de tous. Après : lecture réservée à l’enseignant propriétaire (`estEnseignant()` et `resource.data.enseignant == uid`) et aux élèves dont le profil porte le même `enseignant` (un `get()` sur `eleves/{uid}`). Ni compte sans profil, ni administrateur seul, ni élève d’un autre enseignant.
+- Aucun changement de code du site nécessaire : toutes les requêtes de devoirs filtraient déjà par `enseignant` (devoirs-eleve.js, suivi.js x3, devoirs.js). Vérifié en production avant : 100 élèves sur 100 et 12 devoirs sur 12 portent `enseignant` ; aucun compte sans profil ni droit.
+- Test : 154 cas réussis sur l’émulateur (131 + 23 nouveaux : élève de A / de B / sans enseignant, requêtes de liste avec et sans filtre, enseignant A/B, admin seul, david, compte sans profil).
+- Comptes de test `davidmrc92@gmail.com` supprimés (compte, 3 élèves, 2 devoirs) avec `supprimer-enseignant.js --oui`. Dossier local d’étiquettes : PDF verrouillés au moment de la suppression, à effacer à la main.

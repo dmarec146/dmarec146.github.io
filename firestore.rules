@@ -166,11 +166,14 @@ service cloud.firestore {
     }
 
     match /devoirs/{devoirId} {
-      // Lecture : tout compte connecté (un devoir ne contient aucune donnée
-      // personnelle : fiche, classe, échéance...). PROVISOIRE : à restreindre à
-      // l'enseignant propriétaire et à ses élèves quand tous les navigateurs
-      // auront rechargé le site (les pages filtrent déjà par enseignant).
-      allow read: if request.auth != null;
+      // Lecture (resserrée le 28/10/2026) : l'enseignant propriétaire, et les élèves
+      // DE CET enseignant (champ enseignant de leur profil, un seul get()). Les
+      // pages filtrent déjà par enseignant (where), ce que Firestore exige pour
+      // accepter une requête de liste. Ni un élève d'un autre enseignant, ni un
+      // compte sans profil, ni l'administrateur seul ne lisent les devoirs.
+      allow read: if estEnseignant() && resource.data.enseignant == request.auth.uid
+        || request.auth != null
+          && resource.data.enseignant == get(/databases/$(database)/documents/eleves/$(request.auth.uid)).data.enseignant;
       // Écriture : un enseignant seulement pour SES devoirs (champ enseignant =
       // son uid, à la création comme ensuite). Le droit admin n'y change rien.
       allow create: if estEnseignant() && request.resource.data.enseignant == request.auth.uid;

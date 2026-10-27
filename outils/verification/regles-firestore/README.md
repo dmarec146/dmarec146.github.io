@@ -24,7 +24,7 @@ Il faut un `firebase.json` à côté indiquant les règles et le port 8080 :
     { "firestore": { "rules": "../../../firestore.rules" },
       "emulators": { "firestore": { "port": 8080, "host": "127.0.0.1" }, "ui": { "enabled": false } } }
 
-Résultat attendu : « 131 réussis, 0 échecs » (29 cas initiaux + 16 pour
+Résultat attendu : « 154 réussis, 0 échecs » (131 jusqu'au 27/10/2026, + 23 pour la lecture des devoirs resserrée le 28/10/2026) (29 cas initiaux + 16 pour
 `devoirsMasques`, 04/10/2026, + 8 pour `s_qcm_bac`, 18/10/2026, + 59 pour les
 **plusieurs enseignants**, 26/10/2026 : chaque enseignant ne lit que les profils,
 journaux et brouillons de ses élèves, ne crée/modifie/supprime que ses devoirs,
