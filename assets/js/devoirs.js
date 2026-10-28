@@ -648,10 +648,12 @@ function afficherAccueilSansEleve() {
   const encadre = document.getElementById('dev-accueil');
   document.getElementById('dev-accueil-courriel').href = 'mailto:' + ADRESSE_ENVOI_LISTES
     + '?subject=' + encodeURIComponent('Liste de mes classes — Cahiers interactifs')
-    + '&body=' + encodeURIComponent(['Bonjour,', '', 'Vous trouverez ci-joint la liste de mes classes (colonnes Classe, Nom, Prénom).', '', 'Cordialement'].join('\r\n'));
+    + '&body=' + encodeURIComponent(['Bonjour,', '', 'Vous trouverez ci-joint la liste de mes classes (première ligne : mon adresse ; puis colonnes Classe, Nom, Prénom).', '', 'Cordialement'].join('\r\n'));
   document.getElementById('dev-accueil-modele').addEventListener('click', () => {
     // BOM + point-virgule : Excel en français l'ouvre directement, accents compris, une colonne par champ.
-    const lignes = ['Classe;Nom;Prénom', '2nde-207;EXEMPLE;Prénom1', '2nde-207;EXEMPLE;Prénom2', '1ere-Gr 1;EXEMPLE;Prénom3'];
+    // 1re ligne : l'enseignant (adresse de connexion déjà remplie : c'est elle qui rattache les élèves à son compte).
+    const adresse = (auth.currentUser && auth.currentUser.email) || 'votre.adresse@ac-creteil.fr';
+    const lignes = ['Enseignant;Votre nom (facultatif);' + adresse, 'Classe;Nom;Prénom', '2nde-207;EXEMPLE;Prénom1', '2nde-207;EXEMPLE;Prénom2', '1ere-Gr 1;EXEMPLE;Prénom3'];
     const fichier = new Blob(['\uFEFF' + lignes.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
     const lien = document.createElement('a');
     lien.href = URL.createObjectURL(fichier);

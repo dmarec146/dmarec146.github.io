@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { lireListe } = require('./liste-eleves.js');
 
 const CHEMIN_CLE_SERVICE = path.join(__dirname, 'service-account.json');
 // Choix assume : reste dans ce dossier (donc dans Google Drive, synchronise
@@ -97,20 +98,15 @@ function genererPseudosUniques(eleves) {
   });
 }
 
-// Excel en France enregistre/attend des CSV separes par ';' (la ',' est la
-// touche decimale) ; on accepte aussi ',' pour les fichiers ecrits a la main
-// ou par un autre outil. Detecte sur la ligne d'entete.
-function detecterSeparateur(entete) {
-  return entete.includes(';') ? ';' : ',';
-}
-
-function lireCsvEleves(cheminCsv) {
-  // Excel enregistre un « CSV UTF-8 » avec un BOM en tete : sans ce retrait, la premiere colonne ne serait pas reconnue.
-  const lignes = fs.readFileSync(cheminCsv, 'utf8').replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+// Lit la liste d'un enseignant (CSV ou Excel, voir liste-eleves.js) : renvoie { enseignant, eleves } ou `enseignant` est
+// { adresse, nom } d'apres la premiere ligne du fichier (null pour un ancien fichier sans cette ligne).
+// En-tetes sans tenir compte de la casse ni des accents : « Prénom » = « prenom » (modele donne aux enseignants).
+async function lireListeEleves(chemin) {
+  const { enseignant, lignes } = await lireListe(chemin);
+  if (!lignes.length) throw new Error('Le fichier ne contient aucun eleve.');
   const [entete, ...reste] = lignes;
-  const sep = detecterSeparateur(entete);
-  // En-tetes sans tenir compte de la casse ni des accents : « Prénom » = « prenom » (modele donne aux enseignants).
-  const colonnes = entete.split(sep).map(c => c.trim().toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, ''));
+  const decalage = enseignant ? 3 : 2;     // numero de la premiere ligne d'eleve dans le fichier, pour les messages d'erreur
+  const colonnes = entete.map(c => c.trim().toLowerCase().normalize('NFD').replace(MARQUES_DIACRITIQUES, ''));
   const iClasse = colonnes.indexOf('classe');
   const iPseudo = colonnes.indexOf('pseudo');
   const iPrenom = colonnes.indexOf('prenom');
@@ -119,31 +115,29 @@ function lireCsvEleves(cheminCsv) {
   // Colonne 'classe' obligatoire, mais sa valeur peut etre vide : eleve hors classe (rattache a
   // aucun niveau, donc suivi sur tous les niveaux dans le tableau de bord -- voir estHorsClasse
   // dans assets/js/tableau-de-bord.js). Aucun champ 'classe' n'est alors ecrit dans Firestore.
-  if (iClasse === -1) throw new Error("Le CSV doit avoir une colonne 'classe' (valeur vide autorisee pour un eleve hors classe).");
+  if (iClasse === -1) throw new Error("La liste doit avoir une colonne 'classe' (valeur vide autorisee pour un eleve hors classe).");
 
   if (iPseudo !== -1) {
     // Pseudo deja choisi par l'enseignant : utilise tel quel.
-    return reste.map((ligne, index) => {
-      const champs = ligne.split(sep).map(c => c.trim());
+    return { enseignant, eleves: reste.map((champs, index) => {
       const classe = champs[iClasse];
       const pseudo = champs[iPseudo];
-      if (!pseudo) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
+      if (!pseudo) throw new Error(`Ligne ${index + decalage} de la liste incomplete : "${champs.join(';')}"`);
       return { classe, pseudo };
-    });
+    }) };
   }
 
   if (iPrenom === -1 || iNom === -1) {
-    throw new Error("Le CSV doit avoir soit une colonne 'pseudo', soit les colonnes 'prenom' et 'nom'.");
+    throw new Error("La liste doit avoir soit une colonne 'pseudo', soit les colonnes 'prenom' et 'nom'.");
   }
-  const eleves = reste.map((ligne, index) => {
-    const champs = ligne.split(sep).map(c => c.trim());
+  const eleves = reste.map((champs, index) => {
     const classe = champs[iClasse];
     const prenom = champs[iPrenom];
     const nom = champs[iNom];
-    if (!prenom || !nom) throw new Error(`Ligne ${index + 2} du CSV incomplete : "${ligne}"`);
+    if (!prenom || !nom) throw new Error(`Ligne ${index + decalage} de la liste incomplete : "${champs.join(';')}"`);
     return { classe, prenom, nom };
   });
-  return genererPseudosUniques(eleves);
+  return { enseignant, eleves: genererPseudosUniques(eleves) };
 }
 
 // Compte d'un enseignant (claim "enseignant" ou "admin") retrouve par son
@@ -193,25 +187,43 @@ async function trouverPseudoLibre(pseudoSouhaite, eleve, enseignantUid, pseudoIm
   throw new Error(`Aucun pseudo libre trouve a partir de "${pseudoSouhaite}".`);
 }
 
-// Renvoie la liste des comptes crees [{ classe, pseudo, motDePasse, prenom, nom }] (vide si rien de nouveau).
+// Renvoie la liste des comptes crees [{ classe, pseudo, motDePasse, prenom, nom }] (vide si rien de nouveau), avec en plus la
+// propriete `enseignant` { adresse, nom } (adresse du compte, nom donne dans le fichier). Renvoie `null` si `confirme` est faux :
+// simple verification (aucun compte cree), qui affiche a qui seraient rattaches les eleves et ce qui serait cree.
+// L'adresse de l'enseignant est celle de la premiere ligne du fichier, ou --enseignant ; si les deux sont donnees, elles doivent
+// etre identiques.
 // ecrireCsv: false pour ne pas ecrire comptes-crees-<date>.csv (utilise par comptes-et-etiquettes.js, qui produit
 // ses propres fichiers dans un dossier par enseignant).
-async function creerComptesEleves(cheminCsv, emailEnseignant, { ecrireCsv = true } = {}) {
-  const eleves = lireCsvEleves(cheminCsv);
+async function creerComptesEleves(cheminListe, emailEnseignant, { ecrireCsv = true, confirme = true } = {}) {
+  const { enseignant: depuisFichier, eleves } = await lireListeEleves(cheminListe);
+  const demande = (emailEnseignant || '').trim().toLowerCase();
+  if (demande && depuisFichier && depuisFichier.adresse !== demande) {
+    throw new Error(`L'adresse de la premiere ligne du fichier (${depuisFichier.adresse}) ne correspond pas a celle demandee (${demande}) : rien n'a ete cree.`);
+  }
+  const email = demande || (depuisFichier && depuisFichier.adresse) || '';
+  if (!email) {
+    throw new Error("Aucune adresse d'enseignant : la premiere ligne du fichier doit la contenir (Enseignant ; Nom ; adresse), ou ajouter --enseignant=<adresse>.");
+  }
   const auth = getAuth();
   const db = getFirestore();
-  const enseignant = await trouverEnseignant(emailEnseignant);
+  const enseignant = await trouverEnseignant(email);
   const pseudoImpose = eleves.length > 0 && eleves.every((e) => !e.nom && !e.prenom);
   const resultats = [];
-  console.log(`Eleves rattaches a l'enseignant : ${enseignant.email}`);
+  const aCreer = [];
+  let dejaLa = 0;
+  const nomEnseignant = (depuisFichier && depuisFichier.nom) || null;
+  console.log(`Eleves rattaches a l'enseignant : ${enseignant.email}${nomEnseignant ? ` (${nomEnseignant})` : ''}`
+    + `${depuisFichier ? ' [adresse lue dans la premiere ligne du fichier]' : ' [adresse donnee en ligne de commande]'}`);
 
   for (const eleve of eleves) {
     const { classe, prenom, nom } = eleve;
     const { pseudo, existant } = await trouverPseudoLibre(eleve.pseudo, eleve, enseignant.uid, pseudoImpose);
     if (existant) {
       console.log(`Deja existant, ignore : ${pseudo}`);
+      dejaLa++;
       continue;
     }
+    if (!confirme) { aCreer.push({ classe, pseudo }); continue; }
 
     const motDePasse = genererMotDePasse();
     const utilisateur = await auth.createUser({ email: emailDepuisPseudo(pseudo), password: motDePasse });
@@ -229,6 +241,18 @@ async function creerComptesEleves(cheminCsv, emailEnseignant, { ecrireCsv = true
     resultats.push({ classe, pseudo, motDePasse, prenom, nom });
     console.log(`Cree : ${pseudo} (${classe || 'hors classe'})`);
   }
+
+  if (!confirme) {
+    const parClasse = new Map();
+    for (const e of aCreer) parClasse.set(e.classe || 'hors classe', (parClasse.get(e.classe || 'hors classe') || 0) + 1);
+    console.log(`\nVERIFICATION SEULEMENT, rien n'a ete cree. Les eleves ci-dessous seraient rattaches a ${enseignant.email}`
+      + `${nomEnseignant ? ` (${nomEnseignant})` : ''} :`);
+    for (const [classe, n] of parClasse) console.log(`  ${classe} : ${n} compte(s) a creer`);
+    if (!aCreer.length) console.log('  aucun compte a creer');
+    if (dejaLa) console.log(`  ${dejaLa} eleve(s) deja existant(s), ignore(s)`);
+    return null;
+  }
+  resultats.enseignant = { adresse: enseignant.email, nom: nomEnseignant };
 
   if (resultats.length === 0) {
     console.log('Aucun nouveau compte a creer.');
@@ -385,4 +409,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant, lireCsvEleves };
+module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant, lireListeEleves };

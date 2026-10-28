@@ -62,8 +62,39 @@ les crées pour lui (section suivante), à partir de la liste qu'il t'envoie.
 ## Élèves d'un collègue : comptes et étiquettes en une commande
 
 ```bash
-node comptes-et-etiquettes.js liste.csv --enseignant=collegue@ac-creteil.fr
+node comptes-et-etiquettes.js liste.xlsx          # 1. vérification : rien n'est créé
+node comptes-et-etiquettes.js liste.xlsx --oui    # 2. création
 ```
+
+**La liste** (CSV ou Excel `.xlsx`, première feuille) commence par une ligne
+pour l'enseignant, que le collègue remplit lui-même (le bouton « Télécharger
+le modèle » du tableau de bord la pré-remplit avec son adresse de connexion) :
+
+    Enseignant ; Marie Martin (facultatif) ; marie.martin@ac-creteil.fr
+    Classe ; Nom ; Prénom
+    2nde-207 ; BERNARD ; Léa
+    ...
+
+L'adresse (obligatoire) est la case de la première ligne qui contient un `@` ;
+l'ordre des cases n'a pas d'importance. Elle doit être celle d'un compte
+enseignant déjà invité, sinon rien n'est créé. Un ancien fichier sans cette
+ligne se lit encore, avec `--enseignant=<adresse>` ; si les deux sont donnés
+et diffèrent, rien n'est créé. **Sans `--oui`**, la commande affiche à quelle adresse (et
+quel nom) les élèves seraient rattachés et ce qui serait créé : à
+contrôler (l'adresse écrite dans un fichier est une déclaration du collègue,
+une faute de frappe pourrait désigner un autre collègue invité), puis relancer
+avec `--oui`.
+
+**Courriel au collègue** : avec `--oui`, un courriel « Vos classes sont en
+ligne » (classes et nombre d'élèves, mode d'emploi de la connexion, lien du
+guide) part de `contact@cahiers-interactifs.fr`, sans identifiant ni mot de
+passe d'élève (les étiquettes sont envoyées à part). Les réglages de la boîte
+(serveur sortant OVH, mot de passe) sont dans `courriel.json` (copie de
+`courriel.exemple.json`, **jamais commité** : `.gitignore`) ; sans ce fichier
+ou sans mot de passe, le courriel n'est pas envoyé et le script le dit.
+`--sans-courriel` pour ne pas l'envoyer. Essai de la boîte d'envoi sans rien
+créer : `node envoyer-courriel-test.js <adresse>`. Test des lectures et de la
+vérification : `test-liste.js` (émulateurs, voir son en-tête).
 
 Crée les comptes **nouveaux** (comme `creer-comptes.js`), puis fabrique les
 étiquettes et range tout dans un dossier au nom de l'enseignant :
