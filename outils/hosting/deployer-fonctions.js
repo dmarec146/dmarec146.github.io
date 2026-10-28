@@ -29,7 +29,7 @@ fs.writeFileSync(CONFIG, JSON.stringify({
     source: 'functions',
     codebase: 'default',
     runtime: 'nodejs22',
-    ignore: ['node_modules', '.git', 'test-invitation.js', '*.log'],
+    ignore: ['node_modules', '.git', 'test-invitation.js', 'test-liste-enseignants.js', '*.log'],
   }],
 }, null, 2) + '\n');
 

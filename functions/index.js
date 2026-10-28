@@ -5,7 +5,9 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
+const { getFirestore } = require('firebase-admin/firestore');
 const { inviter } = require('./invitation');
+const { listerEnseignants } = require('./liste-enseignants');
 
 initializeApp();
 setGlobalOptions({ region: 'europe-west9', maxInstances: 3 });
@@ -36,4 +38,13 @@ exports.inviterEnseignant = onCall(async (requete) => {
     throw new HttpsError('permission-denied', 'Réservé à l\'administrateur.');
   }
   return inviter(getAuth(), requete.data, { envoyerCourriel: envoyerCourrielMotDePasse });
+});
+
+// Appelable depuis la page Inviter par l'administrateur UNIQUEMENT : les collegues invites (adresse, date d'invitation,
+// derniere connexion) avec leur nombre d'eleves et de classes. Que des totaux, jamais de nom d'eleve (voir liste-enseignants.js).
+exports.listerEnseignants = onCall(async (requete) => {
+  if (!requete.auth || requete.auth.token.admin !== true) {
+    throw new HttpsError('permission-denied', 'Réservé à l\'administrateur.');
+  }
+  return listerEnseignants(getAuth(), getFirestore());
 });

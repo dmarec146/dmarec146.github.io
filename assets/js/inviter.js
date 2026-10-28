@@ -26,6 +26,10 @@ const zoneErreur = document.getElementById('inv-erreur');
 const fonctions = getFunctions(app, REGION);
 if (MODE_EMULATEUR) connectFunctionsEmulator(fonctions, '127.0.0.1', 5001);
 const inviterEnseignant = httpsCallable(fonctions, 'inviterEnseignant');
+const listerEnseignants = httpsCallable(fonctions, 'listerEnseignants');
+const zoneListeEtat = document.getElementById('inv-liste-etat');
+const tableListe = document.getElementById('inv-liste');
+const corpsListe = document.getElementById('inv-liste-corps');
 
 function montrer(zone, texte) { zone.textContent = texte; zone.hidden = false; }
 function cacher(zone) { zone.hidden = true; zone.textContent = ''; }
@@ -40,6 +44,49 @@ function messageErreur(erreur) {
   if (code === 'unavailable' || code === 'deadline-exceeded') return 'Connexion impossible pour le moment. Réessaie dans un instant.';
   if (code === 'not-found') return "La fonction d'invitation n'est pas encore installée sur le serveur.";
   return "L'invitation n'a pas pu être envoyée. Réessaie, et dis-le moi si cela se reproduit.";
+}
+
+// Collegues invites (28/10/2026) : adresse, date d'invitation, derniere connexion, nombre d'eleves et de classes.
+// Que des totaux (la fonction ne renvoie jamais de nom d'eleve). Appelee a l'ouverture de la page et apres chaque
+// invitation, pas autrement : chaque appel lit un profil par eleve de chaque collegue.
+const FORMAT_JOUR = { day: 'numeric', month: 'long', year: 'numeric' };
+const FORMAT_HEURE = { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+function cellule(ligne, texte, classe) {
+  const td = document.createElement('td');
+  td.textContent = texte;
+  if (classe) td.className = classe;
+  ligne.appendChild(td);
+  return td;
+}
+async function chargerListe() {
+  tableListe.hidden = true;
+  zoneListeEtat.classList.remove('tdb-etat-erreur');
+  zoneListeEtat.textContent = 'Chargement de la liste…';
+  zoneListeEtat.hidden = false;
+  try {
+    const { data } = await listerEnseignants();
+    corpsListe.textContent = '';
+    for (const e of data.enseignants) {
+      const ligne = document.createElement('tr');
+      cellule(ligne, e.adresse);
+      cellule(ligne, e.creeLe ? new Date(e.creeLe).toLocaleDateString('fr-FR', FORMAT_JOUR) : '—');
+      if (e.derniereConnexion) cellule(ligne, new Date(e.derniereConnexion).toLocaleString('fr-FR', FORMAT_HEURE));
+      else cellule(ligne, 'Pas encore connecté', 'inv-pas-connecte');
+      cellule(ligne, String(e.eleves), 'inv-nombre');
+      cellule(ligne, String(e.classes), 'inv-nombre');
+      corpsListe.appendChild(ligne);
+    }
+    if (!data.enseignants.length) { zoneListeEtat.textContent = 'Aucun collègue invité pour le moment.'; return; }
+    zoneListeEtat.hidden = true;
+    tableListe.hidden = false;
+  } catch (erreur) {
+    console.error('Liste des collègues : échec.', erreur);
+    const code = erreur && erreur.code ? String(erreur.code).replace('functions/', '') : '';
+    zoneListeEtat.classList.add('tdb-etat-erreur');
+    zoneListeEtat.textContent = code === 'not-found'
+      ? "La fonction de liste n'est pas encore installée sur le serveur."
+      : 'La liste des collègues n’a pas pu être chargée. Recharge la page pour réessayer.';
+  }
 }
 
 formulaire.addEventListener('submit', async (evenement) => {
@@ -57,6 +104,7 @@ formulaire.addEventListener('submit', async (evenement) => {
       : `Nouveau courriel envoyé à ${data.adresse} (le compte existait déjà).`);
     champEmail.value = '';
     caseException.checked = false;
+    chargerListe();
   } catch (erreur) {
     console.error('Invitation : échec.', erreur);
     montrer(zoneErreur, messageErreur(erreur));
@@ -74,4 +122,5 @@ onAuthStateChanged(auth, async (utilisateur) => {
   try { window.localStorage.setItem('cahiers-admin', '1'); } catch (e) { /* stockage indisponible */ }
   zoneChargement.hidden = true;
   zoneContenu.hidden = false;
+  chargerListe();
 });
