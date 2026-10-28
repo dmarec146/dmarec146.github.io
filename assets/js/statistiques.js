@@ -74,6 +74,7 @@ async function compter() {
   if (location.protocol === 'file:' || ['localhost', '127.0.0.1', ''].includes(location.hostname)) return;
   if (navigator.webdriver) return;
   if (lire(CLE_EXCLU) === '1') return;
+  if (lire('stats-refus') === '1') return;     // refus du comptage, bouton de la page confidentialite/ (28/10/2026)
 
   const utilisateur = await utilisateurInitial();
   if (utilisateur) {
