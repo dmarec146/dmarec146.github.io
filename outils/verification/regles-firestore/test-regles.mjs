@@ -23,22 +23,36 @@ console.log('Création');
 await cas('anonyme : création valide (comme le script)', true, setDoc(doc(anonyme, 'statistiques', ID), pageVue('premiere-f14', { visites: increment(1), visiteurs: increment(1), a_ordinateur: increment(1) }), { merge: true }));
 await cas('identifiant de document invalide', false, setDoc(doc(anonyme, 'statistiques', 'nimportequoi'), pageVue('premiere-f14'), { merge: true }));
 await cas('fragment hors 0-4', false, setDoc(doc(anonyme, 'statistiques', '2026-10-03_7'), pageVue('premiere-f14'), { merge: true }));
-await cas('création avec pv = 5', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 5, pages: { accueil: 1 }, derniere: 'accueil' }));
+await cas('création avec pv = 13 (au-delà d\'un paquet)', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 13, pages: { accueil: 1 }, derniere: 'accueil' }));
+await cas('création avec pv = 0', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 0, pages: { accueil: 1 }, derniere: 'accueil' }));
 await cas('création avec une clé inconnue', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 1, pages: { accueil: 1 }, derniere: 'accueil', pirate: 1 }));
-await cas('création avec deux pages', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 1, pages: { accueil: 1, connexion: 1 }, derniere: 'accueil' }));
-await cas('création : derniere ne correspond pas', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 1, pages: { accueil: 1 }, derniere: 'connexion' }));
+await cas('création avec 13 pages', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 12, pages: Object.fromEntries(Array.from({ length: 13 }, (_, i) => ['p' + i, 1])), derniere: 'p0' }));
+await cas('création sans derniere (nouveau format)', true, setDoc(doc(anonyme, 'statistiques', '2026-10-04_1'), { pv: 1, s_accueil: 1, pages: { accueil: 1 } }));
+await cas('création groupée : 8 pages vues, 3 pages', true, setDoc(doc(anonyme, 'statistiques', '2026-10-04_2'), { pv: 8, s_fiches_premiere: 6, s_accueil: 2, pages: { 'premiere-f1': 5, 'premiere-f2': 1, accueil: 2 }, visites: 1, a_telephone: 1, visiteurs: 1 }));
+await cas('création groupée : visites = 2', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_3'), { pv: 8, pages: { accueil: 8 }, visites: 2 }));
+await cas('création : s_accueil = 13', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_3'), { pv: 12, s_accueil: 13, pages: { accueil: 12 } }));
 await cas('création : clé de page invalide', false, setDoc(doc(anonyme, 'statistiques', '2026-10-04_0'), { pv: 1, pages: { 'A/B': 1 }, derniere: 'A/B' }));
 
 console.log('Mise à jour');
 await cas('anonyme : page vue suivante, même page', true, setDoc(doc(anonyme, 'statistiques', ID), pageVue('premiere-f14'), { merge: true }));
 await cas('élève connecté : autre page, nouvelle visite', true, setDoc(doc(eleve, 'statistiques', ID), pageVue('seconde-f3', { visites: increment(1), a_telephone: increment(1) }), { merge: true }));
-await cas('pv +2', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(2), pages: { 'premiere-f14': increment(1) }, derniere: 'premiere-f14' }, { merge: true }));
+await cas('pv +2 (paquet)', true, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(2), pages: { 'premiere-f14': increment(2) } }, { merge: true }));
+await cas('pv +13 refusé', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(13), pages: { 'premiere-f14': increment(13) } }, { merge: true }));
+await cas('pv +0 refusé', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(0), pages: { 'premiere-f14': increment(1) } }, { merge: true }));
+await cas('paquet de 8 pages vues sur 3 pages et 2 parties', true, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(8), s_fiches_premiere: increment(6), s_accueil: increment(2), pages: { 'premiere-f14': increment(5), 'premiere-f15': increment(1), accueil: increment(2) } }, { merge: true }));
+await cas('paquet de 12 pages vues (maximum)', true, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(12), s_accueil: increment(12), pages: { accueil: increment(12) } }, { merge: true }));
+await cas('s_accueil +13 refusé', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(12), s_accueil: increment(13), pages: { accueil: increment(12) } }, { merge: true }));
+await cas('baisse de s_accueil refusée', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), s_accueil: increment(-1), pages: { accueil: increment(1) } }, { merge: true }));
+await cas('13 pages touchées en une écriture refusé', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(12), pages: Object.fromEntries(Array.from({ length: 13 }, (_, i) => ['x' + i, increment(1)])) }, { merge: true }));
+await cas('12 pages touchées en une écriture', true, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(12), pages: Object.fromEntries(Array.from({ length: 12 }, (_, i) => ['y' + i, increment(1)])) }, { merge: true }));
+await cas('derniere au mauvais format refusée', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), pages: { accueil: increment(1) }, derniere: 'A/B' }, { merge: true }));
+await cas('visites +2 dans un paquet refusé', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(3), visites: increment(2), pages: { accueil: increment(3) } }, { merge: true }));
 await cas('visites +5', false, setDoc(doc(anonyme, 'statistiques', ID), pageVue('premiere-f14', { visites: increment(5) }), { merge: true }));
 await cas('baisse d\'un compteur', false, setDoc(doc(anonyme, 'statistiques', ID), pageVue('premiere-f14', { visiteurs: increment(-1) }), { merge: true }));
 await cas('+1 sur une page sans compter de page vue', false, setDoc(doc(anonyme, 'statistiques', ID), { pages: { 'premiere-f14': increment(1) }, derniere: 'premiere-f14' }, { merge: true }));
-await cas('+1 sur une autre page que derniere', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), pages: { 'seconde-f3': increment(1) }, derniere: 'premiere-f14' }, { merge: true }));
-await cas('deux pages à la fois', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), pages: { 'premiere-f14': increment(1), 'seconde-f3': increment(1) }, derniere: 'premiere-f14' }, { merge: true }));
-await cas('remise à zéro d\'une page', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), pages: { 'seconde-f3': 0, 'premiere-f14': increment(1) }, derniere: 'premiere-f14' }, { merge: true }));
+await cas('deux pages à la fois (paquet)', true, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(2), pages: { 'premiere-f14': increment(1), 'seconde-f3': increment(1) } }, { merge: true }));
+// Limite connue des règles (elles ne parcourent pas « pages ») : une valeur de page peut être remise à zéro ; seule la suppression est refusée.
+await cas('remise à zéro d\'une page : acceptée (limite connue)', true, setDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), pages: { 'zz-test': 0, 'premiere-f14': increment(1) } }, { merge: true }));
 await cas('suppression d\'une page', false, updateDoc(doc(anonyme, 'statistiques', ID), { pv: increment(1), 'pages.seconde-f3': deleteField(), derniere: 'premiere-f14', 'pages.premiere-f14': increment(1) }));
 await cas('clé inconnue ajoutée', false, setDoc(doc(anonyme, 'statistiques', ID), pageVue('premiere-f14', { pirate: 1 }), { merge: true }));
 await cas('écrasement complet du document', false, setDoc(doc(anonyme, 'statistiques', ID), { pv: 1, pages: { accueil: 1 }, derniere: 'accueil' }));
@@ -49,9 +63,9 @@ const pageQcm = (page, extra = {}) => ({ pv: increment(1), s_qcm_bac: increment(
 await cas('QCM Bac : création valide (anonyme)', true, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac-fiche', { visites: increment(1), a_telephone: increment(1) }), { merge: true }));
 await cas('QCM Bac : page vue suivante (anonyme)', true, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac'), { merge: true }));
 await cas('QCM Bac : élève connecté', true, setDoc(doc(eleve, 'statistiques', ID_QCM), pageQcm('qcm-bac-sujet-blanc'), { merge: true }));
-await cas('QCM Bac : s_qcm_bac +2', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_qcm_bac: increment(2) }), { merge: true }));
+await cas('QCM Bac : s_qcm_bac +13', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_qcm_bac: increment(13) }), { merge: true }));
 await cas('QCM Bac : baisse du compteur', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_qcm_bac: increment(-1) }), { merge: true }));
-await cas('QCM Bac : création avec s_qcm_bac = 5', false, setDoc(doc(anonyme, 'statistiques', '2026-10-18_2'), { pv: 1, s_qcm_bac: 5, pages: { 'qcm-bac': 1 }, derniere: 'qcm-bac' }));
+await cas('QCM Bac : création avec s_qcm_bac = 13', false, setDoc(doc(anonyme, 'statistiques', '2026-10-18_2'), { pv: 1, s_qcm_bac: 13, pages: { 'qcm-bac': 1 }, derniere: 'qcm-bac' }));
 await cas('QCM Bac : une autre partie inconnue reste refusée', false, setDoc(doc(anonyme, 'statistiques', ID_QCM), pageQcm('qcm-bac', { s_pirate: increment(1) }), { merge: true }));
 await cas('QCM Bac : lecture refusée à l\'anonyme', false, getDoc(doc(anonyme, 'statistiques', ID_QCM)));
 
@@ -65,9 +79,9 @@ await cas('anonyme : suppression refusée', false, deleteDoc(doc(anonyme, 'stati
 
 const final = (await getDoc(doc(prof, 'statistiques', ID))).data();
 console.log('Document final :', JSON.stringify(final));
-const attendu = { pv: 3, visites: 2, visiteurs: 1, a_ordinateur: 1, a_telephone: 1, s_fiches_premiere: 3 };
+const attendu = { pv: 40, visites: 2, visiteurs: 1, a_ordinateur: 1, a_telephone: 1, s_fiches_premiere: 9, s_accueil: 14 };     // écritures acceptées ci-dessus, paquets compris
 for (const [k, v] of Object.entries(attendu)) if (final[k] !== v) { ko++; console.log('  ECHEC valeur', k, final[k], '≠', v); }
-if (final.pages['premiere-f14'] !== 2 || final.pages['seconde-f3'] !== 1) { ko++; console.log('  ECHEC pages', JSON.stringify(final.pages)); }
+if (final.pages['premiere-f14'] !== 11 || final.pages['seconde-f3'] !== 2 || final.pages.accueil !== 14) { ko++; console.log('  ECHEC pages', JSON.stringify(final.pages)); }
 
 console.log('Règles existantes (non-régression)');
 await cas('élève : écrit son brouillon', true, setDoc(doc(eleve, 'eleves/eleve1/brouillons/f1'), { a: 1 }));

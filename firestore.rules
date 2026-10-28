@@ -28,8 +28,8 @@
 //   devoirs/{id}                    un devoir attribué par l'enseignant
 //   statistiques/{AAAA-MM-JJ}_{n}   compteurs anonymes de fréquentation d'un jour
 //                                    (fragment n de 0 à 4) -- écrits par tout visiteur,
-//                                    connecté ou non, uniquement par ajout de +1
-//                                    (assets/js/statistiques.js) ; lus par l'enseignant
+//                                    connecté ou non, uniquement par ajout (1 page vue, ou un
+//                                    paquet de 12 au plus : assets/js/statistiques.js) ; lus par l'admin
 //                                    (tableau-de-bord/frequentation.html)
 //
 // Les comptes élèves et les comptes enseignants sont créés côté serveur (script
@@ -182,14 +182,19 @@ service cloud.firestore {
       allow delete: if estEnseignant() && resource.data.enseignant == request.auth.uid;
     }
 
-    // ---------- Fréquentation anonyme (03/10/2026) ----------
-    // N'importe quel visiteur (même non connecté) peut seulement AJOUTER 1 à
-    // des compteurs connus ; personne d'autre que l'enseignant ne lit. Une
-    // écriture = une page vue : pv +1, une partie s_* +1, la page pages[derniere]
-    // +1, et éventuellement visites, visiteurs et un appareil a_* +1. Toute
-    // autre clé, toute autre valeur ou tout autre identifiant de document est
-    // refusé. Gonfler les compteurs reste possible (une page vue à la fois),
-    // rien d'autre.
+    // ---------- Fréquentation anonyme (03/10/2026 ; écritures groupées 28/10/2026) ----------
+    // N'importe quel visiteur (même non connecté) peut seulement AUGMENTER des
+    // compteurs connus ; personne d'autre que l'enseignant ne lit. Une écriture
+    // porte une page vue (la première d'une visite) ou un paquet de 12 pages vues
+    // au plus (assets/js/statistiques.js regroupe les suivantes dans le navigateur
+    // pour limiter le nombre d'écritures) : pv de +1 à +12, chaque partie s_* de
+    // +0 à +12, au plus 12 pages touchées dans « pages », et visites, visiteurs,
+    // appareil a_* de +1 au plus. Aucune baisse ni suppression de page. Toute
+    // autre clé ou tout autre identifiant de document est refusé. Limite
+    // assumée : les règles ne savent pas parcourir « pages », donc la valeur
+    // ajoutée à chaque page n'est pas bornée individuellement (la somme n'est
+    // pas non plus rapprochée de pv) -- gonfler ou fausser ces chiffres reste
+    // possible, rien d'autre. Ancien format (une page, pv +1, derniere) toujours accepté.
     function clesStatistiques() {
       return ['pv', 'visites', 'visiteurs',
               's_accueil', 's_cahiers', 's_fiches_seconde', 's_fiches_premiere', 's_fiches_terminale',
@@ -197,42 +202,49 @@ service cloud.firestore {
               'a_ordinateur', 'a_tablette', 'a_telephone',
               'pages', 'derniere'];
     }
-    // Compteur absent ou égal à 1 (création du document du jour).
+    // Création : compteur absent ou compris entre 1 et 12 / absent ou égal à 1.
+    function paquetOuAbsent(d, cle) {
+      return !(cle in d) || (d[cle] is int && d[cle] >= 1 && d[cle] <= 12);
+    }
     function unOuAbsent(d, cle) {
       return !(cle in d) || d[cle] == 1;
     }
-    // Compteur inchangé ou augmenté de 1 exactement (mise à jour).
+    // Mise à jour : compteur inchangé ou augmenté de 1 exactement / de 12 au plus.
     function memeOuPlusUn(d, a, cle) {
       return d.get(cle, 0) == a.get(cle, 0) || d.get(cle, 0) == a.get(cle, 0) + 1;
     }
-    function pageValide(d) {
-      return d.derniere is string && d.derniere.matches('^[a-z0-9-]{1,40}$') && d.pages is map;
+    function hausseBornee(d, a, cle) {
+      return d.get(cle, 0) >= a.get(cle, 0) && d.get(cle, 0) <= a.get(cle, 0) + 12;
+    }
+    function derniereValide(d) {
+      return !('derniere' in d) || (d.derniere is string && d.derniere.matches('^[a-z0-9-]{1,40}$'));
     }
     function creationStatistiquesValide() {
       let d = request.resource.data;
       return d.keys().hasOnly(clesStatistiques())
-        && d.keys().hasAll(['pv', 'pages', 'derniere'])
-        && pageValide(d)
-        && d.pages.keys().hasOnly([d.derniere]) && d.pages[d.derniere] == 1
-        && d.pv == 1
+        && d.keys().hasAll(['pv', 'pages'])
+        && derniereValide(d)
+        && d.pv is int && d.pv >= 1 && d.pv <= 12
+        && d.pages is map && d.pages.size() >= 1 && d.pages.size() <= 12
         && unOuAbsent(d, 'visites') && unOuAbsent(d, 'visiteurs')
-        && unOuAbsent(d, 's_accueil') && unOuAbsent(d, 's_cahiers') && unOuAbsent(d, 's_fiches_seconde')
-        && unOuAbsent(d, 's_fiches_premiere') && unOuAbsent(d, 's_fiches_terminale') && unOuAbsent(d, 's_automatismes') && unOuAbsent(d, 's_qcm_bac')
-        && unOuAbsent(d, 's_mes_devoirs') && unOuAbsent(d, 's_connexion') && unOuAbsent(d, 's_autres')
+        && paquetOuAbsent(d, 's_accueil') && paquetOuAbsent(d, 's_cahiers') && paquetOuAbsent(d, 's_fiches_seconde')
+        && paquetOuAbsent(d, 's_fiches_premiere') && paquetOuAbsent(d, 's_fiches_terminale') && paquetOuAbsent(d, 's_automatismes') && paquetOuAbsent(d, 's_qcm_bac')
+        && paquetOuAbsent(d, 's_mes_devoirs') && paquetOuAbsent(d, 's_connexion') && paquetOuAbsent(d, 's_autres')
         && unOuAbsent(d, 'a_ordinateur') && unOuAbsent(d, 'a_tablette') && unOuAbsent(d, 'a_telephone');
     }
     function miseAJourStatistiquesValide() {
       let d = request.resource.data;
       let a = resource.data;
       return d.keys().hasOnly(clesStatistiques())
-        && pageValide(d)
-        && d.pv == a.pv + 1
-        && d.pages.diff(a.pages).affectedKeys().hasOnly([d.derniere])
-        && d.pages[d.derniere] == a.pages.get(d.derniere, 0) + 1
+        && derniereValide(d)
+        && d.pv is int && d.pv >= a.pv + 1 && d.pv <= a.pv + 12
+        && d.pages is map && d.pages.size() <= 250
+        && d.pages.diff(a.pages).removedKeys().size() == 0
+        && d.pages.diff(a.pages).affectedKeys().size() <= 12
         && memeOuPlusUn(d, a, 'visites') && memeOuPlusUn(d, a, 'visiteurs')
-        && memeOuPlusUn(d, a, 's_accueil') && memeOuPlusUn(d, a, 's_cahiers') && memeOuPlusUn(d, a, 's_fiches_seconde')
-        && memeOuPlusUn(d, a, 's_fiches_premiere') && memeOuPlusUn(d, a, 's_fiches_terminale') && memeOuPlusUn(d, a, 's_automatismes') && memeOuPlusUn(d, a, 's_qcm_bac')
-        && memeOuPlusUn(d, a, 's_mes_devoirs') && memeOuPlusUn(d, a, 's_connexion') && memeOuPlusUn(d, a, 's_autres')
+        && hausseBornee(d, a, 's_accueil') && hausseBornee(d, a, 's_cahiers') && hausseBornee(d, a, 's_fiches_seconde')
+        && hausseBornee(d, a, 's_fiches_premiere') && hausseBornee(d, a, 's_fiches_terminale') && hausseBornee(d, a, 's_automatismes') && hausseBornee(d, a, 's_qcm_bac')
+        && hausseBornee(d, a, 's_mes_devoirs') && hausseBornee(d, a, 's_connexion') && hausseBornee(d, a, 's_autres')
         && memeOuPlusUn(d, a, 'a_ordinateur') && memeOuPlusUn(d, a, 'a_tablette') && memeOuPlusUn(d, a, 'a_telephone');
     }
 

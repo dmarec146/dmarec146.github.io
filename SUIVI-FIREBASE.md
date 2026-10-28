@@ -139,8 +139,8 @@ depuis la réorganisation du 02/10/2026 »).
     (tableau de bord enseignant), `manifeste-fiches.js` (liste des fiches
     pour l'attribution, à tenir à jour à la main), `export-cahier.js`.
   - `assets/js/statistiques.js` (module, chargé par les 76 pages publiques) :
-    mesure de fréquentation anonyme, une écriture Firestore par page vue
-    (voir §3). Pied de page : « Visites comptées anonymement, sans cookie. » (simplifié le 25/10/2026).
+    mesure de fréquentation anonyme, écritures groupées depuis le 28/10/2026 : 1re page d'une visite tout de suite,
+    les suivantes par paquet de 8 pages ou 10 minutes (voir §3 et §6). Pied de page : « Visites comptées anonymement, sans cookie. » (simplifié le 25/10/2026).
   - `assets/js/pied-droits.js` (script classique, 81 pages publiques, hors `outils/`) :
     icône sigma (`assets/img/`) à gauche du titre « Cahiers interactifs », favicon
     et ligne « © 2026 David Marec · Tous droits réservés » en pied de page (nom changé le 26/10/2026, auparavant dmarec146) (ajoutée au
@@ -216,7 +216,7 @@ depuis la réorganisation du 02/10/2026 »).
   (`outils/verification/regles-firestore/`, 45 cas), test à relancer avant
   toute nouvelle publication.
 - Collections utiles : `statistiques/{AAAA-MM-JJ}_{0-4}` (fréquentation
-  anonyme : compteurs du jour, +1 seulement pour tout visiteur, lecture
+  anonyme : compteurs du jour, ajouts seulement (1 page ou paquet de 12 au plus) pour tout visiteur, lecture
   admin ; enseignant et navigateurs où il s'est connecté exclus) ;
   `devoirs/{id}` (lecture élève connecté, écriture admin) ; sous `eleves/{uid}` : `brouillons/{ficheId}`,
   `brouillonsAutomatismes/{devoirId}`, `devoirsTentatives` (journal des
@@ -450,6 +450,9 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 - **Fin d'année scolaire (décision de David, 26/10/2026 : suppression des comptes d'élèves le 30 juin, à la main)** : `outils/fin-annee/fin-annee.js` — comptage (sans option d'action), `--exporter` (sauvegarde complète + `resultats-des-devoirs.csv` pour Excel), `--supprimer --oui` (refusé sans l'export du jour) ; options `--classes=`, `--toutes`, `--garder=`, `--orphelins`, `--devoirs` (mode d'emploi en tête du script). **À lancer vers le 30/06/2027** : prévenir David en juin. Le compte `admin.jetable` (administrateur jetable jamais connecté, sans donnée) a été supprimé le 26/10/2026 après sauvegarde (`2026-10-26-avant-suppression-admin-jetable`) ; l'outil ne traite jamais un compte portant le droit admin comme un élève.
 - Données orphelines des 21 comptes supprimés (journaux de connexion surtout, 117 documents après la purge) : à effacer avec l'accord de David (voir le brouillon de
   confidentialité, durées de conservation).
+- **Comptage des visites : écritures groupées (28/10/2026, demande de David : « limiter le nombre d'écritures » pour ~1000 élèves, quota gratuit de 20 000 écritures/jour ; 30 pages/élève/jour = 30 000 avec l'ancien système).**
+  `statistiques.js` : la 1re page d'une visite (ou du jour) est écrite tout de suite avec visite, visiteur et appareil (un passage de 30 secondes est donc toujours compté) ; les pages suivantes sont additionnées dans le navigateur (clé `stats-attente`) et envoyées en un paquet à 8 pages ou 10 minutes (minuteur si la page reste ouverte, sinon à la page suivante ou à la visite suivante, à la date d'origine). Un élève qui part sans revenir perd au plus 7 pages vues : visites et visiteurs restent exacts. Mesuré sur banc d'essai : 6 écritures/élève/jour au lieu de 30, 96 % des pages vues envoyées. Bibliothèques Firebase chargées seulement quand il y a une écriture (plus ~245 Ko sur chaque page publique). Compte enseignant/admin : l'attente est effacée, rien n'est envoyé.
+  **Règles Firestore modifiées (`firestore.rules`, 167 cas de test réussis) — collées par David dans la console le 28/10/2026, *avant* la publication du code (ordre à respecter : les nouvelles règles acceptent aussi l'ancien format, l'inverse ne marche pas)** (les nouvelles règles acceptent aussi l'ancien format, l'inverse ne marche pas) : pv de +1 à +12 par écriture, chaque `s_*` de +0 à +12, au plus 12 pages touchées dans `pages`, aucune baisse ni suppression de page ; `derniere` devient facultative. **Limite assumée** : les règles ne savent pas parcourir `pages`, donc la valeur ajoutée à chaque page n'est pas bornée une à une (ni rapprochée de `pv`) : un malveillant pourrait gonfler ou remettre à zéro des compteurs de page (comme il pouvait déjà gonfler les totaux) ; rien d'autre. Politique de confidentialité : phrase ajoutée sur le stockage du nombre de pages vues en attente (à republier avec le code). Banc d'essai du script : `outils/` n'en contient pas ; il a été exécuté dans le scratchpad (faux navigateur + fausse base, 30 vérifications).
 - Idée non demandée : barème réglable devoir par devoir (automatismes).
 - Fiche 2 de Première : pas de titre de section entre les automatismes et
   2.3 (remarque, non traitée).

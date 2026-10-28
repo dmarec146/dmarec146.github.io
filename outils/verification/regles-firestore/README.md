@@ -3,7 +3,7 @@
 `test-regles.mjs` vérifie les règles de `firestore.rules` contre l'émulateur
 Firestore, sans toucher au vrai projet : surtout la collection
 `statistiques` (fréquentation anonyme : seul un ajout de +1 aux compteurs
-connus est permis, lecture réservée à l'enseignant), plus quelques règles
+connus est permis, par page vue ou par paquet de 12 au plus depuis le 28/10/2026, lecture réservée à l'enseignant), plus quelques règles
 existantes en non-régression.
 
 À relancer après toute modification de `firestore.rules`, **avant** de les
@@ -24,7 +24,7 @@ Il faut un `firebase.json` à côté indiquant les règles et le port 8080 :
     { "firestore": { "rules": "../../../firestore.rules" },
       "emulators": { "firestore": { "port": 8080, "host": "127.0.0.1" }, "ui": { "enabled": false } } }
 
-Résultat attendu : « 154 réussis, 0 échecs » (131 jusqu'au 27/10/2026, + 23 pour la lecture des devoirs resserrée le 27/10/2026) (29 cas initiaux + 16 pour
+Résultat attendu : « 167 réussis, 0 échecs » (154 jusqu'au 28/10/2026, + 13 pour les écritures groupées de la fréquentation ; 131 jusqu'au 27/10/2026, + 23 pour la lecture des devoirs resserrée le 27/10/2026) (29 cas initiaux + 16 pour
 `devoirsMasques`, 04/10/2026, + 8 pour `s_qcm_bac`, 18/10/2026, + 59 pour les
 **plusieurs enseignants**, 26/10/2026 : chaque enseignant ne lit que les profils,
 journaux et brouillons de ses élèves, ne crée/modifie/supprime que ses devoirs,
