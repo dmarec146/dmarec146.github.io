@@ -193,6 +193,10 @@ depuis la réorganisation du 02/10/2026 »).
   dernier choix mémorisé en `localStorage` (`reglages-entree-auto` / `reglages-entree-qcm`). Sur la page de travail, les deux panneaux sont remplacés par une ligne
   « Mode fiche · ★★ Niveau 2 — Changer » (`recapReglagesHTML`, `ETAT.reglagesOuverts`) ; « Changer » rouvre les panneaux d'avant, absent pendant un chrono en cours.
   En devoir : panneau « niveau et mode imposés » **inchangé**. Un accès direct à `fiche.html` sans paramètre donne fiche / niveau 2.
+- **Numéros des fiches sur « Tous les cahiers » (28/10/2026)** : calculés **dans la page** d'après `assets/js/manifeste-fiches.js` (module importé par `cahiers/index.html` : « 3 fiches · n° 4 à 6 »,
+  et le sous-titre « 26 fiches réparties en 10 cahiers » de chaque niveau). Le texte écrit dans le HTML n'est qu'un **repli** (JavaScript absent, ouverture en `file://`).
+  **Une seule liste à tenir à jour : le manifeste** (déjà nécessaire à l'attribution des devoirs) ; `node outils/verification/verifier-manifeste.js` contrôle qu'il concorde avec les dossiers
+  `cahiers/<niveau>/cahier-N/` et avec le repli (`--corriger` réécrit le repli). Les 18 pages de sommaire de cahier restent, elles, écrites à la main.
 - **Export PDF d'une fiche** : bouton qui appelle `window.print()` (+ `@media print`). **Ne pas retenter** html2pdf / html2canvas /
   jsPDF : le navigateur se bloque sur les champs `<math-field>` (essai du 04/09/2026). L'export d'un **cahier entier** en un seul
   PDF (`assets/js/export-cahier.js`) est en pause depuis le 11/09/2026, quatre architectures tentées (voir `HISTORIQUE.md`).

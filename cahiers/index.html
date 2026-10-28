@@ -187,6 +187,31 @@
   <span class="site-pied-mention">Visites comptées anonymement, sans cookie.</span>
 </footer>
 
+<script type="module">
+// Nombre et numéros des fiches de chaque cahier, calculés d'après assets/js/manifeste-fiches.js (28/10/2026) : une seule liste à tenir
+// à jour (déjà nécessaire à l'attribution des devoirs). Le texte écrit dans le HTML sert de repli (JavaScript absent, ouverture en
+// file://) ; outils/verification/verifier-manifeste.js contrôle que le manifeste, les fichiers de fiches et ce texte concordent.
+import { MANIFESTE_CAHIERS } from '../assets/js/manifeste-fiches.js';
+
+function plage(nums) {
+  if (nums.length === 1) return 'n° ' + nums[0];
+  var consecutifs = nums.every(function (v, i) { return i === 0 || v === nums[i - 1] + 1; });
+  if (!consecutifs) return 'n° ' + nums.join(', ');
+  return nums.length === 2 ? 'n° ' + nums[0] + ' et ' + nums[1] : 'n° ' + nums[0] + ' à ' + nums[nums.length - 1];
+}
+var totaux = {};
+MANIFESTE_CAHIERS.forEach(function (c) {
+  var nums = c.fiches.map(function (x) { return x.numero; }).sort(function (a, b) { return a - b; });
+  var meta = document.querySelector('a.bento-carte[href="' + c.niveau + '/' + c.cahier + '/index.html"] .bento-meta');
+  if (meta) meta.textContent = nums.length + (nums.length > 1 ? ' fiches' : ' fiche') + ' · ' + plage(nums);
+  var t = totaux[c.niveau] || (totaux[c.niveau] = { fiches: 0, cahiers: 0 });
+  t.fiches += nums.length; t.cahiers += 1;
+});
+Object.keys(totaux).forEach(function (niveau) {
+  var p = document.querySelector('#niveau-' + niveau + ' .groupe-niveau-sous');
+  if (p) p.textContent = p.textContent.replace(/\d+ fiches réparties en \d+ cahiers/, totaux[niveau].fiches + ' fiches réparties en ' + totaux[niveau].cahiers + ' cahiers');
+});
+</script>
 <script>
 // Téléphone en portrait : un seul niveau affiché à la fois (la règle .masque-tel n'existe que dans ce cas, voir style.css)
 (function () {

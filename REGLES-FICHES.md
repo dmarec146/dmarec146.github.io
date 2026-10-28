@@ -343,6 +343,9 @@ les corrections ponctuelles d'une fiche).
 
 ## 5. Vérification avant de pousser
 
+0. **Fiche ajoutée, retirée ou renumérotée** : mettre à jour `assets/js/manifeste-fiches.js` (une entrée par fiche : href, numero, nom), puis
+   `node outils/verification/verifier-manifeste.js` (0 écart attendu ; `--corriger` réécrit le texte de repli de `cahiers/index.html`). La page
+   « Tous les cahiers » calcule le nombre et les numéros de fiches de chaque cahier d'après ce manifeste ; le contrôle vérifie qu'il concorde avec les fichiers réels.
 1. Vérificateur de syntaxe des 50 fiches :
    `node outils/verification/verifier-syntaxe-fiches.js` (0 erreur attendue).
 2. Liste des `id` générés conforme au plan, cohérente avec `groupes` et avec
