@@ -38,6 +38,7 @@ depuis la réorganisation du 02/10/2026 »).
   d'une ancienne session peut-être non fusionné : vérifier avec
   `git cherry -v master <branche>` avant toute chose. Ne rien écraser
   (`reset --hard`, `checkout --`…) sans comprendre ce qui est là.
+- **Branche d'essais de présentation `design` (29/10/2026, locale, jamais poussée)** : dossier de travail `.claude/worktrees/design` (ignoré par Git), serveur local `site-design` sur `http://localhost:8792` (configuration de `.claude/launch.json`, démarrer avec `preview_start site-design`) ; le site habituel reste sur le port 8791. Sécurités : aucune branche distante associée et `branch.design.pushRemote` pointe vers un dépôt inexistant (un `git push` de cette branche échoue) ; `publier-hosting.js` ne publie que le dernier commit de `master`. **Ne fusionner dans `master` qu'à la demande de David**, après présentation. Pour supprimer : `git worktree remove .claude/worktrees/design` puis `git branch -D design`. Rappel : même en local, une connexion de compte part vers le vrai Firebase.
 - `.claude/scratch/` (scripts ponctuels déjà appliqués) est ignoré par Git
   et reste local à chaque machine : ne jamais relancer ces scripts.
 
