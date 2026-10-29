@@ -48,6 +48,9 @@ onAuthStateChanged(auth, async (utilisateur) => {
     // ceux deja rendus une fois avec des essais restants, et "Enregistres").
     const resultat = await chargerDevoirsEleve(utilisateur.uid);
     if (!resultat) return; // pas un profil eleve (ex. compte admin)
+    // Publie le resultat pour les cartes « en vedette » de l'accueil (assets/js/vedette-accueil.js, 29/10/2026) : pas de seconde lecture Firestore.
+    window.devoirsEleve = resultat;
+    document.dispatchEvent(new CustomEvent('devoirs-eleve-prets', { detail: resultat }));
     if (resultat.nbDevoirs === 0) return; // jamais aucun devoir attribue
 
     // Le bouton n'a d'utilite que tant qu'il reste au moins un devoir a faire ou enregistre (27/10/2026, demande de
