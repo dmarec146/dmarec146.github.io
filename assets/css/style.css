@@ -664,7 +664,11 @@ a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-cla
 .fiche-go { margin-left: auto; flex: none; font: 600 14px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #fff; background: var(--accent); border-radius: 999px; padding: 8px 16px; }
 
 /* ---------- Cartes « Cahiers de calcul en vedette » de l'accueil (29/10/2026, assets/js/vedette-accueil.js) ---------- */
-.vedette-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.vedette-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; min-height: 330px; }
+/* cachees (place reservee) jusqu'a ce que vedette-accueil.js ait dessine les vraies cartes : plus de saut de page au chargement ; si le script
+   ne s'execute pas, le repli statique apparait de lui-meme apres 1,5 s */
+.vedette-grille:not(.pret) { visibility: hidden; animation: vc-montrer 0s 1.5s forwards; }
+@keyframes vc-montrer { to { visibility: visible; } }
 @media (max-width: 860px) { .vedette-grille { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
 .vc-carte {
   position: relative; display: flex; flex-direction: column; min-height: 200px; padding: 20px 22px 18px;

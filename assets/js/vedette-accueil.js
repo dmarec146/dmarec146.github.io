@@ -91,9 +91,19 @@ function dessiner(resultat) {
     return carteCahier(niveau, libelle, classe, cahierDuJour(niveau), null, 0);
   }).join('') + CARTE_TERMINALE;
   zone.innerHTML = html;
+  zone.classList.add('pret');
+}
+
+// Dernier etat connu des devoirs (ecrit par devoirs-notification.js) : evite que la carte change apres le chargement de Firebase
+function depuisCache() {
+  try {
+    const c = JSON.parse(window.localStorage.getItem('cahiers-devoirs-cache') || 'null');
+    if (!c || !Array.isArray(c.devoirs)) return null;
+    return { aFaire: c.devoirs.filter((d) => d.echeanceMillis > Date.now()), enregistres: [] };
+  } catch (e) { return null; }
 }
 
 if (zone) {
-  dessiner(window.devoirsEleve || null);
+  dessiner(window.devoirsEleve || depuisCache());
   document.addEventListener('devoirs-eleve-prets', (ev) => dessiner(ev.detail));
 }

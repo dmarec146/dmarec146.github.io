@@ -49,6 +49,8 @@ function lireEtatConnu() {
 }
 function memoriserEtat(role) {
   try { if (role) window.localStorage.setItem(CLE_ETAT, role); else window.localStorage.removeItem(CLE_ETAT); } catch (e) { /* stockage indisponible */ }
+  // le cache des devoirs (devoirs-notification.js) n'a de sens que pour un eleve connecte
+  if (role !== 'eleve') { try { window.localStorage.removeItem('cahiers-devoirs-cache'); } catch (e) { /* stockage indisponible */ } }
 }
 
 // Icone "profil" classique (silhouette tete + epaules), reconnaissable sans
