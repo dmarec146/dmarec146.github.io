@@ -160,6 +160,8 @@ les corrections ponctuelles d'une fiche).
   contextualisés** (pas de taxi, de prix…) : soit un calcul combinant
   plusieurs techniques du cœur, soit une propriété à démontrer.
 
+- **Pas de pictogramme de niveau (David, 30/10/2026)** : les petits triangles (et la roue dentée des calculs avancés) à droite des titres de calcul sont retirés de toutes les fiches (« les élèves ne les regardent pas ») ; une nouvelle fiche n'en comporte pas. Le conteneur `<span class="picto-niveau"></span>` reste, vide : le bouton « ? » d'aide y est inséré par JavaScript. Le barème n'en dépend pas.
+
 ## 3 bis. Compléments de rédaction (fusionnés le 16/10/2026 depuis la mémoire locale du PC perso)
 
 - **« À partir de quel rang »** : « le plus petit entier \(n\) tel que \(P(n)\) » est souvent vrai dès \(n=1\) (\(2^n>n^2\)
