@@ -269,7 +269,7 @@
   function barreHTML(idx, touches) {
     const liste = (touches && touches.length) ? touches : ['P', 'Pcond', 'bar', 'cap', 'cup'];
     return '<div class="q-barre-formule">' + liste.filter((t) => TOUCHES[t]).map((t) =>
-      `<button type="button" class="q-touche-formule" title="${TOUCHES[t].titre}" onclick="insererMath(${idx},'${echapper(TOUCHES[t].tex)}')">${TOUCHES[t].libelle}</button>`).join('') + '</div>';
+      `<button type="button" class="q-touche-formule" title="${TOUCHES[t].titre}" onmousedown="event.preventDefault()" onclick="insererMath(${idx},'${echapper(TOUCHES[t].tex)}')">${TOUCHES[t].libelle}</button>`).join('') + '</div>';
   }
   const AIDES = {
     P: '<code>P( )</code> insère une probabilité',
