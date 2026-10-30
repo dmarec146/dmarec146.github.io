@@ -32,7 +32,7 @@ function texteMeta(nums) { return nums.length + (nums.length > 1 ? ' fiches' : '
 
   // 1. manifeste <-> fichiers de fiches
   const dossiersReels = [];
-  for (const niveau of ['seconde', 'premiere']) {
+  for (const niveau of ['seconde', 'premiere', 'terminale']) {
     const base = path.join(RACINE, 'cahiers', niveau);
     for (const d of fs.readdirSync(base)) if (/^cahier-\d+$/.test(d)) dossiersReels.push({ niveau, cahier: d });
   }
@@ -68,11 +68,11 @@ function texteMeta(nums) { return nums.length + (nums.length > 1 ? ' fiches' : '
       else erreurs.push(`cahiers/index.html : ${c.niveau}/${c.cahier} affiche « ${m[2]} » au lieu de « ${attendu} »`);
     }
   }
-  for (const niveau of ['seconde', 'premiere']) {
+  for (const niveau of ['seconde', 'premiere', 'terminale']) {
     const cs = MANIFESTE_CAHIERS.filter(c => c.niveau === niveau);
     const total = cs.reduce((t, c) => t + c.fiches.length, 0);
-    const attendu = `${total} fiches réparties en ${cs.length} cahiers`;
-    const re = new RegExp('(<div class="groupe-niveau" id="niveau-' + niveau + '">[\\s\\S]*?<p class="groupe-niveau-sous">[^<]*?)(\\d+ fiches réparties en \\d+ cahiers)');
+    const attendu = `${total} ${total > 1 ? 'fiches' : 'fiche'} ${cs.length > 1 ? 'réparties en ' + cs.length + ' cahiers' : 'dans 1 cahier'}`;
+    const re = new RegExp('(<div class="groupe-niveau" id="niveau-' + niveau + '">[\\s\\S]*?<p class="groupe-niveau-sous">[^<]*?)(\\d+ fiches? (?:réparties en \\d+ cahiers|dans 1 cahier))');
     const m = html.match(re);
     if (!m) { erreurs.push(`cahiers/index.html : sous-titre de ${niveau} introuvable`); continue; }
     if (m[2] !== attendu) {

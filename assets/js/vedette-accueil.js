@@ -1,14 +1,13 @@
-// Cartes « Cahiers de calcul en vedette » de l'accueil (29/10/2026, choix de David après maquette) :
-//   - une carte Première et une carte Seconde : le cahier du JOUR (tiré au hasard, le même toute la journée pour un niveau
+// Cartes « Cahiers de calcul en vedette » de l'accueil (29/10/2026, choix de David après maquette ; Terminale ajoutée le 30/10/2026) :
+//   - une carte par niveau (Seconde, Première, Terminale) : le cahier du JOUR (tiré au hasard, le même toute la journée pour un niveau
 //     donné), sauf pour un élève connecté qui a un devoir de fiche de calcul en cours dans ce niveau : la carte montre alors le
 //     cahier de ce devoir (celui dont l'échéance est la plus proche), avec un bandeau « Devoir à rendre le … » qui mène à la fiche ;
-//   - une carte « Terminale » (à venir), sans lien.
 // Le HTML de index.html contient un repli statique (JavaScript absent, ouverture en file://) ; ce script le remplace.
 // Les devoirs de l'élève viennent de devoirs-notification.js, qui les charge déjà pour la pastille « Mes devoirs » : il publie le
 // résultat (événement « devoirs-eleve-prets » et window.devoirsEleve), aucune lecture Firestore de plus.
 import { MANIFESTE_CAHIERS } from './manifeste-fiches.js';
 
-const NIVEAUX = [['seconde', 'Seconde', 'vc-clair'], ['premiere', 'Première', 'vc-sombre']];   // ordre voulu par David (30/10/2026) : Seconde, Première, puis Terminale
+const NIVEAUX = [['seconde', 'Seconde', 'vc-clair'], ['premiere', 'Première', 'vc-sombre'], ['terminale', 'Terminale', 'vc-clair']];   // ordre voulu par David (30/10/2026) : Seconde, Première, puis Terminale
 const zone = document.getElementById('vedette-cartes');
 
 function echapper(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
@@ -42,11 +41,11 @@ function dateEcheance(ms) {
 
 // Devoirs de fiche en cours de l'élève, rangés par niveau : { premiere: [devoir…], seconde: [...] }, du plus proche au plus lointain
 function devoirsParNiveau(resultat) {
-  const par = { premiere: [], seconde: [] };
+  const par = { premiere: [], seconde: [], terminale: [] };
   if (!resultat) return par;
   const ouverts = [].concat(resultat.aFaire || [], resultat.enregistres || []);
   for (const d of ouverts) {
-    const m = d.type === 'fiche' && typeof d.ficheId === 'string' && d.ficheId.match(/^\/cahiers\/(premiere|seconde)\/(cahier-\d+)\/(fiche-\d+\.html)$/);
+    const m = d.type === 'fiche' && typeof d.ficheId === 'string' && d.ficheId.match(/^\/cahiers\/(premiere|seconde|terminale)\/(cahier-\d+)\/(fiche-\d+\.html)$/);
     if (m) par[m[1]].push({ devoir: d, cahier: m[2], href: m[3] });
   }
   for (const n of Object.keys(par)) par[n].sort((a, b) => a.devoir.echeanceMillis - b.devoir.echeanceMillis);
@@ -76,9 +75,6 @@ function carteCahier(niveau, libelle, classe, cahier, avecDevoir, nbAutres) {
     '<span class="vc-fleche" aria-hidden="true">→</span></div>';
 }
 
-const CARTE_TERMINALE = '<div class="vc-carte vc-avenir"><span class="vc-eti">Terminale</span><h3>Cahier de Terminale</h3>' +
-  '<p class="vc-bientot">À venir — en préparation.</p></div>';
-
 function dessiner(resultat) {
   const devoirs = devoirsParNiveau(resultat);
   const html = NIVEAUX.map(([niveau, libelle, classe]) => {
@@ -89,7 +85,7 @@ function dessiner(resultat) {
       if (cahier) return carteCahier(niveau, libelle, classe, cahier, choisi, liste.length - 1);
     }
     return carteCahier(niveau, libelle, classe, cahierDuJour(niveau), null, 0);
-  }).join('') + CARTE_TERMINALE;
+  }).join('');
   zone.innerHTML = html;
   zone.classList.add('pret');
 }
