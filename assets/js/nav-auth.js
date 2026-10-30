@@ -130,7 +130,8 @@ if (cible) {
   // display:none) pour un non-admin : l'espace reserve au chargement ne
   // bouge plus jamais, au prix d'un petit vide invisible et permanent dans
   // la barre pour la tres grande majorite des visiteurs.
-  const lienTableau = document.createElement('a');
+  // adopte l'icone deja posee par assets/js/entete-instantane.js (avant le premier affichage), sinon la cree
+  const lienTableau = (nav && nav.querySelector('a[data-nav-auth]')) || document.createElement('a');
   // Pointe directement sur devoirs.html (29/09/2026) : l'ancien tableau de
   // bord "Fiches" (suivi de l'entrainement hors devoir) a ete retire sur
   // demande de David ("je ne ferai un suivi enseignant que sur les devoirs
@@ -151,7 +152,7 @@ if (cible) {
   lienTableau.style.visibility = 'hidden';
   cible.appendChild(lienTableau);
 
-  const bouton = document.createElement('button');
+  const bouton = (nav && nav.querySelector('button[data-nav-auth]')) || document.createElement('button');
   bouton.type = 'button';
   bouton.dataset.navAuth = 'true';
   bouton.innerHTML = ICONE_PROFIL;

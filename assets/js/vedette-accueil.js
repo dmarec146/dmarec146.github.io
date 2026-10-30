@@ -8,7 +8,7 @@
 // résultat (événement « devoirs-eleve-prets » et window.devoirsEleve), aucune lecture Firestore de plus.
 import { MANIFESTE_CAHIERS } from './manifeste-fiches.js';
 
-const NIVEAUX = [['premiere', 'Première', 'vc-sombre'], ['seconde', 'Seconde', 'vc-clair']];
+const NIVEAUX = [['seconde', 'Seconde', 'vc-clair'], ['premiere', 'Première', 'vc-sombre']];   // ordre voulu par David (30/10/2026) : Seconde, Première, puis Terminale
 const zone = document.getElementById('vedette-cartes');
 
 function echapper(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }

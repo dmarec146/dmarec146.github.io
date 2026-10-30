@@ -26,8 +26,9 @@
 
   --rayon: 14px;
   --rayon-sm: 8px;
-  --ombre: 0 1px 2px rgba(26,26,26,0.04), 0 8px 24px rgba(26,26,26,0.05);
-  --ombre-hover: 0 2px 4px rgba(26,26,26,0.06), 0 16px 32px rgba(26,26,26,0.08);
+  --fond-page: #F6F6F4;   /* fond de page très légèrement gris (30/10/2026) : les cartes blanches s'en détachent */
+  --ombre: 0 1px 2px rgba(26,26,26,0.07), 0 4px 14px rgba(26,26,26,0.07);
+  --ombre-hover: 0 2px 5px rgba(26,26,26,0.09), 0 12px 28px rgba(26,26,26,0.11);
 }
 
 * { box-sizing: border-box; }
@@ -41,10 +42,11 @@ html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scrollbar-gutter
 body {
   font-family: 'Georgia', 'Times New Roman', serif;
   color: var(--encre);
-  background: var(--papier);
+  background: var(--fond-page);
   margin: 0;
   line-height: 1.5;
 }
+body.tdb { background: var(--papier); }   /* tableaux de bord de l'enseignant : fond blanc comme avant */
 
 a { color: inherit; }
 
@@ -56,6 +58,7 @@ a { color: inherit; }
 
 /* ---------- En-tête du site ---------- */
 .site-entete {
+  background: var(--papier);
   border-bottom: 1.5px solid var(--gris-200);
   padding: 18px 0;
 }
@@ -160,6 +163,33 @@ a { color: inherit; }
   .site-nav a.nav-vedette { font-size: 10.5px; padding: 6px 6px; }
   .site-nav a.nav-icone-profil, .site-nav button.nav-icone-profil { width: 34px; height: 34px; }
 }
+
+/* ---------- Barre de navigation sobre (30/10/2026) : du texte et une pastille neutre sur la page en cours (les points de couleur par section ont été retirés à la demande de David).
+   Ordinateur, tablette et téléphone en paysage ; le téléphone en portrait garde sa barre d'onglets du bas. L'onglet courant vient de aria-current (pied-droits.js). ---------- */
+@media (min-width: 561px), (orientation: landscape) {
+  .site-nav { gap: 2px; }
+  .site-nav a, .site-nav a.nav-vedette, .site-nav a.nav-vedette-vert, .site-nav a.nav-vedette-anthracite {
+    background: none; color: var(--gris-600); font: 500 15px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 10px 12px; border-radius: var(--rayon-sm); display: inline-flex; align-items: center; gap: 8px;
+  }
+  .site-nav a:hover, .site-nav a.nav-vedette:hover, .site-nav a.nav-vedette-vert:hover, .site-nav a.nav-vedette-anthracite:hover { background: var(--gris-100); color: var(--encre); }
+  .site-nav a[aria-current], .site-nav a.nav-vedette[aria-current], .site-nav a.nav-vedette-vert[aria-current], .site-nav a.nav-vedette-anthracite[aria-current] { background: #E9E6DD; color: var(--encre); }
+}
+@media (min-width: 561px) and (max-width: 860px) {
+  .site-nav { gap: 0; }
+  .site-nav a, .site-nav a.nav-vedette, .site-nav a.nav-vedette-vert, .site-nav a.nav-vedette-anthracite { padding: 9px 5px; font-size: 13.5px; gap: 5px; }
+}
+
+/* Place réservée (30/10/2026) : les icônes du compte (nav-auth.js, module) arrivent après le premier affichage ; sans cette réserve, la navigation
+   se décalait d'environ 85 px quand elles apparaissaient (clignotement au changement de page). Disparaît dès que les vraies icônes existent.
+   Écran large seulement : sur téléphone en portrait la barre d'onglets est fixe et l'icône de profil reste seule dans l'en-tête. */
+@media (min-width: 561px), (orientation: landscape) {
+  body:not(.sans-icones) .site-nav:not(:has(.nav-icone-profil))::after { content: ""; flex: none; width: 82px; height: 40px; }
+}
+/* État « connecté » du bouton profil (copie de ce que nav-auth.js injecte, pour qu'il soit déjà là au premier affichage) */
+button[data-nav-auth][data-connecte] { position: relative; background: var(--accent, #4B46C7) !important; color: #fff !important; border-color: var(--accent, #4B46C7) !important; }
+button[data-nav-auth][data-connecte]:hover { filter: brightness(1.1); }
+button[data-nav-auth][data-connecte]::after { content: ""; position: absolute; right: 4px; bottom: 4px; width: 10px; height: 10px; border-radius: 50%; background: #2fbf71; border: 2px solid #fff; box-sizing: border-box; }
 
 /* ---------- Fil d'ariane ---------- */
 .fil-ariane {
@@ -270,7 +300,8 @@ body.mode-export-cahier > .site-pied {
   flex-wrap: wrap;
 }
 .section-entete h2 {
-  font-size: 21px;
+  font-size: 30px;
+  line-height: 1.2;
   margin: 0;
 }
 .section-entete .voir-tout {
@@ -451,8 +482,9 @@ body.mode-export-cahier > .site-pied {
 
 /* Carte "à venir" (niveau/cahier pas encore publié) */
 .bento-carte--a-venir {
-  background: var(--gris-50);
-  border-style: dashed;
+  background: transparent;
+  border: 1.5px dashed #C9C8C2;
+  box-shadow: none;
   color: var(--gris-600);
   cursor: default;
 }
@@ -497,6 +529,7 @@ body.mode-export-cahier > .site-pied {
   color: var(--encre);
   transition: border-color 0.15s, background-color 0.15s, transform 0.1s;
   min-height: 56px;
+  box-shadow: 0 1px 2px rgba(26,26,26,0.06);
 }
 .fiche-lien:hover { border-color: var(--accent); background: var(--accent-clair); transform: translateX(2px); }
 .fiche-lien:active { transform: scale(0.98); }
@@ -664,14 +697,14 @@ a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-cla
 .fiche-go { margin-left: auto; flex: none; font: 600 14px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #fff; background: var(--accent); border-radius: 999px; padding: 8px 16px; }
 
 /* ---------- Cartes « Cahiers de calcul en vedette » de l'accueil (29/10/2026, assets/js/vedette-accueil.js) ---------- */
-.vedette-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; min-height: 330px; }
+.vedette-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; min-height: 190px; }
 /* cachees (place reservee) jusqu'a ce que vedette-accueil.js ait dessine les vraies cartes : plus de saut de page au chargement ; si le script
    ne s'execute pas, le repli statique apparait de lui-meme apres 1,5 s */
 .vedette-grille:not(.pret) { visibility: hidden; animation: vc-montrer 0s 1.5s forwards; }
 @keyframes vc-montrer { to { visibility: visible; } }
 @media (max-width: 860px) { .vedette-grille { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
 .vc-carte {
-  position: relative; display: flex; flex-direction: column; min-height: 200px; padding: 20px 22px 18px;
+  position: relative; display: flex; flex-direction: column; padding: 20px 22px 16px;
   background: var(--papier); border: 1.5px solid var(--gris-200); border-radius: var(--rayon); box-shadow: var(--ombre);
   color: var(--encre); transition: transform 0.15s, box-shadow 0.15s;
 }
@@ -701,7 +734,7 @@ a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-cla
 }
 .vc-devoir small { font-weight: 400; font-size: 12.5px; }
 .vc-devoir:hover { background: var(--rouge); }
-.vc-avenir { background: var(--gris-50); border-style: dashed; box-shadow: none; color: var(--gris-600); }
+.vc-avenir { background: transparent; border: 1.5px dashed #C9C8C2; box-shadow: none; color: var(--gris-600); }
 .vc-avenir .vc-eti { background: var(--gris-200); color: var(--gris-600); }
 .vc-avenir h3 { color: var(--gris-600); }
 .vc-bientot { margin: 0; font: 14px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -797,7 +830,7 @@ a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-cla
   .hero .filet { margin: 14px 0 0; }
   .section { padding-top: 18px; padding-bottom: 14px; }
   .section-entete { margin-bottom: 12px; }
-  .section-entete h2 { font-size: 20px; }
+  .section-entete h2 { font-size: 25px; }
   .section-entete .voir-tout { font-size: 15px; padding: 10px 0; }
   .section-intro { font-size: 15px; }
   .site-pied { margin-top: 20px; padding: 16px 16px 24px; font-size: 13px; }
@@ -853,7 +886,7 @@ a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-cla
     margin: 0 -16px -10px; padding: 2px 16px 22px; scrollbar-width: none;
   }
   .page-accueil .section-vedette .vedette-grille::-webkit-scrollbar { display: none; }
-  .page-accueil .section-vedette .vc-carte { flex: 0 0 268px; scroll-snap-align: start; min-height: 190px; }
+  .page-accueil .section-vedette .vc-carte { flex: 0 0 268px; scroll-snap-align: start; }
 
   /* ----- liste « Tous les cahiers » : un niveau à la fois, lignes compactes ----- */
   .seg-niveaux { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--gris-100); border-radius: 14px; padding: 4px; margin: 6px 0 4px; }
