@@ -316,6 +316,8 @@ les corrections ponctuelles d'une fiche).
   serait la solution, dénominateur qui s'annule là où la question suppose
   le contraire.
 
+- **Réponse en formule de probabilités (Terminale, 30/10/2026, clavier dédié voulu par David « qui pourra nous resservir »)** : une question qui demande d'« exprimer P(S) en fonction de P_T(S)… » ou V(X) en fonction de E(X²)… a le type `formule` (`assets/js/formules-proba.js`) : barre de boutons P( ), P indice ( ), barre du contraire, ∩, ∪, E( ), V( ), x² sous le champ, comparaison par substitution numérique (toute écriture équivalente est acceptée), valeurs connues de l'énoncé déclarées dans `fixes`. Le détail est dans `SUIVI-FIREBASE.md` §2.
+
 ## 4 bis. Conception des tirages aléatoires
 
 - **Élargir le champ de l'aléatoire** (« c'est très important », redit
