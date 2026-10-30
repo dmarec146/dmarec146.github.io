@@ -947,7 +947,12 @@ Bareme.definir({"points":{"1.1 a)":0.5,"1.1 b)":0.75,"1.2 a)":0.5,"1.2 b)":0.75,
   .table-loi-a-completer th, .table-loi-a-completer td { border: 1px solid #999; padding: 6px 10px; text-align: center; vertical-align: middle; font-weight: normal; }
   .table-loi-a-completer .question-cellule { padding: 4px; justify-content: center; gap: 4px; }
   .table-loi-a-completer .q-mathfield { min-width: 60px; max-width: 84px; }
-  .loi-a-completer { display: flex; flex-direction: column; align-items: center; }
+  .loi-a-completer { display: flex; flex-direction: column; align-items: center; max-width: 100%; min-width: 0; }
+  @media (max-width: 480px) {
+    .table-loi-a-completer th, .table-loi-a-completer td { padding: 4px 3px; }
+    .table-loi-a-completer .question-cellule { padding: 2px; gap: 2px; }
+    .table-loi-a-completer .q-mathfield { min-width: 44px; max-width: 58px; font-size: 14px; }
+  }
 </style>
 
 <body>
@@ -1241,6 +1246,77 @@ function familleAlpha() {
   return res;
 }
 
+// ---------- details de correction (30/10/2026) : fonctions communes dans assets/js/details-correction.js et details-second-degre.js ----------
+const { dP, dPlus, fracD, fracDP, fracTexte, fracBrute } = Detail;
+const { dedup2 } = DetailQ;
+const dFr = (x) => fracD(FR(x));                                                    // fraction irreductible, signe devant
+const tm = (x, s = 1) => { const f = FR(x); return { s, n: f.n, d: f.d }; };         // terme { s, n, d } d'une somme de fractions (x positif)
+const puiss = (p, e) => (e === 1 ? String(p) : `${p}^{${e}}`);
+
+// somme de fractions signees [{ s: +1|-1, n, d }] (le premier terme peut etre negatif) : les etapes de l'ecriture en ligne
+function sommeSignee(termes) {
+  const den = termes.reduce((t, x) => Detail.ppcm(t, x.d), 1), num = termes.reduce((t, x) => t + x.s * x.n * (den / x.d), 0);
+  const sg = (x, i) => (i === 0 ? (x.s < 0 ? '-' : '') : (x.s < 0 ? ' - ' : ' + '));
+  const brute = num === 0 ? '0' : fracBrute(num, den), simple = fracTexte(num, den);
+  const origine = termes.map((x, i) => sg(x, i) + fracBrute(x.n, x.d)).join('');
+  const converti = termes.map((x, i) => { const m = den / x.d; return sg(x, i) + (m === 1 ? fracBrute(x.n, x.d) : `\\dfrac{${x.n}\\times ${m}}{${x.d}\\times ${m}}`); }).join('');
+  const meme = termes.map((x, i) => sg(x, i) + fracBrute(x.n * (den / x.d), den)).join('');
+  return { origine, converti, meme, brute, simple, chaine: dedup2(origine, converti, meme, brute, simple) };
+}
+
+// somme de produits « coefficient x probabilite » (coefficient eventuellement negatif ou fractionnaire) : ecriture puis somme
+function produitsEnSomme(items) {
+  const gardes = items.filter(it => !FR(it.c).equals(0));
+  const txt = (it) => { const m = math.abs(FR(it.c)); return m.equals(1) ? frTex(it.p) : `${frTex(m)}\\times ${frTex(it.p)}`; };
+  const l1 = gardes.map((it, i) => (i === 0 ? (FR(it.c).s < 0 ? '-' : '') : (FR(it.c).s < 0 ? ' - ' : ' + ')) + txt(it)).join('');
+  const S = sommeSignee(gardes.map(it => { const t = math.multiply(math.abs(FR(it.c)), FR(it.p)); return { s: FR(it.c).s < 0 ? -1 : 1, n: t.n, d: t.d }; }));
+  return dedup2(l1, S.origine, S.converti, S.meme, S.brute, S.simple);
+}
+
+// espérance : E(X) = somme des v x P(X=v)
+function detailE(vs, ps, nom = 'E(X)') {
+  return { lignes: [`${nom} = ${produitsEnSomme(vs.map((v, i) => ({ c: v, p: ps[i] })))}`], final: dFr(moyenne(vs, ps)) };
+}
+// fin d'un calcul de variance : E(X) rappelee, puis V(X) = E(X^2) - E(X)^2
+function finVariance(nomV, nomE, M2, M1) {
+  const m1 = FR(M1), m2 = FR(M2), m1c = math.multiply(m1, m1);
+  if (m1.n === 0) return [`${nomE} = 0`, `${nomV} = ${dedup2(`${dFr(m2)}-0^{2}`, dFr(m2))}`];
+  const sq = m1.d === 1 && m1.s >= 0 ? `${m1.n}^{2}` : `\\left(${dFr(m1)}\\right)^{2}`;
+  const S = sommeSignee([tm(m2, 1), tm(m1c, -1)]);
+  return [`${nomE} = ${dFr(m1)}`, `${nomV} = ${dedup2(`${dFr(m2)}-${sq}`, S.origine, S.converti, S.meme, S.brute, S.simple)}`];
+}
+function detailV(vs, ps) {
+  const M2 = moyenne(vs.map(v => math.multiply(FR(v), FR(v))), ps), M1 = moyenne(vs, ps);
+  const E2 = produitsEnSomme(vs.map((v, i) => ({ c: math.multiply(FR(v), FR(v)), p: ps[i] })));
+  return { lignes: ['V(X) = E(X^{2})-E(X)^{2}', `E(X^{2}) = ${E2}`, ...finVariance('V(X)', 'E(X)', M2, M1)], final: dFr(variance(vs, ps)) };
+}
+// probabilite d'un evenement « X ... » : somme des P(X=v) concernees
+function sommeLoi(cond, idx, vs, ps) {
+  const noms = idx.map(i => `P(X=${valTex(vs[i])})`).join('+');
+  if (idx.length === 1) return { lignes: [`P(${cond}) = ${noms} = ${frTex(ps[idx[0]])}`], final: frTex(ps[idx[0]]) };
+  const S = sommeSignee(idx.map(i => tm(ps[i], 1)));
+  return { lignes: [`P(${cond}) = ${noms} = ${S.chaine}`], final: S.simple };
+}
+// probabilite manquante : 1 moins la somme des autres
+function lignesComplement(nom, connus) {
+  const S = sommeSignee(connus.map(x => tm(x, 1)));
+  let somme = FR(0); connus.forEach(x => { somme = math.add(somme, FR(x)); });
+  const res = math.subtract(1, somme), lignes = [`${nom} = 1-\\left(${S.origine}\\right)`];
+  if (S.chaine.includes(' = ')) lignes.push(S.chaine);
+  lignes.push(`${nom} = ${dedup2(`1-${dFr(somme)}`, `\\dfrac{${somme.d}-${somme.n}}{${somme.d}}`, dFr(res))}`);
+  return { lignes, final: dFr(res) };
+}
+// 1 - x en une ligne : 1-\dfrac{1}{3} = \dfrac{3-1}{3} = \dfrac{2}{3}
+function complement1(x) {
+  const f = FR(x), r = math.subtract(1, f);
+  return dedup2(`1-${dFr(f)}`, `\\dfrac{${f.d}-${f.n}}{${f.d}}`, dFr(r));
+}
+// coefficient devant une lettre, valeur numerique (« -2E(X)+3 », « (-2)\times 5+3 »)
+const cp30 = (a) => (a === 1 ? '' : a === -1 ? '-' : String(a));
+const affSym = (a, sym, b) => `${cp30(a)}${sym}${b > 0 ? '+' + b : b < 0 ? String(b) : ''}`;
+const affNum = (a, mu, b) => `${a === 1 ? mu : a === -1 ? '-' + mu : dP(a) + '\\times ' + mu}${b > 0 ? '+' + b : b < 0 ? '-' + (-b) : ''}`;
+const prod30 = (k, v) => (k === 1 ? String(v) : `${k}\\times ${v}`);
+
 function genererExercices() {
   const ex = [];
   paramsAvances = {};
@@ -1256,7 +1332,15 @@ function genererExercices() {
       p = piocher([2, 3, 5, 7]); k = piocher([2, 3]); m = piocher([2, 3]); c = piocher([6, 10, 12, 14, 15, 18, 20, 21, 24, 28, 30, 35, 36, 45]);
       R = Math.pow(p, k * m) * c;
     } while (Math.pow(p, k) > 130 || R > 5e7 || Object.keys(facteursPremiers(R)).length < 2);
-    ex.push({ id: '1.1 a)', type: 'num', texteLibre: false, enonce: `${Math.pow(p, k)}^{${m}}\\times ${c}`, reponse: ecriturePremiers(R), correctionLatex: premiersLatex(R) });
+    const fc = facteursPremiers(c), eP = fc[p] || 0, autres = Object.assign({}, fc); delete autres[p];
+    const l = [`${Math.pow(p, k)}^{${m}}\\times ${c}`, `(${p}^{${k}})^{${m}}\\times ${premiersLatex(c)}`, `${p}^{${k}\\times ${m}}\\times ${premiersLatex(c)}`];
+    if (eP > 0) {
+      const fin = Object.assign({}, autres); fin[p] = k * m + eP;
+      const cles = Object.keys(fin).map(Number).sort((u, v) => u - v);
+      l.push(cles.map(q => (q === p ? `${p}^{${k * m}+${eP}}` : puiss(q, fin[q]))).join('\\times '));
+    }
+    l.push(premiersLatex(R));
+    ex.push({ id: '1.1 a)', detail: { lignes: [l.filter((t, i) => i === 0 || t !== l[i - 1]).join(' = ')], final: premiersLatex(R) }, type: 'num', texteLibre: false, enonce: `${Math.pow(p, k)}^{${m}}\\times ${c}`, reponse: ecriturePremiers(R), correctionLatex: premiersLatex(R) });
     // b) A x B / C, C divise A x B
     let A, B, C, N, ok;
     do {
@@ -1268,7 +1352,12 @@ function genererExercices() {
       C = candidats.length ? piocher(candidats) : 0; N = A * B / (C || 1);
       ok = C > 1 && A <= 130 && B <= 300 && A !== B && N > 1 && Number.isInteger(N) && Object.keys(facteursPremiers(N)).length >= 1;
     } while (!ok);
-    ex.push({ id: '1.1 b)', type: 'num', texteLibre: false, enonce: `\\dfrac{${A}\\times ${B}}{${C}}`, reponse: ecriturePremiers(N), correctionLatex: premiersLatex(N) });
+    const fA = facteursPremiers(A), fB = facteursPremiers(B), fC = facteursPremiers(C), fN = facteursPremiers(N);
+    const tous = [...new Set([...Object.keys(fA), ...Object.keys(fB), ...Object.keys(fC)])].map(Number).sort((u, v) => u - v);
+    const numTex = (somme) => tous.filter(q => (fA[q] || 0) + (fB[q] || 0) > 0).map(q => (somme && fA[q] && fB[q] ? `${q}^{${fA[q]}+${fB[q]}}` : puiss(q, (fA[q] || 0) + (fB[q] || 0)))).join('\\times ');
+    const reste = tous.filter(q => (fA[q] || 0) + (fB[q] || 0) - (fC[q] || 0) > 0).map(q => (fC[q] ? `${q}^{${(fA[q] || 0) + (fB[q] || 0)}-${fC[q]}}` : puiss(q, (fA[q] || 0) + (fB[q] || 0)))).join('\\times ');
+    const lb = [`\\dfrac{${A}\\times ${B}}{${C}}`, `\\dfrac{${premiersLatex(A)}\\times ${premiersLatex(B)}}{${premiersLatex(C)}}`, `\\dfrac{${numTex(true)}}{${premiersLatex(C)}}`, reste, premiersLatex(N)];
+    ex.push({ id: '1.1 b)', detail: { lignes: [lb.filter((t, i) => i === 0 || t !== lb[i - 1]).join(' = ')], final: premiersLatex(N) }, type: 'num', texteLibre: false, enonce: `\\dfrac{${A}\\times ${B}}{${C}}`, reponse: ecriturePremiers(N), correctionLatex: premiersLatex(N) });
   }
 
   // ---------- 1.2 : factoriser ----------
@@ -1276,9 +1365,9 @@ function genererExercices() {
     const signe = (s) => (s > 0 ? '+' : '-');
     const trinome = (a, s, c) => `${c === 1 ? '' : c}x^2${signe(s)}${2 * a * c}x${signe(1)}${a * a * c}`;
     const a1 = alea(1, 9), s1 = piocher([1, -1]);
-    ex.push({ id: '1.2 a)', type: 'alg', texteLibre: false, enonce: trinome(a1, s1, 1), reponse: `(x${signe(s1)}${a1})^2` });
-    const k3 = alea(1, 3);
-    ex.push({ id: '1.2 b)', type: 'alg', texteLibre: false, enonce: `x^4-${Math.pow(k3, 4)}`, reponse: `(x-${k3})(x+${k3})(x^2+${k3 * k3})` });
+    ex.push({ id: '1.2 a)', detail: { lignes: [`x^{2}${signe(s1)}${2 * a1}x+${a1 * a1} = ${a1 === 1 ? '' : `x^{2}${signe(s1)}2\\times ${a1}x+${a1}^{2} = `}(x${signe(s1)}${a1})^{2}`], final: `(x${signe(s1)}${a1})^{2}` }, type: 'alg', texteLibre: false, enonce: trinome(a1, s1, 1), reponse: `(x${signe(s1)}${a1})^2` });
+    const k3 = alea(1, 3), q3 = k3 * k3;
+    ex.push({ id: '1.2 b)', detail: { lignes: [`x^{4}-${Math.pow(k3, 4)} = (x^{2})^{2}-${q3}^{2} = (x^{2}-${q3})(x^{2}+${q3}) = (x-${k3})(x+${k3})(x^{2}+${q3})`], final: `(x-${k3})(x+${k3})(x^{2}+${q3})` }, type: 'alg', texteLibre: false, enonce: `x^4-${Math.pow(k3, 4)}`, reponse: `(x-${k3})(x+${k3})(x^2+${k3 * k3})` });
   }
 
   // ---------- 1.3 : une loi dont une probabilite manque ----------
@@ -1290,56 +1379,65 @@ function genererExercices() {
       vs = [...choix].sort((u, v) => u - v);
       d = piocher([10, 20, 12]); ns = compositionAleatoire(4, d); manque = alea(0, 3);
     } while (vs[0] >= 0 || !vs.some(v => !Number.isInteger(v)));
+    const ps = ns.map(n => math.fraction(n, d));
     const connues = [0, 1, 2, 3].filter(i => i !== manque).map(i => `\\(P(X=${valTex(vs[i])})=${fracLatex(ns[i], d)}\\)`);
     paramsAvances.t3 = `<p>Soit \\(X\\) une variable aléatoire qui prend les valeurs ${listeEt(vs.map(v => `\\(${valTex(v)}\\)`))}. On suppose que ${listeEt(connues)}.</p><p>Déterminer :</p>`;
-    num('1.3 a)', `P(X=${valTex(vs[manque])})`, math.fraction(ns[manque], d));
+    num('1.3 a)', `P(X=${valTex(vs[manque])})`, ps[manque], { detail: lignesComplement(`P(X=${valTex(vs[manque])})`, [0, 1, 2, 3].filter(i => i !== manque).map(i => ps[i])) });
     const somme = (pred) => vs.reduce((s, v, i) => pred(v) ? s + ns[i] : s, 0);
+    const indices = (pred) => vs.map((v, i) => i).filter(i => pred(vs[i]));
     // b) seuil entre deux valeurs
     let seuil = null; const j = alea(1, 2);
     for (let t = vs[j - 1] + 0.5; t < vs[j]; t += 0.5) if (!vs.includes(t)) { seuil = t; break; }
     if (seuil === null) seuil = vs[j - 1];
     const bSup = alea(0, 1) === 1;
-    num('1.3 b)', `P(X${bSup ? '\\gt ' : '\\leqslant '}${valTex(seuil)})`, math.fraction(somme(v => bSup ? v > seuil : v <= seuil), d));
+    const pb = v => bSup ? v > seuil : v <= seuil;
+    num('1.3 b)', `P(X${bSup ? '\\gt ' : '\\leqslant '}${valTex(seuil)})`, math.fraction(somme(pb), d), { detail: sommeLoi(`X${bSup ? '\\gt ' : '\\leqslant '}${valTex(seuil)}`, indices(pb), vs, ps) });
     const cSup = alea(0, 1) === 1, vc = vs[alea(2, 3)];
-    num('1.3 c)', `P(X${cSup ? '\\geqslant ' : '\\leqslant '}${valTex(vc)})`, math.fraction(somme(v => cSup ? v >= vc : v <= vc), d));
+    const pc = v => cSup ? v >= vc : v <= vc;
+    num('1.3 c)', `P(X${cSup ? '\\geqslant ' : '\\leqslant '}${valTex(vc)})`, math.fraction(somme(pc), d), { detail: sommeLoi(`X${cSup ? '\\geqslant ' : '\\leqslant '}${valTex(vc)}`, indices(pc), vs, ps) });
     const dSup = alea(0, 1) === 1, vd = vs[alea(1, 2)];
-    num('1.3 d)', `P(X${dSup ? '\\gt ' : '\\lt '}${valTex(vd)})`, math.fraction(somme(v => dSup ? v > vd : v < vd), d));
+    const pd = v => dSup ? v > vd : v < vd;
+    num('1.3 d)', `P(X${dSup ? '\\gt ' : '\\lt '}${valTex(vd)})`, math.fraction(somme(pd), d), { detail: sommeLoi(`X${dSup ? '\\gt ' : '\\lt '}${valTex(vd)}`, indices(pd), vs, ps) });
   }
 
   // ---------- 1.4 : probabilites totales (choix d'un contenant, puis tirage) ----------
   {
     const CHOIX = [
-      { phrase: (a, b) => `On choisit ${a} ou ${b} au hasard`, pn: 1, pd: 2 },
-      { phrase: (a, b) => `On lance un dé équilibré à six faces : si l'on obtient 1 ou 2, on choisit ${a}, sinon on choisit ${b}`, pn: 1, pd: 3 },
-      { phrase: (a, b) => `On lance un dé équilibré à six faces : si l'on obtient 1, 2, 3 ou 4, on choisit ${a}, sinon on choisit ${b}`, pn: 2, pd: 3 }
+      { phrase: (a, b) => `On choisit ${a} ou ${b} au hasard`, pn: 1, pd: 2, raw: '\\dfrac{1}{2}' },
+      { phrase: (a, b) => `On lance un dé équilibré à six faces : si l'on obtient 1 ou 2, on choisit ${a}, sinon on choisit ${b}`, pn: 1, pd: 3, raw: '\\dfrac{2}{6}' },
+      { phrase: (a, b) => `On lance un dé équilibré à six faces : si l'on obtient 1, 2, 3 ou 4, on choisit ${a}, sinon on choisit ${b}`, pn: 2, pd: 3, raw: '\\dfrac{4}{6}' }
     ];
     const ch = piocher(CHOIX), t = alea(0, 2);
-    let texte, p1n, p1d, p2n, p2d, evC, evN;
+    let texte, p1n, p1d, p2n, p2d, evC, evN, raw1, raw2;
     if (t === 0) {            // deux paquets de cartes
       let n1, n2, k; do { n1 = piocher([20, 24, 30, 32, 36, 40]); n2 = piocher([32, 36, 40, 48, 52, 54]); k = alea(2, 19); } while (n2 <= n1 || k > n1);
-      p1n = 1; p1d = n1; p2n = 1; p2d = n2;
+      p1n = 1; p1d = n1; p2n = 1; p2d = n2; raw1 = `\\dfrac{1}{${n1}}`; raw2 = `\\dfrac{1}{${n2}}`;
       evC = `On choisit le paquet de ${n1} cartes`; evN = `On tire la carte numéro ${k}`;
       texte = `On dispose de deux paquets de cartes : l'un contient ${n1} cartes numérotées de 1 à ${n1}, l'autre ${n2} cartes numérotées de 1 à ${n2}. ${ch.phrase('le paquet de ' + n1 + ' cartes', 'le paquet de ' + n2 + ' cartes')}, puis on tire une carte de ce paquet.`;
     } else if (t === 1) {     // deux urnes
       let r1, b1, r2, b2; do { r1 = alea(1, 6); b1 = alea(1, 6); r2 = alea(1, 6); b2 = alea(1, 6); } while (b1 / (r1 + b1) === b2 / (r2 + b2));
       const pl = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
-      p1n = b1; p1d = r1 + b1; p2n = b2; p2d = r2 + b2;
+      p1n = b1; p1d = r1 + b1; p2n = b2; p2d = r2 + b2; raw1 = `\\dfrac{${b1}}{${r1}+${b1}}`; raw2 = `\\dfrac{${b2}}{${r2}+${b2}}`;
       evC = `On choisit l'urne 1`; evN = `La boule tirée est noire`;
       texte = `On dispose de deux urnes : l'urne 1 contient ${pl(r1, 'boule')} rouge${r1 > 1 ? 's' : ''} et ${pl(b1, 'boule')} noire${b1 > 1 ? 's' : ''}, l'urne 2 contient ${pl(r2, 'boule')} rouge${r2 > 1 ? 's' : ''} et ${pl(b2, 'boule')} noire${b2 > 1 ? 's' : ''}. ${ch.phrase("l'urne 1", "l'urne 2")}, puis on tire une boule de cette urne.`;
     } else {                  // deux des
       const f1 = piocher([4, 6, 6, 8]), f2 = piocher([10, 12, 20]), k = alea(1, f1);
-      p1n = 1; p1d = f1; p2n = 1; p2d = f2;
+      p1n = 1; p1d = f1; p2n = 1; p2d = f2; raw1 = `\\dfrac{1}{${f1}}`; raw2 = `\\dfrac{1}{${f2}}`;
       evC = `On choisit le dé à ${f1} faces`; evN = `On obtient le numéro ${k}`;
       texte = `On dispose de deux dés équilibrés : l'un a ${f1} faces numérotées de 1 à ${f1}, l'autre ${f2} faces numérotées de 1 à ${f2}. ${ch.phrase('le dé à ' + f1 + ' faces', 'le dé à ' + f2 + ' faces')}, puis on le lance.`;
     }
     paramsAvances.t4 = `<p>${texte}</p><p>On définit les événements : \\(C\\) : « ${evC} » et \\(N\\) : « ${evN} ».</p>`;
-    const pC = math.fraction(ch.pn, ch.pd), a = math.fraction(p1n, p1d), b = math.fraction(p2n, p2d);
-    numT('1.4 a)', 'Calculer \\(P(C)\\)', pC);
-    numT('1.4 b)', 'Calculer \\(P_{C}(N)\\)', a);
-    numT('1.4 c)', 'Calculer \\(P_{\\overline{C}}(N)\\)', b);
+    const pC = math.fraction(ch.pn, ch.pd), a = math.fraction(p1n, p1d), b = math.fraction(p2n, p2d), qC = math.subtract(1, pC);
+    const unique = (r, f) => dedup2(r, dFr(f));
+    numT('1.4 a)', 'Calculer \\(P(C)\\)', pC, { detail: { lignes: [`P(C) = ${unique(ch.raw, pC)}`], final: dFr(pC) } });
+    numT('1.4 b)', 'Calculer \\(P_{C}(N)\\)', a, { detail: { lignes: [`P_{C}(N) = ${unique(raw1, a)}`], final: dFr(a) } });
+    numT('1.4 c)', 'Calculer \\(P_{\\overline{C}}(N)\\)', b, { detail: { lignes: [`P_{\\overline{C}}(N) = ${unique(raw2, b)}`], final: dFr(b) } });
+    const formuleN = 'P_{C}(N)\\times P(C)+P_{\\overline{C}}(N)\\times P(\\overline{C})';
     formule('1.4 d)', 'Exprimer \\(P(N)\\) en fonction de \\(P_{C}(N)\\) et \\(P_{\\overline{C}}(N)\\)',
-      'P_{C}(N)\\times P(C)+P_{\\overline{C}}(N)\\times P(\\overline{C})', { fixes: { 'P(C)': ch.pn / ch.pd }, touches: ['P', 'Pcond', 'bar'] });
-    numT('1.4 e)', 'Calculer \\(P(N)\\)', math.add(math.multiply(a, pC), math.multiply(b, math.subtract(1, pC))));
+      formuleN, { fixes: { 'P(C)': ch.pn / ch.pd }, touches: ['P', 'Pcond', 'bar'], detail: { lignes: ['P(N) = P(C\\cap N)+P(\\overline{C}\\cap N)', 'P(C\\cap N) = P_{C}(N)\\times P(C)', 'P(\\overline{C}\\cap N) = P_{\\overline{C}}(N)\\times P(\\overline{C})', `P(N) = ${formuleN}`], final: formuleN } });
+    const t1 = math.multiply(a, pC), t2 = math.multiply(b, qC), S = sommeSignee([tm(t1), tm(t2)]);
+    numT('1.4 e)', 'Calculer \\(P(N)\\)', math.add(t1, t2), { detail: { lignes: [`P(\\overline{C}) = ${complement1(pC)}`, `P(N) = ${formuleN}`,
+      `= ${dedup2(`${dFr(a)}\\times ${dFr(pC)}+${dFr(b)}\\times ${dFr(qC)}`, S.origine, S.converti, S.meme, S.brute, S.simple)}`], final: dFr(math.add(t1, t2)) } });
   }
 
   // ---------- 1.5 : une urne, tirages sans remise ----------
@@ -1349,8 +1447,14 @@ function genererExercices() {
     let r, b; do { r = alea(1, 5); b = alea(1, 4); } while (r + b < 3 || r + b > 8);
     const N = r + b, c1s = c1.replace(/s$/, '');
     paramsAvances.t5 = `<p>Une urne contient ${r + b} boules dont ${r === 1 ? '1 est ' + c1.replace(/s$/, '') : r + ' sont ' + c1} et ${b === 1 ? '1 est ' + c2.replace(/s$/, '') : b + ' sont ' + c2}. On tire, <strong>sans remise</strong>, deux boules de l'urne. On définit les événements : \\(${L}_1\\) : « La première boule tirée est ${c1s} » et \\(${L}_2\\) : « La seconde boule tirée est ${c1s} ».</p>`;
-    num('1.5 a)', `P_{\\overline{${L}_1}}(${L}_2)`, math.fraction(r, N - 1));
-    num('1.5 b)', `P(${L}_2)`, math.fraction(r, N));
+    const fa = math.fraction(r, N - 1), fb = math.fraction(r, N);
+    num('1.5 a)', `P_{\\overline{${L}_1}}(${L}_2)`, fa, { detail: { lignes: [`P_{\\overline{${L}_1}}(${L}_2) = ${dedup2(`\\dfrac{${r}}{${N}-1}`, fracBrute(r, N - 1), dFr(fa))}`], final: dFr(fa) } });
+    const A1 = r * (r - 1), A2 = b * r, D = N * (N - 1);
+    const t1 = r === 1 ? '0' : `\\dfrac{${r}}{${N}}\\times\\dfrac{${r - 1}}{${N - 1}}`;
+    const lignes = [`P(${L}_2) = P(${L}_1)\\times P_{${L}_1}(${L}_2)+P(\\overline{${L}_1})\\times P_{\\overline{${L}_1}}(${L}_2)`,
+      `= ${t1}+\\dfrac{${b}}{${N}}\\times\\dfrac{${r}}{${N - 1}}`];
+    lignes.push(`= ${dedup2(r === 1 ? `\\dfrac{${A2}}{${D}}` : `\\dfrac{${A1}}{${D}}+\\dfrac{${A2}}{${D}}`, `\\dfrac{${A1 + A2}}{${D}}`, dFr(fb))}`);
+    num('1.5 b)', `P(${L}_2)`, fb, { detail: { lignes, final: dFr(fb) } });
   }
 
   // ---------- 1.6 : reunion de deux evenements ----------
@@ -1359,13 +1463,15 @@ function genererExercices() {
     let N, a, b, k;
     do { N = piocher([10, 12, 15, 16, 18, 20]); [a, b] = piocher(PAIRES); k = alea(1, N); } while (math.lcm(a, b) > N || Math.floor(N / math.lcm(a, b)) === 0);
     const mult = (x) => (x === 2 ? 'pair' : `multiple de ${x}`);
-    const nR = Math.floor(N / a), nT = Math.floor(N / b), nRT = Math.floor(N / math.lcm(a, b));
+    const l = math.lcm(a, b), nR = Math.floor(N / a), nT = Math.floor(N / b), nRT = Math.floor(N / l);
+    const liste = (pas, n) => `\\{${Array.from({ length: n }, (_, i) => (i + 1) * pas).join('\\,;\\,')}\\}`;
     paramsAvances.t6 = `<p>On dispose d'un paquet de ${N} cartes numérotées de 1 à ${N}. On tire au hasard une carte du paquet. On définit les événements : \\(R\\) : « On tire une carte dont le numéro est ${mult(a)} » et \\(T\\) : « On tire une carte dont le numéro est ${mult(b)} ».</p>`;
-    num('1.6 a)', '', math.fraction(N - 1, N), { texteLibre: true, enonce: `Déterminer la probabilité de ne pas tirer la carte numéro \\(${k}\\)` });
-    num('1.6 b)', '', math.fraction(nR, N), { texteLibre: true, enonce: `Déterminer la probabilité de tirer une carte dont le numéro est ${mult(a)}` });
-    formule('1.6 c)', `Exprimer \\(P(R\\cup T)\\) en fonction de \\(P(R)\\) et de \\(P(T)\\)`, 'P(R)+P(T)-P(R\\cap T)', { touches: ['P', 'bar', 'cap', 'cup'] });
-    num('1.6 d)', 'P(R\\cap T)', math.fraction(nRT, N));
-    num('1.6 e)', '', math.fraction(nR + nT - nRT, N), { texteLibre: true, enonce: `Calculer la probabilité que le numéro tiré soit ${mult(a)} ou ${mult(b)}` });
+    num('1.6 a)', '', math.fraction(N - 1, N), { texteLibre: true, enonce: `Déterminer la probabilité de ne pas tirer la carte numéro \\(${k}\\)`, detail: { lignes: [`1-\\dfrac{1}{${N}} = \\dfrac{${N}-1}{${N}} = \\dfrac{${N - 1}}{${N}}`], final: dFr(math.fraction(N - 1, N)) } });
+    num('1.6 b)', '', math.fraction(nR, N), { texteLibre: true, enonce: `Déterminer la probabilité de tirer une carte dont le numéro est ${mult(a)}`, detail: { lignes: [`R = ${liste(a, nR)}`, `P(R) = ${dedup2(`\\dfrac{${nR}}{${N}}`, dFr(math.fraction(nR, N)))}`], final: dFr(math.fraction(nR, N)) } });
+    formule('1.6 c)', `Exprimer \\(P(R\\cup T)\\) en fonction de \\(P(R)\\) et de \\(P(T)\\)`, 'P(R)+P(T)-P(R\\cap T)', { touches: ['P', 'bar', 'cap', 'cup'], detail: { lignes: ['P(R\\cup T) = P(R)+P(T)-P(R\\cap T)'], final: 'P(R)+P(T)-P(R\\cap T)' } });
+    num('1.6 d)', 'P(R\\cap T)', math.fraction(nRT, N), { detail: { lignes: [`R\\cap T = ${liste(l, nRT)}`, `P(R\\cap T) = ${dedup2(`\\dfrac{${nRT}}{${N}}`, dFr(math.fraction(nRT, N)))}`], final: dFr(math.fraction(nRT, N)) } });
+    const S = sommeSignee([{ s: 1, n: nR, d: N }, { s: 1, n: nT, d: N }, { s: -1, n: nRT, d: N }]);
+    num('1.6 e)', '', math.fraction(nR + nT - nRT, N), { texteLibre: true, enonce: `Calculer la probabilité que le numéro tiré soit ${mult(a)} ou ${mult(b)}`, detail: { lignes: ['P(R\\cup T) = P(R)+P(T)-P(R\\cap T)', `= ${S.chaine}`], final: S.simple } });
   }
 
   // ---------- 1.7 : une loi en tableau ----------
@@ -1375,10 +1481,10 @@ function genererExercices() {
     const ps = ns.map(n => math.fraction(n, d));
     paramsAvances.t7 = `<p>Soit \\(X\\) une variable aléatoire dont la loi est donnée par</p>${tabLoi(vs.map(v => String(v)), ns.map(n => fracLatex(n, d)))}<p>Déterminer :</p>`;
     const i1 = alea(1, 2), j2 = alea(3, 4);
-    num('1.7 a)', `P(X\\leqslant ${vs[i1]})`, math.fraction(ns.slice(0, i1 + 1).reduce((x, y) => x + y, 0), d));
-    num('1.7 b)', `P(X\\lt ${vs[j2]})`, math.fraction(ns.slice(0, j2).reduce((x, y) => x + y, 0), d));
-    num('1.7 c)', 'E(X)', moyenne(vs, ps));
-    num('1.7 d)', 'V(X)', variance(vs, ps));
+    num('1.7 a)', `P(X\\leqslant ${vs[i1]})`, math.fraction(ns.slice(0, i1 + 1).reduce((x, y) => x + y, 0), d), { detail: sommeLoi(`X\\leqslant ${vs[i1]}`, Array.from({ length: i1 + 1 }, (_, i) => i), vs, ps) });
+    num('1.7 b)', `P(X\\lt ${vs[j2]})`, math.fraction(ns.slice(0, j2).reduce((x, y) => x + y, 0), d), { detail: sommeLoi(`X\\lt ${vs[j2]}`, Array.from({ length: j2 }, (_, i) => i), vs, ps) });
+    num('1.7 c)', 'E(X)', moyenne(vs, ps), { detail: detailE(vs, ps) });
+    num('1.7 d)', 'V(X)', variance(vs, ps), { detail: detailV(vs, ps) });
   }
 
   // ---------- 1.8 : plusieurs urnes numerotees (loi a completer, puis E et V) ----------
@@ -1388,9 +1494,13 @@ function genererExercices() {
     const vs = Array.from({ length: m }, (_, i) => i + 1), ps = vs.map(loi);
     const contenu = (i) => i === 1 ? 'une unique boule numérotée 1' : `${i === 2 ? 'deux' : i === 3 ? 'trois' : 'quatre'} boules numérotées ${Array.from({ length: i }, (_, q) => q + 1).slice(0, -1).join(', ')} et ${i}`;
     paramsAvances.t8 = `<p>On dispose de ${m === 3 ? 'trois' : 'quatre'} urnes numérotées de 1 à ${m}.</p><ul>${vs.map(i => `<li>L'urne ${i} contient ${contenu(i)}.</li>`).join('')}</ul><p>On choisit au hasard, avec la même probabilité, une des urnes, puis on tire une boule de cette urne. On note \\(X\\) le numéro de la boule tirée. Compléter la loi de probabilité de \\(X\\) :</p>`;
-    vs.forEach((v, i) => ex.push({ id: `1.8 ${'abcdef'[i]})`, type: 'num', texteLibre: false, fractionIrreductible: true, cellule: true, kTex: String(v), enonce: `P(X=${v})`, reponse: frStr(ps[i]) }));
-    numT(`1.8 ${'abcdef'[m]})`, 'Calculer \\(E(X)\\)', moyenne(vs, ps));
-    numT(`1.8 ${'abcdef'[m + 1]})`, 'Calculer \\(V(X)\\)', variance(vs, ps));
+    vs.forEach((v, i) => {
+      const termes = vs.map(u => `\\dfrac{1}{${m}}\\times ${u >= v ? (u === 1 ? '1' : `\\dfrac{1}{${u}}`) : '0'}`).join('+');
+      const S = sommeSignee(vs.filter(u => u >= v).map(u => ({ s: 1, n: 1, d: m * u })));
+      ex.push({ id: `1.8 ${'abcdef'[i]})`, detail: { lignes: [`P(X=${v}) = ${termes} = ${S.chaine}`], final: dFr(ps[i]) }, type: 'num', texteLibre: false, fractionIrreductible: true, cellule: true, kTex: String(v), enonce: `P(X=${v})`, reponse: frStr(ps[i]) });
+    });
+    numT(`1.8 ${'abcdef'[m]})`, 'Calculer \\(E(X)\\)', moyenne(vs, ps), { detail: detailE(vs, ps) });
+    numT(`1.8 ${'abcdef'[m + 1]})`, 'Calculer \\(V(X)\\)', variance(vs, ps), { detail: detailV(vs, ps) });
   }
 
   // ---------- 1.9 : une loi avec une probabilite inconnue ----------
@@ -1402,9 +1512,9 @@ function genererExercices() {
     } while (!vs.some(v => !Number.isInteger(v)));
     const ps = ns.map(n => math.fraction(n, d));
     paramsAvances.t9 = `<p>Soit \\(p>0\\). On considère \\(X\\) une variable aléatoire dont la loi est donnée par</p>${tabLoi(vs.map(v => valTex(v)), ns.map((n, i) => i === u ? 'p' : fracLatex(n, d)))}<p>Déterminer :</p>`;
-    num('1.9 a)', 'p', ps[u]);
-    num('1.9 b)', 'E(X)', moyenne(vs, ps));
-    num('1.9 c)', 'V(X)', variance(vs, ps));
+    num('1.9 a)', 'p', ps[u], { detail: lignesComplement('p', [0, 1, 2].filter(i => i !== u).map(i => ps[i])) });
+    num('1.9 b)', 'E(X)', moyenne(vs, ps), { detail: detailE(vs, ps) });
+    num('1.9 c)', 'V(X)', variance(vs, ps), { detail: detailV(vs, ps) });
   }
 
   // ---------- 1.10 : une loi dont les probabilites dependent d'un parametre (equation du second degre) ----------
@@ -1414,9 +1524,17 @@ function genererExercices() {
     const terme = (a, b) => `${a === 0 ? '' : (a === 1 ? '\\alpha' : `${a}\\alpha`)}${a !== 0 && b !== 0 ? '+' : ''}${b === 0 ? '' : (b === 1 ? '\\alpha^{2}' : `${b}\\alpha^{2}`)}`;
     const al = math.fraction(c.n, c.d), ps = c.a.map((a, i) => math.add(math.multiply(a, al), math.multiply(c.b[i], math.multiply(al, al))));
     paramsAvances.t10 = `<p>Soit \\(\\alpha>0\\). On considère \\(X\\) une variable aléatoire dont la loi est donnée par</p>${tabLoi(vs.map(v => valTex(v)), c.a.map((a, i) => terme(a, c.b[i])))}<p>Déterminer :</p>`;
-    num('1.10 a)', '\\alpha', al);
-    num('1.10 b)', 'E(X)', moyenne(vs, ps));
-    num('1.10 c)', 'V(X)', variance(vs, ps));
+    const A = c.a.reduce((x, y) => x + y, 0), B = c.b.reduce((x, y) => x + y, 0), D = A * A + 4 * B, s = Math.round(Math.sqrt(D)), den = B === 1 ? '2' : `2\\times ${B}`;
+    const racine = (signe) => math.fraction(-A + signe * s, 2 * B);
+    const ecrit = (signe) => `\\dfrac{-${A}${signe < 0 ? '-' : '+'}${s}}{${den}}`;
+    const lignesAlpha = [`${c.a.map((a, i) => `\\left(${terme(a, c.b[i])}\\right)`).join('+')} = 1`,
+      `\\iff ${Detail.polyL([0, A, B], '\\alpha')} = 1`, `\\iff ${Detail.polyL([-1, A, B], '\\alpha')} = 0`,
+      `\\Delta = ${dedup2(`${A}^{2}-4\\times ${B === 1 ? '' : B + '\\times '}(-1)`, `${A * A}+${4 * B}`, String(D))}`, `\\sqrt{\\Delta} = ${s}`,
+      `\\alpha_{1} = ${dedup2(ecrit(-1), fracBrute(-A - s, 2 * B), dFr(racine(-1)))}`, `\\alpha_{2} = ${dedup2(ecrit(1), fracBrute(-A + s, 2 * B), dFr(racine(1)))}`,
+      `\\text{Comme } \\alpha>0 \\text{, } \\alpha = \\alpha_{2} = ${dFr(al)}`];
+    num('1.10 a)', '\\alpha', al, { detail: { lignes: lignesAlpha, final: dFr(al) } });
+    num('1.10 b)', 'E(X)', moyenne(vs, ps), { detail: detailE(vs, ps) });
+    num('1.10 c)', 'V(X)', variance(vs, ps), { detail: detailV(vs, ps) });
   }
 
   // ---------- 1.11 : transformation affine ----------
@@ -1426,10 +1544,11 @@ function genererExercices() {
     let a2, b2, c2; do { a2 = piocher([1, -1, 2, -2, 3, -3]); b2 = alea(-5, 5); c2 = piocher([2, 3, 4, 5, 6]); } while (pgcd(pgcd(a2, b2), c2) !== 1);
     const lin = (a, b) => `${a === 1 ? '' : a === -1 ? '-' : a}X${b > 0 ? '+' : ''}${b === 0 ? '' : b}`;
     paramsAvances.t11 = `<p>Soit \\(X\\) une variable aléatoire d'espérance \\(${mu}\\) et de variance \\(${v}\\). On note \\(Y\\) et \\(Z\\) les deux variables aléatoires définies par \\(Y=${lin(a1, b1)}\\) et \\(Z=\\dfrac{${lin(a2, b2)}}{${c2}}\\).</p>`;
-    numT('1.11 a)', 'Calculer \\(E(Y)\\)', a1 * mu + b1);
-    numT('1.11 b)', 'Calculer \\(V(Y)\\)', a1 * a1 * v);
-    numT('1.11 c)', 'Calculer \\(E(Z)\\)', math.fraction(a2 * mu + b2, c2));
-    numT('1.11 d)', 'Calculer \\(V(Z)\\)', math.fraction(a2 * a2 * v, c2 * c2));
+    const eY = a1 * mu + b1, eZ = math.fraction(a2 * mu + b2, c2), vZ = math.fraction(a2 * a2 * v, c2 * c2), carre = (a) => (a === 1 ? '' : `${dP(a)}^{2}\\times `);
+    numT('1.11 a)', 'Calculer \\(E(Y)\\)', eY, { detail: { lignes: [`E(Y) = ${dedup2(affSym(a1, 'E(X)', b1), affNum(a1, mu, b1), String(eY))}`], final: String(eY) } });
+    numT('1.11 b)', 'Calculer \\(V(Y)\\)', a1 * a1 * v, { detail: { lignes: [`V(Y) = ${dedup2(`${dP(a1)}^{2}V(X)`, `${dP(a1)}^{2}\\times ${v}`, `${a1 * a1}\\times ${v}`, String(a1 * a1 * v))}`], final: String(a1 * a1 * v) } });
+    numT('1.11 c)', 'Calculer \\(E(Z)\\)', eZ, { detail: { lignes: [`E(Z) = ${dedup2(b2 === 0 && a2 < 0 ? `-\\dfrac{${cp30(-a2)}E(X)}{${c2}}` : `\\dfrac{${affSym(a2, 'E(X)', b2)}}{${c2}}`, b2 === 0 && a2 < 0 ? `-\\dfrac{${prod30(-a2, mu)}}{${c2}}` : `\\dfrac{${affNum(a2, mu, b2)}}{${c2}}`, fracBrute(a2 * mu + b2, c2), dFr(eZ))}`], final: dFr(eZ) } });
+    numT('1.11 d)', 'Calculer \\(V(Z)\\)', vZ, { detail: { lignes: [`V(Z) = ${dedup2(`\\dfrac{${a2 === 1 ? '' : dP(a2) + '^{2}'}V(X)}{${c2}^{2}}`, `\\dfrac{${carre(a2)}${v}}{${c2}^{2}}`, `\\dfrac{${prod30(a2 * a2, v)}}{${c2 * c2}}`, fracBrute(a2 * a2 * v, c2 * c2), dFr(vZ))}`], final: dFr(vZ) } });
   }
 
   // ---------- 1.12 : Bernoulli et transformation ----------
@@ -1439,44 +1558,58 @@ function genererExercices() {
     const P = math.fraction(p[0], p[1]);
     paramsAvances.t12 = `<p>Soit \\(X\\) une variable aléatoire suivant une loi de Bernoulli de paramètre \\(${fracLatex(p[0], p[1])}\\). On pose \\(Y=${a}X${b > 0 ? '+' : ''}${b}\\).</p>`;
     const vals = [b, a + b].sort((u, v) => u - v);
-    ex.push({ id: '1.12 a)', type: 'num', texteLibre: true, enonce: 'Donner les valeurs prises par \\(Y\\)', reponse: `{${vals.join(';')}}` });
+    const ens = `\\{${vals.join('\\,;\\,')}\\}`;
+    ex.push({ id: '1.12 a)', detail: { lignes: [`X=0 \\Rightarrow Y = ${a}\\times 0 ${dPlus(b)} = ${b}`, `X=1 \\Rightarrow Y = ${a}\\times 1 ${dPlus(b)} = ${a + b}`, `Y\\in${ens}`], final: ens }, type: 'num', texteLibre: true, enonce: 'Donner les valeurs prises par \\(Y\\)', reponse: `{${vals.join(';')}}` });
     const choisie = piocher([b, a + b]);
-    numT('1.12 b)', `Calculer \\(P(Y=${choisie})\\)`, choisie === a + b ? P : math.subtract(1, P));
+    const ligneP = choisie === a + b ? `P(Y=${choisie}) = P(X=1) = ${dFr(P)}` : `P(Y=${choisie}) = P(X=0) = ${dedup2(`1-${dFr(P)}`, `\\dfrac{${p[1]}-${p[0]}}{${p[1]}}`, dFr(math.subtract(1, P)))}`;
+    numT('1.12 b)', `Calculer \\(P(Y=${choisie})\\)`, choisie === a + b ? P : math.subtract(1, P), { detail: { lignes: [ligneP], final: dFr(choisie === a + b ? P : math.subtract(1, P)) } });
   }
 
   // ---------- 1.13 : lancers de des ----------
   {
     const f = piocher([4, 6, 6, 8, 10, 12]);
     paramsAvances.t13 = `<p>Soit \\(n\\in\\mathbb{N}^*\\). On considère un dé équilibré dont les ${f} faces sont numérotées de 1 à ${f}. Le dé est lancé successivement \\(n\\) fois. On note \\(X_1,\\ldots,X_n\\) les résultats des lancers successifs et indépendants, et \\(S_n=\\displaystyle\\sum_{k=1}^{n}X_k=X_1+\\cdots+X_n\\) la somme des \\(n\\) résultats obtenus.</p>`;
-    numT('1.13 a)', 'Déterminer l\'espérance de \\(X_1\\)', math.fraction(f + 1, 2));
-    numT('1.13 b)', 'Déterminer la variance de \\(X_1\\)', math.fraction(f * f - 1, 12));
-    const fa = math.fraction(f + 1, 2), fb = math.fraction(f * f - 1, 12);
-    ex.push({ id: '1.13 c)', type: 'alg', texteLibre: true, enonce: 'Déterminer l\'espérance de \\(S_n\\)', reponse: `${fa.n}*n/${fa.d}` });
-    ex.push({ id: '1.13 d)', type: 'alg', texteLibre: true, enonce: 'Déterminer la variance de \\(S_n\\)', reponse: `${fb.n}*n/${fb.d}` });
+    const fa = math.fraction(f + 1, 2), fb = math.fraction(f * f - 1, 12), M2 = math.fraction((f + 1) * (2 * f + 1), 6);
+    numT('1.13 a)', 'Déterminer l\'espérance de \\(X_1\\)', fa, { detail: { lignes: [`E(X_{1}) = \\dfrac{1}{${f}}\\times\\left(1+2+\\cdots+${f}\\right)`, `= \\dfrac{1}{${f}}\\times\\dfrac{${f}\\times ${f + 1}}{2} = ${dFr(fa)}`], final: dFr(fa) } });
+    numT('1.13 b)', 'Déterminer la variance de \\(X_1\\)', fb, { detail: { lignes: ['V(X_{1}) = E(X_{1}^{2})-E(X_{1})^{2}', `E(X_{1}^{2}) = \\dfrac{1}{${f}}\\times\\left(1^{2}+2^{2}+\\cdots+${f}^{2}\\right)`,
+      `= \\dfrac{1}{${f}}\\times\\dfrac{${f}\\times ${f + 1}\\times ${2 * f + 1}}{6} = ${dedup2(`\\dfrac{${f + 1}\\times ${2 * f + 1}}{6}`, fracBrute((f + 1) * (2 * f + 1), 6), dFr(M2))}`, ...finVariance('V(X_{1})', 'E(X_{1})', M2, fa)], final: dFr(fb) } });
+    ex.push({ id: '1.13 c)', detail: { lignes: ['E(S_{n}) = E(X_{1})+\\cdots+E(X_{n})', `E(S_{n}) = nE(X_{1}) = n\\times ${dFr(fa)} = \\dfrac{${fa.n}n}{${fa.d}}`], final: `\\dfrac{${fa.n}n}{${fa.d}}` }, type: 'alg', texteLibre: true, enonce: 'Déterminer l\'espérance de \\(S_n\\)', reponse: `${fa.n}*n/${fa.d}` });
+    ex.push({ id: '1.13 d)', detail: { lignes: ['\\text{Les lancers sont indépendants, donc}', 'V(S_{n}) = V(X_{1})+\\cdots+V(X_{n})', `V(S_{n}) = nV(X_{1}) = n\\times ${dFr(fb)} = \\dfrac{${fb.n}n}{${fb.d}}`], final: `\\dfrac{${fb.n}n}{${fb.d}}` }, type: 'alg', texteLibre: true, enonce: 'Déterminer la variance de \\(S_n\\)', reponse: `${fb.n}*n/${fb.d}` });
   }
 
   // ---------- 1.14 et 1.15 : calculs plus avances ----------
   {
     const a = piocher([1, 1, 2, 3, 4]);
-    ex.push({ id: '1.14', type: 'num', texteLibre: true, enonce: `Soit \\(X\\) une variable aléatoire à valeurs dans \\(\\{0,${a}\\}\\). Déterminer \\(${a === 1 ? 'E(X)-E(X^2)' : `E(X^2)-${a}E(X)`}\\)`, reponse: '0' });
+    const lignes = a === 1
+      ? ['X=0 \\Rightarrow X^{2}=0=X', 'X=1 \\Rightarrow X^{2}=1=X', 'X^{2}=X \\Rightarrow E(X^{2})=E(X)', 'E(X)-E(X^{2}) = 0']
+      : [`X=0 \\Rightarrow X^{2}=0=${a}\\times 0`, `X=${a} \\Rightarrow X^{2}=${a * a}=${a}\\times ${a}`, `X^{2}=${a}X \\Rightarrow E(X^{2})=${a}E(X)`, `E(X^{2})-${a}E(X) = 0`];
+    ex.push({ id: '1.14', detail: { lignes, final: '0' }, type: 'num', texteLibre: true, enonce: `Soit \\(X\\) une variable aléatoire à valeurs dans \\(\\{0,${a}\\}\\). Déterminer \\(${a === 1 ? 'E(X)-E(X^2)' : `E(X^2)-${a}E(X)`}\\)`, reponse: '0' });
   }
   {
     const VAR = [
-      { tex: 'E\\left(\\left(X-x\\right)^2\\right)', tri: 'x^{2}-2E(X)x+E(X^{2})', min: 'E(X)', val: 'V(X)' },
-      { tex: 'E\\left(\\left(X+x\\right)^2\\right)', tri: 'x^{2}+2E(X)x+E(X^{2})', min: '-E(X)', val: 'V(X)' },
-      { tex: 'E\\left(\\left(2X-x\\right)^2\\right)', tri: 'x^{2}-4E(X)x+4E(X^{2})', min: '2E(X)', val: '4V(X)' }
+      { tex: 'E\\left(\\left(X-x\\right)^2\\right)', tri: 'x^{2}-2E(X)x+E(X^{2})', min: 'E(X)', val: 'V(X)',
+        l1: 'f(x) = E\\left(X^{2}-2xX+x^{2}\\right)', l2: '= E(X^{2})-2xE(X)+x^{2}', b: '-2E(X)', x0: 'x_{0} = \\dfrac{2E(X)}{2} = E(X)',
+        v: ['f(E(X)) = E(X)^{2}-2E(X)^{2}+E(X^{2})', '= E(X^{2})-E(X)^{2}', '= V(X)'] },
+      { tex: 'E\\left(\\left(X+x\\right)^2\\right)', tri: 'x^{2}+2E(X)x+E(X^{2})', min: '-E(X)', val: 'V(X)',
+        l1: 'f(x) = E\\left(X^{2}+2xX+x^{2}\\right)', l2: '= E(X^{2})+2xE(X)+x^{2}', b: '2E(X)', x0: 'x_{0} = -\\dfrac{2E(X)}{2} = -E(X)',
+        v: ['f(-E(X)) = E(X)^{2}-2E(X)^{2}+E(X^{2})', '= E(X^{2})-E(X)^{2}', '= V(X)'] },
+      { tex: 'E\\left(\\left(2X-x\\right)^2\\right)', tri: 'x^{2}-4E(X)x+4E(X^{2})', min: '2E(X)', val: '4V(X)',
+        l1: 'f(x) = E\\left(4X^{2}-4xX+x^{2}\\right)', l2: '= 4E(X^{2})-4xE(X)+x^{2}', b: '-4E(X)', x0: 'x_{0} = \\dfrac{4E(X)}{2} = 2E(X)',
+        v: ['f(2E(X)) = 4E(X)^{2}-8E(X)^{2}+4E(X^{2})', '= 4E(X^{2})-4E(X)^{2}', '= 4\\left(E(X^{2})-E(X)^{2}\\right)', '= 4V(X)'] }
     ];
     const vr = piocher(VAR);
     paramsAvances.t15 = `<p>Soit \\(X\\) une variable aléatoire réelle. On note \\(f\\) la fonction définie sur \\(\\mathbb{R}\\) par \\(f(x)=${vr.tex}\\).</p>`;
-    formule('1.15 a)', 'Soit \\(x\\in\\mathbb{R}\\). Développer l\'expression \\(f(x)\\) et l\'écrire sous la forme d\'un trinôme', vr.tri, { touches: ['E', 'carre'] });
-    formule('1.15 b)', 'Déterminer le point en lequel \\(f\\) atteint son minimum', vr.min, { touches: ['E', 'V'] });
-    formule('1.15 c)', 'Exprimer le minimum de \\(f\\) en fonction de \\(V(X)\\)', vr.val, { touches: ['E', 'V'] });
+    formule('1.15 a)', 'Soit \\(x\\in\\mathbb{R}\\). Développer l\'expression \\(f(x)\\) et l\'écrire sous la forme d\'un trinôme', vr.tri, { touches: ['E', 'carre'], detail: { lignes: [vr.l1, vr.l2, `= ${vr.tri}`], final: vr.tri } });
+    formule('1.15 b)', 'Déterminer le point en lequel \\(f\\) atteint son minimum', vr.min, { touches: ['E', 'V'], detail: { lignes: [`f(x) = ${vr.tri}`, 'a = 1 \\gt 0', `b = ${vr.b}`, 'x_{0} = -\\dfrac{b}{2a}', vr.x0], final: vr.min } });
+    formule('1.15 c)', 'Exprimer le minimum de \\(f\\) en fonction de \\(V(X)\\)', vr.val, { touches: ['E', 'V'], detail: { lignes: vr.v, final: vr.val } });
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
   ex.forEach(e => { if (e.enonce) e.enonce = e.enonce.replace(/</g, '\\lt '); });
   Detail.preparer(ex);
   Detail.couper(ex, 20);
+  const visible = (l) => l.replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\(?:left|right|,|;|:|!|quad|qquad)/g, '').replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}\s]/g, '').length;
+  ex.forEach(e => { if (e.detail) e.detail.lignes = e.detail.lignes.map(l => (/^\\(small|scriptsize|text)/.test(l) ? l : visible(l) > 30 ? '\\scriptsize ' + l : visible(l) > 24 ? '\\small ' + l : l)); });
   return ex;
 }
 

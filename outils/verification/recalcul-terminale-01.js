@@ -283,6 +283,78 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-1/fiche-01.html';
           if (!egal(evalFormule(cc.reponse, tab, {}), f(xmin), 1e-9)) faux(cc, '1.15 c) minimum faux : ' + cc.reponse);
           compte('1.15');
         }
+        // ---- details de correction : les etiquettes et les listes ecrites dans les etapes decrivent bien l'enonce affiche ----
+        {
+          const J = (id) => { const e = par(id); if (!e || !e.detail) { faux(e || ex[0], 'detail absent ' + id); return ''; } return e.detail.lignes.map((l) => l.replace(/^\\(?:small|scriptsize) /, '')).join(' '); };
+          // 1.3 et 1.7 : « P(cond) = P(X=v1)+P(X=v2)… » : exactement les valeurs du tableau qui verifient la condition
+          const verifLoi = (id, vals) => {
+            const e = par(id), j = J(id), m = String(e.enonce).match(/^P\(X(\\leqslant |\\geqslant |\\gt |\\lt )(.*)\)$/), s = evC(m[2]), op = m[1];
+            const ok = (v) => (op === '\\leqslant ' ? v <= s + 1e-9 : op === '\\geqslant ' ? v >= s - 1e-9 : op === '\\gt ' ? v > s + 1e-9 : v < s - 1e-9);
+            if (!j.startsWith(e.enonce.replace(/^P\(X/, 'P(X'))) faux(e, id + ' detail : la probabilite ecrite n\'est pas celle de l\'enonce : ' + j.slice(0, 60));
+            const r = j.slice(e.enonce.length).match(/^ = ((?:P\(X=[^)]*\)\+?)+)/);
+            if (!r) { faux(e, id + ' detail : liste de P(X=v) illisible : ' + j.slice(0, 90)); return; }
+            const ecrites = [...r[1].matchAll(/P\(X=([^)]*)\)/g)].map((q) => evC(q[1])).sort((u, w) => u - w), attendues = vals.filter(ok).sort((u, w) => u - w);
+            if (ecrites.join() !== attendues.join()) faux(e, id + ' detail : valeurs ecrites ' + ecrites.join(';') + ' / attendues ' + attendues.join(';'));
+          };
+          { const t3 = T(3), vals = lat(t3.match(/valeurs (.*?)\. On suppose/)[1]).map((v) => evC(v)); for (const id of ['1.3 b)', '1.3 c)', '1.3 d)']) verifLoi(id, vals); compte('d1.3'); }
+          { const vs = lireTableau(T(7)).vs.map((v) => evC(v)); for (const id of ['1.7 a)', '1.7 b)']) verifLoi(id, vs); compte('d1.7'); }
+          // 1.3 a) : la probabilite cherchee est celle de la valeur manquante (la seule absente de l'enonce)
+          // 1.6 : listes des numeros de R et de R inter T
+          {
+            const t6 = T(6), N6 = Number(t6.match(/paquet de (\d+) cartes/)[1]), mu = (s) => (/pair/.test(s) ? 2 : Number(s.match(/multiple de (\d+)/)[1]));
+            const ev6 = [...t6.matchAll(/\\\((R|T)\\\) : « On tire une carte dont le numéro est (pair|multiple de \d+) »/g)], a = mu(ev6[0][2]), b = mu(ev6[1][2]);
+            const liste = (id, re) => { const m = J(id).match(re); return m ? m[1].split('\\,;\\,').map(Number) : null; };
+            const LR = liste('1.6 b)', /^R = \\\{([^}]*)\\\}/), LRT = liste('1.6 d)', /^R\\cap T = \\\{([^}]*)\\\}/);
+            const att = (f) => Array.from({ length: N6 }, (_, i) => i + 1).filter(f);
+            if (!LR || LR.join() !== att((k) => k % a === 0).join()) faux(par('1.6 b)'), '1.6 b) liste de R fausse : ' + J('1.6 b)').slice(0, 80));
+            if (!LRT || LRT.join() !== att((k) => k % a === 0 && k % b === 0).join()) faux(par('1.6 d)'), '1.6 d) liste de R inter T fausse : ' + J('1.6 d)').slice(0, 80));
+            compte('d1.6');
+          }
+          // 1.8 : chaque cellule P(X=k) = somme sur les urnes de (1/m) x (1/nombre de boules de l'urne si elle contient la boule k, sinon 0)
+          {
+            const t8 = T(8), m = /quatre urnes/.test(t8) ? 4 : 3, li = [...t8.matchAll(/<li>L'urne (\d+) contient (.*?)\.<\/li>/g)];
+            const boules = li.map((q) => (q[2].match(/\d+/g) || []).map(Number));
+            for (let k = 1; k <= m; k++) {
+              const id = '1.8 ' + 'abcdef'[k - 1] + ')', j = J(id), attendu = boules.map((bs) => `\\dfrac{1}{${m}}\\times ${bs.includes(k) ? (bs.length === 1 ? '1' : `\\dfrac{1}{${bs.length}}`) : '0'}`).join('+');
+              if (!j.startsWith(`P(X=${k}) = ${attendu}`)) faux(par(id), id + ' detail : termes des urnes faux : ' + j.slice(0, 120) + ' / attendu ' + attendu);
+            }
+            compte('d1.8');
+          }
+          // 1.4 : les fractions de depart des etapes viennent de l'enonce
+          {
+            const t4 = T(4), jb = J('1.4 b)'), jc = J('1.4 c)'), ja = J('1.4 a)');
+            let rb, rc;
+            if (/paquets de cartes/.test(t4)) { const m = t4.match(/l'un contient (\d+) cartes.*?l'autre (\d+) cartes/); rb = `\\dfrac{1}{${m[1]}}`; rc = `\\dfrac{1}{${m[2]}}`; }
+            else if (/deux urnes/.test(t4)) { const m = t4.match(/l'urne 1 contient (\d+) boules? rouges? et (\d+) boules? noires?, l'urne 2 contient (\d+) boules? rouges? et (\d+) boules? noires?/); rb = `\\dfrac{${m[2]}}{${m[1]}+${m[2]}}`; rc = `\\dfrac{${m[4]}}{${m[3]}+${m[4]}}`; }
+            else { const m = t4.match(/l'un a (\d+) faces.*?l'autre (\d+) faces/); rb = `\\dfrac{1}{${m[1]}}`; rc = `\\dfrac{1}{${m[2]}}`; }
+            if (!jb.startsWith('P_{C}(N) = ' + rb)) faux(par('1.4 b)'), '1.4 b) etape de depart fausse : ' + jb.slice(0, 80) + ' / ' + rb);
+            if (!jc.startsWith('P_{\\overline{C}}(N) = ' + rc)) faux(par('1.4 c)'), '1.4 c) etape de depart fausse : ' + jc.slice(0, 80) + ' / ' + rc);
+            const rawC = /au hasard/.test(t4) ? '\\dfrac{1}{2}' : /1 ou 2, on choisit/.test(t4) ? '\\dfrac{2}{6}' : '\\dfrac{4}{6}';
+            if (!ja.startsWith('P(C) = ' + rawC)) faux(par('1.4 a)'), '1.4 a) etape de depart fausse : ' + ja.slice(0, 60) + ' / ' + rawC);
+            compte('d1.4');
+          }
+          // 1.5 : effectifs de l'urne
+          {
+            const t5 = T(5), m = t5.match(/contient (\d+) boules dont (?:(\d+) sont|1 est) \w+ et (?:(\d+) sont|1 est) \w+/), N5 = Number(m[1]), r5 = Number(m[2] || 1), b5 = Number(m[3] || 1);
+            const ja = J('1.5 a)'), jb = J('1.5 b)');
+            if (!ja.includes(`\\dfrac{${r5}}{${N5}-1}`)) faux(par('1.5 a)'), '1.5 a) etape fausse : ' + ja.slice(0, 80));
+            if (!jb.includes(`\\dfrac{${b5}}{${N5}}\\times\\dfrac{${r5}}{${N5 - 1}}`)) faux(par('1.5 b)'), '1.5 b) etape fausse : ' + jb.slice(0, 120));
+            compte('d1.5');
+          }
+          // 1.10 : discriminant et racine retenue
+          {
+            const { ps: pl } = lireTableau(T(10)); let A = 0, B = 0;
+            pl.forEach((q) => { const m2 = q.match(/(\d*)\\alpha\^\{2\}/); if (m2) B += m2[1] === '' ? 1 : Number(m2[1]); const reste = q.replace(/(\d*)\\alpha\^\{2\}/, ''), m1 = reste.match(/(\d*)\\alpha/); if (m1) A += m1[1] === '' ? 1 : Number(m1[1]); });
+            const j = J('1.10 a)'), D = A * A + 4 * B, s = Math.round(Math.sqrt(D)), al = (-A + s) / (2 * B);
+            if (s * s !== D) faux(par('1.10 a)'), '1.10 a) discriminant non carre : ' + D);
+            if (!j.includes(`\\sqrt{\\Delta} = ${s}`) || !j.includes(`${A * A}+${4 * B}`)) faux(par('1.10 a)'), '1.10 a) discriminant ecrit faux : ' + j.slice(0, 160) + ' / A=' + A + ' B=' + B);
+            if (!(al > 0) || !(( -A - s) / (2 * B) < 0) || !egal(al, rep(par('1.10 a)')), 1e-9)) faux(par('1.10 a)'), '1.10 a) racines : ' + al);
+            compte('d1.10');
+          }
+          // 1.13 et 1.14 : valeurs de l'enonce
+          { const f = Number(T(13).match(/dont les (\d+) faces/)[1]); if (!J('1.13 a)').includes(`\\dfrac{1}{${f}}\\times`) || !J('1.13 b)').includes(`${f}\\times ${f + 1}\\times ${2 * f + 1}`)) faux(par('1.13 a)'), '1.13 etapes sans la valeur du de'); compte('d1.13'); }
+          { const e = par('1.14'), a = Number(e.enonce.match(/\\\{0,(\d+)\\\}/)[1]), j = J('1.14'); if (a === 1 ? !j.includes('X=1 \\Rightarrow X^{2}=1=X') : !j.includes(`X=${a} \\Rightarrow X^{2}=${a * a}=${a}\\times ${a}`)) faux(e, '1.14 etapes sans la valeur a'); compte('d1.14'); }
+        }
         // numerotation continue des calculs et des lettres
         { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^1\.(\d+)/)[1])))]; if (calculs.join() !== Array.from({ length: 15 }, (_, i) => i + 1).join()) faux(ex[0], 'numerotation ' + calculs.join(',')); }
       } catch (er) { faux(ex[0], 'EXCEPTION ' + er.message + ' | ' + er.stack.split('\n')[1]); }

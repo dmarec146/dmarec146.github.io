@@ -798,5 +798,17 @@ module.exports = [
     // « \text{Pour } x = 1 \text{ : } e^{2} \neq e^{3} » : les deux exposants sont différents (exponentielle injective)
     motif: /^\\text\{Pour \} x = 1 \\text\{ : \} e(?:\^\{\d+\})? \\neq e(?:\^\{\d+\})?$/,
     verifie: (l) => { const m = l.match(/ : \} e(?:\^\{(\d+)\})? \\neq e(?:\^\{(\d+)\})?$/); return !!m && Number(m[1] || 1) !== Number(m[2] || 1); }
+  },
+  {
+    nom: 'la-racine-gardee-pour-alpha-est-positive',
+    // « \text{Comme } \alpha>0 \text{, } \alpha = \alpha_{2} = \dfrac{1}{3} » (Terminale, fiche 1, calcul 1.10) : la racine conservée est strictement positive
+    motif: /^\\text\{Comme \} \\alpha>0 \\text\{, \} \\alpha = \\alpha_\{2\} = /,
+    verifie: (l) => { const m = l.match(/\\alpha_\{2\} = (-?)(\\dfrac\{(\d+)\}\{(\d+)\}|(\d+))$/); return !!m && m[1] === '' && Number(m[3] || m[5]) > 0; }
+  },
+  {
+    nom: 'les-lancers-sont-independants-selon-l-enonce',
+    // « \text{Les lancers sont indépendants, donc} » (Terminale, fiche 1, calcul 1.13) : l'énoncé commun dit que les lancers sont indépendants
+    motif: /^\\text\{Les lancers sont indépendants, donc\}$/,
+    verifie: (l, e, env) => /indépendants/.test(env.texte('intro-1-13'))
   }
 ];

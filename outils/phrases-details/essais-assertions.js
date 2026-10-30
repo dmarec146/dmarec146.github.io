@@ -515,6 +515,16 @@ const ESSAIS = {
     [true, '\\text{Pour } x = 1 \\text{ : } e^{2} \\neq e^{3}', {}, env('')],
     [true, '\\text{Pour } x = 1 \\text{ : } e \\neq e^{2}', {}, env('')],
     [false, '\\text{Pour } x = 1 \\text{ : } e^{2} \\neq e^{2}', {}, env('')]
+  ],
+  'la-racine-gardee-pour-alpha-est-positive': [
+    [true, '\\text{Comme } \\alpha>0 \\text{, } \\alpha = \\alpha_{2} = \\dfrac{1}{3}', {}, env('')],
+    [true, '\\text{Comme } \\alpha>0 \\text{, } \\alpha = \\alpha_{2} = 2', {}, env('')],
+    [false, '\\text{Comme } \\alpha>0 \\text{, } \\alpha = \\alpha_{2} = -\\dfrac{1}{3}', {}, env('')],
+    [false, '\\text{Comme } \\alpha>0 \\text{, } \\alpha = \\alpha_{2} = -2', {}, env('')]
+  ],
+  'les-lancers-sont-independants-selon-l-enonce': [
+    [true, '\\text{Les lancers sont indépendants, donc}', {}, env('On lance un dé ; les lancers successifs et indépendants.')],
+    [false, '\\text{Les lancers sont indépendants, donc}', {}, env('On lance un dé deux fois.')]
   ]
 };
 let echecs = 0, essais = 0;
