@@ -318,6 +318,8 @@ les corrections ponctuelles d'une fiche).
 
 - **Réponse en formule de probabilités (Terminale, 30/10/2026, clavier dédié voulu par David « qui pourra nous resservir »)** : une question qui demande d'« exprimer P(S) en fonction de P_T(S)… » ou V(X) en fonction de E(X²)… a le type `formule` (`assets/js/formules-proba.js`) : barre de boutons P( ), P indice ( ), barre du contraire, ∩, ∪, E( ), V( ), x² sous le champ, comparaison par substitution numérique (toute écriture équivalente est acceptée), valeurs connues de l'énoncé déclarées dans `fixes`. Le détail est dans `SUIVI-FIREBASE.md` §2.
 
+- **Calculatrice en Terminale (30/10/2026, précisé par David)** : la calculatrice est **autorisée aux épreuves de Terminale** et certains calculs la **nécessitent** (loi binomiale, calcul intégral, encadrement de la solution d'une équation…). Dans les fiches de calcul de Terminale, **privilégier les calculs sans calculatrice** (efficacité, automatismes), mais **ne pas s'interdire d'en demander une quand le calcul l'exige** ; dans ce cas, l'énoncé dit quelle précision est attendue (valeur approchée à (10^{-3}) près, arrondi…) et la réponse est vérifiée avec une tolérance cohérente. La fiche 1 de probabilités n'en a pas besoin (fractions irréductibles).
+
 ## 4 bis. Conception des tirages aléatoires
 
 - **Élargir le champ de l'aléatoire** (« c'est très important », redit
