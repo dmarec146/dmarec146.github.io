@@ -191,6 +191,14 @@ button[data-nav-auth][data-connecte] { position: relative; background: var(--acc
 button[data-nav-auth][data-connecte]:hover { filter: brightness(1.1); }
 button[data-nav-auth][data-connecte]::after { content: ""; position: absolute; right: 4px; bottom: 4px; width: 10px; height: 10px; border-radius: 50%; background: #2fbf71; border: 2px solid #fff; box-sizing: border-box; }
 
+/* Téléphone en paysage étroit (moins de 740 px) : la navigation passe sous le logo ; elle occupe alors toute la largeur, liens à gauche et icônes du compte collées au bord droit (30/10/2026). */
+@media (min-width: 561px) and (max-width: 739px), (orientation: landscape) and (max-width: 739px) {
+  .site-nav { flex: 1 1 100%; }
+  .site-nav { gap: 2px; }
+  .site-nav a:not(.nav-icone-profil), .site-nav a.nav-vedette, .site-nav a.nav-vedette-vert, .site-nav a.nav-vedette-anthracite { padding: 10px 12px; font-size: 15px; }
+  .site-nav a.nav-icone-profil, .site-nav:not(:has(.nav-icone-profil))::after { margin-left: auto; }
+}
+
 /* ---------- Fil d'ariane ---------- */
 .fil-ariane {
   font-size: 13px;
@@ -738,6 +746,30 @@ a.md-item-lien:hover { border-color: var(--accent); background: var(--accent-cla
 .vc-avenir .vc-eti { background: var(--gris-200); color: var(--gris-600); }
 .vc-avenir h3 { color: var(--gris-600); }
 .vc-bientot { margin: 0; font: 14px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+/* ---------- « Tous les cahiers » sur grand écran : trois colonnes Seconde | Première | Terminale, avec les lignes compactes numérotées du téléphone (30/10/2026) ---------- */
+@media (min-width: 900px) {
+  .page-cahiers .enveloppe.section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 28px; align-items: start; }
+  .page-cahiers .groupe-niveau { margin-bottom: 0; min-width: 0; }
+  .page-cahiers .groupe-niveau-titre { font-size: 26px; padding: 4px 18px; margin-bottom: 6px; }
+  .page-cahiers .groupe-niveau-sous { font-size: 13px; margin: 0 0 14px; min-height: 2.8em; }
+  .page-cahiers .bento { display: flex; flex-direction: column; gap: 8px; counter-reset: cah; }
+  .page-cahiers .bento-carte {
+    counter-increment: cah;
+    display: grid; grid-template-columns: 40px minmax(0, 1fr) 18px; grid-template-areas: "num titre fleche" "num meta fleche";
+    align-items: center; column-gap: 14px; row-gap: 0; min-height: 68px; padding: 12px 14px; border-radius: 12px;
+  }
+  .page-cahiers .bento-carte::before {
+    content: counter(cah); grid-area: num; width: 40px; height: 40px; border-radius: 12px; background: var(--accent-clair); color: var(--accent);
+    display: grid; place-items: center; font: 700 17px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .page-cahiers .bento-etiquette { display: none; }
+  .page-cahiers .bento-carte h3 { grid-area: titre; font-size: 17px; line-height: 1.2; margin: 0; }
+  .page-cahiers .bento-meta { grid-area: meta; font: 13.5px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--gris-600); margin: 2px 0 0; }
+  .page-cahiers .bento-fleche { grid-area: fleche; position: static; opacity: 0.45; font-size: 20px; }
+  .page-cahiers .bento-carte--a-venir::before { content: "…"; background: var(--gris-100); color: var(--gris-600); }
+  .page-cahiers .bento-carte--a-venir .bento-desc { display: none; }
+}
 
 /* ============================================================
    TELEPHONE EN PORTRAIT (refonte du 25/10/2026, validée par David)
