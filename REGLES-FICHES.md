@@ -32,7 +32,7 @@ les corrections ponctuelles d'une fiche).
 - Chaque réduction est expliquée dans `HISTORIQUE.md` (gardé, retiré,
   pourquoi, nouveau nombre de questions).
 
-## 2. « Quelques automatismes »
+## 2. Section « Automatismes » (titre « Quelques automatismes » jusqu'au 30/10/2026 : David l'a raccourci en « Automatismes » dans toutes les fiches)
 
 - **6 questions au maximum** (tous calculs du bloc confondus), réparties selon
   le vrai gradient de chaque calcul, pas à parts égales par défaut.

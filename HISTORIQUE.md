@@ -9307,3 +9307,7 @@ Les 50 questions de `cahiers/terminale/cahier-1/fiche-01.html` portent `detail: 
 ### 30/10/2026 — Pictogrammes de niveau retirés de toutes les fiches
 
 Demande de David (« fais le », après sa réflexion sur les pictogrammes que les élèves ne regardent pas) : les `<svg>` de chaque `<span class="picto-niveau">` sont retirés des 50 fiches de Première et de Seconde qui en portaient (1 933 pictogrammes, dont une roue dentée en Première 17.13) ; le conteneur reste vide pour le bouton « ? » (vérifié : 10 boutons d'aide sur Première 14, aucune erreur de console). Script ponctuel (non conservé) ; ni le barème, ni les Détails, ni les audits ne lisaient ces pictogrammes. Règle ajoutée à `REGLES-FICHES.md`.
+
+### 30/10/2026 — « Quelques automatismes » devient « Automatismes »
+
+Demande de David : le titre de la première section des fiches de calcul (`<p class="section-titre">`) passe de « Quelques automatismes » à « Automatismes » dans les 51 fiches (Seconde, Première, Terminale). Rien ne lit ce titre (les devoirs partiels reposent sur les numéros de calcul ; l'outil d'attribution affiche seulement le nom de section lu dans la fiche). Non modifiés : le guide de l'élève (`outils/guide-eleve/guide-eleve.html` et son PDF, qui nomment encore le bloc « Quelques automatismes »), les commentaires du code et les entrées anciennes de ce journal.
