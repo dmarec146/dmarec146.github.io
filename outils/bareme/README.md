@@ -36,6 +36,8 @@ et le total en tête de fiche (jamais la catégorie ni l'explication).
 - Un barème est lié aux **identifiants** de questions (« 9.6 a) ») : renuméroter une fiche
   oblige à mettre à jour son fichier.
 
+Fiche **Terminale 1** (probabilités, 30/10/2026) : fichier `fiche-T01.json`, commande `appliquer-bareme.js T01`. Pour le calcul 1.8 (trois ou quatre urnes), une question de même lettre n'a pas le même rôle selon le tirage (la quatrième case de la loi ou l'espérance) : points intermédiaires pour `1.8 d)` et `1.8 e)`.
+
 ## Limite connue
 
 Le barème est attaché à la **position** de la question. Si le générateur tire des cas plus ou
