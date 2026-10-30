@@ -11,7 +11,7 @@ const OUT = path.join(__dirname, 'img');
 const BASE = 'http://localhost:8791';
 
 async function route(p) {
-  await p.route(/cdnjs\.cloudflare\.com|unpkg\.com/, r => {
+  if (fs.existsSync(NM)) await p.route(/cdnjs\.cloudflare\.com|unpkg\.com/, r => {
     const u = new URL(r.request().url()); let f;
     if (u.pathname.includes('mathjax')) f = NM + '/mathjax/es5/' + u.pathname.split('/es5/')[1].replace('.min.js', '.js');
     else if (u.pathname.includes('mathjs')) f = NM + '/mathjs/lib/browser/math.js';
@@ -21,7 +21,7 @@ async function route(p) {
     if (fs.existsSync(f)) r.fulfill({ path: f, contentType: f.endsWith('.js') ? 'application/javascript' : (f.endsWith('.woff2') ? 'font/woff2' : undefined) });
     else r.abort();
   });
-  await p.route(/gstatic\.com\/firebasejs\//, r => {
+  if (fs.existsSync(NM)) await p.route(/gstatic\.com\/firebasejs\//, r => {
     const f = NM + '/firebase/' + new URL(r.request().url()).pathname.split('/').pop();
     if (fs.existsSync(f)) r.fulfill({ path: f, contentType: 'application/javascript' }); else r.abort();
   });
@@ -79,8 +79,8 @@ const typeset = p => p.evaluate(() => window.MathJax && MathJax.typesetPromise ?
     await clip(p, 'barre-bas', '.barre-controle', 6, '#score-panneau');
     await p.context().close(); }
 
-  // 6. clavier MathLive (champ mathematique)
-  { const p = await page(b, F, { w: 1000, h: 820 });
+  // 6. clavier MathLive (champ mathematique) ; ignore sans node_modules (pngjs sert au recadrage : l'image clavier-mathlive-crop.png est alors conservee)
+  if (fs.existsSync(NM)) { const p = await page(b, F, { w: 1000, h: 820 });
     const champ = p.locator('#input-4'); await champ.scrollIntoViewIfNeeded();
     await p.evaluate(() => { const c = document.getElementById('input-4'); c.focus(); c.setValue('\\frac{5}{14}', { format: 'latex' }); });
     await p.locator('#input-4 + .q-clavier-btn').click(); await p.waitForTimeout(1500);
@@ -129,7 +129,7 @@ const typeset = p => p.evaluate(() => window.MathJax && MathJax.typesetPromise ?
     await p.screenshot({ path: path.join(OUT, 'accueil.png') }); console.log('ok accueil');
     await p.context().close(); }
   // clavier mathematique : on ne garde que le bas de la capture (le clavier)
-  { const { PNG } = require(NM + '/pngjs');
+  if (fs.existsSync(NM)) { const { PNG } = require(NM + '/pngjs');
     const src = PNG.sync.read(fs.readFileSync(path.join(OUT, 'clavier-mathlive.png')));
     const y0 = 1000, h = src.height - y0, out = new PNG({ width: src.width, height: h });
     PNG.bitblt(src, out, 0, y0, src.width, h, 0, 0);

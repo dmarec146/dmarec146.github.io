@@ -31,6 +31,8 @@ des CDN habituels, Firestore est coupé) : `qcm-carte-corrigee`, `qcm-bilan-nive
 
 ## Refaire les captures (si le site change d'apparence)
 
+**Depuis le 30/10/2026, sans `node_modules`** : `node captures.js` fonctionne aussi tel quel (site servi sur le port 8791, réseau disponible) ; les bibliothèques viennent alors des CDN habituels et le recadrage du clavier MathLive (`clavier-mathlive-crop.png`, qui demande `pngjs`) est ignoré : l'image existante est conservée.
+
 `node captures.js`, avec le site servi en local sur le port 8791 et un dossier
 `node_modules` (variable `GUIDE_NODE_MODULES`, sinon `./node_modules`, non
 suivi par Git) contenant `mathjax@3`, `mathjs@12.4.0`, `mathlive@0.110`,
