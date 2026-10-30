@@ -943,7 +943,8 @@ window.MathJax = {
   .table-loi-a-completer { border-collapse: collapse; margin: 6px auto 10px; }
   .table-loi-a-completer th, .table-loi-a-completer td { border: 1px solid #999; padding: 6px 10px; text-align: center; vertical-align: middle; font-weight: normal; }
   .table-loi-a-completer .question-cellule { padding: 4px; justify-content: center; gap: 4px; }
-  .table-loi-a-completer .q-mathfield { min-width: 84px; max-width: 120px; }
+  .table-loi-a-completer .q-mathfield { min-width: 60px; max-width: 84px; }
+  .loi-a-completer { display: flex; flex-direction: column; align-items: center; }
 </style>
 
 <body>
@@ -1485,6 +1486,13 @@ function recalculerGroupes() {
   exercices.forEach((e, i) => { const m = String(e.id).match(/^(\d+)\.(\d+)/); const g = 'grille-' + m[1] + '-' + m[2]; (groupes[g] = groupes[g] || []).push(i); });
 }
 recalculerGroupes();
+// un seul clavier pour tout le tableau de loi : il s'ouvre sur la case en cours (ou la premiere)
+function clavierTableau(btn) {
+  const champs = [...btn.closest('.loi-a-completer').querySelectorAll('math-field')];
+  const mf = champs.find(c => c === document.activeElement) || champs[0];
+  mf.focus();
+  mf.executeCommand('toggleVirtualKeyboard');
+}
 const lettresEtendues = ["a","b","c","d","e","f","g","h","i","j","k"];
 
 function toggleClavier(idx) {
@@ -2984,7 +2992,7 @@ function construireGrilles() {
     if (idxCellules.length) {
       const bloc = document.createElement('div');
       bloc.className = 'loi-a-completer';
-      bloc.innerHTML = '<table class="table-loi-a-completer"><tr><th>\\(k\\)</th>' + idxCellules.map(i => '<td>\\(' + exercices[i].kTex + '\\)</td>').join('') + '</tr><tr><th>\\(P(X=k)\\)</th>' + idxCellules.map(i => '<td><div class="question question-cellule" id="q-' + i + '">' + champReponsePour(i, exercices[i]).replace(/<button class="q-clavier-btn"[^>]*>[^<]*<\/button>/, '') + '<span class="q-statut" id="statut-' + i + '"></span></div></td>').join('') + '</tr></table>';
+      bloc.innerHTML = '<table class="table-loi-a-completer"><tr><th>\\(k\\)</th>' + idxCellules.map(i => '<td>\\(' + exercices[i].kTex + '\\)</td>').join('') + '</tr><tr><th>\\(P(X=k)\\)</th>' + idxCellules.map(i => '<td><div class="question question-cellule" id="q-' + i + '">' + champReponsePour(i, exercices[i]).replace(/<button class="q-clavier-btn"[^>]*>[^<]*<\/button>/, '') + '<span class="q-statut" id="statut-' + i + '"></span></div></td>').join('') + '</tr></table><button class="q-clavier-btn clavier-tableau" onmousedown="event.preventDefault()" onclick="clavierTableau(this)" title="Clavier symboles">&#9000;&#xFE0E;</button>';
       grille.appendChild(bloc);
     }
     indices.forEach((idx, pos) => {
