@@ -145,7 +145,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-1/fiche-01.html';
           compte('1.1');
         }
         // ---- 1.2 : egalite des polynomes ----
-        for (const id of ['1.2 a)', '1.2 b)', '1.2 c)', '1.2 d)']) {
+        for (const id of ['1.2 a)', '1.2 b)']) {
           const e = par(id);
           for (const x of [-2.3, 0.7, 1.9, 3.1]) if (!egal(evC(e.enonce, { x }), evC(e.reponse, { x }), 1e-9)) faux(e, id + ' ' + e.enonce + ' / ' + e.reponse);
           compte('1.2');

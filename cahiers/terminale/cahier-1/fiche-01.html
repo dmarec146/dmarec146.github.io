@@ -1271,14 +1271,10 @@ function genererExercices() {
   {
     const signe = (s) => (s > 0 ? '+' : '-');
     const trinome = (a, s, c) => `${c === 1 ? '' : c}x^2${signe(s)}${2 * a * c}x${signe(1)}${a * a * c}`;
-    const a1 = alea(1, 4), s1 = piocher([1, -1]);
+    const a1 = alea(1, 9), s1 = piocher([1, -1]);
     ex.push({ id: '1.2 a)', type: 'alg', texteLibre: false, enonce: trinome(a1, s1, 1), reponse: `(x${signe(s1)}${a1})^2` });
-    const a2 = alea(5, 9), s2 = piocher([1, -1]);
-    ex.push({ id: '1.2 b)', type: 'alg', texteLibre: false, enonce: trinome(a2, s2, 1), reponse: `(x${signe(s2)}${a2})^2` });
     const k3 = alea(1, 3);
-    ex.push({ id: '1.2 c)', type: 'alg', texteLibre: false, enonce: `x^4-${Math.pow(k3, 4)}`, reponse: `(x-${k3})(x+${k3})(x^2+${k3 * k3})` });
-    const c4 = piocher([2, 3, 4, 5]), a4 = alea(2, 9), s4 = piocher([1, -1]);
-    ex.push({ id: '1.2 d)', type: 'alg', texteLibre: false, enonce: trinome(a4, s4, c4), reponse: `${c4}(x${signe(s4)}${a4})^2` });
+    ex.push({ id: '1.2 b)', type: 'alg', texteLibre: false, enonce: `x^4-${Math.pow(k3, 4)}`, reponse: `(x-${k3})(x+${k3})(x^2+${k3 * k3})` });
   }
 
   // ---------- 1.3 : une loi dont une probabilite manque ----------
@@ -2988,7 +2984,7 @@ function construireGrilles() {
     if (idxCellules.length) {
       const bloc = document.createElement('div');
       bloc.className = 'loi-a-completer';
-      bloc.innerHTML = '<table class="table-loi-a-completer"><tr><th>\\(k\\)</th>' + idxCellules.map(i => '<td>\\(' + exercices[i].kTex + '\\)</td>').join('') + '</tr><tr><th>\\(P(X=k)\\)</th>' + idxCellules.map(i => '<td><div class="question question-cellule" id="q-' + i + '">' + champReponsePour(i, exercices[i]) + '<span class="q-statut" id="statut-' + i + '"></span></div></td>').join('') + '</tr></table>';
+      bloc.innerHTML = '<table class="table-loi-a-completer"><tr><th>\\(k\\)</th>' + idxCellules.map(i => '<td>\\(' + exercices[i].kTex + '\\)</td>').join('') + '</tr><tr><th>\\(P(X=k)\\)</th>' + idxCellules.map(i => '<td><div class="question question-cellule" id="q-' + i + '">' + champReponsePour(i, exercices[i]).replace(/<button class="q-clavier-btn"[^>]*>[^<]*<\/button>/, '') + '<span class="q-statut" id="statut-' + i + '"></span></div></td>').join('') + '</tr></table>';
       grille.appendChild(bloc);
     }
     indices.forEach((idx, pos) => {
