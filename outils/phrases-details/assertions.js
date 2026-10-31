@@ -772,8 +772,8 @@ module.exports = [
   {
     nom: 'la-lettre-du-qcm-citee-est-la-bonne-reponse-lettree',
     // « \text{Réponse : } b » : la lettre est la bonne réponse de l'exercice (options a, b, c mélangées à chaque tirage)
-    motif: /^\\text\{Réponse : \} [a-c]$/,
-    verifie: (l, e) => { const m = l.match(/^\\text\{Réponse : \} ([a-c])$/); return !!m && m[1] === e.bonneReponse; }
+    motif: /^\\text\{Réponse : \} [a-d]$/,
+    verifie: (l, e) => { const m = l.match(/^\\text\{Réponse : \} ([a-d])$/); return !!m && m[1] === e.bonneReponse; }
   },
   {
     nom: 'x-non-nul-donne-une-raison-differente-de-1',
@@ -810,5 +810,23 @@ module.exports = [
     // « \text{Les lancers sont indépendants, donc} » (Terminale, fiche 1, calcul 1.13) : l'énoncé commun dit que les lancers sont indépendants
     motif: /^\\text\{Les lancers sont indépendants, donc\}$/,
     verifie: (l, e, env) => /indépendants/.test(env.texte('intro-1-13'))
+  },
+  {
+    nom: 'la-somme-compte-autant-de-variables-que-de-messages',
+    // « \text{Somme de } 5 \text{ variables de Bernoulli} » (Terminale, fiche 2, calcul 2.9 b) : l'énoncé dit que l'émetteur envoie ce nombre de messages
+    motif: /^\\text\{Somme de \} \d+ \\text\{ variables de Bernoulli\}$/,
+    verifie: (l, e, env) => { const m = l.match(/Somme de \} (\d+) /), n = ((typeof paramsAvances !== 'undefined' && paramsAvances.t9) || env.texte('intro-2-9')).match(/envoie (\d+) messages/); return !!m && !!n && m[1] === n[1]; }
+  },
+  {
+    nom: 'les-messages-sont-independants-et-de-meme-probabilite-selon-l-enonce',
+    // « \text{indépendantes de paramètre } 0{,}8 » (Terminale, fiche 2, calcul 2.9 b) : l'énoncé donne cette probabilité à chaque message, indépendamment des autres
+    motif: /^\\text\{indépendantes de paramètre \} [\d{},]+$/,
+    verifie: (l, e, env) => { const t = ((typeof paramsAvances !== 'undefined' && paramsAvances.t9) || env.texte('intro-2-9')), m = l.match(/paramètre \} ([\d{},]+)$/); return !!m && t.includes('probabilité \\(' + m[1] + '\\)') && /indépendamment des autres/.test(t); }
+  },
+  {
+    nom: 'la-loi-de-x-est-binomiale-selon-l-enonce',
+    // « \text{donc } X \text{ suit une loi binomiale} » (Terminale, fiche 2, calcul 2.9 b) : X est la somme de variables de Bernoulli indépendantes de même paramètre
+    motif: /^\\text\{donc \} X \\text\{ suit une loi binomiale\}$/,
+    verifie: (l, e, env) => { const t = ((typeof paramsAvances !== 'undefined' && paramsAvances.t9) || env.texte('intro-2-9')); return /X=X_1\+X_2/.test(t) && /indépendamment des autres/.test(t) && /Chaque message est reçu avec la probabilité/.test(t); }
   }
 ];

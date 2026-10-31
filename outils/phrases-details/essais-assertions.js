@@ -525,6 +525,19 @@ const ESSAIS = {
   'les-lancers-sont-independants-selon-l-enonce': [
     [true, '\\text{Les lancers sont indépendants, donc}', {}, env('On lance un dé ; les lancers successifs et indépendants.')],
     [false, '\\text{Les lancers sont indépendants, donc}', {}, env('On lance un dé deux fois.')]
+  ],
+  'la-somme-compte-autant-de-variables-que-de-messages': [
+    [true, '\\text{Somme de } 5 \\text{ variables de Bernoulli}', {}, env('Un émetteur envoie 5 messages à un récepteur.')],
+    [false, '\\text{Somme de } 4 \\text{ variables de Bernoulli}', {}, env('Un émetteur envoie 5 messages à un récepteur.')]
+  ],
+  'les-messages-sont-independants-et-de-meme-probabilite-selon-l-enonce': [
+    [true, '\\text{indépendantes de paramètre } 0{,}9', {}, env('Chaque message est reçu avec la probabilité \\(0{,}9\\), indépendamment des autres.')],
+    [false, '\\text{indépendantes de paramètre } 0{,}8', {}, env('Chaque message est reçu avec la probabilité \\(0{,}9\\), indépendamment des autres.')],
+    [false, '\\text{indépendantes de paramètre } 0{,}9', {}, env('Chaque message est reçu avec une probabilité \\(0{,}9\\) qui dépend du message.')]
+  ],
+  'la-loi-de-x-est-binomiale-selon-l-enonce': [
+    [true, '\\text{donc } X \\text{ suit une loi binomiale}', {}, env('Chaque message est reçu avec la probabilité \\(0{,}9\\), indépendamment des autres. On note X=X_1+X_2+X_3.')],
+    [false, '\\text{donc } X \\text{ suit une loi binomiale}', {}, env('Chaque message est reçu avec une probabilité qui dépend du message. On note X=X_1+X_2+X_3.')]
   ]
 };
 let echecs = 0, essais = 0;

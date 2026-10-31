@@ -78,7 +78,7 @@ async function controlerDansLaPage(opts) {
   const generer = () => (typeof marquerFormesFactorisees === 'function' ? marquerFormesFactorisees(genererExercices()) : genererExercices());
 
   // ---------- LaTeX -> mathjs ----------
-  const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'cosh', 'sinh', 'abs', 'pi', 'e', 'Infinity', 'nthRoot']);
+  const FONCTIONS = new Set(['sqrt', 'log', 'exp', 'cos', 'sin', 'tan', 'cosh', 'sinh', 'abs', 'pi', 'e', 'Infinity', 'nthRoot', 'combinations']);
   // (accélération 23/10/2026) conversion LaTeX -> mathjs et compilation mémorisées : une même expression est évaluée sur 8 portées et revient d'une ligne à l'autre
   const memoVersMathjs = new Map(), memoCompile = new Map();
   function versMathjs(tex) {
@@ -88,7 +88,7 @@ async function controlerDansLaPage(opts) {
   }
   const comp = (m) => { let c = memoCompile.get(m); if (!c) { c = math.compile(m); if (memoCompile.size > 60000) memoCompile.clear(); memoCompile.set(m, c); } return c; };
   function versMathjs0(tex) {
-    let t = String(tex).replace(/\\(?:small|scriptsize)\s*/g, '').replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
+    let t = String(tex).replace(/\\[dt]?binom\{([^{}]*)\}\{([^{}]*)\}/g, 'combinations(($1),($2))').replace(/\\(?:small|scriptsize)\s*/g, '').replace(/\\%/g, '*0.01').replace(/(\d)\\,(?=\d)/g, '$1').replace(/\\lt\s*/g, '<').replace(/\\left|\\right/g, '').replace(/\[/g, '(').replace(/\]/g, ')').replace(/\\[,;!: ]/g, ' ').replace(/\\q?quad/g, ' ')   // 16\,384 : un seul nombre ; crochets : parenthèses
       .replace(/\^\{?\\circ\}?/g, '').replace(/\\(?:times|cdot)/g, '*').replace(/\\div/g, '/').replace(/\\pi/g, 'pi').replace(/\\infty/g, 'Infinity')
       .replace(/\\ln/g, 'log').replace(/\\exp/g, 'exp').replace(/\\cos/g, 'cos').replace(/\\sin/g, 'sin').replace(/\\tan/g, 'tan')
       .replace(/\\mathrm\{e\}/g, 'e').replace(/\{,\}/g, '.').replace(/\\Vert|\\vert/g, '')
