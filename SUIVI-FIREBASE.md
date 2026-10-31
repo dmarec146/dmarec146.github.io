@@ -364,6 +364,29 @@ depuis la réorganisation du 02/10/2026 »).
 
 ## 6. Pistes ouvertes / à faire
 
+- **RAPPEL À DAVID — audit de sécurité du 31/10/2026 (lecture seule, rien corrigé ; à traiter dans cet ordre).**
+  1. **Grave — injection HTML dans le tableau de bord Fréquentation** : les règles `statistiques` ne vérifient pas les VALEURS de la carte
+     `pages` (écriture anonyme permise) et `assets/js/frequentation.js` (l. 209-213) les affiche par `innerHTML` via `nombre(f.n)` :
+     une valeur texte (`"<img onerror=…>"`) sous une clé de fiche valide (`premiere-f1`) s'exécuterait dans la session administrateur
+     (lecture de toutes les données, appel de `inviterEnseignant`). Correctif sans impact pour les utilisateurs : ne garder que les
+     valeurs `typeof n === 'number'` (sinon 0) au cumul (l. ~62 et ~186) et échapper `f.nom`. Puis durcir les règles (valeurs entières).
+  2. **Notes falsifiables** : `devoirsTentatives` accepte n'importe quels champs (note, horodatage antidaté, nombre illimité). Règles
+     possibles : `horodatage == request.time`, `0 <= score <= totalExercices`, devoir existant et non échu. Les bonnes réponses des QCM
+     sont de toute façon lisibles dans la page (correction côté client) : une note infalsifiable exigerait une correction serveur.
+  3. **Coûts / abus (plan Blaze)** : écritures élèves illimitées (brouillons ≤ 1 Mo, journaux), statistiques anonymes illimitées ;
+     règles de création encore ouvertes sur `tentatives`, `automatismes`, `resultats` (collections supprimées). Console : alerte de budget,
+     App Check, restriction de la clé d'API aux domaines du site.
+  4. **Données personnelles dans le dépôt public** : `davidmrc92@gmail.com` (SUIVI, HISTORIQUE, auteur de commits), pseudos de test
+     dérivés de vrais noms (`n.ahankour`, `h.mrc`, `e.mrc`), `outils/creer-comptes/eleves-exemple.csv` (noms réels). À retirer des
+     fichiers ; l'historique Git les garde (réécriture possible mais lourde).
+  5. **Plus faible** : double authentification sur le compte administrateur ; protéger (et remplacer si elle a circulé) la clé
+     `service-account.json` ; protection contre l'énumération des adresses et politique de mots de passe dans Firebase Auth ; en-têtes
+     de sécurité (CSP, `frame-ancestors`, `Referrer-Policy`, `X-Content-Type-Options`) dans `outils/hosting/publier-hosting.js`
+     (impossible sur GitHub Pages) ; MathJax chargé sans `integrity` ; un élève lit tous les devoirs de son enseignant (autres classes,
+     listes d'uid, dérogations). Points solides : profils élèves non modifiables côté client, droits par custom claims, fonctions qui
+     vérifient `admin`, aucun secret dans l'historique Git, script de publication qui bloque les fichiers sensibles, mots de passe
+     aléatoires (`crypto`). Toute modification de règles : tester dans `outils/verification/regles-firestore/` avant publication.
+
 - **MIGRATION EN COURS vers Firebase Hosting + nom de domaine (démarrée le 26/10/2026)** — plan pas à pas, décisions et journal dans l'artefact claude.ai privé
   « Feuille de route du site » (https://claude.ai/artifact/Hq8uwxmdaWvtCbZENxcJuh), à lire avant toute action de publication. **État** : `master` publié par GitHub Pages
   (`dmarec146.github.io`) reste la production annoncée aux élèves ; le même site est publié **en parallèle** sur Firebase Hosting, **non annoncé et non indexé**
