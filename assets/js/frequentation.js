@@ -28,7 +28,14 @@ const LIBELLES_MESURES = { visiteurs: 'Visiteurs', visites: 'Visites', pv: 'Page
 const NIVEAUX = { seconde: 'Seconde', premiere: 'Première', terminale: 'Terminale' };
 
 const etat = { parJour: new Map(), periode: '30', mesure: 'visiteurs' };
-const nombre = (n) => n.toLocaleString('fr-FR');
+// SÉCURITÉ (01/11/2026, audit du 31/10) : les compteurs sont écrits par n'importe quel visiteur (règles Firestore) et ne
+// doivent JAMAIS être traités comme du texte sûr, puisqu'ils sont affichés par innerHTML dans la session administrateur.
+// valeurNumerique : un vrai nombre fini, sinon 0 (une chaîne, un tableau, un objet comptent pour 0). nombre() applique la même
+// règle, donc même un texte qui passerait entre les mailles s'affiche « 0 ». echapper : tout texte inséré dans du HTML.
+const valeurNumerique = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+const nombre = (n) => valeurNumerique(n).toLocaleString('fr-FR');
+const echapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const CLE_PAGE_VALIDE = /^[a-z0-9-]{1,40}$/;
 
 function jourLocal(date) {
   const deux = (n) => String(n).padStart(2, '0');
@@ -60,9 +67,12 @@ async function charger() {
     const cumul = parJour.get(jour) || { pages: {} };
     for (const [cle, valeur] of Object.entries(data)) {
       if (cle === 'pages') {
-        for (const [page, n] of Object.entries(valeur || {})) cumul.pages[page] = (cumul.pages[page] || 0) + n;
+        if (valeur === null || typeof valeur !== 'object' || Array.isArray(valeur)) continue;
+        for (const [page, n] of Object.entries(valeur)) {
+          if (CLE_PAGE_VALIDE.test(page)) cumul.pages[page] = valeurNumerique(cumul.pages[page]) + valeurNumerique(n);
+        }
       } else if (typeof valeur === 'number') {
-        cumul[cle] = (cumul[cle] || 0) + valeur;
+        cumul[cle] = valeurNumerique(cumul[cle]) + valeurNumerique(valeur);
       }
     }
     parJour.set(jour, cumul);
@@ -138,7 +148,7 @@ function dessinerGraphique(groupes, parSemaine) {
       const h = Math.max(1.5, (v / max) * hauteur), x = cx - barre / 2, yb = mh + hauteur, r = Math.min(4, barre / 2, h);
       svg += `<path class="fr-barre" d="M${x},${yb} V${yb - h + r} Q${x},${yb - h} ${x + r},${yb - h} H${x + barre - r} Q${x + barre},${yb - h} ${x + barre},${yb - h + r} V${yb} Z"/>`;
     }
-    if ((groupes.length - 1 - i) % tous === 0) svg += `<text x="${cx}" y="${H - 9}" class="fr-axe" text-anchor="middle">${g.libelle}</text>`;
+    if ((groupes.length - 1 - i) % tous === 0) svg += `<text x="${cx}" y="${H - 9}" class="fr-axe" text-anchor="middle">${echapper(g.libelle)}</text>`;
     svg += `<rect class="fr-cible" x="${mg + pas * i}" y="${mh}" width="${pas}" height="${hauteur}" data-i="${i}"/>`;
   });
   svg += `</svg><div class="fr-bulle" hidden></div>`;
@@ -149,7 +159,7 @@ function dessinerGraphique(groupes, parSemaine) {
     const g = groupes[Number(cible.dataset.i)];
     zone.querySelectorAll('.fr-cible.actif').forEach((c) => c.classList.remove('actif'));
     cible.classList.add('actif');
-    bulle.innerHTML = `<b>${g.detail}</b><br>${LIBELLES_MESURES.visiteurs} : ${nombre(g.visiteurs)}<br>${LIBELLES_MESURES.visites} : ${nombre(g.visites)}<br>${LIBELLES_MESURES.pv} : ${nombre(g.pv)}`;
+    bulle.innerHTML = `<b>${echapper(g.detail)}</b><br>${LIBELLES_MESURES.visiteurs} : ${nombre(g.visiteurs)}<br>${LIBELLES_MESURES.visites} : ${nombre(g.visites)}<br>${LIBELLES_MESURES.pv} : ${nombre(g.pv)}`;
     bulle.hidden = false;
     const rz = zone.getBoundingClientRect(), rc = cible.getBoundingClientRect();
     const gauche = rc.left - rz.left + rc.width / 2;
@@ -168,8 +178,8 @@ function barresHTML(lignes, total) {
   if (!total) return '<p class="fr-vide">Aucune donnée sur cette période.</p>';
   return lignes.filter((l) => l.n > 0).map((l) => `
     <div class="fr-ligne">
-      <span class="fr-ligne-nom">${l.nom}</span>
-      <span class="fr-ligne-piste"><span class="fr-ligne-barre" style="width:${(100 * l.n / max).toFixed(1)}%"></span></span>
+      <span class="fr-ligne-nom">${echapper(l.nom)}</span>
+      <span class="fr-ligne-piste"><span class="fr-ligne-barre" style="width:${(100 * valeurNumerique(l.n) / max).toFixed(1)}%"></span></span>
       <span class="fr-ligne-valeur">${nombre(l.n)} <small>${Math.round(100 * l.n / total)} %</small></span>
     </div>`).join('');
 }
@@ -184,8 +194,8 @@ function afficher() {
     const c = etat.parJour.get(jour);
     if (!c) continue;
     for (const [k, v] of Object.entries(c)) {
-      if (k === 'pages') for (const [p, n] of Object.entries(v)) cumul.pages[p] = (cumul.pages[p] || 0) + n;
-      else cumul[k] = (cumul[k] || 0) + v;
+      if (k === 'pages') for (const [p, n] of Object.entries(v)) cumul.pages[p] = valeurNumerique(cumul.pages[p]) + valeurNumerique(n);
+      else cumul[k] = valeurNumerique(cumul[k]) + valeurNumerique(v);
     }
   }
   document.getElementById('fr-t-visiteurs').textContent = nombre(cumul.visiteurs || 0);
@@ -200,7 +210,7 @@ function afficher() {
   document.getElementById('fr-col-periode').textContent = parSemaine ? 'Semaine du' : 'Jour';
   dessinerGraphique(groupes, parSemaine);
   document.getElementById('fr-corps-jours').innerHTML = [...groupes].reverse().map((g) =>
-    `<tr><td>${parSemaine ? g.libelle : g.detail}</td><td>${nombre(g.visiteurs)}</td><td>${nombre(g.visites)}</td><td>${nombre(g.pv)}</td></tr>`).join('');
+    `<tr><td>${echapper(parSemaine ? g.libelle : g.detail)}</td><td>${nombre(g.visiteurs)}</td><td>${nombre(g.visites)}</td><td>${nombre(g.pv)}</td></tr>`).join('');
 
   document.getElementById('fr-parties').innerHTML = barresHTML(PARTIES.map(([k, nom]) => ({ nom, n: cumul['s_' + k] || 0 })), cumul.pv || 0);
   const totalAppareils = APPAREILS.reduce((s, [k]) => s + (cumul['a_' + k] || 0), 0);
@@ -210,7 +220,7 @@ function afficher() {
   const maxF = Math.max(1, ...fiches.map((f) => f.n));
   document.getElementById('fr-fiches').innerHTML = fiches.length
     ? `<table class="tdb-tableau fr-tableau-fiches"><thead><tr><th>#</th><th>Fiche</th><th>Pages vues</th></tr></thead><tbody>${fiches.map((f, i) =>
-      `<tr><td>${i + 1}</td><td>${f.nom}</td><td class="fr-cellule-barre"><span class="fr-nb">${nombre(f.n)}</span><span class="fr-mini-piste"><span class="fr-mini-barre" style="width:${(100 * f.n / maxF).toFixed(1)}%"></span></span></td></tr>`).join('')}</tbody></table>`
+      `<tr><td>${i + 1}</td><td>${echapper(f.nom)}</td><td class="fr-cellule-barre"><span class="fr-nb">${nombre(f.n)}</span><span class="fr-mini-piste"><span class="fr-mini-barre" style="width:${(100 * valeurNumerique(f.n) / maxF).toFixed(1)}%"></span></span></td></tr>`).join('')}</tbody></table>`
     : '<p class="fr-vide">Aucune fiche ouverte sur cette période.</p>';
 }
 
