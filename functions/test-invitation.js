@@ -23,7 +23,7 @@ async function cas(nom, attendu, fonction) {
   await auth.createUser({ email: 'admin.test@exemple.test', password: 'xxxxxxxx1' }).then((u) => auth.setCustomUserClaims(u.uid, { admin: true, enseignant: true }));
   await cas('adresse vide', 'invalid-argument', () => inviter(auth, { email: '' }, { envoyerCourriel }));
   await cas('adresse sans arobase', 'invalid-argument', () => inviter(auth, { email: 'dupont' }, { envoyerCourriel }));
-  await cas('adresse d\'eleve (.local) refusee', 'invalid-argument', () => inviter(auth, { email: 'h.mrc@cahiers-interactifs.local', exception: true }, { envoyerCourriel }));
+  await cas('adresse d\'eleve (.local) refusee', 'invalid-argument', () => inviter(auth, { email: 'eleve.test@cahiers-interactifs.local', exception: true }, { envoyerCourriel }));
   await cas('adresse non academique refusee sans exception', 'invalid-argument', () => inviter(auth, { email: 'collegue@gmail.com' }, { envoyerCourriel }));
   const aucun = envois.length === 0; if (aucun) { ok++; console.log('  ok   aucun courriel envoye pour les refus'); } else { ko++; console.log('  ECHEC des courriels sont partis pour des refus'); }
   const r1 = await cas('adresse academique acceptee', 'ok', () => inviter(auth, { email: '  Marie.Dupont@AC-Creteil.fr ' }, { envoyerCourriel }));

@@ -145,7 +145,7 @@ touche que ce qui n'est pas encore rattaché).
    fonctionne aussi, le pseudo est alors utilisé tel quel.
 
    **Élève hors classe** : laisser la valeur de `classe` vide (la colonne
-   doit rester présente, par exemple la ligne `;Ewenn;Marec`). Aucune classe
+   doit rester présente, par exemple la ligne `;Léa;Martin`). Aucune classe
    n'est alors enregistrée : l'élève n'est rattaché à aucun niveau, n'a pas
    de devoirs, et le tableau de bord le range sous « Hors classe » avec le
    suivi des cahiers ET des automatismes (tous les niveaux).
