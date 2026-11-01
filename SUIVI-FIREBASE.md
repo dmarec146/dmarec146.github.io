@@ -657,6 +657,7 @@ Elles ne sont synchronisées que par GitHub : `git fetch` / `git pull` à l'ouve
 2. Cloner **hors de Google Drive** : `git clone https://github.com/dmarec146/dmarec146.github.io.git C:\Users\David\Documents\siteCahierCalcul`
    (chemin au choix), puis `gh auth login` : l'étape du code à coller dans le navigateur ne peut être faite que par David ; ensuite `git push` fonctionne.
    Si un clone existe déjà : `git status` (rien ne doit traîner), `git checkout master`, `git pull`.
+   **Adresse d'auteur des commits (01/11/2026)** : `git config --global user.email "321373455+dmarec146@users.noreply.github.com"` (adresse masquée GitHub ; l'option « Keep my email addresses private » est cochée sur GitHub, et un push portant l'adresse Gmail peut être refusé).
 3. `npm install` dans chaque dossier d'outil qui a un `package.json`, au premier usage : `outils/creer-comptes`, `outils/etiquettes`, `functions`
    (indispensable pour déployer), `outils/guide-eleve` et `outils/guide-enseignant` (PDF et captures) ; test des règles : voir
    `outils/verification/regles-firestore/README.md`.
