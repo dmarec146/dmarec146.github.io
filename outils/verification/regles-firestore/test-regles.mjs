@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc, updateDoc, increment, deleteField, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc, updateDoc, increment, deleteField, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 
 const env = await initializeTestEnvironment({
@@ -12,6 +12,11 @@ const prof = env.authenticatedContext('prof', { admin: true, enseignant: true })
 // Depuis le 27/10/2026, le droit admin ne donne plus acces aux eleves : prof lit eleve1 en tant que SON enseignant.
 await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'eleves/eleve1'), { pseudo: 'e1', enseignant: 'prof' }); });
 const ID = '2026-10-03_2';
+const DANS_30_JOURS = Timestamp.fromMillis(Date.now() + 30 * 24 * 3600 * 1000);
+const IL_Y_A_2_JOURS = Timestamp.fromMillis(Date.now() - 2 * 24 * 3600 * 1000);
+const FICHE = '/cahiers/seconde/cahier-1/fiche-01.html';
+const devoirComplet = (titre, classe, enseignant, extra = {}) => ({ type: 'fiche', ficheId: FICHE, titre, classe, enseignant, nbEssaisMax: 3, echeance: DANS_30_JOURS, ...extra });
+const tentative = (devoirId, extra = {}) => ({ devoirId, ficheId: FICHE, score: 3, totalExercices: 10, nbRepondues: 8, horodatage: serverTimestamp(), ...extra });
 let ok = 0, ko = 0;
 async function cas(nom, attendu, promesse) {
   try { await (attendu ? assertSucceeds(promesse) : assertFails(promesse)); ok++; console.log('  ok  ', nom); }
@@ -122,14 +127,17 @@ await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(d, `eleves/${e}/connexions/${t}`), { a: 1 });
     await setDoc(doc(d, `eleves/${e}/brouillons/${t}`), { a: 1 });
   }
-  await setDoc(doc(d, 'devoirs/dA'), { titre: 'A', classe: '2nde1', enseignant: 'profA' });
-  await setDoc(doc(d, 'devoirs/dA2'), { titre: 'A2', classe: '2nde1', enseignant: 'profA' });
-  await setDoc(doc(d, 'devoirs/dB'), { titre: 'B', classe: '2nde1', enseignant: 'profB' });
+  await setDoc(doc(d, 'devoirs/dA'), devoirComplet('A', '2nde1', 'profA'));
+  await setDoc(doc(d, 'devoirs/dA2'), devoirComplet('A2', '2nde1', 'profA'));
+  await setDoc(doc(d, 'devoirs/dB'), devoirComplet('B', '2nde1', 'profB'));
+  await setDoc(doc(d, 'devoirs/dAechu'), devoirComplet('A échu', '2nde1', 'profA', { echeance: IL_Y_A_2_JOURS }));
+  await setDoc(doc(d, 'devoirs/dAderog'), devoirComplet('A échu sauf dérogation', '2nde1', 'profA', { echeance: IL_Y_A_2_JOURS, derogations: { eA1: { echeance: DANS_30_JOURS, nbEssaisMax: 5 } } }));
+  await setDoc(doc(d, 'devoirs/dA2nde2'), devoirComplet('A autre classe', '2nde2', 'profA'));
   await setDoc(doc(d, 'devoirs/dL'), { titre: 'legacy', classe: '2nde1' });
   await setDoc(doc(d, 'eleves/eD1'), { pseudo: 'd1', classe: '2nde3', enseignant: 'david' });
   await setDoc(doc(d, 'eleves/eD1/devoirsTentatives/tD1'), { devoirId: 'dD', score: 2 });
-  await setDoc(doc(d, 'devoirs/dD'), { titre: 'D', classe: '2nde3', enseignant: 'david' });
-  await setDoc(doc(d, 'devoirs/dD2'), { titre: 'D2', classe: '2nde3', enseignant: 'david' });
+  await setDoc(doc(d, 'devoirs/dD'), devoirComplet('D', '2nde3', 'david'));
+  await setDoc(doc(d, 'devoirs/dD2'), devoirComplet('D2', '2nde3', 'david'));
 });
 const profA = env.authenticatedContext('profA', { enseignant: true }).firestore();
 const profB = env.authenticatedContext('profB', { enseignant: true }).firestore();
@@ -171,10 +179,50 @@ await cas('enseignant B : ne supprime pas une tentative d\'un élève de A', fal
 await cas('enseignant A : supprime une tentative de son élève', true, deleteDoc(doc(profA, 'eleves/eA1/devoirsTentatives/tA1')));
 await cas('enseignant A : ne supprime pas une tentative d\'un élève de B', false, deleteDoc(doc(profA, 'eleves/eB1/devoirsTentatives/tB1')));
 await cas('élève : lit toujours ses propres tentatives', true, getDocs(collection(eA1, 'eleves/eA1/devoirsTentatives')));
-await cas('élève : ajoute toujours sa tentative', true, setDoc(doc(eA1, 'eleves/eA1/devoirsTentatives/nouv'), { devoirId: 'dA', score: 1 }));
+await cas('élève : ajoute toujours sa tentative', true, setDoc(doc(eA1, 'eleves/eA1/devoirsTentatives/nouv'), tentative('dA')));
+
+console.log('  Tentatives de devoir contrôlées (01/11/2026, audit : notes falsifiables)');
+const tv = (id, donnees) => setDoc(doc(eA1, `eleves/eA1/devoirsTentatives/${id}`), donnees);
+await cas('tentative d\'automatismes (sans ficheId, avec nbQuestions)', true, tv('t-auto', { devoirId: 'dA', score: 7.25, totalExercices: 20, nbQuestions: 20, nbRepondues: 18, horodatage: serverTimestamp() }));
+await cas('tentative à barème (score décimal)', true, tv('t-bareme', tentative('dA', { score: 17.25, totalExercices: 20, nbQuestions: 24 })));
+await cas('note 0 acceptée', true, tv('t-zero', tentative('dA', { score: 0 })));
+await cas('note supérieure au total refusée', false, tv('t-1', tentative('dA', { score: 11 })));
+await cas('note de 1000 refusée', false, tv('t-2', tentative('dA', { score: 1000, totalExercices: 10 })));
+await cas('note négative refusée', false, tv('t-3', tentative('dA', { score: -1 })));
+await cas('note en texte refusée', false, tv('t-4', tentative('dA', { score: '10' })));
+await cas('total nul refusé', false, tv('t-5', tentative('dA', { score: 0, totalExercices: 0 })));
+await cas('date antidatée refusée', false, tv('t-6', tentative('dA', { horodatage: Timestamp.fromMillis(Date.now() - 86400000) })));
+await cas('sans date refusée', false, tv('t-7', { devoirId: 'dA', score: 3, totalExercices: 10 }));
+await cas('champ en plus refusé', false, tv('t-8', tentative('dA', { bonus: 1 })));
+await cas('devoir inexistant refusé', false, tv('t-9', tentative('nexistepas')));
+await cas('devoir d\'un autre enseignant refusé', false, tv('t-10', tentative('dB')));
+await cas('devoir d\'une autre classe refusé', false, tv('t-11', tentative('dA2nde2')));
+await cas('devoir échu refusé', false, tv('t-12', tentative('dAechu')));
+await cas('devoir échu mais dérogation en cours pour cet élève : accepté', true, tv('t-13', tentative('dAderog')));
+const eA2 = env.authenticatedContext('eA2').firestore();
+await cas('dérogation d\'un autre élève : refusée', false, setDoc(doc(eA2, 'eleves/eA2/devoirsTentatives/t-14'), tentative('dAderog')));
+await cas('tentative chez un autre élève refusée', false, setDoc(doc(eA1, 'eleves/eB1/devoirsTentatives/t-15'), tentative('dB')));
+
+console.log('  Collections anciennes fermées à la création (01/11/2026)');
+await cas('élève : n\'écrit plus dans tentatives', false, setDoc(doc(eA1, 'eleves/eA1/tentatives/x'), { a: 1 }));
+await cas('élève : n\'écrit plus dans automatismes', false, setDoc(doc(eA1, 'eleves/eA1/automatismes/x'), { a: 1 }));
+await cas('élève : n\'écrit plus dans resultats', false, setDoc(doc(eA1, 'eleves/eA1/resultats/x'), { a: 1 }));
+await cas('élève : écrit toujours ses connexions', true, setDoc(doc(eA1, 'eleves/eA1/connexions/x'), { a: 1 }));
+await cas('élève : écrit toujours ses brouillons d\'automatismes', true, setDoc(doc(eA1, 'eleves/eA1/brouillonsAutomatismes/x'), { a: 1 }));
 
 console.log('  Devoirs');
-await cas('enseignant A : crée un devoir à son nom', true, setDoc(doc(profA, 'devoirs/nouvA'), { titre: 'n', classe: '2nde1', enseignant: 'profA' }));
+await cas('enseignant A : crée un devoir à son nom', true, setDoc(doc(profA, 'devoirs/nouvA'), devoirComplet('n', '2nde1', 'profA')));
+await cas('enseignant A : crée un devoir d\'automatismes', true, setDoc(doc(profA, 'devoirs/nouvAuto'), { type: 'automatismes', cible: 'sujet-blanc', niveau: 2, mode: 'fiche', titre: 'Sujet blanc', classe: '2nde1', enseignant: 'profA', nbEssaisMax: 2, echeance: DANS_30_JOURS }));
+await cas('devoir avec un lien javascript: refusé', false, setDoc(doc(profA, 'devoirs/piege1'), devoirComplet('n', '2nde1', 'profA', { ficheId: 'javascript:alert(1)' })));
+await cas('devoir avec guillemet dans le lien refusé', false, setDoc(doc(profA, 'devoirs/piege2'), devoirComplet('n', '2nde1', 'profA', { ficheId: '/cahiers/seconde/cahier-1/fiche-01.html" onmouseover="x' })));
+await cas('devoir vers un autre site refusé', false, setDoc(doc(profA, 'devoirs/piege3'), devoirComplet('n', '2nde1', 'profA', { ficheId: 'https://exemple.com/fiche-01.html' })));
+await cas('devoir de type inconnu refusé', false, setDoc(doc(profA, 'devoirs/piege4'), devoirComplet('n', '2nde1', 'profA', { type: 'autre' })));
+await cas('devoir à cible inconnue refusé', false, setDoc(doc(profA, 'devoirs/piege5'), devoirComplet('n', '2nde1', 'profA', { cible: 'x' })));
+await cas('devoir à 1000 essais refusé', false, setDoc(doc(profA, 'devoirs/piege6'), devoirComplet('n', '2nde1', 'profA', { nbEssaisMax: 1000 })));
+await cas('devoir sans échéance refusé', false, setDoc(doc(profA, 'devoirs/piege7'), { type: 'fiche', ficheId: FICHE, titre: 'n', classe: '2nde1', enseignant: 'profA', nbEssaisMax: 3 }));
+await cas('devoir au titre démesuré refusé', false, setDoc(doc(profA, 'devoirs/piege8'), devoirComplet('x'.repeat(301), '2nde1', 'profA')));
+await cas('modification vers un lien piégé refusée', false, updateDoc(doc(profA, 'devoirs/dA'), { ficheId: 'javascript:alert(1)' }));
+await cas('dérogation ajoutée (comme le tableau de bord)', true, updateDoc(doc(profA, 'devoirs/dA'), { 'derogations.eA2': { echeance: DANS_30_JOURS, nbEssaisMax: 4 } }));
 await cas('enseignant A : crée un devoir au nom de B', false, setDoc(doc(profA, 'devoirs/faux1'), { titre: 'n', classe: '2nde1', enseignant: 'profB' }));
 await cas('enseignant A : crée un devoir sans enseignant', false, setDoc(doc(profA, 'devoirs/faux2'), { titre: 'n', classe: '2nde1' }));
 await cas('enseignant A : modifie son devoir', true, updateDoc(doc(profA, 'devoirs/dA'), { titre: 'A modifié' }));
@@ -250,7 +298,7 @@ await cas("david : n'écrit pas un profil", false, setDoc(doc(david, 'eleves/eD1
 await cas('david : ne modifie pas le devoir de A', false, updateDoc(doc(david, 'devoirs/dA'), { titre: 'par david' }));
 await cas('david : ne supprime pas le devoir de B', false, deleteDoc(doc(david, 'devoirs/dB')));
 await cas('david : ne modifie pas un devoir sans enseignant', false, updateDoc(doc(david, 'devoirs/dL'), { titre: 'x' }));
-await cas('david : crée un devoir à son nom', true, setDoc(doc(david, 'devoirs/nouvD'), { titre: 'n', classe: '2nde3', enseignant: 'david' }));
+await cas('david : crée un devoir à son nom', true, setDoc(doc(david, 'devoirs/nouvD'), devoirComplet('n', '2nde3', 'david')));
 await cas('david : crée un devoir au nom de B', false, setDoc(doc(david, 'devoirs/fauxD'), { titre: 'n', classe: '2nde3', enseignant: 'profB' }));
 await cas('david : modifie son devoir', true, updateDoc(doc(david, 'devoirs/dD'), { titre: 'D modifié' }));
 await cas('david : supprime son devoir', true, deleteDoc(doc(david, 'devoirs/dD2')));

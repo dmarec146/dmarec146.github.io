@@ -76,6 +76,48 @@ service cloud.firestore {
       return estProprietaire(uid) || estSonEnseignant(uid);
     }
 
+    function nombreBorne(d, cle, max) {
+      return !(cle in d) || d[cle] == null || (d[cle] is number && d[cle] >= 0 && d[cle] <= max);
+    }
+
+    // Tentative de devoir (voir devoirsTentatives ci-dessous).
+    function tentativeDevoirValide(uid) {
+      let d = request.resource.data;
+      let cheminDevoir = /databases/$(database)/documents/devoirs/$(d.devoirId);
+      let devoir = get(cheminDevoir).data;
+      let profil = get(/databases/$(database)/documents/eleves/$(uid)).data;
+      let derogation = devoir.get('derogations', {}).get(uid, {});
+      return d.keys().hasOnly(['devoirId', 'ficheId', 'score', 'totalExercices', 'nbRepondues', 'nbQuestions', 'horodatage'])
+        && d.keys().hasAll(['devoirId', 'score', 'totalExercices', 'horodatage'])
+        && d.devoirId is string && d.devoirId.size() <= 100
+        && d.horodatage == request.time
+        && d.totalExercices is number && d.totalExercices > 0 && d.totalExercices <= 1000
+        && d.score is number && d.score >= 0 && d.score <= d.totalExercices
+        && nombreBorne(d, 'nbRepondues', 1000) && nombreBorne(d, 'nbQuestions', 1000)
+        && (!('ficheId' in d) || (d.ficheId is string && d.ficheId.size() <= 200))
+        && exists(cheminDevoir)
+        && devoir.get('enseignant', null) != null
+        && devoir.enseignant == profil.get('enseignant', null)
+        && (devoir.get('classe', '') == profil.get('classe', 'hors-classe') || uid in devoir.get('eleves', []))
+        && request.time < derogation.get('echeance', devoir.echeance);
+    }
+
+    // Devoir écrit par un enseignant (création ou modification) : ses champs
+    // finissent dans les pages des élèves, donc forme contrôlée (01/11/2026,
+    // audit de sécurité : une adresse de fiche arbitraire devenait un lien
+    // exécutable dans « Mes devoirs »).
+    function devoirValide() {
+      let d = request.resource.data;
+      return d.type in ['fiche', 'automatismes']
+        && d.titre is string && d.titre.size() <= 300
+        && d.classe is string && d.classe.size() <= 60
+        && d.nbEssaisMax is int && d.nbEssaisMax >= 1 && d.nbEssaisMax <= 20
+        && d.echeance is timestamp
+        && (!('ficheId' in d) || (d.ficheId is string
+              && d.ficheId.matches('^/cahiers/(seconde|premiere|terminale)/cahier-[0-9]+/fiche-[0-9]+[.]html$')))
+        && (!('cible' in d) || d.cible in ['sujet-blanc', 'fiche', 'qcm-bac', 'qcm-bac-sujet']);
+    }
+
     match /eleves/{uid} {
       // Profil : l'élève lit le sien, un enseignant lit les profils de SES élèves
       // seulement. Aucune écriture depuis le site : les comptes sont créés et
@@ -85,11 +127,11 @@ service cloud.firestore {
       allow write: if false;
 
       match /tentatives/{tentativeId} {
-        // Journal d'usage : l'élève ajoute ses propres tentatives, personne
-        // ne les modifie une fois écrites (y compris l'enseignant) ; seule
-        // une suppression par l'enseignant est permise, pour corriger un cas.
+        // Ancien journal d'usage, plus écrit par aucune page : création fermée
+        // le 01/11/2026 (audit de sécurité : écritures inutiles possibles).
+        // Lecture et suppression par l'enseignant conservées pour l'existant.
         allow read: if accesEleve(uid);
-        allow create: if estProprietaire(uid);
+        allow create: if false;
         allow update: if false;
         allow delete: if estSonEnseignant(uid);
       }
@@ -105,10 +147,10 @@ service cloud.firestore {
       }
 
       match /automatismes/{automatismeId} {
-        // Meme principe que tentatives/connexions : un sujet blanc termine,
-        // journal non modifiable.
+        // Ancien journal des sujets blancs, plus écrit par aucune page :
+        // création fermée le 01/11/2026 (comme tentatives ci-dessus).
         allow read: if accesEleve(uid);
-        allow create: if estProprietaire(uid);
+        allow create: if false;
         allow update: if false;
         allow delete: if estSonEnseignant(uid);
       }
@@ -131,22 +173,26 @@ service cloud.firestore {
       }
 
       match /resultats/{ficheId} {
-        // Score cumule par fiche de calcul (remplace le journal
-        // "tentatives" pour les fiches migrees vers ce nouveau modele) : mis
-        // a jour (merge) a chaque validation. Pas de suppression par
-        // l'eleve, comme les journaux ci-dessus.
+        // Ancien score cumulé par fiche, plus écrit par aucune page : création
+        // et modification fermées le 01/11/2026 (comme tentatives ci-dessus).
         allow read: if accesEleve(uid);
-        allow create, update: if estProprietaire(uid);
+        allow create, update: if false;
         allow delete: if estSonEnseignant(uid);
       }
 
       match /devoirsTentatives/{tentativeId} {
-        // Meme principe que tentatives/connexions/automatismes : un
-        // journal d'evenements (une tentative sur un devoir precis), pas un
+        // Journal d'evenements (une tentative sur un devoir precis), pas un
         // etat -- l'eleve ajoute, personne ne modifie, seul l'enseignant
-        // peut supprimer une entree.
+        // peut supprimer une entree. Depuis le 01/11/2026 (audit de sécurité,
+        // « notes falsifiables ») la tentative doit avoir la forme écrite par
+        // assets/js/suivi.js, la date du serveur, une note entre 0 et le total,
+        // et viser un devoir existant, de l'enseignant de l'élève, de sa classe,
+        // pas encore échu (dérogation individuelle comprise). Limites connues :
+        // le nombre d'essais n'est pas vérifiable ici (pas de comptage dans les
+        // règles) et une note parfaite reste possible pour qui lit les réponses
+        // dans la page (correction faite dans le navigateur).
         allow read: if accesEleve(uid);
-        allow create: if estProprietaire(uid);
+        allow create: if estProprietaire(uid) && tentativeDevoirValide(uid);
         allow update: if false;
         allow delete: if estSonEnseignant(uid);
       }
@@ -176,9 +222,9 @@ service cloud.firestore {
           && resource.data.enseignant == get(/databases/$(database)/documents/eleves/$(request.auth.uid)).data.enseignant;
       // Écriture : un enseignant seulement pour SES devoirs (champ enseignant =
       // son uid, à la création comme ensuite). Le droit admin n'y change rien.
-      allow create: if estEnseignant() && request.resource.data.enseignant == request.auth.uid;
+      allow create: if estEnseignant() && request.resource.data.enseignant == request.auth.uid && devoirValide();
       allow update: if estEnseignant() && resource.data.enseignant == request.auth.uid
-        && request.resource.data.enseignant == request.auth.uid;
+        && request.resource.data.enseignant == request.auth.uid && devoirValide();
       allow delete: if estEnseignant() && resource.data.enseignant == request.auth.uid;
     }
 

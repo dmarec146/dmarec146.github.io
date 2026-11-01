@@ -20,7 +20,11 @@ const zoneChargement = document.getElementById('md-chargement');
 const zoneErreur = document.getElementById('md-erreur');
 const zoneContenu = document.getElementById('md-contenu');
 
-function echapper(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+// SÉCURITÉ (01/11/2026) : les champs d'un devoir sont écrits par un compte enseignant ; tout texte inséré dans le HTML est
+// échappé, guillemets compris (il peut finir dans un attribut).
+function echapper(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+// Seule forme d'adresse de fiche acceptée dans un lien (même forme que les règles Firestore et vedette-accueil.js).
+const FICHE_VALIDE = /^\/cahiers\/(seconde|premiere|terminale)\/cahier-\d+\/fiche-\d+\.html$/;
 
 function formaterDate(millis) {
   return new Date(millis).toLocaleString('fr-FR', {
@@ -36,7 +40,10 @@ function lienPour(devoir) {
   // ?devoir=<id> (04/10/2026) : la fiche s'ouvre sur CE devoir -- necessaire
   // des qu'une fiche porte plusieurs devoirs (devoirs sur des calculs
   // differents) ; une fiche qui ne lit pas le parametre l'ignore.
-  if (devoir.type === 'fiche') return `${devoir.ficheId}?devoir=${encodeURIComponent(devoir.id)}`;
+  if (devoir.type === 'fiche') {
+    if (typeof devoir.ficheId !== 'string' || !FICHE_VALIDE.test(devoir.ficheId)) return '/mes-devoirs/';
+    return `${devoir.ficheId}?devoir=${encodeURIComponent(devoir.id)}`;
+  }
   if (devoir.cible === 'qcm-bac-sujet') return '/qcm-bac/sujet-blanc.html';
   if (devoir.cible === 'qcm-bac') return '/qcm-bac/fiche.html';     // QCM Bac de Terminale (18/10/2026)
   return devoir.cible === 'fiche' ? '/automatismes/premiere/fiche.html' : '/automatismes/premiere/sujet-blanc.html';
@@ -97,7 +104,7 @@ function remplir(section, liste, meta, estLien, action) {
     const li = document.createElement('li');
     const contenu = `<span class="md-item-titre">${echapper(titreDevoir(d))}</span><span class="md-item-meta">${meta(d)}</span>`;
     li.innerHTML = estLien(d)
-      ? `<a class="md-item md-item-lien" href="${lienPour(d)}">${contenu}</a>`
+      ? `<a class="md-item md-item-lien" href="${echapper(lienPour(d))}">${contenu}</a>`
       : `<div class="md-item md-item-fait">${contenu}</div>`;
     if (action) li.firstElementChild.appendChild(boutonSuppression('Supprimer',
       'Retirer ce devoir de ta liste ? Ton enseignant conserve tes résultats.', () => action([d.id])));
