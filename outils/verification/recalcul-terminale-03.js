@@ -41,7 +41,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-03.html';
     for (let tt = 0; tt < N; tt++) {
       const ex = genererExercices();
       const par = (id) => ex.find((e) => e.id === id);
-      for (const e of ex) if (/undefined|NaN|Infinity/.test(String(e.enonce) + String(e.reponse) + String(e.correctionLatex || ''))) faux(e, 'valeur invalide');
+      for (const e of ex) if (/undefined|NaN|Infinity/.test(String(e.enonce) + String(e.reponse === undefined ? '' : e.reponse) + String(e.correctionLatex || ''))) faux(e, 'valeur invalide');
       try {
         // ---- 3.1 : valeur de l'expression affichee (en plusieurs x pour b) ----
         for (const id of ['3.1 a)', '3.1 b)']) { const e = par(id); for (const x of [0, 0.7, -1.3]) if (!proche(val(e.enonce, { x }), math.evaluate(e.reponse))) faux(e, id + ' valeur'); compte('3.1'); }
@@ -67,22 +67,35 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-03.html';
           for (const x of [-0.4, 0.3, 0.9]) if (!proche(derivee(F, x), a * F(x) + b, 1e-5)) faux(e, id + ' equation non verifiee');
           compte(id.slice(0, 3));
         }
-        // ---- 3.7 : equation et integrale (methode de Simpson) ----
+        // ---- 3.7 : la fonction proposee est-elle solution ? (verification numerique de f' = af + b) ----
         {
-          const e = par('3.7'), t7 = T(7), m = t7.match(/\\\((\d+)y'([+-])(\d+)y=0\\\)/), p = Number(m[1]), q = (m[2] === '-' ? 1 : -1) * Number(m[3]);
-          const bornes = t7.match(/\\int_\{(-?\d+)\}\^\{(-?\d+)\}/), u = Number(bornes[1]), v = Number(bornes[2]), F = (x) => math.evaluate(e.reponse, { x });
-          for (const x of [-0.4, 0.3, 0.9]) if (!proche(p * derivee(F, x), q * F(x), 1e-5)) faux(e, '3.7 equation');
-          let I = 0; const n = 2000, h = (v - u) / n; for (let i = 0; i <= n; i++) I += (i === 0 || i === n ? 1 : i % 2 ? 4 : 2) * F(u + i * h); I *= h / 3;
-          if (!proche(I, 1, 1e-6)) faux(e, '3.7 integrale = ' + I); compte('3.7');
+          const verdicts = [];
+          for (const id of ['3.7 a)', '3.7 b)']) {
+            const e = par(id), f = (String(e.enonce).match(/\\\((.*?)\\\)/g) || []).map((x) => x.slice(2, -2));
+            const fx = f[0].replace(/^f\(x\)=/, ''), { a, b } = lireEquation(f[1]), F = (x) => val(fx, { x });
+            const juste = [-0.4, 0.3, 0.9].every((x) => proche(derivee(F, x), a * F(x) + b, 1e-5));
+            verdicts.push(juste);
+            if ((e.bonneReponse === 'a') !== juste) faux(e, id + ' : verdict ' + e.bonneReponse + ' / recalcul ' + (juste ? 'oui' : 'non'));
+            if (!e.options || e.options.map((o) => o.lettre + o.texte).join() !== 'aOui,bNon') faux(e, id + ' : propositions');
+          }
+          if (verdicts[0] === verdicts[1]) faux(par('3.7 a)'), '3.7 : pas une reponse oui et une reponse non');
+          compte('3.7');
         }
-        // ---- 3.8 : equation integrale verifiee en plusieurs x ----
+        // ---- 3.8 : a et b tels que la fonction affichee soit solution de y' = ay + b ----
         {
-          const e = par('3.8'), t8 = T(8), m = t8.match(/\\\((\d*)\\displaystyle\\int_\{0\}\^\{x\}f\(t\)\\,\\mathrm\{d\}t\+(\d*)f\(x\)=(-?\d+)\\\)/);
-          const mm = m[1] === '' ? 1 : Number(m[1]), q = m[2] === '' ? 1 : Number(m[2]), c = Number(m[3]), F = (x) => math.evaluate(e.reponse, { x });
-          for (const X of [-0.8, 0.5, 1.7]) { let I = 0; const n = 2000, h = X / n; for (let i = 0; i <= n; i++) I += (i === 0 || i === n ? 1 : i % 2 ? 4 : 2) * F(i * h); I *= h / 3; if (!proche(mm * I + q * F(X), c, 1e-6)) faux(e, '3.8 equation integrale en ' + X); }
+          const e = par('3.8'), fx = T(8).match(/f\(x\)=(.*?)\\\)/)[1], F = (x) => val(fx, { x });
+          const x1 = 0.2, x2 = 0.9, d1 = derivee(F, x1), d2 = derivee(F, x2), a = (d1 - d2) / (F(x1) - F(x2)), b = d1 - a * F(x1);
+          if (!proche(math.evaluate(e.pa), a, 1e-5) || !proche(math.evaluate(e.pb), b, 1e-5)) faux(e, '3.8 couple (' + e.pa + ';' + e.pb + ') / recalcul (' + a + ';' + b + ')');
           compte('3.8');
         }
-        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^3\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8') faux(ex[0], 'numerotation'); }
+        // ---- 3.9 : equation et condition sur la derivee ----
+        {
+          const e = par('3.9'), t9 = T(9), eq = t9.match(/différentielle \\\((.*?)\\\)/)[1], k = Number(t9.match(/f'\(0\)=(-?\d+)/)[1]), { a, b } = lireEquation(eq), F = (x) => math.evaluate(e.reponse, { x });
+          if (!proche(derivee(F, 0), k, 1e-5)) faux(e, "3.9 f'(0)");
+          for (const x of [-0.4, 0.3, 0.9]) if (!proche(derivee(F, x), a * F(x) + b, 1e-5)) faux(e, '3.9 equation');
+          compte('3.9');
+        }
+        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^3\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9') faux(ex[0], 'numerotation'); }
       } catch (er) { faux(ex[0], 'EXCEPTION ' + er.message + ' | ' + (er.stack || '').split('\n')[1]); }
     }
     return { defauts, stats };
