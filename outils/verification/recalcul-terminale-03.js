@@ -88,11 +88,16 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-03.html';
           if (!proche(math.evaluate(e.pa), a, 1e-5) || !proche(math.evaluate(e.pb), b, 1e-5)) faux(e, '3.8 couple (' + e.pa + ';' + e.pb + ') / recalcul (' + a + ';' + b + ')');
           compte('3.8');
         }
-        // ---- 3.9 : equation et condition sur la derivee ----
+        // ---- 3.9 : equation du second ordre, verification numerique de f'' + pf' + qf = c ----
         {
-          const e = par('3.9'), t9 = T(9), eq = t9.match(/différentielle \\\((.*?)\\\)/)[1], k = Number(t9.match(/f'\(0\)=(-?\d+)/)[1]), { a, b } = lireEquation(eq), F = (x) => math.evaluate(e.reponse, { x });
-          if (!proche(derivee(F, 0), k, 1e-5)) faux(e, "3.9 f'(0)");
-          for (const x of [-0.4, 0.3, 0.9]) if (!proche(derivee(F, x), a * F(x) + b, 1e-5)) faux(e, '3.9 equation');
+          const e = par('3.9'), f = (String(e.enonce).match(/\\\((.*?)\\\)/g) || []).map((x) => x.slice(2, -2)), fx = f[0].replace(/^f\(x\)=/, '');
+          const [g, d] = f[1].split('='), co = { "y''": 0, "y'": 0, y: 0 };
+          g.replace(/([^{(^])-/g, '$1+-').split('+').filter((x) => x).forEach((tt) => { const m = tt.match(/^(.*?)(y''|y'|y)$/); co[m[2]] += m[1] === '' ? 1 : m[1] === '-' ? -1 : Number(m[1]); });
+          const F = (x) => val(fx, { x }), h = 2e-4, D2 = (x) => (F(x + h) - 2 * F(x) + F(x - h)) / (h * h);
+          // ecart rapporte a la taille des termes (derivees numeriques)
+          const juste = [-0.3, 0.2, 0.6].every((x) => { const t2 = co["y''"] * D2(x), t1 = co["y'"] * derivee(F, x), t0 = co.y * F(x); return Math.abs(t2 + t1 + t0 - Number(d)) <= 1e-5 * (1 + Math.abs(t2) + Math.abs(t1) + Math.abs(t0)); });
+          if ((e.bonneReponse === 'a') !== juste) faux(e, '3.9 verdict ' + e.bonneReponse + ' / recalcul ' + (juste ? 'oui' : 'non'));
+          if (co["y''"] !== 1) faux(e, "3.9 coefficient de y''");
           compte('3.9');
         }
         { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^3\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9') faux(ex[0], 'numerotation'); }

@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.75,"3.2 a)":0.5,"3.2 b)":0.75,"3.3 a)":0.5,"3.3 b)":0.5,"3.3 c)":0.75,"3.3 d)":1,"3.4 a)":0.75,"3.4 b)":0.75,"3.4 c)":1.25,"3.4 d)":1.25,"3.5 a)":0.75,"3.5 b)":1,"3.5 c)":1.25,"3.5 d)":1.25,"3.6 a)":1,"3.6 b)":1.25,"3.6 c)":1.25,"3.7 a)":0.75,"3.7 b)":0.75,"3.8":1.75,"3.9":2},"bonus":["3.8","3.9"]});
+Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.75,"3.2 a)":0.5,"3.2 b)":0.75,"3.3 a)":0.5,"3.3 b)":0.5,"3.3 c)":0.75,"3.3 d)":1,"3.4 a)":0.75,"3.4 b)":0.75,"3.4 c)":1.25,"3.4 d)":1.25,"3.5 a)":0.75,"3.5 b)":1,"3.5 c)":1.25,"3.5 d)":1.25,"3.6 a)":1,"3.6 b)":1.25,"3.6 c)":1.25,"3.7 a)":0.75,"3.7 b)":0.75,"3.8":1.75,"3.9":1.5},"bonus":["3.8","3.9"]});
 </script>
 <style>
   :root {
@@ -1038,8 +1038,7 @@ Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.75,"3.2 a)":0.5,"3.2 b)":0.75,
 <div id="intro-3-8"></div>
 <div class="question-grille" id="grille-3-8"></div>
 
-<p class="calcul-titre"><span>Calcul 3.9 — Une condition sur la dérivée.</span><span class="picto-niveau"></span></p>
-<div id="intro-3-9"></div>
+<p class="calcul-titre"><span>Calcul 3.9 — Une équation du second ordre. La fonction \(f\), définie sur \(\mathbb{R}\), est-elle solution de l'équation donnée ?</span><span class="picto-niveau"></span></p>
 <div class="question-grille" id="grille-3-9"></div>
 
 </div>
@@ -1468,13 +1467,25 @@ function genererExercices() {
       detail: { lignes: [`f'(x) = ${solutionTex(k * m, m, 0, 0)}`, `${m === 1 ? '' : m === -1 ? '-' : m}\\left(${solutionTex(k, m, 0, c)}\\right) = ${solutionTex(k * m, m, 0, math.multiply(m, c))}`, `b = -${dFrP(math.multiply(m, c))} = ${dFr(b)}`, `\\left(a\\,;\\,b\\right) = ${fin}`], final: fin } });
   }
   {
-    // 3.9 : condition portant sur la derivee : py' + qy = c avec f'(0) = k
-    let p, q, c; do { p = alea(2, 5); q = non0(-9, 9); c = non0(-9, 9); } while (math.fraction(q, p).d === 1);
-    const E = equationDiff([[p, "y'"], [q, 'y']], [[c, '']]), k = non0(-6, 6), K = math.divide(math.unaryMinus(E.b), E.a), C = math.divide(k, E.a);
-    paramsAvances.t9 = `<p>Soit \\(f\\) la solution de l'équation différentielle \\(${E.tex}\\) vérifiant \\(f'(0)=${k}\\).</p>`;
-    const fin = solutionTex(C, E.a, 0, K);
-    ex.push({ id: '3.9', type: 'alg', texteLibre: true, enonce: 'Déterminer \\(f(x)\\)', reponse: solutionAscii(C, E.a, 0, K), correctionLatex: fin,
-      detail: { lignes: [...lignesReduction(E), `f(x) = Ce^{${exposantTex(E.a)}}${FR(K).s < 0 ? '-' : '+'}${dFr(math.abs(K))}`, `f'(x) = ${coefTex(E.a)}Ce^{${exposantTex(E.a)}}`, `f'(0) = ${k}`, `C = ${k}\\div ${dFrP(E.a)} = ${dFr(C)}`, `f(x) = ${fin}`], final: fin } });
+    // 3.9 : la fonction f est-elle solution d'une equation du second ordre y'' + py' + qy = c ? (reponse oui ou non au hasard)
+    const juste = alea(0, 1) === 1;
+    let r1, r2; do { r1 = non0(-3, 3); r2 = non0(-3, 3); } while (r1 === r2 || r1 + r2 === 0);
+    const A = non0(-5, 5), B = non0(-5, 5), K = alea(-4, 4), p = -(r1 + r2), q = r1 * r2, c = q * K;
+    // fonction proposee : A e^{s1 x} + B e^{s2 x} + k ; fausse : une erreur sur une racine ou sur la constante
+    let s1 = r1, s2 = r2, k = K;
+    if (!juste) piocher([() => { s1 = -r1; }, () => { s2 = -r2; }, () => { k = K + piocher([-2, -1, 1, 2]); }])();
+    const eT = (r) => `e^{${exposantTex(r)}}`;
+    const fTex = sommeTex([[A, eT(s1)], [B, eT(s2)], [k, '']]), f1 = sommeTex([[A * s1, eT(s1)], [B * s2, eT(s2)]]), f2 = sommeTex([[A * s1 * s1, eT(s1)], [B * s2 * s2, eT(s2)]]);
+    const eqTex = `${sommeTex([[1, "y''"], [p, "y'"], [q, 'y']])}=${c}`;
+    const termes = [[A * (s1 * s1 + p * s1 + q), eT(s1)], [B * (s2 * s2 + p * s2 + q), eT(s2)], [q * k, '']];
+    const res = sommeTex(s1 === s2 ? [[termes[0][0] + termes[1][0], eT(s1)], termes[2]] : termes);
+    const coefP = (v) => (v === 1 ? '+' : v === -1 ? '-' : (v < 0 ? '' : '+') + v);
+    const bonne = juste ? 'a' : 'b';
+    ex.push({ id: '3.9', type: 'qcm', texteLibre: true, enonce: `\\(f(x)=${fTex}\\) et l'équation \\(${eqTex}\\)`, bonneReponse: bonne,
+      options: [{ lettre: 'a', texte: 'Oui', texteLibreOption: true }, { lettre: 'b', texte: 'Non', texteLibreOption: true }],
+      detail: { lignes: [`f'(x) = ${f1}`, `f''(x) = ${f2}`,
+        `${f2}${p === 0 ? '' : coefP(p) + `\\left(${f1}\\right)`}${coefP(q)}\\left(${fTex}\\right) = ${res}`,
+        `f''(x)${p === 0 ? '' : coefP(p) + "f'(x)"}${coefP(q)}f(x) = ${res}`, juste ? `${res} = ${c}` : `${res} \\neq ${c}`, `\\text{Réponse : } ${bonne}`], final: bonne } });
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
