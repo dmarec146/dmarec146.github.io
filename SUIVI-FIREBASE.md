@@ -38,7 +38,7 @@ depuis la réorganisation du 02/10/2026 »).
   d'une ancienne session peut-être non fusionné : vérifier avec
   `git cherry -v master <branche>` avant toute chose. Ne rien écraser
   (`reset --hard`, `checkout --`…) sans comprendre ce qui est là.
-- **Branche d'essais de présentation `design` (29/10/2026, locale, jamais poussée)** : dossier de travail `.claude/worktrees/design` (ignoré par Git), serveur local `site-design` sur `http://localhost:8792` (configuration de `.claude/launch.json`, démarrer avec `preview_start site-design`) ; le site habituel reste sur le port 8791. Sécurités : aucune branche distante associée et `branch.design.pushRemote` pointe vers un dépôt inexistant (un `git push` de cette branche échoue) ; `publier-hosting.js` ne publie que le dernier commit de `master`. **Ne fusionner dans `master` qu'à la demande de David**, après présentation. Pour supprimer : `git worktree remove .claude/worktrees/design` puis `git branch -D design`. Rappel : même en local, une connexion de compte part vers le vrai Firebase.
+- **Branche d'essais `design` : supprimée le 01/11/2026** (à la demande de David ; son contenu avait été fusionné en squash dans `master` le 30/10/2026, voir §2). Le serveur local `site-design` (port 8792) est retiré de `.claude/launch.json` ; il ne reste que `site-statique` (port 8791). Pour un nouvel essai de présentation : nouvelle branche locale et nouveau dossier `.claude/worktrees/…`, sans la pousser, et ne fusionner dans `master` qu'à la demande de David.
 - `.claude/scratch/` (scripts ponctuels déjà appliqués) est ignoré par Git
   et reste local à chaque machine : ne jamais relancer ces scripts.
 
@@ -640,17 +640,34 @@ depuis le 02/10/2026 — **ne le modifier qu'à sa demande**.
 
 ## 8. Procédure de reprise sur une autre machine
 
-1. Clone local hors Drive. S'il existe : `git status` (rien ne doit
-   traîner) puis `git checkout master && git pull`. Sinon :
-   `git clone https://github.com/dmarec146/dmarec146.github.io.git <chemin-hors-drive>`.
-2. Serveur de développement : `.claude/launch.json` fonctionne tel quel sur
-   tout clone.
-3. Outils `outils/creer-comptes` et `outils/etiquettes` : `npm install` dans
-   chaque dossier ; recopier ou retélécharger `service-account.json`
-   (Console Firebase → Paramètres du projet → Comptes de service) — jamais
-   suivi par Git, ne voyage pas d'une machine à l'autre.
-4. Publication : `gh` (GitHub CLI) authentifié sur le compte `dmarec146` fait fonctionner `git push` sans code. Sur une
-   **deuxième machine**, refaire l'installation et `gh auth login` (l'étape du code à coller dans le navigateur ne peut être
-   faite que par David). `Publier le site.bat` à la racine : double-clic = add / commit / push.
-5. Avant de modifier une fiche : lire `REGLES-FICHES.md`. Vérificateur de
-   syntaxe : `node outils/verification/verifier-syntaxe-fiches.js`.
+(Réécrite le 01/11/2026 : David travaille sur **deux machines** — PC perso et PC pro —, chacune avec son propre clone, et continue sur les deux.
+Elles ne sont synchronisées que par GitHub : `git fetch` / `git pull` à l'ouverture, `git push` avant de changer de machine, comme dans `CLAUDE.md`.)
+
+**Ce qui voyage par Git** : tout le dépôt — site, outils, `functions/`, règles Firestore (`firestore.rules`, que David colle lui-même dans la console),
+`CLAUDE.md`, `SUIVI-FIREBASE.md`, `REGLES-FICHES.md`, `HISTORIQUE.md`, `.claude/launch.json` et `.claude/static-server.ps1`. Les artefacts claude.ai
+(« Chantiers futurs », etc.) sont liés au compte de David : rien à faire.
+
+**Installer la machine**
+
+1. Installer : Git, Node.js (LTS), GitHub CLI (`gh`), l'application Claude (même compte), un navigateur Chrome ou Edge (guides PDF), et Java seulement
+   pour les émulateurs (test des règles, `outils/test-local`).
+2. Cloner **hors de Google Drive** : `git clone https://github.com/dmarec146/dmarec146.github.io.git C:\Users\David\Documents\siteCahierCalcul`
+   (chemin au choix), puis `gh auth login` : l'étape du code à coller dans le navigateur ne peut être faite que par David ; ensuite `git push` fonctionne.
+   Si un clone existe déjà : `git status` (rien ne doit traîner), `git checkout master`, `git pull`.
+3. `npm install` dans chaque dossier d'outil qui a un `package.json`, au premier usage : `outils/creer-comptes`, `outils/etiquettes`, `functions`
+   (indispensable pour déployer), `outils/guide-eleve` et `outils/guide-enseignant` (PDF et captures) ; test des règles : voir
+   `outils/verification/regles-firestore/README.md`.
+4. **Firebase** : `npx firebase-tools@15.34.1 login` (David, avec son compte Google). Nécessaire à `node outils/hosting/publier-hosting.js` (site,
+   après chaque `git push` de `master`) et à `node outils/hosting/deployer-fonctions.js` (fonctions, **seulement quand `functions/` change**).
+5. **Secrets, ignorés par Git, à refaire sur chaque machine** :
+   - `outils/creer-comptes/service-account.json` : le **régénérer** (Console Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle
+     clé privée) plutôt que le copier d'une machine à l'autre ; il donne un accès total au projet. Révoquer l'ancienne clé quand une machine est retirée.
+   - `outils/creer-comptes/courriel.json` : copie de `courriel.exemple.json`, avec le mot de passe de la boîte `contact@cahiers-interactifs.fr`
+     saisi par David lui-même (jamais dans le chat).
+6. **Local à chaque machine, à ne pas oublier** : `.claude/scratch/` (scripts déjà appliqués, **ne jamais les relancer** ; contient le message prêt pour
+   le délégué à la protection des données, à copier s'il n'est pas encore envoyé) ; la **mémoire de Claude** (`C:\Users\<nom>\.claude\projects\<dossier du
+   clone encodé>\memory\`), propre à chaque machine : à copier pour retrouver les préférences, mais `CLAUDE.md` et les trois fichiers `.md` du dépôt
+   en portent l'essentiel ; `Documents\comptes-enseignants\` (étiquettes avec **mots de passe en clair**) : ne jamais copier, supprimer après envoi.
+7. Ouvrir le dossier dans Claude : il fait la vérification d'ouverture de `CLAUDE.md`. Serveur local : `preview_start site-statique`. Avant de modifier une
+   fiche : lire `REGLES-FICHES.md` ; vérificateurs : `node outils/verification/verifier-syntaxe-fiches.js` et `node outils/verification/verifier-manifeste.js`.
+8. Pièges déjà connus (voir §7) : fins de ligne CRLF (jamais `sed -i`, scripts Node), `git grep` plutôt qu'un `grep` récursif.
