@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"4.1 a)":0.5,"4.1 b)":0.75,"4.2 a)":0.75,"4.2 b)":1,"4.3 a)":0.5,"4.3 b)":1.25,"4.3 c)":1,"4.3 d)":1,"4.4 a)":1.25,"4.4 b)":1,"4.4 c)":0.75,"4.5 a)":1.25,"4.5 b)":1,"4.5 c)":1,"4.6 a)":0.75,"4.6 b)":1,"4.6 c)":1.25,"4.6 d)":1.25,"4.7 a)":1.5,"4.7 b)":1.25,"4.7 c)":1.5},"bonus":["4.7 a)","4.7 b)","4.7 c)"]});
+Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.75,"3.2 a)":0.5,"3.2 b)":0.75,"3.3 a)":0.5,"3.3 b)":0.5,"3.3 c)":0.75,"3.3 d)":1,"3.4 a)":0.75,"3.4 b)":1.25,"3.5 a)":0.75,"3.5 b)":1,"3.5 c)":1.25,"3.5 d)":1.25,"3.6 a)":1,"3.6 b)":1.25,"3.7 a)":0.75,"3.7 b)":0.75,"3.8":1.75,"3.9":1.5},"bonus":["3.8","3.9"]});
 </script>
 <style>
   :root {
@@ -1018,7 +1018,8 @@ Bareme.definir({"points":{"4.1 a)":0.5,"4.1 b)":0.75,"4.2 a)":0.75,"4.2 b)":1,"4
 <div id="intro-4-5"></div>
 <div class="question-grille" id="grille-4-5"></div>
 
-<p class="calcul-titre"><span>Calcul 4.6 — Déterminer une expression de la fonction \(f\) telle que la fonction \(\varphi\), définie sur \(\mathbb{R}\), soit solution de l'équation différentielle donnée.</span><span class="picto-niveau"></span></p>
+<p class="calcul-titre"><span>Calcul 4.6 — Équation différentielle dont le second membre est un polynôme multiplié par une exponentielle.</span><span class="picto-niveau"></span></p>
+<div id="intro-4-6"></div>
 <div class="question-grille" id="grille-4-6"></div>
 
 
@@ -1026,7 +1027,7 @@ Bareme.definir({"points":{"4.1 a)":0.5,"4.1 b)":0.75,"4.2 a)":0.75,"4.2 b)":1,"4
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 4.7 — Une équation différentielle à coefficients variables.</span><span class="picto-niveau"></span></p>
+<p class="calcul-titre"><span>Calcul 4.7 — Une équation différentielle du second ordre.</span><span class="picto-niveau"></span></p>
 <div id="intro-4-7"></div>
 <div class="question-grille" id="grille-4-7"></div>
 
@@ -1305,7 +1306,8 @@ function genererExercices() {
   paramsAvances = {};
   // reponse « forme generale » : constante C, fonction homogene hom(x) et solution particuliere phi(x) (chaines pour math.js)
   const famille = (id, enonce, hom, phi, fin, lignes, extra) => {
-    ex.push(Object.assign({ id, type: 'famille', texteLibre: true, enonce, hom, phi, reponse: `C*(${hom})+(${phi})`, correctionLatex: fin, detail: { lignes: [...lignes, `x \\longmapsto ${fin}`], final: fin } }, extra || {}));
+    const H = [].concat(hom), noms = H.length === 1 ? ['C'] : ['A', 'B'];
+    ex.push(Object.assign({ id, type: 'famille', texteLibre: true, enonce, hom, phi, reponse: noms.map((c, i) => `${c}*(${H[i]})`).join('+') + `+(${phi})`, correctionLatex: fin, detail: { lignes: [...lignes, `x \\longmapsto ${fin}`], final: fin } }, extra || {}));
   };
   const alg = (id, enonce, reponse, fin, lignes, extra) => {
     ex.push(Object.assign({ id, type: 'alg', texteLibre: true, enonce, reponse, correctionLatex: fin, detail: { lignes: [...lignes, `f(x) = ${fin}`], final: fin } }, extra || {}));
@@ -1413,52 +1415,65 @@ function genererExercices() {
       [`f(x) = Ce^{${ea}}${plus(phi)}`, `f(0) = C${ajout(al)}`, `C${ajout(al)} = ${k} \\iff C = ${k}${ajout(-al)} = ${dFr(C)}`]);
   }
 
-  // ---------- 4.6 : retrouver le second membre f ----------
+  // ---------- 4.6 : y' + py = (ux^2 + vx + w) e^{kx}, solution (ax^2 + bx + c) e^{kx}, probleme guide ----------
   {
-    const eqF = (p, q) => `${sommeTex([[p, "y'"], [q, 'y']])}=f(x)`;
-    const enonceF = (phi, p, q) => `\\varphi(x)=${phi}\\) et \\(${eqF(p, q)}`;
-    // a) k e^{rx}
-    let p, q, r, k;
-    do { p = alea(2, 6); q = non0(-5, 5); r = non0(-3, 3); k = non0(-5, 5); } while (p * r + q === 0);
-    let phi = solutionTex(k, r, 0, 0), F = k * (p * r + q);
-    ex.push({ id: '4.6 a)', type: 'alg', texteLibre: true, enonce: `\\(${enonceF(phi, p, q)}\\)`, reponse: `(${F})*exp((${r})*x)`, correctionLatex: solutionTex(F, r, 0, 0),
-      detail: { lignes: [`\\varphi'(x) = ${solutionTex(k * r, r, 0, 0)}`, `${p}\\left(${solutionTex(k * r, r, 0, 0)}\\right)${termeFois(q, phi)} = ${solutionTex(F, r, 0, 0)}`, `f(x) = ${solutionTex(F, r, 0, 0)}`], final: solutionTex(F, r, 0, 0) } });
-    // b) k e^{rx} + m e^{sx}
-    let s, m, F2;
-    do { p = alea(2, 7); q = non0(-5, 5); r = non0(-3, 3); s = non0(-3, 3); k = non0(-4, 4); m = non0(-4, 4); } while (r === s || p * r + q === 0 || p * s + q === 0);
-    phi = sommeTex([[k, eT(r)], [m, eT(s)]]); const dphi = sommeTex([[k * r, eT(r)], [m * s, eT(s)]]);
-    const res = sommeTex([[k * (p * r + q), eT(r)], [m * (p * s + q), eT(s)]]);
-    ex.push({ id: '4.6 b)', type: 'alg', texteLibre: true, enonce: `\\(${enonceF(phi, p, q)}\\)`, reponse: `(${k * (p * r + q)})*exp((${r})*x)+(${m * (p * s + q)})*exp((${s})*x)`, correctionLatex: res,
-      detail: { lignes: [`\\varphi'(x) = ${dphi}`, `${p}\\left(${dphi}\\right)${termeFois(q, phi)} = ${res}`, `f(x) = ${res}`], final: res } });
-    // c) polynome du second degre
-    let al, be, ga;
-    do { p = alea(2, 5); q = non0(-4, 4); al = non0(-4, 4); be = non0(-4, 4); ga = non0(-4, 4); } while ([q * al, 2 * p * al + q * be, p * be + q * ga].some((t) => t === 0));
-    phi = sommeTex([[al, 'x^2'], [be, 'x'], [ga, '']]); const dp = sommeTex([[2 * al, 'x'], [be, '']]);
-    const R = [p * be + q * ga, 2 * p * al + q * be, q * al], resP = polyTex(R);
-    ex.push({ id: '4.6 c)', type: 'alg', texteLibre: true, enonce: `\\(${enonceF(phi, p, q)}\\)`, reponse: polyAscii(R), correctionLatex: sommeTex([[R[2], 'x^2'], [R[1], 'x'], [R[0], '']]),
-      detail: { lignes: [`\\varphi'(x) = ${dp}`, `${p}\\left(${dp}\\right)${termeFois(q, phi)} = ${sommeTex([[R[2], 'x^2'], [R[1], 'x'], [R[0], '']])}`, `f(x) = ${sommeTex([[R[2], 'x^2'], [R[1], 'x'], [R[0], '']])}`], final: sommeTex([[R[2], 'x^2'], [R[1], 'x'], [R[0], '']]) } });
-    // d) k x e^{rx}
-    do { p = alea(2, 5); q = non0(-4, 4); r = non0(-3, 3); k = non0(-4, 4); } while (p * r + q === 0);
-    const A1 = k * (p * r + q), B1 = k * p, finD = `\\left(${sommeTex([[A1, 'x'], [B1, '']])}\\right)e^{${exposantTex(r)}}`;
-    phi = `${coefTex(k)}x${eT(r)}`;
-    ex.push({ id: '4.6 d)', type: 'alg', texteLibre: true, enonce: `\\(${enonceF(phi, p, q)}\\)`, reponse: `((${A1})*x+(${B1}))*exp((${r})*x)`, correctionLatex: finD,
-      detail: { lignes: [`\\varphi'(x) = ${coefTex(k)}\\left(${sommeTex([[1, ''], [r, 'x']])}\\right)${eT(r)}`, `${p}\\times ${coefTex(k)}\\left(${sommeTex([[1, ''], [r, 'x']])}\\right)${eT(r)}${termeFois(q, phi)} = ${finD}`, `f(x) = ${finD}`], final: finD } });
+    let p, k, al, be, ga;
+    do { p = non0(-3, 3); k = non0(-3, 3); al = non0(-3, 3); be = non0(-3, 3); ga = non0(-3, 3); } while (k + p === 0);
+    const d = k + p, u = d * al, v = 2 * al + d * be, w = be + d * ga, ek = exposantTex(k), A = -p;
+    const polyS = sommeTex([[u, 'x^2'], [v, 'x'], [w, '']]), phiPoly = sommeTex([[al, 'x^2'], [be, 'x'], [ga, '']]);
+    paramsAvances.t6 = `<p>On note \\((E)\\) l'équation différentielle \\(${sommeTex([[1, "y'"], [p, 'y']])}=\\left(${polyS}\\right)e^{${ek}}\\).</p>`;
+    // a) triplet (a ; b ; c)
+    const dPoly = sommeTex([[k, 'ax^2'], [2, 'ax'], [k, 'bx'], [1, 'b'], [k, 'c']]);
+    const dPoly2 = `${sommeTex([[d, 'a']])}x^2${plus(`\\left(${sommeTex([[2, 'a'], [d, 'b']])}\\right)x`)}${plus(sommeTex([[1, 'b'], [d, 'c']]))}`;
+    const fin = `\\left(${al}\\,;\\,${be}\\,;\\,${ga}\\right)`;
+    ex.push({ id: '4.6 a)', type: 'triplet', couple: true, texteLibre: true, enonce: `Déterminer le triplet \\((a\\,;\\,b\\,;\\,c)\\) tel que la fonction \\(\\varphi : x\\longmapsto \\left(ax^2+bx+c\\right)e^{${ek}}\\) soit solution de \\((E)\\)`, ta: String(al), tb: String(be), tc: String(ga), reponse: `(${al};${be};${ga})`, correctionLatex: fin,
+      detail: { lignes: [`\\varphi'(x) = \\left(${dPoly}\\right)e^{${ek}}`, `\\left(${dPoly}\\right)e^{${ek}}${termeFois(p, 'ax^2+bx+c')}e^{${ek}} = \\left(${dPoly2}\\right)e^{${ek}}`,
+        `${sommeTex([[d, 'a']])} = ${u} \\iff a = ${al}`, `${2 * al}${plus(sommeTex([[d, 'b']]))} = ${v} \\iff b = ${be}`, `${be}${plus(sommeTex([[d, 'c']]))} = ${w} \\iff c = ${ga}`, `\\left(a\\,;\\,b\\,;\\,c\\right) = ${fin}`], final: fin } });
+    // b) forme generale
+    const finB = `Ce^{${exposantTex(A)}}+\\left(${phiPoly}\\right)e^{${ek}}`;
+    famille('4.6 b)', `Résoudre \\((E)\\) sur \\(\\mathbb{R}\\)`, `exp((${A})*x)`, `((${al})*x^2+(${be})*x+(${ga}))*exp((${k})*x)`, finB, [`x \\longmapsto Ce^{${exposantTex(A)}}`, `\\varphi(x) = \\left(${phiPoly}\\right)e^{${ek}}`], { placeholder: 'Ce^{ax}+…' });
+    // c) condition en 0
+    let k0; do { k0 = non0(-6, 6); } while (k0 === ga);
+    const C = k0 - ga;
+    alg('4.6 c)', `Déterminer la solution \\(f\\) de \\((E)\\) sur \\(\\mathbb{R}\\) vérifiant \\(f(0)=${k0}\\)`, `(${C})*exp((${A})*x)+((${al})*x^2+(${be})*x+(${ga}))*exp((${k})*x)`, `${coefTex(C)}e^{${exposantTex(A)}}+\\left(${phiPoly}\\right)e^{${ek}}`,
+      [`f(x) = Ce^{${exposantTex(A)}}+\\left(${phiPoly}\\right)e^{${ek}}`, `f(0) = C${ajout(ga)}`, `C${ajout(ga)} = ${k0} \\iff C = ${k0}${ajout(-ga)} = ${C}`]);
   }
 
-  // ---------- 4.7 : equation a coefficients variables (calcul avance) ----------
+  // ---------- 4.7 : equation du second ordre y'' + py' + qy = (ux + v) e^{kx}, polynome caracteristique (calcul avance) ----------
   {
-    const m = piocher([1, 2]), k = piocher([1, 2, 3]), k2 = 2 * k, Hq = `${m}-${k2}x^{2}`;
-    const hEq = `xy'-\\left(${Hq}\\right)y=0`, eEq = `xy'-\\left(${Hq}\\right)y=${k2}x^{${m + 2}}`;
-    const xm = m === 1 ? 'x' : `x^{${m}}`, gauss = `e^{-${k === 1 ? '' : k}x^{2}}`, fH = `${xm}${gauss}`;
-    paramsAvances.t7 = `<p>On veut résoudre sur \\(\\mathbb{R}_+^*\\) l'équation différentielle \\((E)\\) : \\(${eEq}\\). On note \\((H)\\) l'équation \\(${hEq}\\) et on admet que les solutions de \\((H)\\) sont les fonctions \\(Cf\\), où \\(C\\) est un réel et \\(f\\) une solution non nulle de \\((H)\\).</p>`;
-    const xs = [0.6, 1.3, 2.1], refF = `x^${m}*exp(-${k}*x^2)`;
-    const derivF = m === 1 ? `\\left(1-${k2}x^{2}\\right)${gauss}` : `\\left(2x-${k2}x^{3}\\right)${gauss}`;
-    ex.push({ id: '4.7 a)', type: 'alg', texteLibre: true, enonce: `Déterminer une solution \\(f\\), non nulle, de \\((H)\\) sur \\(\\mathbb{R}_+^*\\)`, reponse: refF, multipleDe: refF, xs, correctionLatex: fH,
-      detail: { lignes: [`f'(x) = ${derivF}`, `x\\times ${derivF} = \\left(${Hq}\\right)${fH}`, `xf'(x) = \\left(${Hq}\\right)f(x)`, `f(x) = ${fH}`], final: fH } });
-    const residu = `x*yp-(${m}-${k2}*x^2)*y-${k2}*x^${m + 2}`;
-    ex.push({ id: '4.7 b)', type: 'alg', texteLibre: true, enonce: `Déterminer une solution particulière \\(\\varphi\\) de \\((E)\\) sur \\(\\mathbb{R}_+^*\\)`, reponse: `x^${m}`, solutionDe: residu, xs, correctionLatex: xm,
-      detail: { lignes: [`\\varphi(x) = ${xm}`, `\\varphi'(x) = ${m === 1 ? '1' : '2x'}`, `x\\times ${m === 1 ? '1' : '2x'}-\\left(${Hq}\\right)${xm} = ${k2}x^{${m + 2}}`], final: xm } });
-    famille('4.7 c)', `Résoudre \\((E)\\) sur \\(\\mathbb{R}_+^*\\)`, refF, `x^${m}`, `C${fH}+${xm}`, [`x \\longmapsto C${fH}`, `\\varphi(x) = ${xm}`], { xs, placeholder: 'Cf(x)+…' });
+    let r1, r2, k, m, n, A, B, h0, h1, S0, S1;
+    do {
+      r1 = non0(-3, 3); r2 = non0(-3, 3); k = non0(-3, 3); m = non0(-3, 3); n = non0(-3, 3); h0 = non0(-4, 4); h1 = non0(-4, 4);
+      if (r1 === r2) continue;
+      if (r1 > r2) [r1, r2] = [r2, r1];
+      S0 = h0 - n; S1 = h1 - (m + k * n);
+      A = math.fraction(S1 - r2 * S0, r1 - r2); B = math.fraction(r1 * S0 - S1, r1 - r2);
+    } while (r1 === r2 || k === r1 || k === r2 || A.equals(0) || B.equals(0));
+    const p = -(r1 + r2), q = r1 * r2, Pk = (k - r1) * (k - r2), u = Pk * m, v = Pk * n + (2 * k + p) * m, ek = exposantTex(k);
+    const e1 = `e^{${exposantTex(r1)}}`, e2 = `e^{${exposantTex(r2)}}`, polyC = sommeTex([[1, 'r^2'], [p, 'r'], [q, '']]), eqTex = `${sommeTex([[1, "y''"], [p, "y'"], [q, 'y']])}`;
+    paramsAvances.t7 = `<p>On considère l'équation différentielle \\((E)\\) : \\(${eqTex}=\\left(${sommeTex([[u, 'x'], [v, '']])}\\right)e^{${ek}}\\), et l'équation homogène associée \\((E_0)\\) : \\(${eqTex}=0\\). On admet que, si le polynôme caractéristique \\(r^2${plus(sommeTex([[p, 'r'], [q, '']]))}\\) a deux racines réelles distinctes \\(r_1\\) et \\(r_2\\), les solutions de \\((E_0)\\) sur \\(\\mathbb{R}\\) sont les fonctions \\(x\\longmapsto Ae^{r_1x}+Be^{r_2x}\\), où \\(A\\) et \\(B\\) sont deux réels.</p>`;
+    // a) racines du polynome caracteristique
+    const dl = DetailQ.lignesDelta2(1, p, q), D = p * p - 4 * q, sD = Math.sqrt(D), finA = `\\{${r1}\\,;\\,${r2}\\}`;
+    ex.push({ id: '4.7 a)', type: 'num', texteLibre: true, enonce: `Déterminer les racines du polynôme caractéristique \\(${polyC}\\) de \\((E_0)\\)`, reponse: `{${r1};${r2}}`,
+      detail: { lignes: [...dl.lignes, `\\sqrt{${D}} = ${sD}`, `r_1 = \\dfrac{${-p}-${sD}}{2} = ${r1}`, `r_2 = \\dfrac{${-p}+${sD}}{2} = ${r2}`, `S = ${finA}`], final: finA } });
+    // b) solutions de (E0)
+    famille('4.7 b)', `Résoudre \\((E_0)\\) sur \\(\\mathbb{R}\\)`, [`exp((${r1})*x)`, `exp((${r2})*x)`], '0', `Ae^{${exposantTex(r1)}}+Be^{${exposantTex(r2)}}`, [], { placeholder: 'Ae^{rx}+Be^{sx}' });
+    // c) couple (a ; b)
+    const phi = `\\left(${sommeTex([[m, 'x'], [n, '']])}\\right)e^{${ek}}`, finC = `\\left(${m}\\,;\\,${n}\\right)`;
+    const d1 = sommeTex([[k, 'ax'], [1, 'a'], [k, 'b']]), d2 = sommeTex([[k * k, 'ax'], [2 * k, 'a'], [k * k, 'b']]), d3 = sommeTex([[Pk, 'ax'], [2 * k + p, 'a'], [Pk, 'b']]);
+    const tp = p === 0 ? '' : `${termeFois(p, d1)}e^{${ek}}`;
+    ex.push({ id: '4.7 c)', type: 'paire', couple: true, texteLibre: true, enonce: `Déterminer le couple \\((a\\,;\\,b)\\) tel que la fonction \\(\\varphi : x\\longmapsto \\left(ax+b\\right)e^{${ek}}\\) soit solution de \\((E)\\)`, pa: String(m), pb: String(n), correctionLatex: finC,
+      detail: { lignes: [`\\varphi'(x) = \\left(${d1}\\right)e^{${ek}}`, `\\varphi''(x) = \\left(${d2}\\right)e^{${ek}}`,
+        `\\left(${d2}\\right)e^{${ek}}${tp}${termeFois(q, 'ax+b')}e^{${ek}} = \\left(${d3}\\right)e^{${ek}}`,
+        `${sommeTex([[Pk, 'a']])} = ${u} \\iff a = ${m}`, `${sommeTex([[(2 * k + p) * m, ''], [Pk, 'b']])} = ${v} \\iff b = ${n}`, `\\left(a\\,;\\,b\\right) = ${finC}`], final: finC } });
+    // d) forme generale de (E)
+    famille('4.7 d)', `Résoudre \\((E)\\) sur \\(\\mathbb{R}\\)`, [`exp((${r1})*x)`, `exp((${r2})*x)`], `(${m}*x+(${n}))*exp((${k})*x)`, `Ae^{${exposantTex(r1)}}+Be^{${exposantTex(r2)}}+${phi}`, [`x \\longmapsto Ae^{${exposantTex(r1)}}+Be^{${exposantTex(r2)}}`, `\\varphi(x) = ${phi}`], { placeholder: 'Ae^{rx}+Be^{sx}+…' });
+    // e) solution avec h(0) et h'(0)
+    const hx = `${sommeTex([[A, e1], [B, e2]])}${plus(phi)}`, dphi = `\\left(${sommeTex([[k * m, 'x'], [m + k * n, '']])}\\right)e^{${ek}}`;
+    ex.push({ id: '4.7 e)', type: 'alg', texteLibre: true, enonce: `Déterminer la solution \\(h\\) de \\((E)\\) sur \\(\\mathbb{R}\\) vérifiant \\(h(0)=${h0}\\) et \\(h'(0)=${h1}\\)`, reponse: `(${frStr(A)})*exp((${r1})*x)+(${frStr(B)})*exp((${r2})*x)+(${m}*x+(${n}))*exp((${k})*x)`, correctionLatex: hx,
+      detail: { lignes: [`h(x) = Ae^{${exposantTex(r1)}}+Be^{${exposantTex(r2)}}+${phi}`, `h'(x) = ${sommeTex([[r1, `Ae^{${exposantTex(r1)}}`], [r2, `Be^{${exposantTex(r2)}}`]])}${plus(dphi)}`,
+        `h(0) = A+B${ajout(n)} = ${h0}`, `h'(0) = ${sommeTex([[r1, 'A'], [r2, 'B']])}${ajout(m + k * n)} = ${h1}`,
+        `A+B = ${S0} \\iff B = ${S0}-A`, `${sommeTex([[r1, 'A']])}${termeFois(r2, `${S0}-A`)} = ${S1} \\iff ${sommeTex([[r1 - r2, 'A']])} = ${S1 - r2 * S0}`, `A = ${dFr(A)}`, `B = ${S0}${ajout(math.unaryMinus(A))} = ${dFr(B)}`, `h(x) = ${hx}`], final: hx } });
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt
@@ -1471,11 +1486,12 @@ function genererExercices() {
 }
 
 // ---------- verification des formes de reponse de la fiche 4 ----------
-// forme generale : C hom(x) + phi(x), C reel quelconque (constante notee C, k, K, A ou lambda)
-const CONSTANTES_FAMILLE = ['C', 'K', 'k', 'A', 'lambda'];
+// forme generale : combinaison de fonctions de base (une constante pour y' = ay + f, deux pour y'' + py' + qy = f) + solution particuliere phi.
+// Constantes admises : C, K, k, A, B, D, lambda, mu (leur nombre doit etre celui des fonctions de base)
+const CONSTANTES_FAMILLE = ['C', 'K', 'k', 'A', 'B', 'D', 'lambda', 'mu'];
 function lireAvecConstante(userInput) {
-  let s = normaliserSaisie(userInput).replace(/λ/g, 'lambda').replace(/\s/g, '');
-  s = s.replace(/lambda(?=[A-Za-z(\d])/g, 'lambda*').replace(/(^|[^A-Za-z])([CKkA])(?=[A-Za-z(\d])/g, '$1$2*');
+  let s = normaliserSaisie(userInput).replace(/λ/g, 'lambda').replace(/μ/g, 'mu').replace(/\s/g, '');
+  s = s.replace(/(lambda|mu)(?=[A-Za-z(\d])/g, '$1*').replace(/(^|[^A-Za-z])([CKkABD])(?=[A-Za-z(\d])/g, '$1$2*');
   s = s.replace(/([A-DF-Za-df-z])e(?=\^)/g, '$1*e');   // « x e^(…) » devenu « xe^(…) » apres suppression des espaces
   let noeud; try { noeud = math.parse(s); } catch (e) { return null; }
   const symboles = new Set(); noeud.traverse(n => { if (n.isSymbolNode) symboles.add(n.name); });
@@ -1484,53 +1500,38 @@ function lireAvecConstante(userInput) {
   if (autres.length) return null;
   return { code: noeud.compile(), constantes };
 }
-function checkFamille(userInput, hom, phi, xs) {
-  const lu = lireAvecConstante(userInput);
-  if (!lu || lu.constantes.length !== 1) return false;
-  xs = xs || [-0.7, 0.3, 1.1];
-  const K = lu.constantes[0], H = math.compile(hom), P = math.compile(phi);
-  const coef = (c, x) => { const sc = { x }; sc[K] = c; return (lu.code.evaluate(sc) - P.evaluate({ x })) / H.evaluate({ x }); };
-  const cs = [-1.3, 0.4, 2.2], A = [];
-  try {
-    for (const c of cs) {
-      const v = xs.map(x => coef(c, x));
-      if (v.some(t => typeof t !== 'number' || !isFinite(t))) return false;
-      if (v.some(t => Math.abs(t - v[0]) > 1e-7 * (1 + Math.abs(v[0])))) return false;
-      A.push(v[0]);
+function checkFamille(userInput, homs, phi, xs) {
+  homs = [].concat(homs);
+  const n = homs.length, lu = lireAvecConstante(userInput);
+  if (!lu || lu.constantes.length !== n) return false;
+  xs = xs || [-0.7, 0.3, 1.1, 0.8];
+  const H = homs.map(h => math.compile(h)), P = math.compile(phi);
+  // coefficients (sur les fonctions de base) de « fonction saisie - phi » pour des valeurs donnees des constantes ; null si ce n'est pas une combinaison
+  const coefs = (c) => {
+    const sc = {}; lu.constantes.forEach((nm, i) => { sc[nm] = c[i]; });
+    const W = xs.map(x => lu.code.evaluate(Object.assign({ x }, sc)) - P.evaluate({ x }));
+    if (W.some(t => typeof t !== 'number' || !isFinite(t))) return null;
+    const M = xs.slice(0, n).map(x => H.map(h => h.evaluate({ x })));
+    const sol = math.lusolve(M, W.slice(0, n)).map(r => Number(r[0]));
+    for (let j = n; j < xs.length; j++) {
+      const pred = H.reduce((s, h, i) => s + sol[i] * h.evaluate({ x: xs[j] }), 0);
+      if (Math.abs(pred - W[j]) > 1e-7 * (1 + Math.abs(W[j]))) return null;
     }
-  } catch (e) { return false; }
-  // la constante parcourt tous les reels : le coefficient de hom(x) est une fonction affine non constante de la constante
-  if (Math.abs(A[1] - A[0]) < 1e-9) return false;
-  const pente = (A[1] - A[0]) / (cs[1] - cs[0]);
-  return Math.abs(A[0] + pente * (cs[2] - cs[0]) - A[2]) < 1e-7 * (1 + Math.abs(A[2]));
-}
-// un multiple non nul (constant) de la fonction de reference
-function checkMultiple(userInput, ref, xs) {
-  const lu = lireAvecConstante(userInput);
-  if (!lu || lu.constantes.length) return false;
-  const R = math.compile(ref);
+    return sol;
+  };
   try {
-    const q = xs.map(x => lu.code.evaluate({ x }) / R.evaluate({ x }));
-    return q.every(t => typeof t === 'number' && isFinite(t) && Math.abs(t) > 1e-9 && Math.abs(t - q[0]) <= 1e-7 * (1 + Math.abs(q[0])));
+    const zero = Array(n).fill(0), B0 = coefs(zero); if (!B0) return false;
+    const L = [];   // colonnes : effet de chaque constante
+    for (let i = 0; i < n; i++) { const e = zero.slice(); e[i] = 1; const Bi = coefs(e); if (!Bi) return false; L.push(Bi.map((t, j) => t - B0[j])); }
+    const M = math.transpose(L);
+    // les constantes parcourent tous les reels : l'application constantes -> coefficients est affine et inversible
+    if (Math.abs(math.det(M)) < 1e-9) return false;
+    for (const c of [[-1.3, 0.4], [2.2, -0.9]]) {
+      const cc = c.slice(0, n), B = coefs(cc); if (!B) return false;
+      for (let j = 0; j < n; j++) { const pred = B0[j] + cc.reduce((s, t, i) => s + t * L[i][j], 0); if (Math.abs(pred - B[j]) > 1e-7 * (1 + Math.abs(B[j]))) return false; }
+    }
+    return true;
   } catch (e) { return false; }
-}
-// une solution de l'equation : residu(x, y, yp) = 0, derivee par difference centrale
-function checkSolutionEq(userInput, residu, xs) {
-  const lu = lireAvecConstante(userInput);
-  if (!lu || lu.constantes.length) return false;
-  const h = 1e-5;
-  try {
-    return xs.every(x => {
-      const y = lu.code.evaluate({ x }), yp = (lu.code.evaluate({ x: x + h }) - lu.code.evaluate({ x: x - h })) / (2 * h);
-      const r = math.evaluate(residu, { x, y, yp }), echelle = Math.abs(math.evaluate(residu, { x, y: 0, yp: 0 })) + Math.abs(x * yp) + Math.abs(y) * (1 + x * x);
-      return typeof y === 'number' && isFinite(y) && Math.abs(r) <= 1e-6 * (1 + echelle);
-    });
-  } catch (e) { return false; }
-}
-// une seule exponentielle, sans x : e^(...)
-function estUneExponentielle(userInput) {
-  const s = normaliserSaisie(userInput).replace(/\s/g, '');
-  return /^e\^/.test(s) && (s.match(/e/g) || []).length === 1 && !/x/.test(s);
 }
 
 let exercices = genererExercices();
@@ -2336,8 +2337,6 @@ function verifierUne(idx) {
   else if (ex.type === 'triplet') ok = checkTriplet(val, ex.ta, ex.tb, ex.tc, ex.vars);
   else if (ex.type === 'formule') ok = FormulesProba.verifier(input.getValue('latex'), ex);
   else if (ex.type === 'famille') ok = checkFamille(val, ex.hom, ex.phi, ex.xs);
-  else if (ex.multipleDe) ok = checkMultiple(val, ex.multipleDe, ex.xs);
-  else if (ex.solutionDe) ok = checkSolutionEq(val, ex.solutionDe, ex.xs);
   else if (ex.type === 'somme') ok = checkSomme(val, ex.reponse);
   else if (ex.reponse && ex.reponse.trim().startsWith('{')) ok = checkEnsemble(val, ex.reponse);
   else if (ex.fractionIrreductible) ok = estFractionIrreductible(val, ex.facteurSymbolique) && checkEqualNumeric(val, ex.reponse);
@@ -2934,6 +2933,7 @@ function toggleToutesReponses() {
 function placeholderPour(ex) {
   if (ex.type === 'formule') return 'formule';
   if (ex.type === 'paire') return '(a;b)';
+  if (ex.type === 'triplet') return '(a;b;c)';
   if (ex.type === 'famille') return ex.placeholder || 'Ce^{ax}+…';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
@@ -2983,7 +2983,7 @@ function aideContextuellePour(ex) {
     return "Donner une équation cartésienne sous la forme <code>a;b;c</code> (les coefficients de <code>ax+by+c=0</code>, séparés par des points-virgules). Toute équation proportionnelle à la réponse attendue est acceptée.";
   }
   if (ex.type === 'triplet') {
-    return "Donner les trois coefficients demandés, séparés par des points-virgules (ex : <code>a;b;c</code>).";
+    return "Écrire le triplet entre parenthèses, les trois valeurs séparées par des points-virgules, dans l'ordre indiqué par l'énoncé : par exemple <code>(2;-1;3)</code> ou <code>(1/2;0;-3)</code>. Sur le clavier ⌨ de l'écran, le point-virgule s'obtient en appuyant sur la touche ⇧ : la touche <code>}</code> se change alors en <code>;</code>.";
   }
   return "Utiliser <code>^</code> pour une puissance (x^2), le bouton √ pour une racine carrée, <code>/</code> pour une fraction. Toute écriture équivalente est acceptée.";
 }
@@ -3086,7 +3086,7 @@ function construireGrilles() {
   }
 }
 
-const TYPES_MATHFIELD = ['num', 'alg', 'somme', 'formule', 'paire', 'famille'];   // paire : champ mathematique (couple (n;p), fractions)
+const TYPES_MATHFIELD = ['num', 'alg', 'somme', 'formule', 'paire', 'triplet', 'famille'];   // paire : champ mathematique (couple (n;p), fractions)
 
 function utiliseMathfield(ex) {
   if (!TYPES_MATHFIELD.includes(ex.type)) return false;

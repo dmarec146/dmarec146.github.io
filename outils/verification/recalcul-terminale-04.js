@@ -20,7 +20,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-04.html';
     const mj = (t) => {
       let u = String(t).replace(/\\displaystyle|\\textstyle/g, '').replace(/\\(cos|sin)/g, '$1').replace(/\{,\}/g, '.').replace(/\\left|\\right|\\,|\\ /g, ' ').replace(/\\times/g, '*').replace(/\\div/g, '/').replace(/\\frac/g, '\\dfrac');
       for (let i = 0; i < 8; i++) u = u.replace(/\\dfrac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)');
-      u = u.replace(/\{/g, '(').replace(/\}/g, ')').replace(/C(?=[a-zA-Z])/g, 'C*').replace(/([A-DF-Za-df-z])e(?=\^)/g, '$1*e');
+      u = u.replace(/\{/g, '(').replace(/\}/g, ')').replace(/([ABC])(?=[a-zA-Z])/g, '$1*').replace(/([A-DF-Za-df-z])e(?=\^)/g, '$1*e');
       return u.replace(/(\d)\s*\(/g, '$1*(').replace(/\)\s*(\d)/g, ')*$1').replace(/(\d)\s*([a-zA-Z])/g, '$1*$2').replace(/\)\s*\(/g, ')*(').replace(/\)\s*([a-zA-Z])/g, ')*$1');
     };
     const val = (t, sc) => math.evaluate(mj(t), sc || {});
@@ -37,13 +37,13 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-04.html';
       return xs.some((x) => Math.abs(F1(x) - F0(x)) > 1e-6);   // la constante intervient vraiment
     };
     // la correction ecrite (LaTeX) est la meme fonction que la reponse attendue
-    const memeCorrection = (e, xs) => { if (!e.correctionLatex || typeof e.reponse !== 'string' || e.type === 'paire' || e.type === 'qcm' || e.type === 'num') return true; return xs.every((x) => proche(val(e.correctionLatex, { x, C: 1.7 }), math.evaluate(e.reponse, { x, C: 1.7 }), 1e-6)); };
+    const memeCorrection = (e, xs) => { if (!e.correctionLatex || typeof e.reponse !== 'string' || e.type === 'paire' || e.type === 'triplet' || e.type === 'qcm' || e.type === 'num') return true; return xs.every((x) => proche(val(e.correctionLatex, { x, C: 1.7, A: 1.3, B: -0.6 }), math.evaluate(e.reponse, { x, C: 1.7, A: 1.3, B: -0.6 }), 1e-6)); };
     for (let tt = 0; tt < N; tt++) {
       const ex = genererExercices();
       const par = (id) => ex.find((e) => e.id === id);
       for (const e of ex) if (/undefined|NaN|Infinity/.test(String(e.enonce) + String(e.reponse === undefined ? '' : e.reponse) + String(e.correctionLatex || ''))) faux(e, 'valeur invalide');
       try {
-        for (const e of ex) { if (!memeCorrection(e, e.id.startsWith('4.7') ? XP : XR)) faux(e, 'correction affichee differente de la reponse attendue'); }
+        for (const e of ex) { if (!memeCorrection(e, XR)) faux(e, 'correction affichee differente de la reponse attendue'); }
         ou = '4.1'; // ---- 4.1 : developpement, valeur de l'expression affichee ----
         for (const id of ['4.1 a)', '4.1 b)']) { const e = par(id); for (const x of [0, 0.7, -1.3, 2.1]) if (!proche(val(e.enonce, { x }), math.evaluate(e.reponse, { x }))) faux(e, id + ' developpement'); compte('4.1'); }
         ou = '4.2'; // ---- 4.2 : valeur de l'expression affichee, reponse sans racine au denominateur ----
@@ -83,22 +83,41 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-04.html';
           if (!resout(eq, F, XR) || !proche(F(0), k)) faux(eC, '4.5 c) solution ou condition');
           compte('4.5');
         }
-        ou = '4.6'; // ---- 4.6 : f = p phi' + q phi ----
-        for (const id of ['4.6 a)', '4.6 b)', '4.6 c)', '4.6 d)']) {
-          const e = par(id), [fp, eqf] = formules(e.enonce), phi = fp.replace(/^\\varphi\(x\)=/, ''), L = eqf.split('=')[0].replace(/y'/g, ' yp ');
-          const F = (x) => val(phi, { x });
-          for (const x of XR) { const attendu = val(L, { yp: derivee(F, x), y: F(x), x }); if (!proche(attendu, math.evaluate(e.reponse, { x }), 1e-5)) faux(e, id + ' f(' + x + ') = ' + math.evaluate(e.reponse, { x }) + ' / recalcul ' + attendu); }
+        ou = '4.6'; // ---- 4.6 : y' + py = (ux^2 + vx + w) e^{kx} ----
+        {
+          const eq = formules(T(6))[1], eA = par('4.6 a)'), rk = val((eA.enonce.match(/e\^\{([^{}]*)\}/) || [])[1], { x: 1 });
+          const a = math.evaluate(eA.ta), b = math.evaluate(eA.tb), c = math.evaluate(eA.tc);
+          if (!resout(eq, (x) => (a * x * x + b * x + c) * Math.exp(rk * x), XR)) faux(eA, '4.6 a) triplet (' + eA.ta + ';' + eA.tb + ';' + eA.tc + ') ne convient pas');
+          if (resout(eq, (x) => ((a + 1) * x * x + b * x + c) * Math.exp(rk * x), XR) || resout(eq, (x) => (a * x * x + (b + 1) * x + c) * Math.exp(rk * x), XR) || resout(eq, (x) => (a * x * x + b * x + c + 1) * Math.exp(rk * x), XR)) faux(eA, '4.6 a) le triplet n\'est pas unique');
+          const eB = par('4.6 b)'); if (!famValide(eB, eq, XR)) faux(eB, '4.6 b) famille de (E)');
+          const eC = par('4.6 c)'), k0 = Number(eC.enonce.match(/f\(0\)=(-?\d+)/)[1]), F = (x) => math.evaluate(eC.reponse, { x });
+          if (!resout(eq, F, XR) || !proche(F(0), k0)) faux(eC, '4.6 c) solution ou condition');
           compte('4.6');
         }
-        ou = '4.7'; // ---- 4.7 : x y' - (m - 2k x^2) y = 2k x^(m+2) ----
+        ou = '4.7'; // ---- 4.7 : y'' + py' + qy = (ux + v) e^{kx} ----
         {
-          const f7 = formules(T(7)), eqE = f7[2], eqH = f7[4];
+          const f7 = formules(T(7)), eqE = f7[1], eqH = f7[3];
           if (!/=0$/.test(eqH.replace(/\s/g, ''))) faux(ex[0], '4.7 equation homogene mal lue : ' + eqH);
-          const eA = par('4.7 a)'), FA = (x) => math.evaluate(eA.reponse, { x });
-          if (!resout(eqH, FA, XP) || XP.every((x) => Math.abs(FA(x)) < 1e-12)) faux(eA, '4.7 a) f ne resout pas (H) ou est nulle');
-          const eB = par('4.7 b)'), FB = (x) => math.evaluate(eB.reponse, { x });
-          if (!resout(eqE, FB, XP)) faux(eB, '4.7 b) phi ne resout pas (E)');
-          const eC = par('4.7 c)'); if (!famValide(eC, eqE, XP)) faux(eC, '4.7 c) famille de (E)');
+          const eA = par('4.7 a)'), poly = formules(eA.enonce)[0], racines = eA.reponse.slice(1, -1).split(';').map(Number);
+          if (racines.length !== 2 || racines[0] === racines[1] || racines.some((r) => Math.abs(val(poly, { r })) > 1e-9)) faux(eA, '4.7 a) racines ' + eA.reponse + ' de ' + poly);
+          // les racines sont bien toutes les racines : la somme et le produit lus dans le polynome affiche
+          const c0 = val(poly, { r: 0 }), c1 = val(poly, { r: 1 }) - c0 - 1;
+          if (!proche(racines[0] + racines[1], -c1) || !proche(racines[0] * racines[1], c0)) faux(eA, '4.7 a) somme/produit des racines');
+          const deriv2 = (F, x) => (F(x + 1e-3) - 2 * F(x) + F(x - 1e-3)) / 1e-6;
+          const residu2 = (tex, F, x) => { const [g, d] = String(tex).replace(/y''/g, ' ypp ').replace(/y'/g, ' yp ').split('='); const sc = { ypp: deriv2(F, x), yp: derivee(F, x), y: F(x), x }; return val(g, sc) - val(d, sc); };
+          const resout2 = (tex, F, xs) => xs.every((x) => Math.abs(residu2(tex, F, x)) <= 1e-4 * (1 + Math.abs(F(x)) + Math.abs(derivee(F, x)) + Math.abs(deriv2(F, x))));
+          const fam2 = (e, tex) => {
+            const G = (a, b) => (x) => math.evaluate(e.reponse, { x, A: a, B: b });
+            for (const [a, b] of [[-1.3, 0.4], [2.2, -0.9], [0.7, 1.5]]) if (!resout2(tex, G(a, b), XR)) return false;
+            const f1 = (x) => G(1, 0)(x) - G(0, 0)(x), f2 = (x) => G(0, 1)(x) - G(0, 0)(x);
+            return Math.abs(f1(0.2) * f2(0.9) - f1(0.9) * f2(0.2)) > 1e-6;   // les deux constantes interviennent, independamment
+          };
+          const eB = par('4.7 b)'); if (!fam2(eB, eqH)) faux(eB, '4.7 b) famille de (E0)');
+          const eC = par('4.7 c)'), rk = val((eC.enonce.match(/e\^\{([^{}]*)\}/) || [])[1], { x: 1 }), a = math.evaluate(eC.pa), b = math.evaluate(eC.pb);
+          if (!resout2(eqE, (x) => (a * x + b) * Math.exp(rk * x), XR)) faux(eC, '4.7 c) couple (' + eC.pa + ';' + eC.pb + ') ne convient pas');
+          const eD = par('4.7 d)'); if (!fam2(eD, eqE)) faux(eD, '4.7 d) famille de (E)');
+          const eE = par('4.7 e)'), h0 = Number(eE.enonce.match(/h\(0\)=(-?\d+)/)[1]), h1 = Number(eE.enonce.match(/h'\(0\)=(-?\d+)/)[1]), H = (x) => math.evaluate(eE.reponse, { x });
+          if (!resout2(eqE, H, XR) || !proche(H(0), h0, 1e-7) || !proche(derivee(H, 0), h1, 1e-5)) faux(eE, '4.7 e) solution ou conditions : h(0) = ' + H(0) + ', h\'(0) = ' + derivee(H, 0));
           compte('4.7');
         }
         { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^4\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7') faux(ex[0], 'numerotation'); }
