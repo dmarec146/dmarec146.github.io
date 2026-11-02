@@ -60,7 +60,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-2/fiche-03.html';
           compte(id.slice(0, 3));
         }
         // ---- 3.4 et 3.6 : la solution verifie l'equation et la condition affichees ----
-        for (const id of ['3.4 a)', '3.4 b)', '3.4 c)', '3.4 d)', '3.6 a)', '3.6 b)', '3.6 c)']) {
+        for (const id of ['3.4 a)', '3.4 b)', '3.6 a)', '3.6 b)']) {
           const e = par(id), { eq, cond } = enoncesEq(e), { a, b } = lireEquation(eq), m = cond.match(/^f\((-?\d+)\)=(.*)$/), x0 = Number(m[1]), y0 = val(m[2]);
           const F = (x) => math.evaluate(e.reponse, { x });
           if (!proche(F(x0), y0)) faux(e, id + ' condition non verifiee : f(' + x0 + ') = ' + F(x0) + ' / ' + y0);

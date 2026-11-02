@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.75,"3.2 a)":0.5,"3.2 b)":0.75,"3.3 a)":0.5,"3.3 b)":0.5,"3.3 c)":0.75,"3.3 d)":1,"3.4 a)":0.75,"3.4 b)":0.75,"3.4 c)":1.25,"3.4 d)":1.25,"3.5 a)":0.75,"3.5 b)":1,"3.5 c)":1.25,"3.5 d)":1.25,"3.6 a)":1,"3.6 b)":1.25,"3.6 c)":1.25,"3.7 a)":0.75,"3.7 b)":0.75,"3.8":1.75,"3.9":1.5},"bonus":["3.8","3.9"]});
+Bareme.definir({"points":{"3.1 a)":0.5,"3.1 b)":0.75,"3.2 a)":0.5,"3.2 b)":0.75,"3.3 a)":0.5,"3.3 b)":0.5,"3.3 c)":0.75,"3.3 d)":1,"3.4 a)":0.75,"3.4 b)":1.25,"3.5 a)":0.75,"3.5 b)":1,"3.5 c)":1.25,"3.5 d)":1.25,"3.6 a)":1,"3.6 b)":1.25,"3.7 a)":0.75,"3.7 b)":0.75,"3.8":1.75,"3.9":1.5},"bonus":["3.8","3.9"]});
 </script>
 <style>
   :root {
@@ -1365,20 +1365,11 @@ function genererExercices() {
     // a) y' = ay, f(0) = k
     const a1 = non0(-12, 12), k1 = non0(-9, 9), E1 = equationDiff([[1, "y'"]], [[a1, 'y']]);
     particuliere('3.4 a)', `\\(${E1.tex}\\) avec ${cond(0, k1)}`, k1, E1.a, 0, 0, [`f(x) = Ce^{${exposantTex(E1.a)}}`, `f(0) = C`, `C = ${k1}`]);
-    // b) py' + qy = 0, f(0) = k
-    let p2, q2; do { p2 = alea(2, 6); q2 = non0(-9, 9); } while (math.fraction(q2, p2).d === 1);
-    const k2 = non0(-9, 9), E2 = equationDiff([[p2, "y'"], [q2, 'y']], [[0, '']]);
-    particuliere('3.4 b)', `\\(${E2.tex}\\) avec ${cond(0, k2)}`, k2, E2.a, 0, 0, [...lignesReduction(E2), `f(x) = Ce^{${exposantTex(E2.a)}}`, `f(0) = C`, `C = ${k2}`]);
-    // c) y' = ay (coefficients fractionnaires des deux cotes), f(x0) = e^{m}
-    let u, v, w, z, a3; do { u = piocher([2, 3, 4]); v = piocher([2, 3, 4, 5]); w = non0(-3, 3); z = non0(-3, 3); a3 = math.divide(math.subtract(math.fraction(w, v), 1), math.add(math.fraction(1, u), 1)); } while (a3.equals(0) || u === v);
-    const E3 = equationDiff([[math.fraction(1, u), "y'"], [1, 'y']], [[math.fraction(w, v), 'y'], [-1, "y'"]]);
-    const x3 = non0(-3, 3), m3 = non0(-3, 3), k3 = math.subtract(m3, math.multiply(E3.a, x3));
-    particuliere('3.4 c)', `\\(${E3.tex}\\) avec \\(f(${x3})=${puissE(m3)}\\)`, 1, E3.a, k3, 0, [...lignesReduction(E3), `f(x) = Ce^{${exposantTex(E3.a)}}`, `f(${x3}) = ${puissE(m3)}`, `C = \\dfrac{${puissE(m3)}}{${puissE(math.multiply(E3.a, x3))}} = ${puissE(k3)}`]);
-    // d) termes des deux cotes, f(x0) = k
+    // b) termes des deux cotes, f(x0) = k, x0 non nul
     let p4, q4, r4, s4; do { p4 = alea(1, 9); s4 = alea(1, 9); q4 = non0(-9, 9); r4 = non0(-9, 9); } while (p4 === s4 || q4 === r4);
     const E4 = equationDiff([[p4, "y'"], [q4, 'y']], [[r4, 'y'], [s4, "y'"]]), x4 = non0(-3, 3), k4 = non0(-6, 6);
     const kk = math.unaryMinus(math.multiply(E4.a, x4));
-    particuliere('3.4 d)', `\\(${E4.tex}\\) avec ${cond(x4, k4)}`, k4, E4.a, kk, 0, [...lignesReduction(E4), `f(x) = Ce^{${exposantTex(E4.a)}}`, `f(${x4}) = ${k4}`, `C = \\dfrac{${k4}}{${puissE(math.multiply(E4.a, x4))}} = ${coefTex(k4)}${puissE(kk)}`]);
+    particuliere('3.4 b)', `\\(${E4.tex}\\) avec ${cond(x4, k4)}`, k4, E4.a, kk, 0, [...lignesReduction(E4), `f(x) = Ce^{${exposantTex(E4.a)}}`, `f(${x4}) = ${k4}`, `C = \\dfrac{${k4}}{${puissE(math.multiply(E4.a, x4))}} = ${coefTex(k4)}${puissE(kk)}`]);
   }
 
   // ---------- 3.5 : second membre constant, forme generale ----------
@@ -1425,11 +1416,6 @@ function genererExercices() {
     const E2 = equationDiff([[p2, "y'"], [-q2, 'y']], [[c2, '']]), x2 = non0(-3, 3), y2 = non0(-9, 9);
     E2.enonce = `\\(${E2.tex}\\) avec \\(f(${x2})=${y2}\\)`;
     sol('3.6 b)', E2, x2, y2, true);
-    // c) termes des deux cotes, f(0) = y0
-    let p3, q3, r3, s3, c3; do { p3 = alea(2, 9); s3 = alea(1, 9); q3 = non0(-9, 9); r3 = non0(-9, 9); c3 = non0(-15, 15); } while (p3 === s3 || q3 === r3);
-    const E3 = equationDiff([[p3, "y'"], [q3, 'y']], [[s3, "y'"], [r3, 'y'], [c3, '']]), y3 = non0(-6, 6);
-    E3.enonce = `\\(${E3.tex}\\) avec \\(f(0)=${y3}\\)`;
-    sol('3.6 c)', E3, 0, y3, true);
   }
 
   // ---------- 3.7 : la fonction f est-elle solution ? (une reponse oui, une reponse non, ordre au hasard) ----------
