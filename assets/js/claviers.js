@@ -686,3 +686,30 @@
   function demarrer() { envelopperExposant(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
 })();
+
+// --- 4. Saisie dans un champ mathematique : exposant et racine (02/11/2026) --------------------
+//
+// (a) Une parenthese fermante qui ferme la PREMIERE parenthese d'un exposant ou d'une racine fait
+//     sortir du champ ouvert : « e^(3x+1)-3 » met « -3 » sur la ligne (et non dans l'exposant),
+//     « sqrt(5)x » met « x » apres la racine (signalement d'eleves : « sqrt(5)x » etait lu
+//     « sqrt(5x) »). Un exposant ou une racine sans parenthese n'est pas touche.
+// (b) Une page qui declare  window.EXPOSANT_PERSISTANT = true  (fiche 3 de Terminale : exposants
+//     longs, « e^3x+1 ») garde l'exposant ouvert apres un chiffre (MathLive le referme sinon) :
+//     on en sort avec la fleche droite, une espace ou la parenthese fermante.
+// S'appuie sur le modele interne de MathLive (version epinglee 0.111.0) ; en cas d'echec, rien n'est change.
+(function () {
+  document.addEventListener('input', (e) => {
+    const mf = e.target;
+    if (!mf || mf.tagName !== 'MATH-FIELD' || e.data !== ')') return;
+    try {
+      const modele = mf._mathfield.model, a = modele.at(modele.position);
+      if (!a || a.type !== 'leftright' || !a.parent || (a.parent.type !== 'surd' && a.parent.type !== 'subsup')) return;
+      if (a.rightSibling || !a.leftSibling || a.leftSibling.type !== 'first') return;
+      mf.executeCommand('moveToNextChar');
+    } catch (er) { /* MathLive modifie : on laisse la saisie telle quelle */ }
+  });
+  document.addEventListener('focusin', (e) => {
+    const mf = e.target;
+    if (window.EXPOSANT_PERSISTANT && mf && mf.tagName === 'MATH-FIELD' && mf.smartSuperscript !== false) mf.smartSuperscript = false;
+  });
+})();
