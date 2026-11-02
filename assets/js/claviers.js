@@ -693,9 +693,10 @@
 //     sortir du champ ouvert : « e^(3x+1)-3 » met « -3 » sur la ligne (et non dans l'exposant),
 //     « sqrt(5)x » met « x » apres la racine (signalement d'eleves : « sqrt(5)x » etait lu
 //     « sqrt(5x) »). Un exposant ou une racine sans parenthese n'est pas touche.
-// (b) Une page qui declare  window.EXPOSANT_PERSISTANT = true  (fiche 3 de Terminale : exposants
-//     longs, « e^3x+1 ») garde l'exposant ouvert apres un chiffre (MathLive le referme sinon) :
-//     on en sort avec la fleche droite, une espace ou la parenthese fermante.
+// (b) L'exposant d'une exponentielle (base « e ») reste ouvert apres un chiffre ou une lettre
+//     (« e^3x+1 » donne e^(3x+1) ; MathLive le refermait apres le 3) : on en sort avec la fleche
+//     droite, une espace ou la parenthese fermante. Les autres bases (« x^2+1 ») gardent le
+//     comportement habituel : l'exposant se referme tout seul.
 // S'appuie sur le modele interne de MathLive (version epinglee 0.111.0) ; en cas d'echec, rien n'est change.
 (function () {
   document.addEventListener('input', (e) => {
@@ -708,8 +709,30 @@
       mf.executeCommand('moveToNextChar');
     } catch (er) { /* MathLive modifie : on laisse la saisie telle quelle */ }
   });
-  document.addEventListener('focusin', (e) => {
+  // Meme sortie, mais des l'appui sur « ) » (avant MathLive) : en frappe rapide, l'evenement « input »
+  // de la parenthese arrive APRES la touche suivante et le curseur n'est alors plus au bon endroit.
+  document.addEventListener('keydown', (e) => {
     const mf = e.target;
-    if (window.EXPOSANT_PERSISTANT && mf && mf.tagName === 'MATH-FIELD' && mf.smartSuperscript !== false) mf.smartSuperscript = false;
-  });
+    if (!mf || mf.tagName !== 'MATH-FIELD' || e.key !== ')' || e.ctrlKey || e.metaKey || e.altKey) return;
+    try {
+      const modele = mf._mathfield.model, a = modele.at(modele.position), p = a && a.parent;
+      if (!p || p.type !== 'leftright' || a.rightSibling || !p.parent || (p.parent.type !== 'surd' && p.parent.type !== 'subsup')) return;
+      if (!p.leftSibling || p.leftSibling.type !== 'first') return;
+      e.preventDefault(); e.stopPropagation();
+      mf.executeCommand('moveToNextChar'); mf.executeCommand('moveToNextChar');
+    } catch (er) { /* MathLive modifie : on laisse la saisie telle quelle */ }
+  }, true);
+  // avant chaque frappe : la fermeture automatique de l'exposant est coupee tant que le curseur est dans l'exposant d'un « e »
+  const regler = (e) => {
+    const mf = e.target;
+    if (!mf || mf.tagName !== 'MATH-FIELD') return;
+    try {
+      const modele = mf._mathfield.model, a = modele.at(modele.position);
+      const sup = a && a.parent && a.parent.type === 'subsup' ? a.parent : null;
+      const surE = !!sup && !!sup.leftSibling && sup.leftSibling.value === 'e';
+      if (mf.smartSuperscript === surE) mf.smartSuperscript = !surE;
+    } catch (er) { /* MathLive modifie : on laisse la saisie telle quelle */ }
+  };
+  document.addEventListener('keydown', regler, true);
+  document.addEventListener('beforeinput', regler, true);
 })();
