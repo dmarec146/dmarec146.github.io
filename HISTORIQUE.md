@@ -9359,3 +9359,5 @@ David demande (avec un extrait de sujet : `y'' − y' − 2y = 2xe^x`, solution 
 À la demande de David, l'introduction de 4.7 (second ordre, hors programme de Terminale) énonce maintenant **deux résultats admis**, en paragraphes séparés : (1) polynôme caractéristique → solutions de (E0) sous la forme Ae^{r1 x}+Be^{r2 x} ; (2) si φ est une solution particulière de (E), les solutions de (E) sont les fonctions y+φ où y décrit les solutions de (E0). Ajout de la précision « même membre de gauche, second membre nul » pour (E0). Texte modifié dans `fiche-04.html` et dans la source de construction. Recalcul indépendant (100 tirages) sans défaut, syntaxe des 54 fiches OK.
 
 Suite (03/11/2026) : à la demande de David, retrait de la phrase « les équations du second ordre ne sont pas au programme » et de la précision « même membre de gauche, second membre nul » ; l'introduction ne garde que « On admet les deux résultats suivants ».
+
+Suite (03/11/2026) : « polynôme caractéristique ... associé à (E0) » (au lieu de « de (E0) ») dans le résultat admis 1 et dans la question 4.7 a), à la demande de David.
