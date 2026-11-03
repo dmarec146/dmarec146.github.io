@@ -1628,6 +1628,8 @@ function normaliserSaisie(str) {
   // mais math.js traite cette juxtaposition implicite comme prioritaire sur une division explicite qui precede :
   // "(5)/(2)x" s'evaluerait alors en 5/(2x) au lieu de (5/2)*x. Ajouter le '*' explicite retablit la precedence standard.
   s = s.replace(/\)([a-zA-Z])/g, ')*$1');
+  // « xe^(2x) » : math.js lirait le symbole « xe » ; une lettre collee a « e^ » est une multiplication (03/11/2026)
+  s = s.replace(/([A-DF-Za-df-z])e(?=\^)/g, '$1*e');
   return s;
 }
 

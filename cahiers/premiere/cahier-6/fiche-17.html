@@ -1887,6 +1887,8 @@ function normaliserSaisie(str) {
   // produit implicite ecrit avec une espace par MathLive (« p q ») : expliciter avant que les
   // correcteurs ne suppriment les espaces (« pq » serait lu comme une seule variable)
   s = s.replace(/([a-zA-Z0-9_)]+)\s+(?=[a-zA-Z(])/g, (m, t) => FONCTIONS_CONNUES.has(t) ? t : t + '*');
+  // « xe^(2x) » : math.js lirait le symbole « xe » ; une lettre collee a « e^ » est une multiplication (03/11/2026)
+  s = s.replace(/([A-DF-Za-df-z])e(?=\^)/g, '$1*e');
   return s;
 }
 

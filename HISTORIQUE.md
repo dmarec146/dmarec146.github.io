@@ -9361,3 +9361,7 @@ David demande (avec un extrait de sujet : `y'' − y' − 2y = 2xe^x`, solution 
 Suite (03/11/2026) : à la demande de David, retrait de la phrase « les équations du second ordre ne sont pas au programme » et de la précision « même membre de gauche, second membre nul » ; l'introduction ne garde que « On admet les deux résultats suivants ».
 
 Suite (03/11/2026) : « polynôme caractéristique ... associé à (E0) » (au lieu de « de (E0) ») dans le résultat admis 1 et dans la question 4.7 a), à la demande de David.
+
+### 03/11/2026 (suite) — Saisie : « xe^(...) » porté sur toutes les fiches
+
+À la demande de David, la règle « une lettre collée à e^ est une multiplication » (math.js lisait le symbole « xe » : « xe^(2x) », « 3xe^(-x) » étaient refusés) est ajoutée dans `normaliserSaisie` des 53 fiches qui ne l'avaient pas (la fiche 4 de Terminale l'avait déjà), juste avant le `return s;` final ; script Node, fins de ligne CRLF conservées (+2 lignes par fiche, aucune autre modification). Vérifié : syntaxe des 54 fiches, audit des réponses sans anomalie sur Première 9, Seconde 1 et Terminale 3 (449 à 1260 saisies chacune), lecture de xe^(2x), 3xe^(-x), -2xe^(-x^2), xe^x correcte, 2e^x et exp(x) inchangés. `lireAvecConstante` (réponses à constante) reste propre à la fiche 4.
