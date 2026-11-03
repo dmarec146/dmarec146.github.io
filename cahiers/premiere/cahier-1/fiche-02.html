@@ -1397,7 +1397,7 @@ function genGroupe2_6() {
   return {
     C7, bTest, estDistinct,
     items: [
-      {id:"2.6 a)", type:"texte", texteLibre:true, enonce:`Avec \\(b=${bTest}\\), \\(P\\) a-t-il deux racines distinctes ?`, reponse: estDistinct ? "oui":"non",
+      {id:"2.6 a)", type:"texte", ouiNon:true, texteLibre:true, enonce:`Avec \\(b=${bTest}\\), \\(P\\) a-t-il deux racines distinctes ?`, reponse: estDistinct ? "oui":"non",
         detail: { lignes: ['\\text{Deux racines distinctes}', '\\text{si et seulement si } \\Delta \\gt 0', '\\text{Discriminant : } b^{2}-4ac', ...lignesDelta2(1, bTest, C7).lignes,
           phraseDelta2(bTest * bTest - 4 * C7), `\\text{Réponse : ${estDistinct ? 'oui' : 'non'}}`], final: estDistinct ? 'oui' : 'non' } },
       {id:"2.6 b)", type:"alg", texteLibre:true, enonce:`Discriminant de \\(P\\) en fonction de \\(b\\)`, reponse:`b^2-${4*C7}`,
@@ -2994,6 +2994,7 @@ function toggleToutesReponses() {
 
 
 function placeholderPour(ex) {
+  if (ex.ouiNon) return 'oui ou non';
   if (ex.type === 'cercle') return 'cx;cy;r';
   if (ex.type === 'vraifaux') return 'vrai / faux';
   if (ex.type === 'ineq') return 'x>4';
@@ -3004,6 +3005,7 @@ function placeholderPour(ex) {
 
 function aideContextuellePour(ex) {
   if (parametresForme(ex)) return MoteurReponses.aide(exAvecForme(ex));
+  if (ex.ouiNon) return "Répondre par <code>oui</code> ou par <code>non</code>.";
   if (ex.fractionIrreductible) {
     return ex.facteurSymbolique === 'pi'
       ? "La réponse doit être une fraction de π déjà simplifiée : <code>5pi/12</code> et non <code>15pi/36</code>, ni une valeur décimale."
@@ -3050,6 +3052,7 @@ function aideContextuellePour(ex) {
 
 function necessiteAide(ex) {
   if (parametresForme(ex)) return true;
+  if (ex.ouiNon) return true;
   if (ex.fractionIrreductible) return true;
   if (['cercle', 'vraifaux', 'qcm', 'ineq', 'intervalle', 'vecteur', 'somme', 'paire', 'eqcart', 'triplet'].includes(ex.type)) return true;
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) return true;
