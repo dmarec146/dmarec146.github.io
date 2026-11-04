@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"5.1 a)":1,"5.1 b)":1.25,"5.2 a)":0.75,"5.2 b)":1,"5.3 a)":0.75,"5.3 b)":0.75,"5.3 c)":1,"5.3 d)":1,"5.4 a)":0.75,"5.4 b)":1,"5.5 a)":1,"5.5 b)":1,"5.6":1.75,"5.7 a)":1,"5.7 b)":1.25,"5.7 c)":1.25,"5.7 d)":1.25,"5.8 a)":1,"5.8 b)":1.25,"5.9":1,"5.10 a)":1.5,"5.10 b)":1.75,"5.10 c)":1.5,"5.11 a)":1.75,"5.11 b)":1.5,"5.11 c)":1.5},"bonus":["5.10 a)","5.10 b)","5.10 c)","5.11 a)","5.11 b)","5.11 c)"]});
+Bareme.definir({"points":{"5.1 a)":1,"5.1 b)":1.25,"5.2 a)":0.75,"5.2 b)":1,"5.3 a)":0.75,"5.3 b)":0.75,"5.3 c)":1,"5.3 d)":1,"5.4 a)":0.75,"5.4 b)":1,"5.5 a)":1,"5.5 b)":1,"5.6":1.75,"5.7 a)":1,"5.7 b)":1.25,"5.7 c)":1.25,"5.7 d)":1.25,"5.8 a)":1,"5.8 b)":1.25,"5.9":1,"5.10 a)":1.5,"5.10 b)":1.75,"5.11 a)":1.75,"5.11 b)":1.5},"bonus":["5.10 a)","5.10 b)","5.11 a)","5.11 b)"]});
 </script>
 <style>
   :root {
@@ -1035,7 +1035,7 @@ Bareme.definir({"points":{"5.1 a)":1,"5.1 b)":1.25,"5.2 a)":0.75,"5.2 b)":1,"5.3
 <p class="section-titre">Calculs plus avancés</p>
 <div class="section-barre"></div>
 
-<p><strong>Convexité.</strong> Soit \(f\) une fonction deux fois dérivable sur un intervalle \(I\). La fonction \(f\) est <strong>convexe</strong> sur \(I\) lorsque \(f''\) est positive sur \(I\) (sa courbe est alors au-dessus de ses tangentes), et <strong>concave</strong> sur \(I\) lorsque \(f''\) est négative sur \(I\) (sa courbe est alors en dessous de ses tangentes). Un <strong>point d'inflexion</strong> est un point de la courbe où \(f''\) s'annule en changeant de signe : la courbe y traverse sa tangente.</p>
+<p><strong>Convexité.</strong> Soit \(f\) une fonction deux fois dérivable sur un intervalle \(I\). La fonction \(f\) est <strong>convexe</strong> sur \(I\) lorsque \(f''\) est positive sur \(I\) (sa courbe est alors au-dessus de ses tangentes), et <strong>concave</strong> sur \(I\) lorsque \(f''\) est négative sur \(I\) (sa courbe est alors en dessous de ses tangentes).</p>
 
 <p class="calcul-titre"><span>Calcul 5.10 — Convexité d'une fonction.</span><span class="picto-niveau"></span></p>
 <div id="intro-5-10"></div>
@@ -1449,27 +1449,21 @@ function genererExercices() {
     e.detail.lignes[e.detail.lignes.length - 1] = `f''(x) = ${e.correctionLatex}`;
   }
 
-  // ---------- 5.10 : convexite de f(x) = (x^2 + bx + c) e^x, f'' = (x - r1)(x - r2) e^x ----------
+  // ---------- 5.10 : convexite de f(x) = e^{-(x - h)^2 / 2}, f'' = (x - h - 1)(x - h + 1) e^{...} ----------
   {
-    let r1, r2;
-    do { r1 = non0(-3, 3); r2 = non0(-3, 3); } while (r1 >= r2);
-    const b = -4 - (r1 + r2), c = r1 * r2 - 2 - 2 * b, T = [c, b, 1];
-    paramsAvances.t10 = `<p>On considère la fonction \\(f\\) définie sur \\(\\mathbb{R}\\) par \\(f(x)=\\left(${polyTex(T)}\\right)e^{x}\\).</p>`;
-    const dd = `${facteurX(r1)}${facteurX(r2)}e^{x}`;
-    const fp = [c + b, b + 2, 1], fpp = [2 * b + c + 2, b + 4, 1];
-    derivFact('5.10 a)', `Déterminer l'expression de \\(f''(x)\\) sous forme factorisée`, `(x-(${r1}))*(x-(${r2}))*exp(x)`, dd,
-      [REGLE_PROD, ICI_UV(polyTex(T), 'e^{x}'), `f'(x) = \\left(${polyTex(polyDer(T))}\\right)e^{x}+\\left(${polyTex(T)}\\right)e^{x} = \\left(${polyTex(fp)}\\right)e^{x}`,
-       `f''(x) = \\left(${polyTex(polyDer(fp))}\\right)e^{x}+\\left(${polyTex(fp)}\\right)e^{x} = \\left(${polyTex(fpp)}\\right)e^{x}`], true);
-    const e = ex[ex.length - 1];
-    e.detail.lignes[e.detail.lignes.length - 1] = `f''(x) = \\left(${polyTex(fpp)}\\right)e^{x} = ${dd}`;
-    e.detail.final = dd;
+    const h = piocher([-3, -2, 0, 2, 3]), r1 = h - 1, r2 = h + 1;
+    const base = h === 0 ? 'x' : `x${sg(-h)}`, baseP = h === 0 ? 'x' : `\\left(${base}\\right)`, baseA = h === 0 ? 'x' : `(x${sg(-h)})`;
+    const U = `-\\dfrac{${baseP}^2}{2}`, E = `e^{${U}}`;
+    paramsAvances.t10 = `<p>On considère la fonction \\(f\\) définie sur \\(\\mathbb{R}\\) par \\(f(x)=${E}\\).</p>`;
+    const dd = `${facteurX(r1)}${facteurX(r2)}${E}`;
+    derivFact('5.10 a)', `Déterminer l'expression de \\(f''(x)\\) sous forme factorisée`, `(x${sg(-r1)})*(x${sg(-r2)})*exp(-${baseA}^2/2)`, dd,
+      [REGLE_EXP, ...ICI(U, `-${baseP}`), `f'(x) = -${baseP}${E}`, REGLE_PROD, ICI_UV(`-${baseP}`, E),
+       `f''(x) = -${E}+\\left(-${baseP}\\right)\\left(-${baseP}\\right)${E}`, `f''(x) = \\left(${baseP}^2-1\\right)${E}`], true);
+    { const e = ex[ex.length - 1]; e.detail.lignes[e.detail.lignes.length - 1] = `f''(x) = ${e.correctionLatex}`; }   // la ligne finale ajoutee par derivFact() porte f' : c'est f''
     const spec = { type: 'intervalles', liste: [{ bas: -Infinity, haut: r1, inclusBas: false, inclusHaut: true }, { bas: r2, haut: Infinity, inclusBas: true, inclusHaut: false }] }, finB = formaterIntervalleSpec(spec);
     ex.push({ id: '5.10 b)', type: 'intervalle', texteLibre: true, enonce: `Déterminer l'ensemble des réels \\(x\\) pour lesquels \\(f\\) est convexe`, intervalleSpec: spec,
-      detail: { lignes: ["\\text{La fonction } f \\text{ est convexe quand } f''(x) \\geqslant 0", "\\text{Comme } e^{x} > 0 \\text{, le signe de } f''(x)", `\\text{est celui de } ${facteurX(r1)}${facteurX(r2)}`,
+      detail: { lignes: ["\\text{La fonction } f \\text{ est convexe quand } f''(x) \\geqslant 0", "\\text{Comme } e^{u} > 0 \\text{, le signe de } f''(x)", `\\text{est celui de } ${facteurX(r1)}${facteurX(r2)}`,
         "\\text{Ce produit est positif à l'extérieur}", `\\text{de ses racines } ${r1} \\text{ et } ${r2}`, finB], final: finB } });
-    const finC = `\\{${r1}\\,;\\,${r2}\\}`;
-    ex.push({ id: '5.10 c)', type: 'num', texteLibre: true, enonce: `Déterminer les abscisses des points d'inflexion de la courbe représentative de \\(f\\)`, reponse: `{${r1};${r2}}`,
-      detail: { lignes: ["\\text{La fonction } f'' \\text{ s'annule en changeant}", `\\text{de signe en } ${r1} \\text{ et en } ${r2}`, finC], final: finC } });
   }
 
   // ---------- 5.11 : convexite de f(x) = ln(x^2 + r^2), f'' = -2(x - r)(x + r) / (x^2 + r^2)^2 ----------
@@ -1480,13 +1474,11 @@ function genererExercices() {
     derivFact('5.11 a)', `Déterminer l'expression de \\(f''(x)\\) sous forme factorisée (numérateur factorisé)`, `(-2*(x-${r})*(x+${r}))/(x^2+${m})^2`, fin,
       [REGLE_LN, ...ICI(`x^2+${m}`, '2x'), `f'(x) = \\dfrac{2x}{x^2+${m}}`, REGLE_QUOT, ICI_UV('2x', `x^2+${m}`),
        `f''(x) = \\dfrac{2\\left(x^2+${m}\\right)-2x\\times 2x}{\\left(x^2+${m}\\right)^2}`, `f''(x) = \\dfrac{${2 * m}-2x^2}{\\left(x^2+${m}\\right)^2}`], 'numerateur');
+    { const e = ex[ex.length - 1]; e.detail.lignes[e.detail.lignes.length - 1] = `f''(x) = ${e.correctionLatex}`; }
     const spec = { type: 'intervalles', liste: [{ bas: -r, haut: r, inclusBas: true, inclusHaut: true }] }, finB = formaterIntervalleSpec(spec);
     ex.push({ id: '5.11 b)', type: 'intervalle', texteLibre: true, enonce: `Déterminer l'ensemble des réels \\(x\\) pour lesquels \\(f\\) est convexe`, intervalleSpec: spec,
       detail: { lignes: ["\\text{La fonction } f \\text{ est convexe quand } f''(x) \\geqslant 0", "\\text{Le dénominateur est positif :}", "\\text{le signe de } f''(x) \\text{ est celui de}", `${num}`,
         `\\text{Ce produit est positif entre ses racines } -${r} \\text{ et } ${r}`, finB], final: finB } });
-    const finC = `\\{-${r}\\,;\\,${r}\\}`;
-    ex.push({ id: '5.11 c)', type: 'num', texteLibre: true, enonce: `Déterminer les abscisses des points d'inflexion de la courbe représentative de \\(f\\)`, reponse: `{-${r};${r}}`,
-      detail: { lignes: ["\\text{La fonction } f'' \\text{ s'annule en changeant}", `\\text{de signe en } -${r} \\text{ et en } ${r}`, finC], final: finC } });
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt

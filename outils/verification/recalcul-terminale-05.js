@@ -90,18 +90,20 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-05.html';
           if (!proche(G(0), p, 1e-5) || !proche(G(1) - G(0), m, 1e-5)) faux(e, '5.6 tangente : attendu pente ' + m + ' ordonnee ' + p + ', reponse ' + G(0) + ' / ' + (G(1) - G(0)));
           compte('5.6');
         }
-        // calculs avances : f'' lue sur la fonction de l'introduction, convexite et points d'inflexion
+        // calculs avances : f'' lue sur la fonction de l'introduction, convexite lue sur le signe de f'' numerique
         for (const [k, num] of [['10', '5.10'], ['11', '5.11']]) {
           ou = num;
           const F = lireF(null, paramsAvances['t' + k]);
           const ea = par(num + ' a)'), G = rep(ea); for (const x of XR) if (!proche(D2(F, x), G(x), 1e-4)) faux(ea, num + ' a) f\'\' numerique ' + D2(F, x) + ' <> reponse ' + G(x));
           if (!estFactoriseComplet(ea.reponse, ea.formeFactorisee, ea.nbFacteurs)) faux(ea, num + ' a) la reponse attendue ne passe pas sa propre forme factorisee');
-          const ec = par(num + ' c)'), racines = ec.reponse.slice(1, -1).split(';').map(Number);
-          if (racines.length !== 2 || racines[0] === racines[1]) faux(ec, num + ' c) racines ' + ec.reponse);
-          convexite(par(num + ' b)'), F, racines);
-          // exactement deux changements de signe de f'' (les racines annoncees), aucun autre
+          if (ea.detail.lignes.map((l) => l.replace(/^\\(small|scriptsize)\s*/, '')).filter((l) => /^f'\(x\)(\s*=|$)/.test(l)).length !== 1 || !ea.detail.lignes.some((l) => /^(\\(small|scriptsize)\s*)?f''\(x\)(\s*=|$)/.test(l))) faux(ea, num + ' a) la derniere ligne du detail doit porter f\'\'');
+          const eb = par(num + ' b)'), spec = eb.intervalleSpec;
+          // bornes finies de l'ensemble : racines de f'' (changements de signe) ; ni plus ni moins
+          const bornes = []; spec.liste.forEach((iv) => { if (isFinite(iv.bas)) bornes.push(iv.bas); if (isFinite(iv.haut)) bornes.push(iv.haut); });
+          convexite(eb, F, bornes);
           let chg = [], prec = null; for (let t = -6.05; t < 6.2; t += 0.1) { const d = D2(F, t); if (Math.abs(d) < 1e-4) continue; const s = d > 0; if (prec !== null && s !== prec) chg.push(t); prec = s; }
-          if (chg.length !== 2 || racines.some((r) => !chg.some((t) => Math.abs(t - r) < 0.2))) faux(ec, num + ' c) changements de signe de f\'\' : ' + chg.map((t) => t.toFixed(2)).join(' ') + ' <> racines ' + ec.reponse);
+          if (chg.length !== bornes.length || bornes.some((r) => !chg.some((t) => Math.abs(t - r) < 0.2))) faux(eb, num + ' b) changements de signe de f\'\' : ' + chg.map((t) => t.toFixed(2)).join(' ') + ' <> bornes ' + bornes.join(' '));
+          if (par(num + ' c)')) faux(eb, num + ' c) ne doit plus exister');
           compte(num);
         }
         { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^5\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10,11') faux(ex[0], 'numerotation'); }
