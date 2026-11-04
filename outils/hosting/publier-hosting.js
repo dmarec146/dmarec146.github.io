@@ -99,23 +99,6 @@ const aCompleter = liste.filter((f) => f.endsWith('.html') && fs.readFileSync(pa
 if (aCompleter.length) fail('points « a completer » encore presents (pages legales) :\n  ' + aCompleter.join('\n  ') + '\nComplete-les (apres l\'avis du delegue a la protection des donnees) avant de publier.');
 console.log(`publication/ construit : ${liste.length} fichiers, aucun fichier suspect.`);
 
-// ---- 3 bis. Version du site (04/11/2026) : chaque page recoit <meta name="version-site" content="<commit>"> et publication/version.json
-// donne la version en ligne ; assets/js/version-site.js les compare pour proposer le rechargement aux eleves. Les pages publiees sur
-// Hosting different donc de celles de GitHub Pages (une ligne en plus) : `empreintesHosting` sert a la verification de Hosting,
-// `empreintes` (contenu du commit) a la comparaison avec GitHub Pages.
-const empreintesHosting = new Map();
-for (const f of liste.filter((x) => x.endsWith('.html'))) {
-  const chemin = path.join(DOSSIER, f);
-  const html = fs.readFileSync(chemin, 'utf8');
-  const marque = html.replace(/<head(\s[^>]*)?>/i, (m) => `${m}\n<meta name="version-site" content="${commit}">`);
-  if (marque !== html) {
-    fs.writeFileSync(chemin, marque);
-    empreintesHosting.set(f, crypto.createHash('sha256').update(Buffer.from(marque, 'utf8')).digest('hex'));
-  }
-}
-fs.writeFileSync(path.join(DOSSIER, 'version.json'), JSON.stringify({ version: commit }) + '\n');
-console.log(`Version ${commit} inscrite dans ${empreintesHosting.size} pages et dans version.json.`);
-
 // ---- 4. Configuration Hosting (regeneree a chaque fois, identique sur les deux PC) --------------------
 const entetes = [{ key: 'Cache-Control', value: 'public, max-age=600' }];
 if (!INDEXATION_AUTORISEE) entetes.push({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
@@ -132,8 +115,7 @@ const firebaseJson = {
       { source: '**', headers: entetes },
       { source: '**/*.html', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
       { source: '**/', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
-      { source: '/', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
-      { source: '/version.json', headers: [{ key: 'Cache-Control', value: 'no-store' }] }
+      { source: '/', headers: [{ key: 'Cache-Control', value: 'no-cache' }] }
     ]
   }
 };
@@ -179,7 +161,7 @@ async function code(url) {
     let diff = 0;
     for (const f of uniques) {
       const vu = await sha(`${adresse}/${f}`);
-      if (vu !== (empreintesHosting.get(f) || empreintes.get(f))) { diff++; console.warn(`  DIFFERENT sur ${adresse} : ${f} (${vu})`); }
+      if (vu !== empreintes.get(f)) { diff++; console.warn(`  DIFFERENT sur ${adresse} : ${f} (${vu})`); }
     }
     for (const interdit of ['.git/config', 'outils/', 'SUIVI-FIREBASE.md', 'outils/creer-comptes/service-account.json']) {
       const c = await code(`${adresse}/${interdit}`);

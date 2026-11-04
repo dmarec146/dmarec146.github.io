@@ -198,7 +198,7 @@ if (cible) {
   // que Firebase ait restaure la session : authStateReady).
   afficherEtat(lireEtatConnu(), null);
   bouton.onclick = async () => {
-    const [{ auth }, { signOut }] = await modulesFirebase;
+    const [{ auth, annoncerDeconnexion }, { signOut }] = await modulesFirebase;
     await auth.authStateReady();
     if (auth.currentUser) {
       // Deconnexion volontaire (27/10/2026) : on previent les autres scripts de la page. Sans cela, la page protegee
@@ -206,6 +206,7 @@ if (cible) {
       // partait vers l'accueil : deux chargements de page qui se chevauchent, visibles comme un clignotement.
       window.__deconnexionEnCours = true;
       await signOut(auth);
+      annoncerDeconnexion();
       memoriserEtat(null);
       window.location.href = '/index.html';
     } else {

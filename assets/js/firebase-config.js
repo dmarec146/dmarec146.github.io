@@ -44,13 +44,73 @@ const app = initializeApp(MODE_EMULATEUR
   : firebaseConfig);
 
 export { app, MODE_EMULATEUR };
-// Connexion limitée à l'ONGLET (04/11/2026, demande de David : postes partagés de la salle informatique, et pages qui doivent
-// être rechargées au déploiement) : la session vit dans sessionStorage, donc disparaît à la fermeture de l'onglet ou du
-// navigateur et n'est pas partagée entre onglets (un lien ouvert dans un nouvel onglet demande de se reconnecter). La
-// navigation d'une page à l'autre dans le même onglet la conserve. Repli en mémoire si sessionStorage est bloqué.
-// Avec getAuth, la session était gardée durablement (IndexedDB) jusqu'à « Se déconnecter » : ce changement oblige
-// tout le monde à se reconnecter une fois, voulu.
+// Connexion qui se termine avec le NAVIGATEUR (04/11/2026, demande de David : postes partagés de la salle informatique) : la session
+// vit dans sessionStorage (initializeAuth ci-dessous), donc disparaît quand le dernier onglet ou le navigateur est fermé. Un
+// onglet ouvert depuis le site doit pourtant rester connecté (demande de David) : sessionStorage étant propre à chaque onglet, un
+// nouvel onglet demande à un onglet déjà ouvert de lui COPIER la session (échange éphémère par localStorage, quelques
+// centaines de millisecondes, effacé aussitôt). Aucun onglet ouvert (navigateur fraîchement lancé) : personne ne répond, le
+// visiteur n'est pas connecté. Avec getAuth, la session était gardée durablement (IndexedDB) jusqu'à « Se déconnecter » :
+// ce changement oblige tout le monde à se reconnecter une fois, voulu. Repli en mémoire si sessionStorage est bloqué.
+const CLE_PARTAGE_DEMANDE = 'cahiers-partage-demande';
+const CLE_PARTAGE_REPONSE = 'cahiers-partage-reponse';
+const CLE_DECONNEXION = 'cahiers-deconnexion';
+const CLE_ONGLET_INITIALISE = 'cahiers-onglet-initialise';
+const DELAI_ATTENTE_ONGLET_MS = 250;
+const estPartagee = (cle) => cle.startsWith('firebase:authUser:') || cle === 'cahiers-nav-etat' || cle === 'cahiers-devoirs-cache' || cle === 'cahiers-admin';
+
+// Nouvel onglet : à la première page seulement (le marqueur reste dans sessionStorage pendant les changements de page).
+async function recupererSessionDUnAutreOnglet() {
+  try {
+    if (window.sessionStorage.getItem(CLE_ONGLET_INITIALISE)) return;
+    window.sessionStorage.setItem(CLE_ONGLET_INITIALISE, '1');
+    const demande = String(Math.random());
+    await new Promise((resoudre) => {
+      let ecouteur;
+      const fin = setTimeout(() => { window.removeEventListener('storage', ecouteur); resoudre(); }, DELAI_ATTENTE_ONGLET_MS);
+      ecouteur = (e) => {
+        if (e.key !== CLE_PARTAGE_REPONSE || !e.newValue) return;
+        try {
+          const reponse = JSON.parse(e.newValue);
+          if (reponse.demande !== demande) return;
+          for (const [cle, valeur] of Object.entries(reponse.copie)) if (estPartagee(cle)) window.sessionStorage.setItem(cle, valeur);
+          window.localStorage.removeItem(CLE_PARTAGE_REPONSE);
+        } catch (erreur) { /* réponse illisible : onglet non connecté */ }
+        clearTimeout(fin);
+        window.removeEventListener('storage', ecouteur);
+        resoudre();
+      };
+      window.addEventListener('storage', ecouteur);
+      window.localStorage.setItem(CLE_PARTAGE_DEMANDE, demande);
+    });
+    window.localStorage.removeItem(CLE_PARTAGE_DEMANDE);
+  } catch (erreur) { /* stockage indisponible : sans conséquence */ }
+}
+await recupererSessionDUnAutreOnglet();
+
 export const auth = initializeAuth(app, { persistence: [browserSessionPersistence, inMemoryPersistence] });
+
+// Répond aux autres onglets : copie de la session (connecté seulement) ; et suit une déconnexion volontaire faite ailleurs.
+window.addEventListener('storage', (e) => {
+  try {
+    if (e.key === CLE_PARTAGE_DEMANDE && e.newValue) {
+      const copie = {};
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const cle = window.sessionStorage.key(i);
+        if (estPartagee(cle)) copie[cle] = window.sessionStorage.getItem(cle);
+      }
+      if (Object.keys(copie).some((cle) => cle.startsWith('firebase:authUser:'))) {
+        window.localStorage.setItem(CLE_PARTAGE_REPONSE, JSON.stringify({ demande: e.newValue, copie }));
+        setTimeout(() => { try { window.localStorage.removeItem(CLE_PARTAGE_REPONSE); } catch (x) { /* ignoré */ } }, 2000);
+      }
+    } else if (e.key === CLE_DECONNEXION && e.newValue) {
+      signOut(auth).catch(() => {});
+    }
+  } catch (erreur) { /* ignoré */ }
+});
+// Déconnexion volontaire (bouton « Se déconnecter ») : les autres onglets ouverts se déconnectent aussi.
+export function annoncerDeconnexion() {
+  try { window.localStorage.setItem(CLE_DECONNEXION, String(Date.now())); } catch (e) { /* stockage indisponible */ }
+}
 export const db = getFirestore(app);
 
 if (MODE_EMULATEUR) {
@@ -101,8 +161,9 @@ try {
 export const DELAI_INACTIVITE_MS = 60 * 60 * 1000;
 const CLE_ACTIVITE = 'cahiers-activite';
 const CLE_EXPIREE = 'cahiers-session-expiree';
-function lireActivite() { try { return Number(window.sessionStorage.getItem(CLE_ACTIVITE)) || 0; } catch (e) { return 0; } }
-export function marquerActivite() { try { window.sessionStorage.setItem(CLE_ACTIVITE, String(Date.now())); } catch (e) { /* stockage indisponible */ } }
+// (localStorage : partagée entre onglets ; ne sert qu'à mesurer le temps, aucune donnée personnelle.)
+function lireActivite() { try { return Number(window.localStorage.getItem(CLE_ACTIVITE)) || 0; } catch (e) { return 0; } }
+export function marquerActivite() { try { window.localStorage.setItem(CLE_ACTIVITE, String(Date.now())); } catch (e) { /* stockage indisponible */ } }
 
 function annoncerSessionExpiree() {
   if (window.location.pathname.startsWith('/connexion/')) return;     // la page de connexion l'annonce elle-même
