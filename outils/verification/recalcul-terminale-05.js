@@ -28,12 +28,22 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-05.html';
     const D1 = (F, x) => (F(x + 1e-5) - F(x - 1e-5)) / 2e-5;
     const D2 = (F, x) => (F(x + 1e-3) - 2 * F(x) + F(x - 1e-3)) / 1e-6;
     const XR = [-1.1, -0.45, 0.3, 0.9, 1.4];
-    // f lue dans l'enonce AFFICHE : « f(x)=... »
-    const lireF = (e) => { const t = formules(e.enonce).find((s) => /^f\(x\)=/.test(s)); if (!t) throw new Error('f(x) introuvable'); const src = t.replace(/^f\(x\)=/, ''); return (x) => val(src, { x }); };
+    // f lue dans l'enonce AFFICHE (ou dans l'introduction du calcul) : « f(x)=... »
+    const lireF = (e, source) => { const t = formules(source === undefined ? e.enonce : source).find((s) => /^f\(x\)=/.test(s)); if (!t) throw new Error('f(x) introuvable'); const src = t.replace(/^f\(x\)=/, ''); return (x) => val(src, { x }); };
     const lireA = (e) => Number(formules(e.enonce).map((s) => s.match(/^a=(-?\d+)$/)).filter(Boolean)[0][1]);
     const rep = (e) => (x) => math.evaluate(e.reponse, { x });
     // la correction ecrite (LaTeX) est la meme fonction que la reponse attendue
-    const memeCorrection = (e) => { if (!e.correctionLatex || typeof e.reponse !== 'string' || e.type === 'num' || e.formeYax || !/^5\.(1|2|3|4|7|8|9|10)/.test(e.id)) return true; return XR.every((x) => proche(val(e.correctionLatex, { x }), math.evaluate(e.reponse, { x }), 1e-9)); };
+    const memeCorrection = (e) => { if (!e.correctionLatex || typeof e.reponse !== 'string' || e.type === 'num' || e.formeYax || !/^5\.(1|2|3|4|7|8|9|10|11)/.test(e.id)) return true; return [0.37, 0.9, -0.8, 1.3, -1.1].every((x) => proche(val(e.correctionLatex, { x }), math.evaluate(e.reponse, { x }), 1e-9)); };
+    // ensemble de la specification d'intervalles
+    const dans = (spec, t) => spec.liste.some((iv) => (t > iv.bas || (t === iv.bas && iv.inclusBas)) && (t < iv.haut || (t === iv.haut && iv.inclusHaut)));
+    // convexite lue sur f'' (numerique) : bornes et abscisses d'inflexion
+    const convexite = (e, F, racines) => {
+      const spec = e.intervalleSpec;
+      const pts = [];
+      for (let t = -6.05; t < 6.2; t += 0.1) pts.push(t);
+      for (const t of pts) { const d = D2(F, t); if (Math.abs(d) < 1e-4) continue; if ((d > 0) !== dans(spec, t)) faux(e, e.id + ' convexite en x = ' + t.toFixed(2) + ' : f\'\' = ' + d.toExponential(2)); }
+      for (const r of racines) { if (!proche(D2(F, r), 0, 1e-3) && Math.abs(D2(F, r)) > 1e-3) faux(e, e.id + ' f\'\'(' + r + ') = ' + D2(F, r)); const inclus = spec.liste.some((iv) => iv.haut === r && iv.inclusHaut) || spec.liste.some((iv) => iv.bas === r && iv.inclusBas); if (!inclus) faux(e, e.id + ' borne ' + r + ' non incluse'); }
+    };
     for (let tt = 0; tt < N; tt++) {
       const ex = genererExercices();
       const par = (id) => ex.find((e) => e.id === id);
@@ -41,34 +51,60 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-05.html';
       try {
         for (const e of ex) { ou = 'correction ' + e.id; if (!memeCorrection(e)) faux(e, 'correction affichee differente de la reponse attendue'); }
         // la ligne finale du detail est la meme fonction que la reponse attendue
-        for (const e of ex) { ou = 'final ' + e.id; if (e.detail && /^5\.(3|4|6|7|8|9|10)/.test(e.id)) { const f = e.detail.final.replace(/^y\s*=\s*/, ''); if (!XR.every((x) => proche(val(f, { x }), math.evaluate(e.reponse, { x }), 1e-9))) faux(e, 'detail.final different de la reponse attendue'); } }
+        for (const e of ex) { ou = 'final ' + e.id; if (e.detail && /^5\.(3|4|6|7|8|9|10 a|11 a)/.test(e.id) && typeof e.reponse === 'string') { const f = e.detail.final.replace(/^y\s*=\s*/, ''); if (!XR.every((x) => proche(val(f, { x }), math.evaluate(e.reponse, { x }), 1e-9))) faux(e, 'detail.final different de la reponse attendue'); } }
         ou = '5.1';
-        for (const id of ['5.1 a)', '5.1 b)', '5.1 c)']) { const e = par(id); for (const x of [0, 0.7, -1.3, 2.1]) if (!proche(val(e.enonce, { x }), math.evaluate(e.reponse, { x }))) faux(e, id + ' developpement'); compte('5.1'); }
+        for (const id of ['5.1 a)', '5.1 b)']) {
+          const e = par(id); for (const x of [0, 0.7, -1.3, 2.1]) if (!proche(val(e.enonce, { x }), math.evaluate(e.reponse, { x }))) faux(e, id + ' factorisation');
+          if (MoteurReponses.verifierForme({ forme: 'factorise', reponse: e.reponse }, { ascii: e.reponse }) !== true) faux(e, id + ' la reponse attendue ne passe pas la forme factorisee du moteur');
+          compte('5.1');
+        }
         ou = '5.2';
-        for (const id of ['5.2 a)', '5.2 b)', '5.2 c)']) { const e = par(id); for (const x of [0, 0.7, -1.3, 2.1]) if (!proche(val(e.enonce, { x }), math.evaluate(e.reponse, { x }))) faux(e, id + ' factorisation'); if (/^[^*]*$/.test(e.reponse.replace(/\^[0-9]/g, ''))) faux(e, id + ' pas un produit'); compte('5.2'); }
+        for (const id of ['5.2 a)', '5.2 b)']) {
+          const e = par(id), enonce = val(e.enonce, { x: 0.37 });
+          for (const x of [0.37, 1.9, -2.3, 3.1, 0.81]) if (!proche(val(e.enonce, { x }), math.evaluate(e.reponse, { x }), 1e-9)) faux(e, id + ' valeur de la fraction');
+          if (!estMemeDenominateur(e.reponse, e.memeDenominateur, e.reponse)) faux(e, id + ' la reponse attendue ne passe pas sa propre forme');
+          // le denominateur est bien le produit des denominateurs de l'enonce (les facteurs x - a et x - b ou b - x)
+          // les poles de l'enonce : racine de chaque denominateur (affine) lu dans l'ecriture affichee
+          const den = math.compile(e.memeDenominateur.den);
+          for (const m of e.enonce.matchAll(/\\dfrac\{[^{}]*\}\{([^{}]*)\}/g)) { const d = (x) => val(m[1], { x }), pole = -d(0) / (d(1) - d(0)); if (Math.abs(den.evaluate({ x: pole })) > 1e-9) faux(e, id + ' le denominateur ne s\'annule pas en ' + pole); }
+          compte('5.2');
+        }
         // derivees : la reponse attendue est la derivee numerique de la fonction affichee
-        for (const id of ['5.3 a)', '5.3 b)', '5.3 c)', '5.3 d)', '5.4 a)', '5.4 b)', '5.4 c)', '5.4 d)', '5.7 a)', '5.7 b)', '5.7 c)', '5.7 d)', '5.8 a)', '5.8 b)', '5.8 c)', '5.9 a)', '5.9 b)', '5.9 c)']) {
+        for (const id of ['5.3 a)', '5.3 b)', '5.3 c)', '5.3 d)', '5.4 a)', '5.4 b)', '5.7 a)', '5.7 b)', '5.7 c)', '5.7 d)', '5.8 a)', '5.8 b)']) {
           ou = id; const e = par(id), F = lireF(e), G = rep(e);
           for (const x of XR) if (!proche(D1(F, x), G(x), 1e-5)) faux(e, id + ' derivee numerique ' + D1(F, x) + ' <> reponse ' + G(x) + ' en x = ' + x);
-          if (/^5\.[789]/.test(id)) {
+          if (/^5\.[78]/.test(id)) {
             if (!(e.nbFacteurs >= 1)) faux(e, id + ' nombre de facteurs ' + e.nbFacteurs);
             if (!estFactoriseComplet(e.reponse, e.formeFactorisee, e.nbFacteurs)) faux(e, id + ' la reponse attendue ne passe pas sa propre forme factorisee');
-            if (!egaliteFonction(e.reponse, e.reponse)) faux(e, id + ' egalite de fonctions');
           }
           compte(id.slice(0, 3));
         }
-        ou = '5.10';
-        { const e = par('5.10'), F = lireF(e), G = rep(e); for (const x of XR) if (!proche(D2(F, x), G(x), 1e-4)) faux(e, '5.10 derivee seconde ' + D2(F, x) + ' <> reponse ' + G(x)); compte('5.10'); }
+        ou = '5.9';
+        { const e = par('5.9'), F = lireF(e), G = rep(e); for (const x of XR) if (!proche(D2(F, x), G(x), 1e-4)) faux(e, '5.9 derivee seconde ' + D2(F, x) + ' <> reponse ' + G(x)); compte('5.9'); }
         ou = '5.5';
         for (const id of ['5.5 a)', '5.5 b)']) { const e = par(id), F = lireF(e), a = lireA(e), v = math.evaluate(e.reponse); if (!proche(D1(F, a), v, 1e-5)) faux(e, id + ' nombre derive ' + D1(F, a) + ' <> ' + v); compte('5.5'); }
         ou = '5.6';
-        for (const id of ['5.6 a)', '5.6 b)']) {
-          const e = par(id), F = lireF(e), a = lireA(e), m = D1(F, a), p = F(a) - m * a, G = rep(e);
-          if (!e.formeYax) faux(e, id + ' forme y= absente');
-          if (!proche(G(0), p, 1e-5) || !proche(G(1) - G(0), m, 1e-5)) faux(e, id + ' tangente : attendu pente ' + m + ' ordonnee ' + p + ', reponse ' + G(0) + ' / ' + (G(1) - G(0)));
+        {
+          const e = par('5.6'), F = lireF(e), a = lireA(e), m = D1(F, a), p = F(a) - m * a, G = rep(e);
+          if (!e.formeYax) faux(e, '5.6 forme y= absente');
+          if (!proche(G(0), p, 1e-5) || !proche(G(1) - G(0), m, 1e-5)) faux(e, '5.6 tangente : attendu pente ' + m + ' ordonnee ' + p + ', reponse ' + G(0) + ' / ' + (G(1) - G(0)));
           compte('5.6');
         }
-        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^5\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10') faux(ex[0], 'numerotation'); }
+        // calculs avances : f'' lue sur la fonction de l'introduction, convexite et points d'inflexion
+        for (const [k, num] of [['10', '5.10'], ['11', '5.11']]) {
+          ou = num;
+          const F = lireF(null, paramsAvances['t' + k]);
+          const ea = par(num + ' a)'), G = rep(ea); for (const x of XR) if (!proche(D2(F, x), G(x), 1e-4)) faux(ea, num + ' a) f\'\' numerique ' + D2(F, x) + ' <> reponse ' + G(x));
+          if (!estFactoriseComplet(ea.reponse, ea.formeFactorisee, ea.nbFacteurs)) faux(ea, num + ' a) la reponse attendue ne passe pas sa propre forme factorisee');
+          const ec = par(num + ' c)'), racines = ec.reponse.slice(1, -1).split(';').map(Number);
+          if (racines.length !== 2 || racines[0] === racines[1]) faux(ec, num + ' c) racines ' + ec.reponse);
+          convexite(par(num + ' b)'), F, racines);
+          // exactement deux changements de signe de f'' (les racines annoncees), aucun autre
+          let chg = [], prec = null; for (let t = -6.05; t < 6.2; t += 0.1) { const d = D2(F, t); if (Math.abs(d) < 1e-4) continue; const s = d > 0; if (prec !== null && s !== prec) chg.push(t); prec = s; }
+          if (chg.length !== 2 || racines.some((r) => !chg.some((t) => Math.abs(t - r) < 0.2))) faux(ec, num + ' c) changements de signe de f\'\' : ' + chg.map((t) => t.toFixed(2)).join(' ') + ' <> racines ' + ec.reponse);
+          compte(num);
+        }
+        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^5\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10,11') faux(ex[0], 'numerotation'); }
       } catch (er) { faux(ex[0], 'EXCEPTION dans ' + ou + ' : ' + er.message + ' | ' + (er.stack || '').split('\n')[1]); }
     }
     return { defauts, stats };
