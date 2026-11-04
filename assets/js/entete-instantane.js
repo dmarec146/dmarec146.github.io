@@ -21,7 +21,7 @@
   if (!nav) return;
   if (!document.body.classList.contains('sans-icones') && !nav.querySelector('[data-nav-auth]')) {
     var etat = null;
-    try { var v = window.localStorage.getItem('cahiers-nav-etat'); if (v === 'eleve' || v === 'enseignant') etat = v; } catch (e) { /* stockage indisponible */ }
+    try { var v = window.sessionStorage.getItem('cahiers-nav-etat'); if (v === 'eleve' || v === 'enseignant') etat = v; } catch (e) { /* stockage indisponible */ }
     var lien = document.createElement('a');
     lien.className = 'nav-icone-profil';
     lien.dataset.navAuth = 'true';

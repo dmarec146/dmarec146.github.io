@@ -248,6 +248,6 @@ onAuthStateChanged(auth, async (utilisateur) => {
   const jeton = await utilisateur.getIdTokenResult();
   if (jeton.claims.admin !== true) { window.location.replace('../index.html'); return; }
   document.querySelectorAll('.tdb-nav-carte[data-reserve-admin]').forEach((carte) => { carte.classList.add('admin-confirme'); });
-  try { window.localStorage.setItem('cahiers-admin', '1'); } catch (e) { /* stockage indisponible */ }
+  try { window.sessionStorage.setItem('cahiers-admin', '1'); } catch (e) { /* stockage indisponible */ }
   initialiser();
 });

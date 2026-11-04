@@ -99,4 +99,12 @@
     f.appendChild(liens);
     document.body.appendChild(f);
   }
+
+  // Vérification de version du site (04/11/2026) : voir version-site.js (sans effet hors Firebase Hosting).
+  if (script && script.src) {
+    var v = document.createElement('script');
+    v.src = new URL('version-site.js', script.src).href;
+    v.async = true;
+    document.head.appendChild(v);
+  }
 })();

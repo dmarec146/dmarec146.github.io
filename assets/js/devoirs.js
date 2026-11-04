@@ -252,9 +252,9 @@ onAuthStateChanged(auth, async (utilisateur) => {
   if (admin === true) {
     document.querySelectorAll('.tdb-nav-carte[data-reserve-admin]').forEach((carte) => { carte.classList.add('admin-confirme'); });
     document.documentElement.classList.add('admin-probable');
-    try { window.localStorage.setItem('cahiers-admin', '1'); } catch (e) { /* stockage indisponible */ }
+    try { window.sessionStorage.setItem('cahiers-admin', '1'); } catch (e) { /* stockage indisponible */ }
   } else {
-    try { window.localStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ }
+    try { window.sessionStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ }
     document.documentElement.classList.remove('admin-probable');
   }
   initialiser();

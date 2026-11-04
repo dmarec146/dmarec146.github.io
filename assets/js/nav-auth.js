@@ -45,12 +45,12 @@ const modulesFirebase = Promise.all([
 // l'etat reel venant ensuite de Firebase. Peut etre vide ou refuse (navigation privee) : sans consequence.
 const CLE_ETAT = 'cahiers-nav-etat';
 function lireEtatConnu() {
-  try { const v = window.localStorage.getItem(CLE_ETAT); return v === 'eleve' || v === 'enseignant' ? v : null; } catch (e) { return null; }
+  try { const v = window.sessionStorage.getItem(CLE_ETAT); return v === 'eleve' || v === 'enseignant' ? v : null; } catch (e) { return null; }
 }
 function memoriserEtat(role) {
-  try { if (role) window.localStorage.setItem(CLE_ETAT, role); else window.localStorage.removeItem(CLE_ETAT); } catch (e) { /* stockage indisponible */ }
+  try { if (role) window.sessionStorage.setItem(CLE_ETAT, role); else window.sessionStorage.removeItem(CLE_ETAT); } catch (e) { /* stockage indisponible */ }
   // le cache des devoirs (devoirs-notification.js) n'a de sens que pour un eleve connecte
-  if (role !== 'eleve') { try { window.localStorage.removeItem('cahiers-devoirs-cache'); } catch (e) { /* stockage indisponible */ } }
+  if (role !== 'eleve') { try { window.sessionStorage.removeItem('cahiers-devoirs-cache'); } catch (e) { /* stockage indisponible */ } }
 }
 
 // Icone "profil" classique (silhouette tete + epaules), reconnaissable sans
@@ -217,7 +217,7 @@ if (cible) {
     onAuthStateChanged(auth, async (utilisateur) => {
       if (!utilisateur) {
         memoriserEtat(null);
-        try { window.localStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ }
+        try { window.sessionStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ }
         // Pendant une deconnexion volontaire, la barre reste telle quelle jusqu'au changement de page.
         if (!window.__deconnexionEnCours) afficherEtat(null);
         return;
@@ -225,7 +225,7 @@ if (cible) {
       const resultatToken = await utilisateur.getIdTokenResult();
       const role = resultatToken.claims.admin === true || resultatToken.claims.enseignant === true ? 'enseignant' : 'eleve';
       memoriserEtat(role);
-      if (resultatToken.claims.admin !== true) { try { window.localStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ } }
+      if (resultatToken.claims.admin !== true) { try { window.sessionStorage.removeItem('cahiers-admin'); } catch (e) { /* stockage indisponible */ } }
       afficherEtat(role, identifiantAffichable(utilisateur));
     });
   }).catch((erreur) => console.warn('Navigation : Firebase indisponible.', erreur));

@@ -29,8 +29,8 @@ const ICONE_CLOCHE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidde
 // cache avant tout reseau, assets/js/vedette-accueil.js dessine ses cartes d'apres lui, puis ce script corrige s'il y a lieu (rien ne bouge si
 // l'etat est le meme). Efface a la deconnexion et pour un compte qui n'est pas un eleve (nav-auth.js, memoriserEtat).
 const CLE_CACHE = 'cahiers-devoirs-cache';
-function ecrireCache(donnees) { try { window.localStorage.setItem(CLE_CACHE, JSON.stringify(donnees)); } catch (e) { /* stockage indisponible */ } }
-function effacerCache() { try { window.localStorage.removeItem(CLE_CACHE); } catch (e) { /* stockage indisponible */ } }
+function ecrireCache(donnees) { try { window.sessionStorage.setItem(CLE_CACHE, JSON.stringify(donnees)); } catch (e) { /* stockage indisponible */ } }
+function effacerCache() { try { window.sessionStorage.removeItem(CLE_CACHE); } catch (e) { /* stockage indisponible */ } }
 
 function htmlBloc(nbAFaire) {
   return `

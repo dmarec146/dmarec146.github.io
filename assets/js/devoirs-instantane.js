@@ -4,7 +4,7 @@
 // le bloc (voir CLE_CACHE) ; la carte de devoir de l'accueil lit le meme cache (assets/js/vedette-accueil.js).
 (function () {
   try {
-    var c = JSON.parse(window.localStorage.getItem('cahiers-devoirs-cache') || 'null');
+    var c = JSON.parse(window.sessionStorage.getItem('cahiers-devoirs-cache') || 'null');
     var entete = document.querySelector('.site-entete');
     if (!c || !(c.n > 0) || typeof c.html !== 'string' || !entete || document.querySelector('.devoir-bloc-enveloppe')) return;
     var bloc = document.createElement('div');

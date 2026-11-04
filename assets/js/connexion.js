@@ -1,4 +1,4 @@
-import { auth, emailDepuisIdentifiant } from './firebase-config.js';
+import { auth, emailDepuisIdentifiant, marquerActivite } from './firebase-config.js';
 import { enregistrerConnexion } from './suivi.js';
 import {
   signInWithEmailAndPassword,
@@ -41,6 +41,15 @@ const zoneErreur = document.getElementById('connexion-erreur');
 const bouton = formulaire.querySelector('.connexion-bouton');
 const boutonAfficherMdp = document.getElementById('bouton-afficher-mdp');
 
+// Session expirée par inactivité (voir firebase-config.js) : on le dit une fois, à l'arrivée sur cette page.
+try {
+  if (window.sessionStorage.getItem('cahiers-session-expiree') === '1') {
+    window.sessionStorage.removeItem('cahiers-session-expiree');
+    zoneErreur.textContent = 'Ta session a expiré (une heure sans activité). Reconnecte-toi.';
+    zoneErreur.hidden = false;
+  }
+} catch (e) { /* stockage indisponible */ }
+
 boutonAfficherMdp.addEventListener('click', () => {
   const estVisible = champMotDePasse.type === 'text';
   champMotDePasse.type = estVisible ? 'password' : 'text';
@@ -73,6 +82,7 @@ formulaire.addEventListener('submit', async (evenement) => {
   connexionEnCours = true;
   try {
     const identifiants = await signInWithEmailAndPassword(auth, emailDepuisIdentifiant(identifiant), motDePasse);
+    marquerActivite();
     // Le journal des connexions concerne les eleves : pas celles d'un enseignant ou de l'administrateur.
     const { claims } = await identifiants.user.getIdTokenResult();
     if (claims.admin !== true && claims.enseignant !== true) await enregistrerConnexion(identifiants.user.uid);
