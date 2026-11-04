@@ -1,4 +1,4 @@
-// Liste statique des 54 fiches de cahiers de calcul (Première, Seconde et Terminale), regroupées par
+// Liste statique des 55 fiches de cahiers de calcul (Première, Seconde et Terminale), regroupées par
 // cahier — sert au sélecteur de fiche de l'outil d'attribution des devoirs
 // (tableau-de-bord/devoirs.html). Extraite une fois des 18 sommaires de cahier
 // (cahiers/<niveau>/cahier-N/index.html) ; à tenir à jour à la main si une fiche est
@@ -99,6 +99,9 @@ export const MANIFESTE_CAHIERS = [
     { href: 'fiche-03.html', numero: 3, nom: 'Équations différentielles I' },
     { href: 'fiche-04.html', numero: 4, nom: 'Équations différentielles II' },
   ]},
+  { niveau: 'terminale', cahier: 'cahier-3', titreCahier: 'Cahier 3 — Dérivation et limites de fonctions', fiches: [
+    { href: 'fiche-05.html', numero: 5, nom: 'Dérivée des fonctions composées' },
+  ]},
 ];
 
 function libelleNiveau(niveau) {
@@ -112,7 +115,7 @@ export function ficheIdDepuis(niveau, cahier, href) {
   return `/cahiers/${niveau}/${cahier}/${href}`;
 }
 
-// Liste à plat des 54 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
+// Liste à plat des 55 fiches, prête pour un <select> : { ficheId, titre, niveau, cahier }.
 export const FICHES_PLATES = MANIFESTE_CAHIERS.flatMap((c) =>
   c.fiches.map((f) => ({
     ficheId: ficheIdDepuis(c.niveau, c.cahier, f.href),

@@ -63,6 +63,7 @@ const FICHES = {
   'T02': 'cahiers/terminale/cahier-1/fiche-02.html',
   'T03': 'cahiers/terminale/cahier-2/fiche-03.html',
   'T04': 'cahiers/terminale/cahier-2/fiche-04.html',
+  'T05': 'cahiers/terminale/cahier-3/fiche-05.html',
 };
 
 const [, , num, option] = process.argv;
