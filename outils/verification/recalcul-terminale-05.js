@@ -41,7 +41,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-05.html';
       const spec = e.intervalleSpec;
       const pts = [];
       for (let t = -6.05; t < 6.2; t += 0.1) pts.push(t);
-      for (const t of pts) { const d = D2(F, t); if (Math.abs(d) < 1e-4) continue; if ((d > 0) !== dans(spec, t)) faux(e, e.id + ' convexite en x = ' + t.toFixed(2) + ' : f\'\' = ' + d.toExponential(2)); }
+      for (const t of pts) { const d = D2(F, t); if (Math.abs(d) < 1e-4) continue; if (((/concave/.test(e.enonce) ? d < 0 : d > 0)) !== dans(spec, t)) faux(e, e.id + ' convexite en x = ' + t.toFixed(2) + ' : f\'\' = ' + d.toExponential(2)); }
       for (const r of racines) { if (!proche(D2(F, r), 0, 1e-3) && Math.abs(D2(F, r)) > 1e-3) faux(e, e.id + ' f\'\'(' + r + ') = ' + D2(F, r)); const inclus = spec.liste.some((iv) => iv.haut === r && iv.inclusHaut) || spec.liste.some((iv) => iv.bas === r && iv.inclusBas); if (!inclus) faux(e, e.id + ' borne ' + r + ' non incluse'); }
     };
     for (let tt = 0; tt < N; tt++) {
