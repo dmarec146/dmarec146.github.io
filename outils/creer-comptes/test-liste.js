@@ -94,6 +94,38 @@ const ecrire = (nom, contenu) => { const c = path.join(dossier, nom); fs.writeFi
   const profPaul = await db.collection('eleves').where('enseignant', '==', autre.uid).get();
   verif('les 2 eleves sont rattaches a Paul', profPaul.size === 2, profPaul.size);
 
+  console.log('Reinitialisation des mots de passe et nouvelles etiquettes (reinitialiser-etiquettes.js)');
+  const lirePremierCsv = () => {
+    const dossiers = fs.readdirSync(path.join(racine, 'paul.martin@ac-creteil.fr')).sort();
+    const dernier = path.join(racine, 'paul.martin@ac-creteil.fr', dossiers[dossiers.length - 1]);
+    return fs.readFileSync(path.join(dernier, 'comptes-2nde-9.csv'), 'utf8').split('\n').slice(1).map((l) => l.split(';').map((c) => c.replace(/^"|"$/g, '')));
+  };
+  const anciens = lirePremierCsv();      // [Nom, Prenom, Identifiant, MotDePasse]
+  // (un nouvel essai en cas de coupure de connexion avec l'emulateur : arrive apres un changement de mot de passe)
+  const connexion = async (pseudo, mdp) => { for (let i = 0; i < 3; i++) { try { return await connexionUnique(pseudo, mdp); } catch (e) { await new Promise((r) => setTimeout(r, 300)); } } return connexionUnique(pseudo, mdp); };
+  const connexionUnique = (pseudo, mdp) => fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=cle`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: pseudo + '@cahiers-interactifs.local', password: mdp, returnSecureToken: true }),
+  });
+  const reinit = (...a) => spawnSync(process.execPath, [path.join(__dirname, 'reinitialiser-etiquettes.js'), '2nde-9', '--enseignant=paul.martin@ac-creteil.fr', `--racine=${racine}`, ...a], { encoding: 'utf8', env: process.env });
+  const simul = reinit();
+  verif('simulation : liste les eleves, rien change', /2 eleve\(s\) ; deja connecte\(s\) : 0/.test(simul.stdout) && /SIMULATION/.test(simul.stdout), simul.stdout + simul.stderr);
+  verif('simulation : ancien mot de passe toujours valide', (await connexion(anciens[0][2], anciens[0][3])).ok);
+  await connexion(anciens[1][2], anciens[1][3]);                       // Bob se connecte une fois : l'emulateur horodate
+  await new Promise((r) => setTimeout(r, 6000));
+  await connexion(anciens[1][2], anciens[1][3]);
+  const refus = reinit('--oui');
+  verif('refuse si un eleve s\'est deja connecte', refus.status !== 0 && /deja connecte|SE DEJA CONNECTE/.test(refus.stdout + refus.stderr), refus.stdout + refus.stderr);
+  verif('refus : ancien mot de passe de Bob inchange', (await connexion(anciens[1][2], anciens[1][3])).ok);
+  const forcee = reinit('--oui', '--forcer');
+  verif('avec --forcer : 2 mots de passe reinitialises', /2 mot\(s\) de passe reinitialise\(s\) sur 2/.test(forcee.stdout), forcee.stdout + forcee.stderr);
+  const nouveaux = lirePremierCsv();
+  verif('nouveaux mots de passe differents des anciens', nouveaux[0][3] !== anciens[0][3] && nouveaux[1][3] !== anciens[1][3] && nouveaux.every((n) => n[3].length === 10));
+  verif('ancien mot de passe refuse', !(await connexion(anciens[0][2], anciens[0][3])).ok);
+  verif('nouveau mot de passe accepte', (await connexion(nouveaux[0][2], nouveaux[0][3])).ok && (await connexion(nouveaux[1][2], nouveaux[1][3])).ok);
+  verif('etiquettes refaites (PDF et images)', fs.readdirSync(path.join(racine, 'paul.martin@ac-creteil.fr')).length >= 2);
+  const inconnue = spawnSync(process.execPath, [path.join(__dirname, 'reinitialiser-etiquettes.js', ''), 'classe-inexistante'], { encoding: 'utf8', env: process.env });
+  verif('classe inconnue refusee', inconnue.status !== 0 && /Aucun eleve/.test(inconnue.stderr + inconnue.stdout), inconnue.stderr);
+
   fs.rmSync(dossier, { recursive: true, force: true });
   console.log(`\n${ok} reussis, ${ko} echecs`);
   process.exit(ko ? 1 : 0);

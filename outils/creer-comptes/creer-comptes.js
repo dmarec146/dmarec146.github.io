@@ -409,4 +409,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant, lireListeEleves };
+module.exports = { initialiserAdmin, creerComptesEleves, inviterEnseignant, lireListeEleves, genererMotDePasse };
