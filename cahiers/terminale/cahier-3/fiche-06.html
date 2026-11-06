@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.5 d)":1.25,"6.6 a)":1,"6.6 b)":1,"6.7 a)":0.75,"6.7 b)":1.25,"6.7 c)":1,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.8 d)":1,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.9 d)":1.25,"6.10 a)":1.25,"6.10 b)":1.25,"6.11 a)":1,"6.11 b)":1,"6.11 c)":1,"6.11 d)":1.25,"6.12 a)":1.25,"6.12 b)":1.25,"6.13 a)":1.75,"6.13 b)":1.5,"6.13 c)":1.5,"6.14 a)":1.5,"6.14 b)":1.5,"6.14 c)":1.75,"6.14 d)":1.5},"bonus":["6.13 a)","6.13 b)","6.13 c)","6.14 a)","6.14 b)","6.14 c)","6.14 d)"]});
+Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.5 d)":1.25,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.7 d)":1,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.8 d)":1,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.9 d)":1.25,"6.10 a)":1.25,"6.10 b)":1.25,"6.11 a)":1,"6.11 b)":1,"6.11 c)":1,"6.11 d)":1.25,"6.12 a)":1.25,"6.12 b)":1.25,"6.13 a)":1.75,"6.13 b)":1.5,"6.13 c)":1.5,"6.14 a)":1.5,"6.14 b)":1.5,"6.14 c)":1.75,"6.14 d)":1.5},"bonus":["6.13 a)","6.13 b)","6.13 c)","6.14 a)","6.14 b)","6.14 c)","6.14 d)"]});
 </script>
 <style>
   :root {
@@ -1015,10 +1015,10 @@ Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,
 <p class="calcul-titre"><span>Calcul 6.5 — Limites en l'infini de quotients.</span><span class="picto-niveau"></span></p>
 <div class="question-grille" id="grille-6-5"></div>
 
-<p class="calcul-titre"><span>Calcul 6.6 — Limites de différences.</span><span class="picto-niveau"></span></p>
+<p class="calcul-titre"><span>Calcul 6.6 — Limites en un point : premiers exemples.</span><span class="picto-niveau"></span></p>
 <div class="question-grille" id="grille-6-6"></div>
 
-<p class="calcul-titre"><span>Calcul 6.7 — Limites en un point : premiers exemples.</span><span class="picto-niveau"></span></p>
+<p class="calcul-titre"><span>Calcul 6.7 — Limites en un point : quotients de polynômes.</span><span class="picto-niveau"></span></p>
 <div class="question-grille" id="grille-6-7"></div>
 
 <p class="calcul-titre"><span>Calcul 6.8 — Limites en un point : exemples plus délicats.</span><span class="picto-niveau"></span></p>
@@ -1384,34 +1384,48 @@ function genererExercices() {
     }
   }
 
-  // ---------- 6.6 : differences ----------
-  {
-    // a) a/x - b/x^2 en 0+
-    const a = non0(-4, 4), b = non0(-4, 4), s = b > 0 ? -1 : 1;     // (ax - b)/x^2 : numerateur -> -b, denominateur -> 0+
-    limite('6.6 a)', { a: 0, cote: '+' }, `\\left(\\dfrac{${a}}{x}${b < 0 ? '+' : '-'}\\dfrac{${Math.abs(b)}}{x^{2}}\\right)`, { t: 'inf', s }, infTex(s),
-      [`\\dfrac{${a}}{x}${b < 0 ? '+' : '-'}\\dfrac{${Math.abs(b)}}{x^{2}} = \\dfrac{${sommeTex([[a, 'x'], [-b, '']])}}{x^{2}}`, `\\text{Le numérateur tend vers } ${-b}`, `\\text{Le dénominateur tend vers } 0^{+}`]);
-    // b) (x + a)^2 - (x + b)^2 en +infini
-    let a2, b2;
-    do { a2 = non0(-4, 4); b2 = non0(-4, 4); } while (a2 === b2);
-    const s2 = a2 > b2 ? 1 : -1;
-    limite('6.6 b)', '+inf', `\\left(\\left(x${sg(a2)}\\right)^{2}-\\left(x${sg(b2)}\\right)^{2}\\right)`, { t: 'inf', s: s2 }, infTex(s2),
-      [`\\left(x${sg(a2)}\\right)^{2}-\\left(x${sg(b2)}\\right)^{2} = ${sommeTex([[2 * (a2 - b2), 'x'], [a2 * a2 - b2 * b2, '']])}`, `\\text{Terme dominant : } ${sommeTex([[2 * (a2 - b2), 'x']])}`]);
-  }
-
-  // ---------- 6.7 : limites en un point, premiers exemples : k/(x + a), k/(x^2 - c^2), k/(x - a)^2 ----------
+  // ---------- 6.6 : limites en un point, premiers exemples : k/(x + a), k/(x^2 - c^2), k/(x - a)^2 ----------
   {
     // a) k / (x + a), a gauche ou a droite de -a
     const a = non0(-4, 4), k = non0(-5, 5), cote = piocher(['+', '-']), s = Math.sign(k) * (cote === '+' ? 1 : -1);
-    limite('6.7 a)', { a: -a, cote }, '\\dfrac{' + k + '}{x' + sg(a) + '}', { t: 'inf', s }, infTex(s),
+    limite('6.6 a)', { a: -a, cote }, '\\dfrac{' + k + '}{x' + sg(a) + '}', { t: 'inf', s }, infTex(s),
       ['\\text{Le numérateur tend vers } ' + k, '\\text{Le dénominateur tend vers } 0^{' + cote + '}']);
     // b) k / (x^2 - p^2), en p ou en -p, a gauche ou a droite
     const p = non0(-3, 3), k2 = non0(-5, 5), cote2 = piocher(['+', '-']), sden = (cote2 === '+' ? 1 : -1) * Math.sign(p), s2 = Math.sign(k2) * sden;
-    limite('6.7 b)', { a: p, cote: cote2 }, '\\dfrac{' + k2 + '}{x^{2}-' + p * p + '}', { t: 'inf', s: s2 }, infTex(s2),
+    limite('6.6 b)', { a: p, cote: cote2 }, '\\dfrac{' + k2 + '}{x^{2}-' + p * p + '}', { t: 'inf', s: s2 }, infTex(s2),
       ['\\dfrac{' + k2 + '}{x^{2}-' + p * p + '} = \\dfrac{' + k2 + '}{\\left(x' + sg(-p) + '\\right)\\left(x' + sg(p) + '\\right)}', '\\text{Le numérateur tend vers } ' + k2, '\\text{Le dénominateur tend vers } 0^{' + (sden > 0 ? '+' : '-') + '}']);
     // c) k / (x - a)^2 en a (le carre est positif)
     const a3 = non0(-4, 4), k3 = non0(-5, 5), s3 = Math.sign(k3);
-    limite('6.7 c)', { a: a3, cote: 0 }, '\\dfrac{' + k3 + '}{\\left(x' + sg(-a3) + '\\right)^{2}}', { t: 'inf', s: s3 }, infTex(s3),
+    limite('6.6 c)', { a: a3, cote: 0 }, '\\dfrac{' + k3 + '}{\\left(x' + sg(-a3) + '\\right)^{2}}', { t: 'inf', s: s3 }, infTex(s3),
       ['\\text{Le numérateur tend vers } ' + k3, '\\text{Le dénominateur tend vers } 0^{+}']);
+  }
+
+  // ---------- 6.7 : limites en un point d'un quotient de polynomes, sans simplification ----------
+  {
+    // a) substitution directe : (x^2 + bx + c)/(dx + e) en a, denominateur non nul
+    let a, b, c, d, e;
+    do { a = non0(-4, 4); b = non0(-5, 5); c = alea(-6, 6); d = non0(-4, 4); e = alea(-6, 6); } while (d * a + e === 0 || a * a + b * a + c === 0);
+    const num = a * a + b * a + c, den = d * a + e, L = math.fraction(num, den), brut = (num < 0) !== (den < 0) ? '-\\dfrac{' + Math.abs(num) + '}{' + Math.abs(den) + '}' : '\\dfrac{' + Math.abs(num) + '}{' + Math.abs(den) + '}';
+    limite('6.7 a)', { a, cote: 0 }, '\\dfrac{' + polyTex([c, b, 1]) + '}{' + polyTex([e, d]) + '}', { t: 'fini', v: num / den, rep: frStr(L) }, finNombre(L),
+      ['\\text{Le numérateur tend vers } ' + num, '\\text{Le dénominateur tend vers } ' + den, ...(brut === finNombre(L) || Math.abs(den) === 1 ? [] : [brut + ' = ' + finNombre(L)])]);
+    // b) numerateur affine non nul au pole, denominateur x^2 - s^2 : limite a droite ou a gauche de s ou de -s
+    let s1, p1, u1, v1, cote1;
+    do { s1 = alea(1, 3); p1 = piocher([s1, -s1]); u1 = non0(-4, 4); v1 = non0(-6, 6); cote1 = piocher(['+', '-']); } while (u1 * p1 + v1 === 0);
+    const n1 = u1 * p1 + v1, sden1 = (cote1 === '+' ? 1 : -1) * Math.sign(p1), sig1 = Math.sign(n1) * sden1;
+    limite('6.7 b)', { a: p1, cote: cote1 }, '\\dfrac{' + polyTex([v1, u1]) + '}{x^{2}-' + s1 * s1 + '}', { t: 'inf', s: sig1 }, infTex(sig1),
+      ['\\dfrac{' + polyTex([v1, u1]) + '}{x^{2}-' + s1 * s1 + '} = \\dfrac{' + polyTex([v1, u1]) + '}{\\left(x' + sg(-s1) + '\\right)\\left(x' + sg(s1) + '\\right)}', '\\text{Le numérateur tend vers } ' + n1, '\\text{Le dénominateur tend vers } 0^{' + (sden1 > 0 ? '+' : '-') + '}']);
+    // c) denominateur deja factorise (x - p)(x - q), limite a droite ou a gauche de p : le second facteur change le signe
+    let p2, q2, u2, v2, cote2;
+    do { p2 = non0(-4, 4); q2 = non0(-4, 4); u2 = non0(-4, 4); v2 = non0(-6, 6); cote2 = piocher(['+', '-']); } while (p2 === q2 || u2 * p2 + v2 === 0);
+    const n2 = u2 * p2 + v2, sden2 = (cote2 === '+' ? 1 : -1) * Math.sign(p2 - q2), sig2 = Math.sign(n2) * sden2;
+    limite('6.7 c)', { a: p2, cote: cote2 }, '\\dfrac{' + polyTex([v2, u2]) + '}{\\left(x' + sg(-p2) + '\\right)\\left(x' + sg(-q2) + '\\right)}', { t: 'inf', s: sig2 }, infTex(sig2),
+      ['\\text{Le numérateur tend vers } ' + n2, '\\text{Le facteur } x' + sg(-p2) + ' \\text{ tend vers } 0^{' + cote2 + '}', '\\text{Le facteur } x' + sg(-q2) + ' \\text{ tend vers } ' + (p2 - q2), '\\text{Le dénominateur tend vers } 0^{' + (sden2 > 0 ? '+' : '-') + '}']);
+    // d) facteur au carre : (x - p)^2 (x - q) en p (limite des deux cotes)
+    let p3, q3, u3, v3;
+    do { p3 = non0(-4, 4); q3 = non0(-4, 4); u3 = non0(-4, 4); v3 = non0(-6, 6); } while (p3 === q3 || u3 * p3 + v3 === 0);
+    const n3 = u3 * p3 + v3, sden3 = Math.sign(p3 - q3), sig3 = Math.sign(n3) * sden3;
+    limite('6.7 d)', { a: p3, cote: 0 }, '\\dfrac{' + polyTex([v3, u3]) + '}{\\left(x' + sg(-p3) + '\\right)^{2}\\left(x' + sg(-q3) + '\\right)}', { t: 'inf', s: sig3 }, infTex(sig3),
+      ['\\text{Le numérateur tend vers } ' + n3, '\\text{Le facteur } \\left(x' + sg(-p3) + '\\right)^{2} \\text{ tend vers } 0^{+}', '\\text{Le facteur } x' + sg(-q3) + ' \\text{ tend vers } ' + (p3 - q3), '\\text{Le dénominateur tend vers } 0^{' + (sden3 > 0 ? '+' : '-') + '}']);
   }
 
   // ---------- 6.8 : limites en un point ----------
