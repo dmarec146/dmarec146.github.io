@@ -36,7 +36,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
       const s = String(src).replace(/^\\displaystyle/, ''), i = s.indexOf('_{');
       if (i < 0) throw new Error('pas de limite : ' + src);
       let prof = 0, j = i + 1; for (; j < s.length; j++) { if (s[j] === '{') prof++; else if (s[j] === '}') { prof--; if (prof === 0) break; } }
-      const brut = s.slice(i + 2, j).replace(/^x\\to\s*/, '').trim(), expr = s.slice(j + 1);
+      const brut = s.slice(i + 2, j).replace(/^\\textstyle\s*/, '').replace(/^x\\to\s*/, '').trim(), expr = s.slice(j + 1);
       let pt;
       if (brut === '+\\infty') pt = '+inf'; else if (brut === '-\\infty') pt = '-inf';
       else { const m = brut.match(/^(-?\d+)(\^\{([+-])\})?$/); if (!m) throw new Error('point illisible : ' + brut); pt = { a: Number(m[1]), cote: m[3] || 0 }; }
@@ -65,8 +65,8 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
       return res[0];
     };
     // formes indeterminees reconnues sur l'ecriture AFFICHEE (independamment du generateur)
-    const estFI = (enonce) => /lim_\{x\\to \+\\infty\}\\left\(e\^\{x\}-x(\^\{\d+\})?\\right\)/.test(enonce) || /lim_\{x\\to \+\\infty\}\\dfrac\{\\ln\(x\)\}\{x(\^\{\d+\})?\}/.test(enonce)
-      || /lim_\{x\\to -\\infty\}(x\\,|x\^\{\d+\})e\^\{x\}/.test(enonce) || /lim_\{x\\to -?\d+\}\\dfrac\{x\^\{2\}-\d+\}\{x[+-]\d+\}/.test(enonce);
+    const estFI = (enonce) => /lim_\{\\textstyle x\\to \+\\infty\}\\left\(e\^\{x\}-x(\^\{\d+\})?\\right\)/.test(enonce) || /lim_\{\\textstyle x\\to \+\\infty\}\\dfrac\{\\ln\(x\)\}\{x(\^\{\d+\})?\}/.test(enonce)
+      || /lim_\{\\textstyle x\\to -\\infty\}(x\\,|x\^\{\d+\})e\^\{x\}/.test(enonce) || /lim_\{\\textstyle x\\to -?\d+\}\\dfrac\{x\^\{2\}-\d+\}\{x[+-]\d+\}/.test(enonce);
     const verifierLimite = (e, source) => {
       const { pt, expr } = decouper(formules(e.enonce)[0]);
       const src = mj(source === undefined ? expr : source.replace(/^f\(x\)=/, ''));
