@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.5 d)":1.25,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.7 d)":1,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.8 d)":1,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.9 d)":1.25,"6.10 a)":1,"6.10 b)":1,"6.10 c)":1,"6.11 a)":0.75,"6.11 b)":1,"6.11 c)":1.25,"6.11 d)":1.25,"6.12 a)":1.75,"6.12 b)":1.5,"6.12 c)":1.5},"bonus":["6.12 a)","6.12 b)","6.12 c)"]});
+Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.10 a)":1,"6.10 b)":1,"6.10 c)":1,"6.11 a)":0.75,"6.11 b)":1,"6.11 c)":1.25,"6.12 a)":1.75,"6.12 b)":1.5,"6.12 c)":1.5},"bonus":["6.12 a)","6.12 b)","6.12 c)"]});
 </script>
 <style>
   :root {
@@ -1370,12 +1370,6 @@ function genererExercices() {
       limite('6.5 c)', pt, `\\dfrac{${polyTex(P)}}{${polyTex(Q)}}`, { t: 'fini', v: 0, rep: '0' }, '0',
         [`\\text{Terme dominant du numérateur : } ${dom(la, p)}`, `\\text{Terme dominant du dénominateur : } ${dom(lb, q)}`, `\\dfrac{${dom(la, p)}}{${dom(lb, q)}} = ${(la < 0) !== (lb < 0) ? '-' : ''}\\dfrac{${Math.abs(la)}}{${Math.abs(lb) === 1 ? '' : Math.abs(lb)}${monome(q - p)}}`]);
     }
-    // d) avec une racine carree : sqrt(s^2 x^2 + bx) / (cx + d) en +infini
-    {
-      const sq = piocher([2, 3]), b = alea(1, 6), c = alea(1, 5), d = non0(-5, 5), L = math.fraction(sq, c);
-      limite('6.5 d)', '+inf', `\\dfrac{\\sqrt{${sq * sq}x^{2}+${b === 1 ? '' : b}x}}{${polyTex([d, c])}}`, { t: 'fini', v: sq / c, rep: frStr(L) }, finNombre(L),
-        [`\\text{Pour } x \\text{ grand, le numérateur}`, `\\text{se comporte comme } ${sq}x`, `\\text{Terme dominant du dénominateur : } ${pref(c)}x`, `\\dfrac{${sq}x}{${pref(c)}x} = ${finNombre(L)}`]);
-    }
   }
 
   // ---------- 6.6 : limites en un point, premiers exemples : k/(x + a), k/(x^2 - c^2), k/(x - a)^2 ----------
@@ -1414,12 +1408,6 @@ function genererExercices() {
     const n2 = u2 * p2 + v2, sden2 = (cote2 === '+' ? 1 : -1) * Math.sign(p2 - q2), sig2 = Math.sign(n2) * sden2;
     limite('6.7 c)', { a: p2, cote: cote2 }, '\\dfrac{' + polyTex([v2, u2]) + '}{\\left(x' + sg(-p2) + '\\right)\\left(x' + sg(-q2) + '\\right)}', { t: 'inf', s: sig2 }, infTex(sig2),
       ['\\text{Le numérateur tend vers } ' + n2, '\\text{Le facteur } x' + sg(-p2) + ' \\text{ tend vers } 0^{' + cote2 + '}', '\\text{Le facteur } x' + sg(-q2) + ' \\text{ tend vers } ' + (p2 - q2), '\\text{Le dénominateur tend vers } 0^{' + (sden2 > 0 ? '+' : '-') + '}']);
-    // d) facteur au carre : (x - p)^2 (x - q) en p (limite des deux cotes)
-    let p3, q3, u3, v3;
-    do { p3 = non0(-4, 4); q3 = non0(-4, 4); u3 = non0(-4, 4); v3 = non0(-6, 6); } while (p3 === q3 || u3 * p3 + v3 === 0);
-    const n3 = u3 * p3 + v3, sden3 = Math.sign(p3 - q3), sig3 = Math.sign(n3) * sden3;
-    limite('6.7 d)', { a: p3, cote: 0 }, '\\dfrac{' + polyTex([v3, u3]) + '}{\\left(x' + sg(-p3) + '\\right)^{2}\\left(x' + sg(-q3) + '\\right)}', { t: 'inf', s: sig3 }, infTex(sig3),
-      ['\\text{Le numérateur tend vers } ' + n3, '\\text{Le facteur } \\left(x' + sg(-p3) + '\\right)^{2} \\text{ tend vers } 0^{+}', '\\text{Le facteur } x' + sg(-q3) + ' \\text{ tend vers } ' + (p3 - q3), '\\text{Le dénominateur tend vers } 0^{' + (sden3 > 0 ? '+' : '-') + '}']);
   }
 
   // ---------- 6.8 : limites en un point ----------
@@ -1438,10 +1426,6 @@ function genererExercices() {
     const L = math.fraction(q - p, r - p), x0 = -p;
     limite('6.8 c)', { a: x0, cote: 0 }, `\\dfrac{${polyTex([p * q, p + q, 1])}}{${polyTex([p * r, p + r, 1])}}`, { t: 'fini', v: (q - p) / (r - p), rep: frStr(L) }, finNombre(L),
       [`\\dfrac{${polyTex([p * q, p + q, 1])}}{${polyTex([p * r, p + r, 1])}} = \\dfrac{\\left(x${sg(p)}\\right)\\left(x${sg(q)}\\right)}{\\left(x${sg(p)}\\right)\\left(x${sg(r)}\\right)}`, `= \\dfrac{x${sg(q)}}{x${sg(r)}}`, `\\dfrac{${x0}${sg(q)}}{${x0}${sg(r)}} = ${finNombre(L)}`]);
-    // d) (x^3 - a^3) / (x - a), en a
-    const a3 = non0(-3, 3), c3 = -a3 * a3 * a3;
-    limite('6.8 d)', { a: a3, cote: 0 }, `\\dfrac{x^{3}${c3 < 0 ? '-' : '+'}${Math.abs(c3)}}{x${sg(-a3)}}`, { t: 'fini', v: 3 * a3 * a3, rep: String(3 * a3 * a3) }, String(3 * a3 * a3),
-      [`\\dfrac{x^{3}${c3 < 0 ? '-' : '+'}${Math.abs(c3)}}{x${sg(-a3)}} = \\dfrac{\\left(x${sg(-a3)}\\right)\\left(x^{2}${cf(a3, 'x')}+${a3 * a3}\\right)}{x${sg(-a3)}}`, `= x^{2}${cf(a3, 'x')}+${a3 * a3}`, `${pn(a3)}^{2}+${pn(a3)}\\times ${pn(a3)}+${a3 * a3} = ${3 * a3 * a3}`]);
   }
 
   // ---------- 6.9 : croissances comparees, exponentielle ----------
@@ -1453,14 +1437,10 @@ function genererExercices() {
     const m = alea(3, 6), k = non0(-4, 4);
     limite('6.9 b)', '+inf', `\\dfrac{e^{x}-x^{${m}}}{x${sg(k)}}`, { t: 'inf', s: 1 }, '+\\infty',
       [`\\dfrac{e^{x}-x^{${m}}}{x${sg(k)}} = \\dfrac{e^{x}\\left(1-x^{${m}}e^{-x}\\right)}{x${sg(k)}}`, `\\text{Par croissances comparées, } x^{${m}}e^{-x} \\text{ tend vers } 0`, `\\text{Le facteur } 1-x^{${m}}e^{-x} \\text{ tend vers } 1`, `\\text{Par croissances comparées :}`, `\\dfrac{e^{x}}{x${sg(k)}} \\text{ tend vers } +\\infty`]);
-    // c) (e^(x-a) + b e^x)/(e^x + x) en +infini
-    const a = alea(1, 6), b = non0(-4, 4), L = `e^{-${a}}${sg(b)}`, num = `e^{x-${a}}${cf(b, 'e^{x}')}`;
-    limite('6.9 c)', '+inf', `\\dfrac{${num}}{e^{x}+x}`, { t: 'fini', v: Math.exp(-a) + b, rep: `exp(-${a})+(${b})` }, L,
-      [`\\dfrac{${num}}{e^{x}+x} = \\dfrac{e^{x}\\left(e^{-${a}}${sg(b)}\\right)}{e^{x}\\left(1+x\\,e^{-x}\\right)}`, `= \\dfrac{e^{-${a}}${sg(b)}}{1+x\\,e^{-x}}`, `\\text{Par croissances comparées, } x\\,e^{-x} \\text{ tend vers } 0`]);
-    // d) x^n e^(1/x) en 0+ : changement de variable X = 1/x
+    // c) x^n e^(1/x) en 0+ : changement de variable X = 1/x
     {
       const n4 = alea(1, 2);
-      limite('6.9 d)', { a: 0, cote: '+' }, `${xe(n4)}e^{\\frac{1}{x}}`, { t: 'inf', s: 1 }, '+\\infty',
+      limite('6.9 c)', { a: 0, cote: '+' }, `${xe(n4)}e^{\\frac{1}{x}}`, { t: 'inf', s: 1 }, '+\\infty',
         [`\\text{On pose } X = \\dfrac{1}{x}`, `\\text{L'expression devient } \\dfrac{e^{X}}{${monome(n4).replace(/x/g, 'X')}}`, `\\text{Quand } x \\text{ tend vers } 0^{+} \\text{, } X \\text{ tend vers } +\\infty`, `\\text{Par croissances comparées :}`, `\\dfrac{e^{X}}{${monome(n4).replace(/x/g, 'X')}} \\text{ tend vers } +\\infty`]);
     }
   }
@@ -1503,9 +1483,6 @@ function genererExercices() {
     const a = alea(2, 5);
     limite('6.11 c)', '+inf', `\\left(\\ln\\left(e^{x}+${a}x\\right)-x\\right)`, { t: 'fini', v: 0, rep: '0' }, '0',
       [`\\ln\\left(e^{x}+${a}x\\right) = x+\\ln\\left(1+${a}x\\,e^{-x}\\right)`, `\\ln\\left(e^{x}+${a}x\\right)-x = \\ln\\left(1+${a}x\\,e^{-x}\\right)`, `\\text{Par croissances comparées, } x\\,e^{-x} \\text{ tend vers } 0`]);
-    const a2 = alea(2, 4), b2 = non0(-4, 4), t = cf(b2, 'x');
-    limite('6.11 d)', '+inf', `\\left(\\ln\\left(${a2}x^{2}${t}\\right)-2\\ln(x)\\right)`, { t: 'fini', v: Math.log(a2), rep: `ln(${a2})` }, `\\ln(${a2})`,
-      [`\\ln\\left(${a2}x^{2}${t}\\right) = 2\\ln(x)+\\ln\\left(${a2}${b2 < 0 ? '-' : '+'}\\dfrac{${Math.abs(b2)}}{x}\\right)`, `\\text{Le terme } \\ln\\left(${a2}${b2 < 0 ? '-' : '+'}\\dfrac{${Math.abs(b2)}}{x}\\right) \\text{ tend vers } \\ln(${a2})`]);
   }
 
   // ---------- 6.12 : une asymptote oblique, f(x) = (a x^2 + b x + c)/(x - d) (calcul avance) ----------
