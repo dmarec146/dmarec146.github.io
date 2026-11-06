@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.5 d)":1.25,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.7 d)":1,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.8 d)":1,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.9 d)":1.25,"6.10 a)":1,"6.10 b)":1,"6.10 c)":1,"6.11 a)":0.75,"6.11 b)":1,"6.11 c)":1.25,"6.11 d)":1.25,"6.12 a)":1.75,"6.12 b)":1.5,"6.12 c)":1.5,"6.13 a)":1.5,"6.13 b)":1.5,"6.13 c)":1.75,"6.13 d)":1.5},"bonus":["6.12 a)","6.12 b)","6.12 c)","6.13 a)","6.13 b)","6.13 c)","6.13 d)"]});
+Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.5 d)":1.25,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.7 d)":1,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.8 d)":1,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.9 d)":1.25,"6.10 a)":1,"6.10 b)":1,"6.10 c)":1,"6.11 a)":0.75,"6.11 b)":1,"6.11 c)":1.25,"6.11 d)":1.25,"6.12 a)":1.75,"6.12 b)":1.5,"6.12 c)":1.5},"bonus":["6.12 a)","6.12 b)","6.12 c)"]});
 </script>
 <style>
   :root {
@@ -1046,10 +1046,6 @@ Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,
 <div id="intro-6-12"></div>
 <div class="question-grille" id="grille-6-12"></div>
 
-<p class="calcul-titre"><span>Calcul 6.13 — Limites aux bornes d'une fonction.</span><span class="picto-niveau"></span></p>
-<div id="intro-6-13"></div>
-<div class="question-grille" id="grille-6-13"></div>
-
 </div>
 
 <div class="barre-controle">
@@ -1527,17 +1523,6 @@ function genererExercices() {
     const droite = sommeTex([[al, 'x'], [be, '']]);
     ex.push({ id: '6.12 c)', type: 'alg', texteLibre: true, formeYax: true, enonce: `Déterminer l'équation de l'asymptote oblique à la courbe représentative de \\(f\\) en \\(+\\infty\\)`, reponse: `(${al})*x+(${be})`, correctionLatex: `y = ${droite}`,
       detail: { lignes: [`f(x)-\\left(${droite}\\right) = \\dfrac{${ga}}{x${sg(-d)}}`, `\\text{Cette différence tend vers } 0 \\text{ en } +\\infty`, `y = ${droite}`], final: `y = ${droite}` } });
-  }
-
-  // ---------- 6.13 : limites aux bornes de f(x) = k e^x / (x - d) (calcul avance) ----------
-  {
-    const k = piocher([1, 2, -1, -2]), d = non0(-3, 3), sk = k > 0 ? 1 : -1;
-    paramsAvances.t13 = `<p>On considère la fonction \\(f\\) définie sur \\(\\mathbb{R}\\setminus\\{${d}\\}\\) par \\(f(x)=\\dfrac{${pref(k)}e^{x}}{x${sg(-d)}}\\).</p>`;
-    const corps = (pt, s, lignes) => ({ type: 'num', texteLibre: true, limite: s === 0 ? { t: 'fini', v: 0, rep: '0' } : { t: 'inf', s }, enonce: `\\(\\displaystyle\\lim_{x\\to ${ptTex(pt)}}f(x)\\)`, reponse: s === 0 ? '0' : (s > 0 ? '+oo' : '-oo'), correctionLatex: s === 0 ? '0' : infTex(s), detail: { lignes: [...lignes, ESSAIS_FIN(s === 0 ? '0' : infTex(s))], final: s === 0 ? '0' : infTex(s) } });
-    ex.push(Object.assign({ id: '6.13 a)' }, corps({ a: d, cote: '+' }, sk, [`\\text{Le numérateur tend vers } ${pref(k)}${d === 1 ? 'e' : `e^{${d}}`}`, `\\text{Le dénominateur tend vers } 0^{+}`])));
-    ex.push(Object.assign({ id: '6.13 b)' }, corps({ a: d, cote: '-' }, -sk, [`\\text{Le numérateur tend vers } ${pref(k)}${d === 1 ? 'e' : `e^{${d}}`}`, `\\text{Le dénominateur tend vers } 0^{-}`])));
-    ex.push(Object.assign({ id: '6.13 c)' }, corps('+inf', sk, [`f(x) = ${pref(k)}\\dfrac{e^{x}}{x${sg(-d)}}`, `\\text{Par croissances comparées :}`, `\\dfrac{e^{x}}{x${sg(-d)}} \\text{ tend vers } +\\infty`])));
-    ex.push(Object.assign({ id: '6.13 d)' }, corps('-inf', 0, [`\\text{Le numérateur tend vers } 0`, `\\text{Le dénominateur tend vers } -\\infty`])));
   }
 
   // « < » suivi d'une lettre serait lu comme une balise HTML : \lt

@@ -94,7 +94,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
         for (const e of ex) {
           if (!e.limite) continue;
           ou = e.id;
-          if (/^6\.1[23]/.test(e.id)) continue;
+          if (/^6\.12/.test(e.id)) continue;
           verifierLimite(e); compte(e.id.slice(0, 3).replace(/\s|\)/g, ''));
         }
         // 6.3 : deux formes indeterminees et deux limites directes
@@ -112,17 +112,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
           if (!proche(G(0), be, 1e-9) || !proche(G(1) - G(0), al, 1e-9)) faux(ec, '6.12 c) droite ' + G(0) + ' / ' + (G(1) - G(0)) + ' <> y = ' + al + 'x+' + be);
           compte('6.12');
         }
-        // 6.13 : f lue dans l'introduction, limites a chaque borne
-        ou = '6.13';
-        {
-          const src = mj(formules(paramsAvances.t13).find((s) => /^f\(x\)=/.test(s)).replace(/^f\(x\)=/, ''));
-          for (const id of ['6.13 a)', '6.13 b)', '6.13 c)', '6.13 d)']) {
-            const e = par(id), { pt } = decouper(formules(e.enonce)[0]), c = classer(src, pt), att = e.limite;
-            if (att.t === 'inf' ? (c.t !== 'inf' || c.s !== att.s) : (c.t !== 'fini' || !proche(c.v, att.v, 1e-6))) faux(e, id + ' limite numerique ' + JSON.stringify(c) + ' <> ' + e.reponse);
-            compte('6.13');
-          }
-        }
-        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^6\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10,11,12,13') faux(ex[0], 'numerotation'); }
+        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^6\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10,11,12') faux(ex[0], 'numerotation'); }
       } catch (er) { faux(ex[0], 'EXCEPTION dans ' + ou + ' : ' + er.message + ' | ' + (er.stack || '').split('\n')[1]); }
     }
     return { defauts, stats };
