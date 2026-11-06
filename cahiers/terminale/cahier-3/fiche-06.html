@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.10 a)":1,"6.10 b)":1,"6.10 c)":1,"6.11 a)":0.75,"6.11 b)":1,"6.11 c)":1.25,"6.12 a)":1.75,"6.12 b)":1.5,"6.12 c)":1.5},"bonus":["6.12 a)","6.12 b)","6.12 c)"]});
+Bareme.definir({"points":{"6.1 a)":0.5,"6.1 b)":0.75,"6.2 a)":0.5,"6.2 b)":0.75,"6.3 a)":0.75,"6.3 b)":0.75,"6.3 c)":0.75,"6.3 d)":0.75,"6.4 a)":0.5,"6.4 b)":0.75,"6.4 c)":0.75,"6.5 a)":0.75,"6.5 b)":0.75,"6.5 c)":0.75,"6.6 a)":0.75,"6.6 b)":1.25,"6.6 c)":1,"6.7 a)":0.75,"6.7 b)":1,"6.7 c)":1.25,"6.8 a)":1,"6.8 b)":1.25,"6.8 c)":1.25,"6.9 a)":0.75,"6.9 b)":1,"6.9 c)":1.25,"6.10 a)":1,"6.10 b)":1,"6.10 c)":1,"6.11 a)":0.75,"6.11 b)":1,"6.11 c)":1.25,"6.12 a)":1.75,"6.12 b)":1,"6.12 c)":1.5},"bonus":["6.12 a)","6.12 b)","6.12 c)"]});
 </script>
 <style>
   :root {
@@ -1494,10 +1494,9 @@ function genererExercices() {
     ex.push({ id: '6.12 a)', type: 'triplet', couple: true, texteLibre: true, enonce: `Déterminer le triplet \\((a\\,;\\,b\\,;\\,c)\\) tel que, pour tout \\(x\\neq ${d}\\), \\(f(x)=ax+b+\\dfrac{c}{x${sg(-d)}}\\)`, ta: String(al), tb: String(be), tc: String(ga), reponse: `(${al};${be};${ga})`, correctionLatex: fin,
       detail: { lignes: [`\\left(ax+b\\right)\\left(x${sg(-d)}\\right)+c = ax^{2}+\\left(b${d < 0 ? '+' : '-'}${ad}a\\right)x${d < 0 ? '+' : '-'}${ad}b+c`,
         `a = ${al}`, `b${d < 0 ? '+' : '-'}${ad}a = ${B} \\iff b = ${be}`, `${d < 0 ? '' : '-'}${ad}b+c = ${C} \\iff c = ${ga}`, `\\left(a\\,;\\,b\\,;\\,c\\right) = ${fin}`], final: fin } });
-    const s = ga > 0 ? 1 : -1;
-    ex.push({ id: '6.12 b)', type: 'num', texteLibre: true, limite: { t: 'inf', s }, enonce: `\\(\\displaystyle\\lim_{\\textstyle x\\to ${d}^{+}}f(x)\\)`, reponse: s > 0 ? '+oo' : '-oo', correctionLatex: infTex(s),
-      detail: { lignes: [`f(x) = ${pref(al)}x${sg(be)}+\\dfrac{${ga}}{x${sg(-d)}}`, `\\text{Le terme } ${pref(al)}x${sg(be)} \\text{ tend vers } ${al * d + be}`, `\\text{Le terme } \\dfrac{${ga}}{x${sg(-d)}} \\text{ tend vers } ${infTex(s)}`, ESSAIS_FIN(infTex(s))], final: infTex(s) } });
-    const droite = sommeTex([[al, 'x'], [be, '']]);
+    const droite = sommeTex([[al, 'x'], [be, '']]), pt = piocher(['+inf', '-inf']);
+    limite('6.12 b)', pt, `\\left(f(x)-\\left(${droite}\\right)\\right)`, { t: 'fini', v: 0, rep: '0' }, '0',
+      [`f(x)-\\left(${droite}\\right) = \\dfrac{${ga}}{x${sg(-d)}}`, `\\text{Le numérateur tend vers } ${ga}`, `\\text{Le dénominateur tend vers } ${infTex(signeInf(pt))}`]);
     ex.push({ id: '6.12 c)', type: 'alg', texteLibre: true, formeYax: true, enonce: `Déterminer l'équation de l'asymptote oblique à la courbe représentative de \\(f\\) en \\(+\\infty\\)`, reponse: `(${al})*x+(${be})`, correctionLatex: `y = ${droite}`,
       detail: { lignes: [`f(x)-\\left(${droite}\\right) = \\dfrac{${ga}}{x${sg(-d)}}`, `\\text{Cette différence tend vers } 0 \\text{ en } +\\infty`, `y = ${droite}`], final: `y = ${droite}` } });
   }

@@ -105,8 +105,9 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
           const src = formules(paramsAvances.t12).find((s) => /^f\(x\)=/.test(s)), f = (x) => val(src.replace(/^f\(x\)=/, ''), { x });
           const ea = par('6.12 a)'), al = Number(ea.ta), be = Number(ea.tb), ga = Number(ea.tc), d = Number(formules(ea.enonce).join(' ').match(/x\\neq (-?\d+)/)[1]);
           for (const x of [0.37, 1.9, -2.3, 3.1]) if (Math.abs(x - d) > 0.2 && !proche(f(x), al * x + be + ga / (x - d), 1e-9)) faux(ea, '6.12 a) f(x) <> alpha x + beta + gamma/(x-d) en ' + x);
-          const eb = par('6.12 b)'), c = classer(mj(src.replace(/^f\(x\)=/, '')), { a: d, cote: '+' });
-          if (c.t !== 'inf' || c.s !== eb.limite.s) faux(eb, '6.12 b) limite numerique ' + JSON.stringify(c) + ' <> ' + eb.reponse);
+          const eb = par('6.12 b)'), db = decouper(formules(eb.enonce)[0]), fsrc = mj(src.replace(/^f\(x\)=/, '')), exprB = mj(db.expr).replace(/f\(x\)/g, '(' + fsrc + ')'), c = classer(exprB, db.pt);
+          if (!/f\(x\)-/.test(String(eb.enonce).replace(/\\left|\\right|\s/g, ''))) faux(eb, '6.12 b) l\'enonce ne porte pas sur f(x) - (droite)');
+          if (c.t !== 'fini' || !proche(c.v, 0, 1e-6) || eb.limite.t !== 'fini' || eb.limite.v !== 0) faux(eb, '6.12 b) limite numerique ' + JSON.stringify(c) + ' <> ' + eb.reponse);
           const ec = par('6.12 c)'), G = (x) => math.evaluate(ec.reponse, { x }), F = MB.compile(mj(src.replace(/^f\(x\)=/, '')));
           for (const X of ['1e12', '1e24']) { const x = MB.bignumber(X), diff = MB.subtract(F.evaluate({ x, e: EB }), MB.add(MB.multiply(MB.bignumber(al), x), MB.bignumber(be))); if (Math.abs(num(diff)) > 1e-6) faux(ec, '6.12 c) f(x) - (alpha x + beta) vaut ' + num(diff) + ' en ' + X + ' (devrait tendre vers 0)'); }
           if (!proche(G(0), be, 1e-9) || !proche(G(1) - G(0), al, 1e-9)) faux(ec, '6.12 c) droite ' + G(0) + ' / ' + (G(1) - G(0)) + ' <> y = ' + al + 'x+' + be);
