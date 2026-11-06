@@ -18,6 +18,8 @@ Trois fichiers à la racine du dépôt :
 
 Pour tout travail sur le bloc **QCM Bac** (Terminale, dossier `qcm-bac/`), lire aussi **`outils/qcm-bac/SUIVI-QCM-BAC.md`** (§0 : reste à faire).
 
+Pour créer, modifier, réduire ou vérifier une **fiche de calcul** (`cahiers/*/cahier-N/fiche-NN.html`), utiliser le skill **`fiche-de-calcul`** (`.claude/skills/fiche-de-calcul/`) : il donne le déroulé et les contrôles, et renvoie à `REGLES-FICHES.md`, qui reste la seule source des règles de rédaction.
+
 (Le backlog de David pour plus tard n'est plus un fichier du dépôt : c'est
 l'artefact claude.ai « Chantiers futurs »,
 https://claude.ai/artifact/D4BQtmML6BK5AtuAHRpbad, à ne modifier qu'à sa

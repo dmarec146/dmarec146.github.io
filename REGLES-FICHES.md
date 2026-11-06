@@ -1,6 +1,6 @@
 # Règles de rédaction des fiches de calcul
 
-**À lire avant de modifier une fiche** (`cahiers/{seconde|premiere}/cahier-N/fiche-NN.html`).
+**À lire avant de modifier une fiche** (`cahiers/{seconde|premiere|terminale}/cahier-N/fiche-NN.html`).
 Ces règles ont été données par David au fil des sessions ; elles s'appliquent
 sur les deux machines (PC pro et PC perso). Le détail de chaque décision est
 dans `HISTORIQUE.md` ; ce fichier n'en garde que la règle et sa raison.
@@ -85,9 +85,12 @@ les corrections ponctuelles d'une fiche).
     « Quelques automatismes » réduit à
     **un seul calcul de 4 questions, calcul numérique uniquement** (pas de
     développer ni de puissances dans ce bloc) ; les règles de diversification
-    de Première (§2 ci-dessus) viendront plus tard. Fiches 1 (08/10/2026),
-    2 (09/10/2026), 5 (12/10/2026, une fois son devoir terminé) 3 (13/10/2026, avec un 2e calcul de fractions à dénominateurs premiers entre eux) et 4 (13/10/2026, automatismes = un calcul « Développer et réduire », sans calcul numérique) faites ; fiche 5 : automatismes en fractions mélangées (13/10/2026) ; fiche 6 : automatismes en calcul littéral simple sans équations, 6.2 et 6.3 au début du coeur (14/10/2026) ; fiche 7 : idem (14/10/2026) ; fiche 8 : automatismes = un développement, une factorisation, deux équations du premier degré (14/10/2026) ; 8.2 = tableau de signes de ax+b (widget, un seul facteur donc sans ligne finale) ; fiche 9 : automatismes = fractions (4 modèles du vivier, gardés à la demande de David), conversions et pourcentages fusionnés (calculs de 4 exemples, sauf 9.4 réduit à 2 par David) (14/10/2026) ; fiche 10 : automatismes = 4 calculs numériques distincts (vivier de 7), 10.2 à 4 exemples (confirmé par David), cas hausse/baisse différenciés (14/10/2026) ; fiche 11 : automatismes = 4 calculs numériques distincts (puissances, puissances de 10, racines, décimaux), écriture scientifique et ensembles fusionnés (14/10/2026) ; fiche 12 : 12.1 gardé en automatismes, reste du bloc supprimé ; traduction, appartenance, intersection, réunion à 4 exemples variés ; systèmes d'inéquations en calcul séparé (15/10/2026) ; fiche 13 : automatismes = 4 calculs numériques distincts (vivier de 8), valeur absolue d'un entier en premier calcul du cœur, puis quatre équations avec valeur absolue (réponse en ensemble `{a;b}`), l'inéquation `|x| ◊ A` / `|x ± A| ◊ B` à deux exemples (◊ tiré), « cas moins immédiats » remplacé par des inéquations réellement plus délicates ; arrondis et amplitude/centre supprimés, doublons de générateurs corrigés, consignes remontées dans les titres (distances, traductions), avancés = √(a²), balayage, système de deux inéquations à valeurs absolues, double inéquation `s ◊ |kx+b| ◊ r` (15/10/2026) ; fiche 14 : automatismes = calculs numériques + développement (4 + 4), lecture graphique avant les antécédents par le calcul, lectures à ±0,2 partout (15/10/2026) ; fiche 15 : automatismes à 4 exemples (2 numériques + 2 développements), valeurs de lecture graphique **au dixième** (entiers ou demi-entiers, jamais de quarts d'entier), équations graphiques avec TOUTES les racines en ensemble au dixième, encadrements : un item aux inégalités strictes, l'autre aux larges (15/10/2026) ; fiche 16 : automatismes à 4 exemples (2 numériques + 1 identité remarquable + 1 double distributivité), 16.6 à 4 questions, 16.9 a) = système à solution fractionnaire (15/10/2026) ; fiche 17 : automatismes à 4 exemples (2 numériques + identité remarquable + double distributivité), consignes remontées dans les titres (17.3, 17.5), 17.4 à 3 et 17.6 à 4 questions (15/10/2026) ; fiche 18 : automatismes = 2 inéquations de degré 1 + 2 taux d'évolution (type `pourcentage`, % exigé), 18.6 à 4 questions (15/10/2026) ; fiche 19 : automatismes = 2 taux d'évolution + 2 calculs de fractions (une somme, un produit, fraction irréductible) ; cœur inchangé (15/10/2026) ; fiche 20 : automatismes = 2 fractions (somme, produit) + 2 calculs sur probabilités décimales, numérotation rendue séquentielle (réunion = 20.8, dénombrement = 20.9, Bayes = 20.12), phrase commune de 20.8 en introduction (15/10/2026) ; fiche 21 : automatismes = 21.1 calculs de carrés (relatifs, sommes de carrés) + 21.2 racines à simplifier sous la forme a√b, 21.4 distance en valeur exacte simplifiée, 21.5 ramenée à 4 questions, corrigé du milieu à paramètre réparé (15/10/2026) ; fiche 22 : automatismes = 22.1 fraction × entier relatif + 22.2 développer et réduire k(ax+b)±l(cx+d), 22.3 à 3 questions équilibrées, 22.5 à 4 règles différentes (parallélogramme, milieu I, différence, vecteurs arrivant au même sommet), 22.6 à 3 questions (15/10/2026) ; fiche 23 : automatismes = 23.1 sommes de demi-entiers + 23.2 carrés de demi-entiers et racine à simplifier, 23.3 à 3 vecteurs, consignes de 23.3 à 23.6 dans les titres, normes en valeur exacte simplifiée (15/10/2026) ; fiche 24 (ex-25, renumérotée : pas de fiche 24 dans le cahier 8) : automatismes = 24.1 quotients (yB−yA)/(xB−xA) + 24.2 équations du premier degré, 24.5 c) droite parallèle à un axe, 24.6 à 4 questions, consignes de 24.3 à 24.10 dans les titres (16/10/2026) ;
-    les suivantes au fur et à mesure des demandes de David.
+    de Première (§2 ci-dessus) viendront plus tard. Détail fiche par fiche (fiches 1 à 24) : `HISTORIQUE.md`, entrée du 06/11/2026.
+    Règles générales qui s'en dégagent (les autres sont aux §3 et §4) : un encadrement
+    graphique a un item aux inégalités strictes et un aux larges ; une équation graphique
+    donne TOUTES les racines, en ensemble, au dixième ; normes et distances en valeur exacte
+    simplifiée ; quand un calcul est fusionné ou supprimé, la numérotation redevient
+    séquentielle (aucun trou). Les suivantes : au fur et à mesure des demandes de David.
 
 ## 3. Titres et énoncés
 
@@ -154,7 +157,14 @@ les corrections ponctuelles d'une fiche).
   comparaison suggérée n'est pas maîtrisée). Remplacer par une catégorie
   factuelle et non personnelle (lieu, objet, durée, format, catégorie
   sportive officielle…). Admis : candidats anonymes A/B/C, cadre/non-cadre,
-  junior/senior, demi-pensionnaire/externe.
+  junior/senior, demi-pensionnaire/externe, élections à candidats anonymes, taux de
+  participation, salaire d'une personne anonyme, nombre de frères et sœurs.
+  **Contrôle** : repasser un lexique automatisé sur les énoncés, explications, options
+  et textes de SVG de toute nouvelle fiche ou banque (dix familles : genre,
+  nationalité/origine, religion, santé/troubles, substances, précarité,
+  stigmatisation scolaire, violence/mort, orientation, absentéisme) ; cible : zéro
+  signalement, faux positifs compris (reformuler plutôt que tolérer : « version
+  française » d'un film devient « version doublée »).
 - **Calculs plus avancés** : nettement plus difficiles que tout le cœur de
   la fiche (quitte à déborder légèrement du programme), **jamais
   contextualisés** (pas de taxi, de prix…) : soit un calcul combinant
@@ -345,14 +355,20 @@ les corrections ponctuelles d'une fiche).
   pour une lecture de pente, que le tracé passe par au moins deux nœuds
   entiers du quadrillage.
 - S'inspirer aussi des banques `automatismes/premiere/banques/*.js`
-  (motifs de génération éprouvés), en adaptant à l'architecture des fiches.
+  (motifs de génération éprouvés), en adaptant à l'architecture des fiches (le moteur
+  `automatismes/` est différent : ne pas copier sans adapter). Exemple : construire la
+  seconde courbe à partir de la première (`g = f + a·Π(x−rᵢ)`, valable du degré 2 au
+  degré 3) plutôt que l'inverse. **Avant ET après tout changement d'un générateur
+  d'automatismes, simuler son taux de succès** (10/09/2026 : exclure la pente nulle
+  de `comparerCourbes` l'a fait passer de 95 % à 0 %, alors que le même changement
+  était sans risque dans une fonction voisine sans contrainte de fenêtre).
 
 ## 5. Vérification avant de pousser
 
 0. **Fiche ajoutée, retirée ou renumérotée** : mettre à jour `assets/js/manifeste-fiches.js` (une entrée par fiche : href, numero, nom), puis
    `node outils/verification/verifier-manifeste.js` (0 écart attendu ; `--corriger` réécrit le texte de repli de `cahiers/index.html`). La page
    « Tous les cahiers » calcule le nombre et les numéros de fiches de chaque cahier d'après ce manifeste ; le contrôle vérifie qu'il concorde avec les fichiers réels.
-1. Vérificateur de syntaxe des 50 fiches :
+1. Vérificateur de syntaxe de toutes les fiches (56 au 06/11/2026) :
    `node outils/verification/verifier-syntaxe-fiches.js` (0 erreur attendue).
 2. Liste des `id` générés conforme au plan, cohérente avec `groupes` et avec
    l'ordre des grilles.
