@@ -58,7 +58,7 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
       else paires = [classerUnCote(src, pt.a, '+', exp), classerUnCote(src, pt.a, '-', exp)];
       const res = paires.map(([v1, v2]) => {
         const a1 = Math.abs(num(v1)), a2 = Math.abs(num(v2));
-        if (a2 > 1.4 * a1 && a2 > 5) return { t: 'inf', s: num(v2) > 0 ? 1 : -1 };
+        if (!isFinite(a2) || (a2 > 1.4 * a1 && a2 > 5)) return { t: 'inf', s: num(v2) > 0 ? 1 : -1 };
         return { t: 'fini', v: num(v2) };
       });
       if (res.length === 2 && JSON.stringify(res[0]) !== JSON.stringify(res[1]) && !(res[0].t === 'fini' && res[1].t === 'fini' && proche(res[0].v, res[1].v, 1e-6))) return { t: 'differente', res };
@@ -94,35 +94,35 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-06.html';
         for (const e of ex) {
           if (!e.limite) continue;
           ou = e.id;
-          if (/^6\.1[34]/.test(e.id)) continue;
+          if (/^6\.1[23]/.test(e.id)) continue;
           verifierLimite(e); compte(e.id.slice(0, 3).replace(/\s|\)/g, ''));
         }
         // 6.3 : deux formes indeterminees et deux limites directes
         { const fis = ['6.3 a)', '6.3 b)', '6.3 c)', '6.3 d)'].filter((id) => par(id).limite.t === 'FI'); if (fis.length !== 2) faux(par('6.3 a)'), '6.3 : ' + fis.length + ' formes indeterminees au lieu de 2'); }
-        // 6.13 : f lue dans l'introduction
+        // 6.12 : f lue dans l'introduction
+        ou = '6.12';
+        {
+          const src = formules(paramsAvances.t12).find((s) => /^f\(x\)=/.test(s)), f = (x) => val(src.replace(/^f\(x\)=/, ''), { x });
+          const ea = par('6.12 a)'), al = Number(ea.ta), be = Number(ea.tb), ga = Number(ea.tc), d = Number(formules(ea.enonce).join(' ').match(/x\\neq (-?\d+)/)[1]);
+          for (const x of [0.37, 1.9, -2.3, 3.1]) if (Math.abs(x - d) > 0.2 && !proche(f(x), al * x + be + ga / (x - d), 1e-9)) faux(ea, '6.12 a) f(x) <> alpha x + beta + gamma/(x-d) en ' + x);
+          const eb = par('6.12 b)'), c = classer(mj(src.replace(/^f\(x\)=/, '')), { a: d, cote: '+' });
+          if (c.t !== 'inf' || c.s !== eb.limite.s) faux(eb, '6.12 b) limite numerique ' + JSON.stringify(c) + ' <> ' + eb.reponse);
+          const ec = par('6.12 c)'), G = (x) => math.evaluate(ec.reponse, { x }), F = MB.compile(mj(src.replace(/^f\(x\)=/, '')));
+          for (const X of ['1e12', '1e24']) { const x = MB.bignumber(X), diff = MB.subtract(F.evaluate({ x, e: EB }), MB.add(MB.multiply(MB.bignumber(al), x), MB.bignumber(be))); if (Math.abs(num(diff)) > 1e-6) faux(ec, '6.12 c) f(x) - (alpha x + beta) vaut ' + num(diff) + ' en ' + X + ' (devrait tendre vers 0)'); }
+          if (!proche(G(0), be, 1e-9) || !proche(G(1) - G(0), al, 1e-9)) faux(ec, '6.12 c) droite ' + G(0) + ' / ' + (G(1) - G(0)) + ' <> y = ' + al + 'x+' + be);
+          compte('6.12');
+        }
+        // 6.13 : f lue dans l'introduction, limites a chaque borne
         ou = '6.13';
         {
-          const src = formules(paramsAvances.t13).find((s) => /^f\(x\)=/.test(s)), f = (x) => val(src.replace(/^f\(x\)=/, ''), { x });
-          const ea = par('6.13 a)'), al = Number(ea.ta), be = Number(ea.tb), ga = Number(ea.tc), d = Number(formules(ea.enonce).join(' ').match(/x\\neq (-?\d+)/)[1]);
-          for (const x of [0.37, 1.9, -2.3, 3.1]) if (Math.abs(x - d) > 0.2 && !proche(f(x), al * x + be + ga / (x - d), 1e-9)) faux(ea, '6.13 a) f(x) <> alpha x + beta + gamma/(x-d) en ' + x);
-          const eb = par('6.13 b)'), c = classer(mj(src.replace(/^f\(x\)=/, '')), { a: d, cote: '+' });
-          if (c.t !== 'inf' || c.s !== eb.limite.s) faux(eb, '6.13 b) limite numerique ' + JSON.stringify(c) + ' <> ' + eb.reponse);
-          const ec = par('6.13 c)'), G = (x) => math.evaluate(ec.reponse, { x }), F = MB.compile(mj(src.replace(/^f\(x\)=/, '')));
-          for (const X of ['1e12', '1e24']) { const x = MB.bignumber(X), diff = MB.subtract(F.evaluate({ x, e: EB }), MB.add(MB.multiply(MB.bignumber(al), x), MB.bignumber(be))); if (Math.abs(num(diff)) > 1e-6) faux(ec, '6.13 c) f(x) - (alpha x + beta) vaut ' + num(diff) + ' en ' + X + ' (devrait tendre vers 0)'); }
-          if (!proche(G(0), be, 1e-9) || !proche(G(1) - G(0), al, 1e-9)) faux(ec, '6.13 c) droite ' + G(0) + ' / ' + (G(1) - G(0)) + ' <> y = ' + al + 'x+' + be);
-          compte('6.13');
-        }
-        // 6.14 : f lue dans l'introduction, limites a chaque borne
-        ou = '6.14';
-        {
-          const src = mj(formules(paramsAvances.t14).find((s) => /^f\(x\)=/.test(s)).replace(/^f\(x\)=/, ''));
-          for (const id of ['6.14 a)', '6.14 b)', '6.14 c)', '6.14 d)']) {
+          const src = mj(formules(paramsAvances.t13).find((s) => /^f\(x\)=/.test(s)).replace(/^f\(x\)=/, ''));
+          for (const id of ['6.13 a)', '6.13 b)', '6.13 c)', '6.13 d)']) {
             const e = par(id), { pt } = decouper(formules(e.enonce)[0]), c = classer(src, pt), att = e.limite;
             if (att.t === 'inf' ? (c.t !== 'inf' || c.s !== att.s) : (c.t !== 'fini' || !proche(c.v, att.v, 1e-6))) faux(e, id + ' limite numerique ' + JSON.stringify(c) + ' <> ' + e.reponse);
-            compte('6.14');
+            compte('6.13');
           }
         }
-        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^6\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10,11,12,13,14') faux(ex[0], 'numerotation'); }
+        { const ids = ex.map((e) => e.id), calculs = [...new Set(ids.map((i) => Number(i.match(/^6\.(\d+)/)[1])))]; if (calculs.join() !== '1,2,3,4,5,6,7,8,9,10,11,12,13') faux(ex[0], 'numerotation'); }
       } catch (er) { faux(ex[0], 'EXCEPTION dans ' + ou + ' : ' + er.message + ' | ' + (er.stack || '').split('\n')[1]); }
     }
     return { defauts, stats };
