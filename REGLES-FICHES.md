@@ -197,6 +197,7 @@ les corrections ponctuelles d'une fiche).
   valeurs différentes ; réponse qui répète la question (somme non calculée) ; formule valable seulement sur un domaine
   que les paramètres ne respectent pas (racine carrée, rang) ; auto-contrôle tautologique d'un type `paire` /
   `triplet` sans `vars`.
+- **Figure ou introduction qui dépend du tirage** (coefficient d'une courbe, nombre tiré) : elle est reconstruite au chargement **et** dans « Générer une nouvelle version » ; vérifier en régénérant plusieurs dizaines de fois que ce que montre la figure est bien ce que contiennent les réponses (7/11/2026, Première fiche 4). Un tableau statique d'indices de questions par grille (`groupes`) se met à jour quand le nombre de questions d'un calcul change.
 
 ## 4. Réponses, corrections, tirages
 

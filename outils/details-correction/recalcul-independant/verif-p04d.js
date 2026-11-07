@@ -1,4 +1,4 @@
-// Verification independante des details de Premiere 4 (puissances, nombre derive, tableaux de variation, tangente au cercle) : recalcul a partir de l'enonce et des courbes tracees
+// Verification independante des details de Premiere 4 (puissances, nombre derive, tableaux de variation, tangente a une parabole) : recalcul a partir de l'enonce et des courbes tracees
 const fs = require('fs'), path = require('path'), http = require('http');
 const RACINE = 'C:/Users/David/Documents/siteCahierCalcul';
 const { chromium } = require(RACINE + '/outils/audit-reponses/node_modules/playwright-core');
@@ -74,17 +74,27 @@ const FICHE = process.argv[3] || 'cahiers/premiere/cahier-2/fiche-04.html';
             compte('4.5');
           }
           else if (/^4\.6 /.test(id)) {
-            const f = (t) => Math.sqrt(1 - t * t), fp = (t) => -t / Math.sqrt(1 - t * t);
-            for (const t of [-0.8, -0.3, 0.2, 0.7]) {
-              const sc = { t, yt: f(t), x: 1.3 + t, y_t: f(t) };
-              if (id === '4.6 a)') { if (!proche(val(F.replace(/y_\{t\}/g, 'yt'), sc), 1, 1e-9)) faux(e, '4.6a OM=1 ' + F); }
-              else if (id === '4.6 b)') { if (!proche(val(F, sc), f(t), 1e-9)) faux(e, 'y_t ' + F); }
-              else if (id === '4.6 c)') { if (!proche(val(F, sc), deriv(f, t), 1e-5)) faux(e, 'f\' ' + F + ' ' + val(F, sc) + ' / ' + deriv(f, t)); }
-              else if (id === '4.6 d)') { const m = F.match(/^y = (.*)x\+(.*)$/); if (!m) { faux(e, 'forme y=ax+b ' + F); break; } const a = val(m[1], sc), bb = val(m[2], sc); for (const x of [-2, 0.5, 3]) if (!proche(a * x + bb, f(t) + fp(t) * (x - t), 1e-8)) faux(e, 'tangente ' + F); }
-              else if (id === '4.6 e)') { const L = F.replace(/\\left|\\right|\\,/g, '').replace(/^\(|\)$/g, '').split(';').map((z) => val(z, sc)); if (Math.abs(L[0] * fp(t) - L[1] * 1) > 1e-8 || (Math.abs(L[0]) + Math.abs(L[1])) < 1e-12) faux(e, 'vecteur directeur de T ' + F); }
-              else if (id === '4.6 f)') { const L = F.replace(/\\left|\\right|\\,/g, '').replace(/^\(|\)$/g, '').split(';').map((z) => val(z, sc)); if (Math.abs(L[0] * f(t) - L[1] * t) > 1e-8) faux(e, 'vecteur directeur de OM ' + F); }
-              else if (id === '4.6 g)') { const w = [f(t), -t], om = [t, f(t)]; if (Math.abs(w[0] * om[0] + w[1] * om[1]) > 1e-9 || F !== 'Vrai' || e.estVrai !== true) faux(e, 'orthogonalite'); }
+            const g = gp.g6_6, a = g.n / g.d, f = (x) => a * x * x, fp = (x) => 2 * a * x;
+            for (const t of [-1.7, -0.6, 0.4, 1.3, 2.2]) {
+              const sc = { t };
+              if (id === '4.6 a)') { if (!proche(val(F, sc), fp(t), 1e-9) || !proche(math.evaluate(e.reponse, sc), fp(t), 1e-9) || !proche(val(e.correctionLatex, sc), fp(t), 1e-9)) faux(e, '4.6a f\'(t) ' + F); }
+              else if (id === '4.6 b)') {
+                const m = F.replace(/^y = /, '').match(/^(.*?)x(.*)$/); if (!m) { faux(e, 'forme y=ax+b ' + F); break; }
+                const pente = val(m[1], sc), ord = val(m[2], sc);
+                for (const x of [-2, 0.5, 3]) if (!proche(pente * x + ord, f(t) + fp(t) * (x - t), 1e-8)) faux(e, 'tangente ' + F);
+                if (e.correctionLatex !== F) faux(e, 'corrige affiche <> detail : ' + e.correctionLatex);
+                const rep = e.reponse.replace(/^\(/, '').match(/^(.*)\)\*x([+-].*)?$/); if (!rep) { faux(e, 'reponse ' + e.reponse); break; }
+                for (const x of [-2, 3]) if (!proche(math.evaluate(e.reponse, { t, x }), f(t) + fp(t) * (x - t), 1e-8)) faux(e, 'reponse attendue ' + e.reponse);
+              }
+              else if (id === '4.6 c)') { if (!proche(val(F, sc), t - f(t) / fp(t), 1e-9) || !proche(math.evaluate(e.reponse, sc), t - f(t) / fp(t), 1e-9) || !proche(val(e.correctionLatex, sc), t - f(t) / fp(t), 1e-9)) faux(e, 'abscisse de I ' + F); }
+              else if (id === '4.6 d)') { if (!proche(val(F, sc), f(t) - fp(t) * t, 1e-9) || !proche(math.evaluate(e.reponse, sc), f(t) - fp(t) * t, 1e-9) || !proche(val(e.correctionLatex, sc), f(t) - fp(t) * t, 1e-9)) faux(e, 'ordonnee de J ' + F); }
+              else if (id === '4.6 e)') {
+                const sur = /\[H\\,M\(t\)\]/.test(tx) ? 'HM' : /\[OH\]/.test(tx) ? 'OH' : null; if (!sur) { faux(e, 'segment illisible'); break; }
+                const I = [t - f(t) / fp(t), 0], mil = sur === 'OH' ? [(0 + t) / 2, 0] : [(t + t) / 2, (0 + f(t)) / 2], vrai = Math.abs(mil[0] - I[0]) < 1e-9 && Math.abs(mil[1] - I[1]) < 1e-9;
+                if (e.estVrai !== vrai || F !== (vrai ? 'Vrai' : 'Faux')) faux(e, 'milieu ' + sur + ' : attendu ' + vrai);
+              }
             }
+            if (id === '4.6 a)' && !(g.n !== 0 && g.d > 0)) faux(e, 'parametre a');
             compte('4.6');
           }
           else faux(e, 'exercice non verifie');
