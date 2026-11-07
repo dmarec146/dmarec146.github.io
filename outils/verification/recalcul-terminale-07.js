@@ -111,13 +111,36 @@ const FICHE = process.argv[3] || 'cahiers/terminale/cahier-3/fiche-07.html';
       const par = (id) => ex.find((e) => e.id === id);
       for (const e of ex) if (/undefined|NaN|Infinity/.test(String(e.enonce) + String(e.reponse === undefined ? '' : e.reponse) + String(e.correctionLatex || ''))) faux(e, 'valeur invalide');
       try {
-        // 7.1 : equations, racines recalculees sur l'enonce affiche
-        for (const id of ['7.1 a)', '7.1 b)', '7.1 c)']) {
-          ou = id; const e = par(id), lhs = formules(e.enonce)[0].replace(/=0$/, '');
-          const R = racinesReelles(lhs), A = ensembleReponse(e.reponse);
-          if (!memeListe(R, A)) faux(e, id + ' racines ' + JSON.stringify(R) + ' <> ' + e.reponse);
-          if (!checkEnsemble(e.reponse, e.reponse)) faux(e, id + ' la reponse attendue ne passe pas sa propre verification');
-          compte('7.1');
+        // 7.1 : equations et inequations du second degre, recalculees sur l'enonce affiche (coefficients relus sur le polynome, discriminant, test sur de nombreux points)
+        {
+          const signes = [];
+          for (const id of ['7.1 a)', '7.1 b)', '7.1 c)', '7.1 d)']) {
+            ou = id; const e = par(id), m = formules(e.enonce)[0].match(/^(.*?)(\\geqslant|\\leqslant|\\lt|\\gt|=|>|<)\s*0$/);
+            if (!m) { faux(e, id + ' enonce illisible : ' + e.enonce); continue; }
+            const P = math.compile(mj(m[1])), p = (x) => P.evaluate({ x }), C = p(0), A = (p(1) + p(-1) - 2 * C) / 2, B = (p(1) - p(-1)) / 2, D = B * B - 4 * A * C, op = m[2];
+            for (const x of [2.5, -3.5, 7]) if (!proche(p(x), A * x * x + B * x + C, 1e-9)) faux(e, id + ' le membre de gauche n\'est pas un trinome');
+            signes.push(Math.sign(D));
+            if (op === '=') {
+              if (A <= 0) faux(e, id + ' coefficient dominant negatif dans une equation');
+              const R = D > 1e-9 ? [(-B - Math.sqrt(D)) / (2 * A), (-B + Math.sqrt(D)) / (2 * A)] : Math.abs(D) <= 1e-9 ? [-B / (2 * A)] : [];
+              if (!memeListe(R, ensembleReponse(e.reponse))) faux(e, id + ' solutions ' + JSON.stringify(R) + ' <> ' + e.reponse);
+              if (!checkEnsemble(e.reponse, e.reponse)) faux(e, id + ' la reponse attendue ne passe pas sa propre verification');
+            } else {
+              const verifie = (x, spec) => {
+                const v = p(x), nul = Math.abs(v) < 1e-14, vrai = op === '\\gt' || op === '>' ? v > 0 && !nul : op === '\\geqslant' ? v > 0 || nul : op === '\\lt' || op === '<' ? v < 0 && !nul : v < 0 || nul;
+                const dans = spec.type === 'tout' ? true : spec.type === 'vide' ? false : spec.liste.some((iv) => (x > iv.bas || (iv.inclusBas && x === iv.bas)) && (x < iv.haut || (iv.inclusHaut && x === iv.haut)));
+                return vrai === dans;
+              };
+              const spec = e.intervalleSpec, pts = [];
+              for (let x = -30; x <= 30; x += 0.0137) pts.push(x);
+              if (D >= 0) for (const s of [-1, 1]) { const r = (-B + s * Math.sqrt(D)) / (2 * A); pts.push(r, r - 1e-6, r + 1e-6); }
+              for (const x of pts) if (!verifie(x, spec)) { faux(e, id + ' x = ' + x + ' mal classe par ' + JSON.stringify(spec)); break; }
+              if (spec.type === 'intervalles' && spec.liste.some((iv) => iv.bas === iv.haut)) faux(e, id + ' ensemble reduit a un point');
+              if (!checkIntervalle(formaterIntervalleSpec(spec).replace(/\\,/g, '').replace(/\\ \\cup\\ /g, '∪').replace(/\\infty/g, '∞').replace(/\\mathbb\{R\}/, 'ℝ').replace(/\\emptyset/, '∅').replace(/\\dfrac\{(-?\d+)\}\{(\d+)\}/g, '($1)/($2)'), spec)) faux(e, id + ' le corrige affiche, retape, n\'est pas accepte : ' + formaterIntervalleSpec(spec));
+            }
+            compte('7.1');
+          }
+          if (!(signes.filter((s) => s > 0).length === 2 && signes.includes(0) && signes.includes(-1))) faux(par('7.1 a)'), '7.1 : signes des discriminants ' + signes);
         }
         // limites sans f(x) : valeur numerique en haute precision
         for (const e of ex) {

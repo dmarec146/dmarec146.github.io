@@ -26,7 +26,7 @@ window.MathJax = {
 <script src="../../../assets/js/details-second-degre.js?v=20261023"></script>
 <script>
 // Barème de la fiche (points par question ; les calculs avancés sont un bonus) : voir assets/js/bareme.js
-Bareme.definir({"points":{"7.1 a)":0.5,"7.1 b)":0.5,"7.1 c)":0.75,"7.2 a)":1,"7.2 b)":1.25,"7.3 a)":1.25,"7.3 b)":1,"7.4 a)":0.75,"7.4 b)":1.25,"7.5 a)":1,"7.5 b)":1.25,"7.5 c)":1.5,"7.5 d)":1.75,"7.6 a)":1.5,"7.6 b)":1.5,"7.6 c)":1,"7.7 a)":2,"7.8 a)":1.75},"bonus":["7.6 a)","7.6 b)","7.6 c)","7.7 a)","7.8 a)"]});
+Bareme.definir({"points":{"7.1 a)":0.75,"7.1 b)":0.75,"7.1 c)":1,"7.1 d)":1,"7.2 a)":1,"7.2 b)":1.25,"7.3 a)":1.25,"7.3 b)":1,"7.4 a)":0.75,"7.4 b)":1.25,"7.5 a)":1,"7.5 b)":1.25,"7.5 c)":1.5,"7.5 d)":1.75,"7.6 a)":1.5,"7.6 b)":1.5,"7.6 c)":1,"7.7 a)":2,"7.8 a)":1.75},"bonus":["7.6 a)","7.6 b)","7.6 c)","7.7 a)","7.8 a)"]});
 </script>
 <style>
   :root {
@@ -995,7 +995,7 @@ Bareme.definir({"points":{"7.1 a)":0.5,"7.1 b)":0.5,"7.1 c)":0.75,"7.2 a)":1,"7.
 <p class="section-titre">Automatismes</p>
 <div class="section-barre"></div>
 
-<p class="calcul-titre"><span>Calcul 7.1 — Résoudre les équations suivantes.</span><span class="picto-niveau"></span></p>
+<p class="calcul-titre"><span>Calcul 7.1 — Résoudre les équations et inéquations suivantes.</span><span class="picto-niveau"></span></p>
 <div class="question-grille" id="grille-7-1"></div>
 
 </div>
@@ -1285,21 +1285,58 @@ function genererExercices() {
   const ensTex = (liste) => '\\left\\{' + liste.join('\\,;\\,') + '\\right\\}';
   const lnx = (k) => (k === 1 ? 'x\\,\\ln(x)' : `x^{${k}}\\ln(x)`);                              // x^k ln(x)
 
-  // ---------- 7.1 : resoudre des equations (automatismes) ----------
+  // ---------- 7.1 : equations et inequations du second degre (automatismes) ----------
   {
-    // a) ax + b = 0
-    const a = alea(2, 6), b = non0(-9, 9), L = math.fraction(-b, a), sol = finNombre(L), brut = fb(-b, a);
-    ex.push({ id: '7.1 a)', type: 'num', texteLibre: true, enonce: `\\(${polyTex([b, a])}=0\\)`, reponse: `{${frStr(L)}}`, correctionLatex: ensTex([sol]),
-      detail: { lignes: [`${polyTex([b, a])}=0 \\iff ${a}x=${-b}`, `\\iff x=${brut}` + (brut === sol ? '' : `=${sol}`), `S=${ensTex([sol])}`], final: ensTex([sol]) } });
-    // b) ax^2 - ak^2 = 0
-    const k = alea(2, 9), a1 = alea(1, 5), pb = polyTex([-a1 * k * k, 0, a1]);
-    ex.push({ id: '7.1 b)', type: 'num', texteLibre: true, enonce: `\\(${pb}=0\\)`, reponse: `{${-k};${k}}`, correctionLatex: ensTex([-k, k]),
-      detail: { lignes: [`${pb}=0 \\iff x^{2}=${k * k}`, `\\iff x=${-k} \\text{ ou } x=${k}`, `S=${ensTex([-k, k])}`], final: ensTex([-k, k]) } });
-    // c) x^2 + bx + c = 0, deux racines entieres non nulles
-    let p, q; do { p = non0(-7, 7); q = non0(-7, 7); } while (p >= q || p + q === 0);
-    const b2 = -(p + q), c2 = p * q, D = b2 * b2 - 4 * c2, sq = q - p;
-    ex.push({ id: '7.1 c)', type: 'num', texteLibre: true, enonce: `\\(${polyTex([c2, b2, 1])}=0\\)`, reponse: `{${p};${q}}`, correctionLatex: ensTex([p, q]),
-      detail: { lignes: [`${polyTex([c2, b2, 1])}=0`, `\\Delta=${dP(b2)}^{2}-4\\times ${dP(c2)}=${D}=${sq}^{2}`, `x_{1}=\\dfrac{-${dP(b2)}-${sq}}{2}=${p}`, `x_{2}=\\dfrac{-${dP(b2)}+${sq}}{2}=${q}`, `S=${ensTex([p, q])}`], final: ensTex([p, q]) } });
+    const pgcd3 = (a, b, c) => { const g = (x, y) => (y ? g(y, x % y) : Math.abs(x)); return g(g(a, b), c); };
+    // trinome A x^2 + B x + C (A > 0, coefficients sans facteur commun) de discriminant > 0 (racines rationnelles distinctes), nul ou < 0
+    const trinome = (genre) => {
+      for (;;) {
+        let A, B, C, racines = [];
+        if (genre === 'pos') {
+          const m1 = alea(1, 3), m2 = alea(1, 3), n1 = non0(-6, 6), n2 = non0(-6, 6);
+          if (m1 * n2 === m2 * n1) continue;
+          A = m1 * m2; B = m1 * n2 + m2 * n1; C = n1 * n2; racines = [math.fraction(-n1, m1), math.fraction(-n2, m2)];
+        } else if (genre === 'nul') {
+          const m = alea(1, 3), n = non0(-6, 6); A = m * m; B = 2 * m * n; C = n * n; racines = [math.fraction(-n, m)];
+        } else { A = alea(1, 3); B = alea(-6, 6); C = Math.floor(B * B / (4 * A)) + alea(1, 4); }
+        if (pgcd3(A, B, C) !== 1) continue;
+        return { A, B, C, racines: racines.sort((p, q) => p.valueOf() - q.valueOf()) };
+      }
+    };
+    // ensemble des solutions de A x^2 + B x + C op 0 (op : '>', '>=', '<', '<=') sous forme d'intervalles
+    const specInequation = (A, B, C, op) => {
+      const D = B * B - 4 * A * C, veutPositif = op === '>' || op === '>=', strict = op === '>' || op === '<', dehors = (A > 0) === veutPositif;
+      if (D < 0) return { type: dehors ? 'tout' : 'vide' };
+      if (D === 0) {
+        const r = -B / (2 * A);
+        if (dehors) return strict ? { type: 'intervalles', liste: [{ bas: -Infinity, haut: r, inclusBas: false, inclusHaut: false }, { bas: r, haut: Infinity, inclusBas: false, inclusHaut: false }] } : { type: 'tout' };
+        return { type: 'vide' };       // strict : le cas d'une inequation large « <= 0 » (ensemble {r}) est ecarte du tirage
+      }
+      const sq = Math.sqrt(D), r1 = Math.min((-B - sq) / (2 * A), (-B + sq) / (2 * A)), r2 = Math.max((-B - sq) / (2 * A), (-B + sq) / (2 * A));
+      return dehors ? { type: 'intervalles', liste: [{ bas: -Infinity, haut: r1, inclusBas: false, inclusHaut: !strict }, { bas: r2, haut: Infinity, inclusBas: !strict, inclusHaut: false }] }
+        : { type: 'intervalles', liste: [{ bas: r1, haut: r2, inclusBas: !strict, inclusHaut: !strict }] };
+    };
+    const equation = (id, genre) => {
+      const t = trinome(genre), dd = DetailQ.lignesDelta2(t.A, t.B, t.C), lignes = ['\\text{Discriminant : } b^{2}-4ac', ...dd.lignes, DetailQ.phraseDelta2(dd.D)];
+      if (genre === 'pos') lignes.push(...DetailQ.lignesRacines2(t.A, t.B, dd.D.n).lignes);
+      else if (genre === 'nul') lignes.push(DetailQ.ligneRacineDouble2(t.A, t.B).ligne);
+      const tex = t.racines.length ? ensTex(t.racines.map((r) => finNombre(r))) : '\\emptyset';
+      lignes.push(`S=${tex}`);
+      ex.push({ id, type: 'num', texteLibre: true, enonce: `\\(${polyTex([t.C, t.B, t.A])}=0\\)`, reponse: `{${t.racines.map((r) => frStr(r)).join(';')}}`, correctionLatex: tex, detail: { lignes, final: tex } });
+    };
+    const inequation = (id, genre) => {
+      const t = trinome(genre), s = piocher([1, -1]), A = s * t.A, B = s * t.B, C = s * t.C;
+      let op;
+      for (;;) { op = piocher(['>', '>=', '<', '<=']); const pos = op === '>' || op === '>=', strict = op === '>' || op === '<'; if (!(genre === 'nul' && (A > 0) !== pos && !strict)) break; }
+      const spec = specInequation(A, B, C, op), sym = { '>': '>', '>=': '\\geqslant', '<': '<', '<=': '\\leqslant' }[op];
+      ex.push({ id, type: 'intervalle', texteLibre: true, enonce: `\\(${polyTex([C, B, A])}${sym}0\\)`, intervalleSpec: spec, detail: DetailQ.detailInequation2('x', A, B, C, op, spec, undefined, formaterIntervalleSpec) });
+    };
+    // deux equations et deux inequations : le discriminant est positif en a) et c), nul dans l'une des deux autres, negatif dans l'autre
+    const genres = melanger(['nul', 'neg']);
+    equation('7.1 a)', 'pos');
+    equation('7.1 b)', genres[0]);
+    inequation('7.1 c)', 'pos');
+    inequation('7.1 d)', genres[1]);
   }
 
   // ---------- 7.2 : limites avec une exponentielle ----------
@@ -2950,7 +2987,7 @@ function aideContextuellePour(ex) {
     return "Écrire la solution sous la forme <code>x&gt;4</code>, <code>x&lt;-2</code>, <code>x&gt;=1</code> ou <code>x&lt;=0</code> (avec &gt;= pour ≥ et &lt;= pour ≤).";
   }
   if (ex.type === 'num' && ex.reponse && ex.reponse.trim().startsWith('{')) {
-    return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution.";
+    return "Écrire l'ensemble des solutions entre accolades, séparées par un point-virgule : par exemple <code>{-2;3}</code>, ou <code>{5}</code> s'il n'y a qu'une solution, ou <code>∅</code> s'il n'y en a aucune.";
   }
   if (ex.type === 'cercle') {
     return "Donner les coordonnées du centre puis le rayon, séparés par des points-virgules : <code>cx;cy;r</code>. Exemple pour un centre (1;-2) et un rayon 3 : <code>1;-2;3</code>.";
