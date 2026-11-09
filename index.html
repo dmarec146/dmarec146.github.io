@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cahiers interactifs a changé d'adresse</title>
+<meta name="description" content="Cahiers interactifs, exercices de mathématiques pour le lycée, est maintenant à l'adresse cahiers-interactifs.fr.">
+<link rel="canonical" href="https://cahiers-interactifs.fr/">
+<noscript><meta http-equiv="refresh" content="8;url=https://cahiers-interactifs.fr/"></noscript>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #F6F6F4; color: #23272B;
+         font: 16px/1.55 system-ui, "Segoe UI", sans-serif; padding: 16px; box-sizing: border-box; }
+  main { max-width: 34rem; background: #fff; border-radius: 12px; padding: 24px 28px; box-shadow: 0 1px 6px rgba(0,0,0,.12); }
+  h1 { margin: 0 0 12px; font-size: 1.4rem; }
+  a { color: #3A36A0; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .bouton { display: inline-block; background: #3A36A0; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 8px; }
+  .bouton:focus-visible, a:focus-visible { outline: 3px solid #D9584B; outline-offset: 2px; }
+  .discret { font-size: .93rem; color: #5F666D; margin-bottom: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Le site a changé d'adresse</h1>
+  <p>Cahiers interactifs se trouve maintenant à l'adresse
+     <a href="https://cahiers-interactifs.fr/">cahiers-interactifs.fr</a>. Pensez à mettre à jour vos favoris.</p>
+  <p>Vous serez redirigé automatiquement dans <b id="compteur">6</b> secondes.</p>
+  <p><a id="continuer" class="bouton" href="https://cahiers-interactifs.fr/">Continuer maintenant</a></p>
+  <p class="discret">Vous devrez peut-être vous reconnecter une fois, avec les mêmes identifiants. N'oubliez pas
+     d'enregistrer ou de valider vos exercices en cours.</p>
+</main>
+<script>
+/* Redirige vers le nouveau domaine en gardant le chemin, après quelques secondes pour laisser lire le message : cette page sert
+   aussi de 404.html (GitHub Pages renvoie 404.html pour toute adresse inconnue), donc /cahiers/premiere/cahier-2/fiche-04.html arrive
+   ici puis repart vers la même fiche. Sans JavaScript : redirection de secours vers l'accueil (balise noscript du <head>). */
+var CIBLE = 'https://cahiers-interactifs.fr';
+var DELAI = 6;
+function adresseCible(chemin, recherche, ancre) {
+  if (String(chemin).charAt(0) !== '/') chemin = '/' + chemin;
+  if (chemin === '/404.html' || chemin === '/index.html') chemin = '/';
+  return CIBLE + chemin + (recherche || '') + (ancre || '');
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { adresseCible: adresseCible };
+} else {
+  var cible = adresseCible(location.pathname, location.search, location.hash);
+  document.getElementById('continuer').href = cible;
+  var reste = DELAI;
+  var compteur = document.getElementById('compteur');
+  (function tic() {
+    compteur.textContent = reste;
+    if (reste <= 0) { location.replace(cible); return; }
+    reste--;
+    setTimeout(tic, 1000);
+  })();
+}
+</script>
+</body>
+</html>
